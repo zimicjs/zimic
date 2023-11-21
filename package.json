@@ -1,0 +1,14 @@
+{
+  "name": "zimic",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": [],
+  "author": "Diego Aquino <diegocruzdeaquino@gmail.com>",
+  "repository": "git@github.com:diego-aquino/zimic.git",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "./dist"
+  ],
+  "scripts": {}
+}
