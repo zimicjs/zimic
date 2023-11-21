@@ -4,7 +4,10 @@
   "description": "",
   "keywords": [],
   "author": "Diego Aquino <diegocruzdeaquino@gmail.com>",
-  "repository": "git@github.com:diego-aquino/zimic.git",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/diego-aquino/zimic.git"
+  },
   "license": "MIT",
   "main": "dist/index.js",
   "files": [
