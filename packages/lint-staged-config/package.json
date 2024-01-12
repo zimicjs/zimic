@@ -1,0 +1,19 @@
+{
+  "name": "@zimic/lint-staged-config",
+  "version": "0.0.0",
+  "private": false,
+  "files": [
+    "*.js"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./lint": "./lib/lint.js",
+    "./style": "./lib/style.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "lint-staged": "^15.1.0"
+  }
+}
