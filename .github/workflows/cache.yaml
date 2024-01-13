@@ -1,0 +1,44 @@
+name: Cache
+
+on:
+  push:
+    branches:
+      - canary
+  workflow_dispatch:
+
+concurrency:
+  group: cache
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  cache-canary:
+    name: Cache canary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        node-version:
+          - 18
+          - 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ matrix.node-version }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+      - name: Check formatting style and save prettier cache
+        uses: ./.github/actions/zimic-style-check
+        with:
+          node-version: ${{ matrix.node-version }}

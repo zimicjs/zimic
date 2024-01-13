@@ -1,0 +1,30 @@
+{
+  "name": "zimic-test-client",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test:turbo": "pnpm run test run",
+    "types:check": "tsc --noEmit",
+    "deps:prepare": "pnpm deps:build && pnpm deps:install",
+    "deps:build": "pnpm turbo build --filter zimic-test-client^...",
+    "deps:install": "pnpm install --filter zimic-test-client"
+  },
+  "dependencies": {
+    "zimic": "workspace:*"
+  },
+  "devDependencies": {
+    "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "@types/node": "^18.8.4",
+    "dotenv-cli": "^7.0.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.2"
+  }
+}

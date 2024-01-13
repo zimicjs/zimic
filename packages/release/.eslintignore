@@ -1,0 +1,20 @@
+# Configuration
+/.eslintrc.js
+/.lintstagedrc.js
+
+# Dependencies
+node_modules
+
+# Build
+/dist
+/*.d.ts
+
+# Tests
+/coverage
+**/__tests__/fixtures/**/*.js
+
+# Cache
+.turbo
+
+# Miscellaneous
+local/
