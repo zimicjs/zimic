@@ -1,4 +1,4 @@
-name: Release
+name: Release to NPM
 
 on:
   release:
@@ -40,14 +40,25 @@ jobs:
           build: zimic^...
           build-node-env: production
 
-      - name: Release to NPM
+      - name: Build zimic
         run: pnpm turbo build --filter zimic
         env:
           NODE_ENV: production
 
+      - name: Prepare NPM tag
+        id: npm-tag
+        run: |
+          if [[ '${{ github.ref_name }}' == v*.*.*-canary.* ]]; then
+            echo "tag=canary" >> $GITHUB_OUTPUT
+          elif [[ '${{ github.ref_name }}' == v*.*.* ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=next" >> $GITHUB_OUTPUT
+          fi
+
       - name: Release to NPM
         working-directory: packages/zimic
-        run: pnpm publish
+        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
