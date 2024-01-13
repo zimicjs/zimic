@@ -175,6 +175,9 @@ importers:
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:../lint-staged-config
+      '@zimic/release':
+        specifier: workspace:*
+        version: link:../release
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

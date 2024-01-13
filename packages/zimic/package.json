@@ -22,6 +22,7 @@
   "scripts": {
     "dev": "pnpm build --watch",
     "build": "tsup --onSuccess 'tsup --dts-only && rimraf *.d.ts && cp dist/*.d.ts .'",
+    "release": "zimic-release",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -39,6 +40,7 @@
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "@zimic/release": "workspace:*",
     "@types/node": "^18.8.4",
     "dotenv-cli": "^7.0.0",
     "rimraf": "^3.0.2",
