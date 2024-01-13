@@ -1,7 +1,29 @@
 {
   "name": "zimic",
+  "description": "TypeScript-first, statically inferred HTTP mocks",
+  "keywords": [
+    "typescript",
+    "validation",
+    "type",
+    "inference",
+    "http",
+    "mock",
+    "static"
+  ],
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diego-aquino/zimic.git",
+    "directory": "packages/zimic"
+  },
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
   "files": [
     "dist",
     "*.d.ts"
@@ -12,12 +34,6 @@
       "require": "./dist/interceptor.js",
       "types": "./dist/interceptor.d.ts"
     }
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "pnpm build --watch",
@@ -35,13 +51,12 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@types/node": "^18.8.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
-    "@zimic/tsconfig": "workspace:*",
     "@zimic/release": "workspace:*",
-    "@types/node": "^18.8.4",
+    "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.0.0",
     "rimraf": "^3.0.2",
     "tsup": "^8.0.1",

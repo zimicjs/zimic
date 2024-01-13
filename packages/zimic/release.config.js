@@ -6,6 +6,7 @@ module.exports = {
       versionKey: 'version',
     },
   ],
+  tagSuffix: '-zimic',
   github: {
     repositoryOwner: 'diego-aquino',
     repositoryName: 'zimic',
