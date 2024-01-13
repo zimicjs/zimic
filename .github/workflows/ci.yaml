@@ -28,9 +28,9 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - node-version: 18
-          - node-version: 20
+        node-version:
+          - 18
+          - 20
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
