@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: release-npm-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-zimic-to-npm:
+    name: Release zimic to NPM
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    environment: NPM
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-registry-url: https://registry.npmjs.org
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: zimic...
+          build: zimic^...
+          build-node-env: production
+
+      - name: Release to NPM
+        run: pnpm turbo build --filter zimic
+        env:
+          NODE_ENV: production
+
+      - name: Release to NPM
+        working-directory: packages/zimic
+        run: pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

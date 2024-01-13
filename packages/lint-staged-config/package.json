@@ -10,9 +10,6 @@
     "./lint": "./lib/lint.js",
     "./style": "./lib/style.js"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "peerDependencies": {
     "lint-staged": "^15.1.0"
   }

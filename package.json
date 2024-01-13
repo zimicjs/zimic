@@ -1,21 +1,11 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "keywords": [
-    "typescript",
-    "validation",
-    "type",
-    "inference",
-    "http",
-    "mock",
-    "static"
-  ],
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/diego-aquino/zimic.git"
+    "url": "https://github.com/diego-aquino/zimic.git"
   },
-  "author": "Diego Aquino <diegocruzdeaquino@gmail.com>",
   "private": false,
   "packageManager": "pnpm@8.11.0",
   "engines": {

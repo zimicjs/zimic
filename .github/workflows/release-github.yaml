@@ -6,9 +6,10 @@ on:
       - main
     tags:
       - v*.*.*-canary.*
+      - '!v*.*.*-zimic'
 
 concurrency:
-  group: ci-${{ github.ref_name }}
+  group: release-github-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -17,8 +18,8 @@ env:
   TURBO_LOG_ORDER: stream
 
 jobs:
-  prepare-release:
-    name: Prepare release
+  prepare-github-release:
+    name: Prepare GitHub release
     runs-on: ubuntu-latest
     timeout-minutes: 2
 
@@ -39,7 +40,7 @@ jobs:
     name: Release to GitHub
     runs-on: ubuntu-latest
     needs:
-      - prepare-release
+      - prepare-github-release
     timeout-minutes: 2
 
     environment: GitHub
@@ -51,12 +52,13 @@ jobs:
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
-          name: ${{ needs.prepare-release.outputs.version }}
-          tag: ${{ needs.prepare-release.outputs.version }}
+          name: ${{ needs.prepare-github-release.outputs.version }}
+          tag: ${{ needs.prepare-github-release.outputs.version }}
           commit: ${{ github.sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           makeLatest: ${{ startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main' }}
+          prerelease: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
           allowUpdates: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
           replacesArtifacts: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
-          prerelease: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
           generateReleaseNotes: true
+          draft: true
