@@ -17,6 +17,9 @@ importers:
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:packages/lint-staged-config
+      '@zimic/release':
+        specifier: workspace:*
+        version: link:packages/release
       husky:
         specifier: ^8.0.3
         version: 8.0.3
@@ -121,7 +124,7 @@ importers:
         specifier: ^4.6.0
         version: 4.7.0
       typescript:
-        specifier: ^5.1.3
+        specifier: ^5.3.3
         version: 5.3.3
       vitest:
         specifier: ^1.1.2
@@ -132,6 +135,36 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
+
+  packages/zimic:
+    devDependencies:
+      '@types/node':
+        specifier: ^18.8.4
+        version: 18.19.6
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      dotenv-cli:
+        specifier: ^7.0.0
+        version: 7.3.0
+      rimraf:
+        specifier: ^3.0.2
+        version: 3.0.2
+      tsup:
+        specifier: ^8.0.1
+        version: 8.0.1(typescript@5.3.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+      vitest:
+        specifier: ^1.1.2
+        version: 1.2.0(@types/node@18.19.6)
 
 packages:
 

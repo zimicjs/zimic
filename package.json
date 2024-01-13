@@ -1,5 +1,5 @@
 {
-  "name": "zimic",
+  "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
   "keywords": [
     "typescript",

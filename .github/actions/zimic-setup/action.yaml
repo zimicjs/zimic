@@ -58,7 +58,7 @@ runs:
       id: install-dependencies
       shell: bash
       run: |
-        workspaceRootInstallFlag='--filter zimic'
+        workspaceRootInstallFlag='--filter zimic-root'
 
         function composeFilterOptions() {
           filterEntries=${*}
