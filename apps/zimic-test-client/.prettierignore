@@ -1,0 +1,14 @@
+# Dependencies
+node_modules
+
+# Cache
+.turbo
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Tests
+/coverage
+
+# Miscellaneous
+.vscode
+local/

@@ -36,6 +36,34 @@ importers:
         specifier: ^1.11.3
         version: 1.11.3
 
+  apps/zimic-test-client:
+    dependencies:
+      zimic:
+        specifier: workspace:*
+        version: link:../../packages/zimic
+    devDependencies:
+      '@types/node':
+        specifier: ^18.8.4
+        version: 18.19.6
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config-node
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../../packages/lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/tsconfig
+      dotenv-cli:
+        specifier: ^7.0.0
+        version: 7.3.0
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+      vitest:
+        specifier: ^1.1.2
+        version: 1.2.0(@types/node@18.19.6)
+
   packages/eslint-config:
     dependencies:
       '@typescript-eslint/eslint-plugin':
