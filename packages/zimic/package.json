@@ -16,6 +16,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "pnpm build --watch",
     "build": "tsup --onSuccess 'tsup --dts-only && rimraf *.d.ts && cp dist/*.d.ts .'",
