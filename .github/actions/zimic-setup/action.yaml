@@ -5,6 +5,9 @@ inputs:
   node-version:
     description: Node.js version to use
     required: true
+  node-registry-url:
+    description: Node.js registry URL to use (provide only if the action is going to push a release)
+    required: false
   turbo-token:
     description: Turbo remote cache token
     required: false
@@ -39,6 +42,7 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.node-registry-url }}
 
     - name: Install pnpm
       uses: pnpm/action-setup@v2
