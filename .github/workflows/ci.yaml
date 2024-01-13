@@ -32,6 +32,9 @@ jobs:
           - 18
           - 20
 
+    env:
+      NODE_VERSION: ${{ matrix.node-version }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

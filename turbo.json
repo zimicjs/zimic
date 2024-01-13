@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV", "NODE_VERSION"],
   "pipeline": {
     "dev": {
       "cache": false,
@@ -8,23 +9,19 @@
     },
 
     "build": {
-      "env": ["NODE_ENV"],
       "dependsOn": ["^build"]
     },
 
     "test:turbo": {
-      "env": ["NODE_ENV"],
       "dependsOn": ["^build"]
     },
 
     "lint:turbo": {
-      "env": ["NODE_ENV"],
       "dependsOn": ["^build"],
       "outputs": [".eslintcache"]
     },
 
     "types:check": {
-      "env": ["NODE_ENV"],
       "dependsOn": ["^build"],
       "outputs": ["tsconfig.tsbuildinfo"]
     }

@@ -87,6 +87,7 @@ runs:
         # apply the build outputs of the internal packages
         pnpm install --offline $installFlag
       env:
+        NODE_VERSION: ${{ matrix.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
