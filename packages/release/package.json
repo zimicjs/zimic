@@ -12,9 +12,6 @@
   "bin": {
     "zimic-release": "./dist/cli.js"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
     "dev": "pnpm build --watch",
     "dev:cli": "tsx src/cli/index.ts",

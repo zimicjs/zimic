@@ -8,9 +8,6 @@
   "exports": {
     ".": "./index.js"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
     "@zimic/eslint-config": "workspace:*"
   }

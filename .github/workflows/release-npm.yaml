@@ -22,6 +22,10 @@ jobs:
 
     environment: NPM
 
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,14 +41,13 @@ jobs:
           build-node-env: production
 
       - name: Release to NPM
-        run: |
-          pnpm turbo build --filter zimic
+        run: pnpm turbo build --filter zimic
         env:
           NODE_ENV: production
 
       - name: Release to NPM
         working-directory: packages/zimic
-        run: |
-          pnpm publish
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true

@@ -2,9 +2,6 @@
   "name": "@zimic/tsconfig",
   "version": "0.0.0",
   "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
   "peerDependencies": {
     "typescript": "^5.3.3"
   }
