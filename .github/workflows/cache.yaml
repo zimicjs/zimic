@@ -21,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    strategy:
+      matrix:
+        node-version:
+          - 18
+          - 20
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,8 +34,11 @@ jobs:
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
+          node-version: ${{ matrix.node-version }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
 
       - name: Check formatting style and save prettier cache
         uses: ./.github/actions/zimic-style-check
+        with:
+          node-version: ${{ matrix.node-version }}

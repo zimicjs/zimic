@@ -1,6 +1,11 @@
 name: Check zimic formatting style
 description: Check zimic formatting style
 
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: true
+
 runs:
   using: composite
   steps:
@@ -9,7 +14,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: node_modules/.cache/prettier
-        key: ${{ runner.os }}-prettier-${{ github.sha }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-prettier-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-prettier
 
@@ -22,4 +27,4 @@ runs:
       uses: actions/cache/save@v3
       with:
         path: node_modules/.cache/prettier
-        key: ${{ runner.os }}-prettier-${{ github.sha }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-prettier-${{ github.sha }}

@@ -2,6 +2,9 @@ name: Set up zimic
 description: Set up zimic
 
 inputs:
+  node-version:
+    description: Node.js version to use
+    required: true
   turbo-token:
     description: Turbo remote cache token
     required: false
@@ -35,7 +38,7 @@ runs:
     - name: Install Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 20.11.0
+        node-version: ${{ inputs.node-version }}
 
     - name: Install pnpm
       uses: pnpm/action-setup@v2
@@ -50,9 +53,9 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-
 
     - name: Install dependencies
       id: install-dependencies
@@ -93,4 +96,4 @@ runs:
       if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

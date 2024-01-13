@@ -26,6 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
 
+    strategy:
+      matrix:
+        node-version:
+          - 18
+          - 20
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,6 +42,7 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
+          node-version: ${{ matrix.node-version }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
@@ -44,6 +51,8 @@ jobs:
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - name: Lint code and check types
         run: |
