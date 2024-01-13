@@ -1,3 +1,3 @@
-import HttpInterceptor from './HttpInterceptor';
+import HttpInterceptor from './http/HttpInterceptor';
 
 export { HttpInterceptor };
