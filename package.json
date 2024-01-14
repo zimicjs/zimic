@@ -15,7 +15,6 @@
   "scripts": {
     "dev": "turbo dev --parallel --continue",
     "build": "turbo build",
-    "release": "zimic-release",
     "lint": "turbo lint:turbo",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check .",
