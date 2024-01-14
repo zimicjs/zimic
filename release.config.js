@@ -5,6 +5,10 @@ module.exports = {
       path: 'package.json',
       versionKey: 'version',
     },
+    {
+      path: 'packages/zimic/package.json',
+      versionKey: 'version',
+    },
   ],
   github: {
     repositoryOwner: 'diego-aquino',

@@ -10,7 +10,7 @@
     ".": "./dist/index.js"
   },
   "bin": {
-    "zimic-release": "./dist/cli.js"
+    "release": "./dist/cli.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
