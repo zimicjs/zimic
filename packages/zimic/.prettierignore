@@ -8,6 +8,7 @@ tsconfig.tsbuildinfo
 
 # Build
 /dist
+/interceptor/*.d.ts
 
 # Tests
 /coverage

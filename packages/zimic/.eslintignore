@@ -8,6 +8,7 @@ node_modules
 # Build
 /dist
 /*.d.ts
+/interceptor/*.d.ts
 
 # Tests
 /coverage

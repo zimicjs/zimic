@@ -19,10 +19,10 @@
     "zimic": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^18.8.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "@types/node": "^18.8.4",
     "dotenv-cli": "^7.0.0",
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"

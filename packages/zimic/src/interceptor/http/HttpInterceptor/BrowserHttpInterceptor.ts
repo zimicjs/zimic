@@ -7,7 +7,7 @@ class BrowserHttpInterceptor<Schema extends HttpInterceptorSchema> extends HttpI
   Schema,
   BrowserHttpInterceptorWorker
 > {
-  constructor(options: HttpInterceptorOptions) {
+  constructor(options: HttpInterceptorOptions = {}) {
     const browserWorker = new BrowserHttpInterceptorWorker();
     super({ ...options, worker: browserWorker });
   }
