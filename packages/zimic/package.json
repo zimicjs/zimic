@@ -51,6 +51,9 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic"
   },
+  "dependencies": {
+    "msw": "^2.1.0"
+  },
   "devDependencies": {
     "@types/node": "^18.8.4",
     "@zimic/eslint-config-node": "workspace:*",
