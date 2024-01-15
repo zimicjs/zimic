@@ -7,6 +7,8 @@ export default defineConfig((options) => ({
   entry: {
     index: 'src/index.ts',
     interceptor: 'src/interceptor/index.ts',
+    'interceptor/browser': 'src/interceptor/browser.ts',
+    'interceptor/node': 'src/interceptor/node.ts',
   },
   format: ['cjs', 'esm'],
   dts: false,

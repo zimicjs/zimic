@@ -1,0 +1,16 @@
+import NodeHttpInterceptorWorker from '../HttpInterceptorWorker/NodeHttpInterceptorWorker';
+import HttpInterceptor from './HttpInterceptor';
+import { HttpInterceptorOptions } from './types/options';
+import { HttpInterceptorSchema } from './types/schema';
+
+class NodeHttpInterceptor<Schema extends HttpInterceptorSchema> extends HttpInterceptor<
+  Schema,
+  NodeHttpInterceptorWorker
+> {
+  constructor(options: HttpInterceptorOptions) {
+    const nodeWorker = new NodeHttpInterceptorWorker();
+    super({ ...options, worker: nodeWorker });
+  }
+}
+
+export default NodeHttpInterceptor;
