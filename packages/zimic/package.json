@@ -26,9 +26,9 @@
   },
   "license": "MIT",
   "files": [
-    "dist",
-    "*.d.ts"
+    "dist"
   ],
+  "types": "dist/index.d.ts",
   "exports": {
     "./interceptor": {
       "import": "./dist/interceptor.mjs",

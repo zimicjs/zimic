@@ -5,6 +5,7 @@ const isProductionBuild = NODE_ENV === 'production';
 
 export default defineConfig((options) => ({
   entry: {
+    index: 'src/index.ts',
     interceptor: 'src/interceptor/index.ts',
   },
   format: ['cjs', 'esm'],
