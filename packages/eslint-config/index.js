@@ -237,8 +237,8 @@ module.exports = {
       { selector: 'typeLike', format: ['PascalCase'] },
       {
         selector: 'typeProperty',
-        format: ['camelCase', 'PascalCase', 'UPPER_CASE', 'snake_case'],
-        filter: { regex: '^.+-.+$', match: false },
+        format: [],
+        custom: { regex: '^.+$', match: true },
       },
       { selector: 'interface', format: ['PascalCase'], custom: { regex: '^I[A-Z]', match: false } },
       { selector: 'typeParameter', format: ['PascalCase'], custom: { regex: '^T[A-Z]', match: false } },
