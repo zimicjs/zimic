@@ -1,11 +1,13 @@
 export type HttpInterceptorMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
+export type HttpInterceptorRequestDefaultBody = Record<string, unknown> | string | number | boolean | null | undefined;
+
 export interface HttpInterceptorRequestSchema {
-  body?: unknown;
+  body?: HttpInterceptorRequestDefaultBody;
 }
 
 export interface HttpInterceptorResponseSchema {
-  body?: unknown;
+  body?: HttpInterceptorRequestDefaultBody;
 }
 
 export interface HttpInterceptorResponseSchemaByStatusCode {

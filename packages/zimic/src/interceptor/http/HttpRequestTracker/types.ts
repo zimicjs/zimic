@@ -7,9 +7,8 @@ import {
   HttpInterceptorResponseSchemaByStatusCode,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../HttpInterceptor/types/schema';
-import HttpRequestTracker from './HttpRequestTracker';
 
-export type HttpRequestTrackerResponseAttributeDefinition<
+export type HttpRequestTrackerResponseAttribute<
   ResponseSchemaByStatusCode extends HttpInterceptorResponseSchemaByStatusCode,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<ResponseSchemaByStatusCode>,
   AttributeName extends keyof ResponseSchemaByStatusCode[StatusCode],
@@ -17,15 +16,16 @@ export type HttpRequestTrackerResponseAttributeDefinition<
   ? { [Name in AttributeName]?: never }
   : { [Name in AttributeName]: ResponseSchemaByStatusCode[StatusCode][AttributeName] };
 
-export type HttpRequestTrackerResponseDefinition<
+export type HttpRequestTrackerResponse<
   ResponseSchemaByStatusCode extends HttpInterceptorResponseSchemaByStatusCode,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<ResponseSchemaByStatusCode>,
 > = {
   status: StatusCode;
-} & HttpRequestTrackerResponseAttributeDefinition<ResponseSchemaByStatusCode, StatusCode, 'body'>;
+} & HttpRequestTrackerResponseAttribute<ResponseSchemaByStatusCode, StatusCode, 'body'>;
 
 export interface HttpInterceptorRequest<RequestSchema extends HttpInterceptorRequestSchema>
   extends Omit<Request, keyof Body> {
+  rawBody: Body['body'];
   body: undefined | void extends RequestSchema['body'] ? never : RequestSchema['body'];
 }
 
@@ -46,15 +46,4 @@ export type HttpRequestTrackerComputeResponseFactory<
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
   request: HttpInterceptorRequest<Default<MethodSchema['request']>>,
-) => PossiblePromise<HttpRequestTrackerResponseDefinition<Default<MethodSchema['response']>, StatusCode>>;
-
-export interface HttpRequestTrackerResponseDefinitionHandler<MethodSchema extends HttpInterceptorMethodSchema> {
-  <StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
-    response: HttpRequestTrackerResponseDefinition<Default<MethodSchema['response']>, StatusCode>,
-  ): HttpRequestTracker<MethodSchema, StatusCode>;
-
-  <StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
-    // eslint-disable-next-line @typescript-eslint/unified-signatures
-    computeResponse: HttpRequestTrackerComputeResponseFactory<MethodSchema, StatusCode>,
-  ): HttpRequestTracker<MethodSchema, StatusCode>;
-}
+) => PossiblePromise<HttpRequestTrackerResponse<Default<MethodSchema['response']>, StatusCode>>;

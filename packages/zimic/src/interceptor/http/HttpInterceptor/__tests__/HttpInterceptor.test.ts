@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import HttpInterceptor from '../HttpInterceptor';
+import NodeHttpInterceptor from '../NodeHttpInterceptor';
 
 describe('HttpInterceptor', () => {
   it('should instantiate without an error', () => {
-    const interceptor = new HttpInterceptor();
-    expect(interceptor).toBeInstanceOf(HttpInterceptor);
+    const interceptor = new NodeHttpInterceptor();
+    expect(interceptor).toBeInstanceOf(NodeHttpInterceptor);
   });
 });

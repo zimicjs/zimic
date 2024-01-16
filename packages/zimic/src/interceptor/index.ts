@@ -20,13 +20,12 @@ export type {
 } from './http/HttpInterceptor/types/schema';
 
 export type {
-  HttpRequestTrackerResponseAttributeDefinition,
-  HttpRequestTrackerResponseDefinition,
+  HttpRequestTrackerResponseAttribute,
+  HttpRequestTrackerResponse,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   InterceptedRequest,
   HttpRequestTrackerComputeResponseFactory,
-  HttpRequestTrackerResponseDefinitionHandler,
 } from './http/HttpRequestTracker/types';
 
 export { HttpInterceptor, HttpRequestTracker };

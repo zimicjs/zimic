@@ -1,8 +1,8 @@
-import { HttpResponseResolver, http } from 'msw';
+import { HttpResponse, http, passthrough } from 'msw';
 
 import { HttpInterceptorMethod } from '../HttpInterceptor/types/schema';
 import UnknownInterceptorWorkerError from './errors/UnknownInterceptorWorkerError';
-import { BrowserMSWWorker, MSWWorker, NodeMSWWorker } from './types';
+import { BrowserMSWWorker, HttpRequestHandler, MSWWorker, NodeMSWWorker } from './types';
 
 abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
   protected constructor(private worker: Worker) {}
@@ -35,8 +35,22 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
     return 'listen' in worker;
   }
 
-  use(method: Lowercase<HttpInterceptorMethod>, path: string, handler: HttpResponseResolver) {
-    this.worker.use(http[method](path, handler));
+  use(method: HttpInterceptorMethod, path: string, handler: HttpRequestHandler) {
+    const lowercaseMethod = method.toLowerCase<typeof method>();
+
+    this.worker.use(
+      http[lowercaseMethod](path, async (context) => {
+        const result = await handler(context);
+
+        if (result.bypass) {
+          return passthrough();
+        }
+
+        return HttpResponse.json(result.body, {
+          status: result.status ?? 200,
+        });
+      }),
+    );
   }
 }
 
