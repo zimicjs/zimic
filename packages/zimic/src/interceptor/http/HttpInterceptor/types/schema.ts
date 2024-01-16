@@ -1,6 +1,8 @@
+import { JSONValue } from '@/types/json';
+
 export type HttpInterceptorMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
-export type HttpInterceptorRequestDefaultBody = Record<string, unknown> | string | number | boolean | null | undefined;
+export type HttpInterceptorRequestDefaultBody = JSONValue;
 
 export interface HttpInterceptorRequestSchema {
   body?: HttpInterceptorRequestDefaultBody;

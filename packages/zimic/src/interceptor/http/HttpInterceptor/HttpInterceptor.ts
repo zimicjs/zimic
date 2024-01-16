@@ -5,7 +5,7 @@ import { HttpRequestHandlerContext, HttpRequestHandlerResult } from '../HttpInte
 import HttpRequestTracker from '../HttpRequestTracker';
 import { HttpInterceptorRequest } from '../HttpRequestTracker/types';
 import { HttpInterceptorMethodHandler } from './types/handlers';
-import { HttpInterceptorContext, HttpInterceptorOptions } from './types/options';
+import { HttpInterceptorOptions } from './types/options';
 import { HttpInterceptorMethod, HttpInterceptorSchema, HttpInterceptorSchemaPath } from './types/schema';
 
 type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> = Map<
@@ -14,7 +14,8 @@ type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method exte
 >;
 
 abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker extends HttpInterceptorWorker> {
-  private context: HttpInterceptorContext<Worker>;
+  protected worker: Worker;
+  protected baseURL?: string;
 
   private trackersByMethod: { [Method in HttpInterceptorMethod]: HttpRequestTrackersByPath<Schema, Method> } = {
     GET: this.createTrackersByPathMap<'GET'>(),
@@ -27,10 +28,8 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
   };
 
   constructor(options: HttpInterceptorOptions & { worker: Worker }) {
-    this.context = {
-      worker: options.worker,
-      baseURL: options.baseURL,
-    };
+    this.worker = options.worker;
+    this.baseURL = options.baseURL;
   }
 
   private createTrackersByPathMap<Method extends HttpInterceptorMethod>(): HttpRequestTrackersByPath<Schema, Method> {
@@ -38,11 +37,11 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
   }
 
   async start() {
-    await this.context.worker.start();
+    await this.worker.start();
   }
 
   stop() {
-    this.context.worker.stop();
+    this.worker.stop();
   }
 
   get: HttpInterceptorMethodHandler<Schema, 'GET'> = (path) => {
@@ -86,7 +85,7 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
       this.trackersByMethod[method].set(path, methodPathTrackers);
 
       const boundRequestHandler = this.handleInterceptedRequest.bind(this, method, path);
-      this.context.worker.use(method, path, boundRequestHandler);
+      this.worker.use(method, path, boundRequestHandler);
     }
 
     return tracker;

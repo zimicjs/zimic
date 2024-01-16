@@ -1,5 +1,3 @@
-import HttpInterceptorWorker from '../../HttpInterceptorWorker';
-
 enum HttpInterceptorEnvironmentEnum {
   BROWSER = 'browser',
   NODE = 'node',
@@ -10,10 +8,5 @@ export type HttpInterceptorEnvironment = HttpInterceptorEnvironmentEnum | HttpIn
 export const HttpInterceptorEnvironment = HttpInterceptorEnvironmentEnum; // eslint-disable-line @typescript-eslint/no-redeclare
 
 export interface HttpInterceptorOptions {
-  baseURL?: string;
-}
-
-export interface HttpInterceptorContext<Worker extends HttpInterceptorWorker = HttpInterceptorWorker> {
-  worker: Worker;
   baseURL?: string;
 }

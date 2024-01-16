@@ -1,17 +1,30 @@
-import { HttpResponse, http, passthrough } from 'msw';
+import { HttpResponse, SharedOptions, http, passthrough } from 'msw';
 
 import { HttpInterceptorMethod } from '../HttpInterceptor/types/schema';
 import UnknownInterceptorWorkerError from './errors/UnknownInterceptorWorkerError';
 import { BrowserMSWWorker, HttpRequestHandler, MSWWorker, NodeMSWWorker } from './types';
 
+export interface HttpInterceptorWorkerOptions {
+  baseURL?: string;
+}
+
 abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
-  protected constructor(private worker: Worker) {}
+  private baseURL?: string;
+
+  protected constructor(
+    private worker: Worker,
+    options: HttpInterceptorWorkerOptions = {},
+  ) {
+    this.baseURL = options.baseURL;
+  }
 
   async start() {
+    const sharedOptions: SharedOptions = { onUnhandledRequest: 'bypass' };
+
     if (this.isBrowserWorker(this.worker)) {
-      await this.worker.start();
+      await this.worker.start(sharedOptions);
     } else if (this.isNodeWorker(this.worker)) {
-      this.worker.listen();
+      this.worker.listen(sharedOptions);
     } else {
       throw new UnknownInterceptorWorkerError(this.worker);
     }
@@ -38,8 +51,10 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
   use(method: HttpInterceptorMethod, path: string, handler: HttpRequestHandler) {
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
+    const pathWithBaseURL = this.applyBaseURL(path);
+
     this.worker.use(
-      http[lowercaseMethod](path, async (context) => {
+      http[lowercaseMethod](pathWithBaseURL, async (context) => {
         const result = await handler(context);
 
         if (result.bypass) {
@@ -51,6 +66,14 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
         });
       }),
     );
+  }
+
+  private applyBaseURL(path: string) {
+    if (this.baseURL) {
+      const separator = this.baseURL.endsWith('/') || path.startsWith('/') ? '' : '/';
+      return `${this.baseURL}${separator}${path}`;
+    }
+    return path;
   }
 }
 
