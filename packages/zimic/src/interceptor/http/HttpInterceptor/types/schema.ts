@@ -3,7 +3,8 @@ import { Default } from '@/types/utils';
 
 import { HttpRequestHandlerContext } from '../../HttpInterceptorWorker/types';
 
-export type HttpInterceptorMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+export const HTTP_INTERCEPTOR_METHOD = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
+export type HttpInterceptorMethod = (typeof HTTP_INTERCEPTOR_METHOD)[number];
 
 export type HttpInterceptorDefaultBody = JSONValue;
 

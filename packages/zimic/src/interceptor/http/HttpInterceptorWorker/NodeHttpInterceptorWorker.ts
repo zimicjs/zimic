@@ -4,7 +4,7 @@ import HttpInterceptorWorker, { HttpInterceptorWorkerOptions } from './HttpInter
 import { NodeMSWWorker } from './types';
 
 class NodeHttpInterceptorWorker extends HttpInterceptorWorker<NodeMSWWorker> {
-  constructor(options?: HttpInterceptorWorkerOptions) {
+  constructor(options: HttpInterceptorWorkerOptions) {
     const worker = setupServer();
     super(worker, options);
   }

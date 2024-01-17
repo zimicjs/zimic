@@ -7,7 +7,7 @@ class NodeHttpInterceptor<Schema extends HttpInterceptorSchema> extends HttpInte
   Schema,
   NodeHttpInterceptorWorker
 > {
-  constructor(options: HttpInterceptorOptions = {}) {
+  constructor(options: HttpInterceptorOptions) {
     const nodeWorker = new NodeHttpInterceptorWorker(options);
     super({ ...options, worker: nodeWorker });
   }

@@ -11,10 +11,8 @@ import { HttpInterceptorDefaultBody } from '../HttpInterceptor/types/schema';
 export type MSWWorker = BrowserMSWWorker | NodeMSWWorker;
 export { BrowserMSWWorker, NodeMSWWorker };
 
-export type HttpRequestHandlerContext<Body extends HttpInterceptorDefaultBody> = ResponseResolverInfo<
-  HttpRequestResolverExtras<PathParams>,
-  Body
->;
+export type HttpRequestHandlerContext<Body extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody> =
+  ResponseResolverInfo<HttpRequestResolverExtras<PathParams>, Body>;
 
 export interface HttpRequestHandlerRequest<Body extends HttpInterceptorDefaultBody> extends Request {
   json: () => Promise<Body>;

@@ -8,5 +8,5 @@ export type HttpInterceptorEnvironment = HttpInterceptorEnvironmentEnum | HttpIn
 export const HttpInterceptorEnvironment = HttpInterceptorEnvironmentEnum; // eslint-disable-line @typescript-eslint/no-redeclare
 
 export interface HttpInterceptorOptions {
-  baseURL?: string;
+  baseURL: string;
 }

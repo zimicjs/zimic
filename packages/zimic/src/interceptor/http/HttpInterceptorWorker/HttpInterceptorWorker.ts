@@ -5,39 +5,60 @@ import UnknownInterceptorWorkerError from './errors/UnknownInterceptorWorkerErro
 import { BrowserMSWWorker, HttpRequestHandler, MSWWorker, NodeMSWWorker } from './types';
 
 export interface HttpInterceptorWorkerOptions {
-  baseURL?: string;
+  baseURL: string;
 }
 
 abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
-  private baseURL?: string;
+  private _baseURL: string;
+  private isRunning = false;
 
   protected constructor(
-    private worker: Worker,
-    options: HttpInterceptorWorkerOptions = {},
+    private _worker: Worker,
+    options: HttpInterceptorWorkerOptions,
   ) {
-    this.baseURL = options.baseURL;
+    this._baseURL = options.baseURL;
+  }
+
+  worker() {
+    return this._worker;
+  }
+
+  baseURL() {
+    return this._baseURL;
   }
 
   async start() {
+    if (this.isRunning) {
+      return;
+    }
+
     const sharedOptions: SharedOptions = { onUnhandledRequest: 'bypass' };
 
-    if (this.isBrowserWorker(this.worker)) {
-      await this.worker.start(sharedOptions);
-    } else if (this.isNodeWorker(this.worker)) {
-      this.worker.listen(sharedOptions);
+    if (this.isBrowserWorker(this._worker)) {
+      await this._worker.start({ ...sharedOptions, quiet: true });
+    } else if (this.isNodeWorker(this._worker)) {
+      this._worker.listen(sharedOptions);
     } else {
-      throw new UnknownInterceptorWorkerError(this.worker);
+      throw new UnknownInterceptorWorkerError(this._worker);
     }
+
+    this.isRunning = true;
   }
 
   stop() {
-    if (this.isBrowserWorker(this.worker)) {
-      this.worker.stop();
-    } else if (this.isNodeWorker(this.worker)) {
-      this.worker.close();
-    } else {
-      throw new UnknownInterceptorWorkerError(this.worker);
+    if (!this.isRunning) {
+      return;
     }
+
+    if (this.isBrowserWorker(this._worker)) {
+      this._worker.stop();
+    } else if (this.isNodeWorker(this._worker)) {
+      this._worker.close();
+    } else {
+      throw new UnknownInterceptorWorkerError(this._worker);
+    }
+
+    this.isRunning = false;
   }
 
   private isBrowserWorker(worker: MSWWorker): worker is BrowserMSWWorker {
@@ -53,7 +74,7 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
 
     const pathWithBaseURL = this.applyBaseURL(path);
 
-    this.worker.use(
+    this._worker.use(
       http[lowercaseMethod](pathWithBaseURL, async (context) => {
         const result = await handler(context);
 
@@ -69,11 +90,9 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
   }
 
   private applyBaseURL(path: string) {
-    if (this.baseURL) {
-      const separator = this.baseURL.endsWith('/') || path.startsWith('/') ? '' : '/';
-      return `${this.baseURL}${separator}${path}`;
-    }
-    return path;
+    const baseURLWithoutTrailingSlash = this._baseURL.replace(/\/$/, '');
+    const pathWithoutLeadingSlash = path.replace(/^\//, '');
+    return `${baseURLWithoutTrailingSlash}/${pathWithoutLeadingSlash}`;
   }
 }
 

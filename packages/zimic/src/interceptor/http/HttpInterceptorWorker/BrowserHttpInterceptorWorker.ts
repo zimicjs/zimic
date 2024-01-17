@@ -4,7 +4,7 @@ import HttpInterceptorWorker, { HttpInterceptorWorkerOptions } from './HttpInter
 import { BrowserMSWWorker } from './types';
 
 class BrowserHttpInterceptorWorker extends HttpInterceptorWorker<BrowserMSWWorker> {
-  constructor(options?: HttpInterceptorWorkerOptions) {
+  constructor(options: HttpInterceptorWorkerOptions) {
     const worker = setupWorker();
     super(worker, options);
   }
