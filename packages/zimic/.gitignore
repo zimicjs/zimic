@@ -1,1 +1,2 @@
 /interceptor/*.d.ts
+/public/mockServiceWorker.js

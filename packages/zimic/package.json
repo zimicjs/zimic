@@ -64,7 +64,8 @@
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic^...",
-    "deps:install": "pnpm install --filter zimic"
+    "deps:install": "pnpm install --filter zimic",
+    "postinstall": "msw init"
   },
   "dependencies": {
     "msw": "^2.1.0"
@@ -81,5 +82,10 @@
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

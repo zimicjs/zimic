@@ -9,6 +9,7 @@ node_modules
 /dist
 /*.d.ts
 /interceptor/*.d.ts
+/public/mockServiceWorker.js
 
 # Tests
 /coverage
