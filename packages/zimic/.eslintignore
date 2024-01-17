@@ -12,7 +12,7 @@ node_modules
 /public/mockServiceWorker.js
 
 # Tests
-/coverage
+/tests/coverage
 **/__tests__/fixtures/**/*.js
 
 # Cache

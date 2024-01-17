@@ -11,8 +11,8 @@ packages/*/*.d.ts
 packages/zimic/interceptor/*.d.ts
 
 # Tests
-apps/*/coverage
-packages/*/coverage
+/apps/*/tests/coverage
+/packages/*/tests/coverage
 
 # Configuration
 .husky

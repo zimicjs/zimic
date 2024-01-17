@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
+    "@vitest/coverage-istanbul": "^1.2.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",

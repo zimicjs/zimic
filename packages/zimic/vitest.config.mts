@@ -8,6 +8,11 @@ export default defineConfig({
   test: {
     globals: false,
     allowOnly: process.env.CI !== 'true',
+    coverage: {
+      provider: 'istanbul',
+      reporter: ['text', 'html'],
+      reportsDirectory: './tests/coverage',
+    },
   },
   resolve: {
     alias: {

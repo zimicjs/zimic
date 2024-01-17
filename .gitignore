@@ -12,8 +12,8 @@ node_modules
 /packages/*/*.d.ts
 
 # Test coverage
-/apps/*/coverage
-/packages/*/coverage
+/apps/*/tests/coverage
+/packages/*/tests/coverage
 
 # Environment variables
 .env*.local

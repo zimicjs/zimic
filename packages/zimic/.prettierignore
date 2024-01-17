@@ -11,7 +11,7 @@ tsconfig.tsbuildinfo
 /interceptor/*.d.ts
 
 # Tests
-/coverage
+/tests/coverage
 
 # Miscellaneous
 .vscode

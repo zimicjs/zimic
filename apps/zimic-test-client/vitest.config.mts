@@ -9,6 +9,11 @@ export default defineConfig({
     environment: 'node',
     include: ['./{src,tests}/**/*.test.ts'],
     allowOnly: process.env.CI !== 'true',
+    coverage: {
+      provider: 'istanbul',
+      reporter: ['text', 'html'],
+      reportsDirectory: './tests/coverage',
+    },
   },
   resolve: {
     alias: {
