@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchWithTimeout } from '@/utils/fetch';
+
 import { HTTP_INTERCEPTOR_METHOD } from '../../HttpInterceptor/types/schema';
 import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
@@ -116,7 +118,7 @@ export function createHttpInterceptorWorkerTests<
 
       expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
@@ -134,7 +136,7 @@ export function createHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -146,22 +148,12 @@ export function createHttpInterceptorWorkerTests<
 
       interceptorWorker.use(method, '/path', spiedRequestHandler);
 
-      expect(spiedRequestHandler).not.toHaveBeenCalled();
-
       interceptorWorker.stop();
 
-      const abortController = new AbortController();
-
-      const fetchTimeout = 500;
-      setTimeout(() => {
-        abortController.abort();
-      }, fetchTimeout);
-
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, {
-        method,
-        signal: abortController.signal,
-      });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
+
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
     });
   });
 }
