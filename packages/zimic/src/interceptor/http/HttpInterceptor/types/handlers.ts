@@ -4,19 +4,21 @@ import HttpRequestTracker from '../../HttpRequestTracker';
 import {
   HttpInterceptorMethod,
   HttpInterceptorSchema,
+  HttpInterceptorSchemaMethod,
   HttpInterceptorSchemaPath,
   LiteralHttpInterceptorSchemaPath,
 } from './schema';
 
-export interface HttpInterceptorMethodHandler<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorMethod,
-> {
-  <Path extends LiteralHttpInterceptorSchemaPath<Schema>>(
-    path: Path,
-  ): HttpRequestTracker<Default<Schema[Path][Method]>>;
+export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<never>;
 
-  <Path extends LiteralHttpInterceptorSchemaPath<Schema> = never>(
-    path: HttpInterceptorSchemaPath<Schema>, // eslint-disable-line @typescript-eslint/unified-signatures
-  ): HttpRequestTracker<Default<Schema[Path][Method]>>;
-}
+export type StrictHttpInterceptorMethodHandler<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> = <Path extends LiteralHttpInterceptorSchemaPath<Schema, Method>>(
+  path: Path | HttpInterceptorSchemaPath<Schema, Method>,
+) => HttpRequestTracker<Default<Schema[Path][Method]>>;
+
+export type HttpInterceptorMethodHandler<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> =
+  Method extends HttpInterceptorSchemaMethod<Schema>
+    ? StrictHttpInterceptorMethodHandler<Schema, Method>
+    : EmptyHttpInterceptorMethodHandler;

@@ -24,8 +24,8 @@ export type {
   HttpRequestTrackerResponse,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  InterceptedRequest,
-  HttpRequestTrackerComputeResponseFactory,
+  InterceptedHttpRequest,
+  HttpRequestTrackerResponseFactory,
 } from './http/HttpRequestTracker/types';
 
 export { HttpInterceptor, HttpRequestTracker };

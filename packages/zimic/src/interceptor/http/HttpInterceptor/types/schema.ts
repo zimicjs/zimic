@@ -1,15 +1,18 @@
 import { JSONValue } from '@/types/json';
+import { Default } from '@/types/utils';
+
+import { HttpRequestHandlerContext } from '../../HttpInterceptorWorker/types';
 
 export type HttpInterceptorMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
-export type HttpInterceptorRequestDefaultBody = JSONValue;
+export type HttpInterceptorDefaultBody = JSONValue;
 
 export interface HttpInterceptorRequestSchema {
-  body?: HttpInterceptorRequestDefaultBody;
+  body?: HttpInterceptorDefaultBody;
 }
 
 export interface HttpInterceptorResponseSchema {
-  body?: HttpInterceptorRequestDefaultBody;
+  body?: HttpInterceptorDefaultBody;
 }
 
 export interface HttpInterceptorResponseSchemaByStatusCode {
@@ -33,7 +36,17 @@ export interface HttpInterceptorSchema {
   [path: string]: HttpInterceptorPathSchema;
 }
 
-export type LiteralHttpInterceptorSchemaPath<Schema extends HttpInterceptorSchema> = Extract<keyof Schema, string>;
+export type HttpInterceptorSchemaMethod<Schema extends HttpInterceptorSchema> = Extract<
+  keyof Schema[keyof Schema],
+  HttpInterceptorMethod
+>;
+
+export type LiteralHttpInterceptorSchemaPath<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> = {
+  [Path in Extract<keyof Schema, string>]: keyof Schema[Path] extends Method ? Path : never;
+}[Extract<keyof Schema, string>];
 
 type AllowAnyStringInRouteParameters<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
   ? `${Prefix}${string}/${AllowAnyStringInRouteParameters<Suffix>}`
@@ -41,10 +54,18 @@ type AllowAnyStringInRouteParameters<Path extends string> = Path extends `${infe
     ? `${Prefix}${string}`
     : Path;
 
-export type NonLiteralHttpInterceptorSchemaPath<Schema extends HttpInterceptorSchema> = AllowAnyStringInRouteParameters<
-  LiteralHttpInterceptorSchemaPath<Schema>
->;
+export type NonLiteralHttpInterceptorSchemaPath<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> = AllowAnyStringInRouteParameters<LiteralHttpInterceptorSchemaPath<Schema, Method>>;
 
-export type HttpInterceptorSchemaPath<Schema extends HttpInterceptorSchema> =
-  | LiteralHttpInterceptorSchemaPath<Schema>
-  | NonLiteralHttpInterceptorSchemaPath<Schema>;
+export type HttpInterceptorSchemaPath<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> = LiteralHttpInterceptorSchemaPath<Schema, Method> | NonLiteralHttpInterceptorSchemaPath<Schema, Method>;
+
+export type HttpInterceptorRequestContext<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+> = HttpRequestHandlerContext<Default<Default<Schema[Path][Method]>['request']>['body']>;

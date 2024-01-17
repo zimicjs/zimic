@@ -2,50 +2,58 @@ import { Default } from '@/types/utils';
 
 import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../HttpInterceptor/types/schema';
 import { EffectiveHttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
+import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import {
   HttpInterceptorRequest,
-  HttpRequestTrackerComputeResponseFactory,
-  HttpRequestTrackerResponse,
-  InterceptedRequest,
+  HttpRequestTrackerResponseFactory,
+  InterceptedHttpRequest,
+  HttpRequestTrackerResponseDeclaration,
 } from './types';
 
 class HttpRequestTracker<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
 > {
-  private computeResponse?: HttpRequestTrackerComputeResponseFactory<MethodSchema, StatusCode>;
+  private responseDeclaration?: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>;
 
-  matchesRequest(_request: HttpInterceptorRequest<Default<MethodSchema['request']>>) {
+  shouldRespondRequest(_request: HttpInterceptorRequest<MethodSchema>): boolean {
     return true;
   }
 
   respond<StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
-    responseOrComputeResponse:
-      | HttpRequestTrackerResponse<Default<MethodSchema['response']>, StatusCode>
-      | HttpRequestTrackerComputeResponseFactory<MethodSchema, StatusCode>,
+    declaration: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>,
   ): HttpRequestTracker<MethodSchema, StatusCode> {
     const newThis = this as unknown as HttpRequestTracker<MethodSchema, StatusCode>;
-
-    if (typeof responseOrComputeResponse === 'function') {
-      newThis.computeResponse = responseOrComputeResponse;
-    } else {
-      newThis.computeResponse = () => responseOrComputeResponse;
-    }
-
+    newThis.responseDeclaration = declaration;
     return newThis;
   }
 
-  async createResponseResult(
-    request: HttpInterceptorRequest<Default<MethodSchema['request']>>,
-  ): Promise<EffectiveHttpRequestHandlerResult> {
-    if (!this.computeResponse) {
-      throw new Error('Cannot generate a response without a definition. Use .respond() to set a response.');
+  async createResponse(request: HttpInterceptorRequest<MethodSchema>): Promise<EffectiveHttpRequestHandlerResult> {
+    if (!this.responseDeclaration) {
+      throw new NoResponseDefinitionError();
     }
-    const response = await this.computeResponse(request);
-    return response;
+
+    const responseBodyOrCreateResponseBody = this.responseDeclaration.body;
+
+    const createResponseBody = this.isResponseFactory<StatusCode>(responseBodyOrCreateResponseBody)
+      ? responseBodyOrCreateResponseBody
+      : () => responseBodyOrCreateResponseBody;
+
+    return {
+      status: this.responseDeclaration.status,
+      body: await createResponseBody(request),
+    };
   }
 
-  requests: () => InterceptedRequest<MethodSchema, StatusCode>[] = () => [];
+  private isResponseFactory<
+    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  >(
+    body: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>['body'],
+  ): body is HttpRequestTrackerResponseFactory<MethodSchema, StatusCode> {
+    return typeof body === 'function';
+  }
+
+  requests: () => InterceptedHttpRequest<MethodSchema, StatusCode>[] = () => [];
 }
 
 export default HttpRequestTracker;

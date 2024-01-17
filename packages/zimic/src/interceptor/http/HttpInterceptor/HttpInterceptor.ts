@@ -1,12 +1,18 @@
 import { Default } from '@/types/utils';
 
 import HttpInterceptorWorker from '../HttpInterceptorWorker';
-import { HttpRequestHandlerContext, HttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
+import { HttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
 import HttpRequestTracker from '../HttpRequestTracker';
 import { HttpInterceptorRequest } from '../HttpRequestTracker/types';
-import { HttpInterceptorMethodHandler } from './types/handlers';
+import { HttpInterceptorMethodHandler, StrictHttpInterceptorMethodHandler } from './types/handlers';
 import { HttpInterceptorOptions } from './types/options';
-import { HttpInterceptorMethod, HttpInterceptorSchema, HttpInterceptorSchemaPath } from './types/schema';
+import {
+  HttpInterceptorMethod,
+  HttpInterceptorRequestContext,
+  HttpInterceptorSchema,
+  HttpInterceptorSchemaMethod,
+  HttpInterceptorSchemaPath,
+} from './types/schema';
 
 type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> = Map<
   string,
@@ -44,37 +50,58 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     this.worker.stop();
   }
 
-  get: HttpInterceptorMethodHandler<Schema, 'GET'> = (path) => {
-    return this.prepareHttpRequestTracker('GET', path);
-  };
+  get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
+    return this.prepareHttpRequestTracker('GET' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  post: HttpInterceptorMethodHandler<Schema, 'POST'> = (path) => {
-    return this.prepareHttpRequestTracker('POST', path);
-  };
+  post: HttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
+    return this.prepareHttpRequestTracker('POST' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = (path) => {
-    return this.prepareHttpRequestTracker('PATCH', path);
-  };
+  patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
+    return this.prepareHttpRequestTracker('PATCH' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  put: HttpInterceptorMethodHandler<Schema, 'PUT'> = (path) => {
-    return this.prepareHttpRequestTracker('PUT', path);
-  };
+  put: HttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
+    return this.prepareHttpRequestTracker('PUT' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = (path) => {
-    return this.prepareHttpRequestTracker('DELETE', path);
-  };
+  delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
+    return this.prepareHttpRequestTracker('DELETE' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = (path) => {
-    return this.prepareHttpRequestTracker('HEAD', path);
-  };
+  head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
+    return this.prepareHttpRequestTracker('HEAD' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = (path) => {
-    return this.prepareHttpRequestTracker('OPTIONS', path);
-  };
+  options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
+    return this.prepareHttpRequestTracker('OPTIONS' as HttpInterceptorSchemaMethod<Schema>, path);
+  }) satisfies StrictHttpInterceptorMethodHandler<
+    Schema,
+    HttpInterceptorSchemaMethod<Schema>
+  > as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   private prepareHttpRequestTracker<
-    Method extends HttpInterceptorMethod,
-    Path extends HttpInterceptorSchemaPath<Schema>,
+    Method extends HttpInterceptorSchemaMethod<Schema>,
+    Path extends HttpInterceptorSchemaPath<Schema, Method>,
   >(method: Method, path: Path) {
     const tracker = new HttpRequestTracker<Default<Schema[Path][Method]>>();
 
@@ -84,60 +111,77 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     if (!this.trackersByMethod[method].has(path)) {
       this.trackersByMethod[method].set(path, methodPathTrackers);
 
-      const boundRequestHandler = this.handleInterceptedRequest.bind(this, method, path);
-      this.worker.use(method, path, boundRequestHandler);
+      this.worker.use(method, path, async (context) => {
+        return this.handleInterceptedRequest(
+          method,
+          path,
+          context as HttpInterceptorRequestContext<Schema, Method, Path>,
+        );
+      });
     }
 
     return tracker;
   }
 
   private handleInterceptedRequest = async <
-    Method extends HttpInterceptorMethod,
-    Path extends HttpInterceptorSchemaPath<Schema>,
+    Method extends HttpInterceptorSchemaMethod<Schema>,
+    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(
     method: Method,
     path: Path,
-    { request }: HttpRequestHandlerContext<Default<Default<Schema[Path][Method]>['request']>['body']>,
+    { request }: Context,
   ): Promise<HttpRequestHandlerResult> => {
     const methodPathTrackers = this.trackersByMethod[method].get(path) ?? [];
+    const requestWithParsedBody = await this.parseRawRequest(request);
 
-    const requestWithParsedBody = this.parseRawRequest<Method, Path>(request);
-
-    const matchedTracker = methodPathTrackers.findLast((tracker) => tracker.matchesRequest(requestWithParsedBody));
+    const matchedTracker = methodPathTrackers.findLast((tracker) => {
+      return tracker.shouldRespondRequest(requestWithParsedBody);
+    });
 
     if (matchedTracker) {
-      const responseDefinition = await matchedTracker.createResponseResult(requestWithParsedBody);
-      return responseDefinition;
+      const response = await matchedTracker.createResponse(requestWithParsedBody);
+      return response;
     } else {
       return { bypass: true };
     }
   };
 
-  private parseRawRequest<Method extends HttpInterceptorMethod, Path extends HttpInterceptorSchemaPath<Schema>>(
-    request: HttpRequestHandlerContext<Default<Default<Schema[Path][Method]>['request']>['body']>['request'],
-  ) {
-    const requestWithParsedBody = request as unknown as HttpInterceptorRequest<
-      Default<Default<Schema[Path][Method]>['request']>
-    >;
+  private async parseRawRequest<
+    Method extends HttpInterceptorSchemaMethod<Schema>,
+    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
+  >(request: Context['request']) {
+    type MethodSchema = Default<Schema[Path][Method]>;
+    type MethodHttpInterceptorRequest = HttpInterceptorRequest<MethodSchema>;
 
-    const requestContentType = request.headers.get('Content-Type');
-    const hasJSONBody = requestContentType?.includes('application/json');
+    const parsedBody = await this.parseRawRequestBody(request);
 
-    const propertiesToAddToRequest: Partial<
-      HttpInterceptorRequest<Default<Default<Schema[Path][Method]>['request']>>
-    >[] = [
-      {
-        rawBody: request.body,
+    const proxyRequest = new Proxy(request, {
+      get(target, property, receiver) {
+        if (property === 'body') {
+          return parsedBody;
+        }
+        return Reflect.get(target, property, receiver);
       },
-      hasJSONBody
-        ? {
-            body: request.json() as Default<Default<Default<Schema[Path][Method]>['request']>['body']>,
-          }
-        : {},
-    ];
+    }) as unknown as MethodHttpInterceptorRequest;
 
-    Object.assign(requestWithParsedBody, ...propertiesToAddToRequest);
-    return requestWithParsedBody;
+    return proxyRequest;
+  }
+
+  private async parseRawRequestBody<
+    Method extends HttpInterceptorSchemaMethod<Schema>,
+    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
+  >(request: Context['request']) {
+    const bodyAsText = await request.text();
+
+    try {
+      const jsonParsedBody = JSON.parse(bodyAsText) as Context['request']['body'];
+      return jsonParsedBody;
+    } catch {
+      return bodyAsText;
+    }
   }
 }
 

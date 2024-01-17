@@ -2,48 +2,58 @@ import { Default, PossiblePromise } from '@/types/utils';
 
 import {
   HttpInterceptorMethodSchema,
-  HttpInterceptorRequestSchema,
   HttpInterceptorResponseSchema,
-  HttpInterceptorResponseSchemaByStatusCode,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../HttpInterceptor/types/schema';
 
 export type HttpRequestTrackerResponseAttribute<
-  ResponseSchemaByStatusCode extends HttpInterceptorResponseSchemaByStatusCode,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<ResponseSchemaByStatusCode>,
-  AttributeName extends keyof ResponseSchemaByStatusCode[StatusCode],
-> = undefined | void extends ResponseSchemaByStatusCode[StatusCode][AttributeName]
+  ResponseSchema extends HttpInterceptorResponseSchema,
+  AttributeName extends keyof ResponseSchema,
+> = undefined | void extends ResponseSchema[AttributeName]
   ? { [Name in AttributeName]?: never }
-  : { [Name in AttributeName]: ResponseSchemaByStatusCode[StatusCode][AttributeName] };
+  : { [Name in AttributeName]: ResponseSchema[AttributeName] };
 
 export type HttpRequestTrackerResponse<
-  ResponseSchemaByStatusCode extends HttpInterceptorResponseSchemaByStatusCode,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<ResponseSchemaByStatusCode>,
-> = {
-  status: StatusCode;
-} & HttpRequestTrackerResponseAttribute<ResponseSchemaByStatusCode, StatusCode, 'body'>;
-
-export interface HttpInterceptorRequest<RequestSchema extends HttpInterceptorRequestSchema>
-  extends Omit<Request, keyof Body> {
-  rawBody: Body['body'];
-  body: undefined | void extends RequestSchema['body'] ? never : RequestSchema['body'];
-}
-
-export interface HttpInterceptorResponse<ResponseSchema extends HttpInterceptorResponseSchema>
-  extends Omit<Response, keyof Body> {
-  body: ResponseSchema['body'];
-}
-
-export interface InterceptedRequest<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> extends HttpInterceptorRequest<Default<MethodSchema['request']>> {
-  response: HttpInterceptorResponse<Default<MethodSchema['response']>[StatusCode]>;
+> = {
+  status: StatusCode;
+} & HttpRequestTrackerResponseAttribute<Default<MethodSchema['response']>[StatusCode], 'body'>;
+
+export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
+  extends Omit<Request, keyof Body> {
+  body: undefined | void extends Default<MethodSchema['request']>['body']
+    ? never
+    : Default<MethodSchema['request']>['body'];
 }
 
-export type HttpRequestTrackerComputeResponseFactory<
+export interface HttpInterceptorResponse<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> extends Omit<Response, keyof Body> {
+  body: Default<MethodSchema['response']>[StatusCode]['body'];
+}
+
+export interface InterceptedHttpRequest<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> extends HttpInterceptorRequest<MethodSchema> {
+  response: HttpInterceptorResponse<MethodSchema, StatusCode>;
+}
+
+export type HttpRequestTrackerResponseFactory<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
-  request: HttpInterceptorRequest<Default<MethodSchema['request']>>,
-) => PossiblePromise<HttpRequestTrackerResponse<Default<MethodSchema['response']>, StatusCode>>;
+  request: HttpInterceptorRequest<MethodSchema>,
+) => PossiblePromise<HttpRequestTrackerResponse<MethodSchema, StatusCode>['body']>;
+
+export interface HttpRequestTrackerResponseDeclaration<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> {
+  status: StatusCode;
+  body:
+    | HttpRequestTrackerResponse<MethodSchema, StatusCode>['body']
+    | HttpRequestTrackerResponseFactory<MethodSchema, StatusCode>;
+}
