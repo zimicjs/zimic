@@ -12,6 +12,7 @@ export default defineConfig({
       provider: 'istanbul',
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
+      exclude: ['**/public/**', '**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
     },
   },
   resolve: {
