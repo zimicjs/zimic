@@ -1,8 +1,7 @@
 import { HttpResponse, SharedOptions, http, passthrough } from 'msw';
 
 import { HttpInterceptorMethod } from '../HttpInterceptor/types/schema';
-import UnknownInterceptorWorkerError from './errors/UnknownInterceptorWorkerError';
-import { BrowserMSWWorker, HttpRequestHandler, MSWWorker, NodeMSWWorker } from './types';
+import { BrowserMSWWorker, HttpRequestHandler, MSWWorker } from './types';
 
 export interface HttpInterceptorWorkerOptions {
   baseURL: string;
@@ -10,7 +9,7 @@ export interface HttpInterceptorWorkerOptions {
 
 abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
   private _baseURL: string;
-  private isRunning = false;
+  private _isRunning = false;
 
   protected constructor(
     private _worker: Worker,
@@ -27,8 +26,12 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
     return this._baseURL;
   }
 
+  isRunning() {
+    return this._isRunning;
+  }
+
   async start() {
-    if (this.isRunning) {
+    if (this._isRunning) {
       return;
     }
 
@@ -36,37 +39,29 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
 
     if (this.isBrowserWorker(this._worker)) {
       await this._worker.start({ ...sharedOptions, quiet: true });
-    } else if (this.isNodeWorker(this._worker)) {
-      this._worker.listen(sharedOptions);
+      this._isRunning = true;
     } else {
-      throw new UnknownInterceptorWorkerError(this._worker);
+      this._worker.listen(sharedOptions);
+      this._isRunning = true;
     }
-
-    this.isRunning = true;
   }
 
   stop() {
-    if (!this.isRunning) {
+    if (!this._isRunning) {
       return;
     }
 
     if (this.isBrowserWorker(this._worker)) {
       this._worker.stop();
-    } else if (this.isNodeWorker(this._worker)) {
-      this._worker.close();
+      this._isRunning = false;
     } else {
-      throw new UnknownInterceptorWorkerError(this._worker);
+      this._worker.close();
+      this._isRunning = false;
     }
-
-    this.isRunning = false;
   }
 
   private isBrowserWorker(worker: MSWWorker): worker is BrowserMSWWorker {
-    return 'start' in worker;
-  }
-
-  private isNodeWorker(worker: MSWWorker): worker is NodeMSWWorker {
-    return 'listen' in worker;
+    return 'start' in worker && 'stop' in worker;
   }
 
   use(method: HttpInterceptorMethod, path: string, handler: HttpRequestHandler) {
@@ -82,9 +77,7 @@ abstract class HttpInterceptorWorker<Worker extends MSWWorker = MSWWorker> {
           return passthrough();
         }
 
-        return HttpResponse.json(result.body, {
-          status: result.status ?? 200,
-        });
+        return HttpResponse.json(result.body, { status: result.status });
       }),
     );
   }

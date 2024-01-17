@@ -28,6 +28,8 @@ export interface EffectiveHttpRequestHandlerResult<
 
 export interface BypassedHttpRequestHandlerResult {
   bypass: true;
+  status?: never;
+  body?: never;
 }
 
 export type HttpRequestHandlerResult<Body extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody> =
