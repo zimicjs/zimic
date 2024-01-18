@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { HTTP_INTERCEPTOR_METHOD } from '../../HttpInterceptor/types/schema';
+import { HTTP_INTERCEPTOR_METHODS } from '../../HttpInterceptor/types/schema';
 import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
 import { HttpRequestHandler } from '../types';
@@ -10,64 +10,64 @@ export function createHttpInterceptorWorkerTests<
 >(WorkerClass: Worker) {
   const defaultBaseURL = 'http://localhost:3000';
 
-  describe.each(HTTP_INTERCEPTOR_METHOD)('Method: %s', (method) => {
-    let interceptorWorker: BrowserHttpInterceptorWorker | NodeHttpInterceptorWorker;
+  let interceptorWorker: BrowserHttpInterceptorWorker | NodeHttpInterceptorWorker;
 
-    const responseStatus = 200;
-    const responseBody = { success: true };
+  const responseStatus = 200;
+  const responseBody = { success: true };
 
-    function requestHandler(..._parameters: Parameters<HttpRequestHandler>): ReturnType<HttpRequestHandler> {
-      return {
-        status: responseStatus,
-        body: responseBody,
-      };
-    }
+  function requestHandler(..._parameters: Parameters<HttpRequestHandler>): ReturnType<HttpRequestHandler> {
+    return {
+      status: responseStatus,
+      body: responseBody,
+    };
+  }
 
-    const spiedRequestHandler = vi.fn(requestHandler);
+  const spiedRequestHandler = vi.fn(requestHandler);
 
-    beforeEach(() => {
-      spiedRequestHandler.mockClear();
-    });
+  beforeEach(() => {
+    spiedRequestHandler.mockClear();
+  });
 
-    afterEach(() => {
-      interceptorWorker.stop();
-    });
+  afterEach(() => {
+    interceptorWorker.stop();
+  });
 
-    it('should not throw an error when started multiple times', async () => {
-      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
-      expect(interceptorWorker.isRunning()).toBe(false);
-      await interceptorWorker.start();
-      expect(interceptorWorker.isRunning()).toBe(true);
-      await interceptorWorker.start();
-      expect(interceptorWorker.isRunning()).toBe(true);
-      await interceptorWorker.start();
-      expect(interceptorWorker.isRunning()).toBe(true);
-    });
+  it('should not throw an error when started multiple times', async () => {
+    interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+    expect(interceptorWorker.isRunning()).toBe(false);
+    await interceptorWorker.start();
+    expect(interceptorWorker.isRunning()).toBe(true);
+    await interceptorWorker.start();
+    expect(interceptorWorker.isRunning()).toBe(true);
+    await interceptorWorker.start();
+    expect(interceptorWorker.isRunning()).toBe(true);
+  });
 
-    it('should not throw an error when stopped without running', () => {
-      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
-      expect(interceptorWorker.isRunning()).toBe(false);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-    });
+  it('should not throw an error when stopped without running', () => {
+    interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+    expect(interceptorWorker.isRunning()).toBe(false);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+  });
 
-    it('should not throw an error when stopped multiple times while running', async () => {
-      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
-      expect(interceptorWorker.isRunning()).toBe(false);
-      await interceptorWorker.start();
-      expect(interceptorWorker.isRunning()).toBe(true);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-      interceptorWorker.stop();
-      expect(interceptorWorker.isRunning()).toBe(false);
-    });
+  it('should not throw an error when stopped multiple times while running', async () => {
+    interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+    expect(interceptorWorker.isRunning()).toBe(false);
+    await interceptorWorker.start();
+    expect(interceptorWorker.isRunning()).toBe(true);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+    interceptorWorker.stop();
+    expect(interceptorWorker.isRunning()).toBe(false);
+  });
 
+  describe.each(HTTP_INTERCEPTOR_METHODS)('Method: %s', (method) => {
     it.each([
       { baseURL: `${defaultBaseURL}`, path: 'path' },
       { baseURL: `${defaultBaseURL}/`, path: 'path' },

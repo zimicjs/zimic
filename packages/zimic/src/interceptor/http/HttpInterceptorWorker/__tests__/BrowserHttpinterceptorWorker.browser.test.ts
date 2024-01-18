@@ -15,5 +15,7 @@ describe('BrowserHttpInterceptorWorker', () => {
     expectTypeOf(mswWorker).toEqualTypeOf<BrowserMSWWorker>();
   });
 
-  createHttpInterceptorWorkerTests(BrowserHttpInterceptorWorker);
+  describe('Shared', () => {
+    createHttpInterceptorWorkerTests(BrowserHttpInterceptorWorker);
+  });
 });

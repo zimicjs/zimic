@@ -15,5 +15,7 @@ describe('NodeHttpInterceptorWorker', () => {
     expectTypeOf(mswWorker).toEqualTypeOf<NodeMSWWorker>();
   });
 
-  createHttpInterceptorWorkerTests(NodeHttpInterceptorWorker);
+  describe('Shared', () => {
+    createHttpInterceptorWorkerTests(NodeHttpInterceptorWorker);
+  });
 });
