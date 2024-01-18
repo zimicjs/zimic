@@ -46,14 +46,9 @@ export type HttpRequestTrackerResponseFactory<
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
   request: HttpInterceptorRequest<MethodSchema>,
-) => PossiblePromise<HttpRequestTrackerResponse<MethodSchema, StatusCode>['body']>;
+) => PossiblePromise<HttpRequestTrackerResponse<MethodSchema, StatusCode>>;
 
-export interface HttpRequestTrackerResponseDeclaration<
+export type HttpRequestTrackerResponseDeclaration<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> {
-  status: StatusCode;
-  body:
-    | HttpRequestTrackerResponse<MethodSchema, StatusCode>['body']
-    | HttpRequestTrackerResponseFactory<MethodSchema, StatusCode>;
-}
+> = HttpRequestTrackerResponse<MethodSchema, StatusCode> | HttpRequestTrackerResponseFactory<MethodSchema, StatusCode>;

@@ -136,7 +136,7 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     const requestWithParsedBody = await this.parseRawRequest(request);
 
     const matchedTracker = methodPathTrackers.findLast((tracker) => {
-      return tracker.shouldRespondRequest(requestWithParsedBody);
+      return tracker.matchesRequest(requestWithParsedBody);
     });
 
     if (matchedTracker) {
@@ -157,14 +157,14 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
 
     const parsedBody = await this.parseRawRequestBody(request);
 
-    const proxyRequest = new Proxy(request, {
+    const proxyRequest = new Proxy(request as unknown as MethodHttpInterceptorRequest, {
       get(target, property, receiver) {
         if (property === 'body') {
           return parsedBody;
         }
-        return Reflect.get(target, property, receiver);
+        return Reflect.get(target, property, receiver) as unknown;
       },
-    }) as unknown as MethodHttpInterceptorRequest;
+    });
 
     return proxyRequest;
   }

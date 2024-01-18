@@ -1,59 +1,75 @@
 import { Default } from '@/types/utils';
 
 import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../HttpInterceptor/types/schema';
-import { EffectiveHttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import {
   HttpInterceptorRequest,
   HttpRequestTrackerResponseFactory,
   InterceptedHttpRequest,
   HttpRequestTrackerResponseDeclaration,
+  HttpRequestTrackerResponse,
 } from './types';
 
 class HttpRequestTracker<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
 > {
-  private responseDeclaration?: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>;
+  private interceptedRequests: InterceptedHttpRequest<MethodSchema, StatusCode>[] = [];
+  private responseOrCreateResponse?: HttpRequestTrackerResponseFactory<MethodSchema, StatusCode>;
 
-  shouldRespondRequest(_request: HttpInterceptorRequest<MethodSchema>): boolean {
-    return true;
+  matchesRequest(_request: HttpInterceptorRequest<MethodSchema>): boolean {
+    return this.responseOrCreateResponse !== undefined;
   }
 
   respond<StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
-    declaration: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>,
+    responseOrCreateResponse: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>,
   ): HttpRequestTracker<MethodSchema, StatusCode> {
     const newThis = this as unknown as HttpRequestTracker<MethodSchema, StatusCode>;
-    newThis.responseDeclaration = declaration;
+    newThis.responseOrCreateResponse = this.isResponseFactory<StatusCode>(responseOrCreateResponse)
+      ? responseOrCreateResponse
+      : () => responseOrCreateResponse;
     return newThis;
   }
 
-  async createResponse(request: HttpInterceptorRequest<MethodSchema>): Promise<EffectiveHttpRequestHandlerResult> {
-    if (!this.responseDeclaration) {
+  async createResponse(
+    request: HttpInterceptorRequest<MethodSchema>,
+  ): Promise<HttpRequestTrackerResponse<MethodSchema, StatusCode>> {
+    if (!this.responseOrCreateResponse) {
       throw new NoResponseDefinitionError();
     }
 
-    const responseBodyOrCreateResponseBody = this.responseDeclaration.body;
-
-    const createResponseBody = this.isResponseFactory<StatusCode>(responseBodyOrCreateResponseBody)
-      ? responseBodyOrCreateResponseBody
-      : () => responseBodyOrCreateResponseBody;
-
-    return {
-      status: this.responseDeclaration.status,
-      body: await createResponseBody(request),
-    };
+    const response = await this.responseOrCreateResponse(request);
+    this.registerInterceptedRequest(request, response);
+    return response;
   }
 
   private isResponseFactory<
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(
-    body: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>['body'],
-  ): body is HttpRequestTrackerResponseFactory<MethodSchema, StatusCode> {
-    return typeof body === 'function';
+    declaration: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>,
+  ): declaration is HttpRequestTrackerResponseFactory<MethodSchema, StatusCode> {
+    return typeof declaration === 'function';
   }
 
-  requests: () => InterceptedHttpRequest<MethodSchema, StatusCode>[] = () => [];
+  private registerInterceptedRequest(
+    request: HttpInterceptorRequest<MethodSchema>,
+    response: HttpRequestTrackerResponse<MethodSchema, StatusCode>,
+  ) {
+    const interceptedRequest = new Proxy(request as unknown as InterceptedHttpRequest<MethodSchema, StatusCode>, {
+      get(target, property, receiver) {
+        if (property === 'response') {
+          return response;
+        }
+        return Reflect.get(target, property, receiver) as unknown;
+      },
+    });
+
+    this.interceptedRequests.push(interceptedRequest);
+  }
+
+  requests(): readonly InterceptedHttpRequest<MethodSchema, StatusCode>[] {
+    return this.interceptedRequests;
+  }
 }
 
 export default HttpRequestTracker;
