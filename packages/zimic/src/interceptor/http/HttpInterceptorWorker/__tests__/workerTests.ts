@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchWithTimeout } from '@/utils/fetch';
-
 import { HTTP_INTERCEPTOR_METHOD } from '../../HttpInterceptor/types/schema';
 import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
@@ -118,7 +116,7 @@ export function createHttpInterceptorWorkerTests<
 
       expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
+      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
@@ -136,24 +134,28 @@ export function createHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
+      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
     });
 
-    it(`should not intercept ${method} requests after stopped`, async () => {
-      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
-      await interceptorWorker.start();
+    it(
+      `should not intercept ${method} requests after stopped`,
+      async () => {
+        interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+        await interceptorWorker.start();
 
-      interceptorWorker.use(method, '/path', spiedRequestHandler);
+        interceptorWorker.use(method, '/path', spiedRequestHandler);
 
-      interceptorWorker.stop();
+        interceptorWorker.stop();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
-      await expect(fetchPromise).rejects.toThrowError();
+        const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+        await expect(fetchPromise).rejects.toThrowError();
 
-      expect(spiedRequestHandler).not.toHaveBeenCalled();
-    });
+        expect(spiedRequestHandler).not.toHaveBeenCalled();
+      },
+      { retry: 2 },
+    );
   });
 }

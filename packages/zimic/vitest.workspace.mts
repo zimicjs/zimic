@@ -8,7 +8,7 @@ export default defineWorkspace([
     test: {
       name: 'node',
       environment: 'node',
-      include: ['./{src,tests}/**/*.test.ts'],
+      include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.node.test.ts'],
       exclude: ['**/*.browser.test.ts'],
     },
   },
@@ -17,7 +17,8 @@ export default defineWorkspace([
     test: {
       name: 'browser',
       environment: undefined,
-      include: ['./{src,tests}/**/*.browser.test.ts'],
+      include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
+      exclude: ['**/*.node.test.ts'],
       browser: {
         name: 'chromium',
         provider: 'playwright',
