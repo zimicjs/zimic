@@ -5,7 +5,6 @@ import { HttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
 import HttpRequestTracker from '../HttpRequestTracker';
 import { HttpInterceptorRequest } from '../HttpRequestTracker/types';
 import { HttpInterceptorMethodHandler, StrictHttpInterceptorMethodHandler } from './types/handlers';
-import { HttpInterceptorOptions } from './types/options';
 import {
   HttpInterceptorMethod,
   HttpInterceptorRequestContext,
@@ -20,10 +19,11 @@ type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method exte
 >;
 
 abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker extends HttpInterceptorWorker> {
-  protected worker: Worker;
-  protected baseURL?: string;
+  protected _worker: Worker;
 
-  private trackersByMethod: { [Method in HttpInterceptorMethod]: HttpRequestTrackersByPath<Schema, Method> } = {
+  private trackersByMethod: {
+    [Method in HttpInterceptorMethod]: HttpRequestTrackersByPath<Schema, Method>;
+  } = {
     GET: this.createTrackersByPathMap<'GET'>(),
     POST: this.createTrackersByPathMap<'POST'>(),
     PATCH: this.createTrackersByPathMap<'PATCH'>(),
@@ -33,9 +33,20 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     OPTIONS: this.createTrackersByPathMap<'OPTIONS'>(),
   };
 
-  constructor(options: HttpInterceptorOptions & { worker: Worker }) {
-    this.worker = options.worker;
-    this.baseURL = options.baseURL;
+  constructor(options: { worker: Worker }) {
+    this._worker = options.worker;
+  }
+
+  worker() {
+    return this._worker;
+  }
+
+  baseURL() {
+    return this._worker.baseURL();
+  }
+
+  isRunning() {
+    return this._worker.isRunning();
   }
 
   private createTrackersByPathMap<Method extends HttpInterceptorMethod>(): HttpRequestTrackersByPath<Schema, Method> {
@@ -43,11 +54,11 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
   }
 
   async start() {
-    await this.worker.start();
+    await this._worker.start();
   }
 
   stop() {
-    this.worker.stop();
+    this._worker.stop();
   }
 
   get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
@@ -111,7 +122,7 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     if (!this.trackersByMethod[method].has(path)) {
       this.trackersByMethod[method].set(path, methodPathTrackers);
 
-      this.worker.use(method, path, async (context) => {
+      this._worker.use(method, path, async (context) => {
         return this.handleInterceptedRequest(
           method,
           path,
@@ -132,10 +143,9 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     path: Path,
     { request }: Context,
   ): Promise<HttpRequestHandlerResult> => {
-    const methodPathTrackers = this.trackersByMethod[method].get(path) ?? [];
+    const methodPathTrackers = this.trackersByMethod[method].get(path);
     const requestWithParsedBody = await this.parseRawRequest(request);
-
-    const matchedTracker = methodPathTrackers.findLast((tracker) => {
+    const matchedTracker = methodPathTrackers?.findLast((tracker) => {
       return tracker.matchesRequest(requestWithParsedBody);
     });
 

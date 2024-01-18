@@ -140,22 +140,18 @@ export function createHttpInterceptorWorkerTests<
       expect(spiedRequestHandler).not.toHaveBeenCalled();
     });
 
-    it(
-      `should not intercept ${method} requests after stopped`,
-      async () => {
-        interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
-        await interceptorWorker.start();
+    it(`should not intercept ${method} requests after stopped`, async () => {
+      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+      await interceptorWorker.start();
 
-        interceptorWorker.use(method, '/path', spiedRequestHandler);
+      interceptorWorker.use(method, '/path', spiedRequestHandler);
 
-        interceptorWorker.stop();
+      interceptorWorker.stop();
 
-        const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
-        await expect(fetchPromise).rejects.toThrowError();
+      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      await expect(fetchPromise).rejects.toThrowError();
 
-        expect(spiedRequestHandler).not.toHaveBeenCalled();
-      },
-      { retry: 2 },
-    );
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
+    });
   });
 }
