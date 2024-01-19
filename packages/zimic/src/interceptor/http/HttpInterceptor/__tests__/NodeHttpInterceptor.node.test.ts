@@ -20,7 +20,5 @@ describe('NodeHttpInterceptor', () => {
     expect(baseURL).toBe(defaultBaseURL);
   });
 
-  describe('Shared', () => {
-    createHttpInterceptorTests(NodeHttpInterceptor);
-  });
+  createHttpInterceptorTests(NodeHttpInterceptor);
 });
