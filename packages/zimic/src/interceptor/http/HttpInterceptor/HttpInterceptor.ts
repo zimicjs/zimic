@@ -190,7 +190,7 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
       const jsonParsedBody = JSON.parse(bodyAsText) as Context['request']['body'];
       return jsonParsedBody;
     } catch {
-      return bodyAsText;
+      return bodyAsText || undefined;
     }
   }
 }
