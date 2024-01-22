@@ -25,9 +25,13 @@ class HttpRequestTracker<
     responseOrCreateResponse: HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>,
   ): HttpRequestTracker<MethodSchema, StatusCode> {
     const newThis = this as unknown as HttpRequestTracker<MethodSchema, StatusCode>;
+
     newThis.responseOrCreateResponse = this.isResponseFactory<StatusCode>(responseOrCreateResponse)
       ? responseOrCreateResponse
       : () => responseOrCreateResponse;
+
+    newThis.interceptedRequests = [];
+
     return newThis;
   }
 
