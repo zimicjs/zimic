@@ -21,7 +21,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       '/users': {
         PATCH: {
           response: {
-            200: { body: User };
+            201: { body: User };
           };
         };
       };
@@ -30,26 +30,45 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.patch('/users').respond({
-        status: 200,
+      const updateTracker = interceptor.patch('/users').respond({
+        status: 201,
         body: users[0],
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PATCH',
       });
-      expect(userListResponse.status).toBe(200);
+      expect(updateResponse.status).toBe(201);
+
+      const fetchedUsers = (await updateResponse.json()) as User;
+      expect(fetchedUsers).toEqual(users[0]);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expect(updateRequest.body).toBe(undefined);
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
+      expect(updateRequest.response.status).toEqual(201);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual(users[0]);
     });
   });
 
-  it('should support intercepting PATCH requests with a computed response body, based on request body', async () => {
+  it('should support intercepting PATCH requests with a compatched response body, based on the request body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         PATCH: {
           request: { body: User };
           response: {
-            200: { body: User };
+            201: { body: User };
           };
         };
       };
@@ -58,28 +77,44 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.patch('/users').respond((request) => {
+      const updateTracker = interceptor.patch('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         return {
-          status: 200,
+          status: 201,
           body: {
             name: request.body.name,
           },
         };
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
 
       const userName = 'User (other)';
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PATCH',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(userListResponse.status).toBe(200);
+      expect(updateResponse.status).toBe(201);
 
-      const fetchedUsers = (await userListResponse.json()) as User;
+      const fetchedUsers = (await updateResponse.json()) as User;
       expect(fetchedUsers).toEqual<User>({ name: userName });
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
+      expect(updateRequest.body).toEqual<User>({ name: userName });
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
+      expect(updateRequest.response.status).toEqual(201);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual<User>({ name: userName });
     });
   });
 
@@ -87,8 +122,9 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
     const interceptor = new Interceptor<{
       '/users': {
         PATCH: {
+          request: { body: User };
           response: {
-            200: { body: User };
+            201: { body: User };
           };
         };
       };
@@ -97,27 +133,67 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      let fetchPromise = fetch(`${baseURL}/users`, { method: 'PATCH' });
-      await expect(fetchPromise).rejects.toThrowError();
+      const userName = 'User (other)';
 
-      const userListTracker = interceptor.patch('/users');
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      let updatePromise = fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: userName } satisfies User),
+      });
+      await expect(updatePromise).rejects.toThrowError();
 
-      fetchPromise = fetch(`${baseURL}/users`, { method: 'PATCH' });
-      await expect(fetchPromise).rejects.toThrowError();
+      const updateTrackerWithoutResponse = interceptor.patch('/users');
+      expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
-      userListTracker.respond({
-        status: 200,
+      const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
+      expect(updateRequestsWithoutResponse).toHaveLength(0);
+
+      let [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
+      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+
+      updatePromise = fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: userName } satisfies User),
+      });
+      await expect(updatePromise).rejects.toThrowError();
+
+      expect(updateRequestsWithoutResponse).toHaveLength(0);
+
+      [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
+      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+
+      const updateTrackerWithResponse = updateTrackerWithoutResponse.respond({
+        status: 201,
         body: users[0],
       });
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PATCH',
+        body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(userListResponse.status).toBe(200);
+      expect(updateResponse.status).toBe(201);
 
-      const fetchedUsers = (await userListResponse.json()) as User;
+      const fetchedUsers = (await updateResponse.json()) as User;
       expect(fetchedUsers).toEqual(users[0]);
+
+      expect(updateRequestsWithoutResponse).toHaveLength(0);
+      const updateRequestsWithResponse = updateTrackerWithResponse.requests();
+      expect(updateRequestsWithResponse).toHaveLength(1);
+
+      const [updateRequest] = updateRequestsWithResponse;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
+      expect(updateRequest.body).toEqual<User>({ name: userName });
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
+      expect(updateRequest.response.status).toEqual(201);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual<User>(users[0]);
     });
   });
 }

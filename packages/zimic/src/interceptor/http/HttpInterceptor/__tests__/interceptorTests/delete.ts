@@ -30,23 +30,39 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.delete('/users').respond({
+      const deletionTracker = interceptor.delete('/users').respond({
         status: 200,
         body: users[0],
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      const deletionResponse = await fetch(`${baseURL}/users`, {
         method: 'DELETE',
       });
-      expect(userListResponse.status).toBe(200);
+      expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await userListResponse.json()) as User;
+      const fetchedUsers = (await deletionResponse.json()) as User;
       expect(fetchedUsers).toEqual(users[0]);
+
+      expect(deletionRequests).toHaveLength(1);
+      const [deletionRequest] = deletionRequests;
+      expect(deletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expect(deletionRequest.body).toBe(undefined);
+
+      expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
+      expect(deletionRequest.response.status).toEqual(200);
+
+      expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
+      expect(deletionRequest.response.body).toEqual(users[0]);
     });
   });
 
-  it('should support intercepting DELETE requests with a computed response body, based on request body', async () => {
+  it('should support intercepting DELETE requests with a computed response body, based on the request body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         DELETE: {
@@ -61,7 +77,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.delete('/users').respond((request) => {
+      const deletionTracker = interceptor.delete('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         return {
@@ -71,18 +87,34 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
           },
         };
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
 
       const userName = 'User (other)';
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const deletionResponse = await fetch(`${baseURL}/users`, {
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(userListResponse.status).toBe(200);
+      expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await userListResponse.json()) as User;
+      const fetchedUsers = (await deletionResponse.json()) as User;
       expect(fetchedUsers).toEqual<User>({ name: userName });
+
+      expect(deletionRequests).toHaveLength(1);
+      const [deletionRequest] = deletionRequests;
+      expect(deletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<User>();
+      expect(deletionRequest.body).toEqual<User>({ name: userName });
+
+      expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
+      expect(deletionRequest.response.status).toEqual(200);
+
+      expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
+      expect(deletionRequest.response.body).toEqual<User>({ name: userName });
     });
   });
 
@@ -90,6 +122,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
     const interceptor = new Interceptor<{
       '/users': {
         DELETE: {
+          request: { body: User };
           response: {
             200: { body: User };
           };
@@ -100,27 +133,67 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      let fetchPromise = fetch(`${baseURL}/users`, { method: 'DELETE' });
-      await expect(fetchPromise).rejects.toThrowError();
+      const userName = 'User (other)';
 
-      const userListTracker = interceptor.delete('/users');
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      let deletionPromise = fetch(`${baseURL}/users`, {
+        method: 'DELETE',
+        body: JSON.stringify({ name: userName } satisfies User),
+      });
+      await expect(deletionPromise).rejects.toThrowError();
 
-      fetchPromise = fetch(`${baseURL}/users`, { method: 'DELETE' });
-      await expect(fetchPromise).rejects.toThrowError();
+      const deletionTrackerWithoutResponse = interceptor.delete('/users');
+      expect(deletionTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
-      userListTracker.respond({
+      const deletionRequestsWithoutResponse = deletionTrackerWithoutResponse.requests();
+      expect(deletionRequestsWithoutResponse).toHaveLength(0);
+
+      let [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
+      expectTypeOf<typeof deletionRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+
+      deletionPromise = fetch(`${baseURL}/users`, {
+        method: 'DELETE',
+        body: JSON.stringify({ name: userName } satisfies User),
+      });
+      await expect(deletionPromise).rejects.toThrowError();
+
+      expect(deletionRequestsWithoutResponse).toHaveLength(0);
+
+      [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
+      expectTypeOf<typeof deletionRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+
+      const deletionTrackerWithResponse = deletionTrackerWithoutResponse.respond({
         status: 200,
         body: users[0],
       });
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const deletionResponse = await fetch(`${baseURL}/users`, {
         method: 'DELETE',
+        body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(userListResponse.status).toBe(200);
+      expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await userListResponse.json()) as User;
+      const fetchedUsers = (await deletionResponse.json()) as User;
       expect(fetchedUsers).toEqual(users[0]);
+
+      expect(deletionRequestsWithoutResponse).toHaveLength(0);
+      const deletionRequestsWithResponse = deletionTrackerWithResponse.requests();
+      expect(deletionRequestsWithResponse).toHaveLength(1);
+
+      const [deletionRequest] = deletionRequestsWithResponse;
+      expect(deletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<User>();
+      expect(deletionRequest.body).toEqual<User>({ name: userName });
+
+      expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
+      expect(deletionRequest.response.status).toEqual(200);
+
+      expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
+      expect(deletionRequest.response.body).toEqual<User>(users[0]);
     });
   });
 }

@@ -28,19 +28,35 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.options('/users').respond({
+      const optionsTracker = interceptor.options('/users').respond({
         status: 200,
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/users`, {
         method: 'OPTIONS',
       });
-      expect(userListResponse.status).toBe(200);
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expect(optionsRequest.body).toBe(undefined);
+
+      expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
+      expect(optionsRequest.response.status).toEqual(200);
+
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expect(optionsRequest.response.body).toBe(undefined);
     });
   });
 
-  it('should support intercepting OPTIONS requests with a computed response body, based on request body', async () => {
+  it('should support intercepting OPTIONS requests with a computed response body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         OPTIONS: {
@@ -55,25 +71,45 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const userListTracker = interceptor.options('/users').respond((request) => {
+      const optionsTracker = interceptor.options('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
         return {
           status: 200,
         };
       });
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
 
       const userName = 'User (other)';
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const optionsResponse = await fetch(`${baseURL}/users`, {
         method: 'OPTIONS',
         body: JSON.stringify({ name: userName } satisfies Filters),
       });
-      expect(userListResponse.status).toBe(200);
+
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<Filters>();
+      expect(optionsRequest.body).toEqual<Filters>({ name: userName });
+
+      expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
+      expect(optionsRequest.response.status).toEqual(200);
+
+      expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
+      expect(optionsRequest.response.status).toEqual(200);
+
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expect(optionsRequest.response.body).toBe(undefined);
     });
   });
 
-  it('should not intercept an OPTIONS request without a registered response', async () => {
+  it('should not intercept a OPTIONS request without a registered response', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         OPTIONS: {
@@ -90,20 +126,52 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
-      const userListTracker = interceptor.options('/users');
-      expect(userListTracker).toBeInstanceOf(HttpRequestTracker);
+      const optionsTrackerWithoutResponse = interceptor.options('/users');
+      expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
+      expect(optionsRequestsWithoutResponse).toHaveLength(0);
+
+      let [optionsRequestWithoutResponse] = optionsRequestsWithoutResponse;
+      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
-      userListTracker.respond({
+      expect(optionsRequestsWithoutResponse).toHaveLength(0);
+
+      [optionsRequestWithoutResponse] = optionsRequestsWithoutResponse;
+      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+
+      const optionsTrackerWithResponse = optionsTrackerWithoutResponse.respond({
         status: 200,
       });
 
-      const userListResponse = await fetch(`${baseURL}/users`, {
+      const optionsResponse = await fetch(`${baseURL}/users`, {
         method: 'OPTIONS',
       });
-      expect(userListResponse.status).toBe(200);
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequestsWithoutResponse).toHaveLength(0);
+      const optionsRequestsWithResponse = optionsTrackerWithResponse.requests();
+      expect(optionsRequestsWithResponse).toHaveLength(1);
+
+      const [optionsRequestWithResponse] = optionsRequestsWithResponse;
+      expect(optionsRequestWithResponse).toBeInstanceOf(Request);
+      expect(optionsRequestWithResponse.response.status).toEqual(200);
+
+      expectTypeOf(optionsRequestWithResponse.body).toEqualTypeOf<never>();
+      expect(optionsRequestWithResponse.body).toBe(undefined);
+
+      expectTypeOf(optionsRequestWithResponse.response.status).toEqualTypeOf<200>();
+      expect(optionsRequestWithResponse.response.status).toEqual(200);
+
+      expectTypeOf(optionsRequestWithResponse.response.body).toEqualTypeOf<unknown>();
+      expect(optionsRequestWithResponse.response.body).toBe(undefined);
     });
   });
 }
