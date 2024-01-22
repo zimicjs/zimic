@@ -31,6 +31,7 @@ export interface HttpInterceptorResponse<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<Response, keyof Body> {
+  status: StatusCode;
   body: Default<MethodSchema['response']>[StatusCode]['body'];
 }
 
