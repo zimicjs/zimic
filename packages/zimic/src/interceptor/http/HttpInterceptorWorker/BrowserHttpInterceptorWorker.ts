@@ -1,9 +1,9 @@
 import { setupWorker } from 'msw/browser';
 
-import HttpInterceptorWorker, { HttpInterceptorWorkerOptions } from './HttpInterceptorWorker';
-import { BrowserMSWWorker } from './types';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { HttpInterceptorWorkerOptions, BrowserHttpWorker } from './types';
 
-class BrowserHttpInterceptorWorker extends HttpInterceptorWorker<BrowserMSWWorker> {
+class BrowserHttpInterceptorWorker extends HttpInterceptorWorker<BrowserHttpWorker> {
   constructor(options: HttpInterceptorWorkerOptions) {
     const worker = setupWorker();
     super(worker, options);

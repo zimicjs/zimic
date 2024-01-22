@@ -52,7 +52,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expect(updateRequest).toBeInstanceOf(Request);
 
       expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
-      expect(updateRequest.body).toBe(undefined);
+      expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
       expect(updateRequest.response.status).toEqual(201);

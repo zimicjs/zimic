@@ -1,19 +1,16 @@
-import { JSONValue } from '@/types/json';
 import { Default, UnionToIntersection } from '@/types/utils';
 
-import { HttpRequestHandlerContext } from '../../HttpInterceptorWorker/types';
+import { HttpRequestHandlerContext, DefaultBody } from '../../HttpInterceptorWorker/types';
 
 export const HTTP_INTERCEPTOR_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 export type HttpInterceptorMethod = (typeof HTTP_INTERCEPTOR_METHODS)[number];
 
-export type HttpInterceptorDefaultBody = JSONValue;
-
 export interface HttpInterceptorRequestSchema {
-  body?: HttpInterceptorDefaultBody;
+  body?: DefaultBody;
 }
 
 export interface HttpInterceptorResponseSchema {
-  body?: HttpInterceptorDefaultBody;
+  body?: DefaultBody;
 }
 
 export interface HttpInterceptorResponseSchemaByStatusCode {

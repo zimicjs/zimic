@@ -46,13 +46,13 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expect(optionsRequest).toBeInstanceOf(Request);
 
       expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
-      expect(optionsRequest.body).toBe(undefined);
+      expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
       expect(optionsRequest.response.status).toEqual(200);
 
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
-      expect(optionsRequest.response.body).toBe(undefined);
+      expect(optionsRequest.response.body).toBe(null);
     });
   });
 
@@ -105,7 +105,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expect(optionsRequest.response.status).toEqual(200);
 
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
-      expect(optionsRequest.response.body).toBe(undefined);
+      expect(optionsRequest.response.body).toBe(null);
     });
   });
 
@@ -165,13 +165,13 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expect(optionsRequestWithResponse.response.status).toEqual(200);
 
       expectTypeOf(optionsRequestWithResponse.body).toEqualTypeOf<never>();
-      expect(optionsRequestWithResponse.body).toBe(undefined);
+      expect(optionsRequestWithResponse.body).toBe(null);
 
       expectTypeOf(optionsRequestWithResponse.response.status).toEqualTypeOf<200>();
       expect(optionsRequestWithResponse.response.status).toEqual(200);
 
       expectTypeOf(optionsRequestWithResponse.response.body).toEqualTypeOf<unknown>();
-      expect(optionsRequestWithResponse.response.body).toBe(undefined);
+      expect(optionsRequestWithResponse.response.body).toBe(null);
     });
   });
 }

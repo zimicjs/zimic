@@ -52,7 +52,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       expect(deletionRequest).toBeInstanceOf(Request);
 
       expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
-      expect(deletionRequest.body).toBe(undefined);
+      expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
       expect(deletionRequest.response.status).toEqual(200);

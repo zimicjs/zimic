@@ -42,13 +42,13 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(headRequest).toBeInstanceOf(Request);
 
       expectTypeOf(headRequest.body).toEqualTypeOf<never>();
-      expect(headRequest.body).toBe(undefined);
+      expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
       expect(headRequest.response.status).toEqual(200);
 
       expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
-      expect(headRequest.response.body).toBe(undefined);
+      expect(headRequest.response.body).toBe(null);
     });
   });
 
@@ -84,7 +84,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(headRequest).toBeInstanceOf(Request);
 
       expectTypeOf(headRequest.body).toEqualTypeOf<never>();
-      expect(headRequest.body).toBe(undefined);
+      expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
       expect(headRequest.response.status).toEqual(200);
@@ -93,7 +93,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(headRequest.response.status).toEqual(200);
 
       expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
-      expect(headRequest.response.body).toBe(undefined);
+      expect(headRequest.response.body).toBe(null);
     });
   });
 
@@ -153,13 +153,13 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(headRequestWithResponse.response.status).toEqual(200);
 
       expectTypeOf(headRequestWithResponse.body).toEqualTypeOf<never>();
-      expect(headRequestWithResponse.body).toBe(undefined);
+      expect(headRequestWithResponse.body).toBe(null);
 
       expectTypeOf(headRequestWithResponse.response.status).toEqualTypeOf<200>();
       expect(headRequestWithResponse.response.status).toEqual(200);
 
       expectTypeOf(headRequestWithResponse.response.body).toEqualTypeOf<unknown>();
-      expect(headRequestWithResponse.response.body).toBe(undefined);
+      expect(headRequestWithResponse.response.body).toBe(null);
     });
   });
 }

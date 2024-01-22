@@ -21,11 +21,10 @@ export type {
 
 export type {
   HttpRequestTrackerResponseAttribute,
-  HttpRequestTrackerResponse,
+  HttpRequestTrackerResponseDeclaration,
+  HttpRequestTrackerResponseDeclarationFactory,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  InterceptedHttpRequest,
-  HttpRequestTrackerResponseFactory,
 } from './http/HttpRequestTracker/types';
 
 export { HttpInterceptor, HttpRequestTracker };

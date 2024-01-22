@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpInterceptorWorker from '../HttpInterceptorWorker';
 import NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
-import { NodeMSWWorker } from '../types';
+import { NodeHttpWorker } from '../types';
 import { createHttpInterceptorWorkerTests } from './workerTests';
 
 describe('NodeHttpInterceptorWorker', () => {
@@ -12,7 +12,7 @@ describe('NodeHttpInterceptorWorker', () => {
     expect(interceptorWorker).toBeInstanceOf(HttpInterceptorWorker);
 
     const mswWorker = interceptorWorker.worker();
-    expectTypeOf(mswWorker).toEqualTypeOf<NodeMSWWorker>();
+    expectTypeOf(mswWorker).toEqualTypeOf<NodeHttpWorker>();
   });
 
   describe('Shared', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { HttpInterceptorMethodSchema } from '../../HttpInterceptor/types/schema';
 import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
 import HttpRequestTracker from '../HttpRequestTracker';
-import { HttpInterceptorRequest, HttpRequestTrackerResponse } from '../types';
+import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types';
 
 describe('HttpRequestTracker', () => {
   const defaultBaseURL = 'http://localhost:3000';
@@ -35,7 +35,7 @@ describe('HttpRequestTracker', () => {
     });
 
     const request = new Request(defaultBaseURL);
-    const response = await tracker.createResponse(request);
+    const response = await tracker.applyResponseDeclaration(request);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -47,7 +47,7 @@ describe('HttpRequestTracker', () => {
 
     const responseFactory = vi.fn<
       [HttpInterceptorRequest<HttpInterceptorMethodSchema>],
-      HttpRequestTrackerResponse<HttpInterceptorMethodSchema, number>
+      HttpRequestTrackerResponseDeclaration<HttpInterceptorMethodSchema, number>
     >(() => ({
       status: responseStatus,
       body: responseBody,
@@ -57,7 +57,7 @@ describe('HttpRequestTracker', () => {
     tracker.respond(responseFactory);
 
     const request = new Request(defaultBaseURL);
-    const response = await tracker.createResponse(request);
+    const response = await tracker.applyResponseDeclaration(request);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -72,7 +72,7 @@ describe('HttpRequestTracker', () => {
     const request = new Request(defaultBaseURL);
 
     await expect(async () => {
-      await tracker.createResponse(request);
+      await tracker.applyResponseDeclaration(request);
     }).rejects.toThrowError(NoResponseDefinitionError);
   });
 
@@ -82,21 +82,33 @@ describe('HttpRequestTracker', () => {
       body: {},
     });
 
-    const request = new Request(defaultBaseURL);
-    const firstResponse = await tracker.createResponse(request);
+    const firstRequest = new Request(defaultBaseURL);
+
+    const firstResponseDeclaration = await tracker.applyResponseDeclaration(firstRequest);
+    const firstResponse = Response.json(firstResponseDeclaration.body, {
+      status: firstResponseDeclaration.status,
+    }) as Response & { status: 200 };
+
+    tracker.registerInterceptedRequest(firstRequest, firstResponse);
 
     const interceptedRequests = tracker.requests();
     expect(interceptedRequests).toHaveLength(1);
 
-    expect(interceptedRequests[0]).toEqual(request);
+    expect(interceptedRequests[0]).toEqual(firstRequest);
     expect(interceptedRequests[0].response).toEqual(firstResponse);
 
     const secondRequest = new Request(`${defaultBaseURL}/path`);
-    const secondResponse = await tracker.createResponse(secondRequest);
+    const secondResponseDeclaration = await tracker.applyResponseDeclaration(secondRequest);
+
+    const secondResponse = Response.json(secondResponseDeclaration.body, {
+      status: secondResponseDeclaration.status,
+    }) as Response & { status: 200 };
+
+    tracker.registerInterceptedRequest(secondRequest, secondResponse);
 
     expect(interceptedRequests).toHaveLength(2);
 
-    expect(interceptedRequests[0]).toEqual(request);
+    expect(interceptedRequests[0]).toEqual(firstRequest);
     expect(interceptedRequests[0].response).toEqual(firstResponse);
 
     expect(interceptedRequests[1]).toEqual(secondRequest);

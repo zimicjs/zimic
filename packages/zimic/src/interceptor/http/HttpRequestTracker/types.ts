@@ -5,6 +5,7 @@ import {
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../HttpInterceptor/types/schema';
+import { HttpRequest, HttpResponse } from '../HttpInterceptorWorker/types';
 
 export type HttpRequestTrackerResponseAttribute<
   ResponseSchema extends HttpInterceptorResponseSchema,
@@ -13,7 +14,7 @@ export type HttpRequestTrackerResponseAttribute<
   ? { [Name in AttributeName]?: never }
   : { [Name in AttributeName]: ResponseSchema[AttributeName] };
 
-export type HttpRequestTrackerResponse<
+export type HttpRequestTrackerResponseDeclaration<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = {
@@ -21,35 +22,30 @@ export type HttpRequestTrackerResponse<
 } & HttpRequestTrackerResponseAttribute<Default<MethodSchema['response']>[StatusCode], 'body'>;
 
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
-  extends Omit<Request, keyof Body> {
+  extends Omit<HttpRequest, keyof Body> {
   body: undefined | void extends Default<MethodSchema['request']>['body']
     ? never
     : Default<MethodSchema['request']>['body'];
 }
 
-export interface HttpInterceptorResponse<
+export interface TrackedHttpInterceptorRequest<
   MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> extends Omit<Response, keyof Body> {
-  status: StatusCode;
-  body: Default<MethodSchema['response']>[StatusCode]['body'];
-}
-
-export interface InterceptedHttpRequest<
-  MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
 > extends HttpInterceptorRequest<MethodSchema> {
   response: HttpInterceptorResponse<MethodSchema, StatusCode>;
 }
 
-export type HttpRequestTrackerResponseFactory<
+export interface HttpInterceptorResponse<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> extends Omit<HttpResponse, keyof Body> {
+  status: StatusCode;
+  body: Default<MethodSchema['response']>[StatusCode]['body'];
+}
+
+export type HttpRequestTrackerResponseDeclarationFactory<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
-  request: HttpInterceptorRequest<MethodSchema>,
-) => PossiblePromise<HttpRequestTrackerResponse<MethodSchema, StatusCode>>;
-
-export type HttpRequestTrackerResponseDeclaration<
-  MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = HttpRequestTrackerResponse<MethodSchema, StatusCode> | HttpRequestTrackerResponseFactory<MethodSchema, StatusCode>;
+  request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
+) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;

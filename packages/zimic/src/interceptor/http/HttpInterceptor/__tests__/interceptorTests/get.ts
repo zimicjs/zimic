@@ -52,7 +52,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       expect(listRequest).toBeInstanceOf(Request);
 
       expectTypeOf(listRequest.body).toEqualTypeOf<never>();
-      expect(listRequest.body).toBe(undefined);
+      expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
       expect(listRequest.response.status).toEqual(200);
@@ -100,7 +100,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       expect(listRequest).toBeInstanceOf(Request);
 
       expectTypeOf(listRequest.body).toEqualTypeOf<never>();
-      expect(listRequest.body).toBe(undefined);
+      expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
       expect(listRequest.response.status).toEqual(200);
@@ -173,7 +173,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       expect(listRequestWithResponse.response.status).toEqual(200);
 
       expectTypeOf(listRequestWithResponse.body).toEqualTypeOf<never>();
-      expect(listRequestWithResponse.body).toBe(undefined);
+      expect(listRequestWithResponse.body).toBe(null);
 
       expectTypeOf(listRequestWithResponse.response.status).toEqualTypeOf<200>();
       expect(listRequestWithResponse.response.status).toEqual(200);

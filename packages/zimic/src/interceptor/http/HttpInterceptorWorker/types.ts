@@ -4,39 +4,48 @@ import { HttpRequestResolverExtras } from 'msw/lib/core/handlers/HttpHandler';
 import { ResponseResolverInfo } from 'msw/lib/core/handlers/RequestHandler';
 import type { SetupServer as NodeMSWWorker } from 'msw/node';
 
+import { JSONValue } from '@/types/json';
 import { PossiblePromise } from '@/types/utils';
 
-import { HttpInterceptorDefaultBody } from '../HttpInterceptor/types/schema';
+export type HttpWorker = BrowserMSWWorker | NodeMSWWorker;
+export { BrowserMSWWorker as BrowserHttpWorker, NodeMSWWorker as NodeHttpWorker };
 
-export type MSWWorker = BrowserMSWWorker | NodeMSWWorker;
-export { BrowserMSWWorker, NodeMSWWorker };
+export type DefaultBody = JSONValue;
 
-export type HttpRequestHandlerContext<Body extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody> =
-  ResponseResolverInfo<HttpRequestResolverExtras<PathParams>, Body>;
+export type HttpRequestHandlerContext<Body extends DefaultBody = DefaultBody> = ResponseResolverInfo<
+  HttpRequestResolverExtras<PathParams>,
+  Body
+>;
 
-export interface HttpRequestHandlerRequest<Body extends HttpInterceptorDefaultBody> extends Request {
-  json: () => Promise<Body>;
+export interface HttpRequest<StrictBody extends DefaultBody = DefaultBody> extends Request {
+  json: () => Promise<StrictBody>;
 }
 
-export interface EffectiveHttpRequestHandlerResult<
-  Body extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody,
-> {
+export interface HttpResponse<StrictBody extends DefaultBody = DefaultBody, StatusCode extends number = number>
+  extends Response {
+  status: StatusCode;
+  json: () => Promise<StrictBody>;
+}
+
+export interface EffectiveHttpRequestHandlerResult<Body extends DefaultBody = DefaultBody> {
   bypass?: never;
-  status?: number;
-  body?: Body;
+  response: HttpResponse<Body>;
 }
 
 export interface BypassedHttpRequestHandlerResult {
   bypass: true;
-  status?: never;
-  body?: never;
+  response?: never;
 }
 
-export type HttpRequestHandlerResult<Body extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody> =
+export type HttpRequestHandlerResult<Body extends DefaultBody = DefaultBody> =
   | EffectiveHttpRequestHandlerResult<Body>
   | BypassedHttpRequestHandlerResult;
 
 export type HttpRequestHandler<
-  RequestBody extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody,
-  ResponseBody extends HttpInterceptorDefaultBody = HttpInterceptorDefaultBody,
+  RequestBody extends DefaultBody = DefaultBody,
+  ResponseBody extends DefaultBody = DefaultBody,
 > = (context: HttpRequestHandlerContext<RequestBody>) => PossiblePromise<HttpRequestHandlerResult<ResponseBody>>;
+
+export interface HttpInterceptorWorkerOptions {
+  baseURL: string;
+}

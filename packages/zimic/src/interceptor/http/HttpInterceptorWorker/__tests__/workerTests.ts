@@ -16,10 +16,8 @@ export function createHttpInterceptorWorkerTests<
   const responseBody = { success: true };
 
   function requestHandler(..._parameters: Parameters<HttpRequestHandler>): ReturnType<HttpRequestHandler> {
-    return {
-      status: responseStatus,
-      body: responseBody,
-    };
+    const response = Response.json(responseBody, { status: responseStatus });
+    return { response };
   }
 
   const spiedRequestHandler = vi.fn(requestHandler);

@@ -9,9 +9,7 @@ import {
   LiteralHttpInterceptorSchemaPath,
 } from './schema';
 
-export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<never>;
-
-export interface StrictHttpInterceptorMethodHandler<
+export interface EffectiveHttpInterceptorMethodHandler<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
 > {
@@ -25,7 +23,9 @@ export interface StrictHttpInterceptorMethodHandler<
   ): HttpRequestTracker<Default<Schema[Path][Method]>>;
 }
 
+export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<never>;
+
 export type HttpInterceptorMethodHandler<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> =
   Method extends HttpInterceptorSchemaMethod<Schema>
-    ? StrictHttpInterceptorMethodHandler<Schema, Method>
+    ? EffectiveHttpInterceptorMethodHandler<Schema, Method>
     : EmptyHttpInterceptorMethodHandler;

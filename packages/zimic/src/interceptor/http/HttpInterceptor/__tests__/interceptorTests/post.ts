@@ -52,7 +52,7 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(creationRequest).toBeInstanceOf(Request);
 
       expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
-      expect(creationRequest.body).toBe(undefined);
+      expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
       expect(creationRequest.response.status).toEqual(201);
