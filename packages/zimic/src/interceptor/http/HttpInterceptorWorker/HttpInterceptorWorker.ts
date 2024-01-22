@@ -62,6 +62,8 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
       return;
     }
 
+    this.clearHandlers();
+
     if (this.isBrowserWorker(this._worker)) {
       this._worker.stop();
     } else {
@@ -95,6 +97,10 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     const baseURLWithoutTrailingSlash = this._baseURL.replace(/\/$/, '');
     const pathWithoutLeadingSlash = path.replace(/^\//, '');
     return `${baseURLWithoutTrailingSlash}/${pathWithoutLeadingSlash}`;
+  }
+
+  clearHandlers() {
+    this._worker.resetHandlers();
   }
 
   createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(

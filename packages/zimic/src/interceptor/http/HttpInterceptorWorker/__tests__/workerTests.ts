@@ -10,7 +10,7 @@ export function createHttpInterceptorWorkerTests<
 >(WorkerClass: Worker) {
   const defaultBaseURL = 'http://localhost:3000';
 
-  let interceptorWorker: BrowserHttpInterceptorWorker | NodeHttpInterceptorWorker;
+  let interceptorWorker: BrowserHttpInterceptorWorker | NodeHttpInterceptorWorker | undefined;
 
   const responseStatus = 200;
   const responseBody = { success: true };
@@ -23,11 +23,12 @@ export function createHttpInterceptorWorkerTests<
   const spiedRequestHandler = vi.fn(requestHandler);
 
   beforeEach(() => {
+    interceptorWorker?.clearHandlers();
     spiedRequestHandler.mockClear();
   });
 
   afterEach(() => {
-    interceptorWorker.stop();
+    interceptorWorker?.stop();
   });
 
   it('should not throw an error when started multiple times', async () => {
@@ -150,6 +151,38 @@ export function createHttpInterceptorWorkerTests<
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
+    });
+
+    it(`should not intercept ${method} requests having no handler after cleared`, async () => {
+      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+      await interceptorWorker.start();
+
+      interceptorWorker.use(method, '/path', spiedRequestHandler);
+      interceptorWorker.clearHandlers();
+
+      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      await expect(fetchPromise).rejects.toThrowError();
+
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+      interceptorWorker.use(method, '/path', spiedRequestHandler);
+
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+      const response = await fetch(`${defaultBaseURL}/path`, { method });
+
+      expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+
+      const [callContext] = spiedRequestHandler.mock.calls[0];
+      expect(callContext.request).toBeInstanceOf(Request);
+      expect(callContext.request.method).toBe(method);
+      expect(callContext.params).toEqual({});
+      expect(callContext.cookies).toEqual({});
+
+      expect(response.status).toBe(200);
+
+      const body = (await response.json()) as typeof responseBody;
+      expect(body).toEqual(responseBody);
     });
   });
 }

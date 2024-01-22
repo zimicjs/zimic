@@ -174,6 +174,10 @@ abstract class HttpInterceptor<Schema extends HttpInterceptorSchema, Worker exte
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
   }
+
+  clearHandlers() {
+    this._worker.clearHandlers();
+  }
 }
 
 export default HttpInterceptor;
