@@ -2,21 +2,21 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { HttpInterceptorMethodSchema } from '../../HttpInterceptor/types/schema';
 import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
-import HttpRequestTracker from '../HttpRequestTracker';
-import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types';
+import InternalHttpRequestTracker from '../InternalHttpRequestTracker';
+import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types/requests';
 
 describe('HttpRequestTracker', () => {
   const defaultBaseURL = 'http://localhost:3000';
 
   it('should not match any request if contains no declared response', () => {
-    const tracker = new HttpRequestTracker();
+    const tracker = new InternalHttpRequestTracker();
 
     const request = new Request(defaultBaseURL);
     expect(tracker.matchesRequest(request)).toBe(false);
   });
 
   it('should match any request if contains declared response', () => {
-    const tracker = new HttpRequestTracker().respond({
+    const tracker = new InternalHttpRequestTracker().respond({
       status: 200,
       body: {},
     });
@@ -29,7 +29,7 @@ describe('HttpRequestTracker', () => {
     const responseStatus = 201;
     const responseBody = { success: true };
 
-    const tracker = new HttpRequestTracker().respond({
+    const tracker = new InternalHttpRequestTracker().respond({
       status: responseStatus,
       body: responseBody,
     });
@@ -53,7 +53,7 @@ describe('HttpRequestTracker', () => {
       body: responseBody,
     }));
 
-    const tracker = new HttpRequestTracker();
+    const tracker = new InternalHttpRequestTracker();
     tracker.respond(responseFactory);
 
     const request = new Request(defaultBaseURL);
@@ -67,7 +67,7 @@ describe('HttpRequestTracker', () => {
   });
 
   it('should throw an error if trying to create a response without a declared response', async () => {
-    const tracker = new HttpRequestTracker();
+    const tracker = new InternalHttpRequestTracker();
 
     const request = new Request(defaultBaseURL);
 
@@ -77,7 +77,7 @@ describe('HttpRequestTracker', () => {
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
-    const tracker = new HttpRequestTracker().respond({
+    const tracker = new InternalHttpRequestTracker().respond({
       status: 200,
       body: {},
     });

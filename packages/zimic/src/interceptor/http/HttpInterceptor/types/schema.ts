@@ -26,7 +26,7 @@ export interface HttpInterceptorMethodSchema {
   response?: HttpInterceptorResponseSchemaByStatusCode;
 }
 
-type HttpInterceptorPathSchema = {
+export type HttpInterceptorPathSchema = {
   [Method in HttpInterceptorMethod]?: HttpInterceptorMethodSchema;
 };
 

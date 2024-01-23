@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest';
 import BrowserHttpInterceptorWorker from '../../HttpInterceptorWorker/BrowserHttpInterceptorWorker';
 import BrowserHttpInterceptor from '../BrowserHttpInterceptor';
 import HttpInterceptor from '../HttpInterceptor';
+import InternalBrowserHttpInterceptor from '../InternalBrowserHttpInterceptor';
 import { createHttpInterceptorTests } from './interceptorTests';
 
 describe('BrowserHttpInterceptor', () => {
   const defaultBaseURL = 'http://localhost:3000';
 
   it('should initialize with the correct worker', () => {
-    const interceptor = new BrowserHttpInterceptor({ baseURL: defaultBaseURL });
+    const interceptor = new InternalBrowserHttpInterceptor({ baseURL: defaultBaseURL });
 
     expect(interceptor).toBeInstanceOf(HttpInterceptor);
 

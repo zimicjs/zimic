@@ -4,8 +4,8 @@ import {
   HttpInterceptorMethodSchema,
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaStatusCode,
-} from '../HttpInterceptor/types/schema';
-import { HttpRequest, HttpResponse } from '../HttpInterceptorWorker/types';
+} from '../../HttpInterceptor/types/schema';
+import { HttpRequest, HttpResponse } from '../../HttpInterceptorWorker/types';
 
 export type HttpRequestTrackerResponseAttribute<
   ResponseSchema extends HttpInterceptorResponseSchema,
@@ -21,18 +21,18 @@ export type HttpRequestTrackerResponseDeclaration<
   status: StatusCode;
 } & HttpRequestTrackerResponseAttribute<Default<MethodSchema['response']>[StatusCode], 'body'>;
 
+export type HttpRequestTrackerResponseDeclarationFactory<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> = (
+  request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
+) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
+
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body> {
   body: undefined | void extends Default<MethodSchema['request']>['body']
     ? never
     : Default<MethodSchema['request']>['body'];
-}
-
-export interface TrackedHttpInterceptorRequest<
-  MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
-> extends HttpInterceptorRequest<MethodSchema> {
-  response: HttpInterceptorResponse<MethodSchema, StatusCode>;
 }
 
 export interface HttpInterceptorResponse<
@@ -43,9 +43,9 @@ export interface HttpInterceptorResponse<
   body: Default<MethodSchema['response']>[StatusCode]['body'];
 }
 
-export type HttpRequestTrackerResponseDeclarationFactory<
+export interface TrackedHttpInterceptorRequest<
   MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = (
-  request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
-) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
+> extends HttpInterceptorRequest<MethodSchema> {
+  response: HttpInterceptorResponse<MethodSchema, StatusCode>;
+}

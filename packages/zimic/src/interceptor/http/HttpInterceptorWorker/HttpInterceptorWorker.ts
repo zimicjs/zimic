@@ -7,7 +7,7 @@ import {
   HttpInterceptorMethodSchema,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../HttpInterceptor/types/schema';
-import { HttpInterceptorRequest, HttpInterceptorResponse } from '../HttpRequestTracker/types';
+import { HttpInterceptorRequest, HttpInterceptorResponse } from '../HttpRequestTracker/types/requests';
 import {
   DefaultBody,
   BrowserHttpWorker,

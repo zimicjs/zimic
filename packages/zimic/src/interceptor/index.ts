@@ -1,10 +1,20 @@
 import HttpInterceptor from './http/HttpInterceptor';
 import HttpRequestTracker from './http/HttpRequestTracker';
 
+export type { DefaultBody, HttpRequest, HttpResponse } from './http/HttpInterceptorWorker/types';
+
+export type {
+  HttpRequestTrackerResponseAttribute,
+  HttpRequestTrackerResponseDeclaration,
+  HttpRequestTrackerResponseDeclarationFactory,
+  HttpInterceptorRequest,
+  HttpInterceptorResponse,
+  TrackedHttpInterceptorRequest,
+} from './http/HttpRequestTracker/types/requests';
+
 export type { HttpInterceptorMethodHandler } from './http/HttpInterceptor/types/handlers';
 
 export type { HttpInterceptorOptions } from './http/HttpInterceptor/types/options';
-export { HttpInterceptorEnvironment } from './http/HttpInterceptor/types/options';
 
 export type {
   HttpInterceptorMethod,
@@ -13,18 +23,12 @@ export type {
   HttpInterceptorResponseSchemaByStatusCode,
   HttpInterceptorResponseSchemaStatusCode,
   HttpInterceptorMethodSchema,
+  HttpInterceptorPathSchema,
   HttpInterceptorSchema,
+  HttpInterceptorSchemaMethod,
   LiteralHttpInterceptorSchemaPath,
   NonLiteralHttpInterceptorSchemaPath,
   HttpInterceptorSchemaPath,
 } from './http/HttpInterceptor/types/schema';
-
-export type {
-  HttpRequestTrackerResponseAttribute,
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
-  HttpInterceptorRequest,
-  HttpInterceptorResponse,
-} from './http/HttpRequestTracker/types';
 
 export { HttpInterceptor, HttpRequestTracker };

@@ -1,8 +1,8 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
+import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import HttpRequestTracker from '../../../HttpRequestTracker';
 import { HttpInterceptorClass } from '../../types/classes';
 
 export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
