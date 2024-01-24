@@ -38,8 +38,8 @@ importers:
 
   apps/zimic-test-client:
     dependencies:
-      zimic:
-        specifier: workspace:*
+      zimic0:
+        specifier: workspace:zimic@*
         version: link:../../packages/zimic
     devDependencies:
       '@types/node':

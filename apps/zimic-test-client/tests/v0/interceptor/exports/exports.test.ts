@@ -25,11 +25,11 @@ import type {
   LiteralHttpInterceptorSchemaPath,
   NonLiteralHttpInterceptorSchemaPath,
   TrackedHttpInterceptorRequest,
-} from 'zimic/interceptor';
+} from 'zimic0/interceptor';
 
 describe('Exports', () => {
   it('should export all interceptor-related classes as types', async () => {
-    const { HttpInterceptor, HttpRequestTracker } = await import('zimic/interceptor');
+    const { HttpInterceptor, HttpRequestTracker } = await import('zimic0/interceptor');
     expect(HttpInterceptor).toBe(undefined);
     expect(HttpRequestTracker).toBe(undefined);
   });

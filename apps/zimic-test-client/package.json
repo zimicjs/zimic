@@ -16,7 +16,7 @@
     "deps:install": "pnpm install --filter zimic-test-client"
   },
   "dependencies": {
-    "zimic": "workspace:*"
+    "zimic0": "workspace:zimic@*"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
