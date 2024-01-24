@@ -1,3 +1,3 @@
-import BrowserHttpInterceptor from './http/HttpInterceptor/browser/BrowserHttpInterceptor';
+import createBrowserHttpInterceptor from './http/HttpInterceptor/browser/factory';
 
-export { BrowserHttpInterceptor };
+export { createBrowserHttpInterceptor };

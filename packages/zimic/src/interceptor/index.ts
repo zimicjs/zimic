@@ -1,6 +1,4 @@
 import HttpInterceptor from './http/HttpInterceptor';
-import createBrowserHttpInterceptor from './http/HttpInterceptor/browser/factory';
-import createNodeHttpInterceptor from './http/HttpInterceptor/node/factory';
 import HttpRequestTracker from './http/HttpRequestTracker';
 
 export type { DefaultBody, HttpRequest, HttpResponse } from './http/HttpInterceptorWorker/types';
@@ -34,4 +32,3 @@ export type {
 } from './http/HttpInterceptor/types/schema';
 
 export type { HttpInterceptor, HttpRequestTracker };
-export { createBrowserHttpInterceptor, createNodeHttpInterceptor };

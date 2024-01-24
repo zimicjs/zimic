@@ -1,3 +1,3 @@
-import NodeHttpInterceptor from './http/HttpInterceptor/node/NodeHttpInterceptor';
+import createNodeHttpInterceptor from './http/HttpInterceptor/node/factory';
 
-export { NodeHttpInterceptor };
+export { createNodeHttpInterceptor };
