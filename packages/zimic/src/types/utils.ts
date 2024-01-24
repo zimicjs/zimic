@@ -11,3 +11,7 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union)
 ) => void
   ? IntersectedUnion
   : never;
+
+export type Prettify<Type> = {
+  [Key in keyof Type]: Type[Key];
+};

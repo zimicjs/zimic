@@ -1,6 +1,7 @@
 import { expectTypeOf, it } from 'vitest';
 
 import { HttpInterceptorClass } from '../../types/classes';
+import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
 
 export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
   Interceptor: InterceptorClass,
@@ -12,6 +13,32 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   }
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+
+  it('should correctly type requests', () => {
+    const interceptor = new Interceptor<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    const creationTracker = interceptor.post('/users').respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<User>();
+
+      return {
+        status: 201,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestBody = (typeof creationRequests)[number]['body'];
+    expectTypeOf<RequestBody>().toEqualTypeOf<User>();
+  });
 
   it('should correctly type responses based on the applied status code', () => {
     const interceptor = new Interceptor<{
@@ -167,5 +194,80 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
 
     // @ts-expect-error
     interceptor.put('/users');
+  });
+
+  it('should support declaring schemas using type composition', () => {
+    const inlineInterceptor = new Interceptor<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+
+      '/users/:id': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    type UserCreationRequest = HttpInterceptorSchema.Request<{
+      body: User;
+    }>;
+
+    type UserCreationResponse = HttpInterceptorSchema.Response<{
+      body: User;
+    }>;
+
+    type UserCreationResponseByStatusCode = HttpInterceptorSchema.ResponseByStatusCode<{
+      201: UserCreationResponse;
+    }>;
+
+    type UserCreationMethod = HttpInterceptorSchema.Method<{
+      request: UserCreationRequest;
+      response: UserCreationResponseByStatusCode;
+    }>;
+
+    type UserCreationPath = HttpInterceptorSchema.Path<{
+      POST: UserCreationMethod;
+    }>;
+
+    type UserGetResponse = HttpInterceptorSchema.Response<{
+      body: User;
+    }>;
+
+    type UserGetResponseByStatusCode = HttpInterceptorSchema.ResponseByStatusCode<{
+      200: UserGetResponse;
+    }>;
+
+    type UserGetMethod = HttpInterceptorSchema.Method<{
+      response: UserGetResponseByStatusCode;
+    }>;
+
+    type UserGetPath = HttpInterceptorSchema.Path<{
+      GET: UserGetMethod;
+    }>;
+
+    type UsersRoot = HttpInterceptorSchema.Root<{
+      '/users': UserCreationPath;
+    }>;
+
+    type UserByIdRoot = HttpInterceptorSchema.Root<{
+      '/users/:id': UserGetPath;
+    }>;
+
+    type InterceptorSchema = HttpInterceptorSchema.Root<UsersRoot & UserByIdRoot>;
+
+    const compositeInterceptor = new Interceptor<InterceptorSchema>({ baseURL });
+    expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
+
+    type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
+    type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
+    expectTypeOf<CompositeInterceptorSchema>().toEqualTypeOf<InlineInterceptorSchema>();
   });
 }
