@@ -3,7 +3,7 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../types/classes';
+import { HttpInterceptorClass } from '../../../types/classes';
 
 export function createGetHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
   Interceptor: InterceptorClass,
@@ -237,13 +237,13 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
       expect(listRequest.response.body).toEqual([]);
 
-      const otherListTracker = interceptor.get('/users').respond({
+      const errorListTracker = interceptor.get('/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const otherListRequests = otherListTracker.requests();
-      expect(otherListRequests).toHaveLength(0);
+      const errorListRequests = errorListTracker.requests();
+      expect(errorListRequests).toHaveLength(0);
 
       const otherListResponse = await fetch(`${baseURL}/users`, {
         method: 'GET',
@@ -253,18 +253,143 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      expect(otherListRequests).toHaveLength(1);
-      const [otherListRequest] = otherListRequests;
-      expect(otherListRequest).toBeInstanceOf(Request);
+      expect(listRequests).toHaveLength(1);
 
-      expectTypeOf(otherListRequest.body).toEqualTypeOf<never>();
-      expect(otherListRequest.body).toBe(null);
+      expect(errorListRequests).toHaveLength(1);
+      const [errorListRequest] = errorListRequests;
+      expect(errorListRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(otherListRequest.response.status).toEqualTypeOf<500>();
-      expect(otherListRequest.response.status).toEqual(500);
+      expectTypeOf(errorListRequest.body).toEqualTypeOf<never>();
+      expect(errorListRequest.body).toBe(null);
 
-      expectTypeOf(otherListRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(otherListRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorListRequest.response.status).toEqualTypeOf<500>();
+      expect(errorListRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorListRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorListRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+    });
+  });
+
+  it('should ignore trackers with bypassed responses when intercepting GET requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const listTracker = interceptor
+        .get('/users')
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .bypass();
+
+      const initialListRequests = listTracker.requests();
+      expect(initialListRequests).toHaveLength(0);
+
+      const listPromise = fetch(`${baseURL}/users`, {
+        method: 'GET',
+      });
+      await expect(listPromise).rejects.toThrowError();
+
+      listTracker.respond({
+        status: 200,
+        body: [],
+      });
+
+      expect(initialListRequests).toHaveLength(0);
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      let listResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+      });
+      expect(listResponse.status).toBe(200);
+
+      let fetchedUsers = (await listResponse.json()) as User;
+      expect(fetchedUsers).toEqual([]);
+
+      expect(listRequests).toHaveLength(1);
+      let [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expect(listRequest.body).toBe(null);
+
+      expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
+      expect(listRequest.response.status).toEqual(200);
+
+      expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
+      expect(listRequest.response.body).toEqual([]);
+
+      const errorListTracker = interceptor.get('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const errorListRequests = errorListTracker.requests();
+      expect(errorListRequests).toHaveLength(0);
+
+      const otherListResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+      });
+      expect(otherListResponse.status).toBe(500);
+
+      const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(listRequests).toHaveLength(1);
+
+      expect(errorListRequests).toHaveLength(1);
+      const [errorListRequest] = errorListRequests;
+      expect(errorListRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(errorListRequest.body).toEqualTypeOf<never>();
+      expect(errorListRequest.body).toBe(null);
+
+      expectTypeOf(errorListRequest.response.status).toEqualTypeOf<500>();
+      expect(errorListRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorListRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorListRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      errorListTracker.bypass();
+
+      listResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+      });
+      expect(listResponse.status).toBe(200);
+
+      fetchedUsers = (await listResponse.json()) as User;
+      expect(fetchedUsers).toEqual([]);
+
+      expect(errorListRequests).toHaveLength(1);
+
+      expect(listRequests).toHaveLength(2);
+      [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expect(listRequest.body).toBe(null);
+
+      expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
+      expect(listRequest.response.status).toEqual(200);
+
+      expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
+      expect(listRequest.response.body).toEqual([]);
     });
   });
 }

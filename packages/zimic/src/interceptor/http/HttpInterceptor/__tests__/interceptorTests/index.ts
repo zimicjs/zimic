@@ -3,13 +3,13 @@ import { describe } from 'vitest';
 import { HttpInterceptorClass } from '../../types/classes';
 import { HttpInterceptorMethod } from '../../types/schema';
 import { createDefaultHttpInterceptorTests } from './default';
-import { createDeleteHttpInterceptorTests } from './delete';
-import { createGetHttpInterceptorTests } from './get';
-import { createHeadHttpInterceptorTests } from './head';
-import { createOptionsHttpInterceptorTests } from './options';
-import { createPatchHttpInterceptorTests } from './patch';
-import { createPostHttpInterceptorTests } from './post';
-import { createPutHttpInterceptorTests } from './put';
+import { createDeleteHttpInterceptorTests } from './methods/delete';
+import { createGetHttpInterceptorTests } from './methods/get';
+import { createHeadHttpInterceptorTests } from './methods/head';
+import { createOptionsHttpInterceptorTests } from './methods/options';
+import { createPatchHttpInterceptorTests } from './methods/patch';
+import { createPostHttpInterceptorTests } from './methods/post';
+import { createPutHttpInterceptorTests } from './methods/put';
 import { createTypeHttpInterceptorTests } from './typescript';
 
 export function createHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(

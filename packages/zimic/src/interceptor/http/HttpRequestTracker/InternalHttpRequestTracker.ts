@@ -17,14 +17,14 @@ class InternalHttpRequestTracker<
 > extends HttpRequestTracker<MethodSchema, StatusCode> {
   protected createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>;
 
-  respond<StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
+  respond<NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
     declarationOrCreateDeclaration:
-      | HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
-  ): InternalHttpRequestTracker<MethodSchema, StatusCode> {
-    const newThis = this as unknown as InternalHttpRequestTracker<MethodSchema, StatusCode>;
+      | HttpRequestTrackerResponseDeclaration<MethodSchema, NewStatusCode>
+      | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, NewStatusCode>,
+  ): InternalHttpRequestTracker<MethodSchema, NewStatusCode> {
+    const newThis = this as unknown as InternalHttpRequestTracker<MethodSchema, NewStatusCode>;
 
-    newThis.createResponseDeclaration = this.isResponseDeclarationFactory<StatusCode>(declarationOrCreateDeclaration)
+    newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declarationOrCreateDeclaration)
       ? declarationOrCreateDeclaration
       : () => declarationOrCreateDeclaration;
 
@@ -41,6 +41,12 @@ class InternalHttpRequestTracker<
       | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
   ): declaration is HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode> {
     return typeof declaration === 'function';
+  }
+
+  bypass(): HttpRequestTracker<MethodSchema, StatusCode> {
+    this.createResponseDeclaration = undefined;
+    this.interceptedRequests = [];
+    return this;
   }
 
   matchesRequest(_request: HttpInterceptorRequest<MethodSchema>): boolean {

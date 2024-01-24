@@ -25,6 +25,25 @@ describe('HttpRequestTracker', () => {
     expect(tracker.matchesRequest(request)).toBe(true);
   });
 
+  it('should not match any request if bypassed', () => {
+    const tracker = new InternalHttpRequestTracker();
+
+    const request = new Request(defaultBaseURL);
+    expect(tracker.matchesRequest(request)).toBe(false);
+
+    tracker.bypass();
+    expect(tracker.matchesRequest(request)).toBe(false);
+
+    tracker.respond({
+      status: 200,
+      body: {},
+    });
+    expect(tracker.matchesRequest(request)).toBe(true);
+
+    tracker.bypass();
+    expect(tracker.matchesRequest(request)).toBe(false);
+  });
+
   it('should create response with declared status and body', async () => {
     const responseStatus = 201;
     const responseBody = { success: true };

@@ -3,7 +3,7 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../types/classes';
+import { HttpInterceptorClass } from '../../../types/classes';
 
 export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
   Interceptor: InterceptorClass,
@@ -52,7 +52,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
     });
   });
 
-  it('should support intercepting HEAD requests with a computed response body', async () => {
+  it('should support intercepting HEAD requests with a comheaded response body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         HEAD: {
@@ -191,7 +191,6 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
         .respond({
           status: 204,
         });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -214,13 +213,13 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
       expect(headRequest.response.body).toBe(null);
 
-      const otherHeadTracker = interceptor.head('/users').respond({
+      const errorHeadTracker = interceptor.head('/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const otherHeadRequests = otherHeadTracker.requests();
-      expect(otherHeadRequests).toHaveLength(0);
+      const errorHeadRequests = errorHeadTracker.requests();
+      expect(errorHeadRequests).toHaveLength(0);
 
       const otherHeadResponse = await fetch(`${baseURL}/users`, {
         method: 'HEAD',
@@ -230,18 +229,142 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      expect(otherHeadRequests).toHaveLength(1);
-      const [otherHeadRequest] = otherHeadRequests;
-      expect(otherHeadRequest).toBeInstanceOf(Request);
+      expect(headRequests).toHaveLength(1);
 
-      expectTypeOf(otherHeadRequest.body).toEqualTypeOf<never>();
-      expect(otherHeadRequest.body).toBe(null);
+      expect(errorHeadRequests).toHaveLength(1);
+      const [errorHeadRequest] = errorHeadRequests;
+      expect(errorHeadRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(otherHeadRequest.response.status).toEqualTypeOf<500>();
-      expect(otherHeadRequest.response.status).toEqual(500);
+      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<never>();
+      expect(errorHeadRequest.body).toBe(null);
 
-      expectTypeOf(otherHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(otherHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
+      expect(errorHeadRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+    });
+  });
+
+  it('should ignore trackers with bypassed responses when intercepting HEAD requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: {};
+            204: {};
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const headTracker = interceptor
+        .head('/users')
+        .respond({
+          status: 200,
+        })
+        .bypass();
+
+      const initialHeadRequests = headTracker.requests();
+      expect(initialHeadRequests).toHaveLength(0);
+
+      const headPromise = fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      await expect(headPromise).rejects.toThrowError();
+
+      const noContentHeadTracker = headTracker.respond({
+        status: 204,
+      });
+
+      expect(initialHeadRequests).toHaveLength(0);
+      const headRequests = noContentHeadTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      let headResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      expect(headResponse.status).toBe(204);
+
+      expect(headRequests).toHaveLength(1);
+      let [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
+      expect(headRequest.response.status).toEqual(204);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expect(headRequest.response.body).toBe(null);
+
+      const errorHeadTracker = interceptor.head('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const errorHeadRequests = errorHeadTracker.requests();
+      expect(errorHeadRequests).toHaveLength(0);
+
+      const otherHeadResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      expect(otherHeadResponse.status).toBe(500);
+
+      const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(headRequests).toHaveLength(1);
+
+      expect(errorHeadRequests).toHaveLength(1);
+      const [errorHeadRequest] = errorHeadRequests;
+      expect(errorHeadRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<never>();
+      expect(errorHeadRequest.body).toBe(null);
+
+      expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
+      expect(errorHeadRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      errorHeadTracker.bypass();
+
+      headResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      expect(headResponse.status).toBe(204);
+
+      expect(errorHeadRequests).toHaveLength(1);
+
+      expect(headRequests).toHaveLength(2);
+      [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
+      expect(headRequest.response.status).toEqual(204);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expect(headRequest.response.body).toBe(null);
     });
   });
 }

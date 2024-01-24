@@ -3,7 +3,7 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../types/classes';
+import { HttpInterceptorClass } from '../../../types/classes';
 
 export function createPutHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
   Interceptor: InterceptorClass,
@@ -21,7 +21,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       '/users': {
         PUT: {
           response: {
-            201: { body: User };
+            200: { body: User };
           };
         };
       };
@@ -31,7 +31,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       await interceptor.start();
 
       const updateTracker = interceptor.put('/users').respond({
-        status: 201,
+        status: 200,
         body: users[0],
       });
       expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
@@ -42,7 +42,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PUT',
       });
-      expect(updateResponse.status).toBe(201);
+      expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[0]);
@@ -54,8 +54,8 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
       expect(updateRequest.body).toBe(null);
 
-      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
-      expect(updateRequest.response.status).toEqual(201);
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[0]);
@@ -68,7 +68,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
         PUT: {
           request: { body: User };
           response: {
-            201: { body: User };
+            200: { body: User };
           };
         };
       };
@@ -81,7 +81,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         return {
-          status: 201,
+          status: 200,
           body: {
             name: request.body.name,
           },
@@ -98,7 +98,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
         method: 'PUT',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(updateResponse.status).toBe(201);
+      expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual<User>({ name: userName });
@@ -110,8 +110,8 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
       expect(updateRequest.body).toEqual<User>({ name: userName });
 
-      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
-      expect(updateRequest.response.status).toEqual(201);
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>({ name: userName });
@@ -124,7 +124,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
         PUT: {
           request: { body: User };
           response: {
-            201: { body: User };
+            200: { body: User };
           };
         };
       };
@@ -166,7 +166,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf<typeof updateRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
 
       const updateTrackerWithResponse = updateTrackerWithoutResponse.respond({
-        status: 201,
+        status: 200,
         body: users[0],
       });
 
@@ -174,7 +174,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
         method: 'PUT',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      expect(updateResponse.status).toBe(201);
+      expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[0]);
@@ -189,8 +189,8 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
       expect(updateRequest.body).toEqual<User>({ name: userName });
 
-      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
-      expect(updateRequest.response.status).toEqual(201);
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>(users[0]);
@@ -206,7 +206,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       '/users': {
         PUT: {
           response: {
-            201: { body: User };
+            200: { body: User };
             500: { body: ServerErrorResponseBody };
           };
         };
@@ -219,14 +219,13 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateTracker = interceptor
         .put('/users')
         .respond({
-          status: 201,
+          status: 200,
           body: users[0],
         })
         .respond({
-          status: 201,
+          status: 200,
           body: users[1],
         });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -234,7 +233,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PUT',
       });
-      expect(updateResponse.status).toBe(201);
+      expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
@@ -246,19 +245,19 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
       expect(updateRequest.body).toBe(null);
 
-      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
-      expect(updateRequest.response.status).toEqual(201);
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const otherUpdateTracker = interceptor.put('/users').respond({
+      const errorUpdateTracker = interceptor.put('/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const otherUpdateRequests = otherUpdateTracker.requests();
-      expect(otherUpdateRequests).toHaveLength(0);
+      const errorUpdateRequests = errorUpdateTracker.requests();
+      expect(errorUpdateRequests).toHaveLength(0);
 
       const otherUpdateResponse = await fetch(`${baseURL}/users`, {
         method: 'PUT',
@@ -268,18 +267,143 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      expect(otherUpdateRequests).toHaveLength(1);
-      const [otherUpdateRequest] = otherUpdateRequests;
-      expect(otherUpdateRequest).toBeInstanceOf(Request);
+      expect(updateRequests).toHaveLength(1);
 
-      expectTypeOf(otherUpdateRequest.body).toEqualTypeOf<never>();
-      expect(otherUpdateRequest.body).toBe(null);
+      expect(errorUpdateRequests).toHaveLength(1);
+      const [errorUpdateRequest] = errorUpdateRequests;
+      expect(errorUpdateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(otherUpdateRequest.response.status).toEqualTypeOf<500>();
-      expect(otherUpdateRequest.response.status).toEqual(500);
+      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<never>();
+      expect(errorUpdateRequest.body).toBe(null);
 
-      expectTypeOf(otherUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(otherUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorUpdateRequest.response.status).toEqualTypeOf<500>();
+      expect(errorUpdateRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+    });
+  });
+
+  it('should ignore trackers with bypassed responses when intercepting PUT requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        PUT: {
+          response: {
+            200: { body: User };
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const updateTracker = interceptor
+        .put('/users')
+        .respond({
+          status: 200,
+          body: users[0],
+        })
+        .bypass();
+
+      const initialUpdateRequests = updateTracker.requests();
+      expect(initialUpdateRequests).toHaveLength(0);
+
+      const updatePromise = fetch(`${baseURL}/users`, {
+        method: 'PUT',
+      });
+      await expect(updatePromise).rejects.toThrowError();
+
+      updateTracker.respond({
+        status: 200,
+        body: users[1],
+      });
+
+      expect(initialUpdateRequests).toHaveLength(0);
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      let updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PUT',
+      });
+      expect(updateResponse.status).toBe(200);
+
+      let createdUsers = (await updateResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(updateRequests).toHaveLength(1);
+      let [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expect(updateRequest.body).toBe(null);
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual(users[1]);
+
+      const errorUpdateTracker = interceptor.put('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const errorUpdateRequests = errorUpdateTracker.requests();
+      expect(errorUpdateRequests).toHaveLength(0);
+
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PUT',
+      });
+      expect(otherUpdateResponse.status).toBe(500);
+
+      const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(updateRequests).toHaveLength(1);
+
+      expect(errorUpdateRequests).toHaveLength(1);
+      const [errorUpdateRequest] = errorUpdateRequests;
+      expect(errorUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<never>();
+      expect(errorUpdateRequest.body).toBe(null);
+
+      expectTypeOf(errorUpdateRequest.response.status).toEqualTypeOf<500>();
+      expect(errorUpdateRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      errorUpdateTracker.bypass();
+
+      updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PUT',
+      });
+      expect(updateResponse.status).toBe(200);
+
+      createdUsers = (await updateResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(errorUpdateRequests).toHaveLength(1);
+
+      expect(updateRequests).toHaveLength(2);
+      [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expect(updateRequest.body).toBe(null);
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual(users[1]);
     });
   });
 }

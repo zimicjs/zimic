@@ -19,6 +19,8 @@ abstract class HttpRequestTracker<
       | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
   ): HttpRequestTracker<MethodSchema, StatusCode>;
 
+  abstract bypass(): HttpRequestTracker<MethodSchema, StatusCode>;
+
   requests(): readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] {
     return this.interceptedRequests;
   }

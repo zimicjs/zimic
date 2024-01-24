@@ -3,7 +3,7 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../types/classes';
+import { HttpInterceptorClass } from '../../../types/classes';
 
 export function createPostHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
   Interceptor: InterceptorClass,
@@ -226,7 +226,11 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
           status: 201,
           body: users[1],
         });
-      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      creationTracker.respond({
+        status: 201,
+        body: users[1],
+      });
 
       const creationRequests = creationTracker.requests();
       expect(creationRequests).toHaveLength(0);
@@ -252,13 +256,13 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
       expect(creationRequest.response.body).toEqual(users[1]);
 
-      const otherCreationTracker = interceptor.post('/users').respond({
+      const errorCreationTracker = interceptor.post('/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const otherCreationRequests = otherCreationTracker.requests();
-      expect(otherCreationRequests).toHaveLength(0);
+      const errorCreationRequests = errorCreationTracker.requests();
+      expect(errorCreationRequests).toHaveLength(0);
 
       const otherCreationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
@@ -268,18 +272,143 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       const serverError = (await otherCreationResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      expect(otherCreationRequests).toHaveLength(1);
-      const [otherCreationRequest] = otherCreationRequests;
-      expect(otherCreationRequest).toBeInstanceOf(Request);
+      expect(creationRequests).toHaveLength(1);
 
-      expectTypeOf(otherCreationRequest.body).toEqualTypeOf<never>();
-      expect(otherCreationRequest.body).toBe(null);
+      expect(errorCreationRequests).toHaveLength(1);
+      const [errorCreationRequest] = errorCreationRequests;
+      expect(errorCreationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(otherCreationRequest.response.status).toEqualTypeOf<500>();
-      expect(otherCreationRequest.response.status).toEqual(500);
+      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<never>();
+      expect(errorCreationRequest.body).toBe(null);
 
-      expectTypeOf(otherCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(otherCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorCreationRequest.response.status).toEqualTypeOf<500>();
+      expect(errorCreationRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+    });
+  });
+
+  it('should ignore trackers with bypassed responses when intercepting POST requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        POST: {
+          response: {
+            201: { body: User };
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const creationTracker = interceptor
+        .post('/users')
+        .respond({
+          status: 201,
+          body: users[0],
+        })
+        .bypass();
+
+      const initialCreationRequests = creationTracker.requests();
+      expect(initialCreationRequests).toHaveLength(0);
+
+      const creationPromise = fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      await expect(creationPromise).rejects.toThrowError();
+
+      creationTracker.respond({
+        status: 201,
+        body: users[1],
+      });
+
+      expect(initialCreationRequests).toHaveLength(0);
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      let creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      expect(creationResponse.status).toBe(201);
+
+      let createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(creationRequests).toHaveLength(1);
+      let [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expect(creationRequest.body).toBe(null);
+
+      expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
+      expect(creationRequest.response.status).toEqual(201);
+
+      expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
+      expect(creationRequest.response.body).toEqual(users[1]);
+
+      const errorCreationTracker = interceptor.post('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const errorCreationRequests = errorCreationTracker.requests();
+      expect(errorCreationRequests).toHaveLength(0);
+
+      const otherCreationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      expect(otherCreationResponse.status).toBe(500);
+
+      const serverError = (await otherCreationResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(creationRequests).toHaveLength(1);
+
+      expect(errorCreationRequests).toHaveLength(1);
+      const [errorCreationRequest] = errorCreationRequests;
+      expect(errorCreationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<never>();
+      expect(errorCreationRequest.body).toBe(null);
+
+      expectTypeOf(errorCreationRequest.response.status).toEqualTypeOf<500>();
+      expect(errorCreationRequest.response.status).toEqual(500);
+
+      expectTypeOf(errorCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(errorCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      errorCreationTracker.bypass();
+
+      creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      expect(creationResponse.status).toBe(201);
+
+      createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(errorCreationRequests).toHaveLength(1);
+
+      expect(creationRequests).toHaveLength(2);
+      [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expect(creationRequest.body).toBe(null);
+
+      expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
+      expect(creationRequest.response.status).toEqual(201);
+
+      expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
+      expect(creationRequest.response.body).toEqual(users[1]);
     });
   });
 }
