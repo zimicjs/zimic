@@ -19,7 +19,7 @@ type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method exte
   InternalHttpRequestTracker<Default<Schema[keyof Schema][Method]>>[]
 >;
 
-abstract class HttpInterceptor<Schema extends HttpInterceptorSchema> {
+class HttpInterceptor<Schema extends HttpInterceptorSchema> {
   protected _worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
