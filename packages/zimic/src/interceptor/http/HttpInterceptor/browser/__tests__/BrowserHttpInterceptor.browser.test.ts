@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import BrowserHttpInterceptorWorker from '../../HttpInterceptorWorker/BrowserHttpInterceptorWorker';
-import BrowserHttpInterceptor from '../browser/BrowserHttpInterceptor';
-import InternalBrowserHttpInterceptor from '../browser/InternalBrowserHttpInterceptor';
-import HttpInterceptor from '../HttpInterceptor';
-import { createHttpInterceptorTests } from './interceptorTests';
+import BrowserHttpInterceptorWorker from '@/interceptor/http/HttpInterceptorWorker/BrowserHttpInterceptorWorker';
+
+import { createHttpInterceptorTests } from '../../__tests__/interceptorTests';
+import HttpInterceptor from '../../HttpInterceptor';
+import BrowserHttpInterceptor from '../BrowserHttpInterceptor';
+import InternalBrowserHttpInterceptor from '../InternalBrowserHttpInterceptor';
 
 describe('BrowserHttpInterceptor', () => {
   const defaultBaseURL = 'http://localhost:3000';
