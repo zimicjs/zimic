@@ -44,8 +44,8 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       });
       expect(creationResponse.status).toBe(201);
 
-      const fetchedUsers = (await creationResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
 
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
@@ -100,8 +100,8 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       });
       expect(creationResponse.status).toBe(201);
 
-      const fetchedUsers = (await creationResponse.json()) as User;
-      expect(fetchedUsers).toEqual<User>({ name: userName });
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual<User>({ name: userName });
 
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
@@ -176,8 +176,8 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
       });
       expect(creationResponse.status).toBe(201);
 
-      const fetchedUsers = (await creationResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
 
       expect(creationRequestsWithoutResponse).toHaveLength(0);
       const creationRequestsWithResponse = creationTrackerWithResponse.requests();
@@ -194,6 +194,92 @@ export function createPostHttpInterceptorTests<InterceptorClass extends HttpInte
 
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
       expect(creationRequest.response.body).toEqual<User>(users[0]);
+    });
+  });
+
+  it('should consider only the last declared response when intercepting POST requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        POST: {
+          response: {
+            201: { body: User };
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const creationTracker = interceptor
+        .post('/users')
+        .respond({
+          status: 201,
+          body: users[0],
+        })
+        .respond({
+          status: 201,
+          body: users[1],
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expect(creationRequest.body).toBe(null);
+
+      expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
+      expect(creationRequest.response.status).toEqual(201);
+
+      expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
+      expect(creationRequest.response.body).toEqual(users[1]);
+
+      const otherCreationTracker = interceptor.post('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const otherCreationRequests = otherCreationTracker.requests();
+      expect(otherCreationRequests).toHaveLength(0);
+
+      const otherCreationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+      });
+      expect(otherCreationResponse.status).toBe(500);
+
+      const serverError = (await otherCreationResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(otherCreationRequests).toHaveLength(1);
+      const [otherCreationRequest] = otherCreationRequests;
+      expect(otherCreationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(otherCreationRequest.body).toEqualTypeOf<never>();
+      expect(otherCreationRequest.body).toBe(null);
+
+      expectTypeOf(otherCreationRequest.response.status).toEqualTypeOf<500>();
+      expect(otherCreationRequest.response.status).toEqual(500);
+
+      expectTypeOf(otherCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(otherCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
     });
   });
 }

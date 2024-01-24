@@ -44,8 +44,8 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       });
       expect(updateResponse.status).toBe(201);
 
-      const fetchedUsers = (await updateResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[0]);
 
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
@@ -100,8 +100,8 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       });
       expect(updateResponse.status).toBe(201);
 
-      const fetchedUsers = (await updateResponse.json()) as User;
-      expect(fetchedUsers).toEqual<User>({ name: userName });
+      const updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual<User>({ name: userName });
 
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
@@ -176,8 +176,8 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       });
       expect(updateResponse.status).toBe(201);
 
-      const fetchedUsers = (await updateResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[0]);
 
       expect(updateRequestsWithoutResponse).toHaveLength(0);
       const updateRequestsWithResponse = updateTrackerWithResponse.requests();
@@ -194,6 +194,92 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>(users[0]);
+    });
+  });
+
+  it('should consider only the last declared response when intercepting PATCH requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        PATCH: {
+          response: {
+            201: { body: User };
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const updateTracker = interceptor
+        .patch('/users')
+        .respond({
+          status: 201,
+          body: users[0],
+        })
+        .respond({
+          status: 201,
+          body: users[1],
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+      });
+      expect(updateResponse.status).toBe(201);
+
+      const updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[1]);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expect(updateRequest.body).toBe(null);
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<201>();
+      expect(updateRequest.response.status).toEqual(201);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual(users[1]);
+
+      const otherUpdateTracker = interceptor.patch('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const otherUpdateRequests = otherUpdateTracker.requests();
+      expect(otherUpdateRequests).toHaveLength(0);
+
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+      });
+      expect(otherUpdateResponse.status).toBe(500);
+
+      const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(otherUpdateRequests).toHaveLength(1);
+      const [otherUpdateRequest] = otherUpdateRequests;
+      expect(otherUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(otherUpdateRequest.body).toEqualTypeOf<never>();
+      expect(otherUpdateRequest.body).toBe(null);
+
+      expectTypeOf(otherUpdateRequest.response.status).toEqualTypeOf<500>();
+      expect(otherUpdateRequest.response.status).toEqual(500);
+
+      expectTypeOf(otherUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(otherUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
     });
   });
 }

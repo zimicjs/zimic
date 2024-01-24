@@ -162,4 +162,86 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       expect(headRequestWithResponse.response.body).toBe(null);
     });
   });
+
+  it('should consider only the last declared response when intercepting HEAD requests', async () => {
+    interface ServerErrorResponseBody {
+      message: string;
+    }
+
+    const interceptor = new Interceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: {};
+            204: {};
+            500: { body: ServerErrorResponseBody };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const headTracker = interceptor
+        .head('/users')
+        .respond({
+          status: 200,
+        })
+        .respond({
+          status: 204,
+        });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const headResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      expect(headResponse.status).toBe(204);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
+      expect(headRequest.response.status).toEqual(204);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expect(headRequest.response.body).toBe(null);
+
+      const otherHeadTracker = interceptor.head('/users').respond({
+        status: 500,
+        body: { message: 'Internal server error' },
+      });
+
+      const otherHeadRequests = otherHeadTracker.requests();
+      expect(otherHeadRequests).toHaveLength(0);
+
+      const otherHeadResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+      });
+      expect(otherHeadResponse.status).toBe(500);
+
+      const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
+      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+
+      expect(otherHeadRequests).toHaveLength(1);
+      const [otherHeadRequest] = otherHeadRequests;
+      expect(otherHeadRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(otherHeadRequest.body).toEqualTypeOf<never>();
+      expect(otherHeadRequest.body).toBe(null);
+
+      expectTypeOf(otherHeadRequest.response.status).toEqualTypeOf<500>();
+      expect(otherHeadRequest.response.status).toEqual(500);
+
+      expectTypeOf(otherHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
+      expect(otherHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+    });
+  });
 }

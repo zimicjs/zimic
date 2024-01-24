@@ -44,8 +44,8 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       });
       expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await deletionResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const deletedUsers = (await deletionResponse.json()) as User;
+      expect(deletedUsers).toEqual(users[0]);
 
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
@@ -100,8 +100,8 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       });
       expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await deletionResponse.json()) as User;
-      expect(fetchedUsers).toEqual<User>({ name: userName });
+      const deletedUsers = (await deletionResponse.json()) as User;
+      expect(deletedUsers).toEqual<User>({ name: userName });
 
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
@@ -176,8 +176,8 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       });
       expect(deletionResponse.status).toBe(200);
 
-      const fetchedUsers = (await deletionResponse.json()) as User;
-      expect(fetchedUsers).toEqual(users[0]);
+      const deletedUsers = (await deletionResponse.json()) as User;
+      expect(deletedUsers).toEqual(users[0]);
 
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
       const deletionRequestsWithResponse = deletionTrackerWithResponse.requests();
