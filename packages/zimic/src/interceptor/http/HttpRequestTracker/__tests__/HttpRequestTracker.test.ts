@@ -2,11 +2,17 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { HttpInterceptorMethodSchema } from '../../HttpInterceptor/types/schema';
 import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
+import HttpRequestTracker from '../HttpRequestTracker';
 import InternalHttpRequestTracker from '../InternalHttpRequestTracker';
 import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types/requests';
 
 describe('HttpRequestTracker', () => {
   const defaultBaseURL = 'http://localhost:3000';
+
+  it('should instantiate correctly', () => {
+    const tracker = new InternalHttpRequestTracker();
+    expect(tracker).toBeInstanceOf(HttpRequestTracker);
+  });
 
   it('should not match any request if contains no declared response', () => {
     const tracker = new InternalHttpRequestTracker();

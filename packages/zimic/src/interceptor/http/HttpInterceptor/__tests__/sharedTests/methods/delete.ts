@@ -3,10 +3,12 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../../types/classes';
+import HttpInterceptor from '../../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { HttpInterceptorSchema } from '../../../types/schema';
 
-export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declareDeleteHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
@@ -17,7 +19,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
   it('should support intercepting DELETE requests with a static response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         DELETE: {
           response: {
@@ -61,7 +63,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
   });
 
   it('should support intercepting DELETE requests with a computed response body, based on the request body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         DELETE: {
           request: { body: User };
@@ -116,7 +118,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
   });
 
   it('should support intercepting DELETE requests with a dynamic route', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -193,7 +195,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
   });
 
   it('should not intercept a DELETE request without a registered response', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         DELETE: {
           request: { body: User };
@@ -276,7 +278,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         DELETE: {
           response: {
@@ -359,7 +361,7 @@ export function createDeleteHttpInterceptorTests<InterceptorClass extends HttpIn
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         DELETE: {
           response: {

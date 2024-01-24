@@ -3,10 +3,12 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../../types/classes';
+import HttpInterceptor from '../../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { HttpInterceptorSchema } from '../../../types/schema';
 
-export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declareOptionsHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
@@ -15,7 +17,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
   }
 
   it('should support intercepting OPTIONS requests with a static response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -55,7 +57,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
   });
 
   it('should support intercepting OPTIONS requests with a computed response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters': {
         OPTIONS: {
           request: { body: Filters };
@@ -108,7 +110,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
   });
 
   it('should support intercepting OPTIONS requests with a dynamic route', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters/:id': {
         OPTIONS: {
           response: {
@@ -177,7 +179,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
   });
 
   it('should not intercept a OPTIONS request without a registered response', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -245,7 +247,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -324,7 +326,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {

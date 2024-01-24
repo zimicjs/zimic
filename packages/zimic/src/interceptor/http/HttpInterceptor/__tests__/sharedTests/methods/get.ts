@@ -3,10 +3,12 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../../types/classes';
+import HttpInterceptor from '../../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { HttpInterceptorSchema } from '../../../types/schema';
 
-export function createGetHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declareGetHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
@@ -17,7 +19,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
   it('should support intercepting GET requests with a static response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -61,7 +63,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
   });
 
   it('should support intercepting GET requests with a computed response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -110,7 +112,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
   });
 
   it('should support intercepting GET requests with a dynamic route', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users/:id': {
         GET: {
           response: {
@@ -187,7 +189,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
   });
 
   it('should not intercept a GET request without a registered response', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -259,7 +261,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -342,7 +344,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {

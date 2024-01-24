@@ -1,10 +1,11 @@
 import { expectTypeOf, it } from 'vitest';
 
-import { HttpInterceptorClass } from '../../types/classes';
+import HttpInterceptor from '../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../types/options';
 import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
 
-export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declareTypeHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
@@ -15,7 +16,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
   it('should correctly type requests', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         POST: {
           request: { body: User };
@@ -41,7 +42,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should correctly type requests with dynamic routes', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/groups/:id/users': {
         POST: {
           request: { body: User };
@@ -80,7 +81,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should correctly type responses, based on the applied status code', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -111,7 +112,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should correctly type responses with dynamic routes, based on the applied status code', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/groups/:id/users': {
         GET: {
           response: {
@@ -160,7 +161,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should show a type error if trying to use a non-specified status code', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -189,7 +190,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should show a type error if trying to use a non-assignable response body', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -237,7 +238,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should show a type error if trying to use a non-specified path and/or method', () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -285,7 +286,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should support declaring schemas using type composition', () => {
-    const inlineInterceptor = new Interceptor<{
+    const inlineInterceptor = createInterceptor<{
       '/users': {
         POST: {
           request: { body: User };
@@ -351,7 +352,7 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
 
     type InterceptorSchema = HttpInterceptorSchema.Root<UsersRoot & UserByIdRoot>;
 
-    const compositeInterceptor = new Interceptor<InterceptorSchema>({ baseURL });
+    const compositeInterceptor = createInterceptor<InterceptorSchema>({ baseURL });
     expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;

@@ -5,7 +5,7 @@ import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
 import { HttpRequestHandler } from '../types';
 
-export function createHttpInterceptorWorkerTests<
+export function declareSharedHttpInterceptorWorkerTests<
   Worker extends typeof BrowserHttpInterceptorWorker | typeof NodeHttpInterceptorWorker,
 >(WorkerClass: Worker) {
   const defaultBaseURL = 'http://localhost:3000';

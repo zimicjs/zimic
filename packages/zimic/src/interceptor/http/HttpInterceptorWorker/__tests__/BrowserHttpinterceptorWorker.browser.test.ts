@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import HttpInterceptorWorker from '../HttpInterceptorWorker';
 import { BrowserHttpWorker } from '../types';
-import { createHttpInterceptorWorkerTests } from './workerTests';
+import { declareSharedHttpInterceptorWorkerTests } from './sharedTests';
 
 describe('BrowserHttpInterceptorWorker', () => {
   it('should initialize using the Browser.js MSW server', () => {
@@ -16,6 +16,6 @@ describe('BrowserHttpInterceptorWorker', () => {
   });
 
   describe('Shared', () => {
-    createHttpInterceptorWorkerTests(BrowserHttpInterceptorWorker);
+    declareSharedHttpInterceptorWorkerTests(BrowserHttpInterceptorWorker);
   });
 });

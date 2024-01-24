@@ -3,15 +3,17 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../../types/classes';
+import HttpInterceptor from '../../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { HttpInterceptorSchema } from '../../../types/schema';
 
-export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declareHeadHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
   it('should support intercepting HEAD requests with a static response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -51,7 +53,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should support intercepting HEAD requests with a computed response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -94,7 +96,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should support intercepting HEAD requests with a dynamic route', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users/:id': {
         HEAD: {
           response: {
@@ -163,7 +165,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
   });
 
   it('should not intercept a HEAD request without a registered response', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -231,7 +233,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -310,7 +312,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         HEAD: {
           response: {

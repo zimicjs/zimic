@@ -3,10 +3,12 @@ import { expect, expectTypeOf, it } from 'vitest';
 import HttpRequestTracker from '@/interceptor/http/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorClass } from '../../../types/classes';
+import HttpInterceptor from '../../../HttpInterceptor';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { HttpInterceptorSchema } from '../../../types/schema';
 
-export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInterceptorClass>(
-  Interceptor: InterceptorClass,
+export function declarePatchHttpInterceptorTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
 ) {
   const baseURL = 'http://localhost:3000';
 
@@ -17,7 +19,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
   it('should support intercepting PATCH requests with a static response body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -61,7 +63,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
   });
 
   it('should support intercepting PATCH requests with a computed response body, based on the request body', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         PATCH: {
           request: { body: User };
@@ -117,7 +119,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
   });
 
   it('should support intercepting PATCH requests with a dynamic route', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -194,7 +196,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
   });
 
   it('should not intercept a PATCH request without a registered response', async () => {
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         PATCH: {
           request: { body: User };
@@ -277,7 +279,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -360,7 +362,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       message: string;
     }
 
-    const interceptor = new Interceptor<{
+    const interceptor = createInterceptor<{
       '/users': {
         PATCH: {
           response: {

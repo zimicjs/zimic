@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import HttpInterceptorWorker from '../HttpInterceptorWorker';
 import NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
 import { NodeHttpWorker } from '../types';
-import { createHttpInterceptorWorkerTests } from './workerTests';
+import { declareSharedHttpInterceptorWorkerTests } from './sharedTests';
 
 describe('NodeHttpInterceptorWorker', () => {
   it('should initialize using the Node.js MSW server', () => {
@@ -16,6 +16,6 @@ describe('NodeHttpInterceptorWorker', () => {
   });
 
   describe('Shared', () => {
-    createHttpInterceptorWorkerTests(NodeHttpInterceptorWorker);
+    declareSharedHttpInterceptorWorkerTests(NodeHttpInterceptorWorker);
   });
 });
