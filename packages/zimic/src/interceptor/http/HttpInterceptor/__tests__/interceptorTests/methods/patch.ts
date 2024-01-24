@@ -39,9 +39,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -62,7 +60,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
     });
   });
 
-  it('should support intercepting PATCH requests with a compatched response body, based on the request body', async () => {
+  it('should support intercepting PATCH requests with a computed response body, based on the request body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         PATCH: {
@@ -115,6 +113,83 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>({ name: userName });
+    });
+  });
+
+  it('should support intercepting PATCH requests with a dynamic route', async () => {
+    const interceptor = new Interceptor<{
+      '/users/:id': {
+        PATCH: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const genericUpdateTracker = interceptor.patch('/users/:id').respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(genericUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const genericUpdateRequests = genericUpdateTracker.requests();
+      expect(genericUpdateRequests).toHaveLength(0);
+
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PATCH' });
+      expect(genericUpdateResponse.status).toBe(200);
+
+      const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
+      expect(genericUpdatedUser).toEqual(users[0]);
+
+      expect(genericUpdateRequests).toHaveLength(1);
+      const [genericUpdateRequest] = genericUpdateRequests;
+      expect(genericUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<never>();
+      expect(genericUpdateRequest.body).toBe(null);
+
+      expectTypeOf(genericUpdateRequest.response.status).toEqualTypeOf<200>();
+      expect(genericUpdateRequest.response.status).toEqual(200);
+
+      expectTypeOf(genericUpdateRequest.response.body).toEqualTypeOf<User>();
+      expect(genericUpdateRequest.response.body).toEqual(users[0]);
+
+      genericUpdateTracker.bypass();
+
+      const specificUpdateTracker = interceptor.patch(`/users/${1}`).respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(specificUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const specificUpdateRequests = specificUpdateTracker.requests();
+      expect(specificUpdateRequests).toHaveLength(0);
+
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PATCH' });
+      expect(specificUpdateResponse.status).toBe(200);
+
+      const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
+      expect(specificUpdatedUser).toEqual(users[0]);
+
+      expect(specificUpdateRequests).toHaveLength(1);
+      const [specificUpdateRequest] = specificUpdateRequests;
+      expect(specificUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<never>();
+      expect(specificUpdateRequest.body).toBe(null);
+
+      expectTypeOf(specificUpdateRequest.response.status).toEqualTypeOf<200>();
+      expect(specificUpdateRequest.response.status).toEqual(200);
+
+      expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
+      expect(specificUpdateRequest.response.body).toEqual(users[0]);
+
+      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${2}`, { method: 'PATCH' });
+      await expect(unmatchedUpdatePromise).rejects.toThrowError();
     });
   });
 
@@ -230,9 +305,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -259,9 +332,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -314,9 +385,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      const updatePromise = fetch(`${baseURL}/users`, { method: 'PATCH' });
       await expect(updatePromise).rejects.toThrowError();
 
       updateTracker.respond({
@@ -328,13 +397,11 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      let updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
-      let createdUsers = (await updateResponse.json()) as User;
-      expect(createdUsers).toEqual(users[1]);
+      let updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[1]);
 
       expect(updateRequests).toHaveLength(1);
       let [updateRequest] = updateRequests;
@@ -357,9 +424,7 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -382,13 +447,11 @@ export function createPatchHttpInterceptorTests<InterceptorClass extends HttpInt
 
       errorUpdateTracker.bypass();
 
-      updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PATCH',
-      });
+      updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
-      createdUsers = (await updateResponse.json()) as User;
-      expect(createdUsers).toEqual(users[1]);
+      updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[1]);
 
       expect(errorUpdateRequests).toHaveLength(1);
 

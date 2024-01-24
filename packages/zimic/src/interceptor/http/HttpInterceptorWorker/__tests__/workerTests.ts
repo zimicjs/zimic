@@ -105,6 +105,61 @@ export function createHttpInterceptorWorkerTests<
       },
     );
 
+    it(`should intercept ${method} requests after started, considering dynamic routes with a generic match`, async () => {
+      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+
+      await interceptorWorker.start();
+      interceptorWorker.use(method, '/path/:id', spiedRequestHandler);
+
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+      const response = await fetch(`${defaultBaseURL}/path/${1}`, { method });
+
+      expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+
+      const [callContext] = spiedRequestHandler.mock.calls[0];
+      expect(callContext.request).toBeInstanceOf(Request);
+      expect(callContext.request.method).toBe(method);
+      expect(callContext.params).toEqual({ id: '1' });
+      expect(callContext.cookies).toEqual({});
+
+      expect(response.status).toBe(200);
+
+      const body = (await response.json()) as typeof responseBody;
+      expect(body).toEqual(responseBody);
+    });
+
+    it(`should intercept ${method} requests after started, considering dynamic routes with a specific match`, async () => {
+      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+
+      await interceptorWorker.start();
+      interceptorWorker.use(method, `/path/${1}`, spiedRequestHandler);
+
+      expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+      const matchedResponse = await fetch(`${defaultBaseURL}/path/${1}`, { method });
+
+      expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+
+      const [matchedCallContext] = spiedRequestHandler.mock.calls[0];
+      expect(matchedCallContext.request).toBeInstanceOf(Request);
+      expect(matchedCallContext.request.method).toBe(method);
+      expect(matchedCallContext.params).toEqual({});
+      expect(matchedCallContext.cookies).toEqual({});
+
+      expect(matchedResponse.status).toBe(200);
+
+      const matchedBody = (await matchedResponse.json()) as typeof responseBody;
+      expect(matchedBody).toEqual(responseBody);
+
+      spiedRequestHandler.mockClear();
+
+      const unmatchedResponsePromise = fetch(`${defaultBaseURL}/path/${2}`, { method });
+      await expect(unmatchedResponsePromise).rejects.toThrowError();
+
+      expect(spiedRequestHandler).toHaveBeenCalledTimes(0);
+    });
+
     it(`should not intercept bypassed ${method} requests`, async () => {
       interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
       await interceptorWorker.start();

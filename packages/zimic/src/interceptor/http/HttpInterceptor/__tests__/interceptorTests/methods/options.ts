@@ -16,7 +16,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
 
   it('should support intercepting OPTIONS requests with a static response body', async () => {
     const interceptor = new Interceptor<{
-      '/users': {
+      '/filters': {
         OPTIONS: {
           response: {
             200: {};
@@ -28,7 +28,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const optionsTracker = interceptor.options('/users').respond({
+      const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
       expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
@@ -36,9 +36,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
 
-      const optionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
       expect(optionsRequests).toHaveLength(1);
@@ -58,7 +56,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
 
   it('should support intercepting OPTIONS requests with a computed response body', async () => {
     const interceptor = new Interceptor<{
-      '/users': {
+      '/filters': {
         OPTIONS: {
           request: { body: Filters };
           response: {
@@ -71,7 +69,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      const optionsTracker = interceptor.options('/users').respond((request) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
         return {
           status: 200,
@@ -84,7 +82,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
 
       const userName = 'User (other)';
 
-      const optionsResponse = await fetch(`${baseURL}/users`, {
+      const optionsResponse = await fetch(`${baseURL}/filters`, {
         method: 'OPTIONS',
         body: JSON.stringify({ name: userName } satisfies Filters),
       });
@@ -109,9 +107,9 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     });
   });
 
-  it('should not intercept a OPTIONS request without a registered response', async () => {
+  it('should support intercepting OPTIONS requests with a dynamic route', async () => {
     const interceptor = new Interceptor<{
-      '/users': {
+      '/filters/:id': {
         OPTIONS: {
           response: {
             200: {};
@@ -123,10 +121,79 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      let fetchPromise = fetch(`${baseURL}/users`, { method: 'OPTIONS' });
+      const genericOptionsTracker = interceptor.options('/filters/:id').respond({
+        status: 200,
+      });
+      expect(genericOptionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const genericOptionsRequests = genericOptionsTracker.requests();
+      expect(genericOptionsRequests).toHaveLength(0);
+
+      const genericOptionsResponse = await fetch(`${baseURL}/filters/${1}`, { method: 'OPTIONS' });
+      expect(genericOptionsResponse.status).toBe(200);
+
+      expect(genericOptionsRequests).toHaveLength(1);
+      const [genericOptionsRequest] = genericOptionsRequests;
+      expect(genericOptionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(genericOptionsRequest.body).toEqualTypeOf<never>();
+      expect(genericOptionsRequest.body).toBe(null);
+
+      expectTypeOf(genericOptionsRequest.response.status).toEqualTypeOf<200>();
+      expect(genericOptionsRequest.response.status).toEqual(200);
+
+      expectTypeOf(genericOptionsRequest.response.body).toEqualTypeOf<unknown>();
+      expect(genericOptionsRequest.response.body).toBe(null);
+
+      genericOptionsTracker.bypass();
+
+      const specificOptionsTracker = interceptor.options(`/filters/${1}`).respond({
+        status: 200,
+      });
+      expect(specificOptionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const specificOptionsRequests = specificOptionsTracker.requests();
+      expect(specificOptionsRequests).toHaveLength(0);
+
+      const specificOptionsResponse = await fetch(`${baseURL}/filters/${1}`, { method: 'OPTIONS' });
+      expect(specificOptionsResponse.status).toBe(200);
+
+      expect(specificOptionsRequests).toHaveLength(1);
+      const [specificOptionsRequest] = specificOptionsRequests;
+      expect(specificOptionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificOptionsRequest.body).toEqualTypeOf<never>();
+      expect(specificOptionsRequest.body).toBe(null);
+
+      expectTypeOf(specificOptionsRequest.response.status).toEqualTypeOf<200>();
+      expect(specificOptionsRequest.response.status).toEqual(200);
+
+      expectTypeOf(specificOptionsRequest.response.body).toEqualTypeOf<unknown>();
+      expect(specificOptionsRequest.response.body).toBe(null);
+
+      const unmatchedOptionsPromise = fetch(`${baseURL}/filters/${2}`, { method: 'OPTIONS' });
+      await expect(unmatchedOptionsPromise).rejects.toThrowError();
+    });
+  });
+
+  it('should not intercept a OPTIONS request without a registered response', async () => {
+    const interceptor = new Interceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
-      const optionsTrackerWithoutResponse = interceptor.options('/users');
+      const optionsTrackerWithoutResponse = interceptor.options('/filters');
       expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
@@ -137,7 +204,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expectTypeOf<typeof optionsRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
       expectTypeOf<typeof optionsRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
 
-      fetchPromise = fetch(`${baseURL}/users`, { method: 'OPTIONS' });
+      fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
@@ -151,9 +218,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
         status: 200,
       });
 
-      const optionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
@@ -181,7 +246,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     }
 
     const interceptor = new Interceptor<{
-      '/users': {
+      '/filters': {
         OPTIONS: {
           response: {
             200: {};
@@ -196,7 +261,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       await interceptor.start();
 
       const optionsTracker = interceptor
-        .options('/users')
+        .options('/filters')
         .respond({
           status: 200,
         })
@@ -207,9 +272,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
 
-      const optionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(204);
 
       expect(optionsRequests).toHaveLength(1);
@@ -225,7 +288,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
       expect(optionsRequest.response.body).toBe(null);
 
-      const errorOptionsTracker = interceptor.options('/users').respond({
+      const errorOptionsTracker = interceptor.options('/filters').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -233,9 +296,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const errorOptionsRequests = errorOptionsTracker.requests();
       expect(errorOptionsRequests).toHaveLength(0);
 
-      const otherOptionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const otherOptionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(otherOptionsResponse.status).toBe(500);
 
       const serverError = (await otherOptionsResponse.json()) as ServerErrorResponseBody;
@@ -264,7 +325,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
     }
 
     const interceptor = new Interceptor<{
-      '/users': {
+      '/filters': {
         OPTIONS: {
           response: {
             200: {};
@@ -279,7 +340,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       await interceptor.start();
 
       const optionsTracker = interceptor
-        .options('/users')
+        .options('/filters')
         .respond({
           status: 200,
         })
@@ -288,9 +349,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const initialOptionsRequests = optionsTracker.requests();
       expect(initialOptionsRequests).toHaveLength(0);
 
-      const optionsPromise = fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(optionsPromise).rejects.toThrowError();
 
       const noContentOptionsTracker = optionsTracker.respond({
@@ -301,9 +360,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const optionsRequests = noContentOptionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
 
-      let optionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      let optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(204);
 
       expect(optionsRequests).toHaveLength(1);
@@ -322,7 +379,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
       expect(optionsRequest.response.body).toBe(null);
 
-      const errorOptionsTracker = interceptor.options('/users').respond({
+      const errorOptionsTracker = interceptor.options('/filters').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -330,9 +387,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
       const errorOptionsRequests = errorOptionsTracker.requests();
       expect(errorOptionsRequests).toHaveLength(0);
 
-      const otherOptionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      const otherOptionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(otherOptionsResponse.status).toBe(500);
 
       const serverError = (await otherOptionsResponse.json()) as ServerErrorResponseBody;
@@ -355,9 +410,7 @@ export function createOptionsHttpInterceptorTests<InterceptorClass extends HttpI
 
       errorOptionsTracker.bypass();
 
-      optionsResponse = await fetch(`${baseURL}/users`, {
-        method: 'OPTIONS',
-      });
+      optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(204);
 
       expect(errorOptionsRequests).toHaveLength(1);

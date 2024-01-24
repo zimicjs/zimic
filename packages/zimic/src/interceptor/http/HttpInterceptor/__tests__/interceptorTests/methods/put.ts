@@ -39,9 +39,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -115,6 +113,83 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>({ name: userName });
+    });
+  });
+
+  it('should support intercepting PUT requests with a dynamic route', async () => {
+    const interceptor = new Interceptor<{
+      '/users/:id': {
+        PUT: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const genericUpdateTracker = interceptor.put('/users/:id').respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(genericUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const genericUpdateRequests = genericUpdateTracker.requests();
+      expect(genericUpdateRequests).toHaveLength(0);
+
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PUT' });
+      expect(genericUpdateResponse.status).toBe(200);
+
+      const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
+      expect(genericUpdatedUser).toEqual(users[0]);
+
+      expect(genericUpdateRequests).toHaveLength(1);
+      const [genericUpdateRequest] = genericUpdateRequests;
+      expect(genericUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<never>();
+      expect(genericUpdateRequest.body).toBe(null);
+
+      expectTypeOf(genericUpdateRequest.response.status).toEqualTypeOf<200>();
+      expect(genericUpdateRequest.response.status).toEqual(200);
+
+      expectTypeOf(genericUpdateRequest.response.body).toEqualTypeOf<User>();
+      expect(genericUpdateRequest.response.body).toEqual(users[0]);
+
+      genericUpdateTracker.bypass();
+
+      const specificUpdateTracker = interceptor.put(`/users/${1}`).respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(specificUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const specificUpdateRequests = specificUpdateTracker.requests();
+      expect(specificUpdateRequests).toHaveLength(0);
+
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PUT' });
+      expect(specificUpdateResponse.status).toBe(200);
+
+      const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
+      expect(specificUpdatedUser).toEqual(users[0]);
+
+      expect(specificUpdateRequests).toHaveLength(1);
+      const [specificUpdateRequest] = specificUpdateRequests;
+      expect(specificUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<never>();
+      expect(specificUpdateRequest.body).toBe(null);
+
+      expectTypeOf(specificUpdateRequest.response.status).toEqualTypeOf<200>();
+      expect(specificUpdateRequest.response.status).toEqual(200);
+
+      expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
+      expect(specificUpdateRequest.response.body).toEqual(users[0]);
+
+      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${2}`, { method: 'PUT' });
+      await expect(unmatchedUpdatePromise).rejects.toThrowError();
     });
   });
 
@@ -230,9 +305,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -259,9 +332,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -314,9 +385,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
       await expect(updatePromise).rejects.toThrowError();
 
       updateTracker.respond({
@@ -328,9 +397,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      let updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       let createdUsers = (await updateResponse.json()) as User;
@@ -357,9 +424,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -382,9 +447,7 @@ export function createPutHttpInterceptorTests<InterceptorClass extends HttpInter
 
       errorUpdateTracker.bypass();
 
-      updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-      });
+      updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       createdUsers = (await updateResponse.json()) as User;

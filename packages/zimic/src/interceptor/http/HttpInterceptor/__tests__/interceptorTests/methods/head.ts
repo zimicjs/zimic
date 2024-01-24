@@ -32,9 +32,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
 
-      const headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
       expect(headRequests).toHaveLength(1);
@@ -52,7 +50,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
     });
   });
 
-  it('should support intercepting HEAD requests with a comheaded response body', async () => {
+  it('should support intercepting HEAD requests with a computed response body', async () => {
     const interceptor = new Interceptor<{
       '/users': {
         HEAD: {
@@ -74,9 +72,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
 
-      const headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
       expect(headRequests).toHaveLength(1);
@@ -94,6 +90,75 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
 
       expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
       expect(headRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should support intercepting HEAD requests with a dynamic route', async () => {
+    const interceptor = new Interceptor<{
+      '/users/:id': {
+        HEAD: {
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const genericHeadTracker = interceptor.head('/users/:id').respond({
+        status: 200,
+      });
+      expect(genericHeadTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const genericHeadRequests = genericHeadTracker.requests();
+      expect(genericHeadRequests).toHaveLength(0);
+
+      const genericHeadResponse = await fetch(`${baseURL}/users/${1}`, { method: 'HEAD' });
+      expect(genericHeadResponse.status).toBe(200);
+
+      expect(genericHeadRequests).toHaveLength(1);
+      const [genericHeadRequest] = genericHeadRequests;
+      expect(genericHeadRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(genericHeadRequest.body).toEqualTypeOf<never>();
+      expect(genericHeadRequest.body).toBe(null);
+
+      expectTypeOf(genericHeadRequest.response.status).toEqualTypeOf<200>();
+      expect(genericHeadRequest.response.status).toEqual(200);
+
+      expectTypeOf(genericHeadRequest.response.body).toEqualTypeOf<unknown>();
+      expect(genericHeadRequest.response.body).toBe(null);
+
+      genericHeadTracker.bypass();
+
+      const specificHeadTracker = interceptor.head(`/users/${1}`).respond({
+        status: 200,
+      });
+      expect(specificHeadTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const specificHeadRequests = specificHeadTracker.requests();
+      expect(specificHeadRequests).toHaveLength(0);
+
+      const specificHeadResponse = await fetch(`${baseURL}/users/${1}`, { method: 'HEAD' });
+      expect(specificHeadResponse.status).toBe(200);
+
+      expect(specificHeadRequests).toHaveLength(1);
+      const [specificHeadRequest] = specificHeadRequests;
+      expect(specificHeadRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificHeadRequest.body).toEqualTypeOf<never>();
+      expect(specificHeadRequest.body).toBe(null);
+
+      expectTypeOf(specificHeadRequest.response.status).toEqualTypeOf<200>();
+      expect(specificHeadRequest.response.status).toEqual(200);
+
+      expectTypeOf(specificHeadRequest.response.body).toEqualTypeOf<unknown>();
+      expect(specificHeadRequest.response.body).toBe(null);
+
+      const unmatchedHeadPromise = fetch(`${baseURL}/users/${2}`, { method: 'HEAD' });
+      await expect(unmatchedHeadPromise).rejects.toThrowError();
     });
   });
 
@@ -139,9 +204,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
         status: 200,
       });
 
-      const headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
       expect(headRequestsWithoutResponse).toHaveLength(0);
@@ -195,9 +258,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
 
-      const headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
       expect(headRequests).toHaveLength(1);
@@ -221,9 +282,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const errorHeadRequests = errorHeadTracker.requests();
       expect(errorHeadRequests).toHaveLength(0);
 
-      const otherHeadResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const otherHeadResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(otherHeadResponse.status).toBe(500);
 
       const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
@@ -276,9 +335,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const initialHeadRequests = headTracker.requests();
       expect(initialHeadRequests).toHaveLength(0);
 
-      const headPromise = fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
       await expect(headPromise).rejects.toThrowError();
 
       const noContentHeadTracker = headTracker.respond({
@@ -289,9 +346,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const headRequests = noContentHeadTracker.requests();
       expect(headRequests).toHaveLength(0);
 
-      let headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      let headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
       expect(headRequests).toHaveLength(1);
@@ -318,9 +373,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
       const errorHeadRequests = errorHeadTracker.requests();
       expect(errorHeadRequests).toHaveLength(0);
 
-      const otherHeadResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      const otherHeadResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(otherHeadResponse.status).toBe(500);
 
       const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
@@ -343,9 +396,7 @@ export function createHeadHttpInterceptorTests<InterceptorClass extends HttpInte
 
       errorHeadTracker.bypass();
 
-      headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-      });
+      headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
       expect(errorHeadRequests).toHaveLength(1);

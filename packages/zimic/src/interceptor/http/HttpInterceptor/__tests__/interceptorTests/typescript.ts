@@ -40,7 +40,46 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
     expectTypeOf<RequestBody>().toEqualTypeOf<User>();
   });
 
-  it('should correctly type responses based on the applied status code', () => {
+  it('should correctly type requests with dynamic routes', () => {
+    const interceptor = new Interceptor<{
+      '/groups/:id/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    const genericCreationTracker = interceptor.post('/groups/:id/users').respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<User>();
+
+      return {
+        status: 201,
+        body: users[0],
+      };
+    });
+
+    const genericCreationRequests = genericCreationTracker.requests();
+    type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
+    expectTypeOf<GenericRequestBody>().toEqualTypeOf<User>();
+
+    const specificCreationTracker = interceptor.post(`/groups/${1}/users`).respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<User>();
+
+      return {
+        status: 201,
+        body: users[0],
+      };
+    });
+
+    const specificCreationRequests = specificCreationTracker.requests();
+    type SpecificRequestBody = (typeof specificCreationRequests)[number]['body'];
+    expectTypeOf<SpecificRequestBody>().toEqualTypeOf<User>();
+  });
+
+  it('should correctly type responses, based on the applied status code', () => {
     const interceptor = new Interceptor<{
       '/users': {
         GET: {
@@ -69,6 +108,55 @@ export function createTypeHttpInterceptorTests<InterceptorClass extends HttpInte
     const failedUserListRequests = failedUserListTracker.requests();
     type FailedResponseBody = (typeof failedUserListRequests)[number]['response']['body'];
     expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
+  });
+
+  it('should correctly type responses with dynamic routes, based on the applied status code', () => {
+    const interceptor = new Interceptor<{
+      '/groups/:id/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+            500: { body: { message: string } };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    const successfulGenericUserListTracker = interceptor.get('/groups/:id/users').respond({
+      status: 200,
+      body: users,
+    });
+
+    const successfulGenericUserListRequests = successfulGenericUserListTracker.requests();
+    type SuccessfulGenericResponseBody = (typeof successfulGenericUserListRequests)[number]['response']['body'];
+    expectTypeOf<SuccessfulGenericResponseBody>().toEqualTypeOf<User[]>();
+
+    const failedGenericUserListTracker = interceptor.get('/groups/:id/users').respond({
+      status: 500,
+      body: { message: 'Internal server error' },
+    });
+
+    const failedGenericUserListRequests = failedGenericUserListTracker.requests();
+    type FailedGenericResponseBody = (typeof failedGenericUserListRequests)[number]['response']['body'];
+    expectTypeOf<FailedGenericResponseBody>().toEqualTypeOf<{ message: string }>();
+
+    const successfulSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+      status: 200,
+      body: users,
+    });
+
+    const successfulSpecificUserListRequests = successfulSpecificUserListTracker.requests();
+    type SuccessfulSpecificResponseBody = (typeof successfulSpecificUserListRequests)[number]['response']['body'];
+    expectTypeOf<SuccessfulSpecificResponseBody>().toEqualTypeOf<User[]>();
+
+    const failedSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+      status: 500,
+      body: { message: 'Internal server error' },
+    });
+
+    const failedSpecificUserListRequests = failedSpecificUserListTracker.requests();
+    type FailedSpecificResponseBody = (typeof failedSpecificUserListRequests)[number]['response']['body'];
+    expectTypeOf<FailedSpecificResponseBody>().toEqualTypeOf<{ message: string }>();
   });
 
   it('should show a type error if trying to use a non-specified status code', () => {

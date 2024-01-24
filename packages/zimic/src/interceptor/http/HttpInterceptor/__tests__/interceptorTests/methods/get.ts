@@ -39,12 +39,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
 
-      const listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      const fetchedUsers = (await listResponse.json()) as User;
+      const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual(users);
 
       expect(listRequests).toHaveLength(1);
@@ -87,12 +85,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
 
-      const listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      const fetchedUsers = (await listResponse.json()) as User;
+      const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual<User[]>([{ name: userName }]);
 
       expect(listRequests).toHaveLength(1);
@@ -110,6 +106,83 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
 
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
       expect(listRequest.response.body).toEqual<User[]>([{ name: userName }]);
+    });
+  });
+
+  it('should support intercepting GET requests with a dynamic route', async () => {
+    const interceptor = new Interceptor<{
+      '/users/:id': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const genericGetTracker = interceptor.get('/users/:id').respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(genericGetTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const genericGetRequests = genericGetTracker.requests();
+      expect(genericGetRequests).toHaveLength(0);
+
+      const genericGetResponse = await fetch(`${baseURL}/users/${1}`, { method: 'GET' });
+      expect(genericGetResponse.status).toBe(200);
+
+      const genericFetchedUser = (await genericGetResponse.json()) as User;
+      expect(genericFetchedUser).toEqual(users[0]);
+
+      expect(genericGetRequests).toHaveLength(1);
+      const [genericGetRequest] = genericGetRequests;
+      expect(genericGetRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(genericGetRequest.body).toEqualTypeOf<never>();
+      expect(genericGetRequest.body).toBe(null);
+
+      expectTypeOf(genericGetRequest.response.status).toEqualTypeOf<200>();
+      expect(genericGetRequest.response.status).toEqual(200);
+
+      expectTypeOf(genericGetRequest.response.body).toEqualTypeOf<User>();
+      expect(genericGetRequest.response.body).toEqual(users[0]);
+
+      genericGetTracker.bypass();
+
+      const specificGetTracker = interceptor.get(`/users/${1}`).respond({
+        status: 200,
+        body: users[0],
+      });
+      expect(specificGetTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const specificGetRequests = specificGetTracker.requests();
+      expect(specificGetRequests).toHaveLength(0);
+
+      const specificGetResponse = await fetch(`${baseURL}/users/${1}`, { method: 'GET' });
+      expect(specificGetResponse.status).toBe(200);
+
+      const specificFetchedUser = (await specificGetResponse.json()) as User;
+      expect(specificFetchedUser).toEqual(users[0]);
+
+      expect(specificGetRequests).toHaveLength(1);
+      const [specificGetRequest] = specificGetRequests;
+      expect(specificGetRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificGetRequest.body).toEqualTypeOf<never>();
+      expect(specificGetRequest.body).toBe(null);
+
+      expectTypeOf(specificGetRequest.response.status).toEqualTypeOf<200>();
+      expect(specificGetRequest.response.status).toEqual(200);
+
+      expectTypeOf(specificGetRequest.response.body).toEqualTypeOf<User>();
+      expect(specificGetRequest.response.body).toEqual(users[0]);
+
+      const unmatchedGetPromise = fetch(`${baseURL}/users/${2}`, { method: 'GET' });
+      await expect(unmatchedGetPromise).rejects.toThrowError();
     });
   });
 
@@ -156,12 +229,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
         body: users,
       });
 
-      const listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      const fetchedUsers = (await listResponse.json()) as User;
+      const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual(users);
 
       expect(listRequestsWithoutResponse).toHaveLength(0);
@@ -216,12 +287,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
 
-      const listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      const fetchedUsers = (await listResponse.json()) as User;
+      const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
       expect(listRequests).toHaveLength(1);
@@ -245,9 +314,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const errorListRequests = errorListTracker.requests();
       expect(errorListRequests).toHaveLength(0);
 
-      const otherListResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const otherListResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(otherListResponse.status).toBe(500);
 
       const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
@@ -300,9 +367,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const initialListRequests = listTracker.requests();
       expect(initialListRequests).toHaveLength(0);
 
-      const listPromise = fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
       await expect(listPromise).rejects.toThrowError();
 
       listTracker.respond({
@@ -314,12 +379,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
 
-      let listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      let listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      let fetchedUsers = (await listResponse.json()) as User;
+      let fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
       expect(listRequests).toHaveLength(1);
@@ -343,9 +406,7 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
       const errorListRequests = errorListTracker.requests();
       expect(errorListRequests).toHaveLength(0);
 
-      const otherListResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      const otherListResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(otherListResponse.status).toBe(500);
 
       const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
@@ -368,12 +429,10 @@ export function createGetHttpInterceptorTests<InterceptorClass extends HttpInter
 
       errorListTracker.bypass();
 
-      listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-      });
+      listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
-      fetchedUsers = (await listResponse.json()) as User;
+      fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
       expect(errorListRequests).toHaveLength(1);
