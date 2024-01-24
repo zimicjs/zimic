@@ -45,6 +45,9 @@ importers:
       '@types/node':
         specifier: ^18.8.4
         version: 18.19.6
+      '@vitest/browser':
+        specifier: ^1.2.1
+        version: 1.2.1(playwright@1.41.0)(vitest@1.2.0)
       '@vitest/coverage-istanbul':
         specifier: ^1.2.1
         version: 1.2.1(vitest@1.2.0)
@@ -60,6 +63,9 @@ importers:
       dotenv-cli:
         specifier: ^7.0.0
         version: 7.3.0
+      playwright:
+        specifier: ^1.41.0
+        version: 1.41.0
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
