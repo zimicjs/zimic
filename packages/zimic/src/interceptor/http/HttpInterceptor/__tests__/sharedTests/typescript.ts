@@ -285,6 +285,61 @@ export function declareTypeHttpInterceptorTests(
     interceptor.put('/users');
   });
 
+  it('should correctly type routes with multiple methods', () => {
+    type Schema = HttpInterceptorSchema.Root<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>;
+
+    const interceptor = createInterceptor<Schema>({ baseURL });
+
+    const userCreationTracker = interceptor.post('/users').respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<User>();
+
+      return {
+        status: 201,
+        body: users[0],
+      };
+    });
+
+    const userCreationRequests = userCreationTracker.requests();
+
+    type UserCreationRequestBody = (typeof userCreationRequests)[number]['body'];
+    expectTypeOf<UserCreationRequestBody>().toEqualTypeOf<User>();
+
+    type UserCreationResponseBody = (typeof userCreationRequests)[number]['response']['body'];
+    expectTypeOf<UserCreationResponseBody>().toEqualTypeOf<User>();
+
+    const userListTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<never>();
+
+      return {
+        status: 200,
+        body: users,
+      };
+    });
+
+    const userListRequests = userListTracker.requests();
+
+    type UserListRequestBody = (typeof userListRequests)[number]['body'];
+    expectTypeOf<UserListRequestBody>().toEqualTypeOf<never>();
+
+    type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
+    expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
+  });
+
   it('should support declaring schemas using type composition', () => {
     const inlineInterceptor = createInterceptor<{
       '/users': {

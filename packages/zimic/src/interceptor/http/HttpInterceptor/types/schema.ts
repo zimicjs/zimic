@@ -56,7 +56,7 @@ export type LiteralHttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
 > = {
-  [Path in Extract<keyof Schema, string>]: keyof Schema[Path] extends Method ? Path : never;
+  [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
 type AllowAnyStringInRouteParameters<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
