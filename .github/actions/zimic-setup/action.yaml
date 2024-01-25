@@ -39,7 +39,7 @@ runs:
   using: composite
   steps:
     - name: Install Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: ${{ inputs.node-registry-url }}
@@ -54,7 +54,7 @@ runs:
 
     - name: Restore pnpm cache
       id: pnpm-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
         key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -97,7 +97,7 @@ runs:
         TURBO_LOG_ORDER: stream
 
     - name: Save dependency cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
