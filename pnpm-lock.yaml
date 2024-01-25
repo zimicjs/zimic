@@ -154,9 +154,6 @@ importers:
       dotenv-cli:
         specifier: ^7.0.0
         version: 7.3.0
-      rimraf:
-        specifier: ^3.0.2
-        version: 3.0.2
       tsup:
         specifier: ^8.0.1
         version: 8.0.1(typescript@5.3.3)
@@ -206,9 +203,6 @@ importers:
       playwright:
         specifier: ^1.41.0
         version: 1.41.0
-      rimraf:
-        specifier: ^3.0.2
-        version: 3.0.2
       tsup:
         specifier: ^8.0.1
         version: 8.0.1(typescript@5.3.3)
@@ -4153,6 +4147,7 @@ packages:
     hasBin: true
     dependencies:
       glob: 7.2.3
+    dev: false
 
   /rollup@4.9.5:
     resolution: {integrity: sha512-E4vQW0H/mbNMw2yLSqJyjtkHY9dslf/p0zuT1xehNRqUTBOFMqEjguDvqhXr7N7r/4ttb2jr4T41d3dncmIgbQ==}

@@ -53,7 +53,7 @@
   },
   "scripts": {
     "dev": "pnpm build --watch",
-    "build": "tsup --onSuccess 'rimraf *.d.ts && cp dist/*.d.ts . && mkdir -p ./interceptor && cp dist/interceptor/*.d.ts ./interceptor'",
+    "build": "tsup && rm -rf *.d.ts && cp ./dist/*.d.ts . && mkdir -p ./interceptor && rm -rf ./interceptor/*.d.ts && cp ./dist/interceptor/*.d.ts ./interceptor",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -79,7 +79,6 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.0.0",
     "playwright": "^1.41.0",
-    "rimraf": "^3.0.2",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"

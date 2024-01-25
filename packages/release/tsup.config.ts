@@ -12,7 +12,7 @@ export default defineConfig((options) => ({
     NODE_ENV,
   },
   format: ['cjs'],
-  dts: false,
+  dts: true,
   sourcemap: !isProduction,
   treeshake: isProduction,
   minify: isProduction,
