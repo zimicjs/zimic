@@ -1,9 +1,8 @@
-import BrowserHttpInterceptor from '@/interceptor/http/HttpInterceptor/browser/BrowserHttpInterceptor';
-import NodeHttpInterceptor from '@/interceptor/http/HttpInterceptor/node/NodeHttpInterceptor';
-import { HttpInterceptorSchema } from '@/interceptor/http/HttpInterceptor/types/schema';
+import { HttpInterceptor } from '@/interceptor';
+import { HttpInterceptorSchema } from '@/interceptor/http/interceptor/types/schema';
 
 export async function usingHttpInterceptor<Schema extends HttpInterceptorSchema>(
-  interceptor: BrowserHttpInterceptor<Schema> | NodeHttpInterceptor<Schema>,
+  interceptor: HttpInterceptor<Schema>,
   callback: () => Promise<void> | void,
 ) {
   try {

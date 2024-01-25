@@ -1,4 +1,4 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 import type {
   DefaultBody,
   HttpInterceptor,
@@ -28,12 +28,6 @@ import type {
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
-  it('should export all interceptor-related classes as types', async () => {
-    const { HttpInterceptor, HttpRequestTracker } = await import('zimic0/interceptor');
-    expect(HttpInterceptor).toBe(undefined);
-    expect(HttpRequestTracker).toBe(undefined);
-  });
-
   it('should export all expected types', () => {
     expectTypeOf<DefaultBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
