@@ -155,7 +155,7 @@ export function declareGetHttpInterceptorTests(
 
       genericGetTracker.bypass();
 
-      const specificGetTracker = interceptor.get(`/users/${1}`).respond({
+      const specificGetTracker = interceptor.get<'/users/:id'>(`/users/${1}`).respond({
         status: 200,
         body: users[0],
       });

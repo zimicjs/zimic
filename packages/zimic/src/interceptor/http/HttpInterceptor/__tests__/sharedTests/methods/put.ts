@@ -162,7 +162,7 @@ export function declarePutHttpInterceptorTests(
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.put(`/users/${1}`).respond({
+      const specificUpdateTracker = interceptor.put<'/users/:id'>(`/users/${1}`).respond({
         status: 200,
         body: users[0],
       });

@@ -161,7 +161,7 @@ export function declareDeleteHttpInterceptorTests(
 
       genericDeletionTracker.bypass();
 
-      const specificDeletionTracker = interceptor.delete(`/users/${1}`).respond({
+      const specificDeletionTracker = interceptor.delete<'/users/:id'>(`/users/${1}`).respond({
         status: 200,
         body: users[0],
       });

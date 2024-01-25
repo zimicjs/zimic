@@ -66,7 +66,10 @@ export function declareTypeHttpInterceptorTests(
     type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
     expectTypeOf<GenericRequestBody>().toEqualTypeOf<User>();
 
-    const specificCreationTracker = interceptor.post(`/groups/${1}/users`).respond((request) => {
+    // @ts-expect-error The literal path is required when using route param interpolation
+    interceptor.post(`/groups/${1}/users`);
+
+    const specificCreationTracker = interceptor.post<'/groups/:id/users'>(`/groups/${1}/users`).respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
 
       return {
@@ -141,7 +144,7 @@ export function declareTypeHttpInterceptorTests(
     type FailedGenericResponseBody = (typeof failedGenericUserListRequests)[number]['response']['body'];
     expectTypeOf<FailedGenericResponseBody>().toEqualTypeOf<{ message: string }>();
 
-    const successfulSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+    const successfulSpecificUserListTracker = interceptor.get<'/groups/:id/users'>(`/groups/${1}/users`).respond({
       status: 200,
       body: users,
     });
@@ -150,7 +153,7 @@ export function declareTypeHttpInterceptorTests(
     type SuccessfulSpecificResponseBody = (typeof successfulSpecificUserListRequests)[number]['response']['body'];
     expectTypeOf<SuccessfulSpecificResponseBody>().toEqualTypeOf<User[]>();
 
-    const failedSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+    const failedSpecificUserListTracker = interceptor.get<'/groups/:id/users'>(`/groups/${1}/users`).respond({
       status: 500,
       body: { message: 'Internal server error' },
     });
@@ -264,7 +267,7 @@ export function declareTypeHttpInterceptorTests(
 
     interceptor.get('/users');
     interceptor.get('/users/:id');
-    interceptor.get(`/users/${123}`);
+    interceptor.get<'/users/:id'>(`/users/${123}`);
     interceptor.post('/notifications/read');
 
     // @ts-expect-error
@@ -298,6 +301,20 @@ export function declareTypeHttpInterceptorTests(
         GET: {
           response: {
             200: { body: User[] };
+          };
+        };
+      };
+
+      '/groups/:id': {
+        GET: {
+          response: {
+            200: { body: { users: User[] } };
+          };
+        };
+
+        DELETE: {
+          response: {
+            204: {};
           };
         };
       };
@@ -338,6 +355,23 @@ export function declareTypeHttpInterceptorTests(
 
     type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
     expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
+
+    const groupGetTracker = interceptor.get<'/groups/:id'>(`/groups/${1}`).respond((request) => {
+      expectTypeOf(request.body).toEqualTypeOf<never>();
+
+      return {
+        status: 200,
+        body: { users },
+      };
+    });
+
+    const groupGetRequests = groupGetTracker.requests();
+
+    type GroupGetRequestBody = (typeof groupGetRequests)[number]['body'];
+    expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<never>();
+
+    type GroupGetResponseBody = (typeof groupGetRequests)[number]['response']['body'];
+    expectTypeOf<GroupGetResponseBody>().toEqualTypeOf<{ users: User[] }>();
   });
 
   it('should support declaring schemas using type composition', () => {

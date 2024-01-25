@@ -5,7 +5,7 @@ import { HttpRequestHandlerResult } from '../HttpInterceptorWorker/types';
 import HttpRequestTracker from '../HttpRequestTracker';
 import InternalHttpRequestTracker from '../HttpRequestTracker/InternalHttpRequestTracker';
 import { HttpInterceptorRequest } from '../HttpRequestTracker/types/requests';
-import { HttpInterceptorMethodHandler, EffectiveHttpInterceptorMethodHandler } from './types/handlers';
+import { HttpInterceptorMethodHandler } from './types/handlers';
 import {
   HttpInterceptorMethod,
   HttpInterceptorRequestContext,
@@ -60,52 +60,31 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> {
 
   get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
     return this.prepareHttpRequestTracker('GET' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'GET'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post: HttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
     return this.prepareHttpRequestTracker('POST' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'POST'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
     return this.prepareHttpRequestTracker('PATCH' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put: HttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
     return this.prepareHttpRequestTracker('PUT' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'PUT'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
     return this.prepareHttpRequestTracker('DELETE' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
     return this.prepareHttpRequestTracker('HEAD' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
     return this.prepareHttpRequestTracker('OPTIONS' as HttpInterceptorSchemaMethod<Schema>, path);
-  }) satisfies EffectiveHttpInterceptorMethodHandler<
-    Schema,
-    HttpInterceptorSchemaMethod<Schema>
-  > as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+  }) as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   private prepareHttpRequestTracker<
     Method extends HttpInterceptorSchemaMethod<Schema>,

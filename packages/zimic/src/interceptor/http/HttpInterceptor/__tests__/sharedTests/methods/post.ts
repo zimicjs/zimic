@@ -162,7 +162,7 @@ export function declarePostHttpInterceptorTests(
 
       genericCreationTracker.bypass();
 
-      const specificCreationTracker = interceptor.post(`/users/${1}`).respond({
+      const specificCreationTracker = interceptor.post<'/users/:id'>(`/users/${1}`).respond({
         status: 201,
         body: users[0],
       });

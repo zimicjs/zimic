@@ -149,7 +149,7 @@ export function declareOptionsHttpInterceptorTests(
 
       genericOptionsTracker.bypass();
 
-      const specificOptionsTracker = interceptor.options(`/filters/${1}`).respond({
+      const specificOptionsTracker = interceptor.options<'/filters/:id'>(`/filters/${1}`).respond({
         status: 200,
       });
       expect(specificOptionsTracker).toBeInstanceOf(HttpRequestTracker);
