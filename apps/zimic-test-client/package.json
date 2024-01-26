@@ -14,7 +14,8 @@
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic-test-client^...",
-    "deps:install": "pnpm install --filter zimic-test-client"
+    "deps:install": "pnpm install --filter zimic-test-client && pnpm deps:install-playwright",
+    "deps:install-playwright": "pnpm playwright install chromium --with-deps"
   },
   "dependencies": {
     "zimic0": "workspace:zimic@*"

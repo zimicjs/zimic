@@ -26,6 +26,10 @@ inputs:
     description: NODE_ENV to use when building packages
     required: false
     default: 'development'
+  install-playwright-browsers:
+    description: Whether to install the browsers for Playwright
+    required: false
+    default: 'false'
 
 outputs:
   install-filters:
@@ -90,6 +94,11 @@ runs:
 
         # apply the build outputs of the internal packages
         pnpm install --offline $installFlag
+
+        if [[ '${{ inputs.install-playwright-browsers }}' == 'true' ]]; then
+          pnpm --dir apps/zimic-test-client deps:install-playwright
+          pnpm --dir packages/zimic deps:install-playwright
+        fi
       env:
         NODE_VERSION: ${{ matrix.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}

@@ -51,6 +51,7 @@ jobs:
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
           build-node-env: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && 'development' || 'production' }}
+          install-playwright-browsers: true
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
