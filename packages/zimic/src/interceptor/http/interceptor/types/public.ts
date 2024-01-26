@@ -16,5 +16,5 @@ export interface HttpInterceptor<Schema extends HttpInterceptorSchema> {
   head: HttpInterceptorMethodHandler<Schema, 'HEAD'>;
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
-  clearHandlers: () => void;
+  clear: () => void;
 }

@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
 import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
+import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -405,6 +406,71 @@ export function declareHeadHttpInterceptorTests(
 
       expect(headRequests).toHaveLength(2);
       [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
+      expect(headRequest.response.status).toEqual(204);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expect(headRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should ignore all trackers after cleared when intercepting HEAD requests', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const headTracker = interceptor.head('/users').respond({
+        status: 200,
+      });
+
+      interceptor.clear();
+
+      const initialHeadRequests = headTracker.requests();
+      expect(initialHeadRequests).toHaveLength(0);
+
+      let headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
+      await expect(headPromise).rejects.toThrowError();
+
+      expect(() => {
+        headTracker.respond({
+          status: 204,
+        });
+      }).toThrowError(UnusableHttpRequestTrackerError);
+
+      headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
+      await expect(headPromise).rejects.toThrowError();
+
+      const noContentHeadTracker = interceptor.head('/users').respond({
+        status: 204,
+      });
+
+      expect(initialHeadRequests).toHaveLength(0);
+      const headRequests = noContentHeadTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
+      expect(headResponse.status).toBe(204);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
       expectTypeOf(headRequest.body).toEqualTypeOf<never>();

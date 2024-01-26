@@ -157,11 +157,20 @@ class BaseHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpI
     return matchedTracker;
   }
 
-  clearHandlers() {
+  clear() {
     this._worker.clearHandlers();
 
     for (const method of HTTP_INTERCEPTOR_METHODS) {
+      this.markMethodTrackersAsUnusable(method);
       this.trackersByMethod[method].clear();
+    }
+  }
+
+  private markMethodTrackersAsUnusable(method: HttpInterceptorMethod) {
+    for (const trackers of this.trackersByMethod[method].values()) {
+      for (const tracker of trackers) {
+        tracker.markAsUnusable();
+      }
     }
   }
 }

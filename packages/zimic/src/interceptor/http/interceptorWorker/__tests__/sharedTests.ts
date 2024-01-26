@@ -28,6 +28,7 @@ export function declareSharedHttpInterceptorWorkerTests<
   });
 
   afterEach(() => {
+    interceptorWorker?.clearHandlers();
     interceptorWorker?.stop();
   });
 

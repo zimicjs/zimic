@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
 import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
+import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -464,6 +465,73 @@ export function declarePostHttpInterceptorTests(
 
       expect(creationRequests).toHaveLength(2);
       [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expect(creationRequest.body).toBe(null);
+
+      expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
+      expect(creationRequest.response.status).toEqual(201);
+
+      expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
+      expect(creationRequest.response.body).toEqual(users[1]);
+    });
+  });
+
+  it('should ignore all trackers after cleared when intercepting POST requests', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        POST: {
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      let creationTracker = interceptor.post('/users').respond({
+        status: 201,
+        body: users[0],
+      });
+
+      interceptor.clear();
+
+      const initialCreationRequests = creationTracker.requests();
+      expect(initialCreationRequests).toHaveLength(0);
+
+      let creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
+      await expect(creationPromise).rejects.toThrowError();
+
+      expect(() => {
+        creationTracker.respond({
+          status: 201,
+          body: users[0],
+        });
+      }).toThrowError(UnusableHttpRequestTrackerError);
+
+      creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
+      await expect(creationPromise).rejects.toThrowError();
+
+      creationTracker = interceptor.post('/users').respond({
+        status: 201,
+        body: users[1],
+      });
+
+      expect(initialCreationRequests).toHaveLength(0);
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
       expectTypeOf(creationRequest.body).toEqualTypeOf<never>();

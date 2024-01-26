@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
 import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
+import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -419,6 +420,71 @@ export function declareOptionsHttpInterceptorTests(
 
       expect(optionsRequests).toHaveLength(2);
       [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expect(optionsRequest.body).toBe(null);
+
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expect(optionsRequest.body).toBe(null);
+
+      expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
+      expect(optionsRequest.response.status).toEqual(204);
+
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expect(optionsRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should ignore all trackers after cleared when intercepting OPTIONS requests', async () => {
+    const interceptor = createInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const optionsTracker = interceptor.options('/filters').respond({
+        status: 200,
+      });
+
+      interceptor.clear();
+
+      const initialOptionsRequests = optionsTracker.requests();
+      expect(initialOptionsRequests).toHaveLength(0);
+
+      let optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      await expect(optionsPromise).rejects.toThrowError();
+
+      expect(() => {
+        optionsTracker.respond({
+          status: 204,
+        });
+      }).toThrowError(UnusableHttpRequestTrackerError);
+
+      optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      await expect(optionsPromise).rejects.toThrowError();
+
+      const noContentOptionsTracker = interceptor.options('/filters').respond({
+        status: 204,
+      });
+
+      expect(initialOptionsRequests).toHaveLength(0);
+      const optionsRequests = noContentOptionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(204);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
       expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();

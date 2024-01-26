@@ -13,6 +13,7 @@ abstract class BaseHttpRequestTracker<
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
 > implements HttpRequestTracker<MethodSchema, StatusCode>
 {
+  protected isUsable = true;
   protected interceptedRequests: TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] = [];
 
   abstract respond<StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
@@ -22,6 +23,11 @@ abstract class BaseHttpRequestTracker<
   ): BaseHttpRequestTracker<MethodSchema, StatusCode>;
 
   abstract bypass(): BaseHttpRequestTracker<MethodSchema, StatusCode>;
+
+  markAsUnusable(): BaseHttpRequestTracker<MethodSchema, StatusCode> {
+    this.isUsable = false;
+    return this;
+  }
 
   requests(): readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] {
     return this.interceptedRequests;

@@ -1,3 +1,5 @@
+import UnusableHttpRequestTrackerError from './http/requestTracker/errors/UnusableHttpRequestTrackerError';
+
 export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types';
 
 export type {
@@ -10,6 +12,8 @@ export type {
 } from './http/requestTracker/types/requests';
 
 export type { HttpRequestTracker } from './http/requestTracker/types/public';
+
+export { UnusableHttpRequestTrackerError };
 
 export type { HttpInterceptorMethodHandler } from './http/interceptor/types/handlers';
 

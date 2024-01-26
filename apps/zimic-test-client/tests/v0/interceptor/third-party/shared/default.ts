@@ -139,7 +139,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     });
 
     beforeEach(() => {
-      authInterceptor.clearHandlers();
+      authInterceptor.clear();
     });
 
     afterAll(() => {

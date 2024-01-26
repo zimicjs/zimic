@@ -3,6 +3,7 @@ import { Default } from '@/types/utils';
 import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../interceptor/types/schema';
 import BaseHttpRequestTracker from './BaseHttpRequestTracker';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
+import UnusableHttpRequestTrackerError from './errors/UnusableHttpRequestTrackerError';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -22,6 +23,10 @@ class InternalHttpRequestTracker<
       | HttpRequestTrackerResponseDeclaration<MethodSchema, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, NewStatusCode>,
   ): InternalHttpRequestTracker<MethodSchema, NewStatusCode> {
+    if (!this.isUsable) {
+      throw new UnusableHttpRequestTrackerError();
+    }
+
     const newThis = this as unknown as InternalHttpRequestTracker<MethodSchema, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declarationOrCreateDeclaration)

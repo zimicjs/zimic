@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
 import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
+import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -441,6 +442,73 @@ export function declareGetHttpInterceptorTests(
 
       expect(listRequests).toHaveLength(2);
       [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expect(listRequest.body).toBe(null);
+
+      expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
+      expect(listRequest.response.status).toEqual(200);
+
+      expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
+      expect(listRequest.response.body).toEqual([]);
+    });
+  });
+
+  it('should ignore all trackers when cleared when intercepting GET requests', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      let listTracker = interceptor.get('/users').respond({
+        status: 200,
+        body: users,
+      });
+
+      interceptor.clear();
+
+      const initialListRequests = listTracker.requests();
+      expect(initialListRequests).toHaveLength(0);
+
+      let listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
+      await expect(listPromise).rejects.toThrowError();
+
+      expect(() => {
+        listTracker.respond({
+          status: 200,
+          body: [],
+        });
+      }).toThrowError(UnusableHttpRequestTrackerError);
+
+      listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
+      await expect(listPromise).rejects.toThrowError();
+
+      listTracker = interceptor.get('/users').respond({
+        status: 200,
+        body: [],
+      });
+
+      expect(initialListRequests).toHaveLength(0);
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      const fetchedUsers = (await listResponse.json()) as User[];
+      expect(fetchedUsers).toEqual([]);
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
       expectTypeOf(listRequest.body).toEqualTypeOf<never>();

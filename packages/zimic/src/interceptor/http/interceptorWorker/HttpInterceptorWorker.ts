@@ -62,8 +62,6 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
       return;
     }
 
-    this.clearHandlers();
-
     if (this.isBrowserWorker(this._worker)) {
       this._worker.stop();
     } else {
