@@ -12,7 +12,7 @@ function getSharedConfig(): Options {
     sourcemap: true,
     treeshake: isProductionBuild,
     minify: isProductionBuild,
-    clean: false,
+    clean: true,
   };
 }
 
@@ -22,24 +22,11 @@ export default defineConfig(() => {
   return [
     {
       ...sharedConfig,
-      platform: 'neutral',
       entry: {
         index: 'src/index.ts',
         interceptor: 'src/interceptor/index.ts',
-      },
-    },
-    {
-      ...sharedConfig,
-      platform: 'browser',
-      entry: {
-        'interceptor/browser': 'src/interceptor/browser.ts',
-      },
-    },
-    {
-      ...sharedConfig,
-      platform: 'node',
-      entry: {
         'interceptor/node': 'src/interceptor/node.ts',
+        'interceptor/browser': 'src/interceptor/browser.ts',
       },
     },
   ] as const;
