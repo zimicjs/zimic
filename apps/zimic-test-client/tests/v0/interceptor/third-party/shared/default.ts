@@ -1,4 +1,5 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
+import { HttpInterceptorSchema } from 'zimic0/interceptor';
 
 import { ClientTestDeclarationOptions } from '.';
 
@@ -43,7 +44,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     code: 'conflict';
   }
 
-  const authInterceptor = createInterceptor<{
+  type UsersRootSchema = HttpInterceptorSchema.Root<{
     '/users': {
       POST: {
         request: {
@@ -55,14 +56,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           409: { body: ConflictError };
         };
       };
-
       GET: {
         response: {
           200: { body: User[] };
         };
       };
     };
+  }>;
 
+  type UserByIdRootSchema = HttpInterceptorSchema.Root<{
     '/users/:id': {
       GET: {
         response: {
@@ -86,7 +88,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         };
       };
     };
+  }>;
 
+  type SessionRootSchema = HttpInterceptorSchema.Root<{
     '/session/login': {
       POST: {
         request: {
@@ -123,7 +127,11 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         };
       };
     };
-  }>({
+  }>;
+
+  type AuthRootSchema = HttpInterceptorSchema.Root<UsersRootSchema & UserByIdRootSchema & SessionRootSchema>;
+
+  const authInterceptor = createInterceptor<AuthRootSchema>({
     baseURL: 'https://localhost:3000',
   });
 
