@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
 import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
+import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -37,7 +37,7 @@ export function declareDeleteHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(deletionTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -136,7 +136,7 @@ export function declareDeleteHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(genericDeletionTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(genericDeletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const genericDeletionRequests = genericDeletionTracker.requests();
       expect(genericDeletionRequests).toHaveLength(0);
@@ -166,7 +166,7 @@ export function declareDeleteHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(specificDeletionTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(specificDeletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const specificDeletionRequests = specificDeletionTracker.requests();
       expect(specificDeletionRequests).toHaveLength(0);
@@ -219,7 +219,7 @@ export function declareDeleteHttpInterceptorTests(
       await expect(deletionPromise).rejects.toThrowError();
 
       const deletionTrackerWithoutResponse = interceptor.delete('/users');
-      expect(deletionTrackerWithoutResponse).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(deletionTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
 
       const deletionRequestsWithoutResponse = deletionTrackerWithoutResponse.requests();
       expect(deletionRequestsWithoutResponse).toHaveLength(0);

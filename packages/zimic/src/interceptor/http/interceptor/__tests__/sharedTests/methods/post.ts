@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
 import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
+import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -37,7 +37,7 @@ export function declarePostHttpInterceptorTests(
         status: 201,
         body: users[0],
       });
-      expect(creationTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const creationRequests = creationTracker.requests();
       expect(creationRequests).toHaveLength(0);
@@ -88,7 +88,7 @@ export function declarePostHttpInterceptorTests(
           },
         };
       });
-      expect(creationTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const creationRequests = creationTracker.requests();
       expect(creationRequests).toHaveLength(0);
@@ -137,7 +137,7 @@ export function declarePostHttpInterceptorTests(
         status: 201,
         body: users[0],
       });
-      expect(genericCreationTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(genericCreationTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const genericCreationRequests = genericCreationTracker.requests();
       expect(genericCreationRequests).toHaveLength(0);
@@ -167,7 +167,7 @@ export function declarePostHttpInterceptorTests(
         status: 201,
         body: users[0],
       });
-      expect(specificCreationTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(specificCreationTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const specificCreationRequests = specificCreationTracker.requests();
       expect(specificCreationRequests).toHaveLength(0);
@@ -220,7 +220,7 @@ export function declarePostHttpInterceptorTests(
       await expect(creationPromise).rejects.toThrowError();
 
       const creationTrackerWithoutResponse = interceptor.post('/users');
-      expect(creationTrackerWithoutResponse).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(creationTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
 
       const creationRequestsWithoutResponse = creationTrackerWithoutResponse.requests();
       expect(creationRequestsWithoutResponse).toHaveLength(0);

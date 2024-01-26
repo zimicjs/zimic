@@ -1,7 +1,6 @@
 import { Default } from '@/types/utils';
 
 import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../../interceptor/types/schema';
-import BaseHttpRequestTracker from '../BaseHttpRequestTracker';
 import {
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
@@ -16,9 +15,9 @@ export interface HttpRequestTracker<
     declarationOrCreateDeclaration:
       | HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
-  ) => BaseHttpRequestTracker<MethodSchema, StatusCode>;
+  ) => HttpRequestTracker<MethodSchema, StatusCode>;
 
-  bypass: () => BaseHttpRequestTracker<MethodSchema, StatusCode>;
+  bypass: () => HttpRequestTracker<MethodSchema, StatusCode>;
 
   requests: () => readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[];
 }

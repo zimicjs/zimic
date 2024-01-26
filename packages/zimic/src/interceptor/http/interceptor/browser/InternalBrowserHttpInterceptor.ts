@@ -1,7 +1,14 @@
+import BrowserHttpInterceptorWorker from '../../interceptorWorker/BrowserHttpInterceptorWorker';
+import InternalHttpInterceptor from '../InternalHttpInterceptor';
+import { HttpInterceptorOptions } from '../types/options';
 import { HttpInterceptorSchema } from '../types/schema';
-import BrowserHttpInterceptor from './BrowserHttpInterceptor';
 
-class InternalBrowserHttpInterceptor<Schema extends HttpInterceptorSchema> extends BrowserHttpInterceptor<Schema> {
+class InternalBrowserHttpInterceptor<Schema extends HttpInterceptorSchema> extends InternalHttpInterceptor<Schema> {
+  constructor(options: HttpInterceptorOptions) {
+    const browserWorker = new BrowserHttpInterceptorWorker(options);
+    super({ ...options, worker: browserWorker });
+  }
+
   worker() {
     return this._worker;
   }

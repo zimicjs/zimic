@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
 import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
+import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -30,7 +30,7 @@ export function declareHeadHttpInterceptorTests(
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
-      expect(headTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -70,7 +70,7 @@ export function declareHeadHttpInterceptorTests(
       const headTracker = interceptor.head('/users').respond(() => ({
         status: 200,
       }));
-      expect(headTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -113,7 +113,7 @@ export function declareHeadHttpInterceptorTests(
       const genericHeadTracker = interceptor.head('/users/:id').respond({
         status: 200,
       });
-      expect(genericHeadTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(genericHeadTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const genericHeadRequests = genericHeadTracker.requests();
       expect(genericHeadRequests).toHaveLength(0);
@@ -139,7 +139,7 @@ export function declareHeadHttpInterceptorTests(
       const specificHeadTracker = interceptor.head<'/users/:id'>(`/users/${1}`).respond({
         status: 200,
       });
-      expect(specificHeadTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(specificHeadTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const specificHeadRequests = specificHeadTracker.requests();
       expect(specificHeadRequests).toHaveLength(0);
@@ -183,7 +183,7 @@ export function declareHeadHttpInterceptorTests(
       await expect(fetchPromise).rejects.toThrowError();
 
       const headTrackerWithoutResponse = interceptor.head('/users');
-      expect(headTrackerWithoutResponse).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(headTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
 
       const headRequestsWithoutResponse = headTrackerWithoutResponse.requests();
       expect(headRequestsWithoutResponse).toHaveLength(0);

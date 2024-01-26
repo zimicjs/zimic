@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
 import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
+import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -34,7 +34,7 @@ export function declareOptionsHttpInterceptorTests(
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
-      expect(optionsTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -78,7 +78,7 @@ export function declareOptionsHttpInterceptorTests(
           status: 200,
         };
       });
-      expect(optionsTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -127,7 +127,7 @@ export function declareOptionsHttpInterceptorTests(
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
-      expect(genericOptionsTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(genericOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const genericOptionsRequests = genericOptionsTracker.requests();
       expect(genericOptionsRequests).toHaveLength(0);
@@ -153,7 +153,7 @@ export function declareOptionsHttpInterceptorTests(
       const specificOptionsTracker = interceptor.options<'/filters/:id'>(`/filters/${1}`).respond({
         status: 200,
       });
-      expect(specificOptionsTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(specificOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const specificOptionsRequests = specificOptionsTracker.requests();
       expect(specificOptionsRequests).toHaveLength(0);
@@ -197,7 +197,7 @@ export function declareOptionsHttpInterceptorTests(
       await expect(fetchPromise).rejects.toThrowError();
 
       const optionsTrackerWithoutResponse = interceptor.options('/filters');
-      expect(optionsTrackerWithoutResponse).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(optionsTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
 
       const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
       expect(optionsRequestsWithoutResponse).toHaveLength(0);

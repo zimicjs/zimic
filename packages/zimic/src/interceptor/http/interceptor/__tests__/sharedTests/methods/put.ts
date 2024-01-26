@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import BaseHttpRequestTracker from '@/interceptor/http/requestTracker/BaseHttpRequestTracker';
 import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
+import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -37,7 +37,7 @@ export function declarePutHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(updateTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -88,7 +88,7 @@ export function declarePutHttpInterceptorTests(
           },
         };
       });
-      expect(updateTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -137,7 +137,7 @@ export function declarePutHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(genericUpdateTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(genericUpdateTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
@@ -167,7 +167,7 @@ export function declarePutHttpInterceptorTests(
         status: 200,
         body: users[0],
       });
-      expect(specificUpdateTracker).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(specificUpdateTracker).toBeInstanceOf(InternalHttpRequestTracker);
 
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
@@ -220,7 +220,7 @@ export function declarePutHttpInterceptorTests(
       await expect(updatePromise).rejects.toThrowError();
 
       const updateTrackerWithoutResponse = interceptor.put('/users');
-      expect(updateTrackerWithoutResponse).toBeInstanceOf(BaseHttpRequestTracker);
+      expect(updateTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
       expect(updateRequestsWithoutResponse).toHaveLength(0);

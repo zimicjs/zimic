@@ -1,7 +1,7 @@
 import { Default, UnionToIntersection, Prettify } from '@/types/utils';
 
 import { HttpRequestHandlerContext, DefaultBody } from '../../interceptorWorker/types';
-import BaseHttpInterceptor from '../BaseHttpInterceptor';
+import { HttpInterceptor } from './public';
 
 export const HTTP_INTERCEPTOR_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 export type HttpInterceptorMethod = (typeof HTTP_INTERCEPTOR_METHODS)[number];
@@ -45,7 +45,7 @@ export namespace HttpInterceptorSchema {
 }
 
 export type ExtractHttpInterceptorSchema<Interceptor> =
-  Interceptor extends BaseHttpInterceptor<infer Schema> ? Schema : never;
+  Interceptor extends HttpInterceptor<infer Schema> ? Schema : never;
 
 export type HttpInterceptorSchemaMethod<Schema extends HttpInterceptorSchema> = Extract<
   keyof UnionToIntersection<Schema[keyof Schema]>,
@@ -55,6 +55,11 @@ export type HttpInterceptorSchemaMethod<Schema extends HttpInterceptorSchema> = 
 export type LiteralHttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
+> = LooseLiteralHttpInterceptorSchemaPath<Schema, Method>;
+
+export type LooseLiteralHttpInterceptorSchemaPath<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorMethod,
 > = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];

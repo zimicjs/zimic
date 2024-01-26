@@ -1,9 +1,9 @@
 import { Default } from '@/types/utils';
 
 import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../interceptor/types/schema';
-import BaseHttpRequestTracker from './BaseHttpRequestTracker';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import UnusableHttpRequestTrackerError from './errors/UnusableHttpRequestTrackerError';
+import { HttpRequestTracker } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -15,7 +15,10 @@ import {
 class InternalHttpRequestTracker<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
-> extends BaseHttpRequestTracker<MethodSchema, StatusCode> {
+> implements HttpRequestTracker<MethodSchema, StatusCode>
+{
+  protected isUsable = true;
+  protected interceptedRequests: TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] = [];
   protected createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>;
 
   respond<NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
@@ -48,9 +51,14 @@ class InternalHttpRequestTracker<
     return typeof declaration === 'function';
   }
 
-  bypass(): BaseHttpRequestTracker<MethodSchema, StatusCode> {
+  bypass(): InternalHttpRequestTracker<MethodSchema, StatusCode> {
     this.createResponseDeclaration = undefined;
     this.interceptedRequests = [];
+    return this;
+  }
+
+  markAsUnusable(): InternalHttpRequestTracker<MethodSchema, StatusCode> {
+    this.isUsable = false;
     return this;
   }
 
@@ -88,6 +96,10 @@ class InternalHttpRequestTracker<
         return Reflect.get(target, property, target) as unknown;
       },
     });
+  }
+
+  requests(): readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] {
+    return this.interceptedRequests;
   }
 }
 

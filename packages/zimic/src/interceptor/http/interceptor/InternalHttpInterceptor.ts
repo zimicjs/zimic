@@ -2,8 +2,8 @@ import { Default } from '@/types/utils';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types';
-import BaseHttpRequestTracker from '../requestTracker/BaseHttpRequestTracker';
 import InternalHttpRequestTracker from '../requestTracker/InternalHttpRequestTracker';
+import { HttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { HttpInterceptorMethodHandler } from './types/handlers';
 import { HttpInterceptor } from './types/public';
@@ -14,14 +14,15 @@ import {
   HttpInterceptorSchema,
   HttpInterceptorSchemaMethod,
   HttpInterceptorSchemaPath,
+  LooseLiteralHttpInterceptorSchemaPath,
 } from './types/schema';
 
 type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> = Map<
   string,
-  InternalHttpRequestTracker<Default<Schema[keyof Schema][Method]>>[]
+  InternalHttpRequestTracker<Default<Schema[LooseLiteralHttpInterceptorSchemaPath<Schema, Method>][Method]>>[]
 >;
 
-class BaseHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpInterceptor<Schema> {
+class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpInterceptor<Schema> {
   protected _worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
@@ -91,7 +92,7 @@ class BaseHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpI
   private prepareHttpRequestTracker<
     Method extends HttpInterceptorSchemaMethod<Schema>,
     Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  >(method: Method, path: Path): BaseHttpRequestTracker<Default<Schema[Path][Method]>> {
+  >(method: Method, path: Path): HttpRequestTracker<Default<Schema[Path][Method]>> {
     const tracker = new InternalHttpRequestTracker<Default<Schema[Path][Method]>>();
 
     const methodPathTrackers = this.trackersByMethod[method].get(path) ?? [];
@@ -151,7 +152,7 @@ class BaseHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpI
     method: Method,
     path: Path,
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-  ): InternalHttpRequestTracker<Default<Schema[keyof Schema][Method]>> | undefined {
+  ): InternalHttpRequestTracker<Default<Schema[Path][Method]>> | undefined {
     const methodPathTrackers = this.trackersByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
@@ -175,4 +176,4 @@ class BaseHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpI
   }
 }
 
-export default BaseHttpInterceptor;
+export default InternalHttpInterceptor;

@@ -3,11 +3,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import NodeHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/NodeHttpInterceptorWorker';
 
 import { declareSharedHttpInterceptorTests } from '../../__tests__/sharedTests';
-import BaseHttpInterceptor from '../../BaseHttpInterceptor';
+import InternalHttpInterceptor from '../../InternalHttpInterceptor';
 import { HttpInterceptor } from '../../types/public';
 import createNodeHttpInterceptor from '../factory';
 import InternalNodeHttpInterceptor from '../InternalNodeHttpInterceptor';
-import NodeHttpInterceptor from '../NodeHttpInterceptor';
 
 describe('NodeHttpInterceptor', () => {
   const defaultBaseURL = 'http://localhost:3000';
@@ -16,8 +15,7 @@ describe('NodeHttpInterceptor', () => {
     const interceptor = createNodeHttpInterceptor<{}>({ baseURL: defaultBaseURL });
 
     expect(interceptor).toBeInstanceOf(InternalNodeHttpInterceptor);
-    expect(interceptor).toBeInstanceOf(NodeHttpInterceptor);
-    expect(interceptor).toBeInstanceOf(BaseHttpInterceptor);
+    expect(interceptor).toBeInstanceOf(InternalHttpInterceptor);
 
     expectTypeOf(interceptor).toEqualTypeOf<HttpInterceptor<{}>>();
 
