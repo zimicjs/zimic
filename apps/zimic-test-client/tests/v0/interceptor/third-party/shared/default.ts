@@ -1,6 +1,8 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
 import { HttpInterceptorSchema } from 'zimic0/interceptor';
 
+import { getCrypto } from '@tests/utils/crypto';
+
 import { ClientTestDeclarationOptions } from '.';
 
 function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
@@ -135,7 +137,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     baseURL: 'https://localhost:3000',
   });
 
-  describe('Users', () => {
+  describe('Users', async () => {
+    const crypto = await getCrypto();
+
     const user: User = {
       id: crypto.randomUUID(),
       name: 'Name',
