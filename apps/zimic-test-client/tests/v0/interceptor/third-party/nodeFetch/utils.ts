@@ -11,7 +11,9 @@ export async function nodeFetchAsFetch(request: Request): Promise<Response> {
     body: requestCanContainBody ? undefined : await request.text(),
   });
 
-  return new Response(response.status === 204 ? undefined : await response.text(), {
+  const responseBody = response.status === 204 ? undefined : await response.text();
+
+  return new Response(responseBody, {
     status: response.status,
     statusText: response.statusText,
     headers: convertObjectToHeaders({ ...response.headers }),

@@ -11,7 +11,9 @@ export async function axiosAsFetch(request: Request): Promise<Response> {
       data: await request.text(),
     });
 
-    return new Response(axiosResponse.status === 204 ? null : JSON.stringify(axiosResponse.data), {
+    const stringifiedResponseData = axiosResponse.status === 204 ? null : JSON.stringify(axiosResponse.data);
+
+    return new Response(stringifiedResponseData, {
       status: axiosResponse.status,
       statusText: axiosResponse.statusText,
       headers: convertObjectToHeaders({ ...axiosResponse.headers }),
@@ -22,8 +24,9 @@ export async function axiosAsFetch(request: Request): Promise<Response> {
     }
 
     const axiosResponse = error.response;
+    const responseBody = JSON.stringify(axiosResponse.data);
 
-    return new Response(JSON.stringify(axiosResponse.data), {
+    return new Response(responseBody, {
       status: axiosResponse.status,
       statusText: axiosResponse.statusText,
       headers: convertObjectToHeaders({ ...axiosResponse.headers }),

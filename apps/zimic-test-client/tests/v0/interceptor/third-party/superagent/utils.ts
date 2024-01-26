@@ -9,7 +9,9 @@ export async function superagentAsFetch(request: Request): Promise<Response> {
       .set(convertHeadersToObject(request.headers))
       .send(await request.text());
 
-    return new Response(superAgentResponse.status === 204 ? null : superAgentResponse.text, {
+    const responseBody = superAgentResponse.status === 204 ? null : superAgentResponse.text;
+
+    return new Response(responseBody, {
       status: superAgentResponse.status,
       headers: superAgentResponse.headers,
     });
