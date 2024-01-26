@@ -238,6 +238,13 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     });
 
     describe('User list', () => {
+      beforeEach(() => {
+        authInterceptor.get('/users').respond({
+          status: 200,
+          body: [],
+        });
+      });
+
       async function listUsers(filters: { name?: string; email?: string } = {}) {
         const searchParams = new URLSearchParams(filters);
         const request = new Request(`https://localhost:3000/users?${searchParams}`, { method: 'GET' });
@@ -250,13 +257,23 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           body: [user],
         });
 
-        const response = await listUsers();
+        let response = await listUsers();
         expect(response.status).toBe(200);
 
-        const returnedUsers = (await response.json()) as User[];
+        let returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([user]);
 
         const listRequests = listTracker.requests();
+        expect(listRequests).toHaveLength(1);
+
+        listTracker.bypass();
+
+        response = await listUsers();
+        expect(response.status).toBe(200);
+
+        returnedUsers = (await response.json()) as User[];
+        expect(returnedUsers).toEqual([]);
+
         expect(listRequests).toHaveLength(1);
       });
     });
