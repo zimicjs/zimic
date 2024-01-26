@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchWithTimeout } from '@/utils/fetch';
+import { waitForDelay } from '@/utils/time';
 
 import { HTTP_INTERCEPTOR_METHODS } from '../../interceptor/types/schema';
 import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
@@ -95,11 +96,11 @@ export function declareSharedHttpInterceptorWorkerTests<
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
-        const [callContext] = spiedRequestHandler.mock.calls[0];
-        expect(callContext.request).toBeInstanceOf(Request);
-        expect(callContext.request.method).toBe(method);
-        expect(callContext.params).toEqual({});
-        expect(callContext.cookies).toEqual({});
+        const [handlerContext] = spiedRequestHandler.mock.calls[0];
+        expect(handlerContext.request).toBeInstanceOf(Request);
+        expect(handlerContext.request.method).toBe(method);
+        expect(handlerContext.params).toEqual({});
+        expect(handlerContext.cookies).toEqual({});
 
         expect(response.status).toBe(200);
 
@@ -120,11 +121,11 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
-      const [callContext] = spiedRequestHandler.mock.calls[0];
-      expect(callContext.request).toBeInstanceOf(Request);
-      expect(callContext.request.method).toBe(method);
-      expect(callContext.params).toEqual({ id: '1' });
-      expect(callContext.cookies).toEqual({});
+      const [handlerContext] = spiedRequestHandler.mock.calls[0];
+      expect(handlerContext.request).toBeInstanceOf(Request);
+      expect(handlerContext.request.method).toBe(method);
+      expect(handlerContext.params).toEqual({ id: '1' });
+      expect(handlerContext.cookies).toEqual({});
 
       expect(response.status).toBe(200);
 
@@ -178,11 +179,40 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
 
-      const [callContext] = bypassedSpiedRequestHandler.mock.calls[0];
-      expect(callContext.request).toBeInstanceOf(Request);
-      expect(callContext.request.method).toBe(method);
-      expect(callContext.params).toEqual({});
-      expect(callContext.cookies).toEqual({});
+      const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[0];
+      expect(handlerContext.request).toBeInstanceOf(Request);
+      expect(handlerContext.request.method).toBe(method);
+      expect(handlerContext.params).toEqual({});
+      expect(handlerContext.cookies).toEqual({});
+    });
+
+    it(`should support intercepting ${method} requests with a delay`, async () => {
+      interceptorWorker = new WorkerClass({ baseURL: defaultBaseURL });
+      await interceptorWorker.start();
+
+      const delayedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(async (context) => {
+        await waitForDelay(100);
+        return requestHandler(context);
+      });
+
+      interceptorWorker.use(method, '/path', delayedSpiedRequestHandler);
+
+      expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
+
+      let fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 50 });
+      await expect(fetchPromise).rejects.toThrowError();
+
+      fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+      await expect(fetchPromise).resolves.toBeInstanceOf(Response);
+
+      expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(2);
+
+      for (const [handlerContext] of delayedSpiedRequestHandler.mock.calls) {
+        expect(handlerContext.request).toBeInstanceOf(Request);
+        expect(handlerContext.request.method).toBe(method);
+        expect(handlerContext.params).toEqual({});
+        expect(handlerContext.cookies).toEqual({});
+      }
     });
 
     it(`should not intercept ${method} requests before started`, async () => {
@@ -191,7 +221,7 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -205,7 +235,7 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       interceptorWorker.stop();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -218,7 +248,7 @@ export function declareSharedHttpInterceptorWorkerTests<
       interceptorWorker.use(method, '/path', spiedRequestHandler);
       interceptorWorker.clearHandlers();
 
-      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -231,11 +261,11 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
-      const [callContext] = spiedRequestHandler.mock.calls[0];
-      expect(callContext.request).toBeInstanceOf(Request);
-      expect(callContext.request.method).toBe(method);
-      expect(callContext.params).toEqual({});
-      expect(callContext.cookies).toEqual({});
+      const [handlerContext] = spiedRequestHandler.mock.calls[0];
+      expect(handlerContext.request).toBeInstanceOf(Request);
+      expect(handlerContext.request.method).toBe(method);
+      expect(handlerContext.params).toEqual({});
+      expect(handlerContext.cookies).toEqual({});
 
       expect(response.status).toBe(200);
 
