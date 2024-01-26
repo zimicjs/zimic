@@ -9,10 +9,18 @@ export default defineConfig({
     environment: 'node',
     include: ['./{src,tests}/**/*.test.ts'],
     allowOnly: process.env.CI !== 'true',
+    exclude: ['**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
+      thresholds: {
+        functions: 100,
+        lines: 100,
+        statements: 100,
+        branches: 95,
+        autoUpdate: true,
+      },
     },
   },
   resolve: {

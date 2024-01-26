@@ -12,6 +12,13 @@ export default defineConfig({
       provider: 'istanbul',
       reporter: ['text', 'html'],
       reportsDirectory: './tests/coverage',
+      thresholds: {
+        functions: 100,
+        lines: 100,
+        statements: 100,
+        branches: 100,
+        autoUpdate: true,
+      },
       exclude: ['**/public/**', '**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
     },
   },
