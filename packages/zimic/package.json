@@ -63,13 +63,13 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -- vitest",
-    "pretest": "msw init ./public --save",
     "test:turbo": "pnpm run test run",
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic^...",
-    "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright",
-    "deps:install-playwright": "pnpm playwright install chromium --with-deps"
+    "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
+    "deps:install-playwright": "pnpm playwright install chromium",
+    "deps:init-msw": "msw init ./public --save"
   },
   "dependencies": {
     "msw": "^2.1.0"
