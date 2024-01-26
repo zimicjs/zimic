@@ -16,7 +16,8 @@ export async function superagentAsFetch(request: Request): Promise<Response> {
       headers: superAgentResponse.headers,
     });
   } catch (error) {
-    /* istanbul ignore next -- @preserve Ignoring as this is expected not to be covered */
+    /* istanbul ignore next -- @preserve
+     * Ignoring as this is expected not to be covered. */
     if (!(error instanceof Error) || !('response' in error)) {
       throw error;
     }

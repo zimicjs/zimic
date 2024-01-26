@@ -19,7 +19,8 @@ export async function axiosAsFetch(request: Request): Promise<Response> {
       headers: convertObjectToHeaders({ ...axiosResponse.headers }),
     });
   } catch (error) {
-    /* istanbul ignore next -- @preserve Ignoring as this is expected not to be covered */
+    /* istanbul ignore next -- @preserve
+     * Ignoring as this is expected not to be covered. */
     if (!(error instanceof AxiosError) || !error.response) {
       throw error;
     }
