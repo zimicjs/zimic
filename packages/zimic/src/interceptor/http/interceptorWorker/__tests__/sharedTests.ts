@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchWithTimeout } from '@/utils/fetch';
+
 import { HTTP_INTERCEPTOR_METHODS } from '../../interceptor/types/schema';
 import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
 import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
@@ -189,7 +191,7 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -203,7 +205,7 @@ export function declareSharedHttpInterceptorWorkerTests<
 
       interceptorWorker.stop();
 
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -216,7 +218,7 @@ export function declareSharedHttpInterceptorWorkerTests<
       interceptorWorker.use(method, '/path', spiedRequestHandler);
       interceptorWorker.clearHandlers();
 
-      const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+      const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 500 });
       await expect(fetchPromise).rejects.toThrowError();
 
       expect(spiedRequestHandler).not.toHaveBeenCalled();
