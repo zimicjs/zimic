@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 const isProduction = NODE_ENV === 'production';
 
-export default defineConfig((options) => ({
+export default defineConfig({
   entry: {
     index: 'src/index.ts',
     cli: 'src/cli/entry.ts',
@@ -16,5 +16,5 @@ export default defineConfig((options) => ({
   sourcemap: !isProduction,
   treeshake: isProduction,
   minify: isProduction,
-  clean: options.watch !== true,
-}));
+  clean: true,
+});
