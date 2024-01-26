@@ -1,3 +1,4 @@
+import { HttpInterceptorFactory } from '../types/factory';
 import { HttpInterceptorOptions } from '../types/options';
 import { HttpInterceptor } from '../types/public';
 import { HttpInterceptorSchema } from '../types/schema';
@@ -9,4 +10,4 @@ function createNodeHttpInterceptor<Schema extends HttpInterceptorSchema>(
   return new InternalNodeHttpInterceptor<Schema>(options);
 }
 
-export default createNodeHttpInterceptor;
+export default createNodeHttpInterceptor satisfies HttpInterceptorFactory;

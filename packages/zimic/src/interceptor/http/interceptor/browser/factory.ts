@@ -1,3 +1,4 @@
+import { HttpInterceptorFactory } from '../types/factory';
 import { HttpInterceptorOptions } from '../types/options';
 import { HttpInterceptor } from '../types/public';
 import { HttpInterceptorSchema } from '../types/schema';
@@ -9,4 +10,4 @@ function createBrowserHttpInterceptor<Schema extends HttpInterceptorSchema>(
   return new InternalBrowserHttpInterceptor<Schema>(options);
 }
 
-export default createBrowserHttpInterceptor;
+export default createBrowserHttpInterceptor satisfies HttpInterceptorFactory;

@@ -15,6 +15,8 @@ export type { HttpInterceptorMethodHandler } from './http/interceptor/types/hand
 
 export type { HttpInterceptorOptions } from './http/interceptor/types/options';
 
+export type { HttpInterceptorFactory } from './http/interceptor/types/factory';
+
 export type {
   HttpInterceptorMethod,
   HttpInterceptorRequestSchema,
