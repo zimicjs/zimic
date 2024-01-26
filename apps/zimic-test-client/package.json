@@ -13,7 +13,8 @@
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic-test-client^...",
-    "deps:install": "pnpm install --filter zimic-test-client"
+    "deps:install": "pnpm install --filter zimic-test-client",
+    "postinstall": "zimic init ./public --save"
   },
   "dependencies": {
     "zimic0": "workspace:zimic@*"
@@ -29,5 +30,10 @@
     "playwright": "^1.41.0",
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

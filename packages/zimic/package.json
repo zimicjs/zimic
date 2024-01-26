@@ -51,6 +51,9 @@
       "default": "./dist/interceptor/node.js"
     }
   },
+  "bin": {
+    "zimic": "node_modules/msw/cli/index.js"
+  },
   "scripts": {
     "dev": "pnpm build --watch",
     "build": "tsup && rm -rf *.d.ts && cp ./dist/*.d.ts . && mkdir -p ./interceptor && rm -rf ./interceptor/*.d.ts && cp ./dist/interceptor/*.d.ts ./interceptor",
@@ -65,7 +68,7 @@
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic",
-    "postinstall": "msw init"
+    "postinstall": "msw init ./public --save"
   },
   "dependencies": {
     "msw": "^2.1.0"
