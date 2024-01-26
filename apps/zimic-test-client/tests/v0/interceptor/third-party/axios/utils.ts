@@ -1,24 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-function convertHeadersToObject(headers: Headers) {
-  const headersAsObject: Record<string, string> = {};
-
-  headers.forEach((value, key) => {
-    headersAsObject[key] = value;
-  });
-
-  return headersAsObject;
-}
-
-function convertObjectToHeaders(headers: Record<string, unknown>) {
-  const headersAsObject = new Headers();
-
-  for (const [key, value] of Object.entries(headers)) {
-    headersAsObject.set(key, String(value));
-  }
-
-  return headersAsObject;
-}
+import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
 
 export async function axiosAsFetch(request: Request): Promise<Response> {
   try {
