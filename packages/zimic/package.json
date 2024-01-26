@@ -63,12 +63,12 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -- vitest",
+    "pretest": "msw init ./public --save",
     "test:turbo": "pnpm run test run",
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic^...",
-    "deps:install": "pnpm install --filter zimic",
-    "postinstall": "msw init ./public --save"
+    "deps:install": "pnpm install --filter zimic"
   },
   "dependencies": {
     "msw": "^2.1.0"
