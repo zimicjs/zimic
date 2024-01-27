@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { version } from '@@/package.json';
 
-import { MOCK_SERVICE_WORKER_PATH, SERVICE_WORKER_FILE_NAME } from '../browser/init';
+import { MOCK_SERVICE_WORKER_PATH } from '../browser/init';
+import { SERVICE_WORKER_FILE_NAME } from '../browser/shared/constants';
 import runCLI from '../cli';
 
 describe('CLI', () => {
