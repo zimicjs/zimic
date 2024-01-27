@@ -1,9 +1,9 @@
 /// <reference types="vitest" />
 
 import path from 'path';
-import { defineConfig } from 'vitest/config';
+import { UserConfig, defineConfig } from 'vitest/config';
 
-export default defineConfig({
+export const config: UserConfig = {
   publicDir: './public',
   test: {
     globals: false,
@@ -37,4 +37,6 @@ export default defineConfig({
     },
   },
   plugins: [],
-});
+};
+
+export default defineConfig(config);

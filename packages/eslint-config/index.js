@@ -115,6 +115,7 @@ module.exports = {
           '**/*.config.ts',
           '**/*.workspace.ts',
           '**/*.config.mts',
+          '**/*.config.*.mts',
           '**/*.workspace.mts',
         ],
       },

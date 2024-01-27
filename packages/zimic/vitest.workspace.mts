@@ -9,7 +9,7 @@ export default defineWorkspace([
       name: 'node',
       environment: 'node',
       include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.node.test.ts'],
-      exclude: ['**/*.browser.test.ts'],
+      exclude: ['**/*.browser.test.ts', '**/*.browserNoWorker.test.ts'],
     },
   },
   {
@@ -18,7 +18,21 @@ export default defineWorkspace([
       name: 'browser',
       environment: undefined,
       include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
-      exclude: ['**/*.node.test.ts'],
+      exclude: ['**/*.node.test.ts', '**/*.browserNoWorker.test.ts'],
+      browser: {
+        name: 'chromium',
+        provider: 'playwright',
+        enabled: true,
+        headless: true,
+      },
+    },
+  },
+  {
+    extends: 'vitest.config.noPublic.mts',
+    test: {
+      name: 'browser-no-worker',
+      environment: undefined,
+      include: ['./{src,tests}/**/*.browserNoWorker.test.ts'],
       browser: {
         name: 'chromium',
         provider: 'playwright',
