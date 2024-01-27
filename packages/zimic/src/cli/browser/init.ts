@@ -1,13 +1,11 @@
 import filesystem from 'fs/promises';
 import path from 'path';
 
-import { getFileDirectory } from '@/utils/modules';
-
 import { getChalk, logWithPrefix } from '../utils/console';
 
 export const SERVICE_WORKER_FILE_NAME = 'mockServiceWorker.js';
 export const MOCK_SERVICE_WORKER_PATH = path.join(
-  getFileDirectory(),
+  __dirname,
   '..',
   'node_modules',
   'msw',

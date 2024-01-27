@@ -36,6 +36,9 @@
     "interceptor/browser.d.ts"
   ],
   "types": "index.d.ts",
+  "bin": {
+    "zimic": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -63,9 +66,6 @@
       "types": "./dist/interceptor/node.d.ts",
       "default": "./dist/interceptor/node.js"
     }
-  },
-  "bin": {
-    "zimic": "./dist/cli.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
