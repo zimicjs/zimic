@@ -82,8 +82,7 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-msw": "msw init ./public --save",
-    "postinstall": "pnpm deps:init-msw"
+    "deps:init-msw": "msw init ./public --save"
   },
   "dependencies": {
     "chalk": "^5.3.0",
