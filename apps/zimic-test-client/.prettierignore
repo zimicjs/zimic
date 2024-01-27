@@ -6,8 +6,12 @@ node_modules
 .eslintcache
 tsconfig.tsbuildinfo
 
+# Build
+/dist
+/public/mockServiceWorker.js
+
 # Tests
-/coverage
+/tests/coverage
 
 # Miscellaneous
 .vscode

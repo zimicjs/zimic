@@ -10,7 +10,7 @@ tsconfig.tsbuildinfo
 /dist
 
 # Tests
-/coverage
+/tests/coverage
 
 # Miscellaneous
 .vscode

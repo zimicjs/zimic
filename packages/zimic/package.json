@@ -26,19 +26,37 @@
   },
   "license": "MIT",
   "files": [
-    "dist",
-    "*.d.ts"
+    "dist"
   ],
+  "types": "dist/index.d.ts",
   "exports": {
     "./interceptor": {
       "import": "./dist/interceptor.mjs",
       "require": "./dist/interceptor.js",
+      "default": "./dist/interceptor.js",
       "types": "./dist/interceptor.d.ts"
+    },
+    "./interceptor/browser": {
+      "node": null,
+      "import": "./dist/interceptor/browser.mjs",
+      "require": "./dist/interceptor/browser.js",
+      "types": "./dist/interceptor/browser.d.ts",
+      "default": "./dist/interceptor/browser.js"
+    },
+    "./interceptor/node": {
+      "browser": null,
+      "import": "./dist/interceptor/node.mjs",
+      "require": "./dist/interceptor/node.js",
+      "types": "./dist/interceptor/node.d.ts",
+      "default": "./dist/interceptor/node.js"
     }
+  },
+  "bin": {
+    "zimic": "node_modules/msw/cli/index.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
-    "build": "tsup --onSuccess 'tsup --dts-only && rimraf *.d.ts && cp dist/*.d.ts .'",
+    "build": "tsup && rm -rf *.d.ts && cp ./dist/*.d.ts . && mkdir -p ./interceptor && rm -rf ./interceptor/*.d.ts && cp ./dist/interceptor/*.d.ts ./interceptor",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -49,17 +67,29 @@
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter zimic^...",
-    "deps:install": "pnpm install --filter zimic"
+    "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
+    "deps:install-playwright": "pnpm playwright install chromium",
+    "deps:init-msw": "msw init ./public --save"
+  },
+  "dependencies": {
+    "msw": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
+    "@vitest/browser": "^1.2.1",
+    "@vitest/coverage-istanbul": "^1.2.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.0.0",
-    "rimraf": "^3.0.2",
+    "playwright": "^1.41.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

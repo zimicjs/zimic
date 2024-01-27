@@ -8,9 +8,11 @@ node_modules
 # Build
 /dist
 /*.d.ts
+/interceptor/*.d.ts
+/public/mockServiceWorker.js
 
 # Tests
-/coverage
+/tests/coverage
 **/__tests__/fixtures/**/*.js
 
 # Cache

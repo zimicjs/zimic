@@ -5,13 +5,16 @@ pnpm-lock.yaml
 # Build
 apps/*/dist
 apps/*/build
+apps/*/public/mockServiceWorker.js
 packages/*/dist
 packages/*/build
 packages/*/*.d.ts
+packages/*/public/mockServiceWorker.js
+packages/zimic/interceptor/*.d.ts
 
 # Tests
-apps/*/coverage
-packages/*/coverage
+/apps/*/tests/coverage
+/packages/*/tests/coverage
 
 # Configuration
 .husky
