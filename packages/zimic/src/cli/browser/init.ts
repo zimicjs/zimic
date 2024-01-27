@@ -5,8 +5,8 @@ import { getFileDirectory } from '@/utils/modules';
 
 import { getChalk, logWithPrefix } from '../utils/console';
 
-const SERVICE_WORKER_FILE_NAME = 'mockServiceWorker.js';
-const MOCK_SERVICE_WORKER_PATH = path.join(
+export const SERVICE_WORKER_FILE_NAME = 'mockServiceWorker.js';
+export const MOCK_SERVICE_WORKER_PATH = path.join(
   getFileDirectory(),
   '..',
   'node_modules',
@@ -28,7 +28,7 @@ async function initializeBrowserServiceWorker(cliArguments: { publicDirectory: s
   await filesystem.copyFile(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
   await logWithPrefix(`Service worker script saved to ${chalk.yellow(serviceWorkerDestinationPath)}!`);
-  await logWithPrefix('You can now use browser interceptors! ');
+  await logWithPrefix('You can now use browser interceptors!');
 }
 
 export default initializeBrowserServiceWorker;
