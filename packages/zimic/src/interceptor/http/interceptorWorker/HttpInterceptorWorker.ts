@@ -8,6 +8,7 @@ import {
   HttpInterceptorResponseSchemaStatusCode,
 } from '../interceptor/types/schema';
 import { HttpInterceptorRequest, HttpInterceptorResponse } from '../requestTracker/types/requests';
+import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import {
   DefaultBody,
   BrowserHttpWorker,
@@ -49,7 +50,13 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     const sharedOptions: SharedOptions = { onUnhandledRequest: 'bypass' };
 
     if (this.isBrowserWorker(this._worker)) {
-      await this._worker.start({ ...sharedOptions, quiet: true });
+      try {
+        await this._worker.start({ ...sharedOptions, quiet: true });
+      } catch (error) {
+        if (UnregisteredBrowserServiceWorkerError.matchesError(error)) {
+          throw new UnregisteredBrowserServiceWorkerError();
+        }
+      }
     } else {
       this._worker.listen(sharedOptions);
     }

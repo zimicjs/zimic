@@ -65,7 +65,7 @@
     }
   },
   "bin": {
-    "zimic": "node_modules/msw/cli/index.js"
+    "zimic": "./dist/cli.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
@@ -82,13 +82,17 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-msw": "msw init ./public --save"
+    "deps:init-msw": "msw init ./public --save",
+    "postinstall": "pnpm deps:init-msw"
   },
   "dependencies": {
-    "msw": "^2.1.0"
+    "chalk": "^5.3.0",
+    "msw": "^2.1.0",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
+    "@types/yargs": "^17.0.32",
     "@vitest/browser": "^1.2.1",
     "@vitest/coverage-istanbul": "^1.2.1",
     "@zimic/eslint-config-node": "workspace:*",

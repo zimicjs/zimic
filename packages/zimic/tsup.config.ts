@@ -27,6 +27,7 @@ export default defineConfig(() => {
         interceptor: 'src/interceptor/index.ts',
         'interceptor/node': 'src/interceptor/node.ts',
         'interceptor/browser': 'src/interceptor/browser.ts',
+        cli: 'src/cli/index.ts',
       },
     },
   ] as const;
