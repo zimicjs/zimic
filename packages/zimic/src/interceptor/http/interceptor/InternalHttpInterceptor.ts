@@ -22,8 +22,10 @@ type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method exte
   InternalHttpRequestTracker<Default<Schema[LooseLiteralHttpInterceptorSchemaPath<Schema, Method>][Method]>>[]
 >;
 
-class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpInterceptor<Schema> {
-  protected _worker: HttpInterceptorWorker;
+class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker extends HttpInterceptorWorker>
+  implements HttpInterceptor<Schema>
+{
+  protected _worker: Worker;
 
   private trackersByMethod: {
     [Method in HttpInterceptorMethod]: HttpRequestTrackersByPath<Schema, Method>;
@@ -37,12 +39,16 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
     OPTIONS: this.createTrackersByPathMap<'OPTIONS'>(),
   };
 
-  constructor(options: { worker: HttpInterceptorWorker }) {
+  constructor(options: { worker: Worker }) {
     this._worker = options.worker;
   }
 
   private createTrackersByPathMap<Method extends HttpInterceptorMethod>(): HttpRequestTrackersByPath<Schema, Method> {
     return new Map<string, InternalHttpRequestTracker<Default<Schema[keyof Schema][Method]>>[]>();
+  }
+
+  worker() {
+    return this._worker;
   }
 
   baseURL() {

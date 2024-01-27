@@ -1,9 +1,9 @@
 /// <reference types="vitest" />
 
 import path from 'path';
-import { defineConfig } from 'vitest/config';
+import { UserConfig, defineConfig } from 'vitest/config';
 
-export default defineConfig({
+export const defaultConfig: UserConfig = {
   publicDir: './public',
   test: {
     globals: false,
@@ -17,7 +17,6 @@ export default defineConfig({
         lines: 100,
         statements: 100,
         branches: 100,
-        autoUpdate: true,
       },
       exclude: [
         '**/public/**',
@@ -33,7 +32,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
+      '@@': path.resolve(__dirname, '.'),
     },
   },
   plugins: [],
-});
+};
+
+export default defineConfig(defaultConfig);

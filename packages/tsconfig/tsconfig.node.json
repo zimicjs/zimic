@@ -4,7 +4,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "lib": ["esnext", "webworker"],
-    "module": "commonjs",
+    "module": "esnext",
     "incremental": false
   }
 }
