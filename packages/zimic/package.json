@@ -100,6 +100,14 @@
     "typescript": "^5.3.3",
     "vitest": "^1.1.2"
   },
+  "peerDependencies": {
+    "typescript": ">=4.7.x <5.4"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
   "msw": {
     "workerDirectory": [
       "public"
