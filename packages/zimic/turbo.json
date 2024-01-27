@@ -4,7 +4,7 @@
   "pipeline": {
     "build": {
       "inputs": ["src/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts", ".swcrc"],
-      "outputs": ["dist/**", "*.d.ts", "interceptor/*.d.ts"]
+      "outputs": ["dist/**"]
     },
 
     "test:turbo": {

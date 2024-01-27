@@ -4,7 +4,8 @@
   "private": false,
   "files": [
     "dist",
-    "*.d.ts"
+    "index.d.ts",
+    "cli.d.ts"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -15,7 +16,7 @@
   "scripts": {
     "dev": "pnpm build --watch",
     "dev:cli": "tsx src/cli/index.ts",
-    "build": "tsup && rm -rf *.d.ts && cp ./dist/*.d.ts .",
+    "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
