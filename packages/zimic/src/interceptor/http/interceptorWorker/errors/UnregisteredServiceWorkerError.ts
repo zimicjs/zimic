@@ -1,14 +1,14 @@
-class UnregisteredBrowserServiceWorkerError extends Error {
+class UnregisteredServiceWorkerError extends Error {
   constructor() {
     super(
       `Failed to register a service worker with script '${window.location.origin}/mockServiceWorker.js': service ` +
         'worker script does not exist at the given path.\n\n' +
         'Did you forget to run "npx zimic browser init <PUBLIC_DIR>"?',
     );
-    this.name = 'UnregisteredBrowserServiceWorkerError';
+    this.name = 'UnregisteredServiceWorkerError';
   }
 
-  static matchesError(error: unknown): error is UnregisteredBrowserServiceWorkerError {
+  static matchesRawError(error: unknown): error is UnregisteredServiceWorkerError {
     return (
       error instanceof Error &&
       error.message.toLowerCase().startsWith('[msw] failed to register a service worker for scope')
@@ -16,4 +16,4 @@ class UnregisteredBrowserServiceWorkerError extends Error {
   }
 }
 
-export default UnregisteredBrowserServiceWorkerError;
+export default UnregisteredServiceWorkerError;

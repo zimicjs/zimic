@@ -8,7 +8,7 @@ import {
   HttpInterceptorResponseSchemaStatusCode,
 } from '../interceptor/types/schema';
 import { HttpInterceptorRequest, HttpInterceptorResponse } from '../requestTracker/types/requests';
-import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
+import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import {
   DefaultBody,
   BrowserHttpWorker,
@@ -53,15 +53,20 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
       try {
         await this._worker.start({ ...sharedOptions, quiet: true });
       } catch (error) {
-        if (UnregisteredBrowserServiceWorkerError.matchesError(error)) {
-          throw new UnregisteredBrowserServiceWorkerError();
-        }
+        this.handleBrowserWorkerStartError(error);
       }
     } else {
       this._worker.listen(sharedOptions);
     }
 
     this._isRunning = true;
+  }
+
+  private handleBrowserWorkerStartError(error: unknown) {
+    if (UnregisteredServiceWorkerError.matchesRawError(error)) {
+      throw new UnregisteredServiceWorkerError();
+    }
+    throw error;
   }
 
   stop() {
