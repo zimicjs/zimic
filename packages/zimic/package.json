@@ -37,6 +37,12 @@
   ],
   "types": "index.d.ts",
   "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
     "./interceptor": {
       "import": "./dist/interceptor.mjs",
       "require": "./dist/interceptor.js",
