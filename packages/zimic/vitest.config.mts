@@ -3,7 +3,7 @@
 import path from 'path';
 import { UserConfig, defineConfig } from 'vitest/config';
 
-export const config: UserConfig = {
+export const defaultConfig: UserConfig = {
   publicDir: './public',
   test: {
     globals: false,
@@ -17,7 +17,6 @@ export const config: UserConfig = {
         lines: 100,
         statements: 100,
         branches: 100,
-        autoUpdate: true,
       },
       exclude: [
         '**/public/**',
@@ -39,4 +38,4 @@ export const config: UserConfig = {
   plugins: [],
 };
 
-export default defineConfig(config);
+export default defineConfig(defaultConfig);
