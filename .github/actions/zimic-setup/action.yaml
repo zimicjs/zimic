@@ -99,9 +99,6 @@ runs:
           pnpm --dir packages/zimic deps:install-playwright
           pnpm --dir apps/zimic-test-client deps:install-playwright
         fi
-
-        pnpm --dir packages/zimic deps:init-msw
-        pnpm --dir apps/zimic-test-client deps:init-zimic
       env:
         NODE_VERSION: ${{ matrix.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
