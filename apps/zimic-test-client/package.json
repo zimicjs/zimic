@@ -15,8 +15,7 @@
     "deps:build": "pnpm turbo build --filter zimic-test-client^...",
     "deps:install": "pnpm install --filter zimic-test-client && pnpm deps:install-playwright && pnpm deps:init-zimic",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "pnpm deps:init-zimic || echo 'Could not initialize zimic.'"
+    "deps:init-zimic": "zimic browser init ./public"
   },
   "dependencies": {
     "zimic0": "workspace:zimic@*"
