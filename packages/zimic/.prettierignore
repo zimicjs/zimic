@@ -8,7 +8,6 @@ tsconfig.tsbuildinfo
 
 # Build
 /dist
-/interceptor/*.d.ts
 /public/mockServiceWorker.js
 
 # Tests

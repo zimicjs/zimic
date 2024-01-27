@@ -7,8 +7,6 @@ node_modules
 
 # Build
 /dist
-/*.d.ts
-/interceptor/*.d.ts
 /public/mockServiceWorker.js
 
 # Tests
