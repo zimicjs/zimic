@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 
-import { HTTP_INTERCEPTOR_METHODS } from '../../interceptor/types/schema';
-import type BrowserHttpInterceptorWorker from '../BrowserHttpInterceptorWorker';
-import type NodeHttpInterceptorWorker from '../NodeHttpInterceptorWorker';
-import { HttpRequestHandler } from '../types';
+import { HTTP_INTERCEPTOR_METHODS } from '../../../interceptor/types/schema';
+import type BrowserHttpInterceptorWorker from '../../BrowserHttpInterceptorWorker';
+import type NodeHttpInterceptorWorker from '../../NodeHttpInterceptorWorker';
+import { HttpRequestHandler } from '../../types';
 
 export function declareSharedHttpInterceptorWorkerTests<
   Worker extends typeof BrowserHttpInterceptorWorker | typeof NodeHttpInterceptorWorker,

@@ -1,4 +1,4 @@
-import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/constants';
+import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/shared/constants';
 
 class UnregisteredServiceWorkerError extends Error {
   constructor() {

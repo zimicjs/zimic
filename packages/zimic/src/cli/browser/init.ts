@@ -2,7 +2,9 @@ import filesystem from 'fs/promises';
 import path from 'path';
 
 import { getChalk, logWithPrefix } from '../utils/console';
-import { SERVICE_WORKER_FILE_NAME, MOCK_SERVICE_WORKER_PATH } from './constants';
+import { SERVICE_WORKER_FILE_NAME } from './shared/constants';
+
+export const MOCK_SERVICE_WORKER_PATH = path.join(require.resolve('msw'), '..', '..', SERVICE_WORKER_FILE_NAME);
 
 async function initializeBrowserServiceWorker(cliArguments: { publicDirectory: string }) {
   const { publicDirectory } = cliArguments;

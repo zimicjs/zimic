@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import NodeHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/NodeHttpInterceptorWorker';
 
-import { declareSharedHttpInterceptorTests } from '../../__tests__/sharedTests';
+import { declareSharedHttpInterceptorTests } from '../../__tests__/shared/interceptorTests';
 import InternalHttpInterceptor from '../../InternalHttpInterceptor';
 import { HttpInterceptor } from '../../types/public';
 import createNodeHttpInterceptor from '../factory';
