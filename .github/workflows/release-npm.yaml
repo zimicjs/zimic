@@ -68,7 +68,7 @@ jobs:
         run: |
           sed -i 's/"zimic0": ".*"/"zimic0": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' package.json
 
-          pnpm install --filter .
+          pnpm install --no-frozen-lockfile --filter .
 
           pnpm turbo \
             types:check lint:turbo \
