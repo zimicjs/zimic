@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpInterceptorSchema } from 'zimic0/interceptor';
+import { HttpInterceptorSchema, HttpRequest, HttpResponse } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
@@ -199,18 +199,32 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(creationPayload);
+
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expect(creationRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
+
+        expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<User>();
+        expect(creationRequests[0].response.body).toEqual(createdUser);
+
+        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<User, 201>>();
+        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User>>();
+        expect(await creationRequests[0].response.raw.json()).toEqual(createdUser);
       });
 
       it('should return an error if the payload is not valid', async () => {
         // @ts-expect-error Forcing an invalid payload
         const invalidPayload: UserCreationPayload = {};
 
+        const validationError: ValidationError = {
+          code: 'validation_error',
+          message: 'Invalid payload',
+        };
         const creationTracker = authInterceptor.post('/users').respond({
           status: 400,
-          body: {
-            code: 'validation_error',
-            message: 'Invalid payload',
-          },
+          body: validationError,
         });
 
         const response = await createUser(invalidPayload);
@@ -222,18 +236,30 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(invalidPayload);
 
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expect(creationRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expect(await creationRequests[0].raw.json()).toEqual(invalidPayload);
+
         expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ValidationError>();
+        expect(creationRequests[0].response.body).toEqual(validationError);
+
+        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<ValidationError, 400>>();
+        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
+        expect(await creationRequests[0].response.raw.json()).toEqual(validationError);
       });
 
       it('should return an error if the payload is not valid', async () => {
         const conflictingPayload: UserCreationPayload = creationPayload;
 
+        const conflictError: ConflictError = {
+          code: 'conflict',
+          message: 'User already exists',
+        };
         const creationTracker = authInterceptor.post('/users').respond({
           status: 409,
-          body: {
-            code: 'conflict',
-            message: 'User already exists',
-          },
+          body: conflictError,
         });
 
         const response = await createUser(conflictingPayload);
@@ -245,7 +271,18 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(conflictingPayload);
 
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expect(creationRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
+
         expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ConflictError>();
+        expect(creationRequests[0].response.body).toEqual(conflictError);
+
+        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<ConflictError, 409>>();
+        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
+        expect(await creationRequests[0].response.raw.json()).toEqual(conflictError);
       });
     });
 
@@ -277,6 +314,22 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const listRequests = listTracker.requests();
         expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
+        expect(listRequests[0].body).toBe(null);
+
+        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<User[]>();
+        expect(listRequests[0].response.body).toEqual([user]);
+
+        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<User[], 200>>();
+        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User[]>>();
+        expect(await listRequests[0].response.raw.json()).toEqual([user]);
 
         listTracker.bypass();
 
@@ -310,15 +363,32 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const getRequests = getTracker.requests();
         expect(getRequests).toHaveLength(1);
+
+        expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
+        expect(getRequests[0].body).toBe(null);
+
+        expectTypeOf(getRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(getRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(getRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await getRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(getRequests[0].response.body).toEqualTypeOf<User>();
+        expect(getRequests[0].response.body).toEqual(user);
+
+        expectTypeOf(getRequests[0].response.raw).toEqualTypeOf<HttpResponse<User, 200>>();
+        expect(getRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(getRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User>>();
+        expect(await getRequests[0].response.raw.json()).toEqual(user);
       });
 
       it('should return an error if the user was not found', async () => {
+        const notFoundError: NotFoundError = {
+          code: 'not_found',
+          message: 'User not found',
+        };
         const getTracker = authInterceptor.get('/users/:id').respond({
           status: 404,
-          body: {
-            code: 'not_found',
-            message: 'User not found',
-          },
+          body: notFoundError,
         });
 
         const response = await getUserById(user.id);
@@ -326,6 +396,22 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const getRequests = getTracker.requests();
         expect(getRequests).toHaveLength(1);
+
+        expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
+        expect(getRequests[0].body).toBe(null);
+
+        expectTypeOf(getRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(getRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(getRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await getRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(getRequests[0].response.body).toEqualTypeOf<NotFoundError>();
+        expect(getRequests[0].response.body).toEqual(notFoundError);
+
+        expectTypeOf(getRequests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expect(getRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(getRequests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
+        expect(await getRequests[0].response.raw.json()).toEqual(notFoundError);
       });
     });
 
@@ -345,22 +431,55 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const deleteRequests = deleteTracker.requests();
         expect(deleteRequests).toHaveLength(1);
+
+        expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
+        expect(deleteRequests[0].body).toBe(null);
+
+        expectTypeOf(deleteRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(deleteRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(deleteRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(deleteRequests[0].response.body).toEqualTypeOf<null>();
+        expect(deleteRequests[0].response.body).toBe(null);
+
+        expectTypeOf(deleteRequests[0].response.raw).toEqualTypeOf<HttpResponse<null, 204>>();
+        expect(deleteRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(deleteRequests[0].response.raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteRequests[0].response.raw.text()).toBe('');
       });
 
       it('should return an error if the user was not found', async () => {
+        const notFoundError: NotFoundError = {
+          code: 'not_found',
+          message: 'User not found',
+        };
         const getTracker = authInterceptor.delete<'/users/:id'>(`/users/${user.id}`).respond({
           status: 404,
-          body: {
-            code: 'not_found',
-            message: 'User not found',
-          },
+          body: notFoundError,
         });
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(404);
 
-        const getRequests = getTracker.requests();
-        expect(getRequests).toHaveLength(1);
+        const deleteRequests = getTracker.requests();
+        expect(deleteRequests).toHaveLength(1);
+
+        expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
+        expect(deleteRequests[0].body).toBe(null);
+
+        expectTypeOf(deleteRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(deleteRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(deleteRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(deleteRequests[0].response.body).toEqualTypeOf<NotFoundError>();
+        expect(deleteRequests[0].response.body).toEqual(notFoundError);
+
+        expectTypeOf(deleteRequests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expect(deleteRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(deleteRequests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
+        expect(await deleteRequests[0].response.raw.json()).toEqual(notFoundError);
       });
     });
   });
