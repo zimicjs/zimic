@@ -52,7 +52,7 @@ export function declareGetHttpInterceptorTests(
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
@@ -98,7 +98,7 @@ export function declareGetHttpInterceptorTests(
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
@@ -145,7 +145,7 @@ export function declareGetHttpInterceptorTests(
       const [genericGetRequest] = genericGetRequests;
       expect(genericGetRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericGetRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericGetRequest.body).toEqualTypeOf<null>();
       expect(genericGetRequest.body).toBe(null);
 
       expectTypeOf(genericGetRequest.response.status).toEqualTypeOf<200>();
@@ -175,7 +175,7 @@ export function declareGetHttpInterceptorTests(
       const [specificGetRequest] = specificGetRequests;
       expect(specificGetRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificGetRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificGetRequest.body).toEqualTypeOf<null>();
       expect(specificGetRequest.body).toBe(null);
 
       expectTypeOf(specificGetRequest.response.status).toEqualTypeOf<200>();
@@ -213,9 +213,8 @@ export function declareGetHttpInterceptorTests(
       expect(listRequestsWithoutResponse).toHaveLength(0);
 
       let [listRequestWithoutResponse] = listRequestsWithoutResponse;
-      expectTypeOf<typeof listRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof listRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof listRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof listRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof listRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
       await expect(fetchPromise).rejects.toThrowError();
@@ -223,9 +222,8 @@ export function declareGetHttpInterceptorTests(
       expect(listRequestsWithoutResponse).toHaveLength(0);
 
       [listRequestWithoutResponse] = listRequestsWithoutResponse;
-      expectTypeOf<typeof listRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof listRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof listRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof listRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof listRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const listTrackerWithResponse = listTrackerWithoutResponse.respond({
         status: 200,
@@ -246,7 +244,7 @@ export function declareGetHttpInterceptorTests(
       expect(listRequestWithResponse).toBeInstanceOf(Request);
       expect(listRequestWithResponse.response.status).toEqual(200);
 
-      expectTypeOf(listRequestWithResponse.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequestWithResponse.body).toEqualTypeOf<null>();
       expect(listRequestWithResponse.body).toBe(null);
 
       expectTypeOf(listRequestWithResponse.response.status).toEqualTypeOf<200>();
@@ -300,7 +298,7 @@ export function declareGetHttpInterceptorTests(
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
@@ -329,7 +327,7 @@ export function declareGetHttpInterceptorTests(
       const [errorListRequest] = errorListRequests;
       expect(errorListRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorListRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorListRequest.body).toEqualTypeOf<null>();
       expect(errorListRequest.body).toBe(null);
 
       expectTypeOf(errorListRequest.response.status).toEqualTypeOf<500>();
@@ -392,7 +390,7 @@ export function declareGetHttpInterceptorTests(
       let [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
@@ -421,7 +419,7 @@ export function declareGetHttpInterceptorTests(
       const [errorListRequest] = errorListRequests;
       expect(errorListRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorListRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorListRequest.body).toEqualTypeOf<null>();
       expect(errorListRequest.body).toBe(null);
 
       expectTypeOf(errorListRequest.response.status).toEqualTypeOf<500>();
@@ -444,7 +442,7 @@ export function declareGetHttpInterceptorTests(
       [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();
@@ -511,7 +509,7 @@ export function declareGetHttpInterceptorTests(
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(listRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(listRequest.body).toEqualTypeOf<null>();
       expect(listRequest.body).toBe(null);
 
       expectTypeOf(listRequest.response.status).toEqualTypeOf<200>();

@@ -52,7 +52,7 @@ export function declarePutHttpInterceptorTests(
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
       expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
@@ -152,7 +152,7 @@ export function declarePutHttpInterceptorTests(
       const [genericUpdateRequest] = genericUpdateRequests;
       expect(genericUpdateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<null>();
       expect(genericUpdateRequest.body).toBe(null);
 
       expectTypeOf(genericUpdateRequest.response.status).toEqualTypeOf<200>();
@@ -182,7 +182,7 @@ export function declarePutHttpInterceptorTests(
       const [specificUpdateRequest] = specificUpdateRequests;
       expect(specificUpdateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<null>();
       expect(specificUpdateRequest.body).toBe(null);
 
       expectTypeOf(specificUpdateRequest.response.status).toEqualTypeOf<200>();
@@ -227,8 +227,7 @@ export function declarePutHttpInterceptorTests(
 
       let [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
       expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof updateRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof updateRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       updatePromise = fetch(`${baseURL}/users`, {
         method: 'PUT',
@@ -240,8 +239,7 @@ export function declarePutHttpInterceptorTests(
 
       [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
       expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof updateRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof updateRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const updateTrackerWithResponse = updateTrackerWithoutResponse.respond({
         status: 200,
@@ -318,7 +316,7 @@ export function declarePutHttpInterceptorTests(
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
       expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
@@ -347,7 +345,7 @@ export function declarePutHttpInterceptorTests(
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<null>();
       expect(errorUpdateRequest.body).toBe(null);
 
       expectTypeOf(errorUpdateRequest.response.status).toEqualTypeOf<500>();
@@ -410,7 +408,7 @@ export function declarePutHttpInterceptorTests(
       let [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
       expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
@@ -439,7 +437,7 @@ export function declarePutHttpInterceptorTests(
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorUpdateRequest.body).toEqualTypeOf<null>();
       expect(errorUpdateRequest.body).toBe(null);
 
       expectTypeOf(errorUpdateRequest.response.status).toEqualTypeOf<500>();
@@ -462,7 +460,7 @@ export function declarePutHttpInterceptorTests(
       [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
       expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
@@ -529,7 +527,7 @@ export function declarePutHttpInterceptorTests(
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
       expect(updateRequest.body).toBe(null);
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();

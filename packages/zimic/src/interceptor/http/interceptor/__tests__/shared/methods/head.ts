@@ -42,13 +42,13 @@ export function declareHeadHttpInterceptorTests(
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
       expect(headRequest.response.status).toEqual(200);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
     });
   });
@@ -82,7 +82,7 @@ export function declareHeadHttpInterceptorTests(
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
@@ -91,7 +91,7 @@ export function declareHeadHttpInterceptorTests(
       expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
       expect(headRequest.response.status).toEqual(200);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
     });
   });
@@ -125,13 +125,13 @@ export function declareHeadHttpInterceptorTests(
       const [genericHeadRequest] = genericHeadRequests;
       expect(genericHeadRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericHeadRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericHeadRequest.body).toEqualTypeOf<null>();
       expect(genericHeadRequest.body).toBe(null);
 
       expectTypeOf(genericHeadRequest.response.status).toEqualTypeOf<200>();
       expect(genericHeadRequest.response.status).toEqual(200);
 
-      expectTypeOf(genericHeadRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(genericHeadRequest.response.body).toEqualTypeOf<null>();
       expect(genericHeadRequest.response.body).toBe(null);
 
       genericHeadTracker.bypass();
@@ -151,13 +151,13 @@ export function declareHeadHttpInterceptorTests(
       const [specificHeadRequest] = specificHeadRequests;
       expect(specificHeadRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificHeadRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificHeadRequest.body).toEqualTypeOf<null>();
       expect(specificHeadRequest.body).toBe(null);
 
       expectTypeOf(specificHeadRequest.response.status).toEqualTypeOf<200>();
       expect(specificHeadRequest.response.status).toEqual(200);
 
-      expectTypeOf(specificHeadRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(specificHeadRequest.response.body).toEqualTypeOf<null>();
       expect(specificHeadRequest.response.body).toBe(null);
 
       const unmatchedHeadPromise = fetch(`${baseURL}/users/${2}`, { method: 'HEAD' });
@@ -189,9 +189,8 @@ export function declareHeadHttpInterceptorTests(
       expect(headRequestsWithoutResponse).toHaveLength(0);
 
       let [headRequestWithoutResponse] = headRequestsWithoutResponse;
-      expectTypeOf<typeof headRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof headRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof headRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof headRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof headRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
       await expect(fetchPromise).rejects.toThrowError();
@@ -199,9 +198,8 @@ export function declareHeadHttpInterceptorTests(
       expect(headRequestsWithoutResponse).toHaveLength(0);
 
       [headRequestWithoutResponse] = headRequestsWithoutResponse;
-      expectTypeOf<typeof headRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof headRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof headRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof headRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof headRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const headTrackerWithResponse = headTrackerWithoutResponse.respond({
         status: 200,
@@ -218,13 +216,13 @@ export function declareHeadHttpInterceptorTests(
       expect(headRequestWithResponse).toBeInstanceOf(Request);
       expect(headRequestWithResponse.response.status).toEqual(200);
 
-      expectTypeOf(headRequestWithResponse.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequestWithResponse.body).toEqualTypeOf<null>();
       expect(headRequestWithResponse.body).toBe(null);
 
       expectTypeOf(headRequestWithResponse.response.status).toEqualTypeOf<200>();
       expect(headRequestWithResponse.response.status).toEqual(200);
 
-      expectTypeOf(headRequestWithResponse.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequestWithResponse.response.body).toEqualTypeOf<null>();
       expect(headRequestWithResponse.response.body).toBe(null);
     });
   });
@@ -268,13 +266,13 @@ export function declareHeadHttpInterceptorTests(
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
       expect(headRequest.response.status).toEqual(204);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
 
       const errorHeadTracker = interceptor.head('/users').respond({
@@ -297,7 +295,7 @@ export function declareHeadHttpInterceptorTests(
       const [errorHeadRequest] = errorHeadRequests;
       expect(errorHeadRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<null>();
       expect(errorHeadRequest.body).toBe(null);
 
       expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
@@ -356,16 +354,13 @@ export function declareHeadHttpInterceptorTests(
       let [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
-      expect(headRequest.body).toBe(null);
-
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
       expect(headRequest.response.status).toEqual(204);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
 
       const errorHeadTracker = interceptor.head('/users').respond({
@@ -388,7 +383,7 @@ export function declareHeadHttpInterceptorTests(
       const [errorHeadRequest] = errorHeadRequests;
       expect(errorHeadRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorHeadRequest.body).toEqualTypeOf<null>();
       expect(errorHeadRequest.body).toBe(null);
 
       expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
@@ -408,16 +403,13 @@ export function declareHeadHttpInterceptorTests(
       [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
-      expect(headRequest.body).toBe(null);
-
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
       expect(headRequest.response.status).toEqual(204);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
     });
   });
@@ -473,16 +465,13 @@ export function declareHeadHttpInterceptorTests(
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
-      expect(headRequest.body).toBe(null);
-
-      expectTypeOf(headRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
       expect(headRequest.body).toBe(null);
 
       expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
       expect(headRequest.response.status).toEqual(204);
 
-      expectTypeOf(headRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
     });
   });

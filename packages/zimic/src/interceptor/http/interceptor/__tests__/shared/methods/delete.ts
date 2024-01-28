@@ -52,7 +52,7 @@ export function declareDeleteHttpInterceptorTests(
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
       expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
@@ -151,7 +151,7 @@ export function declareDeleteHttpInterceptorTests(
       const [genericDeletionRequest] = genericDeletionRequests;
       expect(genericDeletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericDeletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericDeletionRequest.body).toEqualTypeOf<null>();
       expect(genericDeletionRequest.body).toBe(null);
 
       expectTypeOf(genericDeletionRequest.response.status).toEqualTypeOf<200>();
@@ -181,7 +181,7 @@ export function declareDeleteHttpInterceptorTests(
       const [specificDeletionRequest] = specificDeletionRequests;
       expect(specificDeletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificDeletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificDeletionRequest.body).toEqualTypeOf<null>();
       expect(specificDeletionRequest.body).toBe(null);
 
       expectTypeOf(specificDeletionRequest.response.status).toEqualTypeOf<200>();
@@ -226,8 +226,7 @@ export function declareDeleteHttpInterceptorTests(
 
       let [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
       expectTypeOf<typeof deletionRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof deletionRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof deletionRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       deletionPromise = fetch(`${baseURL}/users`, {
         method: 'DELETE',
@@ -239,8 +238,7 @@ export function declareDeleteHttpInterceptorTests(
 
       [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
       expectTypeOf<typeof deletionRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof deletionRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof deletionRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof deletionRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const deletionTrackerWithResponse = deletionTrackerWithoutResponse.respond({
         status: 200,
@@ -317,7 +315,7 @@ export function declareDeleteHttpInterceptorTests(
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
       expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
@@ -346,7 +344,7 @@ export function declareDeleteHttpInterceptorTests(
       const [errorDeletionRequest] = errorDeletionRequests;
       expect(errorDeletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorDeletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorDeletionRequest.body).toEqualTypeOf<null>();
       expect(errorDeletionRequest.body).toBe(null);
 
       expectTypeOf(errorDeletionRequest.response.status).toEqualTypeOf<500>();
@@ -409,7 +407,7 @@ export function declareDeleteHttpInterceptorTests(
       let [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
       expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
@@ -438,7 +436,7 @@ export function declareDeleteHttpInterceptorTests(
       const [errorDeletionRequest] = errorDeletionRequests;
       expect(errorDeletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorDeletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorDeletionRequest.body).toEqualTypeOf<null>();
       expect(errorDeletionRequest.body).toBe(null);
 
       expectTypeOf(errorDeletionRequest.response.status).toEqualTypeOf<500>();
@@ -461,7 +459,7 @@ export function declareDeleteHttpInterceptorTests(
       [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
       expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
@@ -528,7 +526,7 @@ export function declareDeleteHttpInterceptorTests(
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
       expect(deletionRequest.body).toBe(null);
 
       expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
