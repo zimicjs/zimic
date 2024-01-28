@@ -91,7 +91,7 @@ class InternalHttpRequestTracker<
     return new Proxy(request as unknown as TrackedHttpInterceptorRequest<MethodSchema, StatusCode>, {
       get(target, property) {
         if (property === 'response') {
-          return response satisfies TrackedHttpInterceptorRequest<MethodSchema, StatusCode>['response'];
+          return response satisfies HttpInterceptorResponse<MethodSchema, StatusCode>;
         }
         return Reflect.get(target, property, target) as unknown;
       },

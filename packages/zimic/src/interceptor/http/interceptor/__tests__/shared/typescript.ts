@@ -1,4 +1,4 @@
-import { expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { HttpInterceptor } from '../../types/public';
@@ -216,6 +216,14 @@ export function declareTypeHttpInterceptorTests(
     interceptor.post('/notifications/read').respond({
       status: 204,
     });
+    interceptor.post('/notifications/read').respond({
+      status: 204,
+      body: null,
+    });
+    interceptor.post('/notifications/read').respond({
+      status: 204,
+      body: undefined,
+    });
 
     interceptor.get('/users').respond({
       status: 200,
@@ -340,7 +348,8 @@ export function declareTypeHttpInterceptorTests(
     expectTypeOf<UserCreationResponseBody>().toEqualTypeOf<User>();
 
     const userListTracker = interceptor.get('/users').respond((request) => {
-      expectTypeOf(request.body).toEqualTypeOf<never>();
+      expectTypeOf(request.body).toEqualTypeOf<null>();
+      expect(request.body).toBe(null);
 
       return {
         status: 200,
@@ -351,13 +360,14 @@ export function declareTypeHttpInterceptorTests(
     const userListRequests = userListTracker.requests();
 
     type UserListRequestBody = (typeof userListRequests)[number]['body'];
-    expectTypeOf<UserListRequestBody>().toEqualTypeOf<never>();
+    expectTypeOf<UserListRequestBody>().toEqualTypeOf<null>();
 
     type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
     expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
 
     const groupGetTracker = interceptor.get<'/groups/:id'>(`/groups/${1}`).respond((request) => {
-      expectTypeOf(request.body).toEqualTypeOf<never>();
+      expectTypeOf(request.body).toEqualTypeOf<null>();
+      expect(request.body).toBe(null);
 
       return {
         status: 200,
@@ -368,7 +378,7 @@ export function declareTypeHttpInterceptorTests(
     const groupGetRequests = groupGetTracker.requests();
 
     type GroupGetRequestBody = (typeof groupGetRequests)[number]['body'];
-    expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<never>();
+    expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<null>();
 
     type GroupGetResponseBody = (typeof groupGetRequests)[number]['response']['body'];
     expectTypeOf<GroupGetResponseBody>().toEqualTypeOf<{ users: User[] }>();

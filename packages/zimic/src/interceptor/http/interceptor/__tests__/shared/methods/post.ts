@@ -52,7 +52,7 @@ export function declarePostHttpInterceptorTests(
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(creationRequest.body).toEqualTypeOf<null>();
       expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
@@ -152,7 +152,7 @@ export function declarePostHttpInterceptorTests(
       const [genericCreationRequest] = genericCreationRequests;
       expect(genericCreationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericCreationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericCreationRequest.body).toEqualTypeOf<null>();
       expect(genericCreationRequest.body).toBe(null);
 
       expectTypeOf(genericCreationRequest.response.status).toEqualTypeOf<201>();
@@ -182,7 +182,7 @@ export function declarePostHttpInterceptorTests(
       const [specificCreationRequest] = specificCreationRequests;
       expect(specificCreationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificCreationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificCreationRequest.body).toEqualTypeOf<null>();
       expect(specificCreationRequest.body).toBe(null);
 
       expectTypeOf(specificCreationRequest.response.status).toEqualTypeOf<201>();
@@ -227,8 +227,7 @@ export function declarePostHttpInterceptorTests(
 
       let [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
       expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof creationRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof creationRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       creationPromise = fetch(`${baseURL}/users`, {
         method: 'POST',
@@ -240,8 +239,7 @@ export function declarePostHttpInterceptorTests(
 
       [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
       expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
-      expectTypeOf<typeof creationRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof creationRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const creationTrackerWithResponse = creationTrackerWithoutResponse.respond({
         status: 201,
@@ -323,7 +321,7 @@ export function declarePostHttpInterceptorTests(
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(creationRequest.body).toEqualTypeOf<null>();
       expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
@@ -352,7 +350,7 @@ export function declarePostHttpInterceptorTests(
       const [errorCreationRequest] = errorCreationRequests;
       expect(errorCreationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<null>();
       expect(errorCreationRequest.body).toBe(null);
 
       expectTypeOf(errorCreationRequest.response.status).toEqualTypeOf<500>();
@@ -415,7 +413,7 @@ export function declarePostHttpInterceptorTests(
       let [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(creationRequest.body).toEqualTypeOf<null>();
       expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
@@ -444,7 +442,7 @@ export function declarePostHttpInterceptorTests(
       const [errorCreationRequest] = errorCreationRequests;
       expect(errorCreationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorCreationRequest.body).toEqualTypeOf<null>();
       expect(errorCreationRequest.body).toBe(null);
 
       expectTypeOf(errorCreationRequest.response.status).toEqualTypeOf<500>();
@@ -467,7 +465,7 @@ export function declarePostHttpInterceptorTests(
       [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(creationRequest.body).toEqualTypeOf<null>();
       expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
@@ -534,7 +532,7 @@ export function declarePostHttpInterceptorTests(
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(creationRequest.body).toEqualTypeOf<null>();
       expect(creationRequest.body).toBe(null);
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();

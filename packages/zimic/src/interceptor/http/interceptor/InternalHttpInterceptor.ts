@@ -129,22 +129,22 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker exten
     path: Path,
     { request }: Context,
   ): Promise<HttpRequestHandlerResult> => {
-    const parsedRequest = await this._worker.parseRawRequest<Default<Schema[Path][Method]>>(request);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
     const matchedTracker = this.findMatchedTracker(method, path, parsedRequest);
 
     if (matchedTracker) {
       const responseDeclaration = await matchedTracker.applyResponseDeclaration(parsedRequest);
 
-      const responseToParse = this._worker.createResponseFromDeclaration(responseDeclaration);
+      const responseToParse = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
 
-      const parsedResponse = await this._worker.parseRawResponse<
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
       >(responseToParse);
 
       matchedTracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-      const responseToReturn = this._worker.createResponseFromDeclaration(responseDeclaration);
+      const responseToReturn = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       return { response: responseToReturn };
     } else {
       return { bypass: true };

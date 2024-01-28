@@ -1,6 +1,8 @@
-export type Default<Type, IfUndefined = never> = undefined | void extends Type
-  ? IfUndefined
-  : Exclude<Type, undefined | void>;
+export type Default<Type, IfEmpty = never> = undefined extends Type
+  ? IfEmpty
+  : void extends Type
+    ? IfEmpty
+    : Exclude<Type, undefined | void>;
 
 export type PossiblePromise<Type> = Type | Promise<Type>;
 

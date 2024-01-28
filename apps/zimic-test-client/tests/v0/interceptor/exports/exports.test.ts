@@ -1,4 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest';
+import { JSONValue } from 'zimic0';
 import type {
   DefaultBody,
   HttpInterceptor,
@@ -29,6 +30,7 @@ import type {
 
 describe('Exports', () => {
   it('should export all expected types', () => {
+    expectTypeOf<JSONValue>().not.toBeAny();
     expectTypeOf<DefaultBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();

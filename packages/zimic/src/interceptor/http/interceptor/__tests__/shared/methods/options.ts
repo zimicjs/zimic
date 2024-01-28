@@ -46,13 +46,13 @@ export function declareOptionsHttpInterceptorTests(
       const [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
       expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
       expect(optionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
     });
   });
@@ -105,7 +105,7 @@ export function declareOptionsHttpInterceptorTests(
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
       expect(optionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
     });
   });
@@ -139,13 +139,13 @@ export function declareOptionsHttpInterceptorTests(
       const [genericOptionsRequest] = genericOptionsRequests;
       expect(genericOptionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(genericOptionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(genericOptionsRequest.body).toEqualTypeOf<null>();
       expect(genericOptionsRequest.body).toBe(null);
 
       expectTypeOf(genericOptionsRequest.response.status).toEqualTypeOf<200>();
       expect(genericOptionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(genericOptionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(genericOptionsRequest.response.body).toEqualTypeOf<null>();
       expect(genericOptionsRequest.response.body).toBe(null);
 
       genericOptionsTracker.bypass();
@@ -165,13 +165,13 @@ export function declareOptionsHttpInterceptorTests(
       const [specificOptionsRequest] = specificOptionsRequests;
       expect(specificOptionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(specificOptionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(specificOptionsRequest.body).toEqualTypeOf<null>();
       expect(specificOptionsRequest.body).toBe(null);
 
       expectTypeOf(specificOptionsRequest.response.status).toEqualTypeOf<200>();
       expect(specificOptionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(specificOptionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(specificOptionsRequest.response.body).toEqualTypeOf<null>();
       expect(specificOptionsRequest.response.body).toBe(null);
 
       const unmatchedOptionsPromise = fetch(`${baseURL}/filters/${2}`, { method: 'OPTIONS' });
@@ -203,9 +203,8 @@ export function declareOptionsHttpInterceptorTests(
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
 
       let [optionsRequestWithoutResponse] = optionsRequestsWithoutResponse;
-      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof optionsRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof optionsRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
@@ -213,9 +212,8 @@ export function declareOptionsHttpInterceptorTests(
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
 
       [optionsRequestWithoutResponse] = optionsRequestsWithoutResponse;
-      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<never>();
-      expectTypeOf<typeof optionsRequestWithoutResponse.response.status>().toEqualTypeOf<never>();
-      expectTypeOf<typeof optionsRequestWithoutResponse.response.body>().toEqualTypeOf<never>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<null>();
+      expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const optionsTrackerWithResponse = optionsTrackerWithoutResponse.respond({
         status: 200,
@@ -232,13 +230,13 @@ export function declareOptionsHttpInterceptorTests(
       expect(optionsRequestWithResponse).toBeInstanceOf(Request);
       expect(optionsRequestWithResponse.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequestWithResponse.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequestWithResponse.body).toEqualTypeOf<null>();
       expect(optionsRequestWithResponse.body).toBe(null);
 
       expectTypeOf(optionsRequestWithResponse.response.status).toEqualTypeOf<200>();
       expect(optionsRequestWithResponse.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequestWithResponse.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequestWithResponse.response.body).toEqualTypeOf<null>();
       expect(optionsRequestWithResponse.response.body).toBe(null);
     });
   });
@@ -282,13 +280,13 @@ export function declareOptionsHttpInterceptorTests(
       const [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
       expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
       expect(optionsRequest.response.status).toEqual(204);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
 
       const errorOptionsTracker = interceptor.options('/filters').respond({
@@ -311,7 +309,7 @@ export function declareOptionsHttpInterceptorTests(
       const [errorOptionsRequest] = errorOptionsRequests;
       expect(errorOptionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorOptionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorOptionsRequest.body).toEqualTypeOf<null>();
       expect(errorOptionsRequest.body).toBe(null);
 
       expectTypeOf(errorOptionsRequest.response.status).toEqualTypeOf<500>();
@@ -370,16 +368,13 @@ export function declareOptionsHttpInterceptorTests(
       let [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
-      expect(optionsRequest.body).toBe(null);
-
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
       expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
       expect(optionsRequest.response.status).toEqual(204);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
 
       const errorOptionsTracker = interceptor.options('/filters').respond({
@@ -402,7 +397,7 @@ export function declareOptionsHttpInterceptorTests(
       const [errorOptionsRequest] = errorOptionsRequests;
       expect(errorOptionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(errorOptionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(errorOptionsRequest.body).toEqualTypeOf<null>();
       expect(errorOptionsRequest.body).toBe(null);
 
       expectTypeOf(errorOptionsRequest.response.status).toEqualTypeOf<500>();
@@ -422,16 +417,13 @@ export function declareOptionsHttpInterceptorTests(
       [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
-      expect(optionsRequest.body).toBe(null);
-
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
       expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
       expect(optionsRequest.response.status).toEqual(204);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
     });
   });
@@ -487,16 +479,13 @@ export function declareOptionsHttpInterceptorTests(
       const [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
-      expect(optionsRequest.body).toBe(null);
-
-      expectTypeOf(optionsRequest.body).toEqualTypeOf<never>();
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
       expect(optionsRequest.body).toBe(null);
 
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
       expect(optionsRequest.response.status).toEqual(204);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<unknown>();
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
     });
   });
