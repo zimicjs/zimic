@@ -23,7 +23,7 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -- vitest",
-    "test:turbo": "pnpm run test run",
+    "test:turbo": "pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
     "deps:build": "pnpm turbo build --filter @zimic/release^...",
