@@ -138,9 +138,15 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     const parsedBody = await this.parseRawBody(rawRequest);
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
+      has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
+          return false;
+        }
+        return Reflect.has(target, property);
+      },
+
       get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        const isHiddenProperty = (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
-        if (isHiddenProperty) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -156,6 +162,10 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     return parsedRequest;
   }
 
+  private static isHiddenRequestProperty(property: string) {
+    return (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+  }
+
   static async parseRawResponse<
     MethodSchema extends HttpInterceptorMethodSchema,
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
@@ -164,9 +174,15 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     const parsedBody = await this.parseRawBody(rawResponse);
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
+      has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
+          return false;
+        }
+        return Reflect.has(target, property);
+      },
+
       get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        const isHiddenProperty = (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
-        if (isHiddenProperty) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -180,6 +196,10 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     });
 
     return parsedRequest;
+  }
+
+  private static isHiddenResponseProperty(property: string) {
+    return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
   }
 
   static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest<Body> | HttpResponse<Body>) {

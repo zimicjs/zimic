@@ -1,10 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { HttpInterceptorMethodSchema } from '../../interceptor/types/schema';
 import HttpInterceptorWorker from '../../interceptorWorker/HttpInterceptorWorker';
+import { HttpRequest, HttpResponse } from '../../interceptorWorker/types';
 import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
 import InternalHttpRequestTracker from '../InternalHttpRequestTracker';
-import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types/requests';
+import {
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+  HttpInterceptorRequest,
+  HttpRequestTrackerResponseDeclaration,
+} from '../types/requests';
 
 describe('InternalHttpRequestTracker', () => {
   const defaultBaseURL = 'http://localhost:3000';
@@ -147,5 +153,77 @@ describe('InternalHttpRequestTracker', () => {
 
     expect(interceptedRequests[1]).toEqual(secondRequest);
     expect(interceptedRequests[1].response).toEqual(secondResponse);
+  });
+
+  it('should provide access to the raw intercepted requests and responses', async () => {
+    const tracker = new InternalHttpRequestTracker().respond({
+      status: 200,
+      body: { response: true },
+    });
+
+    const request = new Request(defaultBaseURL, {
+      method: 'POST',
+      body: JSON.stringify({ request: true }),
+    });
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+
+    const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
+    const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
+    const parsedResponse = await HttpInterceptorWorker.parseRawResponse<HttpInterceptorMethodSchema, 200>(response);
+
+    tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
+
+    const interceptedRequests = tracker.requests();
+    expect(interceptedRequests).toHaveLength(1);
+
+    expect(interceptedRequests[0]).toEqual(parsedRequest);
+
+    expectTypeOf(interceptedRequests[0].raw).toEqualTypeOf<HttpRequest>();
+    expect(interceptedRequests[0].raw).toBeInstanceOf(Request);
+    expect(interceptedRequests[0].raw.url).toBe(`${defaultBaseURL}/`);
+    expect(interceptedRequests[0].raw.method).toBe('POST');
+    expect(interceptedRequests[0].raw.headers).toEqual(request.headers);
+    expect(await interceptedRequests[0].raw.json()).toEqual({ request: true });
+
+    expect(interceptedRequests[0].response).toEqual(parsedResponse);
+
+    expectTypeOf(interceptedRequests[0].response.raw).toEqualTypeOf<HttpResponse>();
+    expect(interceptedRequests[0].response.raw).toBeInstanceOf(Response);
+    expect(interceptedRequests[0].response.raw.status).toBe(200);
+    expect(interceptedRequests[0].response.raw.headers).toEqual(response.headers);
+    expect(await interceptedRequests[0].response.raw.json()).toEqual({ response: true });
+  });
+
+  it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
+    const tracker = new InternalHttpRequestTracker().respond({
+      status: 200,
+      body: {},
+    });
+
+    const request = new Request(defaultBaseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+
+    const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
+    const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
+    const parsedResponse = await HttpInterceptorWorker.parseRawResponse<HttpInterceptorMethodSchema, 200>(response);
+
+    tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
+
+    const interceptedRequests = tracker.requests();
+    expect(interceptedRequests).toHaveLength(1);
+
+    expect(interceptedRequests[0]).toEqual(parsedRequest);
+
+    for (const hiddenProperty of HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES) {
+      expect(interceptedRequests[0]).not.toHaveProperty(hiddenProperty);
+      expect((interceptedRequests[0] as unknown as Request)[hiddenProperty]).toBe(undefined);
+    }
+
+    expect(interceptedRequests[0].response).toEqual(parsedResponse);
+
+    for (const hiddenProperty of HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES) {
+      expect(interceptedRequests[0].response).not.toHaveProperty(hiddenProperty);
+      expect((interceptedRequests[0].response as unknown as Response)[hiddenProperty]).toBe(undefined);
+    }
   });
 });

@@ -31,7 +31,7 @@ export type HttpRequestTrackerResponseDeclarationFactory<
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body> {
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
-  raw: HttpResponse<Default<MethodSchema['request']>['body']>;
+  raw: HttpRequest<Default<MethodSchema['request']>['body']>;
 }
 
 export interface HttpInterceptorResponse<
