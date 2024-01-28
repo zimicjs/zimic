@@ -31,7 +31,7 @@ export type HttpRequestTrackerResponseDeclarationFactory<
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body> {
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
-  raw: HttpRequest<Default<MethodSchema['request']>['body']>;
+  raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }
 
 export interface HttpInterceptorResponse<
@@ -40,7 +40,7 @@ export interface HttpInterceptorResponse<
 > extends Omit<HttpResponse, keyof Body> {
   status: StatusCode;
   body: Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
-  raw: HttpResponse<Default<MethodSchema['response']>[StatusCode]['body']>;
+  raw: HttpResponse<Default<Default<MethodSchema['response']>[StatusCode]['body'], null>, StatusCode>;
 }
 
 export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = new Set<
