@@ -7,7 +7,12 @@ import {
   HttpInterceptorMethodSchema,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../interceptor/types/schema';
-import { HttpInterceptorRequest, HttpInterceptorResponse } from '../requestTracker/types/requests';
+import {
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+  HttpInterceptorRequest,
+  HttpInterceptorResponse,
+} from '../requestTracker/types/requests';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import {
   DefaultBody,
@@ -113,7 +118,7 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     this._worker.resetHandlers();
   }
 
-  createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(
+  static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(
     responseDeclaration: Declaration,
   ): HttpResponse<Declaration['body'], Declaration['status']> {
     const response = MSWHttpResponse.json(responseDeclaration.body, {
@@ -125,42 +130,59 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     };
   }
 
-  async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
-    request: HttpRequest,
+  static async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
+    rawRequest: HttpRequest,
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
-    const parsedBody = await this.parseRawBody(request);
+    const rawRequestClone = rawRequest.clone();
 
-    const proxyRequest = new Proxy(request as unknown as HttpInterceptorRequest<MethodSchema>, {
-      get(target, property) {
+    const parsedBody = await this.parseRawBody(rawRequest);
+
+    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
+      get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+        const isHiddenProperty = (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+        if (isHiddenProperty) {
+          return undefined;
+        }
         if (property === 'body') {
           return parsedBody;
+        }
+        if (property === 'raw') {
+          return rawRequestClone;
         }
         return Reflect.get(target, property, target) as unknown;
       },
     });
 
-    return proxyRequest;
+    return parsedRequest;
   }
 
-  async parseRawResponse<
+  static async parseRawResponse<
     MethodSchema extends HttpInterceptorMethodSchema,
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-  >(response: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
-    const parsedBody = await this.parseRawBody(response);
+  >(rawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+    const rawResponseClone = rawResponse.clone();
+    const parsedBody = await this.parseRawBody(rawResponse);
 
-    const proxyRequest = new Proxy(response as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
-      get(target, property) {
+    const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
+      get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
+        const isHiddenProperty = (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+        if (isHiddenProperty) {
+          return undefined;
+        }
         if (property === 'body') {
           return parsedBody;
+        }
+        if (property === 'raw') {
+          return rawResponseClone;
         }
         return Reflect.get(target, property, target) as unknown;
       },
     });
 
-    return proxyRequest;
+    return parsedRequest;
   }
 
-  async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest<Body> | HttpResponse<Body>) {
+  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest<Body> | HttpResponse<Body>) {
     const bodyAsText = await requestOrResponse.text();
 
     try {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { HttpInterceptorMethodSchema } from '../../interceptor/types/schema';
+import HttpInterceptorWorker from '../../interceptorWorker/HttpInterceptorWorker';
 import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
 import InternalHttpRequestTracker from '../InternalHttpRequestTracker';
 import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '../types/requests';
@@ -8,40 +9,43 @@ import { HttpInterceptorRequest, HttpRequestTrackerResponseDeclaration } from '.
 describe('InternalHttpRequestTracker', () => {
   const defaultBaseURL = 'http://localhost:3000';
 
-  it('should not match any request if contains no declared response', () => {
+  it('should not match any request if contains no declared response', async () => {
     const tracker = new InternalHttpRequestTracker();
 
     const request = new Request(defaultBaseURL);
-    expect(tracker.matchesRequest(request)).toBe(false);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
   });
 
-  it('should match any request if contains declared response', () => {
+  it('should match any request if contains declared response', async () => {
     const tracker = new InternalHttpRequestTracker().respond({
       status: 200,
       body: {},
     });
 
     const request = new Request(defaultBaseURL);
-    expect(tracker.matchesRequest(request)).toBe(true);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
   });
 
-  it('should not match any request if bypassed', () => {
+  it('should not match any request if bypassed', async () => {
     const tracker = new InternalHttpRequestTracker();
 
     const request = new Request(defaultBaseURL);
-    expect(tracker.matchesRequest(request)).toBe(false);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     tracker.bypass();
-    expect(tracker.matchesRequest(request)).toBe(false);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     tracker.respond({
       status: 200,
       body: {},
     });
-    expect(tracker.matchesRequest(request)).toBe(true);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
     tracker.bypass();
-    expect(tracker.matchesRequest(request)).toBe(false);
+    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
   });
 
   it('should create response with declared status and body', async () => {
@@ -54,7 +58,8 @@ describe('InternalHttpRequestTracker', () => {
     });
 
     const request = new Request(defaultBaseURL);
-    const response = await tracker.applyResponseDeclaration(request);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+    const response = await tracker.applyResponseDeclaration(parsedRequest);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -76,7 +81,8 @@ describe('InternalHttpRequestTracker', () => {
     tracker.respond(responseFactory);
 
     const request = new Request(defaultBaseURL);
-    const response = await tracker.applyResponseDeclaration(request);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
+    const response = await tracker.applyResponseDeclaration(parsedRequest);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -89,9 +95,10 @@ describe('InternalHttpRequestTracker', () => {
     const tracker = new InternalHttpRequestTracker();
 
     const request = new Request(defaultBaseURL);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest(request);
 
     await expect(async () => {
-      await tracker.applyResponseDeclaration(request);
+      await tracker.applyResponseDeclaration(parsedRequest);
     }).rejects.toThrowError(NoResponseDefinitionError);
   });
 
@@ -102,13 +109,17 @@ describe('InternalHttpRequestTracker', () => {
     });
 
     const firstRequest = new Request(defaultBaseURL);
+    const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest(firstRequest);
 
-    const firstResponseDeclaration = await tracker.applyResponseDeclaration(firstRequest);
+    const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
-    }) as Response & { status: 200 };
+    });
+    const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<HttpInterceptorMethodSchema, 200>(
+      firstResponse,
+    );
 
-    tracker.registerInterceptedRequest(firstRequest, firstResponse);
+    tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
     const interceptedRequests = tracker.requests();
     expect(interceptedRequests).toHaveLength(1);
@@ -117,13 +128,17 @@ describe('InternalHttpRequestTracker', () => {
     expect(interceptedRequests[0].response).toEqual(firstResponse);
 
     const secondRequest = new Request(`${defaultBaseURL}/path`);
-    const secondResponseDeclaration = await tracker.applyResponseDeclaration(secondRequest);
+    const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest(secondRequest);
+    const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
 
     const secondResponse = Response.json(secondResponseDeclaration.body, {
       status: secondResponseDeclaration.status,
-    }) as Response & { status: 200 };
+    });
+    const parsedSecondResponse = await HttpInterceptorWorker.parseRawResponse<HttpInterceptorMethodSchema, 200>(
+      secondResponse,
+    );
 
-    tracker.registerInterceptedRequest(secondRequest, secondResponse);
+    tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
     expect(interceptedRequests).toHaveLength(2);
 
