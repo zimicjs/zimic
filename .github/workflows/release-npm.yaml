@@ -33,12 +33,14 @@ jobs:
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
+          node-version: 20
           node-registry-url: https://registry.npmjs.org
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: zimic...
           build: zimic^...
           build-node-env: production
+          install-playwright-browsers: true
 
       - name: Build zimic
         run: pnpm turbo build --filter zimic
