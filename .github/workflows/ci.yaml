@@ -72,5 +72,4 @@ jobs:
             test:turbo \
             --continue \
             --concurrency 1 \
-            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }} \
-            -- --coverage
+            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}
