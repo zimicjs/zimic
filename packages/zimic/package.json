@@ -27,7 +27,7 @@
   "license": "MIT",
   "files": [
     "package.json",
-    "README.md",
+    "../../README.md",
     "LICENSE.md",
     "dist",
     "index.d.ts",
