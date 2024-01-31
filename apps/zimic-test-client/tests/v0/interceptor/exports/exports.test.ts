@@ -55,6 +55,6 @@ describe('Exports', () => {
     expectTypeOf<NonLiteralHttpInterceptorSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTracker<never>>().not.toBeAny();
+    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
   });
 });
