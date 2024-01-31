@@ -1,6 +1,11 @@
 import { Default } from '@/types/utils';
 
-import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../../interceptor/types/schema';
+import {
+  HttpInterceptorResponseSchemaStatusCode,
+  HttpInterceptorSchema,
+  HttpInterceptorSchemaMethod,
+  HttpInterceptorSchemaPath,
+} from '../../interceptor/types/schema';
 import {
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
@@ -8,16 +13,25 @@ import {
 } from './requests';
 
 export interface HttpRequestTracker<
-  MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<
+    Default<Default<Schema[Path][Method]>['response']>
+  > = never,
 > {
-  respond: <StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
+  method: () => Method;
+  path: () => Path;
+
+  respond: <
+    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+  >(
     declarationOrCreateDeclaration:
-      | HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
-  ) => HttpRequestTracker<MethodSchema, StatusCode>;
+      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
+      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+  ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  bypass: () => HttpRequestTracker<MethodSchema, StatusCode>;
+  bypass: () => HttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  requests: () => readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[];
+  requests: () => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[];
 }

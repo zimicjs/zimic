@@ -1,5 +1,3 @@
-import { Default } from '@/types/utils';
-
 import { HttpRequestTracker } from '../../requestTracker/types/public';
 import {
   AllowAnyStringInRouteParameters,
@@ -13,19 +11,18 @@ export interface EffectiveHttpInterceptorMethodHandler<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
 > {
-  <Path extends LiteralHttpInterceptorSchemaPath<Schema, Method>>(
-    path: Path,
-  ): HttpRequestTracker<Default<Schema[Path][Method]>>;
+  <Path extends LiteralHttpInterceptorSchemaPath<Schema, Method>>(path: Path): HttpRequestTracker<Schema, Method, Path>;
 
   <
     Path extends LiteralHttpInterceptorSchemaPath<Schema, Method> | void = void,
     ActualPath extends Exclude<Path, void> = Exclude<Path, void>,
   >(
     path: AllowAnyStringInRouteParameters<ActualPath>,
-  ): HttpRequestTracker<Default<Schema[ActualPath][Method]>>;
+  ): HttpRequestTracker<Schema, Method, ActualPath>;
 }
 
-export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<never>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<any, any, never>;
 
 export type HttpInterceptorMethodHandler<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> =
   Method extends HttpInterceptorSchemaMethod<Schema>

@@ -1,18 +1,25 @@
-import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { expectTypeOf, expect, vi, it } from 'vitest';
 
-import { HttpInterceptorSchema } from '../../interceptor/types/schema';
-import HttpInterceptorWorker from '../../interceptorWorker/HttpInterceptorWorker';
-import { HttpRequest, HttpResponse } from '../../interceptorWorker/types';
-import NoResponseDefinitionError from '../errors/NoResponseDefinitionError';
-import InternalHttpRequestTracker from '../InternalHttpRequestTracker';
+import { HttpInterceptorSchema, HttpRequest } from '@@/interceptor';
+
+import InternalNodeHttpInterceptor from '@/interceptor/http/interceptor/node/InternalNodeHttpInterceptor';
+import { HttpInterceptorOptions } from '@/interceptor/http/interceptor/types/options';
+import { HttpInterceptor } from '@/interceptor/http/interceptor/types/public';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { HttpResponse } from '@/interceptor/http/interceptorWorker/types';
+
+import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
+import InternalHttpRequestTracker from '../../InternalHttpRequestTracker';
 import {
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
-  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpRequestTrackerResponseDeclaration,
-} from '../types/requests';
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+} from '../../types/requests';
 
-describe('InternalHttpRequestTracker', () => {
+export function declareSharedHttpRequestTrackerTests(
+  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
+) {
   const defaultBaseURL = 'http://localhost:3000';
 
   type MethodSchema = HttpInterceptorSchema.Method<{
@@ -26,8 +33,26 @@ describe('InternalHttpRequestTracker', () => {
     };
   }>;
 
+  type Schema = HttpInterceptorSchema.Root<{
+    '/users': {
+      GET: MethodSchema;
+    };
+  }>;
+
+  const interceptor = createInterceptor<Schema>({ baseURL: defaultBaseURL }) as InternalNodeHttpInterceptor<Schema>;
+
+  it('should provide access to the method and path', () => {
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+
+    expectTypeOf<typeof tracker.method>().toEqualTypeOf<() => 'GET'>();
+    expect(tracker.method()).toBe('GET');
+
+    expectTypeOf<typeof tracker.path>().toEqualTypeOf<() => '/users'>();
+    expect(tracker.path()).toBe('/users');
+  });
+
   it('should not match any request if contains no declared response', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>();
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
     const request = new Request(defaultBaseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -35,7 +60,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should match any request if contains declared response', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>().respond({
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -46,7 +71,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should not match any request if bypassed', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>();
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
     const request = new Request(defaultBaseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -69,7 +94,7 @@ describe('InternalHttpRequestTracker', () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;
 
-    const tracker = new InternalHttpRequestTracker<MethodSchema>().respond({
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
       status: responseStatus,
       body: responseBody,
     });
@@ -94,7 +119,7 @@ describe('InternalHttpRequestTracker', () => {
       body: responseBody,
     }));
 
-    const tracker = new InternalHttpRequestTracker<MethodSchema>();
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
     tracker.respond(responseFactory);
 
     const request = new Request(defaultBaseURL);
@@ -109,7 +134,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should throw an error if trying to create a response without a declared response', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>();
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
     const request = new Request(defaultBaseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -120,7 +145,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>().respond({
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -163,7 +188,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should provide access to the raw intercepted requests and responses', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>().respond({
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -206,7 +231,7 @@ describe('InternalHttpRequestTracker', () => {
   });
 
   it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
-    const tracker = new InternalHttpRequestTracker<MethodSchema>().respond({
+    const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -237,4 +262,4 @@ describe('InternalHttpRequestTracker', () => {
       expect((interceptedRequests[0].response as unknown as Response)[hiddenProperty]).toBe(undefined);
     }
   });
-});
+}

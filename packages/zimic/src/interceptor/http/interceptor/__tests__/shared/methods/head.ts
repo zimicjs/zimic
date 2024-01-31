@@ -1,6 +1,5 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -438,23 +437,84 @@ export function declareHeadHttpInterceptorTests(
       const initialHeadRequests = headTracker.requests();
       expect(initialHeadRequests).toHaveLength(0);
 
-      let headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
+      const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
       await expect(headPromise).rejects.toThrowError();
+    });
+  });
 
-      expect(() => {
-        headTracker.respond({
-          status: 204,
-        });
-      }).toThrowError(UnusableHttpRequestTrackerError);
+  it('should support creating new trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
 
-      headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expect(headPromise).rejects.toThrowError();
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      interceptor.head('/users').respond({
+        status: 200,
+      });
+
+      interceptor.clear();
 
       const noContentHeadTracker = interceptor.head('/users').respond({
         status: 204,
       });
 
-      expect(initialHeadRequests).toHaveLength(0);
+      const headRequests = noContentHeadTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
+      expect(headResponse.status).toBe(204);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<204>();
+      expect(headRequest.response.status).toEqual(204);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
+      expect(headRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should support reusing previous trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const headTracker = interceptor.head('/users');
+
+      headTracker.respond({
+        status: 200,
+      });
+
+      interceptor.clear();
+
+      const noContentHeadTracker = headTracker.respond({
+        status: 204,
+      });
+
       const headRequests = noContentHeadTracker.requests();
       expect(headRequests).toHaveLength(0);
 

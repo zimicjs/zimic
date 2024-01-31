@@ -11,16 +11,14 @@ import {
   HTTP_INTERCEPTOR_METHODS,
   HttpInterceptorMethod,
   HttpInterceptorRequestContext,
+  HttpInterceptorResponseSchemaStatusCode,
   HttpInterceptorSchema,
   HttpInterceptorSchemaMethod,
   HttpInterceptorSchemaPath,
-  LooseLiteralHttpInterceptorSchemaPath,
 } from './types/schema';
 
-type HttpRequestTrackersByPath<Schema extends HttpInterceptorSchema, Method extends HttpInterceptorMethod> = Map<
-  string,
-  InternalHttpRequestTracker<Default<Schema[LooseLiteralHttpInterceptorSchemaPath<Schema, Method>][Method]>>[]
->;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyInternalHttpRequestTracker = InternalHttpRequestTracker<any, any, any, any>;
 
 class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker extends HttpInterceptorWorker>
   implements HttpInterceptor<Schema>
@@ -28,23 +26,19 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker exten
   protected _worker: Worker;
 
   private trackersByMethod: {
-    [Method in HttpInterceptorMethod]: HttpRequestTrackersByPath<Schema, Method>;
+    [Method in HttpInterceptorMethod]: Map<string, AnyInternalHttpRequestTracker[]>;
   } = {
-    GET: this.createTrackersByPathMap<'GET'>(),
-    POST: this.createTrackersByPathMap<'POST'>(),
-    PATCH: this.createTrackersByPathMap<'PATCH'>(),
-    PUT: this.createTrackersByPathMap<'PUT'>(),
-    DELETE: this.createTrackersByPathMap<'DELETE'>(),
-    HEAD: this.createTrackersByPathMap<'HEAD'>(),
-    OPTIONS: this.createTrackersByPathMap<'OPTIONS'>(),
+    GET: new Map(),
+    POST: new Map(),
+    PATCH: new Map(),
+    PUT: new Map(),
+    DELETE: new Map(),
+    HEAD: new Map(),
+    OPTIONS: new Map(),
   };
 
   constructor(options: { worker: Worker }) {
     this._worker = options.worker;
-  }
-
-  private createTrackersByPathMap<Method extends HttpInterceptorMethod>(): HttpRequestTrackersByPath<Schema, Method> {
-    return new Map<string, InternalHttpRequestTracker<Default<Schema[keyof Schema][Method]>>[]>();
   }
 
   worker() {
@@ -68,56 +62,69 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker exten
   }
 
   get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
-    return this.prepareHttpRequestTracker('GET' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('GET' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post: HttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
-    return this.prepareHttpRequestTracker('POST' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('POST' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
-    return this.prepareHttpRequestTracker('PATCH' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('PATCH' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put: HttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
-    return this.prepareHttpRequestTracker('PUT' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('PUT' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
-    return this.prepareHttpRequestTracker('DELETE' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('DELETE' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
-    return this.prepareHttpRequestTracker('HEAD' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('HEAD' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
-    return this.prepareHttpRequestTracker('OPTIONS' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('OPTIONS' as HttpInterceptorSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
-  private prepareHttpRequestTracker<
+  private createHttpRequestTracker<
     Method extends HttpInterceptorSchemaMethod<Schema>,
     Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  >(method: Method, path: Path): HttpRequestTracker<Default<Schema[Path][Method]>> {
-    const tracker = new InternalHttpRequestTracker<Default<Schema[Path][Method]>>();
+  >(method: Method, path: Path): HttpRequestTracker<Schema, Method, Path> {
+    const tracker = new InternalHttpRequestTracker<Schema, Method, Path>(this, method, path);
+    this.registerRequestTracker(tracker);
+    return tracker;
+  }
 
-    const methodPathTrackers = this.trackersByMethod[method].get(path) ?? [];
-    methodPathTrackers.push(tracker);
+  registerRequestTracker<
+    Method extends HttpInterceptorSchemaMethod<Schema>,
+    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    StatusCode extends HttpInterceptorResponseSchemaStatusCode<
+      Default<Default<Schema[Path][Method]>['response']>
+    > = never,
+  >(tracker: InternalHttpRequestTracker<Schema, Method, Path, StatusCode>) {
+    const methodPathTrackers = this.trackersByMethod[tracker.method()].get(tracker.path()) ?? [];
 
-    if (!this.trackersByMethod[method].has(path)) {
-      this.trackersByMethod[method].set(path, methodPathTrackers);
+    if (!methodPathTrackers.includes(tracker)) {
+      methodPathTrackers.push(tracker);
+    }
 
-      this._worker.use(method, path, async (context) => {
+    const isFirstTrackerForMethodPath = methodPathTrackers.length === 1;
+
+    if (isFirstTrackerForMethodPath) {
+      this.trackersByMethod[tracker.method()].set(tracker.path(), methodPathTrackers);
+
+      this._worker.use(tracker.method(), tracker.path(), async (context) => {
         const response = this.handleInterceptedRequest(
-          method,
-          path,
+          tracker.method(),
+          tracker.path(),
           context as HttpInterceptorRequestContext<Schema, Method, Path>,
         );
         return response;
       });
     }
-
-    return tracker;
   }
 
   private handleInterceptedRequest = async <
@@ -158,7 +165,8 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker exten
     method: Method,
     path: Path,
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-  ): InternalHttpRequestTracker<Default<Schema[Path][Method]>> | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): InternalHttpRequestTracker<Schema, Method, Path, any> | undefined {
     const methodPathTrackers = this.trackersByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
@@ -168,15 +176,15 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema, Worker exten
     this._worker.clearHandlers();
 
     for (const method of HTTP_INTERCEPTOR_METHODS) {
-      this.markMethodTrackersAsUnusable(method);
+      this.bypassMethodTrackers(method);
       this.trackersByMethod[method].clear();
     }
   }
 
-  private markMethodTrackersAsUnusable(method: HttpInterceptorMethod) {
+  private bypassMethodTrackers(method: HttpInterceptorMethod) {
     for (const trackers of this.trackersByMethod[method].values()) {
       for (const tracker of trackers) {
-        tracker.markAsUnusable();
+        tracker.bypass();
       }
     }
   }

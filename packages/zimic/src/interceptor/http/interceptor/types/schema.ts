@@ -1,4 +1,4 @@
-import { Default, UnionToIntersection, Prettify } from '@/types/utils';
+import { Default, UnionToIntersection, Prettify, IfAny } from '@/types/utils';
 
 import { HttpRequestHandlerContext, DefaultBody } from '../../interceptorWorker/types';
 import { HttpInterceptor } from './public';
@@ -47,9 +47,10 @@ export namespace HttpInterceptorSchema {
 export type ExtractHttpInterceptorSchema<Interceptor> =
   Interceptor extends HttpInterceptor<infer Schema> ? Schema : never;
 
-export type HttpInterceptorSchemaMethod<Schema extends HttpInterceptorSchema> = Extract<
-  keyof UnionToIntersection<Schema[keyof Schema]>,
-  HttpInterceptorMethod
+export type HttpInterceptorSchemaMethod<Schema extends HttpInterceptorSchema> = IfAny<
+  Schema,
+  any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  Extract<keyof UnionToIntersection<Schema[keyof Schema]>, HttpInterceptorMethod>
 >;
 
 export type LiteralHttpInterceptorSchemaPath<

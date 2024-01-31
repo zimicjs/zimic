@@ -1,8 +1,14 @@
 import { Default } from '@/types/utils';
 
-import { HttpInterceptorMethodSchema, HttpInterceptorResponseSchemaStatusCode } from '../interceptor/types/schema';
+import InternalHttpInterceptor from '../interceptor/InternalHttpInterceptor';
+import {
+  HttpInterceptorResponseSchemaStatusCode,
+  HttpInterceptorSchema,
+  HttpInterceptorSchemaMethod,
+  HttpInterceptorSchemaPath,
+} from '../interceptor/types/schema';
+import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import UnusableHttpRequestTrackerError from './errors/UnusableHttpRequestTrackerError';
 import { HttpRequestTracker } from './types/public';
 import {
   HttpInterceptorRequest,
@@ -13,24 +19,43 @@ import {
 } from './types/requests';
 
 class InternalHttpRequestTracker<
-  MethodSchema extends HttpInterceptorMethodSchema,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
-> implements HttpRequestTracker<MethodSchema, StatusCode>
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<
+    Default<Default<Schema[Path][Method]>['response']>
+  > = never,
+> implements HttpRequestTracker<Schema, Method, Path, StatusCode>
 {
-  protected isUsable = true;
-  protected interceptedRequests: TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] = [];
-  protected createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>;
+  private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
-  respond<NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>>(
+  private createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<
+    Default<Schema[Path][Method]>,
+    StatusCode
+  >;
+
+  constructor(
+    private interceptor: InternalHttpInterceptor<Schema, HttpInterceptorWorker>,
+    private _method: Method,
+    private _path: Path,
+  ) {}
+
+  method() {
+    return this._method;
+  }
+
+  path() {
+    return this._path;
+  }
+
+  respond<
+    NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+  >(
     declarationOrCreateDeclaration:
-      | HttpRequestTrackerResponseDeclaration<MethodSchema, NewStatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, NewStatusCode>,
-  ): InternalHttpRequestTracker<MethodSchema, NewStatusCode> {
-    if (!this.isUsable) {
-      throw new UnusableHttpRequestTrackerError();
-    }
-
-    const newThis = this as unknown as InternalHttpRequestTracker<MethodSchema, NewStatusCode>;
+      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+  ): InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
+    const newThis = this as unknown as InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declarationOrCreateDeclaration)
       ? declarationOrCreateDeclaration
@@ -38,37 +63,34 @@ class InternalHttpRequestTracker<
 
     newThis.interceptedRequests = [];
 
+    this.interceptor.registerRequestTracker(newThis);
+
     return newThis;
   }
 
   private isResponseDeclarationFactory<
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
-      | HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode>,
-  ): declaration is HttpRequestTrackerResponseDeclarationFactory<MethodSchema, StatusCode> {
+      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
+      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+  ): declaration is HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode> {
     return typeof declaration === 'function';
   }
 
-  bypass(): InternalHttpRequestTracker<MethodSchema, StatusCode> {
+  bypass(): InternalHttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
     this.interceptedRequests = [];
     return this;
   }
 
-  markAsUnusable(): InternalHttpRequestTracker<MethodSchema, StatusCode> {
-    this.isUsable = false;
-    return this;
-  }
-
-  matchesRequest(_request: HttpInterceptorRequest<MethodSchema>): boolean {
+  matchesRequest(_request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
     return this.createResponseDeclaration !== undefined;
   }
 
   async applyResponseDeclaration(
-    request: HttpInterceptorRequest<MethodSchema>,
-  ): Promise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>> {
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+  ): Promise<HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
     }
@@ -77,28 +99,28 @@ class InternalHttpRequestTracker<
   }
 
   registerInterceptedRequest(
-    request: HttpInterceptorRequest<MethodSchema>,
-    response: HttpInterceptorResponse<MethodSchema, StatusCode>,
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     const interceptedRequest = this.createInterceptedRequestProxy(request, response);
     this.interceptedRequests.push(interceptedRequest);
   }
 
   private createInterceptedRequestProxy(
-    request: HttpInterceptorRequest<MethodSchema>,
-    response: HttpInterceptorResponse<MethodSchema, StatusCode>,
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    return new Proxy(request as unknown as TrackedHttpInterceptorRequest<MethodSchema, StatusCode>, {
+    return new Proxy(request as unknown as TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>, {
       get(target, property) {
         if (property === 'response') {
-          return response satisfies HttpInterceptorResponse<MethodSchema, StatusCode>;
+          return response satisfies HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>;
         }
         return Reflect.get(target, property, target) as unknown;
       },
     });
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<MethodSchema, StatusCode>[] {
+  requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
     return this.interceptedRequests;
   }
 }

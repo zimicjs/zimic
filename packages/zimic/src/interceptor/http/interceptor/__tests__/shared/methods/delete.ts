@@ -1,6 +1,5 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -484,7 +483,7 @@ export function declareDeleteHttpInterceptorTests(
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      let deletionTracker = interceptor.delete('/users').respond({
+      const deletionTracker = interceptor.delete('/users').respond({
         status: 200,
         body: users[0],
       });
@@ -494,25 +493,87 @@ export function declareDeleteHttpInterceptorTests(
       const initialDeletionRequests = deletionTracker.requests();
       expect(initialDeletionRequests).toHaveLength(0);
 
-      let deletionPromise = fetch(`${baseURL}/users`, { method: 'DELETE' });
+      const deletionPromise = fetch(`${baseURL}/users`, { method: 'DELETE' });
       await expect(deletionPromise).rejects.toThrowError();
+    });
+  });
 
-      expect(() => {
-        deletionTracker.respond({
-          status: 200,
-          body: users[1],
-        });
-      }).toThrowError(UnusableHttpRequestTrackerError);
+  it('should support creating new trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        DELETE: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
 
-      deletionPromise = fetch(`${baseURL}/users`, { method: 'DELETE' });
-      await expect(deletionPromise).rejects.toThrowError();
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      let deletionTracker = interceptor.delete('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      interceptor.clear();
 
       deletionTracker = interceptor.delete('/users').respond({
         status: 200,
         body: users[1],
       });
 
-      expect(initialDeletionRequests).toHaveLength(0);
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      const deletionResponse = await fetch(`${baseURL}/users`, { method: 'DELETE' });
+      expect(deletionResponse.status).toBe(200);
+
+      const createdUsers = (await deletionResponse.json()) as User;
+      expect(createdUsers).toEqual(users[1]);
+
+      expect(deletionRequests).toHaveLength(1);
+      const [deletionRequest] = deletionRequests;
+      expect(deletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(deletionRequest.body).toEqualTypeOf<null>();
+      expect(deletionRequest.body).toBe(null);
+
+      expectTypeOf(deletionRequest.response.status).toEqualTypeOf<200>();
+      expect(deletionRequest.response.status).toEqual(200);
+
+      expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
+      expect(deletionRequest.response.body).toEqual(users[1]);
+    });
+  });
+
+  it('should support reusing previous trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        DELETE: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const deletionTracker = interceptor.delete('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      interceptor.clear();
+
+      deletionTracker.respond({
+        status: 200,
+        body: users[1],
+      });
+
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
 
