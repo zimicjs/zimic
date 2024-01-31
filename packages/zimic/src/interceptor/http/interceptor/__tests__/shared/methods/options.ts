@@ -1,6 +1,5 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -452,23 +451,84 @@ export function declareOptionsHttpInterceptorTests(
       const initialOptionsRequests = optionsTracker.requests();
       expect(initialOptionsRequests).toHaveLength(0);
 
-      let optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(optionsPromise).rejects.toThrowError();
+    });
+  });
 
-      expect(() => {
-        optionsTracker.respond({
-          status: 204,
-        });
-      }).toThrowError(UnusableHttpRequestTrackerError);
+  it('should support creating new trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
 
-      optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expect(optionsPromise).rejects.toThrowError();
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      interceptor.options('/filters').respond({
+        status: 200,
+      });
+
+      interceptor.clear();
 
       const noContentOptionsTracker = interceptor.options('/filters').respond({
         status: 204,
       });
 
-      expect(initialOptionsRequests).toHaveLength(0);
+      const optionsRequests = noContentOptionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(204);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.body).toEqualTypeOf<null>();
+      expect(optionsRequest.body).toBe(null);
+
+      expectTypeOf(optionsRequest.response.status).toEqualTypeOf<204>();
+      expect(optionsRequest.response.status).toEqual(204);
+
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
+      expect(optionsRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should support reusing previous trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: {};
+            204: {};
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const optionsTracker = interceptor.options('/filters');
+
+      optionsTracker.respond({
+        status: 200,
+      });
+
+      interceptor.clear();
+
+      const noContentOptionsTracker = optionsTracker.respond({
+        status: 204,
+      });
+
       const optionsRequests = noContentOptionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
 

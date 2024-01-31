@@ -1,6 +1,5 @@
 import { expect, expectTypeOf, it } from 'vitest';
 
-import UnusableHttpRequestTrackerError from '@/interceptor/http/requestTracker/errors/UnusableHttpRequestTrackerError';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -485,7 +484,7 @@ export function declarePutHttpInterceptorTests(
     await usingHttpInterceptor(interceptor, async () => {
       await interceptor.start();
 
-      let updateTracker = interceptor.put('/users').respond({
+      const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
       });
@@ -495,25 +494,87 @@ export function declarePutHttpInterceptorTests(
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      let updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
       await expect(updatePromise).rejects.toThrowError();
+    });
+  });
 
-      expect(() => {
-        updateTracker.respond({
-          status: 200,
-          body: users[0],
-        });
-      }).toThrowError(UnusableHttpRequestTrackerError);
+  it('should support creating new trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        PUT: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
 
-      updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
-      await expect(updatePromise).rejects.toThrowError();
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      let updateTracker = interceptor.put('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      interceptor.clear();
 
       updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[1],
       });
 
-      expect(initialUpdateRequests).toHaveLength(0);
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      expect(updateResponse.status).toBe(200);
+
+      const updatedUsers = (await updateResponse.json()) as User;
+      expect(updatedUsers).toEqual(users[1]);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.body).toEqualTypeOf<null>();
+      expect(updateRequest.body).toBe(null);
+
+      expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
+      expect(updateRequest.response.status).toEqual(200);
+
+      expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
+      expect(updateRequest.response.body).toEqual(users[1]);
+    });
+  });
+
+  it('should support reusing current trackers after cleared', async () => {
+    const interceptor = createInterceptor<{
+      '/users': {
+        PUT: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ baseURL });
+
+    await usingHttpInterceptor(interceptor, async () => {
+      await interceptor.start();
+
+      const updateTracker = interceptor.put('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      interceptor.clear();
+
+      updateTracker.respond({
+        status: 200,
+        body: users[1],
+      });
+
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 

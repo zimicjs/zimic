@@ -4,9 +4,9 @@ export type Default<Type, IfEmpty = never> = undefined extends Type
     ? IfEmpty
     : Exclude<Type, undefined | void>;
 
-export type PossiblePromise<Type> = Type | Promise<Type>;
+export type IfAny<Type, Yes, No> = 0 extends 1 & Type ? Yes : No;
 
-export type NeverIfUndefined<Type> = undefined | void extends Type ? never : Type;
+export type PossiblePromise<Type> = Type | Promise<Type>;
 
 export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union) => void : never) extends (
   intersectedUnion: infer IntersectedUnion,
