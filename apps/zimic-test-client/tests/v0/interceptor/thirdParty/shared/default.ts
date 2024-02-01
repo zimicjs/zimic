@@ -1,12 +1,18 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpInterceptorSchema, HttpRequest, HttpResponse } from 'zimic0/interceptor';
+import {
+  HttpInterceptorSchema,
+  HttpRequest,
+  HttpResponse,
+  createHttpInterceptor,
+  createHttpInterceptorWorker,
+} from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
 import { ClientTestDeclarationOptions } from '.';
 
 function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
-  const { createInterceptor, fetch } = options;
+  const { platform, fetch } = options;
 
   interface User {
     id: string;
@@ -133,9 +139,12 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
   type AuthRootSchema = HttpInterceptorSchema.Root<UsersRootSchema & UserByIdRootSchema & SessionRootSchema>;
 
-  const authInterceptor = createInterceptor<AuthRootSchema>({
+  const worker = createHttpInterceptorWorker({
+    platform,
     baseURL: 'https://localhost:3000',
   });
+
+  const authInterceptor = createHttpInterceptor<AuthRootSchema>({ worker });
 
   describe('Users', async () => {
     const crypto = await getCrypto();
@@ -147,15 +156,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     };
 
     beforeAll(async () => {
-      await authInterceptor.start();
+      await worker.start();
     });
 
     beforeEach(() => {
       authInterceptor.clear();
     });
 
-    afterAll(() => {
-      authInterceptor.stop();
+    afterAll(async () => {
+      await worker.stop();
     });
 
     describe('User creation', () => {
