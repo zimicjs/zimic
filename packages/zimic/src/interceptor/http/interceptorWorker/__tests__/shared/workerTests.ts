@@ -4,6 +4,8 @@ import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 
 import { HTTP_INTERCEPTOR_METHODS } from '../../../interceptor/types/schema';
+import InvalidHttpInterceptorWorkerPlatform from '../../errors/InvalidHttpInterceptorWorkerPlatform';
+import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import InternalHttpInterceptorWorker from '../../InternalHttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '../../types/options';
 import { HttpRequestHandler } from '../../types/requests';
@@ -27,21 +29,17 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     const spiedRequestHandler = vi.fn(requestHandler);
 
     beforeEach(() => {
-      if (interceptorWorker?.isRunning()) {
-        interceptorWorker.clearHandlers();
-      }
+      interceptorWorker?.clearHandlers();
       spiedRequestHandler.mockClear();
     });
 
     afterEach(async () => {
-      if (interceptorWorker?.isRunning()) {
-        interceptorWorker.clearHandlers();
-      }
       await interceptorWorker?.stop();
     });
 
-    it('should initialize using the Node.js MSW server', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: '' });
+    it('should initialize using the correct MSW server/worker', async () => {
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      expect(interceptorWorker.platform()).toBe(platform);
 
       expect(interceptorWorker).toBeInstanceOf(InternalHttpInterceptorWorker);
 
@@ -49,6 +47,18 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
       expect(interceptorWorker.hasInternalBrowserWorker()).toBe(platform === 'browser');
       expect(interceptorWorker.hasInternalNodeWorker()).toBe(platform === 'node');
+    });
+
+    it('should thrown an error if an invalid platform is provided', () => {
+      // @ts-expect-error
+      const invalidPlatform: HttpInterceptorWorkerPlatform = 'invalid';
+
+      expect(() => {
+        new InternalHttpInterceptorWorker({
+          platform: invalidPlatform,
+          baseURL: defaultBaseURL,
+        });
+      }).toThrowError(InvalidHttpInterceptorWorkerPlatform);
     });
 
     it('should not throw an error when started multiple times', async () => {
@@ -260,6 +270,21 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
 
+      it(`should clear all ${method} handlers after stopped`, async () => {
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        await interceptorWorker.start();
+
+        interceptorWorker.use(method, '/path', spiedRequestHandler);
+
+        await interceptorWorker.stop();
+        await interceptorWorker.start();
+
+        const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        await expect(fetchPromise).rejects.toThrowError();
+
+        expect(spiedRequestHandler).not.toHaveBeenCalled();
+      });
+
       it(`should not intercept ${method} requests having no handler after cleared`, async () => {
         interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
         await interceptorWorker.start();
@@ -290,6 +315,14 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         const body = (await response.json()) as typeof responseBody;
         expect(body).toEqual(responseBody);
+      });
+
+      it(`should thrown an error if trying to apply a ${method} handler before started`, () => {
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+
+        expect(() => {
+          interceptorWorker?.use(method, '/path', spiedRequestHandler);
+        }).toThrowError(NotStartedHttpInterceptorWorkerError);
       });
     });
   });

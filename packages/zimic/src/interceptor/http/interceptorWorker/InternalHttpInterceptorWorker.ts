@@ -13,6 +13,8 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
+import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
+import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpInterceptorWorker } from './types/public';
@@ -40,14 +42,14 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   private validatePlatform(platform: HttpInterceptorWorkerPlatform) {
     const platformOptions = Object.values(HttpInterceptorWorkerPlatform) as string[];
     if (!platformOptions.includes(platform)) {
-      throw new Error(`Invalid platform: ${platform}`);
+      throw new InvalidHttpInterceptorWorkerPlatform(platform);
     }
     return platform;
   }
 
   internalWorkerOrThrow() {
     if (!this._internalWorker) {
-      throw new Error('Internal worker is not available');
+      throw new NotStartedHttpInterceptorWorkerError();
     }
     return this._internalWorker;
   }
@@ -178,8 +180,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 
   clearHandlers() {
-    const internalWorker = this.internalWorkerOrThrow();
-    internalWorker.resetHandlers();
+    this._internalWorker?.resetHandlers();
   }
 
   static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(

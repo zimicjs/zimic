@@ -1,3 +1,7 @@
+import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
+import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
+import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+
 export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
 export type {
   HttpInterceptorWorkerOptions,
@@ -6,6 +10,7 @@ export type {
 export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types/requests';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
+export { UnregisteredServiceWorkerError, NotStartedHttpInterceptorWorkerError, InvalidHttpInterceptorWorkerPlatform };
 
 export type {
   HttpRequestTrackerResponseAttribute,
