@@ -51,20 +51,6 @@
       "require": "./dist/interceptor.js",
       "default": "./dist/interceptor.js",
       "types": "./dist/interceptor.d.ts"
-    },
-    "./interceptor/browser": {
-      "node": null,
-      "import": "./dist/interceptor/browser.mjs",
-      "require": "./dist/interceptor/browser.js",
-      "types": "./dist/interceptor/browser.d.ts",
-      "default": "./dist/interceptor/browser.js"
-    },
-    "./interceptor/node": {
-      "browser": null,
-      "import": "./dist/interceptor/node.mjs",
-      "require": "./dist/interceptor/node.js",
-      "types": "./dist/interceptor/node.d.ts",
-      "default": "./dist/interceptor/node.js"
     }
   },
   "scripts": {

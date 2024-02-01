@@ -7,7 +7,6 @@ import {
   HttpInterceptorSchemaMethod,
   HttpInterceptorSchemaPath,
 } from '../interceptor/types/schema';
-import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import { HttpRequestTracker } from './types/public';
 import {
@@ -35,7 +34,7 @@ class InternalHttpRequestTracker<
   >;
 
   constructor(
-    private interceptor: InternalHttpInterceptor<Schema, HttpInterceptorWorker>,
+    private interceptor: InternalHttpInterceptor<Schema>,
     private _method: Method,
     private _path: Path,
   ) {}

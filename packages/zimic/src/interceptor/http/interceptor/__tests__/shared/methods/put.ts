@@ -1,16 +1,14 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../../types/options';
-import { HttpInterceptor } from '../../../types/public';
-import { HttpInterceptorSchema } from '../../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declarePutHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
+export function declarePutHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
+  const worker = createHttpInterceptorWorker({ platform, baseURL });
 
   interface User {
     name: string;
@@ -18,8 +16,16 @@ export function declarePutHttpInterceptorTests(
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
   it('should support intercepting PUT requests with a static response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -27,11 +33,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -63,7 +65,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should support intercepting PUT requests with a computed response body, based on the request body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           request: { body: User };
@@ -72,11 +74,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -119,7 +117,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should support intercepting PUT requests with a dynamic route', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -127,11 +125,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const genericUpdateTracker = interceptor.put('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -196,7 +190,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should not intercept a PUT request without a registered response', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           request: { body: User };
@@ -205,11 +199,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const userName = 'User (other)';
 
       let updatePromise = fetch(`${baseURL}/users`, {
@@ -277,7 +267,7 @@ export function declarePutHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -286,11 +276,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor
         .put('/users')
         .respond({
@@ -360,7 +346,7 @@ export function declarePutHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -369,11 +355,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor
         .put('/users')
         .respond({
@@ -471,7 +453,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should ignore all trackers after cleared when intercepting PUT requests', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -479,11 +461,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -500,7 +478,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should support creating new trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -508,11 +486,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       let updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -550,7 +524,7 @@ export function declarePutHttpInterceptorTests(
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PUT: {
           response: {
@@ -558,11 +532,7 @@ export function declarePutHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],

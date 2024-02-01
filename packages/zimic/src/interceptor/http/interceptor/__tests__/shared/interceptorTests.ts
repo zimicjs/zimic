@@ -1,9 +1,8 @@
 import { describe } from 'vitest';
 
-import { HttpInterceptorOptions } from '../../types/options';
-import { HttpInterceptor } from '../../types/public';
-import { HttpInterceptorMethod, HttpInterceptorSchema } from '../../types/schema';
-import { declareDefaultHttpInterceptorTests } from './default';
+import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
+
+import { HttpInterceptorMethod } from '../../types/schema';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -13,26 +12,24 @@ import { declarePostHttpInterceptorTests } from './methods/post';
 import { declarePutHttpInterceptorTests } from './methods/put';
 import { declareTypeHttpInterceptorTests } from './typescript';
 
-export function declareSharedHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
-  describe('Default', () => {
-    declareDefaultHttpInterceptorTests(createInterceptor);
-  });
+export interface SharedHttpInterceptorTestsOptions {
+  platform: HttpInterceptorWorkerPlatform;
+}
 
+export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   describe('Types', () => {
-    declareTypeHttpInterceptorTests(createInterceptor);
+    declareTypeHttpInterceptorTests(options);
   });
 
   describe('Methods', () => {
     const methodTestFactories: Record<HttpInterceptorMethod, () => void> = {
-      GET: declareGetHttpInterceptorTests.bind(null, createInterceptor),
-      POST: declarePostHttpInterceptorTests.bind(null, createInterceptor),
-      PUT: declarePutHttpInterceptorTests.bind(null, createInterceptor),
-      PATCH: declarePatchHttpInterceptorTests.bind(null, createInterceptor),
-      DELETE: declareDeleteHttpInterceptorTests.bind(null, createInterceptor),
-      HEAD: declareHeadHttpInterceptorTests.bind(null, createInterceptor),
-      OPTIONS: declareOptionsHttpInterceptorTests.bind(null, createInterceptor),
+      GET: declareGetHttpInterceptorTests.bind(null, options),
+      POST: declarePostHttpInterceptorTests.bind(null, options),
+      PUT: declarePutHttpInterceptorTests.bind(null, options),
+      PATCH: declarePatchHttpInterceptorTests.bind(null, options),
+      DELETE: declareDeleteHttpInterceptorTests.bind(null, options),
+      HEAD: declareHeadHttpInterceptorTests.bind(null, options),
+      OPTIONS: declareOptionsHttpInterceptorTests.bind(null, options),
     };
 
     for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {

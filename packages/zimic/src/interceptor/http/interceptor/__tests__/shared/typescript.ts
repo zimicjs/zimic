@@ -1,13 +1,14 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpInterceptorOptions } from '../../types/options';
-import { HttpInterceptor } from '../../types/public';
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+
+import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
-export function declareTypeHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
+export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
+  const worker = createHttpInterceptorWorker({ platform, baseURL });
 
   interface User {
     name: string;
@@ -15,8 +16,16 @@ export function declareTypeHttpInterceptorTests(
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
   it('should correctly type requests', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: User };
@@ -25,7 +34,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     const creationTracker = interceptor.post('/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -42,7 +51,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should correctly type requests with dynamic routes', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         POST: {
           request: { body: User };
@@ -51,7 +60,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     const genericCreationTracker = interceptor.post('/groups/:id/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -84,7 +93,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should correctly type responses, based on the applied status code', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -93,7 +102,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     const successfulUserListTracker = interceptor.get('/users').respond({
       status: 200,
@@ -115,7 +124,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should correctly type responses with dynamic routes, based on the applied status code', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         GET: {
           response: {
@@ -124,7 +133,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     const successfulGenericUserListTracker = interceptor.get('/groups/:id/users').respond({
       status: 200,
@@ -164,7 +173,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should show a type error if trying to use a non-specified status code', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -172,7 +181,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     interceptor.get('/users').respond({
       status: 200,
@@ -193,7 +202,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should show a type error if trying to use a non-assignable response body', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -207,7 +216,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 204: {} };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     interceptor.get('/users').respond({
       status: 200,
@@ -249,7 +258,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should show a type error if trying to use a non-specified path and/or method', () => {
-    const interceptor = createInterceptor<{
+    const interceptor = createHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -271,7 +280,7 @@ export function declareTypeHttpInterceptorTests(
           response: { 204: {} };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     interceptor.get('/users');
     interceptor.get('/users/:id');
@@ -328,7 +337,7 @@ export function declareTypeHttpInterceptorTests(
       };
     }>;
 
-    const interceptor = createInterceptor<Schema>({ baseURL });
+    const interceptor = createHttpInterceptor<Schema>({ worker });
 
     const userCreationTracker = interceptor.post('/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -385,7 +394,7 @@ export function declareTypeHttpInterceptorTests(
   });
 
   it('should support declaring schemas using type composition', () => {
-    const inlineInterceptor = createInterceptor<{
+    const inlineInterceptor = createHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: User };
@@ -402,7 +411,7 @@ export function declareTypeHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
+    }>({ worker });
 
     type UserCreationRequest = HttpInterceptorSchema.Request<{
       body: User;
@@ -451,7 +460,7 @@ export function declareTypeHttpInterceptorTests(
 
     type InterceptorSchema = HttpInterceptorSchema.Root<UsersRoot & UserByIdRoot>;
 
-    const compositeInterceptor = createInterceptor<InterceptorSchema>({ baseURL });
+    const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker });
     expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;

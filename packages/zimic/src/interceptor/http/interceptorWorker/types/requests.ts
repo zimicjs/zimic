@@ -45,7 +45,3 @@ export type HttpRequestHandler<
   RequestBody extends DefaultBody = DefaultBody,
   ResponseBody extends DefaultBody = DefaultBody,
 > = (context: HttpRequestHandlerContext<RequestBody>) => PossiblePromise<HttpRequestHandlerResult<ResponseBody>>;
-
-export interface HttpInterceptorWorkerOptions {
-  baseURL: string;
-}

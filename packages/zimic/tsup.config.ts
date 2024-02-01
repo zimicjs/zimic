@@ -20,8 +20,6 @@ export default defineConfig([
     entry: {
       index: 'src/index.ts',
       interceptor: 'src/interceptor/index.ts',
-      'interceptor/node': 'src/interceptor/node.ts',
-      'interceptor/browser': 'src/interceptor/browser.ts',
     },
   },
   {

@@ -1,3 +1,5 @@
+import { HttpInterceptorWorker } from '../../interceptorWorker/types/public';
+
 export interface HttpInterceptorOptions {
-  baseURL: string;
+  worker: HttpInterceptorWorker;
 }
