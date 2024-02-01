@@ -6,6 +6,7 @@ import { waitForDelay } from '@/utils/time';
 import { HTTP_INTERCEPTOR_METHODS } from '../../../interceptor/types/schema';
 import InvalidHttpInterceptorWorkerPlatform from '../../errors/InvalidHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
+import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
 import InternalHttpInterceptorWorker from '../../InternalHttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '../../types/options';
 import { HttpRequestHandler } from '../../types/requests';
@@ -94,6 +95,33 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       expect(interceptorWorker.isRunning()).toBe(false);
       await interceptorWorker.stop();
       expect(interceptorWorker.isRunning()).toBe(false);
+    });
+
+    it('should throw an error if multiple workers are started at the same time', async () => {
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      expect(interceptorWorker.isRunning()).toBe(false);
+
+      const otherInterceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      expect(otherInterceptorWorker.isRunning()).toBe(false);
+
+      await interceptorWorker.start();
+      expect(interceptorWorker.isRunning()).toBe(true);
+
+      await expect(otherInterceptorWorker.start()).rejects.toThrowError(OtherHttpInterceptorWorkerRunningError);
+      expect(otherInterceptorWorker.isRunning()).toBe(false);
+
+      await interceptorWorker.stop();
+      expect(interceptorWorker.isRunning()).toBe(false);
+
+      try {
+        await otherInterceptorWorker.start();
+        expect(otherInterceptorWorker.isRunning()).toBe(true);
+
+        await expect(interceptorWorker.start()).rejects.toThrowError(OtherHttpInterceptorWorkerRunningError);
+        expect(interceptorWorker.isRunning()).toBe(false);
+      } finally {
+        await otherInterceptorWorker.stop();
+      }
     });
 
     describe.each(HTTP_INTERCEPTOR_METHODS)('Method: %s', (method) => {

@@ -15,6 +15,7 @@ import {
 } from '../requestTracker/types/requests';
 import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
+import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpInterceptorWorker } from './types/public';
@@ -29,6 +30,8 @@ import {
 } from './types/requests';
 
 class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
+  private static runningInstance?: InternalHttpInterceptorWorker;
+
   private _baseURL: string;
   private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
@@ -84,6 +87,10 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 
   async start() {
+    if (InternalHttpInterceptorWorker.runningInstance && InternalHttpInterceptorWorker.runningInstance !== this) {
+      throw new OtherHttpInterceptorWorkerRunningError();
+    }
+
     if (this._isRunning) {
       return;
     }
@@ -98,6 +105,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     }
 
     this._isRunning = true;
+    InternalHttpInterceptorWorker.runningInstance = this;
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -135,6 +143,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     this.clearHandlers();
 
     this._isRunning = false;
+    InternalHttpInterceptorWorker.runningInstance = undefined;
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
