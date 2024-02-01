@@ -11,140 +11,174 @@ import { getCrypto } from '@tests/utils/crypto';
 
 import { ClientTestDeclarationOptions } from '.';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface UserWithPassword extends User {
+  password: string;
+}
+
+type UserCreationPayload = Omit<UserWithPassword, 'id'>;
+
+interface LoginResult {
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface RequestError {
+  code: string;
+  message: string;
+}
+
+interface ValidationError extends RequestError {
+  code: 'validation_error';
+}
+
+interface UnauthorizedError extends RequestError {
+  code: 'unauthorized';
+}
+
+interface NotFoundError extends RequestError {
+  code: 'not_found';
+}
+
+interface ConflictError extends RequestError {
+  code: 'conflict';
+}
+
+type UsersSchema = HttpInterceptorSchema.Root<{
+  '/users': {
+    POST: {
+      request: {
+        body: UserCreationPayload;
+      };
+      response: {
+        201: { body: User };
+        400: { body: ValidationError };
+        409: { body: ConflictError };
+      };
+    };
+    GET: {
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+type UserByIdSchema = HttpInterceptorSchema.Root<{
+  '/users/:id': {
+    GET: {
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+    PATCH: {
+      request: {
+        body: Partial<User>;
+      };
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+    DELETE: {
+      response: {
+        204: {};
+        404: { body: NotFoundError };
+      };
+    };
+  };
+}>;
+
+type SessionSchema = HttpInterceptorSchema.Root<{
+  '/session/login': {
+    POST: {
+      request: {
+        body: {
+          email: string;
+          password: string;
+        };
+      };
+      response: {
+        201: { body: LoginResult };
+        400: { body: ValidationError };
+        401: { body: UnauthorizedError };
+      };
+    };
+  };
+
+  '/session/refresh': {
+    POST: {
+      request: {
+        body: { refreshToken: string };
+      };
+      response: {
+        201: { body: LoginResult };
+        401: { body: UnauthorizedError };
+      };
+    };
+  };
+
+  '/session/logout': {
+    POST: {
+      response: {
+        204: { body: undefined };
+        401: { body: UnauthorizedError };
+      };
+    };
+  };
+}>;
+
+type AuthServiceSchema = HttpInterceptorSchema.Root<UsersSchema & UserByIdSchema & SessionSchema>;
+
+interface Notification {
+  id: string;
+  userId: string;
+  content: string;
+}
+
+type NotificationServiceSchema = HttpInterceptorSchema.Root<{
+  '/notifications/:userId': {
+    GET: {
+      response: {
+        200: { body: Notification[] };
+      };
+    };
+  };
+}>;
+
 function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
   const { platform, fetch } = options;
 
-  interface User {
-    id: string;
-    name: string;
-    email: string;
-  }
+  const worker = createHttpInterceptorWorker({ platform });
 
-  interface UserWithPassword extends User {
-    password: string;
-  }
-
-  type UserCreationPayload = Omit<UserWithPassword, 'id'>;
-
-  interface LoginResult {
-    accessToken: string;
-    refreshToken: string;
-  }
-
-  interface RequestError {
-    code: string;
-    message: string;
-  }
-
-  interface ValidationError extends RequestError {
-    code: 'validation_error';
-  }
-
-  interface UnauthorizedError extends RequestError {
-    code: 'unauthorized';
-  }
-
-  interface NotFoundError extends RequestError {
-    code: 'not_found';
-  }
-
-  interface ConflictError extends RequestError {
-    code: 'conflict';
-  }
-
-  type UsersRootSchema = HttpInterceptorSchema.Root<{
-    '/users': {
-      POST: {
-        request: {
-          body: UserCreationPayload;
-        };
-        response: {
-          201: { body: User };
-          400: { body: ValidationError };
-          409: { body: ConflictError };
-        };
-      };
-      GET: {
-        response: {
-          200: { body: User[] };
-        };
-      };
-    };
-  }>;
-
-  type UserByIdRootSchema = HttpInterceptorSchema.Root<{
-    '/users/:id': {
-      GET: {
-        response: {
-          200: { body: User };
-          404: { body: NotFoundError };
-        };
-      };
-      PATCH: {
-        request: {
-          body: Partial<User>;
-        };
-        response: {
-          200: { body: User };
-          404: { body: NotFoundError };
-        };
-      };
-      DELETE: {
-        response: {
-          204: {};
-          404: { body: NotFoundError };
-        };
-      };
-    };
-  }>;
-
-  type SessionRootSchema = HttpInterceptorSchema.Root<{
-    '/session/login': {
-      POST: {
-        request: {
-          body: {
-            email: string;
-            password: string;
-          };
-        };
-        response: {
-          201: { body: LoginResult };
-          400: { body: ValidationError };
-          401: { body: UnauthorizedError };
-        };
-      };
-    };
-
-    '/session/refresh': {
-      POST: {
-        request: {
-          body: { refreshToken: string };
-        };
-        response: {
-          201: { body: LoginResult };
-          401: { body: UnauthorizedError };
-        };
-      };
-    };
-
-    '/session/logout': {
-      POST: {
-        response: {
-          204: { body: undefined };
-          401: { body: UnauthorizedError };
-        };
-      };
-    };
-  }>;
-
-  type AuthRootSchema = HttpInterceptorSchema.Root<UsersRootSchema & UserByIdRootSchema & SessionRootSchema>;
-
-  const worker = createHttpInterceptorWorker({
-    platform,
-    baseURL: 'https://localhost:3000',
+  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+    worker,
+    baseURL: 'http://localhost:3000',
   });
 
-  const authInterceptor = createHttpInterceptor<AuthRootSchema>({ worker });
+  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+    worker,
+    baseURL: 'http://localhost:3001',
+  });
+
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  beforeEach(() => {
+    authInterceptor.clear();
+    notificationInterceptor.clear();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
 
   describe('Users', async () => {
     const crypto = await getCrypto();
@@ -155,18 +189,6 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       email: 'email@email.com',
     };
 
-    beforeAll(async () => {
-      await worker.start();
-    });
-
-    beforeEach(() => {
-      authInterceptor.clear();
-    });
-
-    afterAll(async () => {
-      await worker.stop();
-    });
-
     describe('User creation', () => {
       const creationPayload: UserCreationPayload = {
         name: user.name,
@@ -175,7 +197,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       };
 
       async function createUser(payload: UserCreationPayload) {
-        const request = new Request('https://localhost:3000/users', {
+        const request = new Request('http://localhost:3000/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -305,7 +327,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
       async function listUsers(filters: { name?: string; email?: string } = {}) {
         const searchParams = new URLSearchParams(filters);
-        const request = new Request(`https://localhost:3000/users?${searchParams}`, { method: 'GET' });
+        const request = new Request(`http://localhost:3000/users?${searchParams}`, { method: 'GET' });
         return fetch(request);
       }
 
@@ -354,7 +376,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const request = new Request(`https://localhost:3000/users/${userId}`, { method: 'GET' });
+        const request = new Request(`http://localhost:3000/users/${userId}`, { method: 'GET' });
         return fetch(request);
       }
 
@@ -426,7 +448,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new Request(`https://localhost:3000/users/${userId}`, { method: 'DELETE' });
+        const request = new Request(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
         return fetch(request);
       }
 
@@ -489,6 +511,74 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(deleteRequests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(deleteRequests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
         expect(await deleteRequests[0].response.raw.json()).toEqual(notFoundError);
+      });
+    });
+  });
+
+  describe('Notifications', async () => {
+    const crypto = await getCrypto();
+
+    const notification: Notification = {
+      id: crypto.randomUUID(),
+      userId: crypto.randomUUID(),
+      content: 'Notification content',
+    };
+
+    describe('Notification list', () => {
+      beforeEach(() => {
+        notificationInterceptor.get('/notifications/:userId').respond({
+          status: 200,
+          body: [],
+        });
+      });
+
+      async function listNotifications(userId: string) {
+        const request = new Request(`http://localhost:3001/notifications/${encodeURIComponent(userId)}`, {
+          method: 'GET',
+        });
+        return fetch(request);
+      }
+
+      it('should list notifications', async () => {
+        const listTracker = notificationInterceptor.get('/notifications/:userId').respond({
+          status: 200,
+          body: [notification],
+        });
+
+        let response = await listNotifications(notification.userId);
+        expect(response.status).toBe(200);
+
+        let returnedNotifications = (await response.json()) as Notification[];
+        expect(returnedNotifications).toEqual([notification]);
+
+        const listRequests = listTracker.requests();
+        expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
+        expect(listRequests[0].body).toBe(null);
+
+        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<Notification[]>();
+        expect(listRequests[0].response.body).toEqual([notification]);
+
+        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<Notification[], 200>>();
+        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
+        expect(await listRequests[0].response.raw.json()).toEqual([notification]);
+
+        listTracker.bypass();
+
+        response = await listNotifications(notification.userId);
+        expect(response.status).toBe(200);
+
+        returnedNotifications = (await response.json()) as Notification[];
+        expect(returnedNotifications).toEqual([]);
+
+        expect(listRequests).toHaveLength(1);
       });
     });
   });

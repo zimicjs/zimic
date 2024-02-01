@@ -3,7 +3,7 @@ import { JSONValue } from 'zimic0';
 import {
   createHttpInterceptor,
   createHttpInterceptorWorker,
-  HttpInterceptorWorker,
+  type HttpInterceptorWorker,
   type DefaultBody,
   type HttpInterceptor,
   type HttpInterceptorMethod,
@@ -29,8 +29,8 @@ import {
   type LiteralHttpInterceptorSchemaPath,
   type NonLiteralHttpInterceptorSchemaPath,
   type TrackedHttpInterceptorRequest,
-  HttpInterceptorWorkerPlatform,
-  HttpInterceptorWorkerOptions,
+  type HttpInterceptorWorkerPlatform,
+  type HttpInterceptorWorkerOptions,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
