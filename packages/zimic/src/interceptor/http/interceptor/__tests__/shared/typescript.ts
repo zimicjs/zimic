@@ -8,7 +8,7 @@ import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface User {
     name: string;
@@ -34,7 +34,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     const creationTracker = interceptor.post('/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -60,7 +60,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     const genericCreationTracker = interceptor.post('/groups/:id/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -102,7 +102,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     const successfulUserListTracker = interceptor.get('/users').respond({
       status: 200,
@@ -133,7 +133,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     const successfulGenericUserListTracker = interceptor.get('/groups/:id/users').respond({
       status: 200,
@@ -181,7 +181,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     interceptor.get('/users').respond({
       status: 200,
@@ -216,7 +216,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           response: { 204: {} };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     interceptor.get('/users').respond({
       status: 200,
@@ -280,7 +280,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           response: { 204: {} };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     interceptor.get('/users');
     interceptor.get('/users/:id');
@@ -337,7 +337,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
       };
     }>;
 
-    const interceptor = createHttpInterceptor<Schema>({ worker });
+    const interceptor = createHttpInterceptor<Schema>({ worker, baseURL });
 
     const userCreationTracker = interceptor.post('/users').respond((request) => {
       expectTypeOf(request.body).toEqualTypeOf<User>();
@@ -411,7 +411,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker });
+    }>({ worker, baseURL });
 
     type UserCreationRequest = HttpInterceptorSchema.Request<{
       body: User;
@@ -460,7 +460,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
     type InterceptorSchema = HttpInterceptorSchema.Root<UsersRoot & UserByIdRoot>;
 
-    const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker });
+    const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker, baseURL });
     expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;

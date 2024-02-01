@@ -15,7 +15,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
   const { platform } = options;
 
   describe('Shared', () => {
-    const defaultBaseURL = 'http://localhost:3000';
+    const baseURL = 'http://localhost:3000';
 
     let interceptorWorker: InternalHttpInterceptorWorker | undefined;
 
@@ -39,7 +39,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     it('should initialize using the correct MSW server/worker', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(interceptorWorker.platform()).toBe(platform);
 
       expect(interceptorWorker).toBeInstanceOf(InternalHttpInterceptorWorker);
@@ -55,15 +55,12 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       const invalidPlatform: HttpInterceptorWorkerPlatform = 'invalid';
 
       expect(() => {
-        new InternalHttpInterceptorWorker({
-          platform: invalidPlatform,
-          baseURL: defaultBaseURL,
-        });
+        new InternalHttpInterceptorWorker({ platform: invalidPlatform });
       }).toThrowError(InvalidHttpInterceptorWorkerPlatform);
     });
 
     it('should not throw an error when started multiple times', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(interceptorWorker.isRunning()).toBe(false);
       await interceptorWorker.start();
       expect(interceptorWorker.isRunning()).toBe(true);
@@ -74,7 +71,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     it('should not throw an error when stopped without running', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(interceptorWorker.isRunning()).toBe(false);
       await interceptorWorker.stop();
       expect(interceptorWorker.isRunning()).toBe(false);
@@ -85,7 +82,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     it('should not throw an error when stopped multiple times while running', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(interceptorWorker.isRunning()).toBe(false);
       await interceptorWorker.start();
       expect(interceptorWorker.isRunning()).toBe(true);
@@ -98,10 +95,10 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     it('should throw an error if multiple workers are started at the same time', async () => {
-      interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      interceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(interceptorWorker.isRunning()).toBe(false);
 
-      const otherInterceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+      const otherInterceptorWorker = new InternalHttpInterceptorWorker({ platform });
       expect(otherInterceptorWorker.isRunning()).toBe(false);
 
       await interceptorWorker.start();
@@ -125,53 +122,40 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     describe.each(HTTP_INTERCEPTOR_METHODS)('Method: %s', (method) => {
-      it.each([
-        { baseURL: `${defaultBaseURL}`, path: 'path' },
-        { baseURL: `${defaultBaseURL}/`, path: 'path' },
-        { baseURL: `${defaultBaseURL}`, path: '/path' },
-        { baseURL: `${defaultBaseURL}/`, path: '/path' },
-        { baseURL: `${defaultBaseURL}/api`, path: 'path' },
-        { baseURL: `${defaultBaseURL}/api/`, path: 'path' },
-        { baseURL: `${defaultBaseURL}/api`, path: '/path' },
-        { baseURL: `${defaultBaseURL}/api/`, path: '/path' },
-      ])(
-        `should intercept ${method} requests after started, considering slashes in the URL: $baseURL and $path`,
-        async ({ baseURL, path }) => {
-          interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL });
-          expect(interceptorWorker.baseURL()).toBe(baseURL);
-
-          await interceptorWorker.start();
-          interceptorWorker.use(method, path, spiedRequestHandler);
-
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-
-          const url = `${baseURL}/${path}`.replace(/(\w)\/{2,}(\w)/g, '$1/$2');
-          const response = await fetch(url, { method });
-
-          expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
-
-          const [handlerContext] = spiedRequestHandler.mock.calls[0];
-          expect(handlerContext.request).toBeInstanceOf(Request);
-          expect(handlerContext.request.method).toBe(method);
-          expect(handlerContext.params).toEqual({});
-          expect(handlerContext.cookies).toEqual({});
-
-          expect(response.status).toBe(200);
-
-          const body = (await response.json()) as typeof responseBody;
-          expect(body).toEqual(responseBody);
-        },
-      );
-
-      it(`should intercept ${method} requests after started, considering dynamic routes with a generic match`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
-
+      it(`should intercept ${method} requests after started`, async () => {
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
-        interceptorWorker.use(method, '/path/:id', spiedRequestHandler);
+
+        const url = `${baseURL}/path`;
+        interceptorWorker.use(method, url, spiedRequestHandler);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const response = await fetch(`${defaultBaseURL}/path/${1}`, { method });
+        const response = await fetch(url, { method });
+
+        expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+
+        const [handlerContext] = spiedRequestHandler.mock.calls[0];
+        expect(handlerContext.request).toBeInstanceOf(Request);
+        expect(handlerContext.request.method).toBe(method);
+        expect(handlerContext.params).toEqual({});
+        expect(handlerContext.cookies).toEqual({});
+
+        expect(response.status).toBe(200);
+
+        const body = (await response.json()) as typeof responseBody;
+        expect(body).toEqual(responseBody);
+      });
+
+      it(`should intercept ${method} requests after started, considering dynamic routes with a generic match`, async () => {
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
+
+        await interceptorWorker.start();
+        interceptorWorker.use(method, `${baseURL}/path/:id`, spiedRequestHandler);
+
+        expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+        const response = await fetch(`${baseURL}/path/${1}`, { method });
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
@@ -188,14 +172,14 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       });
 
       it(`should intercept ${method} requests after started, considering dynamic routes with a specific match`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
 
         await interceptorWorker.start();
-        interceptorWorker.use(method, `/path/${1}`, spiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path/${1}`, spiedRequestHandler);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const matchedResponse = await fetch(`${defaultBaseURL}/path/${1}`, { method });
+        const matchedResponse = await fetch(`${baseURL}/path/${1}`, { method });
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
@@ -212,23 +196,23 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         spiedRequestHandler.mockClear();
 
-        const unmatchedResponsePromise = fetch(`${defaultBaseURL}/path/${2}`, { method });
+        const unmatchedResponsePromise = fetch(`${baseURL}/path/${2}`, { method });
         await expect(unmatchedResponsePromise).rejects.toThrowError();
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(0);
       });
 
       it(`should not intercept bypassed ${method} requests`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
 
         const bypassedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ bypass: true }));
 
-        interceptorWorker.use(method, '/path', bypassedSpiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, bypassedSpiedRequestHandler);
 
         expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        const fetchPromise = fetch(`${defaultBaseURL}/path`, { method });
+        const fetchPromise = fetch(`${baseURL}/path`, { method });
         await expect(fetchPromise).rejects.toThrowError();
 
         expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
@@ -241,7 +225,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       });
 
       it(`should support intercepting ${method} requests with a delay`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
 
         const delayedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(async (context) => {
@@ -249,14 +233,14 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
           return requestHandler(context);
         });
 
-        interceptorWorker.use(method, '/path', delayedSpiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, delayedSpiedRequestHandler);
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 50 });
+        let fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 50 });
         await expect(fetchPromise).rejects.toThrowError();
 
-        fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).resolves.toBeInstanceOf(Response);
 
         expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(2);
@@ -270,66 +254,66 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       });
 
       it(`should not intercept ${method} requests before started`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
 
         expect(() => {
-          interceptorWorker?.use(method, '/path', spiedRequestHandler);
+          interceptorWorker?.use(method, `${baseURL}/path`, spiedRequestHandler);
         }).toThrowError(Error);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).rejects.toThrowError();
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
 
       it(`should not intercept ${method} requests after stopped`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
 
-        interceptorWorker.use(method, '/path', spiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, spiedRequestHandler);
 
         await interceptorWorker.stop();
 
-        const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).rejects.toThrowError();
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
 
       it(`should clear all ${method} handlers after stopped`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
 
-        interceptorWorker.use(method, '/path', spiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, spiedRequestHandler);
 
         await interceptorWorker.stop();
         await interceptorWorker.start();
 
-        const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).rejects.toThrowError();
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
 
       it(`should not intercept ${method} requests having no handler after cleared`, async () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
         await interceptorWorker.start();
 
-        interceptorWorker.use(method, '/path', spiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, spiedRequestHandler);
         interceptorWorker.clearHandlers();
 
-        const fetchPromise = fetchWithTimeout(`${defaultBaseURL}/path`, { method, timeout: 200 });
+        const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).rejects.toThrowError();
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        interceptorWorker.use(method, '/path', spiedRequestHandler);
+        interceptorWorker.use(method, `${baseURL}/path`, spiedRequestHandler);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const response = await fetch(`${defaultBaseURL}/path`, { method });
+        const response = await fetch(`${baseURL}/path`, { method });
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
 
@@ -346,10 +330,10 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       });
 
       it(`should thrown an error if trying to apply a ${method} handler before started`, () => {
-        interceptorWorker = new InternalHttpInterceptorWorker({ platform, baseURL: defaultBaseURL });
+        interceptorWorker = new InternalHttpInterceptorWorker({ platform });
 
         expect(() => {
-          interceptorWorker?.use(method, '/path', spiedRequestHandler);
+          interceptorWorker?.use(method, `${baseURL}/path`, spiedRequestHandler);
         }).toThrowError(NotStartedHttpInterceptorWorkerError);
       });
     });

@@ -32,13 +32,11 @@ import {
 class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   private static runningInstance?: InternalHttpInterceptorWorker;
 
-  private _baseURL: string;
   private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
   private _isRunning = false;
 
   constructor(options: HttpInterceptorWorkerOptions) {
-    this._baseURL = options.baseURL;
     this._platform = this.validatePlatform(options.platform);
   }
 
@@ -72,10 +70,6 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
       const { setupServer } = await import('msw/node');
       return setupServer();
     }
-  }
-
-  baseURL() {
-    return this._baseURL;
   }
 
   platform() {
@@ -166,13 +160,12 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use(method: HttpInterceptorMethod, path: string, handler: HttpRequestHandler) {
+  use(method: HttpInterceptorMethod, url: string, handler: HttpRequestHandler) {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
-    const pathWithBaseURL = this.applyBaseURL(path);
 
     internalWorker.use(
-      http[lowercaseMethod](pathWithBaseURL, async (context) => {
+      http[lowercaseMethod](url, async (context) => {
         const result = await handler(context);
         if (result.bypass) {
           return passthrough();
@@ -180,12 +173,6 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
         return result.response;
       }),
     );
-  }
-
-  private applyBaseURL(path: string) {
-    const baseURLWithoutTrailingSlash = this._baseURL.replace(/\/$/, '');
-    const pathWithoutLeadingSlash = path.replace(/^\//, '');
-    return `${baseURLWithoutTrailingSlash}/${pathWithoutLeadingSlash}`;
   }
 
   clearHandlers() {

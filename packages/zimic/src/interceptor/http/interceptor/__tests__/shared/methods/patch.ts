@@ -8,7 +8,7 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface User {
     name: string;
@@ -33,7 +33,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -74,7 +74,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -125,7 +125,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericUpdateTracker = interceptor.patch('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -199,7 +199,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const userName = 'User (other)';
 
       let updatePromise = fetch(`${baseURL}/users`, {
@@ -276,7 +276,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .patch('/users')
         .respond({
@@ -355,7 +355,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .patch('/users')
         .respond({
@@ -461,7 +461,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -486,7 +486,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -532,7 +532,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],

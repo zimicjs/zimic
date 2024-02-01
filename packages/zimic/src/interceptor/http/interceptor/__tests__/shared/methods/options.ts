@@ -8,7 +8,7 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface Filters {
     name: string;
@@ -31,7 +31,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
@@ -68,7 +68,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
         return {
@@ -116,7 +116,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
@@ -181,7 +181,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -245,7 +245,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor
         .options('/filters')
         .respond({
@@ -320,7 +320,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor
         .options('/filters')
         .respond({
@@ -419,7 +419,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
@@ -444,7 +444,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       interceptor.options('/filters').respond({
         status: 200,
       });
@@ -486,7 +486,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters');
 
       optionsTracker.respond({

@@ -13,8 +13,8 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  const worker = createHttpInterceptorWorker({ platform });
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
 
   beforeAll(async () => {
     await worker.start();
@@ -33,7 +33,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -73,7 +73,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const userName = `User (other ${Math.random()})`;
 
       const listTracker = interceptor.get('/users').respond(() => ({
@@ -118,7 +118,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericGetTracker = interceptor.get('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -191,7 +191,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -258,7 +258,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor
         .get('/users')
         .respond({
@@ -337,7 +337,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor
         .get('/users')
         .respond({
@@ -443,7 +443,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -468,7 +468,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -514,7 +514,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,

@@ -40,8 +40,8 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       };
     }>;
 
-    const worker = createHttpInterceptorWorker({ platform, baseURL });
-    const interceptor = createHttpInterceptor<Schema>({ worker }) as InternalHttpInterceptor<Schema>;
+    const worker = createHttpInterceptorWorker({ platform });
+    const interceptor = createHttpInterceptor<Schema>({ worker, baseURL }) as InternalHttpInterceptor<Schema>;
 
     beforeAll(async () => {
       await worker.start();

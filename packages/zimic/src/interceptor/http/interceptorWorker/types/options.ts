@@ -10,5 +10,4 @@ export const HttpInterceptorWorkerPlatform = HttpInterceptorWorkerPlatformEnum; 
 
 export interface HttpInterceptorWorkerOptions {
   platform: HttpInterceptorWorkerPlatform;
-  baseURL: string;
 }

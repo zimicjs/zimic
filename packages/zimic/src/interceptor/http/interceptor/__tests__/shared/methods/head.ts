@@ -8,7 +8,7 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
+  const worker = createHttpInterceptorWorker({ platform });
 
   beforeAll(async () => {
     await worker.start();
@@ -27,7 +27,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
@@ -63,7 +63,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond(() => ({
         status: 200,
       }));
@@ -102,7 +102,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericHeadTracker = interceptor.head('/users/:id').respond({
         status: 200,
       });
@@ -167,7 +167,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -231,7 +231,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .respond({
@@ -306,7 +306,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .respond({
@@ -405,7 +405,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
@@ -430,7 +430,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       interceptor.head('/users').respond({
         status: 200,
       });
@@ -472,7 +472,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users');
 
       headTracker.respond({

@@ -8,7 +8,7 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declarePutHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform, baseURL });
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface User {
     name: string;
@@ -33,7 +33,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -74,7 +74,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -125,7 +125,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericUpdateTracker = interceptor.put('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -199,7 +199,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const userName = 'User (other)';
 
       let updatePromise = fetch(`${baseURL}/users`, {
@@ -276,7 +276,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .put('/users')
         .respond({
@@ -355,7 +355,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .put('/users')
         .respond({
@@ -461,7 +461,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -486,7 +486,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       let updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],
@@ -532,7 +532,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
           };
         };
       };
-    }>({ worker }, async (interceptor) => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond({
         status: 200,
         body: users[0],

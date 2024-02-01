@@ -3,6 +3,7 @@ import { describe } from 'vitest';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
 
 import { HttpInterceptorMethod } from '../../types/schema';
+import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -19,6 +20,10 @@ export interface SharedHttpInterceptorTestsOptions {
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   describe('Types', () => {
     declareTypeHttpInterceptorTests(options);
+  });
+
+  describe('Base URLs', () => {
+    declareBaseURLHttpInterceptorTests(options);
   });
 
   describe('Methods', () => {
