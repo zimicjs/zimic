@@ -1,16 +1,14 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../../types/options';
-import { HttpInterceptor } from '../../../types/public';
-import { HttpInterceptorSchema } from '../../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declarePatchHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
+export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface User {
     name: string;
@@ -18,8 +16,16 @@ export function declarePatchHttpInterceptorTests(
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
   it('should support intercepting PATCH requests with a static response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -27,11 +33,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -63,7 +65,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should support intercepting PATCH requests with a computed response body, based on the request body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           request: { body: User };
@@ -72,11 +74,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -119,7 +117,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should support intercepting PATCH requests with a dynamic route', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -127,11 +125,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericUpdateTracker = interceptor.patch('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -196,7 +190,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should not intercept a PATCH request without a registered response', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           request: { body: User };
@@ -205,11 +199,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const userName = 'User (other)';
 
       let updatePromise = fetch(`${baseURL}/users`, {
@@ -277,7 +267,7 @@ export function declarePatchHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -286,11 +276,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .patch('/users')
         .respond({
@@ -360,7 +346,7 @@ export function declarePatchHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -369,11 +355,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
         .patch('/users')
         .respond({
@@ -471,7 +453,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should ignore all trackers after cleared when intercepting PATCH requests', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -479,11 +461,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -500,7 +478,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should support creating new trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -508,11 +486,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       let updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],
@@ -550,7 +524,7 @@ export function declarePatchHttpInterceptorTests(
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         PATCH: {
           response: {
@@ -558,11 +532,7 @@ export function declarePatchHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.patch('/users').respond({
         status: 200,
         body: users[0],

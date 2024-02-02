@@ -5,7 +5,7 @@ import {
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../../interceptor/types/schema';
-import { HttpRequest, HttpResponse } from '../../interceptorWorker/types';
+import { HttpRequest, HttpResponse } from '../../interceptorWorker/types/requests';
 
 export type HttpRequestTrackerResponseAttribute<
   ResponseSchema extends HttpInterceptorResponseSchema,

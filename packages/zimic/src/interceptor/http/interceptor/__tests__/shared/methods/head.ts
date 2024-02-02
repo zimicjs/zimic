@@ -1,19 +1,25 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../../types/options';
-import { HttpInterceptor } from '../../../types/public';
-import { HttpInterceptorSchema } from '../../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declareHeadHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
+export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
+  const worker = createHttpInterceptorWorker({ platform });
+
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
 
   it('should support intercepting HEAD requests with a static response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -21,11 +27,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
@@ -53,7 +55,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should support intercepting HEAD requests with a computed response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -61,11 +63,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond(() => ({
         status: 200,
       }));
@@ -96,7 +94,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should support intercepting HEAD requests with a dynamic route', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         HEAD: {
           response: {
@@ -104,11 +102,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericHeadTracker = interceptor.head('/users/:id').respond({
         status: 200,
       });
@@ -165,7 +159,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should not intercept a HEAD request without a registered response', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -173,11 +167,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -231,7 +221,7 @@ export function declareHeadHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -241,11 +231,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .respond({
@@ -310,7 +296,7 @@ export function declareHeadHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -320,11 +306,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .respond({
@@ -414,7 +396,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should ignore all trackers after cleared when intercepting HEAD requests', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -423,11 +405,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
@@ -443,7 +421,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should support creating new trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -452,11 +430,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       interceptor.head('/users').respond({
         status: 200,
       });
@@ -489,7 +463,7 @@ export function declareHeadHttpInterceptorTests(
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -498,11 +472,7 @@ export function declareHeadHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const headTracker = interceptor.head('/users');
 
       headTracker.respond({

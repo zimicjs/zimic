@@ -1,4 +1,16 @@
-export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types';
+import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
+import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
+import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+
+export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
+export type {
+  HttpInterceptorWorkerOptions,
+  HttpInterceptorWorkerPlatform,
+} from './http/interceptorWorker/types/options';
+export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types/requests';
+
+export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
+export { UnregisteredServiceWorkerError, NotStartedHttpInterceptorWorkerError, InvalidHttpInterceptorWorkerPlatform };
 
 export type {
   HttpRequestTrackerResponseAttribute,
@@ -14,8 +26,6 @@ export type { HttpRequestTracker } from './http/requestTracker/types/public';
 export type { HttpInterceptorMethodHandler } from './http/interceptor/types/handlers';
 
 export type { HttpInterceptorOptions } from './http/interceptor/types/options';
-
-export type { HttpInterceptorFactory } from './http/interceptor/types/factory';
 
 export type {
   HttpInterceptorMethod,
@@ -33,3 +43,5 @@ export type {
 } from './http/interceptor/types/schema';
 
 export type { HttpInterceptor } from './http/interceptor/types/public';
+
+export { createHttpInterceptor } from './http/interceptor/factory';

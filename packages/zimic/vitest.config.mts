@@ -32,6 +32,7 @@ export const defaultConfig: UserConfig = {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
+      '@scripts': path.resolve(__dirname, './scripts'),
       '@@': path.resolve(__dirname, '.'),
     },
   },

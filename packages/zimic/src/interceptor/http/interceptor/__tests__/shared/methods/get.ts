@@ -1,25 +1,31 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../../types/options';
-import { HttpInterceptor } from '../../../types/public';
-import { HttpInterceptorSchema } from '../../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declareGetHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
-  const baseURL = 'http://localhost:3000';
-
+export function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   interface User {
     name: string;
   }
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  const worker = createHttpInterceptorWorker({ platform });
+  const baseURL = 'http://localhost:3000';
+
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
   it('should support intercepting GET requests with a static response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -27,11 +33,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -63,7 +65,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should support intercepting GET requests with a computed response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -71,12 +73,8 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
+    }>({ worker, baseURL }, async (interceptor) => {
       const userName = `User (other ${Math.random()})`;
-
-      await interceptor.start();
 
       const listTracker = interceptor.get('/users').respond(() => ({
         status: 200,
@@ -112,7 +110,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should support intercepting GET requests with a dynamic route', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         GET: {
           response: {
@@ -120,11 +118,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericGetTracker = interceptor.get('/users/:id').respond({
         status: 200,
         body: users[0],
@@ -189,7 +183,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should not intercept a GET request without a registered response', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -197,11 +191,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -259,7 +249,7 @@ export function declareGetHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -268,11 +258,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor
         .get('/users')
         .respond({
@@ -342,7 +328,7 @@ export function declareGetHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -351,11 +337,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor
         .get('/users')
         .respond({
@@ -453,7 +435,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should ignore all trackers when cleared when intercepting GET requests', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -461,11 +443,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -482,7 +460,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should support creating new trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -490,11 +468,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       let listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,
@@ -532,7 +506,7 @@ export function declareGetHttpInterceptorTests(
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         GET: {
           response: {
@@ -540,11 +514,7 @@ export function declareGetHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond({
         status: 200,
         body: users,

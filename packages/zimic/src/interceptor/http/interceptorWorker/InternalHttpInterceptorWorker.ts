@@ -1,4 +1,4 @@
-import { HttpResponse as MSWHttpResponse, SharedOptions, http, passthrough } from 'msw';
+import { HttpResponse as MSWHttpResponse, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 
 import { Default } from '@/types/utils';
 
@@ -13,34 +13,67 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
+import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
+import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
+import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
+import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
+import { HttpInterceptorWorker } from './types/public';
 import {
   DefaultBody,
   BrowserHttpWorker,
   HttpRequestHandler,
   HttpWorker,
-  HttpInterceptorWorkerOptions,
   HttpResponse,
   HttpRequest,
-} from './types';
+  NodeHttpWorker,
+} from './types/requests';
 
-abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
-  private _baseURL: string;
+class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
+  private static runningInstance?: InternalHttpInterceptorWorker;
+
+  private _platform: HttpInterceptorWorkerPlatform;
+  private _internalWorker?: HttpWorker;
   private _isRunning = false;
 
-  protected constructor(
-    private _worker: Worker,
-    options: HttpInterceptorWorkerOptions,
-  ) {
-    this._baseURL = options.baseURL;
+  constructor(options: HttpInterceptorWorkerOptions) {
+    this._platform = this.validatePlatform(options.platform);
   }
 
-  worker() {
-    return this._worker;
+  private validatePlatform(platform: HttpInterceptorWorkerPlatform) {
+    const platformOptions = Object.values(HttpInterceptorWorkerPlatform) as string[];
+    if (!platformOptions.includes(platform)) {
+      throw new InvalidHttpInterceptorWorkerPlatform(platform);
+    }
+    return platform;
   }
 
-  baseURL() {
-    return this._baseURL;
+  internalWorkerOrThrow() {
+    if (!this._internalWorker) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+    return this._internalWorker;
+  }
+
+  async internalWorkerOrLoad() {
+    if (!this._internalWorker) {
+      this._internalWorker = await this.createInternalWorker();
+    }
+    return this._internalWorker;
+  }
+
+  private async createInternalWorker() {
+    if (this._platform === 'browser') {
+      const { setupWorker } = await import('msw/browser');
+      return setupWorker();
+    } else {
+      const { setupServer } = await import('msw/node');
+      return setupServer();
+    }
+  }
+
+  platform() {
+    return this._platform;
   }
 
   isRunning() {
@@ -48,23 +81,33 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
   }
 
   async start() {
+    if (InternalHttpInterceptorWorker.runningInstance && InternalHttpInterceptorWorker.runningInstance !== this) {
+      throw new OtherHttpInterceptorWorkerRunningError();
+    }
+
     if (this._isRunning) {
       return;
     }
 
-    const sharedOptions: SharedOptions = { onUnhandledRequest: 'bypass' };
+    const internalWorker = await this.internalWorkerOrLoad();
+    const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
 
-    if (this.isBrowserWorker(this._worker)) {
-      try {
-        await this._worker.start({ ...sharedOptions, quiet: true });
-      } catch (error) {
-        this.handleBrowserWorkerStartError(error);
-      }
+    if (this.isInternalBrowserWorker(internalWorker)) {
+      await this.startInBrowser(internalWorker, sharedOptions);
     } else {
-      this._worker.listen(sharedOptions);
+      this.startInNode(internalWorker, sharedOptions);
     }
 
     this._isRunning = true;
+    InternalHttpInterceptorWorker.runningInstance = this;
+  }
+
+  private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
+    try {
+      await internalWorker.start({ ...sharedOptions, quiet: true });
+    } catch (error) {
+      this.handleBrowserWorkerStartError(error);
+    }
   }
 
   private handleBrowserWorkerStartError(error: unknown) {
@@ -74,31 +117,55 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     throw error;
   }
 
-  stop() {
+  private startInNode(internalWorker: NodeHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
+    internalWorker.listen(sharedOptions);
+  }
+
+  async stop() {
     if (!this._isRunning) {
       return;
     }
 
-    if (this.isBrowserWorker(this._worker)) {
-      this._worker.stop();
+    const internalWorker = await this.internalWorkerOrLoad();
+
+    if (this.isInternalBrowserWorker(internalWorker)) {
+      this.stopInBrowser(internalWorker);
     } else {
-      this._worker.close();
+      this.stopInNode(internalWorker);
     }
 
+    this.clearHandlers();
+
     this._isRunning = false;
+    InternalHttpInterceptorWorker.runningInstance = undefined;
   }
 
-  private isBrowserWorker(worker: HttpWorker): worker is BrowserHttpWorker {
+  private stopInBrowser(internalWorker: BrowserHttpWorker) {
+    internalWorker.stop();
+  }
+
+  private stopInNode(internalWorker: NodeHttpWorker) {
+    internalWorker.close();
+  }
+
+  private isInternalBrowserWorker(worker: HttpWorker): worker is BrowserHttpWorker {
     return 'start' in worker && 'stop' in worker;
   }
 
-  use(method: HttpInterceptorMethod, path: string, handler: HttpRequestHandler) {
+  hasInternalBrowserWorker() {
+    return this.isInternalBrowserWorker(this.internalWorkerOrThrow());
+  }
+
+  hasInternalNodeWorker() {
+    return !this.hasInternalBrowserWorker();
+  }
+
+  use(method: HttpInterceptorMethod, url: string, handler: HttpRequestHandler) {
+    const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const pathWithBaseURL = this.applyBaseURL(path);
-
-    this._worker.use(
-      http[lowercaseMethod](pathWithBaseURL, async (context) => {
+    internalWorker.use(
+      http[lowercaseMethod](url, async (context) => {
         const result = await handler(context);
         if (result.bypass) {
           return passthrough();
@@ -108,14 +175,8 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
     );
   }
 
-  private applyBaseURL(path: string) {
-    const baseURLWithoutTrailingSlash = this._baseURL.replace(/\/$/, '');
-    const pathWithoutLeadingSlash = path.replace(/^\//, '');
-    return `${baseURLWithoutTrailingSlash}/${pathWithoutLeadingSlash}`;
-  }
-
   clearHandlers() {
-    this._worker.resetHandlers();
+    this._internalWorker?.resetHandlers();
   }
 
   static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(
@@ -139,14 +200,14 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -175,14 +236,14 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
       has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -214,4 +275,4 @@ abstract class HttpInterceptorWorker<Worker extends HttpWorker = HttpWorker> {
   }
 }
 
-export default HttpInterceptorWorker;
+export default InternalHttpInterceptorWorker;

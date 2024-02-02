@@ -1,45 +1,62 @@
-import { describe, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { JSONValue } from 'zimic0';
-import type {
-  DefaultBody,
-  HttpInterceptor,
-  HttpInterceptorMethod,
-  HttpInterceptorMethodHandler,
-  HttpInterceptorMethodSchema,
-  HttpInterceptorOptions,
-  HttpInterceptorPathSchema,
-  HttpInterceptorRequest,
-  HttpInterceptorRequestSchema,
-  HttpInterceptorResponse,
-  HttpInterceptorResponseSchema,
-  HttpInterceptorResponseSchemaByStatusCode,
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-  HttpInterceptorSchemaMethod,
-  HttpInterceptorSchemaPath,
-  HttpRequest,
-  HttpRequestTracker,
-  HttpRequestTrackerResponseAttribute,
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
-  HttpResponse,
-  LiteralHttpInterceptorSchemaPath,
-  NonLiteralHttpInterceptorSchemaPath,
-  TrackedHttpInterceptorRequest,
+import {
+  createHttpInterceptor,
+  createHttpInterceptorWorker,
+  type HttpInterceptorWorker,
+  type DefaultBody,
+  type HttpInterceptor,
+  type HttpInterceptorMethod,
+  type HttpInterceptorMethodHandler,
+  type HttpInterceptorMethodSchema,
+  type HttpInterceptorOptions,
+  type HttpInterceptorPathSchema,
+  type HttpInterceptorRequest,
+  type HttpInterceptorRequestSchema,
+  type HttpInterceptorResponse,
+  type HttpInterceptorResponseSchema,
+  type HttpInterceptorResponseSchemaByStatusCode,
+  type HttpInterceptorResponseSchemaStatusCode,
+  type HttpInterceptorSchema,
+  type HttpInterceptorSchemaMethod,
+  type HttpInterceptorSchemaPath,
+  type HttpRequest,
+  type HttpRequestTracker,
+  type HttpRequestTrackerResponseAttribute,
+  type HttpRequestTrackerResponseDeclaration,
+  type HttpRequestTrackerResponseDeclarationFactory,
+  type HttpResponse,
+  type LiteralHttpInterceptorSchemaPath,
+  type NonLiteralHttpInterceptorSchemaPath,
+  type TrackedHttpInterceptorRequest,
+  type HttpInterceptorWorkerPlatform,
+  type HttpInterceptorWorkerOptions,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
-  it('should export all expected types', () => {
+  it('should export all expected resources', () => {
+    expectTypeOf(createHttpInterceptor).not.toBeAny();
+    expect(typeof createHttpInterceptor).toBe('function');
+
+    expectTypeOf(createHttpInterceptorWorker).not.toBeAny();
+    expect(typeof createHttpInterceptorWorker).toBe('function');
+
     expectTypeOf<JSONValue>().not.toBeAny();
     expectTypeOf<DefaultBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
+    expectTypeOf<HttpInterceptorWorker>().not.toBeAny();
+    expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
+    expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
+
     expectTypeOf<HttpRequestTrackerResponseAttribute<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
+    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
+
     expectTypeOf<HttpInterceptorMethodHandler<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorMethod>().not.toBeAny();
@@ -55,6 +72,5 @@ describe('Exports', () => {
     expectTypeOf<NonLiteralHttpInterceptorSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
   });
 });

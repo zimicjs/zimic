@@ -52,20 +52,7 @@
       "default": "./dist/interceptor.js",
       "types": "./dist/interceptor.d.ts"
     },
-    "./interceptor/browser": {
-      "node": null,
-      "import": "./dist/interceptor/browser.mjs",
-      "require": "./dist/interceptor/browser.js",
-      "types": "./dist/interceptor/browser.d.ts",
-      "default": "./dist/interceptor/browser.js"
-    },
-    "./interceptor/node": {
-      "browser": null,
-      "import": "./dist/interceptor/node.mjs",
-      "require": "./dist/interceptor/node.js",
-      "types": "./dist/interceptor/node.d.ts",
-      "default": "./dist/interceptor/node.js"
-    }
+    "./package.json": "./package.json"
   },
   "scripts": {
     "dev": "pnpm build --watch",
@@ -82,11 +69,12 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-msw": "msw init ./public --save"
+    "deps:init-msw": "msw init ./public --no-save",
+    "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\""
   },
   "dependencies": {
     "chalk": "^5.3.0",
-    "msw": "^2.1.0",
+    "msw": "^2.1.5",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -110,10 +98,5 @@
     "typescript": {
       "optional": true
     }
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

@@ -1,23 +1,29 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../../types/options';
-import { HttpInterceptor } from '../../../types/public';
-import { HttpInterceptorSchema } from '../../../types/schema';
+import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declareOptionsHttpInterceptorTests(
-  createInterceptor: <Schema extends HttpInterceptorSchema>(options: HttpInterceptorOptions) => HttpInterceptor<Schema>,
-) {
+export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
+  const worker = createHttpInterceptorWorker({ platform });
 
   interface Filters {
     name: string;
   }
 
+  beforeAll(async () => {
+    await worker.start();
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
   it('should support intercepting OPTIONS requests with a static response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -25,11 +31,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
@@ -57,7 +59,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should support intercepting OPTIONS requests with a computed response body', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: { body: Filters };
@@ -66,11 +68,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
         return {
@@ -110,7 +108,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should support intercepting OPTIONS requests with a dynamic route', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters/:id': {
         OPTIONS: {
           response: {
@@ -118,11 +116,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
@@ -179,7 +173,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should not intercept a OPTIONS request without a registered response', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -187,11 +181,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       await expect(fetchPromise).rejects.toThrowError();
 
@@ -245,7 +235,7 @@ export function declareOptionsHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -255,11 +245,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor
         .options('/filters')
         .respond({
@@ -324,7 +310,7 @@ export function declareOptionsHttpInterceptorTests(
       message: string;
     }
 
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -334,11 +320,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor
         .options('/filters')
         .respond({
@@ -428,7 +410,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should ignore all trackers after cleared when intercepting OPTIONS requests', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -437,11 +419,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
@@ -457,7 +435,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should support creating new trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -466,11 +444,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       interceptor.options('/filters').respond({
         status: 200,
       });
@@ -503,7 +477,7 @@ export function declareOptionsHttpInterceptorTests(
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    const interceptor = createInterceptor<{
+    await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -512,11 +486,7 @@ export function declareOptionsHttpInterceptorTests(
           };
         };
       };
-    }>({ baseURL });
-
-    await usingHttpInterceptor(interceptor, async () => {
-      await interceptor.start();
-
+    }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters');
 
       optionsTracker.respond({

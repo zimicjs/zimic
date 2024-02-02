@@ -1,10 +1,10 @@
 import { describe } from 'vitest';
-import { HttpInterceptorFactory } from 'zimic0/interceptor';
+import { HttpInterceptorWorkerPlatform } from 'zimic0/interceptor';
 
 import declareDefaultClientTests from './default';
 
 export interface ClientTestDeclarationOptions {
-  createInterceptor: HttpInterceptorFactory;
+  platform: HttpInterceptorWorkerPlatform;
   fetch: (request: Request) => Promise<Response>;
 }
 
