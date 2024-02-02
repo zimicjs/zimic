@@ -68,11 +68,13 @@
     "deps:build": "pnpm turbo build --filter zimic^...",
     "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-msw": "msw init ./public --save"
+    "deps:init-msw": "msw init ./public --no-save",
+    "postinstall": "tsx scripts/postinstall.ts"
   },
   "dependencies": {
     "chalk": "^5.3.0",
-    "msw": "^2.1.0",
+    "msw": "^2.1.5",
+    "tsx": "^4.6.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -96,10 +98,5 @@
     "typescript": {
       "optional": true
     }
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

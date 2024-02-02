@@ -8,7 +8,7 @@ export default defineWorkspace([
     test: {
       name: 'node',
       environment: 'node',
-      include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.node.test.ts'],
+      include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.node.test.ts'],
       exclude: ['**/*.browser.test.ts', '**/*.browserNoWorker.test.ts'],
     },
   },
@@ -17,7 +17,7 @@ export default defineWorkspace([
     test: {
       name: 'browser',
       environment: undefined,
-      include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
+      include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
       exclude: ['**/*.node.test.ts', '**/*.browserNoWorker.test.ts'],
       browser: {
         name: 'chromium',
@@ -32,7 +32,7 @@ export default defineWorkspace([
     test: {
       name: 'browser-no-worker',
       environment: undefined,
-      include: ['./{src,tests}/**/*.browserNoWorker.test.ts'],
+      include: ['./{src,tests,scripts}/**/*.browserNoWorker.test.ts'],
       browser: {
         name: 'chromium',
         provider: 'playwright',
