@@ -26,9 +26,9 @@ const MSW_ROOT_PATH = path.join(require.resolve('msw'), '..', '..', '..');
 const MSW_PACKAGE_JSON_PATH = path.join(MSW_ROOT_PATH, 'package.json');
 
 async function patchMSWExportLimitations() {
-  browserExports.node = browserExports.default;
-  nodeExports.browser = nodeExports.default;
-  nativeExports.browser = nativeExports.default;
+  browserExports.node = nodeExports.default;
+  nodeExports.browser = browserExports.default;
+  nativeExports.browser = browserExports.default;
 
   await filesystem.writeFile(MSW_PACKAGE_JSON_PATH, JSON.stringify(mswPackageJSON, null, 2));
 }

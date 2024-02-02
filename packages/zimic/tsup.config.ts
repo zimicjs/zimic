@@ -27,6 +27,7 @@ export default defineConfig([
     platform: 'node',
     entry: {
       cli: 'src/cli/index.ts',
+      'scripts/postinstall': 'scripts/postinstall.ts',
     },
     format: ['cjs'],
     dts: false,
