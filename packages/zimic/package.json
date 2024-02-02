@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.1.0-canary.8",
+  "version": "0.1.0-canary.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/diego-aquino/zimic.git",
