@@ -1,11 +1,19 @@
-import { HttpResponse as MSWHttpResponse, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
+import {
+  HttpHandler as MSWHttpHandler,
+  HttpResponse as MSWHttpResponse,
+  SharedOptions as MSWWorkerSharedOptions,
+  http,
+  passthrough,
+} from 'msw';
 
 import { Default } from '@/types/utils';
 
+import { HttpInterceptor } from '../interceptor/types/public';
 import {
   HttpInterceptorMethod,
   HttpInterceptorMethodSchema,
   HttpInterceptorResponseSchemaStatusCode,
+  HttpInterceptorSchema,
 } from '../interceptor/types/schema';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
@@ -35,6 +43,11 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
   private _isRunning = false;
+
+  private httpHandlerGroups: {
+    interceptor: HttpInterceptor<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    httpHandler: MSWHttpHandler;
+  }[] = [];
 
   constructor(options: HttpInterceptorWorkerOptions) {
     this._platform = this.validatePlatform(options.platform);
@@ -160,23 +173,44 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use(method: HttpInterceptorMethod, url: string, handler: HttpRequestHandler) {
+  use<Schema extends HttpInterceptorSchema>(
+    interceptor: HttpInterceptor<Schema>,
+    method: HttpInterceptorMethod,
+    url: string,
+    handler: HttpRequestHandler,
+  ) {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    internalWorker.use(
-      http[lowercaseMethod](url, async (context) => {
-        const result = await handler(context);
-        if (result.bypass) {
-          return passthrough();
-        }
-        return result.response;
-      }),
-    );
+    const httpHandler = http[lowercaseMethod](url, async (context) => {
+      const result = await handler(context);
+      if (result.bypass) {
+        return passthrough();
+      }
+      return result.response;
+    });
+
+    internalWorker.use(httpHandler);
+
+    this.httpHandlerGroups.push({ interceptor, httpHandler });
   }
 
   clearHandlers() {
     this._internalWorker?.resetHandlers();
+    this.httpHandlerGroups = [];
+  }
+
+  clearInterceptorHandlers<Schema extends HttpInterceptorSchema>(interceptor: HttpInterceptor<Schema>) {
+    const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
+
+    const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
+    this._internalWorker?.resetHandlers(...httpHandlersToKeep);
+
+    this.httpHandlerGroups = httpHandlerGroupsToKeep;
+  }
+
+  interceptorsWithHandlers() {
+    return this.httpHandlerGroups.map((group) => group.interceptor);
   }
 
   static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(

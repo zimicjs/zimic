@@ -1,23 +1,28 @@
-import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
 import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform });
-
   interface User {
     name: string;
   }
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
+  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const baseURL = 'http://localhost:3000';
+
   beforeAll(async () => {
     await worker.start();
+  });
+
+  afterEach(() => {
+    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
   });
 
   afterAll(async () => {
