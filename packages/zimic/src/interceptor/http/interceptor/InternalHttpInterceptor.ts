@@ -103,7 +103,7 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
 
       const pathWithBaseURL = this.applyBaseURL(tracker.path());
 
-      this.worker.use(tracker.method(), pathWithBaseURL, async (context) => {
+      this.worker.use(this, tracker.method(), pathWithBaseURL, async (context) => {
         const response = await this.handleInterceptedRequest(
           tracker.method(),
           tracker.path(),
@@ -164,6 +164,7 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
       this.bypassMethodTrackers(method);
       this.trackersByMethod[method].clear();
     }
+    this.worker.clearInterceptorHandlers(this);
   }
 
   private bypassMethodTrackers(method: HttpInterceptorMethod) {
