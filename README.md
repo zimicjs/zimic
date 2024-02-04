@@ -9,7 +9,7 @@
 > This project is under active development! Check our [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6).
 > Contributors and suggestions are welcome!
 
-Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by [Zod](https://github.com/colinhacks/zod)'s type-inference and using [msw](https://github.com/mswjs/msw) under the hood.
+Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by [Zod](https://github.com/colinhacks/zod)'s type-inference and using [MSW](https://github.com/mswjs/msw) under the hood.
 
 ## Features
 
@@ -36,16 +36,21 @@ Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired 
   - [Testing](#testing)
 - [Changelog](#changelog)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
-  - [`createNodeHttpInterceptor`](#createnodehttpinterceptor)
-  - [`createBrowserHttpInterceptor`](#createbrowserhttpinterceptor)
+  - [`HttpInterceptorWorker`](#httpinterceptorworker)
+    - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
+    - [`worker.platform()`](#workerplatform)
+    - [`worker.start()`](#workerstart)
+    - [`worker.stop()`](#workerstop)
+    - [`worker.isRunning()`](#workerisrunning)
   - [`HttpInterceptor`](#httpinterceptor)
-    - [`interceptor.start()`](#interceptorstart)
-    - [`interceptor.stop()`](#interceptorstop)
+    - [`createHttpInterceptor`](#createhttpinterceptor)
+      - [`HttpInterceptor` schema](#httpinterceptor-schema)
     - [`interceptor.baseURL()`](#interceptorbaseurl)
-    - [`interceptor.isRunning()`](#interceptorisrunning)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
     - [`interceptor.clear()`](#interceptorclear)
   - [`HttpRequestTracker`](#httprequesttracker)
+    - [`tracker.method()`](#trackermethod)
+    - [`tracker.path()`](#trackerpath)
     - [`tracker.respond(declaration)`](#trackerresponddeclaration)
     - [`tracker.bypass()`](#trackerbypass)
     - [`tracker.requests()`](#trackerrequests)
@@ -113,28 +118,36 @@ This will create a `mockServiceWorker.js` file in the provided public directory,
 
 @TODO
 
-Declare the endpoint schema of a service and create an HTTP interceptor:
-
-```ts
-
-```
-
 ### Testing
 
-Interceptors must be started to intercept requests. We recommend managing the lifecycle of interceptors with `beforeAll` and `afterAll` hooks in your test setup file, or equivalent depending on your testing framework. An example with Jest/Vitest-like syntax:
+Interceptor workers must be started so that their interceptors handle requests. We recommend managing the lifecycle of interceptors with `beforeAll` and `afterAll` hooks in your test setup file, or equivalent depending on your testing framework. An example with Jest/Vitest-like syntax:
 
 ```ts
 // tests/setup.ts
+import { createHttpInterceptorWorker } from 'zimic/interceptor';
+
+// your interceptors
+import userInterceptor from './userInterceptor';
+import logInterceptor from './logInterceptor';
+import emailInterceptor from './emailInterceptor';
+
+const worker = createHttpInterceptorWorker({
+  platform: 'node',
+});
+
 beforeAll(async () => {
-  await interceptor.start(); // starts intercepting requests
+  await worker.start(); // starts intercepting requests
 });
 
 beforeEach(async () => {
-  await interceptor.clear(); // clears all applied mocks to make sure no tests affect each other
+  // clearing all interceptors to make sure no tests affect each other
+  userInterceptor.clear();
+  logInterceptor.clear();
+  emailInterceptor.clear();
 });
 
-afterAll(() => {
-  interceptor.stop(); // stops intercepting requests
+afterAll(async () => {
+  await worker.stop(); // stops intercepting requests
 });
 ```
 
@@ -150,14 +163,82 @@ This module provides a set of utilities to create HTTP interceptors for both Nod
 
 All APIs are typed using TypeScript and documented using JSDoc comments, so you can view detailed descriptions directly in your IDE!
 
-### `createNodeHttpInterceptor`
+### `HttpInterceptorWorker`
 
-A factory function that creates an `HttpInterceptor` instance for a Node.js environment.
+Worker responsible for intercepting HTTP requests and returning mock responses, compatible with browser and Node.js. All interceptors in a project can share the same worker. To start intercepting requests, the worker must be started.
+
+#### `createHttpInterceptorWorker`
+
+Creates a new HTTP interceptor worker instance. A platform is required to specify the environment where the worker will be running.
+
+- Node.js:
+
+  ```ts
+  const worker = createHttpInterceptorWorker({
+    platform: 'node',
+  });
+  ```
+
+- Browser:
+
+  ```ts
+  const worker = createHttpInterceptorWorker({
+    platform: 'browser',
+  });
+  ```
+
+#### `worker.platform()`
+
+Returns the platform used by the worker (`browser` or `node`).
 
 ```ts
-import { createNodeHttpInterceptor } from 'zimic/interceptor/node'; // <-- import from `node`
+const platform = worker.platform();
+```
 
-const interceptor = createNodeHttpInterceptor<{
+#### `worker.start()`
+
+Starts the worker, allowing it to intercept HTTP requests.
+
+```ts
+await worker.start();
+```
+
+When targeting a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal before starting a worker. This initializes the mock service worker in your public directory. Learn more at [`zimic browser init <publicDirectory`](#workerstart).
+
+#### `worker.stop()`
+
+Stops the worker, preventing it from intercepting HTTP requests.
+
+```ts
+await worker.stop();
+```
+
+#### `worker.isRunning()`
+
+Returns whether the worker is currently running and able to intercept HTTP requests.
+
+```ts
+const isRunning = worker.isRunning();
+```
+
+### `HttpInterceptor`
+
+HTTP interceptors provide the main API to apply mocks to HTTP requests.
+
+#### `createHttpInterceptor`
+
+Creates a new HTTP interceptor instance.
+
+The interceptor schema is used to declare the structure of the real service being mocked. This includes routes, methods, request and response bodies, and status codes. Based on the schema, the interceptor will provide type-inference and type-validation when applying mocks.
+
+```ts
+import { createHttpInterceptor } from 'zimic/interceptor/node'; // <-- import from `node`
+
+const worker = createHttpInterceptorWorker({
+  platform: 'node',
+});
+
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -167,88 +248,31 @@ const interceptor = createNodeHttpInterceptor<{
     };
   };
 }>({
+  worker,
   baseURL: 'http://localhost:3000',
 });
 ```
 
-### `createBrowserHttpInterceptor`
+##### `HttpInterceptor` schema
 
-A factory function that creates an `HttpInterceptor` instance for a browser environment.
-
-```ts
-import { createBrowserHttpInterceptor } from 'zimic/interceptor/browser'; // <-- import from `browser`
-
-const interceptor = createBrowserHttpInterceptor<{
-  '/users': {
-    GET: {
-      response: {
-        200: { body: User[] };
-      };
-    };
-  };
-}>({
-  baseURL: 'http://localhost:3000',
-});
-```
-
-### `HttpInterceptor`
-
-HTTP interceptors provide the main API to apply mocks to HTTP requests.
-
-#### `interceptor.start()`
-
-Before using an interceptor, it must be started:
-
-```ts
-await interceptor.start();
-```
-
-#### `interceptor.stop()`
-
-After use, the interceptor must be stopped, after which no more requests will be intercepted:
-
-```ts
-interceptor.stop();
-```
+@TODO
 
 #### `interceptor.baseURL()`
 
 Returns the base URL of the interceptor.
 
 ```ts
-const interceptor = createNodeHttpInterceptor<{}>({
-  baseURL: 'http://localhost:3000',
-});
-
 const baseURL = interceptor.baseURL();
-console.log(baseURL); // http://localhost:3000
-```
-
-#### `interceptor.isRunning()`
-
-Returns a boolean indicating whether the interceptor is currently intercepting requests.
-
-```ts
-const interceptor = createNodeHttpInterceptor<{}>({
-  baseURL: 'http://localhost:3000',
-});
-console.log(interceptor.isRunning()); // false
-
-await interceptor.start();
-console.log(interceptor.isRunning()); // true
-
-interceptor.stop();
-console.log(interceptor.isRunning()); // false
 ```
 
 #### `interceptor.<method>(path)`
 
-Creates an `HttpRequestTracker` instance for the given method and path. The path must be declared in the interceptor schema (generic passed to `createNodeHttpInterceptor` or `createBrowserHttpInterceptor`).
+Creates an [`HttpRequestTracker`](#httprequesttracker) instance for the given method and path. The path and method must be declared in the interceptor schema.
 
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, `options`.
 
 ```ts
-const interceptor = createNodeHttpInterceptor<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -257,21 +281,24 @@ const interceptor = createNodeHttpInterceptor<{
     };
   };
 }>({
+  worker,
   baseURL: 'http://localhost:3000',
 });
 
+// any GET requests to http://localhost:3000/users will match this tracker...
 const listTracker = interceptor.get('/users')
 
+// ...and return with the following response
 listTracker.respond({
   status: 200
   body: [{ id: 1, name: 'Diego' }],
 });
 ```
 
-Paths with dynamic route parameters, such as `/users/:id`, are supported, but it's necessary to explicitly declare the original path to get type-inference and type-validation.
+Paths with dynamic route parameters, such as `/users/:id`, are supported, but you need to specify the original path as a type parameter to get type-inference and type-validation.
 
 ```ts
-const interceptor = createNodeHttpInterceptor<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -280,32 +307,51 @@ const interceptor = createNodeHttpInterceptor<{
     };
   };
 }>({
+  worker,
   baseURL: 'http://localhost:3000',
 });
 
 interceptor.get('/users/:id'); // matches any id
-interceptor.get<'/users/:id'>(`/users/${1}`); // only matches id 1 (see the explicit original path as a generic)
+interceptor.get<'/users/:id'>(`/users/${1}`); // only matches id 1 (see the original path as a type parameter)
 ```
 
 #### `interceptor.clear()`
 
-Clears all the applied mocks from the interceptor.
+Clears all of the [HttpRequestTracker](#httprequesttracker) instances created by this interceptor. After calling this method, the interceptor will no longer intercept any requests until new mock responses are registered.
+
+This method is useful to reset the interceptor mocks between tests.
 
 ```ts
 interceptor.clear();
 ```
 
-After this, all current trackers are marked as unusable. However, if the interceptor is still running, new mocks can be applied creating new trackers with [`interceptor.<method>(path)`](#interceptormethodpath).
-
-Note: clearing an intercetor does not stop it. If you want to stop intercepting requests, use [`interceptor.stop()`](#interceptorstop).
-
 ### `HttpRequestTracker`
 
-HTTP request trackers allow specifying specific responses for requests. When multiple trackers match the same method and route, the _last_ created with [`interceptor.<method>(path)`](#interceptormethodpath) will be used.
+Tracker for intercepted HTTP requests, supporting response declarations to return for matched intercepted requests.
+
+When multiple trackers match the same method and route, the _last_ created with [`interceptor.<method>(path)`](#interceptormethodpath) will be used.
+
+#### `tracker.method()`
+
+Returns the method that matches this tracker.
+
+```ts
+const method = tracker.method();
+```
+
+#### `tracker.path()`
+
+Returns the path that matches this tracker. The base URL of the interceptor is not included, but it is used when checking for intercepted request matches.
+
+```ts
+const path = tracker.path();
+```
 
 #### `tracker.respond(declaration)`
 
-Declares a response for a request tracker. When the tracker matches a request, it will respond with the given declaration. The response type is validated against the schema declared in the interceptor.
+Declares a response to return for matched intercepted requests.
+
+When the tracker matches a request, it will respond with the given declaration. The response type is statically validated against the schema of the interceptor.
 
 ```ts
 const listTracker = interceptor.get('/users').respond({
@@ -318,7 +364,8 @@ A function is also supported, in case the response is dynamic:
 
 ```ts
 const listTracker = interceptor.get('/users').respond((request) => {
-  const { name } = request.body;
+  const { searchParams } = new URL(request.url);
+  const name = searchParams.get('name');
   return {
     status: 200,
     body: [{ id: 1, name }],
@@ -328,26 +375,27 @@ const listTracker = interceptor.get('/users').respond((request) => {
 
 #### `tracker.bypass()`
 
-Bypasses the request tracker, meaning that it won't match any more requests. This is useful when you want to skip a tracker in favor of one created before.
+Clears any declared response and makes the tracker stop matching intercepted requests. The next tracker, created before this one, that matches the same method and path will be used if present. If not, the requests of the method and path will not be intercepted.
 
 ```ts
 const listTracker1 = interceptor.get('/users').respond({
   status: 200,
-  body: [{ id: 1, name: 'Diego' }],
+  body: [],
 });
+
 const listTracker2 = interceptor.get('/users').respond({
   status: 200,
-  body: [],
+  body: [{ id: 1, name: 'Diego' }],
 });
 
 listTracker2.bypass();
 
-// GET requests to /users will only match listTracker1
+// GET requests to /users will match listTracker1 and return an empty array
 ```
 
 #### `tracker.requests()`
 
-Returns an array of all requests that matched the tracker, were intercepted and responded with the mock declaration.
+Returns the intercepted requests that matched this tracker, along with the responses returned to each of them. This is useful for testing that the correct requests were made by your application.
 
 ```ts
 const listTracker = interceptor.get('/users').respond({
@@ -383,7 +431,11 @@ Displays the available commands and options.
 
 ### `zimic browser init <publicDirectory>`
 
-Initializes the mock service worker in a public directory. If you are using Zimic mainly in tests, we recommend adding the `mockServiceWorker.js` to your `.gitignore` and adding a `postinstall` scripts to your `package.json`. This ensures that the latest service worker script is being used after upgrading Zimic.
+Initializes the mock service worker in a public directory.
+
+This command is necessary when using Zimic in a browser environment. It creates a `mockServiceWorker.js` file in the provided public directory, which is used to intercept requests and mock responses.
+
+If you are using Zimic mainly in tests, we recommend adding the `mockServiceWorker.js` to your `.gitignore` and adding this command to a `postinstall` scripts in your `package.json`. This ensures that the latest service worker script is being used after upgrading Zimic.
 
 ---
 
