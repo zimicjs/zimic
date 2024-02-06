@@ -14,7 +14,7 @@ Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired 
 ## Features
 
 - **Typed mocks**: declare the HTTP endpoints and get full type-inference and type-validation when applying mocks. Having a single place to declare routes, parameters and responses means an easier time keeping your mocks in sync with the real services!
-- **Network-level intercepts**: internally, Zimic uses [msw](https://github.com/mswjs/msw), which intercepts HTTP requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped and the mocked requests are indistinguishable from the real ones. If you're mocking requests on a browser, you can even inspect the requests and responses on your devtools!
+- **Network-level intercepts**: internally, Zimic uses [MSW](https://github.com/mswjs/msw), which intercepts HTTP requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped and the mocked requests are indistinguishable from the real ones. If you're mocking requests on a browser, you can even inspect the requests and responses on your devtools!
 - **Flexibility**: you can simulate real application workflows by mocking all endpoints used. This is specially useful in testing, making sure the real path your application is covered and allowing checks about how many requests were made and with which parameters.
 - **Simplicity**: no complex configuration files or heavy dependencies. Check our [Getting started](#getting-started) guide and starting mocking!
 - **Compatibility**: browser and Node.js support!
@@ -32,7 +32,6 @@ Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired 
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
 - [Usage](#usage)
-  - [Basic usage](#basic-usage)
   - [Testing](#testing)
 - [Changelog](#changelog)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
@@ -67,14 +66,14 @@ Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired 
 - TypeScript >=4.7
 
 - `strict` mode enabled in your `tsconfig.json`:
-  ```json
+  ```jsonc
   // tsconfig.json
   {
     // ...
     "compilerOptions": {
       // ...
-      "strict": true
-    }
+      "strict": true,
+    },
   }
   ```
 
@@ -114,8 +113,6 @@ This will create a `mockServiceWorker.js` file in the provided public directory,
 
 ## Usage
 
-### Basic usage
-
 @TODO
 
 ### Testing
@@ -124,30 +121,42 @@ Interceptor workers must be started so that their interceptors handle requests. 
 
 ```ts
 // tests/setup.ts
-import { createHttpInterceptorWorker } from 'zimic/interceptor';
+import { createHttpInterceptorWorker, createHttpInterceptor } from 'zimic/interceptor';
 
-// your interceptors
-import userInterceptor from './userInterceptor';
-import logInterceptor from './logInterceptor';
-import emailInterceptor from './emailInterceptor';
-
+// create a worker
 const worker = createHttpInterceptorWorker({
   platform: 'node',
 });
 
+// declare your interceptors
+const userInterceptor = createHttpInterceptor<{
+  // ...
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+
+const logInterceptor = createHttpInterceptor<{
+  // ...
+}>({
+  worker,
+  baseURL: 'http://localhost:3001',
+});
+
 beforeAll(async () => {
-  await worker.start(); // starts intercepting requests
+  // start intercepting requests
+  await worker.start();
 });
 
 beforeEach(async () => {
-  // clearing all interceptors to make sure no tests affect each other
+  // clear all interceptors to make sure no tests affect each other
   userInterceptor.clear();
   logInterceptor.clear();
-  emailInterceptor.clear();
 });
 
 afterAll(async () => {
-  await worker.stop(); // stops intercepting requests
+  // stop intercepting requests
+  await worker.stop();
 });
 ```
 
@@ -232,7 +241,7 @@ Creates a new HTTP interceptor instance.
 The interceptor schema is used to declare the structure of the real service being mocked. This includes routes, methods, request and response bodies, and status codes. Based on the schema, the interceptor will provide type-inference and type-validation when applying mocks.
 
 ```ts
-import { createHttpInterceptor } from 'zimic/interceptor/node'; // <-- import from `node`
+import { createHttpInterceptor } from 'zimic/interceptor';
 
 const worker = createHttpInterceptorWorker({
   platform: 'node',
@@ -285,13 +294,10 @@ const interceptor = createHttpInterceptor<{
   baseURL: 'http://localhost:3000',
 });
 
-// any GET requests to http://localhost:3000/users will match this tracker...
-const listTracker = interceptor.get('/users')
-
-// ...and return with the following response
-listTracker.respond({
+// any GET requests to http://localhost:3000/users will be intercepted and returned with the given response
+const listTracker = interceptor.get('/users').respond({
   status: 200
-  body: [{ id: 1, name: 'Diego' }],
+  body: [{ username: 'diego-aquino' }],
 });
 ```
 
@@ -356,7 +362,7 @@ When the tracker matches a request, it will respond with the given declaration. 
 ```ts
 const listTracker = interceptor.get('/users').respond({
   status: 200,
-  body: [{ id: 1, name: 'Diego' }],
+  body: [{ username: 'diego-aquino' }],
 });
 ```
 
@@ -365,10 +371,10 @@ A function is also supported, in case the response is dynamic:
 ```ts
 const listTracker = interceptor.get('/users').respond((request) => {
   const { searchParams } = new URL(request.url);
-  const name = searchParams.get('name');
+  const username = searchParams.get('username');
   return {
     status: 200,
-    body: [{ id: 1, name }],
+    body: [{ username }],
   };
 });
 ```
@@ -385,7 +391,7 @@ const listTracker1 = interceptor.get('/users').respond({
 
 const listTracker2 = interceptor.get('/users').respond({
   status: 200,
-  body: [{ id: 1, name: 'Diego' }],
+  body: [{ username: 'diego-aquino' }],
 });
 
 listTracker2.bypass();
@@ -400,7 +406,7 @@ Returns the intercepted requests that matched this tracker, along with the respo
 ```ts
 const listTracker = interceptor.get('/users').respond({
   status: 200,
-  body: [{ id: 1, name: 'Diego' }],
+  body: [{ username: 'diego-aquino' }],
 });
 
 await fetch('http://localhost:3000/users');
@@ -408,7 +414,7 @@ await fetch('http://localhost:3000/users');
 const listRequests = listTracker.requests();
 console.log(listRequests.length); // 1
 console.log(listRequests[0].body); // null
-console.log(listRequests[0].response.body); // [{ id: 1, name: 'Diego' }]
+console.log(listRequests[0].response.body); // [{ username: 'diego-aquino' }]
 ```
 
 The return by `requests` contains simplified objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, with only the necessary properties for inspection and a body already parsed. If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
