@@ -1,11 +1,9 @@
 import { HttpInterceptorWorkerPlatform } from './options';
 
 /**
- * Worker responsible for intercepting HTTP requests and returning mock responses, compatible with browser and Node.js.
+ * Worker used by interceptors to intercept HTTP requests and return mock responses. To start intercepting requests, the worker must be started.
  *
- * To start intercepting requests, the worker must be started.
- *
- * All interceptors in a project can share the same worker.
+ * In a project, all interceptors can share the same worker.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptorworker}
  */
@@ -18,10 +16,10 @@ export interface HttpInterceptorWorker {
   platform: () => HttpInterceptorWorkerPlatform;
 
   /**
-   * Starts the worker, allowing it to intercept HTTP requests.
+   * Starts the worker, allowing it to be used by interceptors.
    *
    * When targeting a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal
-   * before starting a worker. This initializes the mock service worker in your public directory.
+   * before starting the worker. This initializes the mock service worker in your public directory.
    *
    * @throws {UnregisteredServiceWorkerError} When the worker is targeting a browser environment and the mock service
    * worker is not registered.
@@ -33,14 +31,14 @@ export interface HttpInterceptorWorker {
   start: () => Promise<void>;
 
   /**
-   * Stops the worker, preventing it from intercepting HTTP requests.
+   * Stops the worker, preventing it from being used by interceptors.
    *
    * @see {@link https://github.com/diego-aquino/zimic#workerstop}.
    */
   stop: () => Promise<void>;
 
   /**
-   * @returns Whether the worker is currently running and able to intercept HTTP requests.
+   * @returns Whether the worker is currently running and ready to use.
    *
    * @see {@link https://github.com/diego-aquino/zimic#workerisrunning}.
    */

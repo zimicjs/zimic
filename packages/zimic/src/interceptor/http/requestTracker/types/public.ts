@@ -13,9 +13,11 @@ import {
 } from './requests';
 
 /**
- * Tracker for intercepted HTTP requests, supporting response declarations to return for matched intercepted requests.
+ * HTTP request trackers allow declaring responses to return for matched intercepted requests. They also keep track of
+ * the intercepted requests and their responses, allowing checks about how many requests your application made and with
+ * which parameters.
  *
- * When multiple trackers of the same interceptor match the same method and route, the **last** tracker created with
+ * When multiple trackers of the same interceptor match the same method and route, the *last* tracker created with
  * {@link https://github.com/diego-aquino/zimic#interceptormethodpath `interceptor.<method>(path)`} will be used.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
@@ -37,7 +39,7 @@ export interface HttpRequestTracker<
 
   /**
    * @returns The path that matches this tracker. The base URL of the interceptor is not included, but it is used when
-   * checking for intercepted request matches.
+   * matching requests.
    *
    * @see {@link https://github.com/diego-aquino/zimic#trackerpath}
    */
