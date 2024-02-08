@@ -48,6 +48,7 @@ Zimic was designed to provide a simple, flexible and type-safe way to mock HTTP 
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
 - [Usage](#usage)
+  - [Basic usage](#basic-usage)
   - [Testing](#testing)
 - [Changelog](#changelog)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
@@ -62,11 +63,14 @@ Zimic was designed to provide a simple, flexible and type-safe way to mock HTTP 
       - [`HttpInterceptor` schema](#httpinterceptor-schema)
     - [`interceptor.baseURL()`](#interceptorbaseurl)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
+      - [Dynamic route parameters](#dynamic-route-parameters)
     - [`interceptor.clear()`](#interceptorclear)
   - [`HttpRequestTracker`](#httprequesttracker)
     - [`tracker.method()`](#trackermethod)
     - [`tracker.path()`](#trackerpath)
     - [`tracker.respond(declaration)`](#trackerresponddeclaration)
+      - [Static responses](#static-responses)
+      - [Computed responses](#computed-responses)
     - [`tracker.bypass()`](#trackerbypass)
     - [`tracker.requests()`](#trackerrequests)
 - [CLI](#cli)
@@ -128,7 +132,55 @@ This will create a `mockServiceWorker.js` file in the provided public directory,
 
 ## Usage
 
-@TODO
+### Basic usage
+
+To start using Zimic, create a [worker](#httpinterceptorworker) targeting your platform.
+
+```ts
+const worker = createHttpInterceptorWorker({
+  platform: 'node', // or 'browser'
+});
+```
+
+Then, create your first [interceptor](#httpinterceptor):
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    GET: {
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+In this example, we're creating an interceptor for a service with a single route, `/users`, that supports a `GET` method. The response for a successful request is an array of `User` objects. Learn more about how to declare interceptor schemas at [`HttpInterceptor` schema](#httpinterceptor-schema).
+
+Finally, start the worker to intercept requests:
+
+```ts
+await worker.start();
+```
+
+Now, you can start intercepting requests and returning mock responses!
+
+```ts
+const listTracker = interceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+
+const response = await fetch('http://localhost:3000/users');
+const users = await response.json();
+console.log(users); // [{ username: 'diego-aquino' }]
+```
+
+More examples are available at [`zimic/interceptor` API](#zimicinterceptor-api).
 
 ### Testing
 
@@ -250,6 +302,8 @@ const isRunning = worker.isRunning();
 
 HTTP interceptors provide the main API to handle matched HTTP requests and return mock responses. The methods, paths, status codes, parameters, and responses are statically-typed based on the provided service schema. To intercept HTTP requests, an interceptor needs a running [HttpInterceptorWorker](#httpinterceptorworker).
 
+Each interceptor represents a service and can be used to mock its routes and methods.
+
 #### `createHttpInterceptor`
 
 Creates an HTTP interceptor.
@@ -317,6 +371,8 @@ const listTracker = interceptor.get('/users').respond({
 });
 ```
 
+##### Dynamic route parameters
+
 Paths with dynamic route parameters, such as `/users/:id`, are supported, but you need to specify the original path as a type parameter to get type validation.
 
 ```ts
@@ -379,12 +435,16 @@ Declares a response to return for matched intercepted requests.
 
 When the tracker matches a request, it will respond with the given declaration. The response type is statically validated against the schema of the interceptor.
 
+##### Static responses
+
 ```ts
 const listTracker = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 ```
+
+##### Computed responses
 
 A function is also supported, in case the response is dynamic:
 
