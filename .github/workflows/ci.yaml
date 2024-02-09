@@ -15,10 +15,17 @@ concurrency:
 env:
   CI: true
   TURBO_LOG_ORDER: stream
-  TURBO_TOKEN: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
-  TURBO_TEAM: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
-  INSTALL_OPTIONS: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
-  BUILD_OPTIONS: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+  TURBO_TOKEN:
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
+    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM:
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
+    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  INSTALL_OPTIONS:
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
+  BUILD_OPTIONS:
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..."
+    "{./packages/*}[HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci:
@@ -50,7 +57,9 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          build-node-env: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && 'development' || 'production' }}
+          build-node-env:
+            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && 'development'
+            || 'production' }}
           install-playwright-browsers: true
 
       - name: Check formatting style

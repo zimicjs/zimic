@@ -1,8 +1,6 @@
 import { HttpInterceptorWorkerPlatform } from '../types/options';
 
-/**
- * Error thrown when an invalid worker platform is provided.
- */
+/** Error thrown when an invalid worker platform is provided. */
 class InvalidHttpInterceptorWorkerPlatform extends Error {
   constructor(platform: unknown) {
     const availablePlatforms = Object.values(HttpInterceptorWorkerPlatform);

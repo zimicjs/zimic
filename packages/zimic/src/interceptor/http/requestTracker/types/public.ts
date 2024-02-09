@@ -17,7 +17,7 @@ import {
  * the intercepted requests and their responses, allowing checks about how many requests your application made and with
  * which parameters.
  *
- * When multiple trackers of the same interceptor match the same method and route, the *last* tracker created with
+ * When multiple trackers of the same interceptor match the same method and route, the _last_ tracker created with
  * {@link https://github.com/diego-aquino/zimic#interceptormethodpath `interceptor.<method>(path)`} will be used.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
@@ -32,15 +32,13 @@ export interface HttpRequestTracker<
 > {
   /**
    * @returns The method that matches this tracker.
-   *
    * @see {@link https://github.com/diego-aquino/zimic#trackermethod}
    */
   method: () => Method;
 
   /**
    * @returns The path that matches this tracker. The base URL of the interceptor is not included, but it is used when
-   * matching requests.
-   *
+   *   matching requests.
    * @see {@link https://github.com/diego-aquino/zimic#trackerpath}
    */
   path: () => Path;
@@ -52,10 +50,8 @@ export interface HttpRequestTracker<
    * validated against the schema of the interceptor.
    *
    * @param declaration The response declaration or a factory to create it.
-   *
-   * @returns The same tracker, now including type information about the response declaration based on the
-   * specified status code.
-   *
+   * @returns The same tracker, now including type information about the response declaration based on the specified
+   *   status code.
    * @see {@link https://github.com/diego-aquino/zimic#trackerrespond}
    */
   respond: <
@@ -77,8 +73,7 @@ export interface HttpRequestTracker<
 
   /**
    * @returns The intercepted requests that matched this tracker, along with the responses returned to each of them.
-   * This is useful for testing that the correct requests were made by your application.
-   *
+   *   This is useful for testing that the correct requests were made by your application.
    * @see {@link https://github.com/diego-aquino/zimic#trackerrequests}
    */
   requests: () => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[];

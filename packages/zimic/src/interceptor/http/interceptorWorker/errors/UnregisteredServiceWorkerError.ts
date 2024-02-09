@@ -1,8 +1,6 @@
 import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/shared/constants';
 
-/**
- * Error thrown when the browser mock service worker is not found.
- */
+/** Error thrown when the browser mock service worker is not found. */
 class UnregisteredServiceWorkerError extends Error {
   constructor() {
     super(

@@ -7,8 +7,6 @@ export interface HttpInterceptorOptions {
    */
   worker: HttpInterceptorWorker;
 
-  /**
-   * The base URL used by the interceptor. This URL will be prepended to any routes used by the interceptor.
-   */
+  /** The base URL used by the interceptor. This URL will be prepended to any routes used by the interceptor. */
   baseURL: string;
 }
