@@ -60,10 +60,20 @@ Zimic was designed to provide a simple, flexible and type-safe way to mock HTTP 
     - [`worker.isRunning()`](#workerisrunning)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`createHttpInterceptor`](#createhttpinterceptor)
-      - [`HttpInterceptor` schema](#httpinterceptor-schema)
+    - [`HttpInterceptor` schema](#httpinterceptor-schema)
+      - [`HttpInterceptor` schema paths](#httpinterceptor-schema-paths)
+      - [`HttpInterceptor` schema path composition](#httpinterceptor-schema-path-composition)
+      - [`HttpInterceptor` schema methods](#httpinterceptor-schema-methods)
+      - [`HttpInterceptor` schema method composition](#httpinterceptor-schema-method-composition)
+      - [`HttpInterceptor` schema requests](#httpinterceptor-schema-requests)
+      - [`HttpInterceptor` schema request composition](#httpinterceptor-schema-request-composition)
+      - [`HttpInterceptor` schema responses](#httpinterceptor-schema-responses)
+      - [`HttpInterceptor` schema response composition](#httpinterceptor-schema-response-composition)
+      - [`HttpInterceptor` schema (example)](#httpinterceptor-schema-example)
+      - [`HttpInterceptor` schema composition (example)](#httpinterceptor-schema-composition-example)
     - [`interceptor.baseURL()`](#interceptorbaseurl)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
-      - [Dynamic route parameters](#dynamic-route-parameters)
+      - [Dynamic path parameters](#dynamic-path-parameters)
     - [`interceptor.clear()`](#interceptorclear)
   - [`HttpRequestTracker`](#httprequesttracker)
     - [`tracker.method()`](#trackermethod)
@@ -159,7 +169,7 @@ const interceptor = createHttpInterceptor<{
 });
 ```
 
-In this example, we're creating an interceptor for a service with a single route, `/users`, that supports a `GET` method. The response for a successful request is an array of `User` objects. Learn more about how to declare interceptor schemas at [`HttpInterceptor` schema](#httpinterceptor-schema).
+In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET` method. The response for a successful request is an array of `User` objects. Learn more about how to declare interceptor schemas at [`HttpInterceptor` schema](#httpinterceptor-schema).
 
 Finally, start the worker to intercept requests:
 
@@ -302,13 +312,13 @@ const isRunning = worker.isRunning();
 
 HTTP interceptors provide the main API to handle matched HTTP requests and return mock responses. The methods, paths, status codes, parameters, and responses are statically-typed based on the provided service schema. To intercept HTTP requests, an interceptor needs a running [HttpInterceptorWorker](#httpinterceptorworker).
 
-Each interceptor represents a service and can be used to mock its routes and methods.
+Each interceptor represents a service and can be used to mock its paths and methods.
 
 #### `createHttpInterceptor`
 
 Creates an HTTP interceptor.
 
-The interceptor schema defines the structure of the real service being mocked. This includes routes, methods, request and response bodies, and status codes. Based on the schema, the interceptor will provide type validation when applying mocks.
+The interceptor schema defines the structure of the real service being mocked. This includes paths, methods, request and response bodies, and status codes. Based on the schema, the interceptor will provide type validation when applying mocks.
 
 ```ts
 import { createHttpInterceptorWorker, createHttpInterceptor } from 'zimic/interceptor';
@@ -332,9 +342,303 @@ const interceptor = createHttpInterceptor<{
 });
 ```
 
-##### `HttpInterceptor` schema
+#### `HttpInterceptor` schema
 
-@TODO
+HTTP interceptor schemas are defined using types or interfaces.
+
+##### `HttpInterceptor` schema paths
+
+At the root level, each key represents a path or path:
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    // path schema
+  };
+  '/users/:id': {
+    // path schema
+  };
+  '/posts': {
+    // path schema
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema path composition
+
+As an alternative, you can also compose root level paths using the utility type `HttpInterceptorSchema.Root`:
+
+```ts
+type UserPaths = HttpInterceptorSchema.Root<{
+  '/users': {
+    // path schema
+  };
+  '/users/:id': {
+    // path schema
+  };
+}>;
+
+type PostPaths = HttpInterceptorSchema.Root<{
+  '/posts': {
+    // path schema
+  };
+}>;
+
+const interceptor = createHttpInterceptor<UserPaths & PostPaths>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema methods
+
+Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method names are case-sensitive.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    GET: {
+      // method schema
+    };
+    POST: {
+      // method schema
+    };
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema method composition
+
+Similarly to [paths](#httpinterceptor-schema-paths), you can also compose methods using the utility type `HttpInterceptorSchema.Method`:
+
+```ts
+type UserMethods = HttpInterceptorSchema.Method<{
+  GET: {
+    // method schema
+  };
+  POST: {
+    // method schema
+  };
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users': UserMethods;
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema requests
+
+Each method can have a `request`, which defines the schema of the accepted requests. Currently, only the `body` property is supported.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    POST: {
+      request: {
+        body: {
+          username: string;
+        };
+      };
+      // ...
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema request composition
+
+You can also compose requests using the utility type `HttpInterceptorSchema.Request`, similarly to [methods](#httpinterceptor-schema-methods):
+
+```ts
+type UserCreationRequest = HttpInterceptorSchema.Request<{
+  body: {
+    username: string;
+  };
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    POST: {
+      request: UserCreationRequest;
+    };
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema responses
+
+Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as keys. Currently, only the `body` property is supported.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users/:id': {
+    GET: {
+      // ...
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema response composition
+
+You can also compose responses using the utility types `HttpInterceptorSchema.ResponseByStatusCode` and `HttpInterceptorSchema.Response`, similarly to [requests](#httpinterceptor-schema-requests):
+
+```ts
+type SuccessUserGetResponse = HttpInterceptorSchema.Response<{
+  body: User;
+}>;
+
+type NotFoundUserGetResponse = HttpInterceptorSchema.Response<{
+  body: NotFoundError;
+}>;
+
+type UserGetResponses = HttpInterceptorSchema.ResponseByStatusCode<{
+  200: SuccessUserGetResponse;
+  404: NotFoundUserGetResponse;
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    GET: {
+      // ...
+      response: UserGetResponses;
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema (example)
+
+Combining all of these, you can define a complete schema for your services:
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    POST: {
+      request: {
+        body: {
+          username: string;
+        };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+    GET: {
+      response: {
+        200: { body: User[] };
+        404: { body: NotFoundError };
+      };
+    };
+  };
+
+  '/users/:id': {
+    GET: {
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+  };
+
+  '/posts': {
+    GET: {
+      response: {
+        200: { body: Post[] };
+      };
+    };
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+##### `HttpInterceptor` schema composition (example)
+
+Alternatively, you can compose the schema using utility types:
+
+```ts
+type UserPaths = HttpInterceptorSchema.Root<{
+  '/users': {
+    POST: {
+      request: {
+        body: {
+          username: string;
+        };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+
+    GET: {
+      response: {
+        200: { body: User[] };
+        404: { body: NotFoundError };
+      };
+    };
+  };
+}>;
+
+type UserByIdPaths = HttpInterceptorSchema.Root<{
+  '/users/:id': {
+    GET: {
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+  };
+}>;
+
+type PostPaths = HttpInterceptorSchema.Root<{
+  '/posts': {
+    GET: {
+      response: {
+        200: { body: Post[] };
+      };
+    };
+  };
+}>;
+
+const interceptor = createHttpInterceptor<UserPaths & UserByIdPaths & PostPaths>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
 
 #### `interceptor.baseURL()`
 
@@ -371,9 +675,9 @@ const listTracker = interceptor.get('/users').respond({
 });
 ```
 
-##### Dynamic route parameters
+##### Dynamic path parameters
 
-Paths with dynamic route parameters, such as `/users/:id`, are supported, but you need to specify the original path as a type parameter to get type validation.
+Paths with dynamic path parameters, such as `/users/:id`, are supported, but you need to specify the original path as a type parameter to get type validation.
 
 ```ts
 const interceptor = createHttpInterceptor<{
@@ -407,7 +711,7 @@ interceptor.clear();
 
 HTTP request trackers allow declaring responses to return for matched intercepted requests. They also keep track of the intercepted requests and their responses, allowing checks about how many requests your application made and with which parameters.
 
-When multiple trackers match the same method and route, the _last_ created with [`interceptor.<method>(path)`](#interceptormethodpath) will be used.
+When multiple trackers match the same method and path, the _last_ created with [`interceptor.<method>(path)`](#interceptormethodpath) will be used.
 
 #### `tracker.method()`
 
