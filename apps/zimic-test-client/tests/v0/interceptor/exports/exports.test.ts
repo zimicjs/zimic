@@ -7,7 +7,6 @@ import {
   type DefaultBody,
   type HttpInterceptor,
   type HttpInterceptorMethod,
-  type HttpInterceptorMethodHandler,
   type HttpInterceptorMethodSchema,
   type HttpInterceptorOptions,
   type HttpInterceptorPathSchema,
@@ -57,7 +56,6 @@ describe('Exports', () => {
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
 
-    expectTypeOf<HttpInterceptorMethodHandler<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorMethod>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequestSchema>().not.toBeAny();

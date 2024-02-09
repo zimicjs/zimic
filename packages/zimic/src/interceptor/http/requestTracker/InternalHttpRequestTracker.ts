@@ -50,15 +50,15 @@ class InternalHttpRequestTracker<
   respond<
     NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
-    declarationOrCreateDeclaration:
+    declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
   ): InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
 
-    newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declarationOrCreateDeclaration)
-      ? declarationOrCreateDeclaration
-      : () => declarationOrCreateDeclaration;
+    newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
+      ? declaration
+      : () => declaration;
 
     newThis.interceptedRequests = [];
 
