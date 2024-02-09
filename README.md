@@ -3,13 +3,13 @@
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP request mocking.
+  TypeScript-first HTTP request mocking
 </p>
 
 <div align="center">
   <a href="https://www.npmjs.com/package/zimic">npm</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="#table-of-contents">Documentation</a>
+  <a href="#table-of-contents">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
@@ -64,10 +64,10 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [`HttpInterceptor`](#httpinterceptor)
     - [`createHttpInterceptor`](#createhttpinterceptor)
     - [`HttpInterceptor` schema](#httpinterceptor-schema)
-      - [Path schema](#path-schema)
-      - [Method schema](#method-schema)
-      - [Request schema](#request-schema)
-      - [Response schema](#response-schema)
+      - [Declaring paths](#declaring-paths)
+      - [Declaring methods](#declaring-methods)
+      - [Declaring requests](#declaring-requests)
+      - [Declaring responses](#declaring-responses)
     - [`interceptor.baseURL()`](#interceptorbaseurl)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
@@ -169,8 +169,8 @@ const interceptor = createHttpInterceptor<{
 ```
 
 In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET` method.
-The response for a successful request is an array of `User` objects. Learn more about how to declare interceptor schemas
-at [`HttpInterceptor` schema](#httpinterceptor-schema).
+The response for a successful request is an array of `User` objects. Learn more about declaring interceptor schemas at
+[`HttpInterceptor` schema](#httpinterceptor-schema).
 
 Finally, start the worker to intercept requests:
 
@@ -244,7 +244,7 @@ afterAll(async () => {
 
 This module provides a set of utilities to create HTTP interceptors for both Node.js and browser environments.
 
-All APIs are documented using [JSDoc](https://jsdoc.ap`) comments, so you can view detailed descriptions directly in
+All APIs are documented using [JSDoc](https://jsdoc.app) comments, so you can view detailed descriptions directly in
 your IDE!
 
 ### `HttpInterceptorWorker`
@@ -458,7 +458,7 @@ const interceptor = createHttpInterceptor<InterceptorSchema>({
 
 </details>
 
-##### Path schema
+##### Declaring paths
 
 At the root level, each key represents a path or route:
 
@@ -481,7 +481,7 @@ const interceptor = createHttpInterceptor<{
 
 <details>
   <summary>
-    Alternatively, you can also compose root level paths using the utility type `HttpInterceptorSchema.Root`:
+    Alternatively, you can also compose root level paths using the utility type <code>HttpInterceptorSchema.Root</code>:
   </summary>
 
 ```ts
@@ -510,7 +510,7 @@ const interceptor = createHttpInterceptor<UserPaths & PostPaths>({
 
 </details>
 
-##### Method schema
+##### Declaring methods
 
 Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method
 names are case-sensitive.
@@ -534,8 +534,8 @@ const interceptor = createHttpInterceptor<{
 
 <details>
   <summary>
-    Similarly to [paths](#httpinterceptor-schema-paths), you can also compose methods using the utility type
-    `HttpInterceptorSchema.Method`:
+    Similarly to <a href="#declaring-paths">paths</a>, you can also compose methods using the utility type
+    <code>HttpInterceptorSchema.Method</code>:
   </summary>
 
 ```ts
@@ -560,7 +560,7 @@ const interceptor = createHttpInterceptor<{
 
 </details>
 
-##### Request schema
+##### Declaring requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. Currently, only the `body` property
 is supported.
@@ -586,8 +586,10 @@ const interceptor = createHttpInterceptor<{
 ```
 
 <details>
-  <summary>You can also compose requests using the utility type `HttpInterceptorSchema.Request`, similarly to
-[methods](#httpinterceptor-schema-methods):</summary>
+  <summary>
+    You can also compose requests using the utility type <code>HttpInterceptorSchema.Request</code>, similarly to
+    <a href="#declaring-methods">methods</a>:
+  </summary>
 
 ```ts
 import { HttpInterceptorSchema } from 'zimic/interceptor';
@@ -612,7 +614,7 @@ const interceptor = createHttpInterceptor<{
 
 </details>
 
-##### Response schema
+##### Declaring responses
 
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. Currently, only the `body` property is supported.
@@ -637,8 +639,10 @@ const interceptor = createHttpInterceptor<{
 ```
 
 <details>
-  <summary>You can also compose responses using the utility types `HttpInterceptorSchema.ResponseByStatusCode` and
-`HttpInterceptorSchema.Response`, similarly to [requests](#httpinterceptor-schema-requests):</summary>
+  <summary>
+    You can also compose responses using the utility types <code>HttpInterceptorSchema.ResponseByStatusCode</code> and
+    <code>HttpInterceptorSchema.Response</code>, similarly to <a href="#declaring-requests">requests</a>:
+  </summary>
 
 ```ts
 import { HttpInterceptorSchema } from 'zimic/interceptor';
