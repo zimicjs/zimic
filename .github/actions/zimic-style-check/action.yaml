@@ -1,0 +1,30 @@
+name: Check zimic formatting style
+description: Check zimic formatting style
+
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Restore prettier cache
+      id: prettier-cache
+      uses: actions/cache@v4
+      with:
+        path: node_modules/.cache/prettier
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-prettier-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-prettier
+
+    - name: Check formatting style
+      shell: bash
+      run: pnpm style:check
+
+    - name: Save prettier cache
+      if: ${{ steps.prettier-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: node_modules/.cache/prettier
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-prettier-${{ github.sha }}

@@ -1,17 +1,40 @@
 {
-  "name": "zimic",
-  "version": "0.0.1",
-  "description": "",
-  "keywords": [],
-  "author": "Diego Aquino <diegocruzdeaquino@gmail.com>",
+  "name": "zimic-root",
+  "description": "TypeScript-first, statically inferred HTTP mocks",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/diego-aquino/zimic.git"
+    "url": "https://github.com/diego-aquino/zimic.git"
+  },
+  "private": false,
+  "packageManager": "pnpm@8.11.0",
+  "engines": {
+    "node": ">=18.0.0 <21.0.0"
   },
   "license": "MIT",
-  "main": "dist/index.js",
-  "files": [
-    "./dist"
-  ],
-  "scripts": {}
+  "scripts": {
+    "dev": "turbo dev --parallel --continue",
+    "build": "turbo build",
+    "lint": "turbo lint:turbo",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check .",
+    "style:format": "pnpm style --write .",
+    "test": "turbo test:turbo",
+    "types:check": "turbo types:check",
+    "pre:commit": "lint-staged",
+    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 75% && turbo test:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 1",
+    "prepare": "husky install || echo 'Could not install git hooks with husky.'"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.4",
+    "@commitlint/config-conventional": "^18.4.4",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/release": "workspace:*",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.0",
+    "prettier-plugin-jsdoc": "^1.3.0",
+    "prettier-plugin-sh": "^0.13.1",
+    "turbo": "^1.11.3"
+  }
 }

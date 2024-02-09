@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "pipeline": {
+    "build": {
+      "inputs": ["src/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts", ".swcrc"],
+      "outputs": ["dist/**"]
+    },
+
+    "deps:init-msw": {
+      "inputs": ["package.json"],
+      "outputs": ["public/mockServiceWorker.js"]
+    },
+
+    "test:turbo": {
+      "dependsOn": ["^build", "deps:init-msw"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts", ".swcrc", "jest.config.js"]
+    },
+
+    "lint:turbo": {
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", ".eslintrc.js", "../../.prettierrc.json"]
+    },
+
+    "types:check": {
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}

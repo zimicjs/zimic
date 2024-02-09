@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+
+# Build
+apps/*/dist
+apps/*/build
+apps/*/public/mockServiceWorker.js
+packages/*/dist
+packages/*/build
+packages/*/public/mockServiceWorker.js
+
+# Tests
+/apps/*/tests/coverage
+/packages/*/tests/coverage
+
+# Configuration
+.husky
+
+# Cache
+.turbo
+.cache
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+
+# Miscellaneous
+.vscode
+local/

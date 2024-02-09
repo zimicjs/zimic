@@ -1,0 +1,64 @@
+name: Release to GitHub
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*.*.*-canary.*
+      - '!v*.*.*-zimic'
+
+concurrency:
+  group: release-github-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  prepare-github-release:
+    name: Prepare GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get monorepo release version
+        id: get-version
+        run: |
+          version=v$(jq -r '.version' package.json)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+  release-to-github:
+    name: Release to GitHub
+    runs-on: ubuntu-latest
+    needs:
+      - prepare-github-release
+    timeout-minutes: 2
+
+    environment: GitHub
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ needs.prepare-github-release.outputs.version }}
+          tag: ${{ needs.prepare-github-release.outputs.version }}
+          commit: ${{ github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          makeLatest: ${{ startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main' }}
+          prerelease: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
+          allowUpdates: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
+          replacesArtifacts: ${{ !(startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main') }}
+          generateReleaseNotes: true
+          draft: true

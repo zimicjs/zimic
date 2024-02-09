@@ -1,0 +1,14 @@
+{
+  "name": "@zimic/eslint-config-node",
+  "version": "0.0.0",
+  "private": false,
+  "files": [
+    "*.js"
+  ],
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@zimic/eslint-config": "workspace:*"
+  }
+}

@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  TURBO_LOG_ORDER: stream
+  TURBO_TOKEN:
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
+    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM:
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
+    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  INSTALL_OPTIONS:
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
+  BUILD_OPTIONS:
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..."
+    "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    strategy:
+      matrix:
+        node-version:
+          - 18
+          - 20
+
+    env:
+      NODE_VERSION: ${{ matrix.node-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ matrix.node-version }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
+          build-node-env:
+            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && 'development'
+            || 'production' }}
+          install-playwright-browsers: true
+
+      - name: Check formatting style
+        uses: ./.github/actions/zimic-style-check
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Lint code and check types
+        run: |
+          pnpm turbo \
+            types:check lint:turbo \
+            --continue \
+            --concurrency 100% \
+            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}
+
+      - name: Run tests
+        run: |
+          pnpm turbo \
+            test:turbo \
+            --continue \
+            --concurrency 1 \
+            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}

@@ -1,0 +1,113 @@
+name: Set up zimic
+description: Set up zimic
+
+inputs:
+  node-version:
+    description: Node.js version to use
+    required: true
+  node-registry-url:
+    description: Node.js registry URL to use (provide only if the action is going to push a release)
+    required: false
+  turbo-token:
+    description: Turbo remote cache token
+    required: false
+  turbo-team:
+    description: Turbo remote cache team
+    required: false
+  install:
+    description: Filter to install the dependencies of a specific app or package
+    required: false
+    default: './{apps,packages}/*'
+  build:
+    description: Filter to build the dependencies of a specific app or package
+    required: false
+    default: './packages/*'
+  build-node-env:
+    description: NODE_ENV to use when building packages
+    required: false
+    default: 'development'
+  install-playwright-browsers:
+    description: Whether to install the browsers for Playwright
+    required: false
+    default: 'false'
+
+outputs:
+  install-filters:
+    description: Effective filter flags for installing dependencies
+    value: ${{ steps.install-dependencies.outputs.install-filters }}
+  build-filters:
+    description: Effective filter flags for building dependencies
+    value: ${{ steps.build-dependencies.outputs.build-filters }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.node-registry-url }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+
+    - name: Get pnpm store directory
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Restore pnpm cache
+      id: pnpm-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-
+
+    - name: Install dependencies
+      id: install-dependencies
+      shell: bash
+      run: |
+        workspaceRootInstallFlag='--filter zimic-root'
+
+        function composeFilterOptions() {
+          filterEntries=${*}
+          filterOptions=()
+
+          for filterEntry in ${filterEntries[@]}; do
+            filterOptions+=("--filter $filterEntry")
+          done
+
+          echo "${filterOptions[@]}"
+        }
+
+        partialInstallFlag="$(composeFilterOptions ${{ inputs.install }})"
+        installFlag="$workspaceRootInstallFlag $partialInstallFlag"
+        echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
+
+        pnpm install --prefer-offline --frozen-lockfile $installFlag
+
+        buildFlag="$(composeFilterOptions ${{ inputs.build }})"
+        echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT
+        NODE_ENV='${{ inputs.build-node-env }}' pnpm turbo build $buildFlag
+
+        # apply the build outputs of the internal packages
+        pnpm install --offline $installFlag
+
+        if [[ '${{ inputs.install-playwright-browsers }}' == 'true' ]]; then
+          pnpm --dir packages/zimic deps:install-playwright
+          pnpm --dir apps/zimic-test-client deps:install-playwright
+        fi
+      env:
+        NODE_VERSION: ${{ matrix.node-version }}
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream
+
+    - name: Save dependency cache
+      uses: actions/cache/save@v4
+      if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

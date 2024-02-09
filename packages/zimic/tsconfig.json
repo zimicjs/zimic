@@ -1,0 +1,16 @@
+{
+  "extends": "@zimic/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "target": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"],
+      "@scripts/*": ["./scripts/*"],
+      "@@/*": ["./*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.mts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["NODE_ENV", "NODE_VERSION"],
+  "pipeline": {
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^build"]
+    },
+
+    "build": {
+      "dependsOn": ["^build"]
+    },
+
+    "test:turbo": {
+      "dependsOn": ["^build"]
+    },
+
+    "lint:turbo": {
+      "dependsOn": ["^build"],
+      "outputs": [".eslintcache"]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build"],
+      "outputs": ["tsconfig.tsbuildinfo"]
+    }
+  }
+}

@@ -1,0 +1,85 @@
+name: Release to NPM
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: release-npm-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-zimic-to-npm:
+    name: Release zimic to NPM
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    environment: NPM
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: 20
+          node-registry-url: https://registry.npmjs.org
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: zimic...
+          build: zimic^...
+          build-node-env: production
+          install-playwright-browsers: true
+
+      - name: Build zimic
+        run: pnpm turbo build --filter zimic
+        env:
+          NODE_ENV: production
+
+      - name: Prepare NPM tag
+        id: npm-tag
+        run: |
+          if [[ '${{ github.ref_name }}' == v*.*.*-canary.* ]]; then
+            echo "tag=canary" >> $GITHUB_OUTPUT
+          elif [[ '${{ github.ref_name }}' == v*.*.* ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=next" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release to NPM
+        working-directory: packages/zimic
+        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Test released package
+        working-directory: apps/zimic-test-client
+        run: |
+          sed -i 's/"zimic0": ".*"/"zimic0": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' package.json
+
+          pnpm install --no-frozen-lockfile --filter .
+
+          pnpm turbo \
+            types:check lint:turbo \
+            --continue \
+            --concurrency 100% \
+            --filter zimic-test-client
+
+          pnpm turbo \
+            test:turbo \
+            --continue \
+            --concurrency 1 \
+            --filter zimic-test-client

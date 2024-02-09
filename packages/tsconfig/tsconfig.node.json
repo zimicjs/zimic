@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node.js",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["esnext", "webworker"],
+    "module": "esnext",
+    "incremental": false
+  }
+}

@@ -1,0 +1,18 @@
+# Dependencies
+node_modules
+
+# Cache
+.turbo
+.eslintcache
+tsconfig.tsbuildinfo
+
+# Build
+/dist
+/public/mockServiceWorker.js
+
+# Tests
+/tests/coverage
+
+# Miscellaneous
+.vscode
+local/
