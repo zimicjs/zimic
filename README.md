@@ -3,22 +3,23 @@
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP request mocking.
+  TypeScript-first HTTP request mocking
 </p>
 
 <div align="center">
   <a href="https://www.npmjs.com/package/zimic">npm</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="#table-of-contents">Documentation</a>
+  <a href="#table-of-contents">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/users/diego-aquino/projects/5">Roadmap</a>
-  <br />
 </div>
 
+---
+
 > 🚧 This project is under active development! Check our
-> [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6). <br /> Contributors and ideas are welcome!
+> [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6). Contributors and ideas are welcome!
 
 Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by
 [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
@@ -31,13 +32,12 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   mocks.
 - :link: **Network-level intercepts**. Internally, Zimic uses [MSW](https://github.com/mswjs/msw), which intercepts HTTP
   requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped. From you
-  application's point of view, the mocked requests are indistinguishable from the real ones. If you're mocking on a
-  browser, you can even inspect the requests and responses on your devtools!
-- :wrench: **Flexibility**. You can simulate real application workflows by mocking all endpoints used. This is specially
-  useful in testing, making sure the real path your application takes is covered and the requests sent are as expected.
-- :bulb: **Simplicity and opinion**. Having no complex configuration or heavy dependencies, Zimic was designed from
-  scratch to encourage clarity, simplicity and standardization. Check our [Getting started](#getting-started) guide and
-  starting mocking!
+  application's point of view, the mocked requests are indistinguishable from the real ones.
+- :wrench: **Flexibility**. You can simulate real application workflows by mocking each necessary endpoints. This is
+  specially useful in testing, making sure the real path your application takes is covered and the sent requests are
+  correct.
+- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity, simplicity and standardization in your
+  mocks. Check our [Getting started](#getting-started) guide and starting mocking!
 
 ---
 
@@ -54,7 +54,6 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
 - [Usage](#usage)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
-- [Changelog](#changelog)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
   - [`HttpInterceptorWorker`](#httpinterceptorworker)
     - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
@@ -65,16 +64,10 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [`HttpInterceptor`](#httpinterceptor)
     - [`createHttpInterceptor`](#createhttpinterceptor)
     - [`HttpInterceptor` schema](#httpinterceptor-schema)
-      - [`HttpInterceptor` schema paths](#httpinterceptor-schema-paths)
-      - [`HttpInterceptor` schema path composition](#httpinterceptor-schema-path-composition)
-      - [`HttpInterceptor` schema methods](#httpinterceptor-schema-methods)
-      - [`HttpInterceptor` schema method composition](#httpinterceptor-schema-method-composition)
-      - [`HttpInterceptor` schema requests](#httpinterceptor-schema-requests)
-      - [`HttpInterceptor` schema request composition](#httpinterceptor-schema-request-composition)
-      - [`HttpInterceptor` schema responses](#httpinterceptor-schema-responses)
-      - [`HttpInterceptor` schema response composition](#httpinterceptor-schema-response-composition)
-      - [`HttpInterceptor` schema (example)](#httpinterceptor-schema-example)
-      - [`HttpInterceptor` schema composition (example)](#httpinterceptor-schema-composition-example)
+      - [Declaring paths](#declaring-paths)
+      - [Declaring methods](#declaring-methods)
+      - [Declaring requests](#declaring-requests)
+      - [Declaring responses](#declaring-responses)
     - [`interceptor.baseURL()`](#interceptorbaseurl)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
@@ -91,6 +84,7 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [`zimic --version`](#zimic---version)
   - [`zimic --help`](#zimic---help)
   - [`zimic browser init <publicDirectory>`](#zimic-browser-init-publicdirectory)
+- [Changelog](#changelog)
 - [Development](#development)
 
 ## Getting started
@@ -175,8 +169,8 @@ const interceptor = createHttpInterceptor<{
 ```
 
 In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET` method.
-The response for a successful request is an array of `User` objects. Learn more about how to declare interceptor schemas
-at [`HttpInterceptor` schema](#httpinterceptor-schema).
+The response for a successful request is an array of `User` objects. Learn more about declaring interceptor schemas at
+[`HttpInterceptor` schema](#httpinterceptor-schema).
 
 Finally, start the worker to intercept requests:
 
@@ -244,17 +238,13 @@ afterAll(async () => {
 });
 ```
 
-## Changelog
-
-The changelog is available on our [GitHub Releases](https://github.com/diego-aquino/zimic/releases) page.
-
 ---
 
 ## `zimic/interceptor` API
 
 This module provides a set of utilities to create HTTP interceptors for both Node.js and browser environments.
 
-All APIs are documented using [JSDoc](https://jsdoc.ap`) comments, so you can view detailed descriptions directly in
+All APIs are documented using [JSDoc](https://jsdoc.app) comments, so you can view detailed descriptions directly in
 your IDE!
 
 ### `HttpInterceptorWorker`
@@ -341,7 +331,7 @@ const worker = createHttpInterceptorWorker({
 });
 
 const interceptor = createHttpInterceptor<{
-  '/users': {
+  '/users/:id': {
     GET: {
       response: {
         200: { body: User };
@@ -361,216 +351,8 @@ HTTP interceptor schemas define the structure of the real services being mocked.
 and response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying
 mocks.
 
-##### `HttpInterceptor` schema paths
-
-At the root level, each key represents a path or route:
-
-```ts
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    // path schema
-  };
-  '/users/:id': {
-    // path schema
-  };
-  '/posts': {
-    // path schema
-  };
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema path composition
-
-As an alternative, you can also compose root level paths using the utility type `HttpInterceptorSchema.Root`:
-
-```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
-
-type UserPaths = HttpInterceptorSchema.Root<{
-  '/users': {
-    // path schema
-  };
-  '/users/:id': {
-    // path schema
-  };
-}>;
-
-type PostPaths = HttpInterceptorSchema.Root<{
-  '/posts': {
-    // path schema
-  };
-}>;
-
-const interceptor = createHttpInterceptor<UserPaths & PostPaths>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema methods
-
-Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method
-names are case-sensitive.
-
-```ts
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    GET: {
-      // method schema
-    };
-    POST: {
-      // method schema
-    };
-  };
-  // other paths
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema method composition
-
-Similarly to [paths](#httpinterceptor-schema-paths), you can also compose methods using the utility type
-`HttpInterceptorSchema.Method`:
-
-```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
-
-type UserMethods = HttpInterceptorSchema.Method<{
-  GET: {
-    // method schema
-  };
-  POST: {
-    // method schema
-  };
-}>;
-
-const interceptor = createHttpInterceptor<{
-  '/users': UserMethods;
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema requests
-
-Each method can have a `request`, which defines the schema of the accepted requests. Currently, only the `body` property
-is supported.
-
-```ts
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    POST: {
-      request: {
-        body: {
-          username: string;
-        };
-      };
-      // ...
-    };
-    // other methods
-  };
-  // other paths
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema request composition
-
-You can also compose requests using the utility type `HttpInterceptorSchema.Request`, similarly to
-[methods](#httpinterceptor-schema-methods):
-
-```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
-
-type UserCreationRequest = HttpInterceptorSchema.Request<{
-  body: {
-    username: string;
-  };
-}>;
-
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    POST: {
-      request: UserCreationRequest;
-    };
-  };
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema responses
-
-Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
-keys. Currently, only the `body` property is supported.
-
-```ts
-const interceptor = createHttpInterceptor<{
-  '/users/:id': {
-    GET: {
-      // ...
-      response: {
-        200: { body: User };
-        404: { body: NotFoundError };
-      };
-    };
-    // other methods
-  };
-  // other paths
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema response composition
-
-You can also compose responses using the utility types `HttpInterceptorSchema.ResponseByStatusCode` and
-`HttpInterceptorSchema.Response`, similarly to [requests](#httpinterceptor-schema-requests):
-
-```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
-
-type SuccessUserGetResponse = HttpInterceptorSchema.Response<{
-  body: User;
-}>;
-
-type NotFoundUserGetResponse = HttpInterceptorSchema.Response<{
-  body: NotFoundError;
-}>;
-
-type UserGetResponses = HttpInterceptorSchema.ResponseByStatusCode<{
-  200: SuccessUserGetResponse;
-  404: NotFoundUserGetResponse;
-}>;
-
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    GET: {
-      // ...
-      response: UserGetResponses;
-    };
-    // other methods
-  };
-  // other paths
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
-
-##### `HttpInterceptor` schema (example)
-
-Combining all of the above, here's an example of a complete interceptor schema:
+<details>
+  <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
 const interceptor = createHttpInterceptor<{
@@ -615,9 +397,10 @@ const interceptor = createHttpInterceptor<{
 });
 ```
 
-##### `HttpInterceptor` schema composition (example)
+</details>
 
-Alternatively, you can compose the schema using utility types:
+<details>
+  <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
 import { HttpInterceptorSchema } from 'zimic/interceptor';
@@ -672,6 +455,227 @@ const interceptor = createHttpInterceptor<InterceptorSchema>({
   baseURL: 'http://localhost:3000',
 });
 ```
+
+</details>
+
+##### Declaring paths
+
+At the root level, each key represents a path or route:
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    // path schema
+  };
+  '/users/:id': {
+    // path schema
+  };
+  '/posts': {
+    // path schema
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+<details>
+  <summary>
+    Alternatively, you can also compose root level paths using the utility type <code>HttpInterceptorSchema.Root</code>:
+  </summary>
+
+```ts
+import { HttpInterceptorSchema } from 'zimic/interceptor';
+
+type UserPaths = HttpInterceptorSchema.Root<{
+  '/users': {
+    // path schema
+  };
+  '/users/:id': {
+    // path schema
+  };
+}>;
+
+type PostPaths = HttpInterceptorSchema.Root<{
+  '/posts': {
+    // path schema
+  };
+}>;
+
+const interceptor = createHttpInterceptor<UserPaths & PostPaths>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+##### Declaring methods
+
+Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method
+names are case-sensitive.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    GET: {
+      // method schema
+    };
+    POST: {
+      // method schema
+    };
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+<details>
+  <summary>
+    Similarly to <a href="#declaring-paths">paths</a>, you can also compose methods using the utility type
+    <code>HttpInterceptorSchema.Method</code>:
+  </summary>
+
+```ts
+import { HttpInterceptorSchema } from 'zimic/interceptor';
+
+type UserMethods = HttpInterceptorSchema.Method<{
+  GET: {
+    // method schema
+  };
+  POST: {
+    // method schema
+  };
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users': UserMethods;
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+##### Declaring requests
+
+Each method can have a `request`, which defines the schema of the accepted requests. Currently, only the `body` property
+is supported.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    POST: {
+      request: {
+        body: {
+          username: string;
+        };
+      };
+      // ...
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+<details>
+  <summary>
+    You can also compose requests using the utility type <code>HttpInterceptorSchema.Request</code>, similarly to
+    <a href="#declaring-methods">methods</a>:
+  </summary>
+
+```ts
+import { HttpInterceptorSchema } from 'zimic/interceptor';
+
+type UserCreationRequest = HttpInterceptorSchema.Request<{
+  body: {
+    username: string;
+  };
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users': {
+    POST: {
+      request: UserCreationRequest;
+    };
+  };
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+##### Declaring responses
+
+Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
+keys. Currently, only the `body` property is supported.
+
+```ts
+const interceptor = createHttpInterceptor<{
+  '/users/:id': {
+    GET: {
+      // ...
+      response: {
+        200: { body: User };
+        404: { body: NotFoundError };
+      };
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+<details>
+  <summary>
+    You can also compose responses using the utility types <code>HttpInterceptorSchema.ResponseByStatusCode</code> and
+    <code>HttpInterceptorSchema.Response</code>, similarly to <a href="#declaring-requests">requests</a>:
+  </summary>
+
+```ts
+import { HttpInterceptorSchema } from 'zimic/interceptor';
+
+type SuccessUserGetResponse = HttpInterceptorSchema.Response<{
+  body: User;
+}>;
+
+type NotFoundUserGetResponse = HttpInterceptorSchema.Response<{
+  body: NotFoundError;
+}>;
+
+type UserGetResponses = HttpInterceptorSchema.ResponseByStatusCode<{
+  200: SuccessUserGetResponse;
+  404: NotFoundUserGetResponse;
+}>;
+
+const interceptor = createHttpInterceptor<{
+  '/users/:id': {
+    GET: {
+      // ...
+      response: UserGetResponses;
+    };
+    // other methods
+  };
+  // other paths
+}>({
+  worker,
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
 
 #### `interceptor.baseURL()`
 
@@ -890,6 +894,10 @@ this command to a `postinstall` scripts in your `package.json`. This ensures tha
 being used after upgrading Zimic.
 
 ---
+
+## Changelog
+
+The changelog is available on our [GitHub Releases](https://github.com/diego-aquino/zimic/releases) page.
 
 ## Development
 
