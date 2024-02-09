@@ -27,7 +27,7 @@
   "license": "MIT",
   "files": [
     "package.json",
-    "../../README.md",
+    "README.md",
     "LICENSE.md",
     "dist",
     "index.d.ts",
@@ -70,7 +70,8 @@
     "deps:install": "pnpm install --filter zimic && pnpm deps:install-playwright && pnpm deps:init-msw",
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
-    "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\""
+    "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\"",
+    "prepublishOnly": "cp ../../README.md ../../LICENSE.md ."
   },
   "dependencies": {
     "chalk": "^5.3.0",
