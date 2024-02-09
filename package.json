@@ -1,7 +1,7 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "version": "0.1.0-canary.11",
+  "version": "0.1.0-canary.12",
   "repository": {
     "type": "git",
     "url": "https://github.com/diego-aquino/zimic.git"
