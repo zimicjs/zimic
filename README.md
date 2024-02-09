@@ -11,25 +11,11 @@
 
 Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
 
-## Why
-
-Mocking is hard. It's a trade-off between simulating real application workflows and keeping tests simple and maintainable. However, many things can go wrong:
-
-- If mocking application code:
-  - Mocking parts of your codebase could lead to false positives, since not all components are really being executed.
-- If mocking at the network-level (intercepting requests):
-  - There's no guarantee that the mocks match the real service's interfaces and behavior. The service being mocked might change and client tests still pass even though the application won't work on production.
-  - TypeScript's type inference and validation are not always available when applying mocks, leading to possibly outdated or faulty mocks.
-  - Verifying that the application made the correct requests might not be straightforward.
-  - Each project might have its own abstractions for mocking requests, which makes it hard to understand and maintain the mocks across the codebase.
-
-So, what do we do about it? Thats where Zimic comes in.
-
 ## Features
 
-Zimic was designed to provide a simple, flexible and type-safe way to mock HTTP requests.
+Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
 
-- **Typed mocks**: declare your HTTP endpoints and get full type inference and validation when applying mocks.
+- **Statically-typed mocks**: declare your HTTP endpoints and get full type inference and validation when applying mocks.
 - **Network-level intercepts**: internally, Zimic uses [MSW](https://github.com/mswjs/msw), which intercepts HTTP requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped. From you application's point of view, the mocked requests are indistinguishable from the real ones. If you're mocking on a browser, you can even inspect the requests and responses on your devtools!
 - **Flexibility**: you can simulate real application workflows by mocking each endpoints used. This is specially useful in testing, making sure the real path your application is covered and allowing checks about how many requests were made and with which parameters.
 - **Simplicity and opinion**: having no complex configuration or heavy dependencies, Zimic was designed from scratch to encourage clarity, simplicity and standardization. Check our [Getting started](#getting-started) guide and starting mocking!
@@ -38,7 +24,6 @@ Zimic was designed to provide a simple, flexible and type-safe way to mock HTTP 
 
 ## Table of contents
 
-- [Why](#why)
 - [Features](#features)
 - [Table of contents](#table-of-contents)
 - [Getting started](#getting-started)
