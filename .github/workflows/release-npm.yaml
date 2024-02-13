@@ -69,6 +69,7 @@ jobs:
         working-directory: apps/zimic-test-client
         run: |
           sed -i 's/"zimic0": ".*"/"zimic0": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' package.json
+          sed -i 's/link-workspace-packages = true/link-workspace-packages = false/' ../../.npmrc
 
           pnpm install --no-frozen-lockfile --filter .
 
