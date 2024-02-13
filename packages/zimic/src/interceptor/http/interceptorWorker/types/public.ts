@@ -24,6 +24,8 @@ export interface HttpInterceptorWorker {
    * @throws {UnregisteredServiceWorkerError} When the worker is targeting a browser environment and the mock service
    *   worker is not registered.
    * @throws {OtherHttpInterceptorWorkerRunningError} When another worker is already running.
+   * @throws {MismatchedHttpInterceptorWorkerPlatform} When the worker was created for one platform and is being started
+   *   on another.
    * @see {@link https://github.com/diego-aquino/zimic#workerstart}
    */
   start: () => Promise<void>;
@@ -31,6 +33,8 @@ export interface HttpInterceptorWorker {
   /**
    * Stops the worker, preventing it from being used by interceptors.
    *
+   * @throws {MismatchedHttpInterceptorWorkerPlatform} When the worker was created for one platform and is being stopped
+   *   on another.
    * @see {@link https://github.com/diego-aquino/zimic#workerstop}
    */
   stop: () => Promise<void>;

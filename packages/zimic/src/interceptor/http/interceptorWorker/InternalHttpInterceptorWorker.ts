@@ -22,6 +22,7 @@ import {
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
 import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
+import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
@@ -78,9 +79,19 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   private async createInternalWorker() {
     if (this._platform === 'browser') {
       const { setupWorker } = await import('msw/browser');
+
+      if (typeof setupWorker === 'undefined') {
+        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
+      }
+
       return setupWorker();
     } else {
       const { setupServer } = await import('msw/node');
+
+      if (typeof setupServer === 'undefined') {
+        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
+      }
+
       return setupServer();
     }
   }
