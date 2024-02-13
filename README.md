@@ -106,21 +106,21 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
 
 ### 2. Install from `npm`
 
-```bash
-npm install zimic --save-dev # npm
-yarn add zimic --dev         # yarn
-pnpm add zimic --dev         # pnpm
-bun add zimic --dev          # bun
-```
+| Manager | Command                        |
+| :-----: | ------------------------------ |
+|   npm   | `npm install zimic --save-dev` |
+|  yarn   | `yarn add zimic --dev`         |
+|  pnpm   | `pnpm add zimic --dev`         |
+|   bun   | `bun add zimic --dev`          |
 
 Canary versions are released under the `canary` tag:
 
-```bash
-npm install zimic@canary --save-dev # npm
-yarn add zimic@canary --dev         # yarn
-pnpm add zimic@canary --dev         # pnpm
-bun add zimic@canary --dev          # bun
-```
+| Manager | Command                               |
+| :-----: | ------------------------------------- |
+|   npm   | `npm install zimic@canary --save-dev` |
+|  yarn   | `yarn add zimic@canary --dev`         |
+|  pnpm   | `pnpm add zimic@canary --dev`         |
+|   bun   | `bun add zimic@canary --dev`          |
 
 ### 3. Post-install
 
