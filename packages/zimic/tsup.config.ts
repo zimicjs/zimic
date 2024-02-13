@@ -10,7 +10,7 @@ const sharedConfig: Options = {
   splitting: false,
   sourcemap: true,
   treeshake: isProductionBuild,
-  minify: isProductionBuild,
+  minify: false,
   clean: true,
 };
 
