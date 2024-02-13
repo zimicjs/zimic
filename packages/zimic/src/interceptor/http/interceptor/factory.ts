@@ -1,6 +1,6 @@
-import InternalHttpInterceptor from './InternalHttpInterceptor';
+import HttpInterceptor from './HttpInterceptor';
 import { HttpInterceptorOptions } from './types/options';
-import { HttpInterceptor } from './types/public';
+import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
 import { HttpInterceptorSchema } from './types/schema';
 
 /**
@@ -12,6 +12,6 @@ import { HttpInterceptorSchema } from './types/schema';
  */
 export function createHttpInterceptor<Schema extends HttpInterceptorSchema>(
   options: HttpInterceptorOptions,
-): HttpInterceptor<Schema> {
-  return new InternalHttpInterceptor<Schema>(options);
+): PublicHttpInterceptor<Schema> {
+  return new HttpInterceptor<Schema>(options);
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import MismatchedHttpInterceptorWorkerPlatform from '../errors/MismatchedHttpInterceptorWorkerPlatform';
-import InternalHttpInterceptorWorker from '../InternalHttpInterceptorWorker';
+import { createHttpInterceptorWorker } from '../factory';
 import { HttpInterceptorWorkerPlatform } from '../types/options';
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
@@ -16,7 +16,7 @@ describe('HttpInterceptorWorker (browser)', () => {
     const mismatchedPlatform: HttpInterceptorWorkerPlatform = 'node';
     expect(mismatchedPlatform).not.toBe(platform);
 
-    const interceptorWorker = new InternalHttpInterceptorWorker({
+    const interceptorWorker = createHttpInterceptorWorker({
       platform: mismatchedPlatform,
     });
     expect(interceptorWorker.platform()).toBe(mismatchedPlatform);

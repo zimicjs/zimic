@@ -1,13 +1,13 @@
 import { Default } from '@/types/utils';
 
-import InternalHttpInterceptorWorker from '../interceptorWorker/InternalHttpInterceptorWorker';
+import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
-import InternalHttpRequestTracker from '../requestTracker/InternalHttpRequestTracker';
-import { HttpRequestTracker } from '../requestTracker/types/public';
+import HttpRequestTracker from '../requestTracker/HttpRequestTracker';
+import { HttpRequestTracker as PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { HttpInterceptorMethodHandler } from './types/handlers';
 import { HttpInterceptorOptions } from './types/options';
-import { HttpInterceptor } from './types/public';
+import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
 import {
   HTTP_INTERCEPTOR_METHODS,
   HttpInterceptorMethod,
@@ -19,11 +19,11 @@ import {
 } from './types/schema';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyInternalHttpRequestTracker = InternalHttpRequestTracker<any, any, any, any>;
+type AnyInternalHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
 
-class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements HttpInterceptor<Schema> {
+class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHttpInterceptor<Schema> {
   private _baseURL: string;
-  protected worker: InternalHttpInterceptorWorker;
+  protected worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
     [Method in HttpInterceptorMethod]: Map<string, AnyInternalHttpRequestTracker[]>;
@@ -39,7 +39,7 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
 
   constructor(options: HttpInterceptorOptions) {
     this._baseURL = options.baseURL;
-    this.worker = options.worker as InternalHttpInterceptorWorker;
+    this.worker = options.worker as HttpInterceptorWorker;
   }
 
   baseURL() {
@@ -77,8 +77,8 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
   private createHttpRequestTracker<
     Method extends HttpInterceptorSchemaMethod<Schema>,
     Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  >(method: Method, path: Path): HttpRequestTracker<Schema, Method, Path> {
-    const tracker = new InternalHttpRequestTracker<Schema, Method, Path>(this, method, path);
+  >(method: Method, path: Path): PublicHttpRequestTracker<Schema, Method, Path> {
+    const tracker = new HttpRequestTracker<Schema, Method, Path>(this, method, path);
     this.registerRequestTracker(tracker);
     return tracker;
   }
@@ -89,7 +89,7 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<
       Default<Default<Schema[Path][Method]>['response']>
     > = never,
-  >(tracker: InternalHttpRequestTracker<Schema, Method, Path, StatusCode>) {
+  >(tracker: HttpRequestTracker<Schema, Method, Path, StatusCode>) {
     const methodPathTrackers = this.trackersByMethod[tracker.method()].get(tracker.path()) ?? [];
 
     if (!methodPathTrackers.includes(tracker)) {
@@ -125,20 +125,20 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
     Path extends HttpInterceptorSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(method: Method, path: Path, { request }: Context): Promise<HttpRequestHandlerResult> {
-    const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
     const matchedTracker = this.findMatchedTracker(method, path, parsedRequest);
 
     if (matchedTracker) {
       const responseDeclaration = await matchedTracker.applyResponseDeclaration(parsedRequest);
-      const responseToParse = InternalHttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
-      const parsedResponse = await InternalHttpInterceptorWorker.parseRawResponse<
+      const responseToParse = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
       >(responseToParse);
 
       matchedTracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-      const responseToReturn = InternalHttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
+      const responseToReturn = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       return { response: responseToReturn };
     } else {
       return { bypass: true };
@@ -153,7 +153,7 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
     path: Path,
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): InternalHttpRequestTracker<Schema, Method, Path, any> | undefined {
+  ): HttpRequestTracker<Schema, Method, Path, any> | undefined {
     const methodPathTrackers = this.trackersByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
@@ -176,4 +176,4 @@ class InternalHttpInterceptor<Schema extends HttpInterceptorSchema> implements H
   }
 }
 
-export default InternalHttpInterceptor;
+export default HttpInterceptor;

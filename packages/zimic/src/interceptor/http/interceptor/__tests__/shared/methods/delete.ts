@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
-import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -14,7 +14,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
-  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
   beforeAll(async () => {
@@ -43,7 +43,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         status: 200,
         body: users[0],
       });
-      expect(deletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -134,7 +134,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         status: 200,
         body: users[0],
       });
-      expect(genericDeletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(genericDeletionTracker).toBeInstanceOf(HttpRequestTracker);
 
       const genericDeletionRequests = genericDeletionTracker.requests();
       expect(genericDeletionRequests).toHaveLength(0);
@@ -164,7 +164,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         status: 200,
         body: users[0],
       });
-      expect(specificDeletionTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(specificDeletionTracker).toBeInstanceOf(HttpRequestTracker);
 
       const specificDeletionRequests = specificDeletionTracker.requests();
       expect(specificDeletionRequests).toHaveLength(0);
@@ -213,7 +213,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       await expect(deletionPromise).rejects.toThrowError();
 
       const deletionTrackerWithoutResponse = interceptor.delete('/users');
-      expect(deletionTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(deletionTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const deletionRequestsWithoutResponse = deletionTrackerWithoutResponse.requests();
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
