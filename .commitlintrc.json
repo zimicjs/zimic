@@ -9,7 +9,8 @@
     "scope-enum": [
       2,
       "always",
-      ["ci", "zimic-test-client", "#zimic", "#release", "#eslint", "#eslint-node", "#lint-staged", "#tsconfig"]
-    ]
+      ["root", "ci", "zimic-test-client", "#zimic", "#release", "#eslint", "#eslint-node", "#lint-staged", "#tsconfig"]
+    ],
+    "scope-empty": [2, "never"]
   }
 }
