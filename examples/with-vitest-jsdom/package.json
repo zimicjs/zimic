@@ -1,0 +1,21 @@
+{
+  "name": "zimic-example-with-vitest-jsdom",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "vitest",
+    "test:turbo": "pnpm run test run",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zimic": "workspace:zimic@*"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^9.3.4",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^18.8.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.2"
+  }
+}
