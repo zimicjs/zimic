@@ -12,7 +12,7 @@ describe('HttpInterceptorWorker (browser, no worker)', () => {
     const interceptorWorker = new InternalHttpInterceptorWorker({ platform });
 
     const interceptorStartPromise = interceptorWorker.start();
-    await expect(interceptorStartPromise).rejects.toThrowError(UnregisteredServiceWorkerError);
+    await expect(interceptorStartPromise).rejects.toThrowError(new UnregisteredServiceWorkerError());
   });
 
   it('should throw an error after failing to start due to a unknown error', async () => {
