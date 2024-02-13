@@ -12,8 +12,8 @@ const getGitHubRepositorySchema = z.object({
 
 export interface GitHubRepository {
   id: number;
-  name: string;
-  topics: string[];
+  full_name: string;
+  html_url: string;
 }
 
 async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
@@ -24,12 +24,7 @@ async function fetchGitHubRepository(ownerName: string, repositoryName: string) 
     return null;
   }
 
-  const completeRepository = (await repositoryResponse.json()) as GitHubRepository & Record<string, unknown>;
-  const repository: GitHubRepository = {
-    id: completeRepository.id,
-    name: completeRepository.name,
-    topics: completeRepository.topics,
-  };
+  const repository = (await repositoryResponse.json()) as GitHubRepository;
   return repository;
 }
 
@@ -40,7 +35,12 @@ app.get('/github/repositories/:owner/:name', async (request, reply) => {
   if (repository === null) {
     return reply.status(404).send();
   }
-  return reply.status(200).send(repository);
+
+  return reply.status(200).send({
+    id: repository.id,
+    fullName: repository.full_name,
+    homepageURL: repository.html_url,
+  });
 });
 
 export default app;

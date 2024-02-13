@@ -5,12 +5,6 @@ import app, { GitHubRepository } from '../src/app';
 import githubInterceptor from './interceptors/githubInterceptor';
 
 describe('Example tests', () => {
-  const zimicRepository: GitHubRepository = {
-    id: 1,
-    name: 'zimic',
-    topics: ['api', 'http'],
-  };
-
   beforeAll(async () => {
     await app.ready();
   });
@@ -20,6 +14,12 @@ describe('Example tests', () => {
   });
 
   it('should return a GitHub repository, if found', async () => {
+    const zimicRepository: GitHubRepository = {
+      id: 1,
+      full_name: 'diego-aquino/zimic',
+      html_url: 'https://github.com/diego-aquino/zimic',
+    };
+
     const getRepositoryTracker = githubInterceptor.get('/repos/:owner/:name').respond({
       status: 200,
       body: zimicRepository,
@@ -27,7 +27,11 @@ describe('Example tests', () => {
 
     const response = await supertest(app.server).get('/github/repositories/diego-aquino/zimic');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(zimicRepository);
+    expect(response.body).toEqual({
+      id: zimicRepository.id,
+      fullName: zimicRepository.full_name,
+      homepageURL: zimicRepository.html_url,
+    });
 
     const getRequests = getRepositoryTracker.requests();
     expect(getRequests).toHaveLength(1);
