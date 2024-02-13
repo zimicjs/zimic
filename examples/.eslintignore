@@ -1,6 +1,7 @@
 # Configuration
 /.eslintrc.js
 /.lintstagedrc.js
+*/jest.config.js
 
 # Dependencies
 node_modules
