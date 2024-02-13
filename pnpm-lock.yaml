@@ -89,6 +89,10 @@ importers:
         version: 1.2.0(@types/node@18.19.6)(@vitest/browser@1.2.1)
 
   examples:
+    dependencies:
+      zimic:
+        specifier: latest
+        version: link:../packages/zimic
     devDependencies:
       '@zimic/eslint-config-node':
         specifier: workspace:*

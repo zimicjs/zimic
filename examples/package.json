@@ -10,6 +10,9 @@
     "style:format": "pnpm style --write",
     "types:check": "tsc --noEmit"
   },
+  "dependencies": {
+    "zimic": "latest"
+  },
   "devDependencies": {
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
