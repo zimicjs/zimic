@@ -7,10 +7,11 @@
     "test:turbo": "pnpm run test run",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "postinstall": "zimic browser init ./public"
+    "deps:init-zimic": "zimic browser init ./public",
+    "prepare": "pnpm deps:init-zimic"
   },
   "dependencies": {
-    "zimic": "workspace:zimic@*"
+    "zimic": "latest"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.4",

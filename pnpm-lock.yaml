@@ -106,8 +106,8 @@ importers:
   examples/with-jest-jsdom:
     dependencies:
       zimic:
-        specifier: workspace:zimic@*
-        version: link:../../packages/zimic
+        specifier: latest
+        version: 0.1.0(typescript@5.3.3)
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0
@@ -146,8 +146,8 @@ importers:
         specifier: ^4.26.1
         version: 4.26.1
       zimic:
-        specifier: workspace:zimic@*
-        version: link:../../packages/zimic
+        specifier: latest
+        version: 0.1.0(typescript@5.3.3)
       zod:
         specifier: ^3.22.3
         version: 3.22.4
@@ -180,8 +180,8 @@ importers:
   examples/with-vitest-browser:
     dependencies:
       zimic:
-        specifier: workspace:zimic@*
-        version: link:../../packages/zimic
+        specifier: latest
+        version: 0.1.0(typescript@5.3.3)
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.3.4
@@ -211,8 +211,8 @@ importers:
   examples/with-vitest-jsdom:
     dependencies:
       zimic:
-        specifier: workspace:zimic@*
-        version: link:../../packages/zimic
+        specifier: latest
+        version: 0.1.0(typescript@5.3.3)
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.3.4
@@ -239,8 +239,8 @@ importers:
         specifier: ^4.26.1
         version: 4.26.1
       zimic:
-        specifier: workspace:zimic@*
-        version: link:../../packages/zimic
+        specifier: latest
+        version: 0.1.0(typescript@5.3.3)
       zod:
         specifier: ^3.22.3
         version: 3.22.4
@@ -7920,6 +7920,23 @@ packages:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
     dev: true
+
+  /zimic@0.1.0(typescript@5.3.3):
+    resolution: {integrity: sha512-p4/MI+2xLM2fcAUedh0oqdcrvnxI6AknBCkMbZDw3rrsvOmXxxbLowZE/jUQ4YxW7oDBrImEMb27TvrviKFcSQ==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+    requiresBuild: true
+    peerDependencies:
+      typescript: '>=4.7.x <5.4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      chalk: 5.3.0
+      msw: 2.1.5(typescript@5.3.3)
+      typescript: 5.3.3
+      yargs: 17.7.2
+    dev: false
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}

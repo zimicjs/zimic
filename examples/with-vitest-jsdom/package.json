@@ -8,7 +8,7 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "zimic": "workspace:zimic@*"
+    "zimic": "latest"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.4",
