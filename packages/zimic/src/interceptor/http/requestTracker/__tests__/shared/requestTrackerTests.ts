@@ -151,7 +151,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       await expect(async () => {
         await tracker.applyResponseDeclaration(parsedRequest);
-      }).rejects.toThrowError(NoResponseDefinitionError);
+      }).rejects.toThrowError(new NoResponseDefinitionError());
     });
 
     it('should keep track of the intercepted requests and responses', async () => {

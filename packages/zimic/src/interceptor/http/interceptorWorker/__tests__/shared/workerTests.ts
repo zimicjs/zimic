@@ -113,7 +113,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       await interceptorWorker.start();
       expect(interceptorWorker.isRunning()).toBe(true);
 
-      await expect(otherInterceptorWorker.start()).rejects.toThrowError(OtherHttpInterceptorWorkerRunningError);
+      await expect(otherInterceptorWorker.start()).rejects.toThrowError(new OtherHttpInterceptorWorkerRunningError());
       expect(otherInterceptorWorker.isRunning()).toBe(false);
 
       await interceptorWorker.stop();
@@ -123,7 +123,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         await otherInterceptorWorker.start();
         expect(otherInterceptorWorker.isRunning()).toBe(true);
 
-        await expect(interceptorWorker.start()).rejects.toThrowError(OtherHttpInterceptorWorkerRunningError);
+        await expect(interceptorWorker.start()).rejects.toThrowError(new OtherHttpInterceptorWorkerRunningError());
         expect(interceptorWorker.isRunning()).toBe(false);
       } finally {
         await otherInterceptorWorker.stop();
