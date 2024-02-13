@@ -1,0 +1,22 @@
+{
+  "name": "zimic-example-with-vitest-node",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "test": "vitest",
+    "test:turbo": "pnpm run test run",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^4.26.1",
+    "zimic": "workspace:zimic@*",
+    "zod": "^3.22.3"
+  },
+  "devDependencies": {
+    "@types/node": "^18.8.4",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^6.3.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.2"
+  }
+}
