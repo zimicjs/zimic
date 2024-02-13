@@ -5,7 +5,7 @@ function getGitHubRepositoryURL(repositoryOwner: string, repositoryName: string)
 }
 
 export function getGitHubPullRequestURL(releaseBranch: string, upgradedVersion: string, config: ReleaseConfig) {
-  const pullRequestTitle = `release: v${upgradedVersion}`;
+  const pullRequestTitle = `chore(release): v${upgradedVersion}`;
   const repositoryURL = getGitHubRepositoryURL(config.github.repositoryOwner, config.github.repositoryName);
 
   return `${repositoryURL}/compare/${config.github.productionBranch}...${encodeURIComponent(

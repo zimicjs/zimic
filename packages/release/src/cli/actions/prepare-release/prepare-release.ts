@@ -32,7 +32,7 @@ async function prepareRelease(parameters: CommandParameters, { config }: Command
 
   log.progress('Committing version updates...');
   await withCommandOutputs($`git add .`);
-  const releaseCommitMessage = `release: upgrade version to ${releaseTag}`;
+  const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
   await withCommandOutputs($`git commit -m ${releaseCommitMessage}`);
 
   if (isPartialUpgrade) {

@@ -90,7 +90,7 @@ describe('Prepare release command', () => {
 
     const releaseTag = `v${upgradedVersion}`;
     const releaseBranch = `release/${releaseTag}`;
-    const releaseCommitMessage = `release: upgrade version to ${releaseTag}`;
+    const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(10);
     expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
@@ -118,7 +118,7 @@ describe('Prepare release command', () => {
 
     const releaseTag = `v${upgradedVersion}${exampleTagSuffix}`;
     const releaseBranch = `release/${releaseTag}`;
-    const releaseCommitMessage = `release: upgrade version to ${releaseTag}`;
+    const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(10);
     expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
@@ -144,7 +144,7 @@ describe('Prepare release command', () => {
 
     const releaseTag = `v${upgradedVersion}`;
     const releaseBranch = `release/${releaseTag}`;
-    const releaseCommitMessage = `release: upgrade version to ${releaseTag}`;
+    const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(5);
     expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
@@ -167,7 +167,7 @@ describe('Prepare release command', () => {
 
     const releaseTag = `v${upgradedVersion}${exampleTagSuffix}`;
     const releaseBranch = `release/${releaseTag}`;
-    const releaseCommitMessage = `release: upgrade version to ${releaseTag}`;
+    const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(5);
     expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
