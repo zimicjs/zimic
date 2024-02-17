@@ -1,14 +1,14 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
-import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
   interface User {
@@ -43,7 +43,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         status: 200,
         body: users[0],
       });
-      expect(updateTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -90,7 +90,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
           },
         };
       });
-      expect(updateTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -135,7 +135,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         status: 200,
         body: users[0],
       });
-      expect(genericUpdateTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(genericUpdateTracker).toBeInstanceOf(HttpRequestTracker);
 
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
@@ -165,7 +165,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         status: 200,
         body: users[0],
       });
-      expect(specificUpdateTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(specificUpdateTracker).toBeInstanceOf(HttpRequestTracker);
 
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
@@ -214,7 +214,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       await expect(updatePromise).rejects.toThrowError();
 
       const updateTrackerWithoutResponse = interceptor.patch('/users');
-      expect(updateTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
       expect(updateRequestsWithoutResponse).toHaveLength(0);

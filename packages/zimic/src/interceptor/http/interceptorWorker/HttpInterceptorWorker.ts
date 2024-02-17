@@ -27,7 +27,7 @@ import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterce
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
-import { HttpInterceptorWorker } from './types/public';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
 import {
   DefaultBody,
   BrowserHttpWorker,
@@ -38,8 +38,8 @@ import {
   NodeHttpWorker,
 } from './types/requests';
 
-class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
-  private static runningInstance?: InternalHttpInterceptorWorker;
+class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
+  private static runningInstance?: HttpInterceptorWorker;
 
   private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
@@ -105,7 +105,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 
   async start() {
-    if (InternalHttpInterceptorWorker.runningInstance && InternalHttpInterceptorWorker.runningInstance !== this) {
+    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
       throw new OtherHttpInterceptorWorkerRunningError();
     }
 
@@ -123,7 +123,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     }
 
     this._isRunning = true;
-    InternalHttpInterceptorWorker.runningInstance = this;
+    HttpInterceptorWorker.runningInstance = this;
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -161,7 +161,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     this.clearHandlers();
 
     this._isRunning = false;
-    InternalHttpInterceptorWorker.runningInstance = undefined;
+    HttpInterceptorWorker.runningInstance = undefined;
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
@@ -245,14 +245,14 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -281,14 +281,14 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
       has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
         if (property === 'body') {
@@ -320,4 +320,4 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 }
 
-export default InternalHttpInterceptorWorker;
+export default HttpInterceptorWorker;

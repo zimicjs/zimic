@@ -1,14 +1,14 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
-import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
   interface Filters {
@@ -40,7 +40,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
-      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -80,7 +80,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           status: 200,
         };
       });
-      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -125,7 +125,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
-      expect(genericOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(genericOptionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const genericOptionsRequests = genericOptionsTracker.requests();
       expect(genericOptionsRequests).toHaveLength(0);
@@ -151,7 +151,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const specificOptionsTracker = interceptor.options<'/filters/:id'>(`/filters/${1}`).respond({
         status: 200,
       });
-      expect(specificOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(specificOptionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const specificOptionsRequests = specificOptionsTracker.requests();
       expect(specificOptionsRequests).toHaveLength(0);
@@ -191,7 +191,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       await expect(fetchPromise).rejects.toThrowError();
 
       const optionsTrackerWithoutResponse = interceptor.options('/filters');
-      expect(optionsTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
       expect(optionsRequestsWithoutResponse).toHaveLength(0);

@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
-import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -14,7 +14,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
-  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
   beforeAll(async () => {
@@ -43,7 +43,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         status: 200,
         body: users,
       });
-      expect(listTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -85,7 +85,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         status: 200,
         body: [{ name: userName }],
       }));
-      expect(listTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -128,7 +128,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         status: 200,
         body: users[0],
       });
-      expect(genericGetTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(genericGetTracker).toBeInstanceOf(HttpRequestTracker);
 
       const genericGetRequests = genericGetTracker.requests();
       expect(genericGetRequests).toHaveLength(0);
@@ -158,7 +158,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         status: 200,
         body: users[0],
       });
-      expect(specificGetTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(specificGetTracker).toBeInstanceOf(HttpRequestTracker);
 
       const specificGetRequests = specificGetTracker.requests();
       expect(specificGetRequests).toHaveLength(0);
@@ -201,7 +201,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       await expect(fetchPromise).rejects.toThrowError();
 
       const listTrackerWithoutResponse = interceptor.get('/users');
-      expect(listTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(listTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const listRequestsWithoutResponse = listTrackerWithoutResponse.requests();
       expect(listRequestsWithoutResponse).toHaveLength(0);
