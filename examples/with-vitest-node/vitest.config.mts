@@ -7,8 +7,6 @@ export default defineConfig({
     environment: 'node',
     include: ['./**/*.test.ts'],
     globals: false,
-    allowOnly: process.env.CI !== 'true',
     setupFiles: ['./tests/setup.ts'],
   },
-  plugins: [],
 });

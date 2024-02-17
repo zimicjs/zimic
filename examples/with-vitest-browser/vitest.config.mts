@@ -6,7 +6,6 @@ export default defineConfig({
   test: {
     include: ['./tests/*.test.ts'],
     globals: false,
-    allowOnly: process.env.CI !== 'true',
     browser: {
       name: 'chromium',
       provider: 'playwright',
@@ -14,5 +13,4 @@ export default defineConfig({
       headless: true,
     },
   },
-  plugins: [],
 });

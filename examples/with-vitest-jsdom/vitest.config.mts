@@ -7,8 +7,6 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['./tests/*.test.ts'],
     globals: false,
-    allowOnly: process.env.CI !== 'true',
     setupFiles: ['./tests/setup.ts'],
   },
-  plugins: [],
 });
