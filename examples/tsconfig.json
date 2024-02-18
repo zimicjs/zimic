@@ -1,0 +1,8 @@
+{
+  "extends": "@zimic/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "target": "es6"
+  },
+  "include": ["**/*.ts", "**/*.mts", "*/tests/resolver.js"],
+  "exclude": ["node_modules", "**/dist", "**/build"]
+}

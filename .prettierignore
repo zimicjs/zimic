@@ -8,7 +8,7 @@ apps/*/build
 apps/*/public/mockServiceWorker.js
 packages/*/dist
 packages/*/build
-packages/*/public/mockServiceWorker.js
+**/public/mockServiceWorker.js
 
 # Tests
 /apps/*/tests/coverage

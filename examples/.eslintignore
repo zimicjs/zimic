@@ -1,0 +1,21 @@
+# Configuration
+/.eslintrc.js
+/.lintstagedrc.js
+*/jest.config.js
+
+# Dependencies
+node_modules
+
+# Build
+*/dist
+*/public/mockServiceWorker.js
+
+# Tests
+*/tests/coverage
+**/__tests__/fixtures/**/*.js
+
+# Cache
+.turbo
+
+# Miscellaneous
+local/

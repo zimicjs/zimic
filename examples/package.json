@@ -1,0 +1,22 @@
+{
+  "name": "zimic-examples",
+  "version": "0.0.0",
+  "private": false,
+  "scripts": {
+    "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "types:check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zimic": "latest"
+  },
+  "devDependencies": {
+    "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "typescript": "^5.3.3"
+  }
+}

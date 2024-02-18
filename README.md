@@ -52,6 +52,7 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
 - [Usage](#usage)
+  - [Examples](#examples)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
@@ -140,6 +141,10 @@ This will create a `mockServiceWorker.js` file in the provided public directory,
 requests and mock responses. We recommend not deploying this file to production.
 
 ## Usage
+
+### Examples
+
+Visit our [examples](./examples) to see how to use Zimic with popular frameworks and libraries!
 
 ### Basic usage
 
