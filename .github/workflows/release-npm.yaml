@@ -81,14 +81,14 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            --filter zimic-test-client
-            --filter zimic-examples
+            --filter zimic-test-client \
+            --filter zimic-examples \
             --filter 'zimic-example-*'
 
           pnpm turbo \
             test:turbo \
             --continue \
             --concurrency 1 \
-            --filter zimic-test-client
-            --filter zimic-examples
+            --filter zimic-test-client \
+            --filter zimic-examples \
             --filter 'zimic-example-*'
