@@ -1,16 +1,16 @@
-<h1 align="center">
-  Zimic - Examples
+<h1>
+  Zimic Examples
 </h1>
 
 This directory contains examples of how to use Zimic with popular frameworks, libraries, and configurations.
 
 - Vitest
 
-  - [With Vitest and Node.js](./with-vitest-node)
-  - [With Vitest and Browser Mode](./with-vitest-browser)
-  - [With Vitest and JSDOM](./with-vitest-jsdom)
+  - [With Vitest + Node.js](./with-vitest-node)
+  - [With Vitest + Browser Mode](./with-vitest-browser)
+  - [With Vitest + JSDOM](./with-vitest-jsdom)
 
 - Jest
 
-  - [With Jest and Node.js](./with-jest-node)
-  - [With Jest and JSDOM](./with-jest-jsdom)
+  - [With Jest + Node.js](./with-jest-node)
+  - [With Jest + JSDOM](./with-jest-jsdom)
