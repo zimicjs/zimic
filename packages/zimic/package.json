@@ -71,7 +71,8 @@
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\"",
-    "prepublishOnly": "cp ../../README.md ../../LICENSE.md ."
+    "prepublish:adapt-relative-paths": "sed -E -i 's/\\]\\(\\.\\/(.+)\\)/](..\\/..\\/\\1)/g'",
+    "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:adapt-relative-paths README.md"
   },
   "dependencies": {
     "chalk": "^5.3.0",
