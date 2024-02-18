@@ -71,9 +71,12 @@ jobs:
             's/link-workspace-packages = true/link-workspace-packages = false/' \
             .npmrc
 
-          sed -E -i \
-            's/"zimic([0-9]?)": ".*"/"zimic\1": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' \
-            package.json **/package.json
+          for packageJSON in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
+            sed -E -i \
+              's/"zimic([0-9]?)": ".*"/"zimic\1": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' \
+              $packageJSON
+          done
+
 
           pnpm install --no-frozen-lockfile
 
