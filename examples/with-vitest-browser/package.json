@@ -8,7 +8,7 @@
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic"
+    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
   },
   "dependencies": {
     "zimic": "latest"
