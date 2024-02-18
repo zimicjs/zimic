@@ -30,7 +30,9 @@ where the repository is found and another where it is not.
 ### Test
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
+
 - Test setup file: [`tests/browserSetup.ts`](./tests/browserSetup.ts)
+
   > IMPORTANT: As a workaround, this setup file must be imported in each test file. Currently, Browser Mode is
   > experimental and Vitest runs the setup file in a different process than the test files, so the worker started on
   > [`tests/browserSetup.ts`](./tests/browserSetup.ts) is not shared between them.
