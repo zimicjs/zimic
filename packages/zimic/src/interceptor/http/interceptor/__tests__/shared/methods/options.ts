@@ -112,7 +112,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
-  it('should support intercepting OPTIONS requests with a dynamic route', async () => {
+  it('should support intercepting OPTIONS requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/filters/:id': {
         OPTIONS: {

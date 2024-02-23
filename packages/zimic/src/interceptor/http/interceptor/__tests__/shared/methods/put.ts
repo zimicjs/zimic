@@ -121,7 +121,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
-  it('should support intercepting PUT requests with a dynamic route', async () => {
+  it('should support intercepting PUT requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {

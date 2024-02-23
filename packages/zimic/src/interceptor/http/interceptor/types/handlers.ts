@@ -1,6 +1,6 @@
 import { HttpRequestTracker } from '../../requestTracker/types/public';
 import {
-  AllowAnyStringInRouteParameters,
+  AllowAnyStringInPathParameters,
   HttpInterceptorMethod,
   HttpInterceptorSchema,
   HttpInterceptorSchemaMethod,
@@ -17,7 +17,7 @@ export interface EffectiveHttpInterceptorMethodHandler<
     Path extends LiteralHttpInterceptorSchemaPath<Schema, Method> | void = void,
     ActualPath extends Exclude<Path, void> = Exclude<Path, void>,
   >(
-    path: AllowAnyStringInRouteParameters<ActualPath>,
+    path: AllowAnyStringInPathParameters<ActualPath>,
   ): HttpRequestTracker<Schema, Method, ActualPath>;
 }
 

@@ -121,7 +121,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
     });
   });
 
-  it('should support intercepting PATCH requests with a dynamic route', async () => {
+  it('should support intercepting PATCH requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PATCH: {
