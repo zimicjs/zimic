@@ -1,7 +1,7 @@
 import { Default, UnionToIntersection, Prettify, IfAny } from '@/types/utils';
 
 import { HttpRequestHandlerContext, DefaultBody } from '../../interceptorWorker/types/requests';
-import { HttpSearchParamsSchema } from '../../searchParams/HttpSearchParams';
+import { HttpSearchParamsSchema } from '../../searchParams/types';
 import { HttpInterceptor } from './public';
 
 export const HTTP_INTERCEPTOR_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;

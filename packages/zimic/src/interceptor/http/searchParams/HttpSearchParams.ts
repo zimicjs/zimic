@@ -1,6 +1,8 @@
 import { ReplaceBy, Defined, ArrayItemIfArray, NonArrayKey, ArrayKey } from '@/types/utils';
 
-function withPrimitiveProperties<Schema extends HttpSearchParamsSchema>(searchParamsInit: Schema) {
+import { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './types';
+
+function pickDefinedPrimitiveProperties<Schema extends HttpSearchParamsSchema>(searchParamsInit: Schema) {
   return Object.entries(searchParamsInit).reduce<Record<string, string>>((accumulated, [key, value]) => {
     if (value !== undefined && !Array.isArray(value)) {
       accumulated[key] = value;
@@ -9,20 +11,14 @@ function withPrimitiveProperties<Schema extends HttpSearchParamsSchema>(searchPa
   }, {});
 }
 
-export interface HttpSearchParamsSchema {
-  [paramName: string]: string | string[] | undefined;
-}
-
-type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema> = {
-  [Key in keyof Schema & string]: [Key, ArrayItemIfArray<Defined<Schema[Key]>>];
-}[keyof Schema & string];
-
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {
-  constructor(init?: URLSearchParams | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[] | Schema) {
-    if (init instanceof URLSearchParams || Array.isArray(init) || !init) {
+  constructor(
+    init?: string | URLSearchParams | Schema | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[],
+  ) {
+    if (init instanceof URLSearchParams || Array.isArray(init) || typeof init === 'string' || !init) {
       super(init);
     } else {
-      super(withPrimitiveProperties(init));
+      super(pickDefinedPrimitiveProperties(init));
       this.populateInitArrayProperties(init);
     }
   }
