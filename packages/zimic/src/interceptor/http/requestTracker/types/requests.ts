@@ -6,6 +6,7 @@ import {
   HttpInterceptorResponseSchemaStatusCode,
 } from '../../interceptor/types/schema';
 import { HttpRequest, HttpResponse } from '../../interceptorWorker/types/requests';
+import HttpSearchParams from '../../searchParams/HttpSearchParams';
 
 export type HttpRequestTrackerResponseAttribute<
   ResponseSchema extends HttpInterceptorResponseSchema,
@@ -30,6 +31,7 @@ export type HttpRequestTrackerResponseDeclarationFactory<
 
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body> {
+  searchParams: HttpSearchParams<Default<Default<MethodSchema['request'], { searchParams: never }>['searchParams']>>;
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }

@@ -3,8 +3,10 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -111,6 +113,58 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
       expect(listRequest.response.body).toEqual<User[]>([{ name: userName }]);
+    });
+  });
+
+  it('should support intercepting GET requests having search params', async () => {
+    type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      name?: string;
+      orderBy?: ('name' | 'createdAt')[];
+      page?: `${number}`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+
+        return {
+          status: 200,
+          body: users,
+        };
+      });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserListSearchParams>({
+        name: 'User 1',
+        orderBy: ['createdAt', 'name'],
+      });
+
+      const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+      expect(listRequest.searchParams).toEqual(searchParams);
+      expect(listRequest.searchParams.get('name')).toBe('User 1');
+      expect(listRequest.searchParams.getAll('orderBy')).toEqual(['createdAt', 'name']);
+      expect(listRequest.searchParams.get('page')).toBe(null);
     });
   });
 

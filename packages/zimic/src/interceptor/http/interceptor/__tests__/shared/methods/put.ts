@@ -3,8 +3,10 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declarePutHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -118,6 +120,53 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual<User>({ name: userName });
+    });
+  });
+
+  it('should support intercepting PUT requests having search params', async () => {
+    type UserUpdateSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      from?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PUT: {
+          request: {
+            searchParams: UserUpdateSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor.put('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+
+        return {
+          status: 200,
+          body: users[0],
+        };
+      });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
+        from: 'admin',
+      });
+
+      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      expect(updateResponse.status).toBe(200);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+      expect(updateRequest.searchParams).toEqual(searchParams);
+      expect(updateRequest.searchParams.get('from')).toBe('admin');
     });
   });
 
