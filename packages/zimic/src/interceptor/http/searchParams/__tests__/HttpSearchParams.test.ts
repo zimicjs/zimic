@@ -9,6 +9,8 @@ describe('HttpSearchParams', () => {
       page?: `${number}`;
     }>(new URLSearchParams('names=User1&names=User2&page=1'));
 
+    expect(searchParams.size).toBe(3);
+
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
     expect(names).toEqual(['User1', 'User2']);
@@ -23,6 +25,8 @@ describe('HttpSearchParams', () => {
       names?: string[];
       page?: `${number}`;
     }>('names=User1&names=User2&page=1');
+
+    expect(searchParams.size).toBe(3);
 
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
@@ -41,6 +45,8 @@ describe('HttpSearchParams', () => {
       names: ['User1', 'User2'],
       page: '1',
     });
+
+    expect(searchParams.size).toBe(3);
 
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
@@ -63,6 +69,8 @@ describe('HttpSearchParams', () => {
     const searchParams = new HttpSearchParams(otherSearchParams);
     expect(otherSearchParams).toEqual(searchParams);
 
+    expect(searchParams.size).toBe(3);
+
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
     expect(names).toEqual(['User1', 'User2']);
@@ -82,6 +90,8 @@ describe('HttpSearchParams', () => {
       ['page', '1'],
     ]);
 
+    expect(searchParams.size).toBe(3);
+
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
     expect(names).toEqual(['User1', 'User2']);
@@ -97,9 +107,16 @@ describe('HttpSearchParams', () => {
       page?: `${number}`;
     }>();
 
+    expect(searchParams.size).toBe(0);
+
     searchParams.set('names', 'User1');
+    expect(searchParams.size).toBe(1);
+
     searchParams.set('names', 'User2');
+    expect(searchParams.size).toBe(1);
+
     searchParams.set('page', '1');
+    expect(searchParams.size).toBe(2);
 
     expect(searchParams.getAll('names')).toEqual(['User2']);
     expect(searchParams.get('page')).toBe('1');
@@ -111,9 +128,16 @@ describe('HttpSearchParams', () => {
       page?: `${number}`;
     }>();
 
+    expect(searchParams.size).toBe(0);
+
     searchParams.append('names', 'User1');
+    expect(searchParams.size).toBe(1);
+
     searchParams.append('names', 'User2');
+    expect(searchParams.size).toBe(2);
+
     searchParams.append('page', '1');
+    expect(searchParams.size).toBe(3);
 
     const names = searchParams.getAll('names');
     expectTypeOf(names).toEqualTypeOf<string[]>();
@@ -181,16 +205,24 @@ describe('HttpSearchParams', () => {
       page: '1',
     });
 
+    expect(searchParams.size).toBe(3);
+
     searchParams.delete('names');
+    expect(searchParams.size).toBe(1);
     expect(searchParams.getAll('names')).toEqual([]);
 
     searchParams.append('names', 'User1');
+    expect(searchParams.size).toBe(2);
+
     searchParams.append('names', 'User2');
+    expect(searchParams.size).toBe(3);
 
     searchParams.delete('names', 'User1');
+    expect(searchParams.size).toBe(2);
     expect(searchParams.getAll('names')).toEqual(['User2']);
 
     searchParams.delete('page');
+    expect(searchParams.size).toBe(1);
     expect(searchParams.get('page')).toBe(null);
   });
 
