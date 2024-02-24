@@ -3,8 +3,10 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declarePostHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -118,6 +120,56 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
       expect(creationRequest.response.body).toEqual<User>({ name: userName });
+    });
+  });
+
+  it('should support intercepting POST requests having search params', async () => {
+    type UserCreationSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            searchParams: UserCreationSearchParams;
+          };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor.post('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+
+        return {
+          status: 201,
+          body: users[0],
+        };
+      });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+        tag: 'admin',
+      });
+
+      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+      expect(creationRequest.searchParams).toEqual(searchParams);
+      expect(creationRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

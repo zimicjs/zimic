@@ -3,6 +3,7 @@ import {
   HttpInterceptorSchema,
   HttpRequest,
   HttpResponse,
+  HttpSearchParams,
   createHttpInterceptor,
   createHttpInterceptorWorker,
 } from 'zimic0/interceptor';
@@ -49,6 +50,11 @@ interface ConflictError extends RequestError {
   code: 'conflict';
 }
 
+type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+  name?: string;
+  orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
+}>;
+
 type UsersSchema = HttpInterceptorSchema.Root<{
   '/users': {
     POST: {
@@ -62,6 +68,9 @@ type UsersSchema = HttpInterceptorSchema.Root<{
       };
     };
     GET: {
+      request: {
+        searchParams: UserListSearchParams;
+      };
       response: {
         200: { body: User[] };
       };
@@ -228,6 +237,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const creationRequests = creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(creationRequests[0].searchParams.size).toBe(0);
+
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(creationPayload);
 
@@ -264,6 +276,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const creationRequests = creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(creationRequests[0].searchParams.size).toBe(0);
+
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(invalidPayload);
 
@@ -299,6 +314,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const creationRequests = creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(creationRequests[0].searchParams.size).toBe(0);
+
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(conflictingPayload);
 
@@ -318,6 +336,24 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     });
 
     describe('User list', () => {
+      const users: User[] = [
+        {
+          id: crypto.randomUUID(),
+          name: 'Name 1',
+          email: 'email1@email.com',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Name 2',
+          email: 'email2@email.com',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Name3',
+          email: 'email3@email.com',
+        },
+      ];
+
       beforeEach(() => {
         authInterceptor.get('/users').respond({
           status: 200,
@@ -325,8 +361,8 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         });
       });
 
-      async function listUsers(filters: { name?: string; email?: string } = {}) {
-        const searchParams = new URLSearchParams(filters);
+      async function listUsers(filters: UserListSearchParams = {}) {
+        const searchParams = new HttpSearchParams(filters);
         const request = new Request(`http://localhost:3000/users?${searchParams}`, { method: 'GET' });
         return fetch(request);
       }
@@ -334,17 +370,60 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       it('should list users', async () => {
         const listTracker = authInterceptor.get('/users').respond({
           status: 200,
+          body: users,
+        });
+
+        const response = await listUsers();
+        expect(response.status).toBe(200);
+
+        const returnedUsers = (await response.json()) as User[];
+        expect(returnedUsers).toEqual(users);
+
+        const listRequests = listTracker.requests();
+        expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(listRequests[0].searchParams.get('name')).toBe(null);
+        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
+
+        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
+        expect(listRequests[0].body).toBe(null);
+
+        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<User[]>();
+        expect(listRequests[0].response.body).toEqual(users);
+
+        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<User[], 200>>();
+        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User[]>>();
+        expect(await listRequests[0].response.raw.json()).toEqual(users);
+      });
+
+      it('should list users filtered by name', async () => {
+        const user = users[0];
+
+        const listTracker = authInterceptor.get('/users').respond({
+          status: 200,
           body: [user],
         });
 
-        let response = await listUsers();
+        const response = await listUsers({ name: user.name });
         expect(response.status).toBe(200);
 
-        let returnedUsers = (await response.json()) as User[];
+        const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([user]);
 
         const listRequests = listTracker.requests();
         expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(listRequests[0].searchParams.size).toBe(1);
+        expect(listRequests[0].searchParams.get('name')).toBe(user.name);
+        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
 
         expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
         expect(listRequests[0].body).toBe(null);
@@ -361,16 +440,49 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(listRequests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([user]);
+      });
 
-        listTracker.bypass();
+      it('should list users with ordering', async () => {
+        const orderedUsers = users.sort((user, otherUser) => {
+          return -user.email.localeCompare(otherUser.email);
+        });
 
-        response = await listUsers();
+        const listTracker = authInterceptor.get('/users').respond({
+          status: 200,
+          body: orderedUsers,
+        });
+
+        const response = await listUsers({
+          orderBy: ['email.desc'],
+        });
         expect(response.status).toBe(200);
 
-        returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual([]);
+        const returnedUsers = (await response.json()) as User[];
+        expect(returnedUsers).toEqual(orderedUsers);
 
+        const listRequests = listTracker.requests();
         expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(listRequests[0].searchParams.size).toBe(1);
+        expect(listRequests[0].searchParams.get('name')).toBe(null);
+        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
+
+        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
+        expect(listRequests[0].body).toBe(null);
+
+        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listRequests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listRequests[0].raw.text()).toBe('');
+
+        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<User[]>();
+        expect(listRequests[0].response.body).toEqual(orderedUsers);
+
+        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<User[], 200>>();
+        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<User[]>>();
+        expect(await listRequests[0].response.raw.json()).toEqual(orderedUsers);
       });
     });
 
@@ -394,6 +506,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const getRequests = getTracker.requests();
         expect(getRequests).toHaveLength(1);
+
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
         expect(getRequests[0].body).toBe(null);
@@ -427,6 +542,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const getRequests = getTracker.requests();
         expect(getRequests).toHaveLength(1);
+
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
         expect(getRequests[0].body).toBe(null);
@@ -463,6 +581,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const deleteRequests = deleteTracker.requests();
         expect(deleteRequests).toHaveLength(1);
 
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(deleteRequests[0].searchParams.size).toBe(0);
+
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
         expect(deleteRequests[0].body).toBe(null);
 
@@ -495,6 +616,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const deleteRequests = getTracker.requests();
         expect(deleteRequests).toHaveLength(1);
+
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(deleteRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
         expect(deleteRequests[0].body).toBe(null);
@@ -553,6 +677,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         const listRequests = listTracker.requests();
         expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
+        expect(listRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
         expect(listRequests[0].body).toBe(null);

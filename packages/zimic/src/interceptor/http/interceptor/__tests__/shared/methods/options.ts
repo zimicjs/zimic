@@ -3,8 +3,10 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -76,6 +78,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
+
         return {
           status: 200,
         };
@@ -109,6 +112,52 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
       expect(optionsRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should support intercepting OPTIONS requests having search params', async () => {
+    type OptionsSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            searchParams: OptionsSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<OptionsSearchParams>>();
+
+        return {
+          status: 200,
+        };
+      });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<OptionsSearchParams>({
+        tag: 'admin',
+      });
+
+      const optionsResponse = await fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.searchParams).toEqualTypeOf<HttpSearchParams<OptionsSearchParams>>();
+      expect(optionsRequest.searchParams).toEqual(searchParams);
+      expect(optionsRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

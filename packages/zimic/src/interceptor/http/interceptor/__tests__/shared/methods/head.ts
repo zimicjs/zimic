@@ -3,8 +3,10 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -95,6 +97,52 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should support intercepting HEAD requests having search params', async () => {
+    type UserHeadSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          request: {
+            searchParams: UserHeadSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const headTracker = interceptor.head('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+
+        return {
+          status: 200,
+        };
+      });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserHeadSearchParams>({
+        tag: 'admin',
+      });
+
+      const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
+      expect(headResponse.status).toBe(200);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+      expect(headRequest.searchParams).toEqual(searchParams);
+      expect(headRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

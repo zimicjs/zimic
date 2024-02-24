@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
@@ -48,6 +49,65 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     const creationRequests = creationTracker.requests();
     type RequestBody = (typeof creationRequests)[number]['body'];
     expectTypeOf<RequestBody>().toEqualTypeOf<User>();
+  });
+
+  it('should correctly type requests with search params', () => {
+    type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+      name: string;
+      usernames: string[];
+      orderBy?: ('name' | 'createdAt')[];
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestSearchParams = (typeof creationRequests)[number]['searchParams'];
+    expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+  });
+
+  it('should correctly type requests with no search params', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestSearchParams = (typeof creationRequests)[number]['searchParams'];
+    expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams>();
   });
 
   it('should correctly type requests with dynamic paths', () => {

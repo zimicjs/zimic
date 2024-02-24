@@ -21,6 +21,7 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
+import HttpSearchParams from '../searchParams/HttpSearchParams';
 import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
 import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
@@ -240,8 +241,10 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     rawRequest: HttpRequest,
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
     const rawRequestClone = rawRequest.clone();
-
     const parsedBody = await this.parseRawBody(rawRequest);
+
+    const parsedURL = new URL(rawRequest.url);
+    const searchParams = new HttpSearchParams(parsedURL.searchParams);
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
@@ -257,6 +260,9 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
         }
         if (property === 'body') {
           return parsedBody;
+        }
+        if (property === 'searchParams') {
+          return searchParams;
         }
         if (property === 'raw') {
           return rawRequestClone;
