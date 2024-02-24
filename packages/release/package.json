@@ -36,13 +36,13 @@
     "zx": "^4.2.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/node": "^20.11.20",
+    "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "^1.2.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "@types/fs-extra": "^9.0.13",
-    "@types/node": "^18.8.4",
-    "@types/yargs": "^17.0.32",
     "dotenv-cli": "^7.0.0",
     "tsup": "^8.0.1",
     "tsx": "^4.6.0",
