@@ -171,14 +171,14 @@ describe('HttpSearchParams', () => {
     expectTypeOf(names).toEqualTypeOf<string[]>();
     expect(names).toEqual(['User1', 'User2']);
 
-    // @ts-expect-error
+    // @ts-expect-error `get` not allow accessing array keys
     searchParams.get('names');
 
     const page = searchParams.get('page');
     expectTypeOf(page).toEqualTypeOf<`${number}` | null>();
     expect(page).toBe('1');
 
-    // @ts-expect-error
+    // @ts-expect-error `getAll` not allow accessing non-array keys
     searchParams.getAll('page');
   });
 
