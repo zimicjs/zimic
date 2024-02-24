@@ -19,14 +19,14 @@ import {
 } from './types/schema';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyInternalHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
+type AnyHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
 
 class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHttpInterceptor<Schema> {
   private _baseURL: string;
   protected worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
-    [Method in HttpInterceptorMethod]: Map<string, AnyInternalHttpRequestTracker[]>;
+    [Method in HttpInterceptorMethod]: Map<string, AnyHttpRequestTracker[]>;
   } = {
     GET: new Map(),
     POST: new Map(),

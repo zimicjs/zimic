@@ -60,7 +60,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     });
 
     it('should thrown an error if an invalid platform is provided', () => {
-      // @ts-expect-error
+      // @ts-expect-error Forcing an invalid platform
       const invalidPlatform: HttpInterceptorWorkerPlatform = 'invalid';
 
       expect(() => {

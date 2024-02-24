@@ -189,12 +189,12 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
 
     interceptor.get('/users').respond({
-      // @ts-expect-error
+      // @ts-expect-error The status code should match the schema
       status: 201,
       body: users,
     });
 
-    // @ts-expect-error
+    // @ts-expect-error The status code should match the schema
     interceptor.get('/users').respond(() => ({
       status: 201,
       body: users,
@@ -236,10 +236,10 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
     interceptor.get('/users').respond({
       status: 200,
-      // @ts-expect-error
+      // @ts-expect-error The response body should match the schema
       body: '',
     });
-    // @ts-expect-error
+    // @ts-expect-error The response body should match the schema
     interceptor.get('/users').respond(() => ({
       status: 200,
       body: '',
@@ -247,10 +247,10 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
     interceptor.post('/notifications/read').respond({
       status: 204,
-      // @ts-expect-error
+      // @ts-expect-error The response body should match the schema
       body: users,
     });
-    // @ts-expect-error
+    // @ts-expect-error The response body should match the schema
     interceptor.post('/notifications/read').respond(() => ({
       status: 204,
       body: users,
@@ -287,21 +287,21 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     interceptor.get<'/users/:id'>(`/users/${123}`);
     interceptor.post('/notifications/read');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/users` does not contain a POST method
     interceptor.post('/users');
-    // @ts-expect-error
+    // @ts-expect-error The path `/users/:id` does not contain a POST method
     interceptor.post('/users/:id');
-    // @ts-expect-error
+    // @ts-expect-error The path `/users/:id` with dynamic parameter does not contain a POST method
     interceptor.post(`/users/${123}`);
-    // @ts-expect-error
+    // @ts-expect-error The path `/notifications/read` does not contain a GET method
     interceptor.get('/notifications/read');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/path` is not declared
     interceptor.get('/path');
-    // @ts-expect-error
+    // @ts-expect-error The path `/path` is not declared
     interceptor.post('/path');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/users` does not contain a PUT method
     interceptor.put('/users');
   });
 
