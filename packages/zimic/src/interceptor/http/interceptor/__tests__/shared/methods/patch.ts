@@ -125,7 +125,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should support intercepting PATCH requests having search params', async () => {
     type UserUpdateSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -154,7 +154,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PATCH' });
@@ -166,7 +166,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
       expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
       expect(updateRequest.searchParams).toEqual(searchParams);
-      expect(updateRequest.searchParams.get('from')).toBe('admin');
+      expect(updateRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

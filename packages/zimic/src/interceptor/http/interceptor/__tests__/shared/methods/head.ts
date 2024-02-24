@@ -102,7 +102,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   it('should support intercepting HEAD requests having search params', async () => {
     type UserHeadSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -130,7 +130,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(headRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserHeadSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
@@ -142,7 +142,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       expectTypeOf(headRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
       expect(headRequest.searchParams).toEqual(searchParams);
-      expect(headRequest.searchParams.get('from')).toBe('admin');
+      expect(headRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

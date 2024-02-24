@@ -125,7 +125,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   it('should support intercepting POST requests having search params', async () => {
     type UserCreationSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -154,7 +154,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(creationRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserCreationSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
@@ -169,7 +169,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       expectTypeOf(creationRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
       expect(creationRequest.searchParams).toEqual(searchParams);
-      expect(creationRequest.searchParams.get('from')).toBe('admin');
+      expect(creationRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

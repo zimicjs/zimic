@@ -117,7 +117,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
   it('should support intercepting OPTIONS requests having search params', async () => {
     type OptionsSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -145,7 +145,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       expect(optionsRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<OptionsSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const optionsResponse = await fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
@@ -157,7 +157,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
       expectTypeOf(optionsRequest.searchParams).toEqualTypeOf<HttpSearchParams<OptionsSearchParams>>();
       expect(optionsRequest.searchParams).toEqual(searchParams);
-      expect(optionsRequest.searchParams.get('from')).toBe('admin');
+      expect(optionsRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

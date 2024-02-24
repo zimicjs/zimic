@@ -125,7 +125,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support intercepting PUT requests having search params', async () => {
     type UserUpdateSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -154,7 +154,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
@@ -166,7 +166,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
       expect(updateRequest.searchParams).toEqual(searchParams);
-      expect(updateRequest.searchParams.get('from')).toBe('admin');
+      expect(updateRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 

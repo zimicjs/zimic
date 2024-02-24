@@ -124,7 +124,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
   it('should support intercepting DELETE requests having search params', async () => {
     type UserDeleteSearchParams = HttpInterceptorSchema.RequestSearchParams<{
-      from?: string;
+      tag?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -153,7 +153,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       expect(deletionRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserDeleteSearchParams>({
-        from: 'admin',
+        tag: 'admin',
       });
 
       const deletionResponse = await fetch(`${baseURL}/users/${1}?${searchParams.toString()}`, { method: 'DELETE' });
@@ -165,7 +165,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
       expectTypeOf(deletionRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserDeleteSearchParams>>();
       expect(deletionRequest.searchParams).toEqual(searchParams);
-      expect(deletionRequest.searchParams.get('from')).toBe('admin');
+      expect(deletionRequest.searchParams.get('tag')).toBe('admin');
     });
   });
 
