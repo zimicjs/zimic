@@ -81,6 +81,16 @@ describe('HttpSearchParams', () => {
   });
 
   it('should support being created by search param tuples', () => {
+    new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+    }>([
+      // @ts-expect-error The first tuple item should match one of the declared keys
+      ['unknown', '1'],
+      // @ts-expect-error The second tuple item should match the type of the key value
+      ['page', 'non-number'],
+    ]);
+
     const searchParams = new HttpSearchParams<{
       names?: string[];
       page?: `${number}`;
