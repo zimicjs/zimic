@@ -50,7 +50,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     expectTypeOf<RequestBody>().toEqualTypeOf<User>();
   });
 
-  it('should correctly type requests with dynamic routes', () => {
+  it('should correctly type requests with dynamic paths', () => {
     const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         POST: {
@@ -75,7 +75,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
     expectTypeOf<GenericRequestBody>().toEqualTypeOf<User>();
 
-    // @ts-expect-error The literal path is required when using route param interpolation
+    // @ts-expect-error The literal path is required when using path param interpolation
     interceptor.post(`/groups/${1}/users`);
 
     const specificCreationTracker = interceptor.post<'/groups/:id/users'>(`/groups/${1}/users`).respond((request) => {
@@ -123,7 +123,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
   });
 
-  it('should correctly type responses with dynamic routes, based on the applied status code', () => {
+  it('should correctly type responses with dynamic paths, based on the applied status code', () => {
     const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         GET: {
@@ -305,7 +305,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     interceptor.put('/users');
   });
 
-  it('should correctly type routes with multiple methods', () => {
+  it('should correctly type paths with multiple methods', () => {
     type Schema = HttpInterceptorSchema.Root<{
       '/users': {
         POST: {

@@ -121,7 +121,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
-  it('should support intercepting POST requests with a dynamic route', async () => {
+  it('should support intercepting POST requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         POST: {

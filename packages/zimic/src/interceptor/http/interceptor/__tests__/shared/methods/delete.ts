@@ -120,7 +120,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
     });
   });
 
-  it('should support intercepting DELETE requests with a dynamic route', async () => {
+  it('should support intercepting DELETE requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {

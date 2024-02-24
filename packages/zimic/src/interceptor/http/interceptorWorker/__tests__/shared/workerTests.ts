@@ -157,7 +157,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(body).toEqual(responseBody);
       });
 
-      it(`should intercept ${method} requests after started, considering dynamic routes with a generic match`, async () => {
+      it(`should intercept ${method} requests after started, considering dynamic paths with a generic match`, async () => {
         interceptorWorker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
         await interceptorWorker.start();
 
@@ -182,7 +182,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(body).toEqual(responseBody);
       });
 
-      it(`should intercept ${method} requests after started, considering dynamic routes with a specific match`, async () => {
+      it(`should intercept ${method} requests after started, considering dynamic paths with a specific match`, async () => {
         interceptorWorker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
         await interceptorWorker.start();
 

@@ -65,9 +65,9 @@ export type LooseLiteralHttpInterceptorSchemaPath<
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
-export type AllowAnyStringInRouteParameters<Path extends string> =
+export type AllowAnyStringInPathParameters<Path extends string> =
   Path extends `${infer Prefix}:${string}/${infer Suffix}`
-    ? `${Prefix}${string}/${AllowAnyStringInRouteParameters<Suffix>}`
+    ? `${Prefix}${string}/${AllowAnyStringInPathParameters<Suffix>}`
     : Path extends `${infer Prefix}:${string}`
       ? `${Prefix}${string}`
       : Path;
@@ -75,7 +75,7 @@ export type AllowAnyStringInRouteParameters<Path extends string> =
 export type NonLiteralHttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
-> = AllowAnyStringInRouteParameters<LiteralHttpInterceptorSchemaPath<Schema, Method>>;
+> = AllowAnyStringInPathParameters<LiteralHttpInterceptorSchemaPath<Schema, Method>>;
 
 export type HttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,

@@ -114,7 +114,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
-  it('should support intercepting GET requests with a dynamic route', async () => {
+  it('should support intercepting GET requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         GET: {

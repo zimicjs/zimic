@@ -98,7 +98,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
-  it('should support intercepting HEAD requests with a dynamic route', async () => {
+  it('should support intercepting HEAD requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         HEAD: {

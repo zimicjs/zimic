@@ -17,7 +17,7 @@ import {
  * the intercepted requests and their responses, allowing checks about how many requests your application made and with
  * which parameters.
  *
- * When multiple trackers of the same interceptor match the same method and route, the _last_ tracker created with
+ * When multiple trackers of the same interceptor match the same method and path, the _last_ tracker created with
  * {@link https://github.com/diego-aquino/zimic#interceptormethodpath `interceptor.<method>(path)`} will be used.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
