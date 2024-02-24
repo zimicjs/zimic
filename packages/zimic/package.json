@@ -80,7 +80,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^18.8.4",
+    "@types/node": "^20.11.20",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "^1.2.1",
     "@vitest/coverage-istanbul": "^1.2.1",
