@@ -30,6 +30,10 @@ import {
   type TrackedHttpInterceptorRequest,
   type HttpInterceptorWorkerPlatform,
   type HttpInterceptorWorkerOptions,
+  type HttpSearchParamsSchema,
+  type HttpSearchParamsSchemaTuple,
+  type HttpInterceptorSearchParamsSchema,
+  type HttpInterceptorBodySchema,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
@@ -56,9 +60,14 @@ describe('Exports', () => {
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
 
+    expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
+
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorMethod>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSearchParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpInterceptorBodySchema>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchema>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchemaByStatusCode>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchemaStatusCode<never>>().not.toBeAny();
