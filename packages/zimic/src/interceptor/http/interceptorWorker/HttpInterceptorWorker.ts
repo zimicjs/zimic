@@ -6,8 +6,10 @@ import {
   passthrough,
 } from 'msw';
 
+import { DefaultBody, HttpResponse, HttpRequest } from '@/http/types/requests';
 import { Default } from '@/types/utils';
 
+import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import { HttpInterceptor } from '../interceptor/types/public';
 import {
   HttpInterceptorMethod,
@@ -21,7 +23,6 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
-import HttpSearchParams from '../searchParams/HttpSearchParams';
 import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
 import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
@@ -29,15 +30,7 @@ import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpIntercepto
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
-import {
-  DefaultBody,
-  BrowserHttpWorker,
-  HttpRequestHandler,
-  HttpWorker,
-  HttpResponse,
-  HttpRequest,
-  NodeHttpWorker,
-} from './types/requests';
+import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   private static runningInstance?: HttpInterceptorWorker;

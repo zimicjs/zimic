@@ -1,12 +1,10 @@
 import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
-import HttpSearchParams from './http/searchParams/HttpSearchParams';
 
 export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
 export type { HttpInterceptorWorkerOptions } from './http/interceptorWorker/types/options';
 export { HttpInterceptorWorkerPlatform } from './http/interceptorWorker/types/options';
-export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types/requests';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export { UnregisteredServiceWorkerError, NotStartedHttpInterceptorWorkerError, InvalidHttpInterceptorWorkerPlatform };
@@ -21,10 +19,6 @@ export type {
 } from './http/requestTracker/types/requests';
 
 export type { HttpRequestTracker } from './http/requestTracker/types/public';
-
-export type { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './http/searchParams/types';
-
-export { HttpSearchParams };
 
 export type { HttpInterceptorOptions } from './http/interceptor/types/options';
 

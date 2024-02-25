@@ -1,12 +1,12 @@
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
 import { HttpInterceptorSchema } from '@/interceptor/http/interceptor/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
-import { HttpRequest, HttpResponse } from '@/interceptor/http/interceptorWorker/types/requests';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import HttpRequestTracker from '../../HttpRequestTracker';

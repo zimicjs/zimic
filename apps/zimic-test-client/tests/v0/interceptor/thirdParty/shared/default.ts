@@ -1,12 +1,6 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import {
-  HttpInterceptorSchema,
-  HttpRequest,
-  HttpResponse,
-  HttpSearchParams,
-  createHttpInterceptor,
-  createHttpInterceptorWorker,
-} from 'zimic0/interceptor';
+import { HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0';
+import { HttpInterceptorSchema, createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
