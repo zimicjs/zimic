@@ -27,7 +27,6 @@ import {
   type HttpInterceptorSchemaMethod,
   type HttpInterceptorSchemaPath,
   type HttpRequestTracker,
-  type HttpRequestTrackerResponseAttribute,
   type HttpRequestTrackerResponseDeclaration,
   type HttpRequestTrackerResponseDeclarationFactory,
   type LiteralHttpInterceptorSchemaPath,
@@ -55,7 +54,6 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
 
-    expectTypeOf<HttpRequestTrackerResponseAttribute<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();

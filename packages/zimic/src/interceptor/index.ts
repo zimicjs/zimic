@@ -10,7 +10,6 @@ export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export { UnregisteredServiceWorkerError, NotStartedHttpInterceptorWorkerError, InvalidHttpInterceptorWorkerPlatform };
 
 export type {
-  HttpRequestTrackerResponseAttribute,
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
   HttpInterceptorRequest,
