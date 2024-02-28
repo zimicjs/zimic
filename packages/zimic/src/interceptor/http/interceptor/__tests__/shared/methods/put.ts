@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -142,6 +143,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor.put('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 200,
@@ -165,8 +167,76 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(updateRequest).toBeInstanceOf(Request);
 
       expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+      expect(updateRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(updateRequest.searchParams).toEqual(searchParams);
       expect(updateRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting PUT requests having headers', async () => {
+    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}`;
+    }>;
+    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
+      Authorization?: `Bearer ${string}-response`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PUT: {
+          request: {
+            headers: UserUpdateRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserUpdateResponseHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor.put('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const authorizationHeader = request.headers.get('Authorization')!;
+        expect(authorizationHeader).not.toBe(null);
+
+        return {
+          status: 200,
+          headers: {
+            Authorization: `${authorizationHeader}-response`,
+          },
+          body: users[0],
+        };
+      });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer token',
+        } satisfies UserUpdateRequestHeaders,
+      });
+      expect(updateResponse.status).toBe(200);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
+      expect(updateRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(updateRequest.headers.get('Authorization')).toBe('Bearer token');
+      expect(updateRequest.headers.get('Keep-Alive')).toBe(null);
+
+      expectTypeOf(updateRequest.response.headers).toEqualTypeOf<HttpHeaders<UserUpdateResponseHeaders>>();
+      expect(updateRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(updateRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
     });
   });
 

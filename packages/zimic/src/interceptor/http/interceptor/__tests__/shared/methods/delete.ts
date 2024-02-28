@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -123,7 +124,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
   });
 
   it('should support intercepting DELETE requests having search params', async () => {
-    type UserDeleteSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserDeletionSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -131,7 +132,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       '/users/:id': {
         DELETE: {
           request: {
-            searchParams: UserDeleteSearchParams;
+            searchParams: UserDeletionSearchParams;
           };
           response: {
             200: { body: User };
@@ -140,7 +141,8 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const deletionTracker = interceptor.delete(`/users/:id`).respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeleteSearchParams>>();
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 200,
@@ -152,7 +154,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
 
-      const searchParams = new HttpSearchParams<UserDeleteSearchParams>({
+      const searchParams = new HttpSearchParams<UserDeletionSearchParams>({
         tag: 'admin',
       });
 
@@ -163,9 +165,78 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(deletionRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserDeleteSearchParams>>();
+      expectTypeOf(deletionRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
+      expect(deletionRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(deletionRequest.searchParams).toEqual(searchParams);
       expect(deletionRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting DELETE requests having headers', async () => {
+    type UserDeletionRequestHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}`;
+    }>;
+    type UserDeletionResponseHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}-response`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        DELETE: {
+          request: {
+            headers: UserDeletionRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserDeletionResponseHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const deletionTracker = interceptor.delete(`/users/:id`).respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const authorizationHeader = request.headers.get('Authorization')!;
+        expect(authorizationHeader).not.toBe(null);
+
+        return {
+          status: 200,
+          headers: {
+            Authorization: `${authorizationHeader}-response`,
+          },
+          body: users[0],
+        };
+      });
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      const deletionResponse = await fetch(`${baseURL}/users/${1}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: 'Bearer token',
+        } satisfies UserDeletionRequestHeaders,
+      });
+      expect(deletionResponse.status).toBe(200);
+
+      expect(deletionRequests).toHaveLength(1);
+      const [deletionRequest] = deletionRequests;
+      expect(deletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(deletionRequest.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
+      expect(deletionRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(deletionRequest.headers.get('Authorization')).toBe('Bearer token');
+      expect(deletionRequest.headers.get('Keep-Alive')).toBe(null);
+
+      expectTypeOf(deletionRequest.response.headers).toEqualTypeOf<HttpHeaders<UserDeletionResponseHeaders>>();
+      expect(deletionRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(deletionRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
     });
   });
 

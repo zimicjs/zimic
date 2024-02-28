@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -116,7 +117,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having search params', async () => {
-    type OptionsSearchParams = HttpInterceptorSchema.SearchParams<{
+    type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -124,7 +125,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       '/filters': {
         OPTIONS: {
           request: {
-            searchParams: OptionsSearchParams;
+            searchParams: FiltersOptionsSearchParams;
           };
           response: {
             200: {};
@@ -133,7 +134,8 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<OptionsSearchParams>>();
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 200,
@@ -144,7 +146,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
 
-      const searchParams = new HttpSearchParams<OptionsSearchParams>({
+      const searchParams = new HttpSearchParams<FiltersOptionsSearchParams>({
         tag: 'admin',
       });
 
@@ -155,9 +157,75 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const [optionsRequest] = optionsRequests;
       expect(optionsRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(optionsRequest.searchParams).toEqualTypeOf<HttpSearchParams<OptionsSearchParams>>();
+      expectTypeOf(optionsRequest.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
+      expect(optionsRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(optionsRequest.searchParams).toEqual(searchParams);
       expect(optionsRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting OPTIONS requests having headers', async () => {
+    type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}`;
+    }>;
+    type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
+      Authorization?: `Bearer ${string}-response`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            headers: FilterOptionsRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: FilterOptionsResponseHeaders;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const authorizationHeader = request.headers.get('Authorization')!;
+        expect(authorizationHeader).not.toBe(null);
+
+        return {
+          status: 200,
+          headers: {
+            Authorization: `${authorizationHeader}-response`,
+          },
+        };
+      });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        headers: {
+          Authorization: 'Bearer token',
+        } satisfies FilterOptionsRequestHeaders,
+      });
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+      expect(optionsRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.headers.get('Authorization')).toBe('Bearer token');
+      expect(optionsRequest.headers.get('Keep-Alive')).toBe(null);
+
+      expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<FilterOptionsResponseHeaders>>();
+      expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
     });
   });
 

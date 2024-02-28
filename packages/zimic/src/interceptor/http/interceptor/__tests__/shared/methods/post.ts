@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -142,6 +143,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     }>({ worker, baseURL }, async (interceptor) => {
       const creationTracker = interceptor.post('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 201,
@@ -168,8 +170,79 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(creationRequest).toBeInstanceOf(Request);
 
       expectTypeOf(creationRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+      expect(creationRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(creationRequest.searchParams).toEqual(searchParams);
       expect(creationRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting POST requests having headers', async () => {
+    type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}`;
+    }>;
+    type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
+      Authorization?: `Bearer ${string}-response`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            headers: UserCreationRequestHeaders;
+          };
+          response: {
+            201: {
+              headers: UserCreationResponseHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor.post('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const authorizationHeader = request.headers.get('Authorization')!;
+        expect(authorizationHeader).not.toBe(null);
+
+        return {
+          status: 201,
+          headers: {
+            Authorization: `${authorizationHeader}-response`,
+          },
+          body: users[0],
+        };
+      });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token',
+        } satisfies UserCreationRequestHeaders,
+      });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
+      expect(creationRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(creationRequest.headers.get('Authorization')).toBe('Bearer token');
+      expect(creationRequest.headers.get('Keep-Alive')).toBe(null);
+
+      expectTypeOf(creationRequest.response.headers).toEqualTypeOf<HttpHeaders<UserCreationResponseHeaders>>();
+      expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(creationRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
     });
   });
 

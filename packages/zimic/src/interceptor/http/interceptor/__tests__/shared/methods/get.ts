@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -137,6 +138,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 200,
@@ -161,10 +163,79 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listRequest).toBeInstanceOf(Request);
 
       expectTypeOf(listRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+      expect(listRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(listRequest.searchParams).toEqual(searchParams);
       expect(listRequest.searchParams.get('name')).toBe('User 1');
       expect(listRequest.searchParams.getAll('orderBy')).toEqual(['createdAt', 'name']);
       expect(listRequest.searchParams.get('page')).toBe(null);
+    });
+  });
+
+  it('should support intercepting GET requests having headers', async () => {
+    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive'?: string;
+      Authorization?: `Bearer ${string}`;
+    }>;
+    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
+      Authorization?: `Bearer ${string}-response`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserListResponseHeaders;
+              body: User[];
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const authorizationHeader = request.headers.get('Authorization')!;
+        expect(authorizationHeader).not.toBe(null);
+
+        return {
+          status: 200,
+          headers: {
+            Authorization: `${authorizationHeader}-response`,
+          },
+          body: users,
+        };
+      });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer token',
+        } satisfies UserListRequestHeaders,
+      });
+      expect(listResponse.status).toBe(200);
+      expect(listResponse.headers.get('Authorization')).toBe('Bearer token-response');
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+      expect(listRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.headers.get('Authorization')).toBe('Bearer token');
+      expect(listRequest.headers.get('Keep-Alive')).toBe(null);
+
+      expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
+      expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
     });
   });
 
