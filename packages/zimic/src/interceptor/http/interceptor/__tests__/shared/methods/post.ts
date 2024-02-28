@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -124,7 +124,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting POST requests having search params', async () => {
-    type UserCreationSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 

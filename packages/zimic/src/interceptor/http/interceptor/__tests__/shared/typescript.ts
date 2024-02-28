@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import HttpSearchParams from '@/interceptor/http/searchParams/HttpSearchParams';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
@@ -52,7 +52,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type requests with search params', () => {
-    type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];

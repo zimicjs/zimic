@@ -2,13 +2,17 @@ import { ReplaceBy, Defined, ArrayItemIfArray, NonArrayKey, ArrayKey } from '@/t
 
 import { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './types';
 
-function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(searchParamsInit: Schema) {
-  return Object.entries(searchParamsInit).reduce<Record<string, string>>((accumulated, [key, value]) => {
-    if (value !== undefined && !Array.isArray(value)) {
-      accumulated[key] = value;
-    }
-    return accumulated;
-  }, {});
+function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
+  const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
+    (accumulated, [key, value]) => {
+      if (value !== undefined && !Array.isArray(value)) {
+        accumulated[key] = value;
+      }
+      return accumulated;
+    },
+    {},
+  );
+  return schemaWithPrimitiveProperties;
 }
 
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {

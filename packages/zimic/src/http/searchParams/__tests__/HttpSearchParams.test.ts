@@ -38,6 +38,23 @@ describe('HttpSearchParams', () => {
   });
 
   it('should support being created from an object', () => {
+    new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+    }>({
+      // @ts-expect-error The object should match the declared schema
+      otherParam: 'example',
+    });
+
+    new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+      // @ts-expect-error The object should match the declared schema
+    }>({
+      names: 'non-an-array',
+      page: 'not-a-number',
+    });
+
     const searchParams = new HttpSearchParams<{
       names?: string[];
       page?: `${number}`;
@@ -68,6 +85,7 @@ describe('HttpSearchParams', () => {
 
     const searchParams = new HttpSearchParams(otherSearchParams);
     expect(otherSearchParams).toEqual(searchParams);
+    expectTypeOf(searchParams).toEqualTypeOf<typeof otherSearchParams>();
 
     expect(searchParams.size).toBe(3);
 
@@ -249,9 +267,13 @@ describe('HttpSearchParams', () => {
     expectTypeOf(entries).toEqualTypeOf<['names' | 'page', string][]>();
 
     expect(entries).toHaveLength(3);
-    expect(entries).toContainEqual(['names', 'User1']);
-    expect(entries).toContainEqual(['names', 'User2']);
-    expect(entries).toContainEqual(['page', '1']);
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        ['names', 'User1'],
+        ['names', 'User2'],
+        ['page', '1'],
+      ]),
+    );
   });
 
   it('should support iterating over params using `forEach`', () => {
@@ -270,9 +292,13 @@ describe('HttpSearchParams', () => {
     });
 
     expect(entries).toHaveLength(3);
-    expect(entries).toContainEqual(['names', 'User1']);
-    expect(entries).toContainEqual(['names', 'User2']);
-    expect(entries).toContainEqual(['page', '1']);
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        ['names', 'User1'],
+        ['names', 'User2'],
+        ['page', '1'],
+      ]),
+    );
   });
 
   it('should support getting keys', () => {
@@ -317,8 +343,12 @@ describe('HttpSearchParams', () => {
     const entries = Array.from(searchParams.entries());
     expectTypeOf(entries).toEqualTypeOf<['names' | 'page', string][]>();
     expect(entries).toHaveLength(3);
-    expect(entries).toContainEqual(['names', 'User1']);
-    expect(entries).toContainEqual(['names', 'User2']);
-    expect(entries).toContainEqual(['page', '1']);
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        ['names', 'User1'],
+        ['names', 'User2'],
+        ['page', '1'],
+      ]),
+    );
   });
 });

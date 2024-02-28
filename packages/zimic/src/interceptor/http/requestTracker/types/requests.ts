@@ -1,3 +1,5 @@
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { Default, PossiblePromise } from '@/types/utils';
 
 import {
@@ -5,8 +7,6 @@ import {
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaStatusCode,
 } from '../../interceptor/types/schema';
-import { HttpRequest, HttpResponse } from '../../interceptorWorker/types/requests';
-import HttpSearchParams from '../../searchParams/HttpSearchParams';
 
 export type HttpRequestTrackerResponseAttribute<
   ResponseSchema extends HttpInterceptorResponseSchema,
