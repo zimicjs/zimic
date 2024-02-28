@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
@@ -81,11 +82,13 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const userName = `User (other ${Math.random()})`;
+      const user: User = {
+        name: 'User (computed)',
+      };
 
       const listTracker = interceptor.get('/users').respond(() => ({
         status: 200,
-        body: [{ name: userName }],
+        body: [user],
       }));
       expect(listTracker).toBeInstanceOf(HttpRequestTracker);
 
@@ -96,7 +99,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listResponse.status).toBe(200);
 
       const fetchedUsers = (await listResponse.json()) as User[];
-      expect(fetchedUsers).toEqual<User[]>([{ name: userName }]);
+      expect(fetchedUsers).toEqual<User[]>([user]);
 
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
@@ -112,7 +115,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listRequest.response.status).toEqual(200);
 
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
-      expect(listRequest.response.body).toEqual<User[]>([{ name: userName }]);
+      expect(listRequest.response.body).toEqual<User[]>([user]);
     });
   });
 
@@ -137,6 +140,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>({ worker, baseURL }, async (interceptor) => {
       const listTracker = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
         return {
           status: 200,
@@ -161,10 +165,80 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listRequest).toBeInstanceOf(Request);
 
       expectTypeOf(listRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+      expect(listRequest.searchParams).toBeInstanceOf(HttpSearchParams);
       expect(listRequest.searchParams).toEqual(searchParams);
       expect(listRequest.searchParams.get('name')).toBe('User 1');
       expect(listRequest.searchParams.getAll('orderBy')).toEqual(['createdAt', 'name']);
       expect(listRequest.searchParams.get('page')).toBe(null);
+    });
+  });
+
+  it('should support intercepting GET requests having headers', async () => {
+    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserListResponseHeaders;
+              body: User[];
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+          body: users,
+        };
+      });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+        } satisfies UserListRequestHeaders,
+      });
+      expect(listResponse.status).toBe(200);
+      expect(listResponse.headers.get('content-type')).toBe('application/json');
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+      expect(listRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
+      expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

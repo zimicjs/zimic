@@ -6,6 +6,8 @@ import {
   passthrough,
 } from 'msw';
 
+import HttpHeaders, { HttpHeadersInit } from '@/http/headers/HttpHeaders';
+import { HttpHeadersSchema } from '@/http/headers/types';
 import { DefaultBody, HttpResponse, HttpRequest } from '@/http/types/requests';
 import { Default } from '@/types/utils';
 
@@ -218,26 +220,36 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return this.httpHandlerGroups.map((group) => group.interceptor);
   }
 
-  static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(
-    responseDeclaration: Declaration,
-  ): HttpResponse<Declaration['body'], Declaration['status']> {
+  static createResponseFromDeclaration<
+    Declaration extends {
+      status: number;
+      headers?: HttpHeadersInit<HeadersSchema>;
+      body?: DefaultBody;
+    },
+    HeadersSchema extends HttpHeadersSchema,
+  >(responseDeclaration: Declaration) {
     const response = MSWHttpResponse.json(responseDeclaration.body, {
+      headers: new HttpHeaders(responseDeclaration.headers),
       status: responseDeclaration.status,
     });
-    return response as typeof response & {
-      status: Declaration['status'];
-      body: Declaration['body'];
-    };
+
+    return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }
 
   static async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
     rawRequest: HttpRequest,
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
     const rawRequestClone = rawRequest.clone();
-    const parsedBody = await this.parseRawBody(rawRequest);
+
+    type BodySchema = Default<Default<MethodSchema['request']>['body']>;
+    const parsedBody = await this.parseRawBody<BodySchema>(rawRequest);
+
+    type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
+    const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
     const parsedURL = new URL(rawRequest.url);
-    const searchParams = new HttpSearchParams(parsedURL.searchParams);
+    type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
+    const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
@@ -251,13 +263,16 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === 'body') {
+        if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
           return parsedBody;
         }
-        if (property === 'searchParams') {
+        if (property === ('headers' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+          return headers;
+        }
+        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
           return searchParams;
         }
-        if (property === 'raw') {
+        if (property === ('raw' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
           return rawRequestClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -276,7 +291,12 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(rawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponseClone = rawResponse.clone();
-    const parsedBody = await this.parseRawBody(rawResponse);
+
+    type BodySchema = Default<Default<MethodSchema['response']>[StatusCode]['body']>;
+    const parsedBody = await this.parseRawBody<BodySchema>(rawResponse);
+
+    type HeadersSchema = Default<Default<MethodSchema['response']>[StatusCode]['headers']>;
+    const headers = new HttpHeaders<HeadersSchema>(rawResponse.headers);
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
       has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
@@ -290,10 +310,13 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
-        if (property === 'body') {
+        if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
+          return headers;
+        }
+        if (property === ('body' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
           return parsedBody;
         }
-        if (property === 'raw') {
+        if (property === ('raw' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
           return rawResponseClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -307,7 +330,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
   }
 
-  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest<Body> | HttpResponse<Body>) {
+  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest | HttpResponse) {
     const bodyAsText = await requestOrResponse.text();
 
     try {

@@ -1,3 +1,4 @@
+import { HttpHeadersSchema } from '@/http/headers/types';
 import { HttpSearchParamsSchema } from '@/http/searchParams/types';
 import { DefaultBody } from '@/http/types/requests';
 import { Default, UnionToIntersection, Prettify, IfAny } from '@/types/utils';
@@ -8,16 +9,20 @@ import { HttpInterceptor } from './public';
 export const HTTP_INTERCEPTOR_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 export type HttpInterceptorMethod = (typeof HTTP_INTERCEPTOR_METHODS)[number];
 
+export type HttpInterceptorHeadersSchema = HttpHeadersSchema;
+
 export type HttpInterceptorSearchParamsSchema = HttpSearchParamsSchema;
 
 export type HttpInterceptorBodySchema = DefaultBody;
 
 export interface HttpInterceptorRequestSchema {
+  headers?: HttpInterceptorHeadersSchema;
   searchParams?: HttpInterceptorSearchParamsSchema;
   body?: HttpInterceptorBodySchema;
 }
 
 export interface HttpInterceptorResponseSchema {
+  headers?: HttpInterceptorHeadersSchema;
   body?: HttpInterceptorBodySchema;
 }
 
@@ -57,6 +62,7 @@ export namespace HttpInterceptorSchema {
 
   export type ResponseByStatusCode<Schema extends HttpInterceptorResponseSchemaByStatusCode> = Prettify<Schema>;
 
+  export type Headers<Schema extends HttpInterceptorHeadersSchema> = Prettify<Schema>;
   export type SearchParams<Schema extends HttpInterceptorSearchParamsSchema> = Prettify<Schema>;
 }
 

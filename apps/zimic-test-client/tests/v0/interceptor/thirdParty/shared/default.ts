@@ -53,10 +53,14 @@ type UsersSchema = HttpInterceptorSchema.Root<{
   '/users': {
     POST: {
       request: {
+        headers: { 'content-type'?: string };
         body: UserCreationPayload;
       };
       response: {
-        201: { body: User };
+        201: {
+          headers: { 'x-user-id': User['id'] };
+          body: User;
+        };
         400: { body: ValidationError };
         409: { body: ConflictError };
       };
@@ -202,21 +206,28 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       async function createUser(payload: UserCreationPayload) {
         const request = new Request('http://localhost:3000/users', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
         return fetch(request);
       }
 
       it('should support creating users', async () => {
-        const creationTracker = authInterceptor.post('/users').respond((request) => ({
-          status: 201,
-          body: {
+        const creationTracker = authInterceptor.post('/users').respond((request) => {
+          expect(request.headers.get('content-type')).toBe('application/json');
+
+          const user: User = {
             id: crypto.randomUUID(),
             name: request.body.name,
             email: request.body.email,
-          },
-        }));
+          };
+
+          return {
+            status: 201,
+            headers: { 'x-user-id': user.id },
+            body: user,
+          };
+        });
 
         const response = await createUser(creationPayload);
         expect(response.status).toBe(201);
@@ -227,6 +238,8 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           name: creationPayload.name,
           email: creationPayload.email,
         });
+
+        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
 
         const creationRequests = creationTracker.requests();
         expect(creationRequests).toHaveLength(1);

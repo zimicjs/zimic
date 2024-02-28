@@ -16,6 +16,6 @@ export async function nodeFetchAsFetch(request: Request): Promise<Response> {
   return new Response(responseBody, {
     status: response.status,
     statusText: response.statusText,
-    headers: convertObjectToHeaders({ ...response.headers }),
+    headers: convertObjectToHeaders(Object.fromEntries(response.headers)),
   });
 }

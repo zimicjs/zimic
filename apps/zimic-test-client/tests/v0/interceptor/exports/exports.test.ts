@@ -7,6 +7,9 @@ import {
   HttpSearchParams,
   type HttpSearchParamsSchema,
   type HttpSearchParamsSchemaTuple,
+  HttpHeadersSchema,
+  HttpHeadersSchemaTuple,
+  HttpHeaders,
 } from 'zimic0';
 import {
   createHttpInterceptor,
@@ -60,6 +63,12 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
+
+    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+
+    expectTypeOf<HttpHeaders>().not.toBeAny();
+    expect(new HttpHeaders()).toBeInstanceOf(Headers);
 
     expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
     expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
