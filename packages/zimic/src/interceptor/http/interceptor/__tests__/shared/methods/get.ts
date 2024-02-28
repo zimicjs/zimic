@@ -82,11 +82,13 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const userName = `User (other ${Math.random()})`;
+      const user: User = {
+        name: 'User (computed)',
+      };
 
       const listTracker = interceptor.get('/users').respond(() => ({
         status: 200,
-        body: [{ name: userName }],
+        body: [user],
       }));
       expect(listTracker).toBeInstanceOf(HttpRequestTracker);
 
@@ -97,7 +99,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listResponse.status).toBe(200);
 
       const fetchedUsers = (await listResponse.json()) as User[];
-      expect(fetchedUsers).toEqual<User[]>([{ name: userName }]);
+      expect(fetchedUsers).toEqual<User[]>([user]);
 
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
@@ -113,7 +115,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listRequest.response.status).toEqual(200);
 
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
-      expect(listRequest.response.body).toEqual<User[]>([{ name: userName }]);
+      expect(listRequest.response.body).toEqual<User[]>([user]);
     });
   });
 
