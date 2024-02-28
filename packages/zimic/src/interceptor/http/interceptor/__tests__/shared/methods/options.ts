@@ -166,11 +166,11 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
   it('should support intercepting OPTIONS requests having headers', async () => {
     type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
     }>;
     type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
-      Authorization?: `Bearer ${string}-response`;
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -191,13 +191,14 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const authorizationHeader = request.headers.get('Authorization')!;
-        expect(authorizationHeader).not.toBe(null);
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
 
         return {
           status: 200,
           headers: {
-            Authorization: `${authorizationHeader}-response`,
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
           },
         };
       });
@@ -209,7 +210,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsResponse = await fetch(`${baseURL}/filters`, {
         method: 'OPTIONS',
         headers: {
-          Authorization: 'Bearer token',
+          accept: 'application/json',
         } satisfies FilterOptionsRequestHeaders,
       });
       expect(optionsResponse.status).toBe(200);
@@ -220,12 +221,12 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
       expectTypeOf(optionsRequest.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
       expect(optionsRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(optionsRequest.headers.get('Authorization')).toBe('Bearer token');
-      expect(optionsRequest.headers.get('Keep-Alive')).toBe(null);
+      expect(optionsRequest.headers.get('accept')).toBe('application/json');
 
       expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<FilterOptionsResponseHeaders>>();
       expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(optionsRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(optionsRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(optionsRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

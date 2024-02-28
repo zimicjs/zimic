@@ -178,11 +178,11 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   it('should support intercepting POST requests having headers', async () => {
     type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
     }>;
     type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
-      Authorization?: `Bearer ${string}-response`;
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -204,13 +204,14 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const authorizationHeader = request.headers.get('Authorization')!;
-        expect(authorizationHeader).not.toBe(null);
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
 
         return {
           status: 201,
           headers: {
-            Authorization: `${authorizationHeader}-response`,
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
           },
           body: users[0],
         };
@@ -223,7 +224,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       const creationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
         headers: {
-          Authorization: 'Bearer token',
+          accept: 'application/json',
         } satisfies UserCreationRequestHeaders,
       });
       expect(creationResponse.status).toBe(201);
@@ -237,12 +238,12 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       expectTypeOf(creationRequest.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
       expect(creationRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(creationRequest.headers.get('Authorization')).toBe('Bearer token');
-      expect(creationRequest.headers.get('Keep-Alive')).toBe(null);
+      expect(creationRequest.headers.get('accept')).toBe('application/json');
 
       expectTypeOf(creationRequest.response.headers).toEqualTypeOf<HttpHeaders<UserCreationResponseHeaders>>();
       expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(creationRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(creationRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(creationRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

@@ -174,12 +174,11 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
   it('should support intercepting DELETE requests having headers', async () => {
     type UserDeletionRequestHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
     }>;
     type UserDeletionResponseHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}-response`;
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -201,13 +200,14 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const authorizationHeader = request.headers.get('Authorization')!;
-        expect(authorizationHeader).not.toBe(null);
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
 
         return {
           status: 200,
           headers: {
-            Authorization: `${authorizationHeader}-response`,
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
           },
           body: users[0],
         };
@@ -220,7 +220,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       const deletionResponse = await fetch(`${baseURL}/users/${1}`, {
         method: 'DELETE',
         headers: {
-          Authorization: 'Bearer token',
+          accept: 'application/json',
         } satisfies UserDeletionRequestHeaders,
       });
       expect(deletionResponse.status).toBe(200);
@@ -231,12 +231,12 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
       expectTypeOf(deletionRequest.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
       expect(deletionRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(deletionRequest.headers.get('Authorization')).toBe('Bearer token');
-      expect(deletionRequest.headers.get('Keep-Alive')).toBe(null);
+      expect(deletionRequest.headers.get('accept')).toBe('application/json');
 
       expectTypeOf(deletionRequest.response.headers).toEqualTypeOf<HttpHeaders<UserDeletionResponseHeaders>>();
       expect(deletionRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(deletionRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(deletionRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(deletionRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

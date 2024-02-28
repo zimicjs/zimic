@@ -5,159 +5,158 @@ import HttpHeaders from '../HttpHeaders';
 describe('HttpHeaders', () => {
   it('should support being created from raw Headers', () => {
     const headers = new HttpHeaders<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
+      'content-type'?: `application/${string}`;
     }>(
       new Headers({
-        'Keep-Alive': 'timeout=5, max=1000',
-        Authorization: 'Bearer token',
+        accept: '*/*',
+        'content-type': 'application/json',
       }),
     );
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support being created from an object', () => {
     new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
       // @ts-expect-error The object should match the declared schema
-      'Other-Header': 'timeout=5, max=1000',
-      Authorization: 'non-a-bearer',
+      referer: 'https://example.com',
     });
 
     new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
       // @ts-expect-error The object should match the declared schema
     }>({
-      Authorization: 'non-a-bearer',
+      'content-type': 'not-an-application-content-type',
     });
 
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: undefined,
+      accept: '*/*',
+      'content-type': undefined,
     });
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe(null);
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe(null);
   });
 
   it('should support being created from another HttpHeaders', () => {
     const otherHeaders = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const headers = new HttpHeaders(otherHeaders);
     expect(headers).toEqual(otherHeaders);
     expectTypeOf(headers).toEqualTypeOf<typeof otherHeaders>();
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support being created from header tuples', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>([
-      ['Keep-Alive', 'timeout=5'],
-      ['Keep-Alive', 'max=1000'],
-      ['Authorization', 'Bearer token'],
+      ['accept', 'image/png'],
+      ['accept', 'image/jpeg'],
+      ['content-type', 'application/json'],
     ]);
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('image/png, image/jpeg');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support setting headers', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>();
 
-    headers.set('Keep-Alive', 'timeout=5, max=1000');
+    headers.set('accept', '*/*');
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
 
-    let authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe(null);
+    let contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe(null);
 
-    headers.set('Authorization', 'Bearer token');
+    headers.set('content-type', 'application/json');
 
-    authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support appending headers', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>();
 
-    headers.append('Keep-Alive', 'timeout=5');
-    headers.append('Keep-Alive', 'max=1000');
+    headers.append('accept', 'image/png');
+    headers.append('accept', 'image/jpeg');
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('image/png, image/jpeg');
 
-    headers.append('Authorization', 'Bearer token');
+    headers.append('content-type', 'application/json');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support getting a header', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
-    const keepAliveHeader = headers.get('Keep-Alive');
-    expectTypeOf(keepAliveHeader).toEqualTypeOf<string | null>();
-    expect(keepAliveHeader).toBe('timeout=5, max=1000');
+    const acceptHeader = headers.get('accept');
+    expectTypeOf(acceptHeader).toEqualTypeOf<string | null>();
+    expect(acceptHeader).toBe('*/*');
 
-    const authorizationHeader = headers.get('Authorization');
-    expectTypeOf(authorizationHeader).toEqualTypeOf<`Bearer ${string}` | null>();
-    expect(authorizationHeader).toBe('Bearer token');
+    const contentTypeHeader = headers.get('content-type');
+    expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
+    expect(contentTypeHeader).toBe('application/json');
   });
 
   it('should support getting a `Set-Cookie` header', () => {
@@ -184,70 +183,70 @@ describe('HttpHeaders', () => {
 
   it('should support checking if headers exist', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>();
 
-    expect(headers.has('Keep-Alive')).toBe(false);
-    expect(headers.has('Authorization')).toBe(false);
+    expect(headers.has('accept')).toBe(false);
+    expect(headers.has('content-type')).toBe(false);
 
-    headers.set('Keep-Alive', 'timeout=5, max=1000');
+    headers.set('accept', '*/*');
 
-    expect(headers.has('Keep-Alive')).toBe(true);
-    expect(headers.has('Authorization')).toBe(false);
+    expect(headers.has('accept')).toBe(true);
+    expect(headers.has('content-type')).toBe(false);
 
-    headers.set('Authorization', 'Bearer token');
+    headers.set('content-type', 'application/json');
 
-    expect(headers.has('Keep-Alive')).toBe(true);
-    expect(headers.has('Authorization')).toBe(true);
+    expect(headers.has('accept')).toBe(true);
+    expect(headers.has('content-type')).toBe(true);
   });
 
   it('should support deleting headers', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
-    expect(headers.has('Keep-Alive')).toBe(true);
-    headers.delete('Keep-Alive');
-    expect(headers.has('Keep-Alive')).toBe(false);
+    expect(headers.has('accept')).toBe(true);
+    headers.delete('accept');
+    expect(headers.has('accept')).toBe(false);
 
-    expect(headers.has('Authorization')).toBe(true);
-    headers.delete('Authorization');
-    expect(headers.has('Authorization')).toBe(false);
+    expect(headers.has('content-type')).toBe(true);
+    headers.delete('content-type');
+    expect(headers.has('content-type')).toBe(false);
   });
 
   it('should support iterating over headers', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const entries = Array.from(headers);
-    expectTypeOf(entries).toEqualTypeOf<['Keep-Alive' | 'Authorization', string][]>();
+    expectTypeOf(entries).toEqualTypeOf<['accept' | 'content-type', string][]>();
 
     expect(entries).toHaveLength(2);
     expect(entries).toEqual(
       expect.arrayContaining([
-        ['keep-alive', 'timeout=5, max=1000'],
-        ['authorization', 'Bearer token'],
+        ['accept', '*/*'],
+        ['content-type', 'application/json'],
       ]),
     );
   });
 
   it('should support iterating over headers using `forEach`', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const entries: [string, string][] = [];
@@ -259,61 +258,61 @@ describe('HttpHeaders', () => {
     expect(entries).toHaveLength(2);
     expect(entries).toEqual(
       expect.arrayContaining([
-        ['keep-alive', 'timeout=5, max=1000'],
-        ['authorization', 'Bearer token'],
+        ['accept', '*/*'],
+        ['content-type', 'application/json'],
       ]),
     );
   });
 
   it('should support getting keys', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const keys = Array.from(headers.keys());
-    expectTypeOf(keys).toEqualTypeOf<('Keep-Alive' | 'Authorization')[]>();
+    expectTypeOf(keys).toEqualTypeOf<('accept' | 'content-type')[]>();
 
     expect(keys).toHaveLength(2);
-    expect(keys).toEqual(expect.arrayContaining(['keep-alive', 'authorization']));
+    expect(keys).toEqual(expect.arrayContaining(['accept', 'accept']));
   });
 
   it('should support getting values', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const values = Array.from(headers.values());
     expectTypeOf(values).toEqualTypeOf<string[]>();
 
     expect(values).toHaveLength(2);
-    expect(values).toEqual(expect.arrayContaining(['timeout=5, max=1000', 'Bearer token']));
+    expect(values).toEqual(expect.arrayContaining(['*/*', 'application/json']));
   });
 
   it('should support getting entries', () => {
     const headers = new HttpHeaders<{
-      ['Keep-Alive']?: string;
-      Authorization?: `Bearer ${string}`;
+      ['accept']?: string;
+      'content-type'?: `application/${string}`;
     }>({
-      'Keep-Alive': 'timeout=5, max=1000',
-      Authorization: 'Bearer token',
+      accept: '*/*',
+      'content-type': 'application/json',
     });
 
     const entries = Array.from(headers.entries());
-    expectTypeOf(entries).toEqualTypeOf<['Keep-Alive' | 'Authorization', string][]>();
+    expectTypeOf(entries).toEqualTypeOf<['accept' | 'content-type', string][]>();
 
     expect(entries).toHaveLength(2);
     expect(entries).toEqual(
       expect.arrayContaining([
-        ['keep-alive', 'timeout=5, max=1000'],
-        ['authorization', 'Bearer token'],
+        ['accept', '*/*'],
+        ['content-type', 'application/json'],
       ]),
     );
   });

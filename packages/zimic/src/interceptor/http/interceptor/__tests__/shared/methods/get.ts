@@ -173,11 +173,11 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support intercepting GET requests having headers', async () => {
     type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
     }>;
     type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
-      Authorization?: `Bearer ${string}-response`;
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -199,13 +199,14 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const authorizationHeader = request.headers.get('Authorization')!;
-        expect(authorizationHeader).not.toBe(null);
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
 
         return {
           status: 200,
           headers: {
-            Authorization: `${authorizationHeader}-response`,
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
           },
           body: users,
         };
@@ -218,11 +219,11 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       const listResponse = await fetch(`${baseURL}/users`, {
         method: 'GET',
         headers: {
-          Authorization: 'Bearer token',
+          accept: 'application/json',
         } satisfies UserListRequestHeaders,
       });
       expect(listResponse.status).toBe(200);
-      expect(listResponse.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(listResponse.headers.get('content-type')).toBe('application/json');
 
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
@@ -230,12 +231,12 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       expectTypeOf(listRequest.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
       expect(listRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(listRequest.headers.get('Authorization')).toBe('Bearer token');
-      expect(listRequest.headers.get('Keep-Alive')).toBe(null);
+      expect(listRequest.headers.get('accept')).toBe('application/json');
 
       expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
       expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(listRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(listRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

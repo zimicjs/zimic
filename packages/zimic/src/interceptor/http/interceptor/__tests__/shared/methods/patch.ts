@@ -175,11 +175,11 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should support intercepting PATCH requests having headers', async () => {
     type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive'?: string;
-      Authorization?: `Bearer ${string}`;
+      accept?: string;
     }>;
     type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
-      Authorization?: `Bearer ${string}-response`;
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
@@ -201,13 +201,14 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const authorizationHeader = request.headers.get('Authorization')!;
-        expect(authorizationHeader).not.toBe(null);
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
 
         return {
           status: 200,
           headers: {
-            Authorization: `${authorizationHeader}-response`,
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
           },
           body: users[0],
         };
@@ -220,7 +221,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateResponse = await fetch(`${baseURL}/users`, {
         method: 'PATCH',
         headers: {
-          Authorization: 'Bearer token',
+          accept: 'application/json',
         } satisfies UserUpdateRequestHeaders,
       });
       expect(updateResponse.status).toBe(200);
@@ -231,12 +232,12 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
       expectTypeOf(updateRequest.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
       expect(updateRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(updateRequest.headers.get('Authorization')).toBe('Bearer token');
-      expect(updateRequest.headers.get('Keep-Alive')).toBe(null);
+      expect(updateRequest.headers.get('accept')).toBe('application/json');
 
       expectTypeOf(updateRequest.response.headers).toEqualTypeOf<HttpHeaders<UserUpdateResponseHeaders>>();
       expect(updateRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(updateRequest.response.headers.get('Authorization')).toBe('Bearer token-response');
+      expect(updateRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(updateRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

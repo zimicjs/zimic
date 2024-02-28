@@ -113,8 +113,8 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   it('should correctly type requests with headers', () => {
     type UserListHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive': string;
-      Authorization: string;
+      accept: string;
+      'content-type': string;
     }>;
 
     const interceptor = createHttpInterceptor<{
@@ -171,7 +171,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   it('should correctly type responses with headers', () => {
     type UserListHeaders = HttpInterceptorSchema.Headers<{
-      'Keep-Alive': string;
+      accept: string;
     }>;
 
     const interceptor = createHttpInterceptor<{
@@ -190,7 +190,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     const creationTracker = interceptor.get('/users').respond({
       status: 200,
       headers: {
-        'Keep-Alive': 'timeout=5, max=1000',
+        accept: '*/*',
       },
       body: users[0],
     });
