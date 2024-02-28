@@ -116,7 +116,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having search params', async () => {
-    type OptionsSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type OptionsSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 

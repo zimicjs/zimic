@@ -44,7 +44,7 @@ interface ConflictError extends RequestError {
   code: 'conflict';
 }
 
-type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
 }>;

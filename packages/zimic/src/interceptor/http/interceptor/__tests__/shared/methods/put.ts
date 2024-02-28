@@ -124,7 +124,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
   });
 
   it('should support intercepting PUT requests having search params', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 

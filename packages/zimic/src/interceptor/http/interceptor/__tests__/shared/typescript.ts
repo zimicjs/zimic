@@ -52,7 +52,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type requests with search params', () => {
-    type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];

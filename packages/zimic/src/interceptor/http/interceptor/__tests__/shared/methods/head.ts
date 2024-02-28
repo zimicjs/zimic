@@ -101,7 +101,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests having search params', async () => {
-    type UserHeadSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserHeadSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 

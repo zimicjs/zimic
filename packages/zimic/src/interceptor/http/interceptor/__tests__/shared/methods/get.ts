@@ -117,7 +117,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
   });
 
   it('should support intercepting GET requests having search params', async () => {
-    type UserListSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
       name?: string;
       orderBy?: ('name' | 'createdAt')[];
       page?: `${number}`;

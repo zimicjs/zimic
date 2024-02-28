@@ -51,12 +51,13 @@ export namespace HttpInterceptorSchema {
 
   export type Request<Schema extends HttpInterceptorRequestSchema> = Prettify<Schema>;
   export type RequestBody<Schema extends HttpInterceptorBodySchema> = Prettify<Schema>;
-  export type RequestSearchParams<Schema extends HttpInterceptorSearchParamsSchema> = Prettify<Schema>;
 
   export type Response<Schema extends HttpInterceptorResponseSchema> = Prettify<Schema>;
   export type ResponseBody<Schema extends HttpInterceptorBodySchema> = Prettify<Schema>;
 
   export type ResponseByStatusCode<Schema extends HttpInterceptorResponseSchemaByStatusCode> = Prettify<Schema>;
+
+  export type SearchParams<Schema extends HttpInterceptorSearchParamsSchema> = Prettify<Schema>;
 }
 
 export type ExtractHttpInterceptorSchema<Interceptor> =

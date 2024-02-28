@@ -123,7 +123,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
   });
 
   it('should support intercepting DELETE requests having search params', async () => {
-    type UserDeleteSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserDeleteSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 

@@ -124,7 +124,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting POST requests having search params', async () => {
-    type UserCreationSearchParams = HttpInterceptorSchema.RequestSearchParams<{
+    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
     }>;
 
