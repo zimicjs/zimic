@@ -53,7 +53,7 @@ type UsersSchema = HttpInterceptorSchema.Root<{
   '/users': {
     POST: {
       request: {
-        headers: { 'Content-Type'?: string };
+        headers: { 'content-type'?: string };
         body: UserCreationPayload;
       };
       response: {
@@ -206,7 +206,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       async function createUser(payload: UserCreationPayload) {
         const request = new Request('http://localhost:3000/users', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
         return fetch(request);
@@ -214,7 +214,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
       it('should support creating users', async () => {
         const creationTracker = authInterceptor.post('/users').respond((request) => {
-          expect(request.headers.get('Content-Type')).toBe('application/json');
+          expect(request.headers.get('content-type')).toBe('application/json');
 
           const user: User = {
             id: crypto.randomUUID(),
