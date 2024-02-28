@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 
@@ -108,6 +109,116 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     const creationRequests = creationTracker.requests();
     type RequestSearchParams = (typeof creationRequests)[number]['searchParams'];
     expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams>();
+  });
+
+  it('should correctly type requests with headers', () => {
+    type UserListHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive': string;
+      Authorization: string;
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestHeaders = (typeof creationRequests)[number]['headers'];
+    expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+  });
+
+  it('should correctly type requests with no headers', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<never>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestHeaders = (typeof creationRequests)[number]['headers'];
+    expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+  });
+
+  it('should correctly type responses with headers', () => {
+    type UserListHeaders = HttpInterceptorSchema.Headers<{
+      'Keep-Alive': string;
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond({
+      status: 200,
+      headers: {
+        'Keep-Alive': 'timeout=5, max=1000',
+      },
+      body: users[0],
+    });
+
+    const creationRequests = creationTracker.requests();
+    type ResponseHeaders = (typeof creationRequests)[number]['response']['headers'];
+    expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+  });
+
+  it('should correctly type responses with no headers', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond({
+      status: 200,
+      body: users[0],
+    });
+
+    const creationRequests = creationTracker.requests();
+    type ResponseHeaders = (typeof creationRequests)[number]['response']['headers'];
+    expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
   });
 
   it('should correctly type requests with dynamic paths', () => {
