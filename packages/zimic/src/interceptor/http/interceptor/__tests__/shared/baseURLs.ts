@@ -28,7 +28,7 @@ export function declareBaseURLHttpInterceptorTests(options: SharedHttpIntercepto
     { baseURL: `${defaultBaseURL}/api/`, path: 'path' },
     { baseURL: `${defaultBaseURL}/api`, path: '/path' },
     { baseURL: `${defaultBaseURL}/api/`, path: '/path' },
-  ])(`should handle base URL '$baseURL' and path '$path' correctly`, async ({ baseURL, path }) => {
+  ])(`should handle base URL $baseURL and path $path correctly`, async ({ baseURL, path }) => {
     await usingHttpInterceptor<{
       ':any': {
         GET: {
