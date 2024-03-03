@@ -5,13 +5,11 @@ import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/Unre
 export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
 export type { HttpInterceptorWorkerOptions } from './http/interceptorWorker/types/options';
 export { HttpInterceptorWorkerPlatform } from './http/interceptorWorker/types/options';
-export type { DefaultBody, HttpRequest, HttpResponse } from './http/interceptorWorker/types/requests';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export { UnregisteredServiceWorkerError, NotStartedHttpInterceptorWorkerError, InvalidHttpInterceptorWorkerPlatform };
 
 export type {
-  HttpRequestTrackerResponseAttribute,
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
   HttpInterceptorRequest,
@@ -26,6 +24,8 @@ export type { HttpInterceptorOptions } from './http/interceptor/types/options';
 export type {
   HttpInterceptorMethod,
   HttpInterceptorRequestSchema,
+  HttpInterceptorSearchParamsSchema,
+  HttpInterceptorBodySchema,
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaByStatusCode,
   HttpInterceptorResponseSchemaStatusCode,

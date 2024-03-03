@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "dom.iterable"]
+  },
+  "include": ["**/*.ts", "**/*.mts", "tests/resolver.js"],
+  "exclude": ["node_modules"]
+}

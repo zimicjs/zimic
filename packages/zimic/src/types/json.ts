@@ -1,3 +1,4 @@
+/** Value that can be represented in JSON. */
 export type JSONValue =
   | {
       [Key in never]: JSONValue;

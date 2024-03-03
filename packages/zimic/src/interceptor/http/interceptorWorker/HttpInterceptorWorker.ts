@@ -6,8 +6,12 @@ import {
   passthrough,
 } from 'msw';
 
+import HttpHeaders, { HttpHeadersInit } from '@/http/headers/HttpHeaders';
+import { HttpHeadersSchema } from '@/http/headers/types';
+import { DefaultBody, HttpResponse, HttpRequest } from '@/http/types/requests';
 import { Default } from '@/types/utils';
 
+import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import { HttpInterceptor } from '../interceptor/types/public';
 import {
   HttpInterceptorMethod,
@@ -22,23 +26,16 @@ import {
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
 import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
+import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
-import { HttpInterceptorWorker } from './types/public';
-import {
-  DefaultBody,
-  BrowserHttpWorker,
-  HttpRequestHandler,
-  HttpWorker,
-  HttpResponse,
-  HttpRequest,
-  NodeHttpWorker,
-} from './types/requests';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
+import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
 
-class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
-  private static runningInstance?: InternalHttpInterceptorWorker;
+class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
+  private static runningInstance?: HttpInterceptorWorker;
 
   private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
@@ -78,9 +75,19 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   private async createInternalWorker() {
     if (this._platform === 'browser') {
       const { setupWorker } = await import('msw/browser');
+
+      if (typeof setupWorker === 'undefined') {
+        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
+      }
+
       return setupWorker();
     } else {
       const { setupServer } = await import('msw/node');
+
+      if (typeof setupServer === 'undefined') {
+        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
+      }
+
       return setupServer();
     }
   }
@@ -94,7 +101,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 
   async start() {
-    if (InternalHttpInterceptorWorker.runningInstance && InternalHttpInterceptorWorker.runningInstance !== this) {
+    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
       throw new OtherHttpInterceptorWorkerRunningError();
     }
 
@@ -112,7 +119,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     }
 
     this._isRunning = true;
-    InternalHttpInterceptorWorker.runningInstance = this;
+    HttpInterceptorWorker.runningInstance = this;
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -150,7 +157,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     this.clearHandlers();
 
     this._isRunning = false;
-    InternalHttpInterceptorWorker.runningInstance = undefined;
+    HttpInterceptorWorker.runningInstance = undefined;
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
@@ -213,16 +220,20 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     return this.httpHandlerGroups.map((group) => group.interceptor);
   }
 
-  static createResponseFromDeclaration<Declaration extends { status: number; body?: DefaultBody }>(
-    responseDeclaration: Declaration,
-  ): HttpResponse<Declaration['body'], Declaration['status']> {
+  static createResponseFromDeclaration<
+    Declaration extends {
+      status: number;
+      headers?: HttpHeadersInit<HeadersSchema>;
+      body?: DefaultBody;
+    },
+    HeadersSchema extends HttpHeadersSchema,
+  >(responseDeclaration: Declaration) {
     const response = MSWHttpResponse.json(responseDeclaration.body, {
+      headers: new HttpHeaders(responseDeclaration.headers),
       status: responseDeclaration.status,
     });
-    return response as typeof response & {
-      status: Declaration['status'];
-      body: Declaration['body'];
-    };
+
+    return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }
 
   static async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
@@ -230,24 +241,38 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
     const rawRequestClone = rawRequest.clone();
 
-    const parsedBody = await this.parseRawBody(rawRequest);
+    type BodySchema = Default<Default<MethodSchema['request']>['body']>;
+    const parsedBody = await this.parseRawBody<BodySchema>(rawRequest);
+
+    type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
+    const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
+
+    const parsedURL = new URL(rawRequest.url);
+    type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
+    const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (InternalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === 'body') {
+        if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
           return parsedBody;
         }
-        if (property === 'raw') {
+        if (property === ('headers' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+          return headers;
+        }
+        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+          return searchParams;
+        }
+        if (property === ('raw' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
           return rawRequestClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -266,24 +291,32 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(rawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponseClone = rawResponse.clone();
-    const parsedBody = await this.parseRawBody(rawResponse);
+
+    type BodySchema = Default<Default<MethodSchema['response']>[StatusCode]['body']>;
+    const parsedBody = await this.parseRawBody<BodySchema>(rawResponse);
+
+    type HeadersSchema = Default<Default<MethodSchema['response']>[StatusCode]['headers']>;
+    const headers = new HttpHeaders<HeadersSchema>(rawResponse.headers);
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
       has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (InternalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
-        if (property === 'body') {
+        if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
+          return headers;
+        }
+        if (property === ('body' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
           return parsedBody;
         }
-        if (property === 'raw') {
+        if (property === ('raw' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
           return rawResponseClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -297,7 +330,7 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
     return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
   }
 
-  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest<Body> | HttpResponse<Body>) {
+  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest | HttpResponse) {
     const bodyAsText = await requestOrResponse.text();
 
     try {
@@ -309,4 +342,4 @@ class InternalHttpInterceptorWorker implements HttpInterceptorWorker {
   }
 }
 
-export default InternalHttpInterceptorWorker;
+export default HttpInterceptorWorker;

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "pipeline": {
+    "test:turbo": {
+      "dependsOn": ["^build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}

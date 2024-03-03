@@ -1,6 +1,6 @@
 import { Default } from '@/types/utils';
 
-import InternalHttpInterceptor from '../interceptor/InternalHttpInterceptor';
+import HttpInterceptor from '../interceptor/HttpInterceptor';
 import {
   HttpInterceptorResponseSchemaStatusCode,
   HttpInterceptorSchema,
@@ -8,7 +8,7 @@ import {
   HttpInterceptorSchemaPath,
 } from '../interceptor/types/schema';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import { HttpRequestTracker } from './types/public';
+import { HttpRequestTracker as PublicHttpRequestTracker } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -17,14 +17,14 @@ import {
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
-class InternalHttpRequestTracker<
+class HttpRequestTracker<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
   Path extends HttpInterceptorSchemaPath<Schema, Method>,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<
     Default<Default<Schema[Path][Method]>['response']>
   > = never,
-> implements HttpRequestTracker<Schema, Method, Path, StatusCode>
+> implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
@@ -34,7 +34,7 @@ class InternalHttpRequestTracker<
   >;
 
   constructor(
-    private interceptor: InternalHttpInterceptor<Schema>,
+    private interceptor: HttpInterceptor<Schema>,
     private _method: Method,
     private _path: Path,
   ) {}
@@ -53,8 +53,8 @@ class InternalHttpRequestTracker<
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
-  ): InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
-    const newThis = this as unknown as InternalHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+  ): HttpRequestTracker<Schema, Method, Path, NewStatusCode> {
+    const newThis = this as unknown as HttpRequestTracker<Schema, Method, Path, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
       ? declaration
@@ -77,7 +77,7 @@ class InternalHttpRequestTracker<
     return typeof declaration === 'function';
   }
 
-  bypass(): InternalHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
     this.interceptedRequests = [];
     return this;
@@ -124,4 +124,4 @@ class InternalHttpRequestTracker<
   }
 }
 
-export default InternalHttpRequestTracker;
+export default HttpRequestTracker;

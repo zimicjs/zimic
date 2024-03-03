@@ -66,20 +66,32 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Test released package
-        working-directory: apps/zimic-test-client
         run: |
-          sed -i 's/"zimic0": ".*"/"zimic0": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' package.json
+          sed -i \
+            's/link-workspace-packages = true/link-workspace-packages = false/' \
+            .npmrc
 
-          pnpm install --no-frozen-lockfile --filter .
+          for packageJSON in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
+            sed -E -i \
+              's/"zimic([0-9]?)": ".*"/"zimic\1": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' \
+              $packageJSON
+          done
+
+
+          pnpm install --no-frozen-lockfile
 
           pnpm turbo \
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            --filter zimic-test-client
+            --filter zimic-test-client \
+            --filter zimic-examples \
+            --filter 'zimic-example-*'
 
           pnpm turbo \
             test:turbo \
             --continue \
             --concurrency 1 \
-            --filter zimic-test-client
+            --filter zimic-test-client \
+            --filter zimic-examples \
+            --filter 'zimic-example-*'

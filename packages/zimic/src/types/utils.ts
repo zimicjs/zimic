@@ -17,3 +17,21 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union)
 export type Prettify<Type> = {
   [Key in keyof Type]: Type[Key];
 };
+
+export type NonUndefined<Type> = Exclude<Type, undefined>;
+
+export type NonNullable<Type> = Exclude<Type, null>;
+
+export type Defined<Type> = NonNullable<NonUndefined<Type>>;
+
+export type ArrayItemIfArray<Type> = Type extends (infer Item)[] ? Item : Type;
+
+type PickArrayProperties<Type> = {
+  [Key in keyof Type as never[] extends Type[Key] ? Key : never]: Type[Key];
+};
+
+export type ArrayKey<Type> = keyof PickArrayProperties<Type>;
+
+export type NonArrayKey<Type> = Exclude<keyof Type, ArrayKey<Type>>;
+
+export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;

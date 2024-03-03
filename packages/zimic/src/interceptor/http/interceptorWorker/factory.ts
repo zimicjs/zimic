@@ -1,6 +1,6 @@
-import InternalHttpInterceptorWorker from './InternalHttpInterceptorWorker';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerOptions } from './types/options';
-import { HttpInterceptorWorker } from './types/public';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
 
 /**
  * Creates an HTTP interceptor worker.
@@ -9,6 +9,6 @@ import { HttpInterceptorWorker } from './types/public';
  * @returns {HttpInterceptorWorker} The created HTTP interceptor worker.
  * @see {@link https://github.com/diego-aquino/zimic#createhttpinterceptorworker}
  */
-export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): HttpInterceptorWorker {
-  return new InternalHttpInterceptorWorker(options);
+export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): PublicHttpInterceptorWorker {
+  return new HttpInterceptorWorker(options);
 }

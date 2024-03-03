@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 
 import { createHttpInterceptor } from '../../factory';
@@ -50,7 +52,176 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     expectTypeOf<RequestBody>().toEqualTypeOf<User>();
   });
 
-  it('should correctly type requests with dynamic routes', () => {
+  it('should correctly type requests with search params', () => {
+    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+      name: string;
+      usernames: string[];
+      orderBy?: ('name' | 'createdAt')[];
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestSearchParams = (typeof creationRequests)[number]['searchParams'];
+    expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+  });
+
+  it('should correctly type requests with no search params', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestSearchParams = (typeof creationRequests)[number]['searchParams'];
+    expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams>();
+  });
+
+  it('should correctly type requests with headers', () => {
+    type UserListHeaders = HttpInterceptorSchema.Headers<{
+      accept: string;
+      'content-type': string;
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestHeaders = (typeof creationRequests)[number]['headers'];
+    expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+  });
+
+  it('should correctly type requests with no headers', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond((request) => {
+      expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<never>>();
+
+      return {
+        status: 200,
+        body: users[0],
+      };
+    });
+
+    const creationRequests = creationTracker.requests();
+    type RequestHeaders = (typeof creationRequests)[number]['headers'];
+    expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+  });
+
+  it('should correctly type responses with headers', () => {
+    type UserListHeaders = HttpInterceptorSchema.Headers<{
+      accept: string;
+    }>;
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond({
+      status: 200,
+      headers: {
+        accept: '*/*',
+      },
+      body: users[0],
+    });
+
+    const creationRequests = creationTracker.requests();
+    type ResponseHeaders = (typeof creationRequests)[number]['response']['headers'];
+    expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+  });
+
+  it('should correctly type responses with no headers', () => {
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL });
+
+    const creationTracker = interceptor.get('/users').respond({
+      status: 200,
+      body: users[0],
+    });
+
+    const creationRequests = creationTracker.requests();
+    type ResponseHeaders = (typeof creationRequests)[number]['response']['headers'];
+    expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+  });
+
+  it('should correctly type requests with dynamic paths', () => {
     const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         POST: {
@@ -75,7 +246,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
     expectTypeOf<GenericRequestBody>().toEqualTypeOf<User>();
 
-    // @ts-expect-error The literal path is required when using route param interpolation
+    // @ts-expect-error The literal path is required when using path param interpolation
     interceptor.post(`/groups/${1}/users`);
 
     const specificCreationTracker = interceptor.post<'/groups/:id/users'>(`/groups/${1}/users`).respond((request) => {
@@ -123,7 +294,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
   });
 
-  it('should correctly type responses with dynamic routes, based on the applied status code', () => {
+  it('should correctly type responses with dynamic paths, based on the applied status code', () => {
     const interceptor = createHttpInterceptor<{
       '/groups/:id/users': {
         GET: {
@@ -189,12 +360,12 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
 
     interceptor.get('/users').respond({
-      // @ts-expect-error
+      // @ts-expect-error The status code should match the schema
       status: 201,
       body: users,
     });
 
-    // @ts-expect-error
+    // @ts-expect-error The status code should match the schema
     interceptor.get('/users').respond(() => ({
       status: 201,
       body: users,
@@ -236,10 +407,10 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
     interceptor.get('/users').respond({
       status: 200,
-      // @ts-expect-error
+      // @ts-expect-error The response body should match the schema
       body: '',
     });
-    // @ts-expect-error
+    // @ts-expect-error The response body should match the schema
     interceptor.get('/users').respond(() => ({
       status: 200,
       body: '',
@@ -247,10 +418,10 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
     interceptor.post('/notifications/read').respond({
       status: 204,
-      // @ts-expect-error
+      // @ts-expect-error The response body should match the schema
       body: users,
     });
-    // @ts-expect-error
+    // @ts-expect-error The response body should match the schema
     interceptor.post('/notifications/read').respond(() => ({
       status: 204,
       body: users,
@@ -287,25 +458,25 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     interceptor.get<'/users/:id'>(`/users/${123}`);
     interceptor.post('/notifications/read');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/users` does not contain a POST method
     interceptor.post('/users');
-    // @ts-expect-error
+    // @ts-expect-error The path `/users/:id` does not contain a POST method
     interceptor.post('/users/:id');
-    // @ts-expect-error
+    // @ts-expect-error The path `/users/:id` with dynamic parameter does not contain a POST method
     interceptor.post(`/users/${123}`);
-    // @ts-expect-error
+    // @ts-expect-error The path `/notifications/read` does not contain a GET method
     interceptor.get('/notifications/read');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/path` is not declared
     interceptor.get('/path');
-    // @ts-expect-error
+    // @ts-expect-error The path `/path` is not declared
     interceptor.post('/path');
 
-    // @ts-expect-error
+    // @ts-expect-error The path `/users` does not contain a PUT method
     interceptor.put('/users');
   });
 
-  it('should correctly type routes with multiple methods', () => {
+  it('should correctly type paths with multiple methods', () => {
     type Schema = HttpInterceptorSchema.Root<{
       '/users': {
         POST: {

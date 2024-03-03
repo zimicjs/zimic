@@ -4,12 +4,30 @@
     "type-enum": [
       2,
       "always",
-      ["build", "chore", "docs", "feat", "fix", "perf", "refactor", "release", "revert", "style", "test"]
+      ["build", "chore", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
     ],
     "scope-enum": [
       2,
       "always",
-      ["ci", "zimic-test-client", "#zimic", "#release", "#eslint", "#eslint-node", "#lint-staged", "#tsconfig"]
-    ]
+      [
+        "root",
+        "ci",
+        "release",
+        "zimic-test-client",
+        "#zimic",
+        "#release",
+        "#eslint",
+        "#eslint-node",
+        "#lint-staged",
+        "#tsconfig",
+        "examples",
+        "examples-vitest-node",
+        "examples-vitest-browser",
+        "examples-vitest-jsdom",
+        "examples-jest-node",
+        "examples-jest-jsdom"
+      ]
+    ],
+    "scope-empty": [2, "never"]
   }
 }

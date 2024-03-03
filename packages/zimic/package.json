@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.1.0",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/diego-aquino/zimic.git",
@@ -71,7 +71,8 @@
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\"",
-    "prepublishOnly": "cp ../../README.md ../../LICENSE.md ."
+    "prepublish:adapt-relative-paths": "sed -E -i 's/\\]\\(\\.\\/(.+)\\)/](..\\/..\\/\\1)/g'",
+    "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:adapt-relative-paths README.md"
   },
   "dependencies": {
     "chalk": "^5.3.0",
@@ -79,7 +80,7 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^18.8.4",
+    "@types/node": "^20.11.20",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "^1.2.1",
     "@vitest/coverage-istanbul": "^1.2.1",

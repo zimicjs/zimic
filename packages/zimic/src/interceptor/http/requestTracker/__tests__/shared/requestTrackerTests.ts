@@ -1,15 +1,15 @@
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
-import InternalHttpInterceptor from '@/interceptor/http/interceptor/InternalHttpInterceptor';
+import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
 import { HttpInterceptorSchema } from '@/interceptor/http/interceptor/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
-import { HttpRequest, HttpResponse } from '@/interceptor/http/interceptorWorker/types/requests';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
-import InternalHttpRequestTracker from '../../InternalHttpRequestTracker';
+import HttpRequestTracker from '../../HttpRequestTracker';
 import {
   HttpInterceptorRequest,
   HttpRequestTrackerResponseDeclaration,
@@ -41,7 +41,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     }>;
 
     const worker = createHttpInterceptorWorker({ platform });
-    const interceptor = createHttpInterceptor<Schema>({ worker, baseURL }) as InternalHttpInterceptor<Schema>;
+    const interceptor = createHttpInterceptor<Schema>({ worker, baseURL }) as HttpInterceptor<Schema>;
 
     beforeAll(async () => {
       await worker.start();
@@ -52,7 +52,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide access to the method and path', () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
       expectTypeOf<typeof tracker.method>().toEqualTypeOf<() => 'GET'>();
       expect(tracker.method()).toBe('GET');
@@ -62,29 +62,29 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should not match any request if contains no declared response', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
     });
 
     it('should match any request if contains declared response', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: 200,
         body: { success: true },
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(true);
     });
 
     it('should not match any request if bypassed', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.bypass();
@@ -104,13 +104,13 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const responseStatus = 200;
       const responseBody = { success: true } as const;
 
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: responseStatus,
         body: responseBody,
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       const response = await tracker.applyResponseDeclaration(parsedRequest);
 
       expect(response.status).toBe(responseStatus);
@@ -129,11 +129,11 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         body: responseBody,
       }));
 
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
       tracker.respond(responseFactory);
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       const response = await tracker.applyResponseDeclaration(parsedRequest);
 
       expect(response.status).toBe(responseStatus);
@@ -144,32 +144,30 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should throw an error if trying to create a response without a declared response', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       await expect(async () => {
         await tracker.applyResponseDeclaration(parsedRequest);
-      }).rejects.toThrowError(NoResponseDefinitionError);
+      }).rejects.toThrowError(new NoResponseDefinitionError());
     });
 
     it('should keep track of the intercepted requests and responses', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: 200,
         body: { success: true },
       });
 
       const firstRequest = new Request(baseURL);
-      const parsedFirstRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
+      const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
 
       const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
       const firstResponse = Response.json(firstResponseDeclaration.body, {
         status: firstResponseDeclaration.status,
       });
-      const parsedFirstResponse = await InternalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(
-        firstResponse,
-      );
+      const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
@@ -180,15 +178,13 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       expect(interceptedRequests[0].response).toEqual(firstResponse);
 
       const secondRequest = new Request(`${baseURL}/path`);
-      const parsedSecondRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
+      const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
       const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
 
       const secondResponse = Response.json(secondResponseDeclaration.body, {
         status: secondResponseDeclaration.status,
       });
-      const parsedSecondResponse = await InternalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(
-        secondResponse,
-      );
+      const parsedSecondResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
       tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
@@ -202,7 +198,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide access to the raw intercepted requests and responses', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -211,11 +207,11 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         method: 'POST',
         body: JSON.stringify({ success: undefined } satisfies MethodSchema['request']['body']),
       });
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
       const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
-      const parsedResponse = await InternalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
       tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
@@ -245,17 +241,17 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
-      const tracker = new InternalHttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: 200,
         body: { success: true },
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await InternalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
       const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
-      const parsedResponse = await InternalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
+      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
       tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 

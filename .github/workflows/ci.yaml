@@ -34,6 +34,7 @@ jobs:
     timeout-minutes: 12
 
     strategy:
+      fail-fast: false
       matrix:
         node-version:
           - 18
@@ -80,5 +81,5 @@ jobs:
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 1 \
+            --concurrency 100% \
             ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}

@@ -86,7 +86,7 @@ runs:
         installFlag="$workspaceRootInstallFlag $partialInstallFlag"
         echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
 
-        pnpm install --prefer-offline --frozen-lockfile $installFlag
+        pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
         buildFlag="$(composeFilterOptions ${{ inputs.build }})"
         echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT

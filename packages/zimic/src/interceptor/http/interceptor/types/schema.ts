@@ -1,17 +1,29 @@
+import { HttpHeadersSchema } from '@/http/headers/types';
+import { HttpSearchParamsSchema } from '@/http/searchParams/types';
+import { DefaultBody } from '@/http/types/requests';
 import { Default, UnionToIntersection, Prettify, IfAny } from '@/types/utils';
 
-import { HttpRequestHandlerContext, DefaultBody } from '../../interceptorWorker/types/requests';
+import { HttpRequestHandlerContext } from '../../interceptorWorker/types/requests';
 import { HttpInterceptor } from './public';
 
 export const HTTP_INTERCEPTOR_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 export type HttpInterceptorMethod = (typeof HTTP_INTERCEPTOR_METHODS)[number];
 
+export type HttpInterceptorHeadersSchema = HttpHeadersSchema;
+
+export type HttpInterceptorSearchParamsSchema = HttpSearchParamsSchema;
+
+export type HttpInterceptorBodySchema = DefaultBody;
+
 export interface HttpInterceptorRequestSchema {
-  body?: DefaultBody;
+  headers?: HttpInterceptorHeadersSchema;
+  searchParams?: HttpInterceptorSearchParamsSchema;
+  body?: HttpInterceptorBodySchema;
 }
 
 export interface HttpInterceptorResponseSchema {
-  body?: DefaultBody;
+  headers?: HttpInterceptorHeadersSchema;
+  body?: HttpInterceptorBodySchema;
 }
 
 export interface HttpInterceptorResponseSchemaByStatusCode {
@@ -37,11 +49,21 @@ export interface HttpInterceptorSchema {
 
 export namespace HttpInterceptorSchema {
   export type Root<Schema extends HttpInterceptorSchema> = Prettify<Schema>;
+
   export type Path<Schema extends HttpInterceptorPathSchema> = Prettify<Schema>;
+
   export type Method<Schema extends HttpInterceptorMethodSchema> = Prettify<Schema>;
+
   export type Request<Schema extends HttpInterceptorRequestSchema> = Prettify<Schema>;
+  export type RequestBody<Schema extends HttpInterceptorBodySchema> = Prettify<Schema>;
+
   export type Response<Schema extends HttpInterceptorResponseSchema> = Prettify<Schema>;
+  export type ResponseBody<Schema extends HttpInterceptorBodySchema> = Prettify<Schema>;
+
   export type ResponseByStatusCode<Schema extends HttpInterceptorResponseSchemaByStatusCode> = Prettify<Schema>;
+
+  export type Headers<Schema extends HttpInterceptorHeadersSchema> = Prettify<Schema>;
+  export type SearchParams<Schema extends HttpInterceptorSearchParamsSchema> = Prettify<Schema>;
 }
 
 export type ExtractHttpInterceptorSchema<Interceptor> =
@@ -65,9 +87,9 @@ export type LooseLiteralHttpInterceptorSchemaPath<
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
-export type AllowAnyStringInRouteParameters<Path extends string> =
+export type AllowAnyStringInPathParameters<Path extends string> =
   Path extends `${infer Prefix}:${string}/${infer Suffix}`
-    ? `${Prefix}${string}/${AllowAnyStringInRouteParameters<Suffix>}`
+    ? `${Prefix}${string}/${AllowAnyStringInPathParameters<Suffix>}`
     : Path extends `${infer Prefix}:${string}`
       ? `${Prefix}${string}`
       : Path;
@@ -75,7 +97,7 @@ export type AllowAnyStringInRouteParameters<Path extends string> =
 export type NonLiteralHttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,
   Method extends HttpInterceptorSchemaMethod<Schema>,
-> = AllowAnyStringInRouteParameters<LiteralHttpInterceptorSchemaPath<Schema, Method>>;
+> = AllowAnyStringInPathParameters<LiteralHttpInterceptorSchemaPath<Schema, Method>>;
 
 export type HttpInterceptorSchemaPath<
   Schema extends HttpInterceptorSchema,

@@ -1,10 +1,20 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { JSONValue } from 'zimic0';
+import {
+  type JSONValue,
+  type DefaultBody,
+  type HttpRequest,
+  type HttpResponse,
+  HttpSearchParams,
+  type HttpSearchParamsSchema,
+  type HttpSearchParamsSchemaTuple,
+  HttpHeadersSchema,
+  HttpHeadersSchemaTuple,
+  HttpHeaders,
+} from 'zimic0';
 import {
   createHttpInterceptor,
   createHttpInterceptorWorker,
   type HttpInterceptorWorker,
-  type DefaultBody,
   type HttpInterceptor,
   type HttpInterceptorMethod,
   type HttpInterceptorMethodSchema,
@@ -19,17 +29,16 @@ import {
   type HttpInterceptorSchema,
   type HttpInterceptorSchemaMethod,
   type HttpInterceptorSchemaPath,
-  type HttpRequest,
   type HttpRequestTracker,
-  type HttpRequestTrackerResponseAttribute,
   type HttpRequestTrackerResponseDeclaration,
   type HttpRequestTrackerResponseDeclarationFactory,
-  type HttpResponse,
   type LiteralHttpInterceptorSchemaPath,
   type NonLiteralHttpInterceptorSchemaPath,
   type TrackedHttpInterceptorRequest,
   type HttpInterceptorWorkerPlatform,
   type HttpInterceptorWorkerOptions,
+  type HttpInterceptorSearchParamsSchema,
+  type HttpInterceptorBodySchema,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
@@ -48,7 +57,6 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
 
-    expectTypeOf<HttpRequestTrackerResponseAttribute<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
@@ -56,9 +64,23 @@ describe('Exports', () => {
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
 
+    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+
+    expectTypeOf<HttpHeaders>().not.toBeAny();
+    expect(new HttpHeaders()).toBeInstanceOf(Headers);
+
+    expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
+
+    expectTypeOf<HttpSearchParams>().not.toBeAny();
+    expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
+
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<HttpInterceptorMethod>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSearchParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpInterceptorBodySchema>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchema>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchemaByStatusCode>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponseSchemaStatusCode<never>>().not.toBeAny();

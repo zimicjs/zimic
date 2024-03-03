@@ -8,12 +8,12 @@ export function convertHeadersToObject(headers: Headers) {
   return headersAsObject;
 }
 
-export function convertObjectToHeaders(headers: Record<string, unknown>) {
-  const headersAsObject = new Headers();
+export function convertObjectToHeaders(headersAsObject: Record<string, unknown>) {
+  const headers = new Headers();
 
-  for (const [key, value] of Object.entries(headers)) {
-    headersAsObject.set(key, String(value));
+  for (const [key, value] of Object.entries(headersAsObject)) {
+    headers.set(key, String(value));
   }
 
-  return headersAsObject;
+  return headers;
 }

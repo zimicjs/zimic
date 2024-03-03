@@ -1,14 +1,17 @@
 import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import InternalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/InternalHttpInterceptorWorker';
-import InternalHttpRequestTracker from '@/interceptor/http/requestTracker/InternalHttpRequestTracker';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  const worker = createHttpInterceptorWorker({ platform }) as InternalHttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
   interface Filters {
@@ -40,7 +43,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
-      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -76,11 +79,12 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     }>({ worker, baseURL }, async (interceptor) => {
       const optionsTracker = interceptor.options('/filters').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Filters>();
+
         return {
           status: 200,
         };
       });
-      expect(optionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -112,7 +116,121 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
-  it('should support intercepting OPTIONS requests with a dynamic route', async () => {
+  it('should support intercepting OPTIONS requests having search params', async () => {
+    type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            searchParams: FiltersOptionsSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+        return {
+          status: 200,
+        };
+      });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<FiltersOptionsSearchParams>({
+        tag: 'admin',
+      });
+
+      const optionsResponse = await fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
+      expect(optionsRequest.searchParams).toBeInstanceOf(HttpSearchParams);
+      expect(optionsRequest.searchParams).toEqual(searchParams);
+      expect(optionsRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting OPTIONS requests having headers', async () => {
+    type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            headers: FilterOptionsRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: FilterOptionsResponseHeaders;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+        };
+      });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        headers: {
+          accept: 'application/json',
+        } satisfies FilterOptionsRequestHeaders,
+      });
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+      expect(optionsRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<FilterOptionsResponseHeaders>>();
+      expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(optionsRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
+  it('should support intercepting OPTIONS requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/filters/:id': {
         OPTIONS: {
@@ -125,7 +243,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
-      expect(genericOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(genericOptionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const genericOptionsRequests = genericOptionsTracker.requests();
       expect(genericOptionsRequests).toHaveLength(0);
@@ -151,7 +269,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const specificOptionsTracker = interceptor.options<'/filters/:id'>(`/filters/${1}`).respond({
         status: 200,
       });
-      expect(specificOptionsTracker).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(specificOptionsTracker).toBeInstanceOf(HttpRequestTracker);
 
       const specificOptionsRequests = specificOptionsTracker.requests();
       expect(specificOptionsRequests).toHaveLength(0);
@@ -191,7 +309,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       await expect(fetchPromise).rejects.toThrowError();
 
       const optionsTrackerWithoutResponse = interceptor.options('/filters');
-      expect(optionsTrackerWithoutResponse).toBeInstanceOf(InternalHttpRequestTracker);
+      expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
