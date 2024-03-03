@@ -25,7 +25,7 @@ describe('HttpHeaders', () => {
 
   it('should support being created from an object', () => {
     new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       // @ts-expect-error The object should match the declared schema
@@ -33,7 +33,7 @@ describe('HttpHeaders', () => {
     });
 
     new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
       // @ts-expect-error The object should match the declared schema
     }>({
@@ -41,7 +41,7 @@ describe('HttpHeaders', () => {
     });
 
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -59,7 +59,7 @@ describe('HttpHeaders', () => {
 
   it('should support being created from another HttpHeaders', () => {
     const otherHeaders = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -81,7 +81,7 @@ describe('HttpHeaders', () => {
 
   it('should support being created from header tuples', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>([
       ['accept', 'image/png'],
@@ -100,7 +100,7 @@ describe('HttpHeaders', () => {
 
   it('should support setting headers', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>();
 
@@ -123,7 +123,7 @@ describe('HttpHeaders', () => {
 
   it('should support appending headers', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>();
 
@@ -143,7 +143,7 @@ describe('HttpHeaders', () => {
 
   it('should support getting a header', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -183,7 +183,7 @@ describe('HttpHeaders', () => {
 
   it('should support checking if headers exist', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>();
 
@@ -203,7 +203,7 @@ describe('HttpHeaders', () => {
 
   it('should support deleting headers', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -221,7 +221,7 @@ describe('HttpHeaders', () => {
 
   it('should support iterating over headers', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -242,7 +242,7 @@ describe('HttpHeaders', () => {
 
   it('should support iterating over headers using `forEach`', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -266,7 +266,7 @@ describe('HttpHeaders', () => {
 
   it('should support getting keys', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -282,7 +282,7 @@ describe('HttpHeaders', () => {
 
   it('should support getting values', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
@@ -298,7 +298,7 @@ describe('HttpHeaders', () => {
 
   it('should support getting entries', () => {
     const headers = new HttpHeaders<{
-      ['accept']?: string;
+      accept?: string;
       'content-type'?: `application/${string}`;
     }>({
       accept: '*/*',
