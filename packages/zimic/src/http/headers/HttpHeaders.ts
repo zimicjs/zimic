@@ -17,6 +17,10 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema> =
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
 
+/**
+ * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/Headers Headers} class.
+ */
 class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
   constructor(init?: HttpHeadersInit<Schema>) {
     if (init instanceof Headers || Array.isArray(init) || !init) {

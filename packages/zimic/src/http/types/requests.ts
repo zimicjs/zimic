@@ -6,7 +6,10 @@ import { HttpHeadersSchema } from '../headers/types';
 /** The default body type (JSON) for HTTP requests and responses. */
 export type DefaultBody = JSONValue;
 
-/** An HTTP request with a strictly-typed JSON body. */
+/**
+ * An HTTP request with a strictly-typed JSON body. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/Request Request} class.
+ */
 export interface HttpRequest<
   StrictBody extends DefaultBody = DefaultBody,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
@@ -15,7 +18,10 @@ export interface HttpRequest<
   json: () => Promise<StrictBody>;
 }
 
-/** An HTTP response with a strictly-typed JSON body and status code. */
+/**
+ * An HTTP response with a strictly-typed JSON body and status code. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/Response Response} class.
+ */
 export interface HttpResponse<
   StrictBody extends DefaultBody = DefaultBody,
   StatusCode extends number = number,

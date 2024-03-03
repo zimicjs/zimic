@@ -55,6 +55,9 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [Examples](#examples)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
+- [`zimic` API](#zimic-api)
+  - [`HttpHeaders`](#httpheaders)
+  - [`HttpSearchParams`](#httpsearchparams)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
   - [`HttpInterceptorWorker`](#httpinterceptorworker)
     - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
@@ -151,6 +154,8 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
 To start using Zimic, create a [worker](#httpinterceptorworker) targeting your platform.
 
 ```ts
+import { createHttpInterceptorWorker } from 'zimic/interceptor';
+
 const worker = createHttpInterceptorWorker({
   platform: 'node', // or 'browser'
 });
@@ -159,6 +164,8 @@ const worker = createHttpInterceptorWorker({
 Then, create your first [interceptor](#httpinterceptor):
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
@@ -245,6 +252,55 @@ afterAll(async () => {
 
 ---
 
+## `zimic` API
+
+This module provides general utilities, such as HTTP classes.
+
+### `HttpHeaders`
+
+A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class, with a strictly-typed
+schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic abstractions to provide type safety when
+applying mocks.
+
+```ts
+import { HttpHeaders } from 'zimic';
+
+const headers = new HttpHeaders<{
+  accept?: string;
+  'content-type'?: string;
+}>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const contentType = headers.get('content-type');
+console.log(contentType); // 'application/json'
+```
+
+### `HttpSearchParams`
+
+A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
+strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic abstractions
+to provide type safety when applying mocks.
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<{
+  names?: string[];
+  page?: `${number}`;
+}>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const names = searchParams.getAll('names');
+console.log(names); // ['user 1', 'user 2']
+
+const page = searchParams.get('page');
+console.log(page); // '1'
+```
+
 ## `zimic/interceptor` API
 
 This module provides a set of utilities to create HTTP interceptors for both Node.js and browser environments.
@@ -266,6 +322,8 @@ Creates an HTTP interceptor worker. A platform is required to specify the enviro
 - Node.js:
 
   ```ts
+  import { createHttpInterceptorWorker } from 'zimic/interceptor';
+
   const worker = createHttpInterceptorWorker({
     platform: 'node',
   });
@@ -274,6 +332,8 @@ Creates an HTTP interceptor worker. A platform is required to specify the enviro
 - Browser:
 
   ```ts
+  import { createHttpInterceptorWorker } from 'zimic/interceptor';
+
   const worker = createHttpInterceptorWorker({
     platform: 'browser',
   });
@@ -360,6 +420,8 @@ mocks.
   <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     POST: {
@@ -408,7 +470,7 @@ const interceptor = createHttpInterceptor<{
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
+import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
 
 type UserPaths = HttpInterceptorSchema.Root<{
   '/users': {
@@ -468,6 +530,8 @@ const interceptor = createHttpInterceptor<InterceptorSchema>({
 At the root level, each key represents a path or route:
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     // path schema
@@ -490,7 +554,7 @@ const interceptor = createHttpInterceptor<{
   </summary>
 
 ```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
+import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
 
 type UserPaths = HttpInterceptorSchema.Root<{
   '/users': {
@@ -521,6 +585,8 @@ Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`
 names are case-sensitive.
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
@@ -544,7 +610,7 @@ const interceptor = createHttpInterceptor<{
   </summary>
 
 ```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
+import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
 
 type UserMethods = HttpInterceptorSchema.Method<{
   GET: {
@@ -567,20 +633,39 @@ const interceptor = createHttpInterceptor<{
 
 ##### Declaring requests
 
-Each method can have a `request`, which defines the schema of the accepted requests. Currently, only the `body` property
-is supported.
+Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
+`body` are supported to provide type safety when applying mocks.
+
+> **Tip**: You only need to declare the properties you want to use in your mocks. For example, if you are referencing
+> only the header `accept`, you need to declare only it. Similarly, if you are not using any headers, search params, or
+> body, you can omit them.
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     POST: {
       request: {
+        headers: {
+          accept: string;
+        };
         body: {
           username: string;
         };
       };
       // ...
     };
+
+    GET: {
+      request: {
+        searchParams: {
+          username?: string;
+        };
+      };
+      // ...
+    };
+
     // other methods
   };
   // other paths
@@ -597,9 +682,12 @@ const interceptor = createHttpInterceptor<{
   </summary>
 
 ```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
+import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
 
 type UserCreationRequest = HttpInterceptorSchema.Request<{
+  headers: {
+    accept: '*/*';
+  };
   body: {
     username: string;
   };
@@ -622,16 +710,32 @@ const interceptor = createHttpInterceptor<{
 ##### Declaring responses
 
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
-keys. Currently, only the `body` property is supported.
+keys. `headers` and `body` are supported to provide type safety when applying mocks.
+
+> **Tip**: Similarly to [Declaring requests](#declaring-requests), you only need to declare the properties you want to
+> use in your mocks. For example, if you are referencing only the header `content-type`, you can declare only it. If you
+> are not using any headers or body, you can omit them.
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       // ...
       response: {
-        200: { body: User };
-        404: { body: NotFoundError };
+        200: {
+          headers: {
+            'content-type': string;
+          };
+          body: User;
+        };
+        404: {
+          headers: {
+            'content-type': string;
+          };
+          body: NotFoundError;
+        };
       };
     };
     // other methods
@@ -650,13 +754,20 @@ const interceptor = createHttpInterceptor<{
   </summary>
 
 ```ts
-import { HttpInterceptorSchema } from 'zimic/interceptor';
+import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+
 
 type SuccessUserGetResponse = HttpInterceptorSchema.Response<{
+  headers: {
+    'content-type': string;
+  };
   body: User;
 }>;
 
-type NotFoundUserGetResponse = HttpInterceptorSchema.Response<{
+type NotFoundUserGetResponse = **HttpInterceptorSchema**.Response<{
+  headers: {
+    'content-type': string;
+  };
   body: NotFoundError;
 }>;
 
@@ -698,6 +809,8 @@ declared in the interceptor schema.
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
@@ -724,6 +837,8 @@ Paths with dynamic path parameters, such as `/users/:id`, are supported, but you
 type parameter to get type validation.
 
 ```ts
+import { createHttpInterceptor } from 'zimic/interceptor';
+
 const interceptor = createHttpInterceptor<{
   '/users/:id': {
     PUT: {
@@ -810,14 +925,16 @@ A function is also supported, in case the response is dynamic:
 
 ```ts
 const listTracker = interceptor.get('/users').respond((request) => {
-  const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username');
+  const username = request.searchParams.get('username');
   return {
     status: 200,
     body: [{ username }],
   };
 });
 ```
+
+The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
+and `.searchParams`, which are typed based on the interceptor schema.
 
 #### `tracker.bypass()`
 
@@ -866,10 +983,12 @@ expect(updateRequests[0].url).toEqual('http://localhost:3000/users/1');
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
 
-The return by `requests` contains simplified objects based on the
+The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing an already parsed body in
-`.body`. If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
+`.body`, typed headers in `.headers` and typed search params in `.searchParams`.
+
+If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
 
 ```ts
 const listRequests = listTracker.requests();

@@ -15,6 +15,10 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
   return schemaWithPrimitiveProperties;
 }
 
+/**
+ * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams} class.
+ */
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {
   constructor(
     init?: string | URLSearchParams | Schema | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[],
