@@ -636,9 +636,9 @@ const interceptor = createHttpInterceptor<{
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
 
-> **Tip**: You need to declare only the properties you want to use in your mocks. For example, if you will reference
-> only the header `accept`, you can declare only it. Similarly, if you won't use any headers, search params, or body,
-> you can omit their properties.
+> **Tip**: You only need to declare the properties you want to use in your mocks. For example, if you are referencing
+> only the header `accept`, you need to declare only it. Similarly, if you are not using any headers, search params, or
+> body, you can omit them.
 
 ```ts
 import { createHttpInterceptor } from 'zimic/interceptor';
@@ -712,9 +712,9 @@ const interceptor = createHttpInterceptor<{
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
-> **Tip**: Similarly to [Declaring requests](#declaring-requests), you need to declare only the properties you want to
-> use in your mocks. For example, if you will reference only the header `content-type`, you can declare only it. If you
-> won't use any headers or body, you can omit their properties.
+> **Tip**: Similarly to [Declaring requests](#declaring-requests), you only need to declare the properties you want to
+> use in your mocks. For example, if you are referencing only the header `content-type`, you can declare only it. If you
+> are not using any headers or body, you can omit them.
 
 ```ts
 import { createHttpInterceptor } from 'zimic/interceptor';
