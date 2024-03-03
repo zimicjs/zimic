@@ -55,6 +55,9 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [Examples](#examples)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
+- [`zimic` API](#zimic-api)
+  - [`HttpHeaders`](#httpheaders)
+  - [`HttpSearchParams`](#httpsearchparams)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
   - [`HttpInterceptorWorker`](#httpinterceptorworker)
     - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
@@ -248,6 +251,55 @@ afterAll(async () => {
 ```
 
 ---
+
+## `zimic` API
+
+This module provides general utilities, such as HTTP classes.
+
+### `HttpHeaders`
+
+A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class, with a strictly-typed
+schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic abstractions to provide type safety when
+applying mocks.
+
+```ts
+import { HttpHeaders } from 'zimic';
+
+const headers = new HttpHeaders<{
+  accept?: string;
+  'content-type'?: string;
+}>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const contentType = headers.get('content-type');
+console.log(contentType); // 'application/json'
+```
+
+### `HttpSearchParams`
+
+A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
+strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic abstractions
+to provide type safety when applying mocks.
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<{
+  names?: string[];
+  page?: `${number}`;
+}>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const names = searchParams.getAll('names');
+console.log(names); // ['user 1', 'user 2']
+
+const page = searchParams.get('page');
+console.log(page); // '1'
+```
 
 ## `zimic/interceptor` API
 
