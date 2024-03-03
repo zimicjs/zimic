@@ -925,14 +925,16 @@ A function is also supported, in case the response is dynamic:
 
 ```ts
 const listTracker = interceptor.get('/users').respond((request) => {
-  const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username');
+  const username = request.searchParams.get('username');
   return {
     status: 200,
     body: [{ username }],
   };
 });
 ```
+
+The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
+and `.searchParams`, which are typed based on the interceptor schema.
 
 #### `tracker.bypass()`
 
@@ -981,10 +983,12 @@ expect(updateRequests[0].url).toEqual('http://localhost:3000/users/1');
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
 
-The return by `requests` contains simplified objects based on the
+The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing an already parsed body in
-`.body`. If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
+`.body`, typed headers in `.headers` and typed search params in `.searchParams`.
+
+If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
 
 ```ts
 const listRequests = listTracker.requests();
