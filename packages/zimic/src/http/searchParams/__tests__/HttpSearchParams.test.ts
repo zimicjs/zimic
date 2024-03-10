@@ -351,4 +351,90 @@ describe('HttpSearchParams', () => {
       ]),
     );
   });
+
+  it('should support checking equality with other search params', () => {
+    const searchParams = new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+    }>({
+      names: ['User1', 'User2'],
+      page: '1',
+    });
+
+    const otherSearchParams = new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+    }>({
+      names: ['User1', 'User2'],
+      page: '1',
+    });
+
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+
+    otherSearchParams.append('names', 'User3');
+    expect(searchParams.equals(otherSearchParams)).toBe(false);
+    otherSearchParams.delete('names', 'User3');
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+
+    otherSearchParams.set('page', '2');
+    expect(searchParams.equals(otherSearchParams)).toBe(false);
+    otherSearchParams.set('page', '1');
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+
+    otherSearchParams.delete('names', 'User2');
+    expect(searchParams.equals(otherSearchParams)).toBe(false);
+    otherSearchParams.append('names', 'User2');
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+
+    otherSearchParams.delete('page');
+    expect(searchParams.equals(otherSearchParams)).toBe(false);
+    otherSearchParams.set('page', '1');
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+  });
+
+  it('should support checking containment with other search params', () => {
+    const searchParams = new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+    }>({
+      names: ['User1', 'User2'],
+      page: '1',
+    });
+
+    const otherSearchParams = new HttpSearchParams<{
+      names?: string[];
+      page?: `${number}`;
+      orderBy?: string;
+    }>({
+      names: ['User1', 'User2'],
+      page: '1',
+    });
+
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
+    otherSearchParams.append('names', 'User3');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+    otherSearchParams.delete('names', 'User3');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
+    otherSearchParams.set('page', '2');
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
+    otherSearchParams.set('page', '1');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
+    otherSearchParams.delete('names', 'User2');
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
+    otherSearchParams.append('names', 'User2');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
+    otherSearchParams.delete('page');
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
+    otherSearchParams.set('page', '1');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
+    otherSearchParams.set('orderBy', 'asc');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+    otherSearchParams.delete('orderBy', 'asc');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+  });
 });

@@ -97,6 +97,19 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
       [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]
     >;
   }
+
+  equals(otherParams: HttpSearchParams<Schema>): boolean {
+    return this.contains(otherParams) && this.size === otherParams.size;
+  }
+
+  contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+    for (const [key, value] of this.entries()) {
+      if (!super.has.call(otherParams, key, value)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 export default HttpSearchParams;
