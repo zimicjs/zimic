@@ -173,6 +173,57 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
+  it('should support intercepting PUT requests having search params restrictions', async () => {
+    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PUT: {
+          request: {
+            searchParams: UserUpdateSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .put('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
+        tag: 'admin',
+      });
+
+      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const updateResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      await expect(updateResponsePromise).rejects.toThrowError();
+    });
+  });
+
   it('should support intercepting PUT requests having headers', async () => {
     type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;
