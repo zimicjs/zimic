@@ -1,5 +1,6 @@
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
@@ -23,8 +24,14 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
   describe('Shared', () => {
     const baseURL = 'http://localhost:3000';
 
+    type SearchParamsSchema = HttpInterceptorSchema.SearchParams<{
+      name?: string;
+      other?: string;
+    }>;
+
     type MethodSchema = HttpInterceptorSchema.Method<{
       request: {
+        searchParams: SearchParamsSchema;
         body: { success?: undefined };
       };
       response: {
@@ -69,7 +76,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
     });
 
-    it('should match any request if contains declared response', async () => {
+    it('should match any request if contains a declared response and no restrictions', async () => {
       const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
         status: 200,
         body: { success: true },
@@ -77,6 +84,10 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+
+      tracker.with({});
+
       expect(tracker.matchesRequest(parsedRequest)).toBe(true);
     });
 
@@ -271,6 +282,150 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         expect(interceptedRequests[0].response).not.toHaveProperty(hiddenProperty);
         expect((interceptedRequests[0].response as unknown as Response)[hiddenProperty]).toBe(undefined);
       }
+    });
+
+    describe('Match by search params', () => {
+      it.each([{ exact: true }])(
+        'should match only specific requests if contains a declared response, a static search param restriction, and exact: $exact',
+        async ({ exact }) => {
+          const name = 'User';
+
+          const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users')
+            .with({
+              searchParams: { name },
+              exact,
+            })
+            .respond({
+              status: 200,
+              body: { success: true },
+            });
+
+          for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
+            const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          }
+
+          for (const mismatchingSearchParams of [
+            new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
+            new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
+            new HttpSearchParams<SearchParamsSchema>({}),
+          ]) {
+            const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          }
+        },
+      );
+
+      it.each([{ exact: false }, { exact: undefined }])(
+        'should match only specific requests if contains a declared response, a static search param restriction, and exact: $exact',
+        async ({ exact }) => {
+          const name = 'User';
+
+          const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users')
+            .with({
+              searchParams: { name },
+              exact,
+            })
+            .respond({
+              status: 200,
+              body: { success: true },
+            });
+
+          for (const matchingSearchParams of [
+            new HttpSearchParams<SearchParamsSchema>({ name }),
+            new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
+          ]) {
+            const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          }
+
+          for (const mismatchingSearchParams of [
+            new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
+            new HttpSearchParams<SearchParamsSchema>({}),
+          ]) {
+            const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          }
+        },
+      );
+
+      it('should match only specific requests if contains a declared response and a computed search params restriction', async () => {
+        const name = 'User';
+
+        const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users')
+          .with((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
+
+            const nameParam = request.searchParams.get('name');
+            return nameParam?.startsWith(name) ?? false;
+          })
+          .respond({
+            status: 200,
+            body: { success: true },
+          });
+
+        for (const matchingSearchParams of [
+          new HttpSearchParams<SearchParamsSchema>({ name }),
+          new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
+          new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
+        ]) {
+          const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        }
+
+        for (const mismatchingSearchParams of [
+          new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
+          new HttpSearchParams<SearchParamsSchema>({}),
+        ]) {
+          const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        }
+      });
+
+      it('should match only specific requests if contains a declared response and multiple restrictions', async () => {
+        const name = 'User';
+
+        const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users')
+          .with({
+            searchParams: { name },
+          })
+          .with((request) => {
+            return request.searchParams.get('other')?.includes('param') ?? false;
+          })
+          .respond({
+            status: 200,
+            body: { success: true },
+          });
+
+        for (const matchingSearchParams of [
+          new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
+          new HttpSearchParams<SearchParamsSchema>({ name, other: 'prefix-param' }),
+          new HttpSearchParams<SearchParamsSchema>({ name, other: 'param-suffix' }),
+          new HttpSearchParams<SearchParamsSchema>({ name, other: 'prefix-param-suffix' }),
+        ]) {
+          const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        }
+
+        for (const mismatchingSearchParams of [
+          new HttpSearchParams<SearchParamsSchema>({ name }),
+          new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
+          new HttpSearchParams<SearchParamsSchema>({ other: 'param' }),
+          new HttpSearchParams<SearchParamsSchema>({ other: `Other param` }),
+          new HttpSearchParams<SearchParamsSchema>({}),
+        ]) {
+          const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        }
+      });
     });
   });
 }
