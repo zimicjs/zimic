@@ -3,9 +3,13 @@ import HttpSearchParams from './http/searchParams/HttpSearchParams';
 
 export type { JSONValue } from '@/types/json';
 
-export type { HttpHeadersSchema, HttpHeadersSchemaTuple } from './http/headers/types';
+export type { HttpHeadersInit, HttpHeadersSchema, HttpHeadersSchemaTuple } from './http/headers/types';
 
-export type { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './http/searchParams/types';
+export type {
+  HttpSearchParamsInit,
+  HttpSearchParamsSchema,
+  HttpSearchParamsSchemaTuple,
+} from './http/searchParams/types';
 
 export type { DefaultBody, HttpRequest, HttpResponse } from './http/types/requests';
 

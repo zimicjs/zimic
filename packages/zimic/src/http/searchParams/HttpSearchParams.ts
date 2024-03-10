@@ -1,6 +1,6 @@
 import { ReplaceBy, Defined, ArrayItemIfArray, NonArrayKey, ArrayKey } from '@/types/utils';
 
-import { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './types';
+import { HttpSearchParamsSchema, HttpSearchParamsInit } from './types';
 
 function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
@@ -20,9 +20,7 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams} class.
  */
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {
-  constructor(
-    init?: string | URLSearchParams | Schema | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[],
-  ) {
+  constructor(init?: HttpSearchParamsInit<Schema>) {
     if (init instanceof URLSearchParams || Array.isArray(init) || typeof init === 'string' || !init) {
       super(init);
     } else {
