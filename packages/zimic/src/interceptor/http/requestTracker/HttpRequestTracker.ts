@@ -93,6 +93,7 @@ class HttpRequestTracker<
 
   bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
+    this.restrictions = [];
     this.interceptedRequests = [];
     return this;
   }

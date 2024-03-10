@@ -109,6 +109,40 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       tracker.bypass();
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.respond({
+        status: 200,
+        body: { success: true },
+      });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    });
+
+    it('should clear restrictions after bypassed', async () => {
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+
+      const request = new Request(baseURL);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.bypass();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker
+        .with((_request) => false)
+        .respond({
+          status: 200,
+          body: { success: true },
+        });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.bypass();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.respond({
+        status: 200,
+        body: { success: true },
+      });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(true);
     });
 
     it('should create response with declared status and body', async () => {
@@ -359,6 +393,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users')
           .with((request) => {
             expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
             const nameParam = request.searchParams.get('name');
             return nameParam?.startsWith(name) ?? false;
@@ -396,6 +431,9 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             searchParams: { name },
           })
           .with((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
             return request.searchParams.get('other')?.includes('param') ?? false;
           })
           .respond({

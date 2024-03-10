@@ -103,9 +103,9 @@ export interface HttpRequestTracker<
   ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
-   * Clears any declared response and makes the tracker stop matching intercepted requests. The next tracker, created
-   * before this one, that matches the same method and path will be used if present. If not, the requests of the method
-   * and path will not be intercepted.
+   * Clears any restrictions and declared responses and makes the tracker stop matching intercepted requests. The next
+   * tracker, created before this one, that matches the same method and path will be used if present. If not, the
+   * requests of the method and path will not be intercepted.
    *
    * @see {@link https://github.com/diego-aquino/zimic#trackerbypass}
    */
