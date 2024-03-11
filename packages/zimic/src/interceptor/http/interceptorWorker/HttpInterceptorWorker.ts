@@ -6,8 +6,8 @@ import {
   passthrough,
 } from 'msw';
 
-import HttpHeaders, { HttpHeadersInit } from '@/http/headers/HttpHeaders';
-import { HttpHeadersSchema } from '@/http/headers/types';
+import HttpHeaders from '@/http/headers/HttpHeaders';
+import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { DefaultBody, HttpResponse, HttpRequest } from '@/http/types/requests';
 import { Default } from '@/types/utils';
 

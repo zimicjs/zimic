@@ -1,3 +1,4 @@
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { Default } from '@/types/utils';
 
 import {
@@ -7,10 +8,43 @@ import {
   HttpInterceptorSchemaPath,
 } from '../../interceptor/types/schema';
 import {
+  HttpInterceptorRequest,
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
+  HttpSearchParamsRequestSchema,
   TrackedHttpInterceptorRequest,
 } from './requests';
+
+export type HttpRequestTrackerSearchParamsStaticRestriction<
+  Schema extends HttpInterceptorSchema,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> =
+  | HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>
+  | HttpSearchParams<HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>>;
+
+export interface HttpRequestTrackerStaticRestriction<
+  Schema extends HttpInterceptorSchema,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> {
+  searchParams?: HttpRequestTrackerSearchParamsStaticRestriction<Schema, Path, Method>;
+  exact?: boolean;
+}
+
+export type HttpRequestTrackerComputedRestriction<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+> = (request: HttpInterceptorRequest<Default<Schema[Path][Method]>>) => boolean;
+
+export type HttpRequestTrackerRestriction<
+  Schema extends HttpInterceptorSchema,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+> =
+  | HttpRequestTrackerStaticRestriction<Schema, Path, Method>
+  | HttpRequestTrackerComputedRestriction<Schema, Method, Path>;
 
 /**
  * HTTP request trackers allow declaring responses to return for matched intercepted requests. They also keep track of
@@ -43,6 +77,10 @@ export interface HttpRequestTracker<
    */
   path: () => Path;
 
+  with: (
+    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
+  ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
+
   /**
    * Declares a response to return for matched intercepted requests.
    *
@@ -63,9 +101,9 @@ export interface HttpRequestTracker<
   ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
-   * Clears any declared response and makes the tracker stop matching intercepted requests. The next tracker, created
-   * before this one, that matches the same method and path will be used if present. If not, the requests of the method
-   * and path will not be intercepted.
+   * Clears any restrictions and declared responses and makes the tracker stop matching intercepted requests. The next
+   * tracker, created before this one, that matches the same method and path will be used if present. If not, the
+   * requests of the method and path will not be intercepted.
    *
    * @see {@link https://github.com/diego-aquino/zimic#trackerbypass}
    */

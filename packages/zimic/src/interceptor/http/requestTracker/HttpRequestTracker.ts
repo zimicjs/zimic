@@ -1,3 +1,4 @@
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { Default } from '@/types/utils';
 
 import HttpInterceptor from '../interceptor/HttpInterceptor';
@@ -8,7 +9,12 @@ import {
   HttpInterceptorSchemaPath,
 } from '../interceptor/types/schema';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import { HttpRequestTracker as PublicHttpRequestTracker } from './types/public';
+import {
+  HttpRequestTrackerRestriction,
+  HttpRequestTrackerComputedRestriction,
+  HttpRequestTracker as PublicHttpRequestTracker,
+  HttpRequestTrackerStaticRestriction,
+} from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -26,6 +32,7 @@ class HttpRequestTracker<
   > = never,
 > implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
+  private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<
@@ -45,6 +52,13 @@ class HttpRequestTracker<
 
   path() {
     return this._path;
+  }
+
+  with(
+    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
+  ): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+    this.restrictions.push(restriction);
+    return this;
   }
 
   respond<
@@ -79,12 +93,44 @@ class HttpRequestTracker<
 
   bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
+    this.restrictions = [];
     this.interceptedRequests = [];
     return this;
   }
 
-  matchesRequest(_request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
-    return this.createResponseDeclaration !== undefined;
+  matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+    const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
+    return hasDeclaredResponse && this.matchesRequestRestrictions(request);
+  }
+
+  private matchesRequestRestrictions(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+    return this.restrictions.every((restriction) => {
+      if (this.isComputedRequestRestriction(restriction)) {
+        return restriction(request);
+      }
+      return this.matchesRequestSearchParamsRestrictions(request, restriction);
+    });
+  }
+
+  private matchesRequestSearchParamsRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ): unknown {
+    if (!restriction.searchParams) {
+      return true;
+    }
+
+    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
+
+    return restriction.exact
+      ? restrictedSearchParams.equals(request.searchParams)
+      : restrictedSearchParams.contains(request.searchParams);
+  }
+
+  private isComputedRequestRestriction(
+    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
+  ): restriction is HttpRequestTrackerComputedRestriction<Schema, Method, Path> {
+    return typeof restriction === 'function';
   }
 
   async applyResponseDeclaration(

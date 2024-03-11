@@ -1,4 +1,4 @@
-import { HttpHeadersInit } from '@/http/headers/HttpHeaders';
+import { HttpHeadersInit } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { Default, PossiblePromise } from '@/types/utils';
@@ -32,6 +32,10 @@ export type HttpRequestTrackerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
 
+export type HttpSearchParamsRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+  Default<MethodSchema['request'], { searchParams: never }>['searchParams']
+>;
+
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<
     HttpRequest<
@@ -40,7 +44,7 @@ export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMeth
     >,
     keyof Body
   > {
-  searchParams: HttpSearchParams<Default<Default<MethodSchema['request'], { searchParams: never }>['searchParams']>>;
+  searchParams: HttpSearchParams<HttpSearchParamsRequestSchema<MethodSchema>>;
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }

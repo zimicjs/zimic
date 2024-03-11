@@ -176,6 +176,57 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
+  it('should support intercepting POST requests having search params restrictions', async () => {
+    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            searchParams: UserCreationSearchParams;
+          };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 201,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+        tag: 'admin',
+      });
+
+      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+      expect(creationRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      await expect(creationResponsePromise).rejects.toThrowError();
+    });
+  });
+
   it('should support intercepting POST requests having headers', async () => {
     type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;

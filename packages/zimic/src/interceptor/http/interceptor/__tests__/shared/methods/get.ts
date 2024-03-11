@@ -173,6 +173,74 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
+  it('should support intercepting GET requests having search params restrictions', async () => {
+    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+      name?: string;
+      orderBy?: ('name' | 'createdAt')[];
+      page?: `${number}`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor
+        .get('/users')
+        .with({
+          searchParams: {
+            name: 'User 1',
+          },
+        })
+        .with((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return request.searchParams.getAll('orderBy').length > 0;
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users,
+          };
+        });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserListSearchParams>({
+        name: 'User 1',
+        orderBy: ['createdAt', 'name'],
+      });
+
+      const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(1);
+
+      searchParams.delete('orderBy');
+
+      let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      await expect(listResponsePromise).rejects.toThrowError();
+
+      searchParams.append('orderBy', 'name');
+      searchParams.set('name', 'User 2');
+
+      listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      await expect(listResponsePromise).rejects.toThrowError();
+    });
+  });
+
   it('should support intercepting GET requests having headers', async () => {
     type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;

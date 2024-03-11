@@ -164,6 +164,56 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
+  it('should support intercepting OPTIONS requests having search params restrictions', async () => {
+    type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            searchParams: FiltersOptionsSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor
+        .options('/filters')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+          };
+        });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<FiltersOptionsSearchParams>({
+        tag: 'admin',
+      });
+
+      const optionsResponse = await fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+      expect(optionsRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      await expect(optionsResponsePromise).rejects.toThrowError();
+    });
+  });
+
   it('should support intercepting OPTIONS requests having headers', async () => {
     type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;

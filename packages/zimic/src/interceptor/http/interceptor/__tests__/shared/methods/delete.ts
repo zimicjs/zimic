@@ -172,6 +172,57 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
     });
   });
 
+  it('should support intercepting DELETE requests having search params restrictions', async () => {
+    type UserDeletionSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        DELETE: {
+          request: {
+            searchParams: UserDeletionSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const deletionTracker = interceptor
+        .delete(`/users/:id`)
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserDeletionSearchParams>({
+        tag: 'admin',
+      });
+
+      const deletionResponse = await fetch(`${baseURL}/users/${1}?${searchParams.toString()}`, { method: 'DELETE' });
+      expect(deletionResponse.status).toBe(200);
+      expect(deletionRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const listResponsePromise = fetch(`${baseURL}/users/${1}?${searchParams.toString()}`, { method: 'DELETE' });
+      await expect(listResponsePromise).rejects.toThrowError();
+    });
+  });
+
   it('should support intercepting DELETE requests having headers', async () => {
     type UserDeletionRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;

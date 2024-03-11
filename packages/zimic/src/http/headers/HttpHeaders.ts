@@ -1,6 +1,6 @@
 import { Default, Defined, ReplaceBy } from '@/types/utils';
 
-import { HttpHeadersSchema, HttpHeadersSchemaTuple } from './types';
+import { HttpHeadersSchema, HttpHeadersInit } from './types';
 
 function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schema) {
   return Object.entries(schema).reduce<Record<string, string>>((accumulated, [key, value]) => {
@@ -10,12 +10,6 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
     return accumulated;
   }, {});
 }
-
-export type HttpHeadersInit<Schema extends HttpHeadersSchema> =
-  | Headers
-  | Schema
-  | HttpHeaders<Schema>
-  | HttpHeadersSchemaTuple<Schema>[];
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
