@@ -370,7 +370,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
       async function listUsers(filters: UserListSearchParams = {}) {
         const searchParams = new HttpSearchParams(filters);
-        const request = new Request(`http://localhost:3000/users?${searchParams}`, { method: 'GET' });
+        const request = new Request(`http://localhost:3000/users?${searchParams.toString()}`, {
+          method: 'GET',
+        });
         return fetch(request);
       }
 
@@ -413,10 +415,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = authInterceptor.get('/users').respond({
-          status: 200,
-          body: [user],
-        });
+        const listTracker = authInterceptor
+          .get('/users')
+          .with({
+            searchParams: { name: user.name },
+          })
+          .respond({
+            status: 200,
+            body: [user],
+          });
 
         const response = await listUsers({ name: user.name });
         expect(response.status).toBe(200);
@@ -454,10 +461,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = authInterceptor.get('/users').respond({
-          status: 200,
-          body: orderedUsers,
-        });
+        const listTracker = authInterceptor
+          .get('/users')
+          .with({
+            searchParams: { orderBy: ['email.desc'] },
+          })
+          .respond({
+            status: 200,
+            body: orderedUsers,
+          });
 
         const response = await listUsers({
           orderBy: ['email.desc'],
