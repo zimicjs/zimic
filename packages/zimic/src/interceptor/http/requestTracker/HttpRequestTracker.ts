@@ -108,7 +108,6 @@ class HttpRequestTracker<
       if (this.isComputedRequestRestriction(restriction)) {
         return restriction(request);
       }
-
       return this.matchesRequestSearchParamsRestrictions(request, restriction);
     });
   }
@@ -121,13 +120,11 @@ class HttpRequestTracker<
       return true;
     }
 
-    const searchParamsRestriction = new HttpSearchParams(restriction.searchParams);
+    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
 
-    if (restriction.exact) {
-      return searchParamsRestriction.equals(request.searchParams);
-    } else {
-      return searchParamsRestriction.contains(request.searchParams);
-    }
+    return restriction.exact
+      ? restrictedSearchParams.equals(request.searchParams)
+      : restrictedSearchParams.contains(request.searchParams);
   }
 
   private isComputedRequestRestriction(

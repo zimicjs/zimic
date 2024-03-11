@@ -98,7 +98,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
     >;
   }
 
-  equals(otherParams: HttpSearchParams<Schema>): boolean {
+  equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
   }
 
