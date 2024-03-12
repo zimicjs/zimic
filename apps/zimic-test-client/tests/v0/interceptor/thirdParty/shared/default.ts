@@ -725,6 +725,18 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
+        expect(listTracker.requests()).toHaveLength(1);
+
+        listTracker.clear();
+
+        response = await listNotifications(notification.userId);
+        expect(response.status).toBe(200);
+
+        returnedNotifications = (await response.json()) as Notification[];
+        expect(returnedNotifications).toEqual([]);
+
+        expect(listRequests).toHaveLength(1);
+        expect(listTracker.requests()).toHaveLength(0);
       });
     });
   });
