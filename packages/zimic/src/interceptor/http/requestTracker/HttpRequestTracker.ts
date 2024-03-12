@@ -93,9 +93,13 @@ class HttpRequestTracker<
 
   bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
+    return this;
+  }
+
+  clear(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.restrictions = [];
     this.interceptedRequests = [];
-    return this;
+    return this.bypass();
   }
 
   matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {

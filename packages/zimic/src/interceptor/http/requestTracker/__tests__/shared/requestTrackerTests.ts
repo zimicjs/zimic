@@ -117,25 +117,23 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       expect(tracker.matchesRequest(parsedRequest)).toBe(true);
     });
 
-    it('should clear restrictions after bypassed', async () => {
+    it('should not match any request if cleared', async () => {
       const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-      tracker.bypass();
+      tracker.clear();
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-      tracker
-        .with((_request) => false)
-        .respond({
-          status: 200,
-          body: { success: true },
-        });
-      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+      tracker.respond({
+        status: 200,
+        body: { success: true },
+      });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
-      tracker.bypass();
+      tracker.clear();
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.respond({
@@ -240,6 +238,35 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       expect(interceptedRequests[1]).toEqual(secondRequest);
       expect(interceptedRequests[1].response).toEqual(secondResponse);
+    });
+
+    it('should clear the intercepted requests and responses after cleared', async () => {
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users').respond({
+        status: 200,
+        body: { success: true },
+      });
+
+      const firstRequest = new Request(baseURL);
+      const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
+
+      const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
+      const firstResponse = Response.json(firstResponseDeclaration.body, {
+        status: firstResponseDeclaration.status,
+      });
+      const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
+
+      tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
+
+      const interceptedRequests = tracker.requests();
+      expect(interceptedRequests).toHaveLength(1);
+
+      expect(interceptedRequests[0]).toEqual(firstRequest);
+      expect(interceptedRequests[0].response).toEqual(firstResponse);
+
+      tracker.clear();
+
+      expect(interceptedRequests).toHaveLength(1);
+      expect(tracker.requests()).toHaveLength(0);
     });
 
     it('should provide access to the raw intercepted requests and responses', async () => {
@@ -464,6 +491,62 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           expect(tracker.matchesRequest(parsedRequest)).toBe(false);
         }
       });
+    });
+
+    it('should clear restrictions after cleared', async () => {
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+
+      const request = new Request(baseURL);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.clear();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker
+        .with((_request) => false)
+        .respond({
+          status: 200,
+          body: { success: true },
+        });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.clear();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.respond({
+        status: 200,
+        body: { success: true },
+      });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    });
+
+    it('should not clear restrictions after bypassed', async () => {
+      const tracker = new HttpRequestTracker<Schema, 'GET', '/users'>(interceptor, 'GET', '/users');
+
+      const request = new Request(baseURL);
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.bypass();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker
+        .with((_request) => false)
+        .respond({
+          status: 200,
+          body: { success: true },
+        });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.bypass();
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+
+      tracker.respond({
+        status: 200,
+        body: { success: true },
+      });
+      expect(tracker.matchesRequest(parsedRequest)).toBe(false);
     });
   });
 }
