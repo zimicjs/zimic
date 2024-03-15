@@ -72,6 +72,56 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
       [keyof Schema & string, Defined<Schema[keyof Schema & string]>]
     >;
   }
+
+  equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+    for (const [key, value] of otherHeaders.entries()) {
+      const otherValue = super.get.call(this, key);
+      if (value !== otherValue) {
+        return false;
+      }
+    }
+
+    for (const otherKey of this.keys()) {
+      const hasKey = super.has.call(otherHeaders, otherKey);
+      if (!hasKey) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+    for (const [key, value] of otherHeaders.entries()) {
+      const otherValue = super.get.call(this, key);
+
+      if (otherValue === null) {
+        return false;
+      }
+
+      const valueItems = this.splitHeaderValues(value);
+      const otherValueItems = this.splitHeaderValues(otherValue);
+
+      if (otherValueItems.length < valueItems.length) {
+        return false;
+      }
+
+      for (const valueItem of valueItems) {
+        if (!otherValueItems.includes(valueItem)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private splitHeaderValues(value: string) {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
 }
 
 export default HttpHeaders;
