@@ -1,3 +1,4 @@
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { Default } from '@/types/utils';
 
@@ -8,6 +9,7 @@ import {
   HttpInterceptorSchemaPath,
 } from '../../interceptor/types/schema';
 import {
+  HttpHeadersRequestSchema,
   HttpInterceptorRequest,
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
@@ -23,11 +25,20 @@ export type HttpRequestTrackerSearchParamsStaticRestriction<
   | HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>
   | HttpSearchParams<HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>>;
 
+export type HttpRequestTrackerHeadersStaticRestriction<
+  Schema extends HttpInterceptorSchema,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> =
+  | HttpHeadersRequestSchema<Default<Schema[Path][Method]>>
+  | HttpHeaders<HttpHeadersRequestSchema<Default<Schema[Path][Method]>>>;
+
 export interface HttpRequestTrackerStaticRestriction<
   Schema extends HttpInterceptorSchema,
   Path extends HttpInterceptorSchemaPath<Schema, Method>,
   Method extends HttpInterceptorSchemaMethod<Schema>,
 > {
+  headers?: HttpRequestTrackerHeadersStaticRestriction<Schema, Path, Method>;
   searchParams?: HttpRequestTrackerSearchParamsStaticRestriction<Schema, Path, Method>;
   exact?: boolean;
 }

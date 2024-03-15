@@ -33,13 +33,17 @@ export type HttpRequestTrackerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
 
+export type HttpHeadersRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+  Default<MethodSchema['request'], { headers: never }>['headers']
+>;
+
 export type HttpSearchParamsRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
   Default<MethodSchema['request'], { searchParams: never }>['searchParams']
 >;
 
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
-  headers: HttpHeaders<Default<Default<MethodSchema['request'], { headers: never }>['headers']>>;
+  headers: HttpHeaders<HttpHeadersRequestSchema<MethodSchema>>;
   searchParams: HttpSearchParams<HttpSearchParamsRequestSchema<MethodSchema>>;
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;

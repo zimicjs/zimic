@@ -173,6 +173,79 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
+  it('should support intercepting GET requests having headers restrictions', async () => {
+    type UserListHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor
+        .get('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users,
+          };
+        });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserListHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
+      await expect(listResponsePromise).rejects.toThrowError();
+      expect(listRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
+      await expect(listResponsePromise).rejects.toThrowError();
+      expect(listRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting GET requests having search params restrictions', async () => {
     type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
       name?: string;
@@ -232,12 +305,14 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
       await expect(listResponsePromise).rejects.toThrowError();
+      expect(listRequests).toHaveLength(1);
 
       searchParams.append('orderBy', 'name');
       searchParams.set('name', 'User 2');
 
       listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
       await expect(listResponsePromise).rejects.toThrowError();
+      expect(listRequests).toHaveLength(1);
     });
   });
 
