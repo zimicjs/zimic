@@ -172,6 +172,79 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
     });
   });
 
+  it('should support intercepting DELETE requests having headers restrictions', async () => {
+    type UserDeletionHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        DELETE: {
+          request: {
+            headers: UserDeletionHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const deletionTracker = interceptor
+        .delete(`/users/:id`)
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserDeletionHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let deletionResponse = await fetch(`${baseURL}/users/${1}`, { method: 'DELETE', headers });
+      expect(deletionResponse.status).toBe(200);
+      expect(deletionRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      deletionResponse = await fetch(`${baseURL}/users/${1}`, { method: 'DELETE', headers });
+      expect(deletionResponse.status).toBe(200);
+      expect(deletionRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let deletionResponsePromise = fetch(`${baseURL}/users/${1}`, { method: 'DELETE', headers });
+      await expect(deletionResponsePromise).rejects.toThrowError();
+      expect(deletionRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      deletionResponsePromise = fetch(`${baseURL}/users`, { method: 'DELETE', headers });
+      await expect(deletionResponsePromise).rejects.toThrowError();
+      expect(deletionRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting DELETE requests having search params restrictions', async () => {
     type UserDeletionSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -220,6 +293,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
 
       const listResponsePromise = fetch(`${baseURL}/users/${1}?${searchParams.toString()}`, { method: 'DELETE' });
       await expect(listResponsePromise).rejects.toThrowError();
+      expect(deletionRequests).toHaveLength(1);
     });
   });
 

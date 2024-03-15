@@ -1,3 +1,4 @@
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { Default } from '@/types/utils';
 
@@ -112,23 +113,37 @@ class HttpRequestTracker<
       if (this.isComputedRequestRestriction(restriction)) {
         return restriction(request);
       }
-      return this.matchesRequestSearchParamsRestrictions(request, restriction);
+      return (
+        this.matchesRequestHeadersRestrictions(request, restriction) &&
+        this.matchesRequestSearchParamsRestrictions(request, restriction)
+      );
     });
+  }
+
+  private matchesRequestHeadersRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ) {
+    if (!restriction.headers) {
+      return true;
+    }
+
+    const restrictedHeaders = new HttpHeaders(restriction.headers);
+    return restriction.exact ? request.headers.equals(restrictedHeaders) : request.headers.contains(restrictedHeaders);
   }
 
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
     restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
-  ): unknown {
+  ) {
     if (!restriction.searchParams) {
       return true;
     }
 
     const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
-
     return restriction.exact
-      ? restrictedSearchParams.equals(request.searchParams)
-      : restrictedSearchParams.contains(request.searchParams);
+      ? request.searchParams.equals(restrictedSearchParams)
+      : request.searchParams.contains(restrictedSearchParams);
   }
 
   private isComputedRequestRestriction(

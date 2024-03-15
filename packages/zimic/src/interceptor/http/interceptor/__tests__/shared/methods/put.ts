@@ -173,6 +173,79 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
+  it('should support intercepting PUT requests having headers restrictions', async () => {
+    type UserUpdateHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PUT: {
+          request: {
+            headers: UserUpdateHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .put('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserUpdateHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting PUT requests having search params restrictions', async () => {
     type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -221,6 +294,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       const updateResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
       await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(1);
     });
   });
 

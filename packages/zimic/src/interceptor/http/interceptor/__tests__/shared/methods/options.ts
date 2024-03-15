@@ -164,6 +164,78 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
+  it('should support intercepting OPTIONS requests having headers restrictions', async () => {
+    type FiltersOptionsHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            headers: FiltersOptionsHeaders;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor
+        .options('/filters')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FiltersOptionsHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FiltersOptionsHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+          };
+        });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<FiltersOptionsHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
+      expect(optionsResponse.status).toBe(200);
+      expect(optionsRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
+      expect(optionsResponse.status).toBe(200);
+      expect(optionsRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
+      await expect(optionsResponsePromise).rejects.toThrowError();
+      expect(optionsRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      optionsResponsePromise = fetch(`${baseURL}/users`, { method: 'OPTIONS', headers });
+      await expect(optionsResponsePromise).rejects.toThrowError();
+      expect(optionsRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting OPTIONS requests having search params restrictions', async () => {
     type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -209,8 +281,9 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
 
       searchParams.delete('tag');
 
-      const optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+      const optionsResponsePromise = fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
       await expect(optionsResponsePromise).rejects.toThrowError();
+      expect(optionsRequests).toHaveLength(1);
     });
   });
 

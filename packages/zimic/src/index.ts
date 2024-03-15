@@ -11,6 +11,12 @@ export type {
   HttpSearchParamsSchemaTuple,
 } from './http/searchParams/types';
 
-export type { DefaultBody, HttpRequest, HttpResponse } from './http/types/requests';
+export type {
+  DefaultBody,
+  HttpRequest,
+  StrictHeaders,
+  StrictURLSearchParams,
+  HttpResponse,
+} from './http/types/requests';
 
 export { HttpSearchParams, HttpHeaders };
