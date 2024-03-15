@@ -127,8 +127,8 @@ class HttpRequestTracker<
     const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
 
     return restriction.exact
-      ? restrictedSearchParams.equals(request.searchParams)
-      : restrictedSearchParams.contains(request.searchParams);
+      ? request.searchParams.equals(restrictedSearchParams)
+      : request.searchParams.contains(restrictedSearchParams);
   }
 
   private isComputedRequestRestriction(

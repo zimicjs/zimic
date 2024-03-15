@@ -396,6 +396,7 @@ describe('HttpSearchParams', () => {
     const searchParams = new HttpSearchParams<{
       names?: string[];
       page?: `${number}`;
+      orderBy?: string;
     }>({
       names: ['User1', 'User2'],
       page: '1',
@@ -404,7 +405,6 @@ describe('HttpSearchParams', () => {
     const otherSearchParams = new HttpSearchParams<{
       names?: string[];
       page?: `${number}`;
-      orderBy?: string;
     }>({
       names: ['User1', 'User2'],
       page: '1',
@@ -412,29 +412,29 @@ describe('HttpSearchParams', () => {
 
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
-    otherSearchParams.append('names', 'User3');
+    searchParams.append('names', 'User3');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
-    otherSearchParams.delete('names', 'User3');
+    searchParams.delete('names', 'User3');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
-    otherSearchParams.set('page', '2');
+    searchParams.set('page', '2');
     expect(searchParams.contains(otherSearchParams)).toBe(false);
-    otherSearchParams.set('page', '1');
+    searchParams.set('page', '1');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
-    otherSearchParams.delete('names', 'User2');
+    searchParams.delete('names', 'User2');
     expect(searchParams.contains(otherSearchParams)).toBe(false);
-    otherSearchParams.append('names', 'User2');
+    searchParams.append('names', 'User2');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
-    otherSearchParams.delete('page');
+    searchParams.delete('page');
     expect(searchParams.contains(otherSearchParams)).toBe(false);
-    otherSearchParams.set('page', '1');
+    searchParams.set('page', '1');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
-    otherSearchParams.set('orderBy', 'asc');
+    searchParams.set('orderBy', 'asc');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
-    otherSearchParams.delete('orderBy', 'asc');
+    searchParams.delete('orderBy', 'asc');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
   });
 });

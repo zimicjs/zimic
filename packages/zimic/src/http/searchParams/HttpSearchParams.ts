@@ -103,8 +103,8 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
   }
 
   contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
-    for (const [key, value] of this.entries()) {
-      if (!super.has.call(otherParams, key, value)) {
+    for (const [key, value] of otherParams.entries()) {
+      if (!super.has.call(this, key, value)) {
         return false;
       }
     }
