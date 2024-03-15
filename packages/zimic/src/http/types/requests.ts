@@ -2,9 +2,18 @@ import { JSONValue } from '@/types/json';
 
 import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
+import HttpSearchParams from '../searchParams/HttpSearchParams';
+import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type (JSON) for HTTP requests and responses. */
 export type DefaultBody = JSONValue;
+
+export type StrictHeaders<Schema extends HttpHeadersSchema> = Pick<HttpHeaders<Schema>, keyof Headers>;
+
+export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema> = Pick<
+  HttpSearchParams<Schema>,
+  keyof URLSearchParams
+>;
 
 /**
  * An HTTP request with a strictly-typed JSON body. Fully compatible with the built-in
@@ -14,7 +23,7 @@ export interface HttpRequest<
   StrictBody extends DefaultBody = DefaultBody,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
-  headers: HttpHeaders<StrictHeadersSchema>;
+  headers: StrictHeaders<StrictHeadersSchema>;
   json: () => Promise<StrictBody>;
 }
 
@@ -28,6 +37,6 @@ export interface HttpResponse<
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
   status: StatusCode;
-  headers: HttpHeaders<StrictHeadersSchema>;
+  headers: StrictHeaders<StrictHeadersSchema>;
   json: () => Promise<StrictBody>;
 }

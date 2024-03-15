@@ -49,11 +49,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   forEach<This extends HttpHeaders<Schema>>(
-    callback: <Key extends keyof Schema & string>(
-      value: Defined<Schema[Key]>,
-      key: Key,
-      parent: HttpHeaders<Schema>,
-    ) => void,
+    callback: <Key extends keyof Schema & string>(value: Defined<Schema[Key]>, key: Key, parent: Headers) => void,
     thisArg?: This,
   ): void {
     super.forEach(callback as (value: string, key: string, parent: Headers) => void, thisArg);
