@@ -86,7 +86,18 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorResponseSchemaStatusCode<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorMethodSchema>().not.toBeAny();
     expectTypeOf<HttpInterceptorPathSchema>().not.toBeAny();
+
     expectTypeOf<HttpInterceptorSchema>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Root<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Path<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Method<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Request<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Response<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.ResponseByStatusCode<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Headers<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.SearchParams<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorSchema.Body<never>>().not.toBeAny();
+
     expectTypeOf<HttpInterceptorSchemaMethod<never>>().not.toBeAny();
     expectTypeOf<LiteralHttpInterceptorSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpInterceptorSchemaPath<never, never>>().not.toBeAny();
