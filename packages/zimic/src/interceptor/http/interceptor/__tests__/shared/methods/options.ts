@@ -354,6 +354,86 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
+  it('should support intercepting OPTIONS requests having body restrictions', async () => {
+    type FiltersOptionsBody = HttpInterceptorSchema.Body<{
+      tags?: string[];
+      other?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            body: FiltersOptionsBody;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor
+        .options('/filters')
+        .with({
+          body: { tags: ['admin'] },
+        })
+        .with((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<FiltersOptionsBody>();
+
+          return request.body.other?.startsWith('extra') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<FiltersOptionsBody>();
+
+          return {
+            status: 200,
+          };
+        });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      let optionsResponse = await fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        body: JSON.stringify({
+          tags: ['admin'],
+          other: 'extra',
+        } satisfies FiltersOptionsBody),
+      });
+      expect(optionsResponse.status).toBe(200);
+      expect(optionsRequests).toHaveLength(1);
+
+      optionsResponse = await fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        body: JSON.stringify({
+          tags: ['admin'],
+          other: 'extra-other',
+        } satisfies FiltersOptionsBody),
+      });
+      expect(optionsResponse.status).toBe(200);
+      expect(optionsRequests).toHaveLength(2);
+
+      let optionsResponsePromise = fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        body: JSON.stringify({
+          tags: ['admin'],
+        } satisfies FiltersOptionsBody),
+      });
+      await expectToThrowFetchError(optionsResponsePromise);
+      expect(optionsRequests).toHaveLength(2);
+
+      optionsResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'OPTIONS',
+        body: JSON.stringify({
+          tags: [],
+        } satisfies FiltersOptionsBody),
+      });
+      await expectToThrowFetchError(optionsResponsePromise);
+      expect(optionsRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting OPTIONS requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/filters/:id': {

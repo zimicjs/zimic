@@ -373,6 +373,55 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
+  it('should support intercepting POST requests having body restrictions', async () => {
+    type UserCreationBody = HttpInterceptorSchema.Body<User>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            body: UserCreationBody;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          body: { name: users[0].name },
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+        body: JSON.stringify(users[0] satisfies UserCreationBody),
+      });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(1);
+
+      const creationResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'POST',
+        body: JSON.stringify(users[1] satisfies UserCreationBody),
+      });
+      await expectToThrowFetchError(creationResponsePromise);
+      expect(creationRequests).toHaveLength(1);
+    });
+  });
+
   it('should support intercepting POST requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {

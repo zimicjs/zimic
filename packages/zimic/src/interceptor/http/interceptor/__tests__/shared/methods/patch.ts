@@ -366,6 +366,66 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
     });
   });
 
+  it('should support intercepting PATCH requests having body restrictions', async () => {
+    type UserUpdateBody = HttpInterceptorSchema.Body<Partial<User>>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PATCH: {
+          request: {
+            body: UserUpdateBody;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch('/users')
+        .with({
+          body: { name: users[0].name },
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserUpdateBody>();
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: users[0].name,
+        } satisfies UserUpdateBody),
+      });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      let updateResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: users[1].name,
+        } satisfies UserUpdateBody),
+      });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(1);
+
+      updateResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'PATCH',
+        body: JSON.stringify({} satisfies UserUpdateBody),
+      });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(1);
+    });
+  });
+
   it('should support intercepting PATCH requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {

@@ -366,6 +366,87 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
     });
   });
 
+  it('should support intercepting DELETE requests having body restrictions', async () => {
+    type UserDeletionBody = HttpInterceptorSchema.Body<{
+      tags?: string[];
+      other?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        DELETE: {
+          request: {
+            body: UserDeletionBody;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const deletionTracker = interceptor
+        .delete(`/users/:id`)
+        .with({
+          body: { tags: ['admin'] },
+        })
+        .with((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
+
+          return request.body.other?.startsWith('extra') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const deletionRequests = deletionTracker.requests();
+      expect(deletionRequests).toHaveLength(0);
+
+      let deletionResponse = await fetch(`${baseURL}/users/${1}`, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          tags: ['admin'],
+          other: 'extra',
+        } satisfies UserDeletionBody),
+      });
+      expect(deletionResponse.status).toBe(200);
+      expect(deletionRequests).toHaveLength(1);
+
+      deletionResponse = await fetch(`${baseURL}/users/${1}`, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          tags: ['admin'],
+          other: 'extra-other',
+        } satisfies UserDeletionBody),
+      });
+      expect(deletionResponse.status).toBe(200);
+      expect(deletionRequests).toHaveLength(2);
+
+      let deletionResponsePromise = fetch(`${baseURL}/users/${1}`, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          tags: ['admin'],
+        } satisfies UserDeletionBody),
+      });
+      await expectToThrowFetchError(deletionResponsePromise);
+      expect(deletionRequests).toHaveLength(2);
+
+      deletionResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          tags: [],
+        } satisfies UserDeletionBody),
+      });
+      await expectToThrowFetchError(deletionResponsePromise);
+      expect(deletionRequests).toHaveLength(2);
+    });
+  });
+
   it('should support intercepting DELETE requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
