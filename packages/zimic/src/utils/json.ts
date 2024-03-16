@@ -22,7 +22,7 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
     return value.every((item, index) => jsonEquals(item, otherValue[index]));
   }
 
-  if (Array.isArray(otherValue)) {
+  if (Array.isArray<JSONValue>(otherValue)) {
     return false;
   }
 
@@ -68,7 +68,7 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
     });
   }
 
-  if (Array.isArray(otherValue)) {
+  if (Array.isArray<JSONValue>(otherValue)) {
     return false;
   }
 
