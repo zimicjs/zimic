@@ -16,10 +16,20 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   beforeAll(async () => {
     await worker.start();
@@ -35,7 +45,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support intercepting PUT requests with a static response body', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -43,7 +53,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond({
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -52,7 +62,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -75,7 +85,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support intercepting PUT requests with a computed response body, based on the request body', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: { body: User };
           response: {
@@ -84,14 +94,14 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond((request) => {
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
+
+        const updatedUser: User = { ...users[0], ...request.body };
 
         return {
           status: 200,
-          body: {
-            name: request.body.name,
-          },
+          body: updatedUser,
         };
       });
       expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
@@ -101,27 +111,27 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       const userName = 'User (other)';
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
-      expect(updatedUsers).toEqual<User>({ name: userName });
+      expect(updatedUsers).toEqual<User>({ ...users[0], name: userName });
 
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
       expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
-      expect(updateRequest.body).toEqual<User>({ name: userName });
+      expect(updateRequest.body).toEqual<User>({ ...users[0], name: userName });
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
       expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
-      expect(updateRequest.response.body).toEqual<User>({ name: userName });
+      expect(updateRequest.response.body).toEqual<User>({ ...users[0], name: userName });
     });
   });
   it('should support intercepting PUT requests having headers', async () => {
@@ -134,7 +144,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: {
             headers: UserUpdateRequestHeaders;
@@ -148,7 +158,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond((request) => {
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
@@ -169,7 +179,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
         headers: {
           accept: 'application/json',
@@ -198,7 +208,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: {
             searchParams: UserUpdateSearchParams;
@@ -209,7 +219,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond((request) => {
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
         expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
@@ -227,7 +237,9 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         tag: 'admin',
       });
 
-      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PUT',
+      });
       expect(updateResponse.status).toBe(200);
 
       expect(updateRequests).toHaveLength(1);
@@ -248,7 +260,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: {
             headers: UserUpdateHeaders;
@@ -260,7 +272,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put('/users')
+        .put<'/users/:id'>(`/users/${users[0].id}`)
         .with({
           headers: { 'content-type': 'application/json' },
         })
@@ -289,26 +301,26 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         accept: 'application/json',
       });
 
-      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT', headers });
       expect(updateResponse.status).toBe(200);
       expect(updateRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
-      updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT', headers });
       expect(updateResponse.status).toBe(200);
       expect(updateRequests).toHaveLength(2);
 
       headers.delete('accept');
 
-      let updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      let updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT', headers });
       await expectToThrowFetchError(updateResponsePromise);
       expect(updateRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
-      updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PUT', headers });
+      updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT', headers });
       await expectToThrowFetchError(updateResponsePromise);
       expect(updateRequests).toHaveLength(2);
     });
@@ -320,7 +332,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: {
             searchParams: UserUpdateSearchParams;
@@ -332,7 +344,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put('/users')
+        .put<'/users/:id'>(`/users/${users[0].id}`)
         .with({
           searchParams: { tag: 'admin' },
         })
@@ -354,13 +366,17 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         tag: 'admin',
       });
 
-      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PUT',
+      });
       expect(updateResponse.status).toBe(200);
       expect(updateRequests).toHaveLength(1);
 
       searchParams.delete('tag');
 
-      const updateResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
+      const updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PUT',
+      });
       await expectToThrowFetchError(updateResponsePromise);
       expect(updateRequests).toHaveLength(1);
     });
@@ -370,7 +386,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     type UserUpdateBody = HttpInterceptorSchema.Body<User>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: {
             body: UserUpdateBody;
@@ -382,9 +398,9 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put('/users')
+        .put<'/users/:id'>(`/users/${users[0].id}`)
         .with({
-          body: { name: users[0].name },
+          body: { ...users[0], name: users[1].name },
         })
         .respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<UserUpdateBody>();
@@ -399,19 +415,21 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: users[0].name,
+          ...users[0],
+          name: users[1].name,
         } satisfies UserUpdateBody),
       });
       expect(updateResponse.status).toBe(200);
       expect(updateRequests).toHaveLength(1);
 
-      const updateResponsePromise = fetch(`${baseURL}/users`, {
+      const updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          name: users[1].name,
+          ...users[0],
+          name: users[0].name,
         } satisfies UserUpdateBody),
       });
       await expectToThrowFetchError(updateResponsePromise);
@@ -421,7 +439,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support intercepting PUT requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
-      '/users/:id': {
+      '/users/:id/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -429,7 +447,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const genericUpdateTracker = interceptor.put('/users/:id').respond({
+      const genericUpdateTracker = interceptor.put('/users/:id/:id').respond({
         status: 200,
         body: users[0],
       });
@@ -438,7 +456,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
 
-      const genericUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PUT' });
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}/${1}`, { method: 'PUT' });
       expect(genericUpdateResponse.status).toBe(200);
 
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
@@ -459,7 +477,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.put<'/users/:id'>(`/users/${1}`).respond({
+      const specificUpdateTracker = interceptor.put<'/users/:id/:id'>(`/users/:id/${1}`).respond({
         status: 200,
         body: users[0],
       });
@@ -468,7 +486,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
 
-      const specificUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PUT' });
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}/${1}`, { method: 'PUT' });
       expect(specificUpdateResponse.status).toBe(200);
 
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
@@ -487,14 +505,14 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
       expect(specificUpdateRequest.response.body).toEqual(users[0]);
 
-      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${2}`, { method: 'PUT' });
+      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${users[0].id}/${2}`, { method: 'PUT' });
       await expectToThrowFetchError(unmatchedUpdatePromise);
     });
   });
 
   it('should not intercept a PUT request without a registered response', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           request: { body: User };
           response: {
@@ -505,13 +523,13 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }>({ worker, baseURL }, async (interceptor) => {
       const userName = 'User (other)';
 
-      let updatePromise = fetch(`${baseURL}/users`, {
+      let updatePromise = fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       await expectToThrowFetchError(updatePromise);
 
-      const updateTrackerWithoutResponse = interceptor.put('/users');
+      const updateTrackerWithoutResponse = interceptor.put<'/users/:id'>(`/users/${users[0].id}`);
       expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
@@ -521,9 +539,9 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
       expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
-      updatePromise = fetch(`${baseURL}/users`, {
+      updatePromise = fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       await expectToThrowFetchError(updatePromise);
 
@@ -538,9 +556,9 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         body: users[0],
       });
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       expect(updateResponse.status).toBe(200);
 
@@ -555,7 +573,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(updateRequest).toBeInstanceOf(Request);
 
       expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
-      expect(updateRequest.body).toEqual<User>({ name: userName });
+      expect(updateRequest.body).toEqual<User>({ ...users[0], name: userName });
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
       expect(updateRequest.response.status).toEqual(200);
@@ -571,7 +589,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -581,7 +599,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put('/users')
+        .put<'/users/:id'>(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -594,7 +612,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -613,7 +631,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.put('/users').respond({
+      const errorUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -621,7 +639,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -650,7 +668,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
     }
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -660,7 +678,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put('/users')
+        .put<'/users/:id'>(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -670,7 +688,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       await expectToThrowFetchError(updatePromise);
 
       updateTracker.respond({
@@ -682,7 +700,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       let createdUsers = (await updateResponse.json()) as User;
@@ -701,7 +719,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.put('/users').respond({
+      const errorUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -709,7 +727,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -732,7 +750,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
       errorUpdateTracker.bypass();
 
-      updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       createdUsers = (await updateResponse.json()) as User;
@@ -757,7 +775,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should ignore all trackers after cleared when intercepting PUT requests', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -765,7 +783,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond({
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -775,14 +793,14 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       await expectToThrowFetchError(updatePromise);
     });
   });
 
   it('should support creating new trackers after cleared', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -790,14 +808,14 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      let updateTracker = interceptor.put('/users').respond({
+      let updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
 
       interceptor.clear();
 
-      updateTracker = interceptor.put('/users').respond({
+      updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[1],
       });
@@ -805,7 +823,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -828,7 +846,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
 
   it('should support reusing current trackers after cleared', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -836,7 +854,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond({
+      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -851,7 +869,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PUT' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;

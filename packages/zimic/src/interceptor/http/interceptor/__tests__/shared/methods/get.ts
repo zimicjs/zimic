@@ -13,10 +13,20 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
@@ -84,6 +94,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const user: User = {
+        id: crypto.randomUUID(),
         name: 'User (computed)',
       };
 

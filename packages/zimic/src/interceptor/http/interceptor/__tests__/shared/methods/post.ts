@@ -16,10 +16,22 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  type UserCreationBody = Omit<User, 'id'>;
+
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   beforeAll(async () => {
     await worker.start();
@@ -77,7 +89,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     await usingHttpInterceptor<{
       '/users': {
         POST: {
-          request: { body: User };
+          request: { body: UserCreationBody };
           response: {
             201: { body: User };
           };
@@ -85,11 +97,12 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<User>();
+        expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
 
         return {
           status: 201,
           body: {
+            id: crypto.randomUUID(),
             name: request.body.name,
           },
         };
@@ -103,25 +116,28 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       const creationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
 
       const createdUsers = (await creationResponse.json()) as User;
-      expect(createdUsers).toEqual<User>({ name: userName });
+      expect(createdUsers).toEqual<User>({
+        id: expect.any(String) as string,
+        name: userName,
+      });
 
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<User>();
-      expect(creationRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(creationRequest.body).toEqualTypeOf<UserCreationBody>();
+      expect(creationRequest.body).toEqual<UserCreationBody>({ name: userName });
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
       expect(creationRequest.response.status).toEqual(201);
 
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
-      expect(creationRequest.response.body).toEqual<User>({ name: userName });
+      expect(creationRequest.response.body).toEqual<User>(createdUsers);
     });
   });
 
@@ -374,8 +390,6 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting POST requests having body restrictions', async () => {
-    type UserCreationBody = HttpInterceptorSchema.Body<User>;
-
     await usingHttpInterceptor<{
       '/users': {
         POST: {
@@ -499,7 +513,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     await usingHttpInterceptor<{
       '/users': {
         POST: {
-          request: { body: User };
+          request: { body: UserCreationBody };
           response: {
             201: { body: User };
           };
@@ -510,7 +524,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       let creationPromise = fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectToThrowFetchError(creationPromise);
 
@@ -521,19 +535,19 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       let [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
-      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<UserCreationBody>();
       expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       creationPromise = fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectToThrowFetchError(creationPromise);
 
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
-      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<UserCreationBody>();
       expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const creationTrackerWithResponse = creationTrackerWithoutResponse.respond({
@@ -543,7 +557,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       const creationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
 
@@ -557,8 +571,8 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       const [creationRequest] = creationRequestsWithResponse;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<User>();
-      expect(creationRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(creationRequest.body).toEqualTypeOf<UserCreationBody>();
+      expect(creationRequest.body).toEqual<UserCreationBody>({ name: userName });
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
       expect(creationRequest.response.status).toEqual(201);
