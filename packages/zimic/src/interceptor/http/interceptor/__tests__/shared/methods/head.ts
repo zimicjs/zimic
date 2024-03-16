@@ -276,14 +276,14 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       headers.delete('accept');
 
       let headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(2);
     });
   });
@@ -334,7 +334,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       searchParams.delete('tag');
 
       const headResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(1);
     });
   });

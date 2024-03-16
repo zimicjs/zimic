@@ -304,14 +304,14 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       headers.delete('accept');
 
       let listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expect(listResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(listResponsePromise);
       expect(listRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expect(listResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(listResponsePromise);
       expect(listRequests).toHaveLength(2);
     });
   });
@@ -374,14 +374,14 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       searchParams.delete('orderBy');
 
       let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expect(listResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(listResponsePromise);
       expect(listRequests).toHaveLength(1);
 
       searchParams.append('orderBy', 'name');
       searchParams.set('name', 'User 2');
 
       listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expect(listResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(listResponsePromise);
       expect(listRequests).toHaveLength(1);
     });
   });

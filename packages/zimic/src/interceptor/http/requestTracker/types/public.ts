@@ -9,29 +9,36 @@ import {
   HttpInterceptorSchemaPath,
 } from '../../interceptor/types/schema';
 import {
-  HttpHeadersRequestSchema,
+  HttpRequestHeadersSchema,
   HttpInterceptorRequest,
   HttpRequestTrackerResponseDeclaration,
   HttpRequestTrackerResponseDeclarationFactory,
-  HttpSearchParamsRequestSchema,
+  HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
+  HttpRequestBodySchema,
 } from './requests';
-
-export type HttpRequestTrackerSearchParamsStaticRestriction<
-  Schema extends HttpInterceptorSchema,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-> =
-  | HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>
-  | HttpSearchParams<HttpSearchParamsRequestSchema<Default<Schema[Path][Method]>>>;
 
 export type HttpRequestTrackerHeadersStaticRestriction<
   Schema extends HttpInterceptorSchema,
   Path extends HttpInterceptorSchemaPath<Schema, Method>,
   Method extends HttpInterceptorSchemaMethod<Schema>,
 > =
-  | HttpHeadersRequestSchema<Default<Schema[Path][Method]>>
-  | HttpHeaders<HttpHeadersRequestSchema<Default<Schema[Path][Method]>>>;
+  | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
+  | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+
+export type HttpRequestTrackerSearchParamsStaticRestriction<
+  Schema extends HttpInterceptorSchema,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> =
+  | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
+  | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+
+export type HttpRequestTrackerBodyStaticRestriction<
+  Schema extends HttpInterceptorSchema,
+  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Method extends HttpInterceptorSchemaMethod<Schema>,
+> = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
 
 export interface HttpRequestTrackerStaticRestriction<
   Schema extends HttpInterceptorSchema,
@@ -40,6 +47,7 @@ export interface HttpRequestTrackerStaticRestriction<
 > {
   headers?: HttpRequestTrackerHeadersStaticRestriction<Schema, Path, Method>;
   searchParams?: HttpRequestTrackerSearchParamsStaticRestriction<Schema, Path, Method>;
+  body?: HttpRequestTrackerBodyStaticRestriction<Schema, Path, Method>;
   exact?: boolean;
 }
 

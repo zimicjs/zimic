@@ -302,14 +302,14 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       headers.delete('accept');
 
       let deletionResponsePromise = fetch(`${baseURL}/users/${1}`, { method: 'DELETE', headers });
-      await expect(deletionResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionResponsePromise);
       expect(deletionRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       deletionResponsePromise = fetch(`${baseURL}/users`, { method: 'DELETE', headers });
-      await expect(deletionResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionResponsePromise);
       expect(deletionRequests).toHaveLength(2);
     });
   });
@@ -361,7 +361,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       searchParams.delete('tag');
 
       const listResponsePromise = fetch(`${baseURL}/users/${1}?${searchParams.toString()}`, { method: 'DELETE' });
-      await expect(listResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(listResponsePromise);
       expect(deletionRequests).toHaveLength(1);
     });
   });

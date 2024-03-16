@@ -291,14 +291,14 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       headers.delete('accept');
 
       let optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
-      await expect(optionsResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(optionsResponsePromise);
       expect(optionsRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       optionsResponsePromise = fetch(`${baseURL}/users`, { method: 'OPTIONS', headers });
-      await expect(optionsResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(optionsResponsePromise);
       expect(optionsRequests).toHaveLength(2);
     });
   });
@@ -349,7 +349,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       searchParams.delete('tag');
 
       const optionsResponsePromise = fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
-      await expect(optionsResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(optionsResponsePromise);
       expect(optionsRequests).toHaveLength(1);
     });
   });
