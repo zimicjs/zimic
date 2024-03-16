@@ -125,6 +125,77 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
+  it('should support intercepting POST requests having headers', async () => {
+    type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            headers: UserCreationRequestHeaders;
+          };
+          response: {
+            201: {
+              headers: UserCreationResponseHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor.post('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 201,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+          body: users[0],
+        };
+      });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+        } satisfies UserCreationRequestHeaders,
+      });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
+      expect(creationRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(creationRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(creationRequest.response.headers).toEqualTypeOf<HttpHeaders<UserCreationResponseHeaders>>();
+      expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(creationRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(creationRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
   it('should support intercepting POST requests having search params', async () => {
     type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -299,77 +370,6 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
       await expect(creationResponsePromise).rejects.toThrowError();
       expect(creationRequests).toHaveLength(1);
-    });
-  });
-
-  it('should support intercepting POST requests having headers', async () => {
-    type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
-      accept?: string;
-    }>;
-    type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
-      'content-type'?: `application/${string}`;
-      'cache-control'?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        POST: {
-          request: {
-            headers: UserCreationRequestHeaders;
-          };
-          response: {
-            201: {
-              headers: UserCreationResponseHeaders;
-              body: User;
-            };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
-
-        return {
-          status: 201,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users[0],
-        };
-      });
-      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const creationRequests = creationTracker.requests();
-      expect(creationRequests).toHaveLength(0);
-
-      const creationResponse = await fetch(`${baseURL}/users`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-        } satisfies UserCreationRequestHeaders,
-      });
-      expect(creationResponse.status).toBe(201);
-
-      const createdUsers = (await creationResponse.json()) as User;
-      expect(createdUsers).toEqual(users[0]);
-
-      expect(creationRequests).toHaveLength(1);
-      const [creationRequest] = creationRequests;
-      expect(creationRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(creationRequest.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
-      expect(creationRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(creationRequest.headers.get('accept')).toBe('application/json');
-
-      expectTypeOf(creationRequest.response.headers).toEqualTypeOf<HttpHeaders<UserCreationResponseHeaders>>();
-      expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(creationRequest.response.headers.get('content-type')).toBe('application/json');
-      expect(creationRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

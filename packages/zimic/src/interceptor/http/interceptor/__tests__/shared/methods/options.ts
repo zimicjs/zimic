@@ -117,6 +117,72 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
     });
   });
 
+  it('should support intercepting OPTIONS requests having headers', async () => {
+    type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          request: {
+            headers: FilterOptionsRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: FilterOptionsResponseHeaders;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const optionsTracker = interceptor.options('/filters').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+        };
+      });
+      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const optionsRequests = optionsTracker.requests();
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(`${baseURL}/filters`, {
+        method: 'OPTIONS',
+        headers: {
+          accept: 'application/json',
+        } satisfies FilterOptionsRequestHeaders,
+      });
+      expect(optionsResponse.status).toBe(200);
+
+      expect(optionsRequests).toHaveLength(1);
+      const [optionsRequest] = optionsRequests;
+      expect(optionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(optionsRequest.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
+      expect(optionsRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<FilterOptionsResponseHeaders>>();
+      expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(optionsRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(optionsRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
   it('should support intercepting OPTIONS requests having search params', async () => {
     type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -285,72 +351,6 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsResponsePromise = fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
       await expect(optionsResponsePromise).rejects.toThrowError();
       expect(optionsRequests).toHaveLength(1);
-    });
-  });
-
-  it('should support intercepting OPTIONS requests having headers', async () => {
-    type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
-      accept?: string;
-    }>;
-    type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
-      'content-type'?: `application/${string}`;
-      'cache-control'?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/filters': {
-        OPTIONS: {
-          request: {
-            headers: FilterOptionsRequestHeaders;
-          };
-          response: {
-            200: {
-              headers: FilterOptionsResponseHeaders;
-            };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const optionsTracker = interceptor.options('/filters').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
-
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-        };
-      });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const optionsRequests = optionsTracker.requests();
-      expect(optionsRequests).toHaveLength(0);
-
-      const optionsResponse = await fetch(`${baseURL}/filters`, {
-        method: 'OPTIONS',
-        headers: {
-          accept: 'application/json',
-        } satisfies FilterOptionsRequestHeaders,
-      });
-      expect(optionsResponse.status).toBe(200);
-
-      expect(optionsRequests).toHaveLength(1);
-      const [optionsRequest] = optionsRequests;
-      expect(optionsRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(optionsRequest.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
-      expect(optionsRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(optionsRequest.headers.get('accept')).toBe('application/json');
-
-      expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<FilterOptionsResponseHeaders>>();
-      expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(optionsRequest.response.headers.get('content-type')).toBe('application/json');
-      expect(optionsRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

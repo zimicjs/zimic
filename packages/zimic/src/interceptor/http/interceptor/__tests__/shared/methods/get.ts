@@ -120,6 +120,75 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
+  it('should support intercepting GET requests having headers', async () => {
+    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserListResponseHeaders;
+              body: User[];
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+          body: users,
+        };
+      });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(`${baseURL}/users`, {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+        } satisfies UserListRequestHeaders,
+      });
+      expect(listResponse.status).toBe(200);
+      expect(listResponse.headers.get('content-type')).toBe('application/json');
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+      expect(listRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
+      expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(listRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
   it('should support intercepting GET requests having search params', async () => {
     type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
       name?: string;
@@ -314,75 +383,6 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
       await expect(listResponsePromise).rejects.toThrowError();
       expect(listRequests).toHaveLength(1);
-    });
-  });
-
-  it('should support intercepting GET requests having headers', async () => {
-    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
-      accept?: string;
-    }>;
-    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
-      'content-type'?: `application/${string}`;
-      'cache-control'?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          request: {
-            headers: UserListRequestHeaders;
-          };
-          response: {
-            200: {
-              headers: UserListResponseHeaders;
-              body: User[];
-            };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
-
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users,
-        };
-      });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const listRequests = listTracker.requests();
-      expect(listRequests).toHaveLength(0);
-
-      const listResponse = await fetch(`${baseURL}/users`, {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-        } satisfies UserListRequestHeaders,
-      });
-      expect(listResponse.status).toBe(200);
-      expect(listResponse.headers.get('content-type')).toBe('application/json');
-
-      expect(listRequests).toHaveLength(1);
-      const [listRequest] = listRequests;
-      expect(listRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(listRequest.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
-      expect(listRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(listRequest.headers.get('accept')).toBe('application/json');
-
-      expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
-      expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(listRequest.response.headers.get('content-type')).toBe('application/json');
-      expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 

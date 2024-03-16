@@ -124,6 +124,73 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(updateRequest.response.body).toEqual<User>({ name: userName });
     });
   });
+  it('should support intercepting PUT requests having headers', async () => {
+    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PUT: {
+          request: {
+            headers: UserUpdateRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserUpdateResponseHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor.put('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+          body: users[0],
+        };
+      });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users`, {
+        method: 'PUT',
+        headers: {
+          accept: 'application/json',
+        } satisfies UserUpdateRequestHeaders,
+      });
+      expect(updateResponse.status).toBe(200);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
+      expect(updateRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(updateRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(updateRequest.response.headers).toEqualTypeOf<HttpHeaders<UserUpdateResponseHeaders>>();
+      expect(updateRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(updateRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(updateRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
 
   it('should support intercepting PUT requests having search params', async () => {
     type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
@@ -296,74 +363,6 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       const updateResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PUT' });
       await expect(updateResponsePromise).rejects.toThrowError();
       expect(updateRequests).toHaveLength(1);
-    });
-  });
-
-  it('should support intercepting PUT requests having headers', async () => {
-    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
-      accept?: string;
-    }>;
-    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
-      'content-type'?: `application/${string}`;
-      'cache-control'?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        PUT: {
-          request: {
-            headers: UserUpdateRequestHeaders;
-          };
-          response: {
-            200: {
-              headers: UserUpdateResponseHeaders;
-              body: User;
-            };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
-
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users[0],
-        };
-      });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const updateRequests = updateTracker.requests();
-      expect(updateRequests).toHaveLength(0);
-
-      const updateResponse = await fetch(`${baseURL}/users`, {
-        method: 'PUT',
-        headers: {
-          accept: 'application/json',
-        } satisfies UserUpdateRequestHeaders,
-      });
-      expect(updateResponse.status).toBe(200);
-
-      expect(updateRequests).toHaveLength(1);
-      const [updateRequest] = updateRequests;
-      expect(updateRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(updateRequest.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
-      expect(updateRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(updateRequest.headers.get('accept')).toBe('application/json');
-
-      expectTypeOf(updateRequest.response.headers).toEqualTypeOf<HttpHeaders<UserUpdateResponseHeaders>>();
-      expect(updateRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(updateRequest.response.headers.get('content-type')).toBe('application/json');
-      expect(updateRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 
