@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -311,7 +312,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(specificGetRequest.response.body).toEqual(users[0]);
 
       const unmatchedGetPromise = fetch(`${baseURL}/users/${2}`, { method: 'GET' });
-      await expect(unmatchedGetPromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedGetPromise);
     });
   });
 
@@ -326,7 +327,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       const listTrackerWithoutResponse = interceptor.get('/users');
       expect(listTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -339,7 +340,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expectTypeOf<typeof listRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       expect(listRequestsWithoutResponse).toHaveLength(0);
 
@@ -483,7 +484,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expect(listPromise).rejects.toThrowError();
+      await expectToThrowFetchError(listPromise);
 
       listTracker.respond({
         status: 200,
@@ -588,7 +589,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expect(listPromise).rejects.toThrowError();
+      await expectToThrowFetchError(listPromise);
     });
   });
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 
 import { HTTP_INTERCEPTOR_METHODS, HttpInterceptorSchema } from '../../../interceptor/types/schema';
 import InvalidHttpInterceptorWorkerPlatform from '../../errors/InvalidHttpInterceptorWorkerPlatform';
@@ -208,7 +209,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         spiedRequestHandler.mockClear();
 
         const unmatchedResponsePromise = fetch(`${baseURL}/path/${2}`, { method });
-        await expect(unmatchedResponsePromise).rejects.toThrowError();
+        await expectToThrowFetchError(unmatchedResponsePromise, { canBeAborted: true });
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(0);
       });
@@ -225,7 +226,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
 
         const fetchPromise = fetch(`${baseURL}/path`, { method });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
 
@@ -251,7 +252,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
         let fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 50 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
         await expect(fetchPromise).resolves.toBeInstanceOf(Response);
@@ -277,7 +278,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
         const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -292,7 +293,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         await interceptorWorker.stop();
 
         const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -308,7 +309,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         await interceptorWorker.start();
 
         const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -323,7 +324,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         interceptorWorker.clearHandlers();
 
         const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -423,7 +424,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(interceptorsWithHandlers).toHaveLength(0);
 
         const fetchPromise = fetchWithTimeout(`${baseURL}/path`, { method, timeout: 200 });
-        await expect(fetchPromise).rejects.toThrowError();
+        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
 
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(2);
         expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(1);

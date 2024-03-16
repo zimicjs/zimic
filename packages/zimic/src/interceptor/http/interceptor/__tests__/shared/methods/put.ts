@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -310,7 +311,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(specificUpdateRequest.response.body).toEqual(users[0]);
 
       const unmatchedUpdatePromise = fetch(`${baseURL}/users/${2}`, { method: 'PUT' });
-      await expect(unmatchedUpdatePromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedUpdatePromise);
     });
   });
 
@@ -331,7 +332,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         method: 'PUT',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(updatePromise).rejects.toThrowError();
+      await expectToThrowFetchError(updatePromise);
 
       const updateTrackerWithoutResponse = interceptor.put('/users');
       expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -347,7 +348,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
         method: 'PUT',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(updatePromise).rejects.toThrowError();
+      await expectToThrowFetchError(updatePromise);
 
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
@@ -493,7 +494,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
-      await expect(updatePromise).rejects.toThrowError();
+      await expectToThrowFetchError(updatePromise);
 
       updateTracker.respond({
         status: 200,
@@ -598,7 +599,7 @@ export function declarePutHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users`, { method: 'PUT' });
-      await expect(updatePromise).rejects.toThrowError();
+      await expectToThrowFetchError(updatePromise);
     });
   });
 
