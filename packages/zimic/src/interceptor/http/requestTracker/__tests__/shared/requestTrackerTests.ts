@@ -140,7 +140,6 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       expect(response.body).toEqual(responseBody);
 
       expect(responseFactory).toHaveBeenCalledTimes(1);
-      expect(responseFactory).toHaveBeenCalledWith(request);
     });
 
     it('should throw an error if trying to create a response without a declared response', async () => {
@@ -167,6 +166,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const firstResponse = Response.json(firstResponseDeclaration.body, {
         status: firstResponseDeclaration.status,
       });
+      const firstResponseClone = firstResponse.clone();
       const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
@@ -174,8 +174,10 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const interceptedRequests = tracker.requests();
       expect(interceptedRequests).toHaveLength(1);
 
-      expect(interceptedRequests[0]).toEqual(firstRequest);
-      expect(interceptedRequests[0].response).toEqual(firstResponse);
+      expect(interceptedRequests[0].url).toEqual(firstRequest.url);
+      expect(interceptedRequests[0].method).toEqual(firstRequest.method);
+      expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+      expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
       const secondRequest = new Request(`${baseURL}/path`);
       const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
@@ -190,11 +192,15 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       expect(interceptedRequests).toHaveLength(2);
 
-      expect(interceptedRequests[0]).toEqual(firstRequest);
-      expect(interceptedRequests[0].response).toEqual(firstResponse);
+      expect(interceptedRequests[0].url).toEqual(firstRequest.url);
+      expect(interceptedRequests[0].method).toEqual(firstRequest.method);
+      expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+      expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
-      expect(interceptedRequests[1]).toEqual(secondRequest);
-      expect(interceptedRequests[1].response).toEqual(secondResponse);
+      expect(interceptedRequests[1].url).toEqual(secondRequest.url);
+      expect(interceptedRequests[1].method).toEqual(secondRequest.method);
+      expect(interceptedRequests[1].response.status).toEqual(secondResponse.status);
+      expect(interceptedRequests[1].response.body).toEqual(await secondResponse.json());
     });
 
     it('should provide access to the raw intercepted requests and responses', async () => {

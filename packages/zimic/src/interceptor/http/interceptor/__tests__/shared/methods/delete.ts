@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -309,7 +310,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       expect(specificDeletionRequest.response.body).toEqual(users[0]);
 
       const unmatchedDeletionPromise = fetch(`${baseURL}/users/${2}`, { method: 'DELETE' });
-      await expect(unmatchedDeletionPromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedDeletionPromise);
     });
   });
 
@@ -330,7 +331,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(deletionPromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionPromise);
 
       const deletionTrackerWithoutResponse = interceptor.delete(`/users/:id`);
       expect(deletionTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -346,7 +347,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(deletionPromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionPromise);
 
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
 
@@ -492,7 +493,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       expect(initialDeletionRequests).toHaveLength(0);
 
       const deletionPromise = fetch(`${baseURL}/users/${1}`, { method: 'DELETE' });
-      await expect(deletionPromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionPromise);
 
       deletionTracker.respond({
         status: 200,
@@ -597,7 +598,7 @@ export function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterc
       expect(initialDeletionRequests).toHaveLength(0);
 
       const deletionPromise = fetch(`${baseURL}/users/${1}`, { method: 'DELETE' });
-      await expect(deletionPromise).rejects.toThrowError();
+      await expectToThrowFetchError(deletionPromise);
     });
   });
 
