@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -399,7 +400,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(specificHeadRequest.response.body).toBe(null);
 
       const unmatchedHeadPromise = fetch(`${baseURL}/users/${2}`, { method: 'HEAD' });
-      await expect(unmatchedHeadPromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedHeadPromise);
     });
   });
 
@@ -414,7 +415,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       };
     }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       const headTrackerWithoutResponse = interceptor.head('/users');
       expect(headTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -427,7 +428,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf<typeof headRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       expect(headRequestsWithoutResponse).toHaveLength(0);
 
@@ -563,7 +564,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expect(headPromise).rejects.toThrowError();
+      await expectToThrowFetchError(headPromise);
 
       const noContentHeadTracker = headTracker.respond({
         status: 204,
@@ -661,7 +662,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expect(headPromise).rejects.toThrowError();
+      await expectToThrowFetchError(headPromise);
     });
   });
 

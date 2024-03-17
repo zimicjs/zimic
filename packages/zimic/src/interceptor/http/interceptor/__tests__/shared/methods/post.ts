@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -441,7 +442,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(specificCreationRequest.response.body).toEqual(users[0]);
 
       const unmatchedCreationPromise = fetch(`${baseURL}/users/${2}`, { method: 'POST' });
-      await expect(unmatchedCreationPromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedCreationPromise);
     });
   });
 
@@ -462,7 +463,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
         method: 'POST',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(creationPromise).rejects.toThrowError();
+      await expectToThrowFetchError(creationPromise);
 
       const creationTrackerWithoutResponse = interceptor.post('/users');
       expect(creationTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -478,7 +479,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
         method: 'POST',
         body: JSON.stringify({ name: userName } satisfies User),
       });
-      await expect(creationPromise).rejects.toThrowError();
+      await expectToThrowFetchError(creationPromise);
 
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
@@ -629,7 +630,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
-      await expect(creationPromise).rejects.toThrowError();
+      await expectToThrowFetchError(creationPromise);
 
       creationTracker.respond({
         status: 201,
@@ -734,7 +735,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
-      await expect(creationPromise).rejects.toThrowError();
+      await expectToThrowFetchError(creationPromise);
     });
   });
 

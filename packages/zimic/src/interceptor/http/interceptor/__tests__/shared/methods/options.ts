@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
@@ -414,7 +415,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       expect(specificOptionsRequest.response.body).toBe(null);
 
       const unmatchedOptionsPromise = fetch(`${baseURL}/filters/${2}`, { method: 'OPTIONS' });
-      await expect(unmatchedOptionsPromise).rejects.toThrowError();
+      await expectToThrowFetchError(unmatchedOptionsPromise);
     });
   });
 
@@ -429,7 +430,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       };
     }>({ worker, baseURL }, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       const optionsTrackerWithoutResponse = interceptor.options('/filters');
       expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
@@ -442,7 +443,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expect(fetchPromise).rejects.toThrowError();
+      await expectToThrowFetchError(fetchPromise);
 
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
 
@@ -578,7 +579,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expect(optionsPromise).rejects.toThrowError();
+      await expectToThrowFetchError(optionsPromise);
 
       const noContentOptionsTracker = optionsTracker.respond({
         status: 204,
@@ -676,7 +677,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expect(optionsPromise).rejects.toThrowError();
+      await expectToThrowFetchError(optionsPromise);
     });
   });
 

@@ -237,8 +237,9 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   static async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
-    rawRequest: HttpRequest,
+    originalRawRequest: HttpRequest,
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
+    const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
 
     type BodySchema = Default<Default<MethodSchema['request']>['body']>;
@@ -289,7 +290,8 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   static async parseRawResponse<
     MethodSchema extends HttpInterceptorMethodSchema,
     StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-  >(rawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+  >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+    const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
 
     type BodySchema = Default<Default<MethodSchema['response']>[StatusCode]['body']>;
