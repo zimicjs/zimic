@@ -447,7 +447,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
 
   it('should support intercepting PATCH requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
-      '/users/:id/:id': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -455,7 +455,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const genericUpdateTracker = interceptor.patch('/users/:id/:id').respond({
+      const genericUpdateTracker = interceptor.patch('/users/:id').respond({
         status: 200,
         body: users[0],
       });
@@ -464,7 +464,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
 
-      const genericUpdateResponse = await fetch(`${baseURL}/users/:id/${1}`, { method: 'PATCH' });
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(genericUpdateResponse.status).toBe(200);
 
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
@@ -485,7 +485,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.patch<'/users/:id/:id'>(`/users/:id/${1}`).respond({
+      const specificUpdateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -494,7 +494,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
 
-      const specificUpdateResponse = await fetch(`${baseURL}/users/:id/${1}`, { method: 'PATCH' });
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(specificUpdateResponse.status).toBe(200);
 
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;

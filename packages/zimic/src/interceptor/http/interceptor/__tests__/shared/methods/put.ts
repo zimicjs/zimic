@@ -442,7 +442,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
 
   it('should support intercepting PUT requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
-      '/users/:id/:id': {
+      '/users/:id': {
         PUT: {
           response: {
             200: { body: User };
@@ -450,7 +450,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const genericUpdateTracker = interceptor.put('/users/:id/:id').respond({
+      const genericUpdateTracker = interceptor.put('/users/:id').respond({
         status: 200,
         body: users[0],
       });
@@ -459,7 +459,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
 
-      const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}/${1}`, { method: 'PUT' });
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(genericUpdateResponse.status).toBe(200);
 
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
@@ -480,7 +480,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.put<'/users/:id/:id'>(`/users/:id/${1}`).respond({
+      const specificUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -489,7 +489,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
 
-      const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}/${1}`, { method: 'PUT' });
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PUT' });
       expect(specificUpdateResponse.status).toBe(200);
 
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
@@ -508,7 +508,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
       expect(specificUpdateRequest.response.body).toEqual(users[0]);
 
-      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${users[0].id}/${2}`, { method: 'PUT' });
+      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${users[1].id}`, { method: 'PUT' });
       await expectToThrowFetchError(unmatchedUpdatePromise);
     });
   });
