@@ -1,10 +1,10 @@
-import { JSONValue } from '..';
+import { LooseJSONValue } from '..';
 
-function isPrimitiveJSONValue<Value extends JSONValue>(value: Value): value is Exclude<Value, object> {
+function isPrimitiveJSONValue<Value extends LooseJSONValue>(value: Value): value is Exclude<Value, object> {
   return typeof value !== 'object' || value === null;
 }
 
-export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
+export function jsonEquals(value: LooseJSONValue, otherValue: LooseJSONValue): boolean {
   if (isPrimitiveJSONValue(value)) {
     return value === otherValue;
   }
@@ -12,8 +12,8 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
     return false;
   }
 
-  if (Array.isArray<JSONValue>(value)) {
-    if (!Array.isArray<JSONValue>(otherValue)) {
+  if (Array.isArray<LooseJSONValue>(value)) {
+    if (!Array.isArray<LooseJSONValue>(otherValue)) {
       return false;
     }
     if (value.length !== otherValue.length) {
@@ -22,7 +22,7 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
     return value.every((item, index) => jsonEquals(item, otherValue[index]));
   }
 
-  if (Array.isArray<JSONValue>(otherValue)) {
+  if (Array.isArray<LooseJSONValue>(otherValue)) {
     return false;
   }
 
@@ -34,13 +34,13 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
   }
 
   return valueKeys.every((key) => {
-    const subValue = value[key as keyof typeof value];
-    const subOtherValue = otherValue[key as keyof typeof otherValue];
+    const subValue = value[key] as LooseJSONValue;
+    const subOtherValue = otherValue[key] as LooseJSONValue;
     return jsonEquals(subValue, subOtherValue);
   });
 }
 
-export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
+export function jsonContains(value: LooseJSONValue, otherValue: LooseJSONValue): boolean {
   if (isPrimitiveJSONValue(value)) {
     return value === otherValue;
   }
@@ -48,8 +48,8 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
     return false;
   }
 
-  if (Array.isArray<JSONValue>(value)) {
-    if (!Array.isArray<JSONValue>(otherValue)) {
+  if (Array.isArray<LooseJSONValue>(value)) {
+    if (!Array.isArray<LooseJSONValue>(otherValue)) {
       return false;
     }
     if (value.length < otherValue.length) {
@@ -68,7 +68,7 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
     });
   }
 
-  if (Array.isArray<JSONValue>(otherValue)) {
+  if (Array.isArray<LooseJSONValue>(otherValue)) {
     return false;
   }
 
@@ -80,8 +80,8 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
   }
 
   return otherValueKeys.every((key) => {
-    const subValue = value[key as keyof typeof value];
-    const subOtherValue = otherValue[key as keyof typeof otherValue];
+    const subValue = value[key] as LooseJSONValue;
+    const subOtherValue = otherValue[key] as LooseJSONValue;
     return jsonContains(subValue, subOtherValue);
   });
 }

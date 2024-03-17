@@ -1,4 +1,4 @@
-import { JSONValue } from '@/types/json';
+import { LooseJSONValue } from '@/types/json';
 
 import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
@@ -6,7 +6,7 @@ import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type (JSON) for HTTP requests and responses. */
-export type DefaultBody = JSONValue;
+export type DefaultBody = LooseJSONValue;
 
 export type StrictHeaders<Schema extends HttpHeadersSchema> = Pick<HttpHeaders<Schema>, keyof Headers>;
 

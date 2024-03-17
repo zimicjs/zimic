@@ -1,7 +1,7 @@
 import HttpHeaders from './http/headers/HttpHeaders';
 import HttpSearchParams from './http/searchParams/HttpSearchParams';
 
-export type { JSONValue } from '@/types/json';
+export type { LooseJSONValue, JSONValue, JSONCompatible, JSONSerialized } from '@/types/json';
 
 export type { HttpHeadersInit, HttpHeadersSchema, HttpHeadersSchemaTuple } from './http/headers/types';
 
