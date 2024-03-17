@@ -1,11 +1,13 @@
+import type { JSONCompatible } from 'zimic';
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
-export interface GitHubRepository {
+export type GitHubRepository = JSONCompatible<{
   id: number;
   full_name: string;
   html_url: string;
-}
+}>;
 
 async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
   const repositoryURL = `${GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
