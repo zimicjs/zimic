@@ -1,4 +1,4 @@
-import { LooseJSONValue } from '@/types/json';
+import { JSONValue, LooseJSONValue } from '@/types/json';
 
 import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
@@ -6,7 +6,9 @@ import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type (JSON) for HTTP requests and responses. */
-export type DefaultBody = LooseJSONValue;
+export type DefaultLooseBody = LooseJSONValue;
+
+export type DefaultBody = JSONValue;
 
 export type StrictHeaders<Schema extends HttpHeadersSchema> = Pick<HttpHeaders<Schema>, keyof Headers>;
 
@@ -20,7 +22,7 @@ export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema> = Pick<
  * {@link https://developer.mozilla.org/docs/Web/API/Request Request} class.
  */
 export interface HttpRequest<
-  StrictBody extends DefaultBody = DefaultBody,
+  StrictBody extends DefaultLooseBody = DefaultLooseBody,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
@@ -32,7 +34,7 @@ export interface HttpRequest<
  * {@link https://developer.mozilla.org/docs/Web/API/Response Response} class.
  */
 export interface HttpResponse<
-  StrictBody extends DefaultBody = DefaultBody,
+  StrictBody extends DefaultLooseBody = DefaultLooseBody,
   StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {

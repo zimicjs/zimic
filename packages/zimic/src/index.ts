@@ -12,6 +12,7 @@ export type {
 } from './http/searchParams/types';
 
 export type {
+  DefaultLooseBody,
   DefaultBody,
   HttpRequest,
   StrictHeaders,

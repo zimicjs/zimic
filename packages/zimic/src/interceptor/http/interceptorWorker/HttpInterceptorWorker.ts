@@ -8,7 +8,7 @@ import {
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
-import { DefaultBody, HttpResponse, HttpRequest } from '@/http/types/requests';
+import { DefaultLooseBody, HttpResponse, HttpRequest } from '@/http/types/requests';
 import { Default } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
@@ -224,7 +224,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     Declaration extends {
       status: number;
       headers?: HttpHeadersInit<HeadersSchema>;
-      body?: DefaultBody;
+      body?: DefaultLooseBody;
     },
     HeadersSchema extends HttpHeadersSchema,
   >(responseDeclaration: Declaration) {
@@ -332,7 +332,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
   }
 
-  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest | HttpResponse) {
+  static async parseRawBody<Body extends DefaultLooseBody>(requestOrResponse: HttpRequest | HttpResponse) {
     const bodyAsText = await requestOrResponse.text();
 
     try {
