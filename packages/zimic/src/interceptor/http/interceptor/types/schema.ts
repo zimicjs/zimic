@@ -1,6 +1,6 @@
 import { HttpHeadersSchema } from '@/http/headers/types';
 import { HttpSearchParamsSchema } from '@/http/searchParams/types';
-import { DefaultBody, DefaultLooseBody } from '@/http/types/requests';
+import { DefaultBody } from '@/http/types/requests';
 import { Default, UnionToIntersection, Prettify, IfAny } from '@/types/utils';
 
 import { HttpRequestHandlerContext } from '../../interceptorWorker/types/requests';
@@ -13,18 +13,17 @@ export type HttpInterceptorHeadersSchema = HttpHeadersSchema;
 
 export type HttpInterceptorSearchParamsSchema = HttpSearchParamsSchema;
 
-export type HttpInterceptorLooseBodySchema = DefaultLooseBody;
 export type HttpInterceptorBodySchema = DefaultBody;
 
 export interface HttpInterceptorRequestSchema {
   headers?: HttpInterceptorHeadersSchema;
   searchParams?: HttpInterceptorSearchParamsSchema;
-  body?: HttpInterceptorLooseBodySchema;
+  body?: HttpInterceptorBodySchema;
 }
 
 export interface HttpInterceptorResponseSchema {
   headers?: HttpInterceptorHeadersSchema;
-  body?: HttpInterceptorLooseBodySchema;
+  body?: HttpInterceptorBodySchema;
 }
 
 export interface HttpInterceptorResponseSchemaByStatusCode {
@@ -59,7 +58,6 @@ export namespace HttpInterceptorSchema {
 
   export type Headers<Schema extends HttpInterceptorHeadersSchema> = Prettify<Schema>;
   export type SearchParams<Schema extends HttpInterceptorSearchParamsSchema> = Prettify<Schema>;
-  export type LooseBody<Schema extends HttpInterceptorLooseBodySchema> = Prettify<Schema>;
   export type Body<Schema extends HttpInterceptorBodySchema> = Prettify<Schema>;
 }
 

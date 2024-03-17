@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONCompatible } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -15,10 +16,10 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const crypto = await getCrypto();
 
-  interface User {
+  type User = JSONCompatible<{
     id: string;
     name: string;
-  }
+  }>;
 
   const users: User[] = [
     {
@@ -611,9 +612,9 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should consider only the last declared response when intercepting DELETE requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -690,9 +691,9 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should ignore trackers with bypassed responses when intercepting DELETE requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users/:id': {

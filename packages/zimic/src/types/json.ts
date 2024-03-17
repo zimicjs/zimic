@@ -1,8 +1,4 @@
 /** Value that can be represented in JSON. */
-export type LooseJSONValue =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Record<string, any> | LooseJSONValue[] | string | number | boolean | null | undefined;
-
 export type JSONValue = { [key: string]: JSONValue } | JSONValue[] | string | number | boolean | null | undefined;
 
 export type JSONCompatible<Type extends JSONValue> = Type;

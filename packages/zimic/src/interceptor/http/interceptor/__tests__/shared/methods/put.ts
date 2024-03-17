@@ -588,9 +588,9 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should consider only the last declared response when intercepting PUT requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -667,9 +667,9 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should ignore trackers with bypassed responses when intercepting PUT requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users/:id': {

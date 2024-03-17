@@ -25,7 +25,6 @@ export type {
   HttpInterceptorMethod,
   HttpInterceptorRequestSchema,
   HttpInterceptorSearchParamsSchema,
-  HttpInterceptorLooseBodySchema,
   HttpInterceptorBodySchema,
   HttpInterceptorResponseSchema,
   HttpInterceptorResponseSchemaByStatusCode,

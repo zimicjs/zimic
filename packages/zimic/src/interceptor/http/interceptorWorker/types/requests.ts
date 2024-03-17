@@ -4,18 +4,18 @@ import { HttpRequestResolverExtras } from 'msw/lib/core/handlers/HttpHandler';
 import { ResponseResolverInfo } from 'msw/lib/core/handlers/RequestHandler';
 import type { SetupServer as NodeMSWWorker } from 'msw/node';
 
-import { HttpResponse, DefaultLooseBody } from '@/http/types/requests';
+import { HttpResponse, DefaultBody } from '@/http/types/requests';
 import { PossiblePromise } from '@/types/utils';
 
 export type HttpWorker = BrowserMSWWorker | NodeMSWWorker;
 export { BrowserMSWWorker as BrowserHttpWorker, NodeMSWWorker as NodeHttpWorker };
 
-export type HttpRequestHandlerContext<Body extends DefaultLooseBody = DefaultLooseBody> = ResponseResolverInfo<
+export type HttpRequestHandlerContext<Body extends DefaultBody = DefaultBody> = ResponseResolverInfo<
   HttpRequestResolverExtras<PathParams>,
   Body
 >;
 
-export interface EffectiveHttpRequestHandlerResult<Body extends DefaultLooseBody = DefaultLooseBody> {
+export interface EffectiveHttpRequestHandlerResult<Body extends DefaultBody = DefaultBody> {
   bypass?: never;
   response: HttpResponse<Body>;
 }
@@ -25,11 +25,11 @@ export interface BypassedHttpRequestHandlerResult {
   response?: never;
 }
 
-export type HttpRequestHandlerResult<Body extends DefaultLooseBody = DefaultLooseBody> =
+export type HttpRequestHandlerResult<Body extends DefaultBody = DefaultBody> =
   | EffectiveHttpRequestHandlerResult<Body>
   | BypassedHttpRequestHandlerResult;
 
 export type HttpRequestHandler<
-  RequestBody extends DefaultLooseBody = DefaultLooseBody,
-  ResponseBody extends DefaultLooseBody = DefaultLooseBody,
+  RequestBody extends DefaultBody = DefaultBody,
+  ResponseBody extends DefaultBody = DefaultBody,
 > = (context: HttpRequestHandlerContext<RequestBody>) => PossiblePromise<HttpRequestHandlerResult<ResponseBody>>;

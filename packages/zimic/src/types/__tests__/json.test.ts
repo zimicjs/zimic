@@ -1,41 +1,9 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { JSONCompatible, JSONSerialized, LooseJSONValue, JSONValue } from '../json';
+import { JSONCompatible, JSONSerialized, JSONValue } from '../json';
 
 describe('JSON types', () => {
-  it('should type loose JSON values correctly', () => {
-    'a' satisfies LooseJSONValue;
-    1 satisfies LooseJSONValue;
-    true satisfies LooseJSONValue;
-    false satisfies LooseJSONValue;
-    null satisfies LooseJSONValue;
-    undefined satisfies LooseJSONValue;
-    ['e'] satisfies LooseJSONValue;
-    [{ g: 'g' }] satisfies LooseJSONValue;
-    ({ a: 1, b: { c: { d: [] } } }) satisfies LooseJSONValue;
-    Date satisfies LooseJSONValue;
-    (() => {}) satisfies LooseJSONValue; // eslint-disable-line @typescript-eslint/no-empty-function
-
-    ({
-      a: 'a',
-      b: 1,
-      c: true,
-      d: false,
-      e: null,
-      f: ['e'],
-      g: [{ g: 'g' }],
-      h: { a: 1, b: { c: { d: [] } } },
-    }) satisfies LooseJSONValue;
-
-    ({
-      a: Date,
-      b: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
-      c: Symbol('c'),
-      d: Error,
-    }) satisfies LooseJSONValue;
-  });
-
-  it('should type strict JSON values correctly', () => {
+  it('should type JSON values correctly', () => {
     'a' satisfies JSONValue;
     1 satisfies JSONValue;
     true satisfies JSONValue;
