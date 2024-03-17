@@ -27,7 +27,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
   });
 
   describe('Methods', () => {
-    const methodTestFactories: Record<HttpInterceptorMethod, () => void> = {
+    const methodTestFactories: Record<HttpInterceptorMethod, () => Promise<void> | void> = {
       GET: declareGetHttpInterceptorTests.bind(null, options),
       POST: declarePostHttpInterceptorTests.bind(null, options),
       PUT: declarePutHttpInterceptorTests.bind(null, options),
@@ -38,8 +38,8 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     };
 
     for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
-      describe(method, () => {
-        methodTestFactory();
+      describe(method, async () => {
+        await methodTestFactory();
       });
     }
   });

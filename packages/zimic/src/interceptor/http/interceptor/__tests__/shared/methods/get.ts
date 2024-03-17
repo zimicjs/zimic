@@ -5,13 +5,16 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const crypto = await getCrypto();
+
   interface User {
     id: string;
     name: string;
