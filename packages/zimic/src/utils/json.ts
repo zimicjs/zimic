@@ -22,7 +22,7 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
     return value.every((item, index) => jsonEquals(item, otherValue[index]));
   }
 
-  if (Array.isArray(otherValue)) {
+  if (Array.isArray<JSONValue>(otherValue)) {
     return false;
   }
 
@@ -34,8 +34,8 @@ export function jsonEquals(value: JSONValue, otherValue: JSONValue): boolean {
   }
 
   return valueKeys.every((key) => {
-    const subValue = value[key as keyof typeof value];
-    const subOtherValue = otherValue[key as keyof typeof otherValue];
+    const subValue = value[key];
+    const subOtherValue = otherValue[key];
     return jsonEquals(subValue, subOtherValue);
   });
 }
@@ -68,7 +68,7 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
     });
   }
 
-  if (Array.isArray(otherValue)) {
+  if (Array.isArray<JSONValue>(otherValue)) {
     return false;
   }
 
@@ -80,8 +80,8 @@ export function jsonContains(value: JSONValue, otherValue: JSONValue): boolean {
   }
 
   return otherValueKeys.every((key) => {
-    const subValue = value[key as keyof typeof value];
-    const subOtherValue = otherValue[key as keyof typeof otherValue];
+    const subValue = value[key];
+    const subOtherValue = otherValue[key];
     return jsonContains(subValue, subOtherValue);
   });
 }

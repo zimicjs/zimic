@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONCompatible } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -15,9 +16,9 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  interface Filters {
+  type Filters = JSONCompatible<{
     name: string;
-  }
+  }>;
 
   beforeAll(async () => {
     await worker.start();
@@ -558,9 +559,9 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should consider only the last declared response when intercepting OPTIONS requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/filters': {
@@ -633,9 +634,9 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should ignore trackers with bypassed responses when intercepting OPTIONS requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONCompatible<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/filters': {
