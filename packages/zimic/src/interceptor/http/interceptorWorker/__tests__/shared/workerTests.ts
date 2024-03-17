@@ -209,7 +209,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         spiedRequestHandler.mockClear();
 
         const unmatchedResponsePromise = fetch(`${baseURL}/path/${2}`, { method });
-        await expectToThrowFetchError(unmatchedResponsePromise, { canBeAborted: true });
+        await expectToThrowFetchError(unmatchedResponsePromise);
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(0);
       });
@@ -226,7 +226,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
 
         const fetchPromise = fetch(`${baseURL}/path`, { method });
-        await expectToThrowFetchError(fetchPromise, { canBeAborted: true });
+        await expectToThrowFetchError(fetchPromise);
 
         expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(1);
 
