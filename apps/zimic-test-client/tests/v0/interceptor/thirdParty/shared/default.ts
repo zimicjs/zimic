@@ -220,6 +220,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
+            body: creationPayload,
           })
           .respond((request) => {
             expect(request.headers.get('content-type')).toBe('application/json');
@@ -280,10 +281,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationTracker = authInterceptor.post('/users').respond({
-          status: 400,
-          body: validationError,
-        });
+        const creationTracker = authInterceptor
+          .post('/users')
+          .with({
+            body: invalidPayload,
+          })
+          .respond({
+            status: 400,
+            body: validationError,
+          });
 
         const response = await createUser(invalidPayload);
         expect(response.status).toBe(400);
@@ -318,10 +324,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationTracker = authInterceptor.post('/users').respond({
-          status: 409,
-          body: conflictError,
-        });
+        const creationTracker = authInterceptor
+          .post('/users')
+          .with({
+            body: conflictingPayload,
+          })
+          .respond({
+            status: 409,
+            body: conflictError,
+          });
 
         const response = await createUser(conflictingPayload);
         expect(response.status).toBe(409);

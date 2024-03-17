@@ -33,30 +33,45 @@ export type HttpRequestTrackerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpHeadersRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+export type HttpRequestHeadersSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
   Default<MethodSchema['request'], { headers: never }>['headers']
 >;
 
-export type HttpSearchParamsRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
   Default<MethodSchema['request'], { searchParams: never }>['searchParams']
+>;
+
+export type HttpRequestBodySchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+  Default<MethodSchema['request'], { body: null }>['body'],
+  null
 >;
 
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
-  headers: HttpHeaders<HttpHeadersRequestSchema<MethodSchema>>;
-  searchParams: HttpSearchParams<HttpSearchParamsRequestSchema<MethodSchema>>;
-  body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
+  headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
+  searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
+  body: HttpRequestBodySchema<MethodSchema>;
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }
+
+export type HttpResponseHeadersSchema<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> = Default<Default<MethodSchema['response']>[StatusCode]['headers']>;
+
+export type HttpResponseBodySchema<
+  MethodSchema extends HttpInterceptorMethodSchema,
+  StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+> = Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
 
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<HttpResponse, keyof Body | 'headers'> {
-  headers: HttpHeaders<Default<Default<MethodSchema['response']>[StatusCode]['headers']>>;
+  headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
   status: StatusCode;
-  body: Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
-  raw: HttpResponse<Default<Default<MethodSchema['response']>[StatusCode]['body'], null>, StatusCode>;
+  body: HttpResponseBodySchema<MethodSchema, StatusCode>;
+  raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }
 
 export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = new Set<

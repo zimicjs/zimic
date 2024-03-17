@@ -1,6 +1,7 @@
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { Default } from '@/types/utils';
+import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptor from '../interceptor/HttpInterceptor';
 import {
@@ -115,7 +116,8 @@ class HttpRequestTracker<
       }
       return (
         this.matchesRequestHeadersRestrictions(request, restriction) &&
-        this.matchesRequestSearchParamsRestrictions(request, restriction)
+        this.matchesRequestSearchParamsRestrictions(request, restriction) &&
+        this.matchesRequestBodyRestrictions(request, restriction)
       );
     });
   }
@@ -124,7 +126,7 @@ class HttpRequestTracker<
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
     restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
   ) {
-    if (!restriction.headers) {
+    if (restriction.headers === undefined) {
       return true;
     }
 
@@ -136,7 +138,7 @@ class HttpRequestTracker<
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
     restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
   ) {
-    if (!restriction.searchParams) {
+    if (restriction.searchParams === undefined) {
       return true;
     }
 
@@ -144,6 +146,19 @@ class HttpRequestTracker<
     return restriction.exact
       ? request.searchParams.equals(restrictedSearchParams)
       : request.searchParams.contains(restrictedSearchParams);
+  }
+
+  private matchesRequestBodyRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ) {
+    if (restriction.body === undefined) {
+      return true;
+    }
+
+    return restriction.exact
+      ? jsonEquals(request.body, restriction.body)
+      : jsonContains(request.body, restriction.body);
   }
 
   private isComputedRequestRestriction(

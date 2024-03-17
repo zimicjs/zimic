@@ -102,6 +102,72 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
+  it('should support intercepting HEAD requests having headers', async () => {
+    type UserHeadRequestHeaders = HttpInterceptorSchema.Headers<{
+      accept?: string;
+    }>;
+    type UserHeadResponseHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: `application/${string}`;
+      'cache-control'?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          request: {
+            headers: UserHeadRequestHeaders;
+          };
+          response: {
+            200: {
+              headers: UserHeadResponseHeaders;
+            };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const headTracker = interceptor.head('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
+        expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+        const acceptHeader = request.headers.get('accept')!;
+        expect(acceptHeader).toBe('application/json');
+
+        return {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': 'no-cache',
+          },
+        };
+      });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const headResponse = await fetch(`${baseURL}/users`, {
+        method: 'HEAD',
+        headers: {
+          accept: 'application/json',
+        } satisfies UserHeadRequestHeaders,
+      });
+      expect(headResponse.status).toBe(200);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
+      expect(headRequest.headers).toBeInstanceOf(HttpHeaders);
+      expect(headRequest.headers.get('accept')).toBe('application/json');
+
+      expectTypeOf(headRequest.response.headers).toEqualTypeOf<HttpHeaders<UserHeadResponseHeaders>>();
+      expect(headRequest.response.headers).toBeInstanceOf(HttpHeaders);
+      expect(headRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(headRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
   it('should support intercepting HEAD requests having search params', async () => {
     type UserHeadSearchParams = HttpInterceptorSchema.SearchParams<{
       tag?: string;
@@ -210,14 +276,14 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       headers.delete('accept');
 
       let headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(2);
     });
   });
@@ -268,74 +334,8 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       searchParams.delete('tag');
 
       const headResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
-      await expect(headResponsePromise).rejects.toThrowError();
+      await expectToThrowFetchError(headResponsePromise);
       expect(headRequests).toHaveLength(1);
-    });
-  });
-
-  it('should support intercepting HEAD requests having headers', async () => {
-    type UserHeadRequestHeaders = HttpInterceptorSchema.Headers<{
-      accept?: string;
-    }>;
-    type UserHeadResponseHeaders = HttpInterceptorSchema.Headers<{
-      'content-type'?: `application/${string}`;
-      'cache-control'?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        HEAD: {
-          request: {
-            headers: UserHeadRequestHeaders;
-          };
-          response: {
-            200: {
-              headers: UserHeadResponseHeaders;
-            };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
-
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-        };
-      });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const headRequests = headTracker.requests();
-      expect(headRequests).toHaveLength(0);
-
-      const headResponse = await fetch(`${baseURL}/users`, {
-        method: 'HEAD',
-        headers: {
-          accept: 'application/json',
-        } satisfies UserHeadRequestHeaders,
-      });
-      expect(headResponse.status).toBe(200);
-
-      expect(headRequests).toHaveLength(1);
-      const [headRequest] = headRequests;
-      expect(headRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(headRequest.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
-      expect(headRequest.headers).toBeInstanceOf(HttpHeaders);
-      expect(headRequest.headers.get('accept')).toBe('application/json');
-
-      expectTypeOf(headRequest.response.headers).toEqualTypeOf<HttpHeaders<UserHeadResponseHeaders>>();
-      expect(headRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(headRequest.response.headers.get('content-type')).toBe('application/json');
-      expect(headRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
 
