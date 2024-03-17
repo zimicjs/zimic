@@ -1,4 +1,5 @@
-import { HttpHeadersInit } from '@/http/headers/HttpHeaders';
+import HttpHeaders from '@/http/headers/HttpHeaders';
+import { HttpHeadersInit } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { Default, PossiblePromise } from '@/types/utils';
@@ -32,15 +33,18 @@ export type HttpRequestTrackerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
 
+export type HttpHeadersRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+  Default<MethodSchema['request'], { headers: never }>['headers']
+>;
+
+export type HttpSearchParamsRequestSchema<MethodSchema extends HttpInterceptorMethodSchema> = Default<
+  Default<MethodSchema['request'], { searchParams: never }>['searchParams']
+>;
+
 export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMethodSchema>
-  extends Omit<
-    HttpRequest<
-      Default<Default<MethodSchema['request'], { body: null }>['body'], null>,
-      Default<Default<MethodSchema['request'], { headers: never }>['headers']>
-    >,
-    keyof Body
-  > {
-  searchParams: HttpSearchParams<Default<Default<MethodSchema['request'], { searchParams: never }>['searchParams']>>;
+  extends Omit<HttpRequest, keyof Body | 'headers'> {
+  headers: HttpHeaders<HttpHeadersRequestSchema<MethodSchema>>;
+  searchParams: HttpSearchParams<HttpSearchParamsRequestSchema<MethodSchema>>;
   body: Default<Default<MethodSchema['request'], { body: null }>['body'], null>;
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }
@@ -48,14 +52,8 @@ export interface HttpInterceptorRequest<MethodSchema extends HttpInterceptorMeth
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpInterceptorMethodSchema,
   StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> extends Omit<
-    HttpResponse<
-      Default<Default<MethodSchema['response']>[StatusCode]['body'], null>,
-      StatusCode,
-      Default<Default<MethodSchema['response']>[StatusCode]['headers']>
-    >,
-    keyof Body
-  > {
+> extends Omit<HttpResponse, keyof Body | 'headers'> {
+  headers: HttpHeaders<Default<Default<MethodSchema['response']>[StatusCode]['headers']>>;
   status: StatusCode;
   body: Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
   raw: HttpResponse<Default<Default<MethodSchema['response']>[StatusCode]['body'], null>, StatusCode>;

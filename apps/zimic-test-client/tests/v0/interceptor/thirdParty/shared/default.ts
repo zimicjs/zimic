@@ -206,28 +206,36 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       async function createUser(payload: UserCreationPayload) {
         const request = new Request('http://localhost:3000/users', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+          },
           body: JSON.stringify(payload),
         });
         return fetch(request);
       }
 
       it('should support creating users', async () => {
-        const creationTracker = authInterceptor.post('/users').respond((request) => {
-          expect(request.headers.get('content-type')).toBe('application/json');
+        const creationTracker = authInterceptor
+          .post('/users')
+          .with({
+            headers: { 'content-type': 'application/json' },
+          })
+          .respond((request) => {
+            expect(request.headers.get('content-type')).toBe('application/json');
 
-          const user: User = {
-            id: crypto.randomUUID(),
-            name: request.body.name,
-            email: request.body.email,
-          };
+            const user: User = {
+              id: crypto.randomUUID(),
+              name: request.body.name,
+              email: request.body.email,
+            };
 
-          return {
-            status: 201,
-            headers: { 'x-user-id': user.id },
-            body: user,
-          };
-        });
+            return {
+              status: 201,
+              headers: { 'x-user-id': user.id },
+              body: user,
+            };
+          });
 
         const response = await createUser(creationPayload);
         expect(response.status).toBe(201);
@@ -370,7 +378,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
       async function listUsers(filters: UserListSearchParams = {}) {
         const searchParams = new HttpSearchParams(filters);
-        const request = new Request(`http://localhost:3000/users?${searchParams}`, { method: 'GET' });
+        const request = new Request(`http://localhost:3000/users?${searchParams.toString()}`, {
+          method: 'GET',
+        });
         return fetch(request);
       }
 
@@ -413,10 +423,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = authInterceptor.get('/users').respond({
-          status: 200,
-          body: [user],
-        });
+        const listTracker = authInterceptor
+          .get('/users')
+          .with({
+            searchParams: { name: user.name },
+          })
+          .respond({
+            status: 200,
+            body: [user],
+          });
 
         const response = await listUsers({ name: user.name });
         expect(response.status).toBe(200);
@@ -454,10 +469,15 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = authInterceptor.get('/users').respond({
-          status: 200,
-          body: orderedUsers,
-        });
+        const listTracker = authInterceptor
+          .get('/users')
+          .with({
+            searchParams: { orderBy: ['email.desc'] },
+          })
+          .respond({
+            status: 200,
+            body: orderedUsers,
+          });
 
         const response = await listUsers({
           orderBy: ['email.desc'],
@@ -713,6 +733,18 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
+        expect(listTracker.requests()).toHaveLength(1);
+
+        listTracker.clear();
+
+        response = await listNotifications(notification.userId);
+        expect(response.status).toBe(200);
+
+        returnedNotifications = (await response.json()) as Notification[];
+        expect(returnedNotifications).toEqual([]);
+
+        expect(listRequests).toHaveLength(1);
+        expect(listTracker.requests()).toHaveLength(0);
       });
     });
   });

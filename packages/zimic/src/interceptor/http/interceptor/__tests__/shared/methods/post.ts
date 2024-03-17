@@ -177,6 +177,131 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
+  it('should support intercepting POST requests having headers restrictions', async () => {
+    type UserCreationHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            headers: UserCreationHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserCreationHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
+      await expect(creationResponsePromise).rejects.toThrowError();
+      expect(creationRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
+      await expect(creationResponsePromise).rejects.toThrowError();
+      expect(creationRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting POST requests having search params restrictions', async () => {
+    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            searchParams: UserCreationSearchParams;
+          };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 201,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+        tag: 'admin',
+      });
+
+      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+      expect(creationRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      await expect(creationResponsePromise).rejects.toThrowError();
+      expect(creationRequests).toHaveLength(1);
+    });
+  });
+
   it('should support intercepting POST requests having headers', async () => {
     type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;

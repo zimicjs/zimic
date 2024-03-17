@@ -174,6 +174,131 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
     });
   });
 
+  it('should support intercepting PATCH requests having headers restrictions', async () => {
+    type UserUpdateHeaders = HttpInterceptorSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PATCH: {
+          request: {
+            headers: UserUpdateHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserUpdateHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PATCH', headers });
+      await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      updateResponsePromise = fetch(`${baseURL}/users`, { method: 'PATCH', headers });
+      await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting PATCH requests having search params restrictions', async () => {
+    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        PATCH: {
+          request: {
+            searchParams: UserUpdateSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
+        tag: 'admin',
+      });
+
+      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PATCH' });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const updateResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PATCH' });
+      await expect(updateResponsePromise).rejects.toThrowError();
+      expect(updateRequests).toHaveLength(1);
+    });
+  });
+
   it('should support intercepting PATCH requests having headers', async () => {
     type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
       accept?: string;
