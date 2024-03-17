@@ -1,14 +1,16 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   type JSONValue,
+  type JSONCompatible,
+  type JSONSerialized,
   type DefaultBody,
   type HttpRequest,
   type HttpResponse,
   HttpSearchParams,
   type HttpSearchParamsSchema,
   type HttpSearchParamsSchemaTuple,
-  HttpHeadersSchema,
-  HttpHeadersSchemaTuple,
+  type HttpHeadersSchema,
+  type HttpHeadersSchemaTuple,
   HttpHeaders,
 } from 'zimic0';
 import {
@@ -50,6 +52,9 @@ describe('Exports', () => {
     expect(typeof createHttpInterceptorWorker).toBe('function');
 
     expectTypeOf<JSONValue>().not.toBeAny();
+    expectTypeOf<JSONCompatible<never>>().not.toBeAny();
+    expectTypeOf<JSONSerialized<never>>().not.toBeAny();
+
     expectTypeOf<DefaultBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
