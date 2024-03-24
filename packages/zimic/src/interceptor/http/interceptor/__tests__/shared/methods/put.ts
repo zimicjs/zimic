@@ -6,7 +6,6 @@ import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSONCompatible } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -19,7 +18,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  type User = JSONCompatible<{
+  type User = HttpSchema.Body<{
     id: string;
     name: string;
   }>;
@@ -588,7 +587,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should consider only the last declared response when intercepting PUT requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = HttpSchema.Body<{
       message: string;
     }>;
 
@@ -667,7 +666,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should ignore trackers with bypassed responses when intercepting PUT requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = HttpSchema.Body<{
       message: string;
     }>;
 

@@ -4,7 +4,6 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import { JSONCompatible } from '@/types/json';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema } from '../../types/schema';
@@ -14,7 +13,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   const baseURL = 'http://localhost:3000';
   const worker = createHttpInterceptorWorker({ platform });
 
-  type User = JSONCompatible<{
+  type User = HttpSchema.Body<{
     name: string;
   }>;
 
