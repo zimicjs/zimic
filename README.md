@@ -686,7 +686,7 @@ import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor'
 
 type UserCreationRequest = HttpInterceptorSchema.Request<{
   headers: {
-    accept: '*/*';
+    accept: string;
   };
   body: {
     username: string;
