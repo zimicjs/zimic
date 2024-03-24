@@ -11,6 +11,8 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="#table-of-contents">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#examples">Examples</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/users/diego-aquino/projects/5">Roadmap</a>
