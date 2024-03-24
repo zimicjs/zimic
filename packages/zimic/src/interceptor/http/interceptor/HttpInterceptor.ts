@@ -1,3 +1,11 @@
+import {
+  HTTP_METHODS,
+  HttpMethod,
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceSchema,
+  HttpServiceSchemaMethod,
+  HttpServiceSchemaPath,
+} from '@/http/types/schema';
 import { Default } from '@/types/utils';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
@@ -8,25 +16,17 @@ import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { HttpInterceptorMethodHandler } from './types/handlers';
 import { HttpInterceptorOptions } from './types/options';
 import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
-import {
-  HTTP_INTERCEPTOR_METHODS,
-  HttpInterceptorMethod,
-  HttpInterceptorRequestContext,
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-  HttpInterceptorSchemaMethod,
-  HttpInterceptorSchemaPath,
-} from './types/schema';
+import { HttpInterceptorRequestContext } from './types/requests';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
 
-class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHttpInterceptor<Schema> {
+class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInterceptor<Schema> {
   private _baseURL: string;
   protected worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
-    [Method in HttpInterceptorMethod]: Map<string, AnyHttpRequestTracker[]>;
+    [Method in HttpMethod]: Map<string, AnyHttpRequestTracker[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -47,36 +47,36 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHtt
   }
 
   get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
-    return this.createHttpRequestTracker('GET' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('GET' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post: HttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
-    return this.createHttpRequestTracker('POST' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('POST' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
-    return this.createHttpRequestTracker('PATCH' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('PATCH' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put: HttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
-    return this.createHttpRequestTracker('PUT' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('PUT' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
-    return this.createHttpRequestTracker('DELETE' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('DELETE' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
-    return this.createHttpRequestTracker('HEAD' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('HEAD' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
-    return this.createHttpRequestTracker('OPTIONS' as HttpInterceptorSchemaMethod<Schema>, path);
+    return this.createHttpRequestTracker('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
   }) as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   private createHttpRequestTracker<
-    Method extends HttpInterceptorSchemaMethod<Schema>,
-    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Method extends HttpServiceSchemaMethod<Schema>,
+    Path extends HttpServiceSchemaPath<Schema, Method>,
   >(method: Method, path: Path): PublicHttpRequestTracker<Schema, Method, Path> {
     const tracker = new HttpRequestTracker<Schema, Method, Path>(this, method, path);
     this.registerRequestTracker(tracker);
@@ -84,11 +84,9 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHtt
   }
 
   registerRequestTracker<
-    Method extends HttpInterceptorSchemaMethod<Schema>,
-    Path extends HttpInterceptorSchemaPath<Schema, Method>,
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<
-      Default<Default<Schema[Path][Method]>['response']>
-    > = never,
+    Method extends HttpServiceSchemaMethod<Schema>,
+    Path extends HttpServiceSchemaPath<Schema, Method>,
+    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
   >(tracker: HttpRequestTracker<Schema, Method, Path, StatusCode>) {
     const methodPathTrackers = this.trackersByMethod[tracker.method()].get(tracker.path()) ?? [];
 
@@ -121,8 +119,8 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHtt
   }
 
   private async handleInterceptedRequest<
-    Method extends HttpInterceptorSchemaMethod<Schema>,
-    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Method extends HttpServiceSchemaMethod<Schema>,
+    Path extends HttpServiceSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(method: Method, path: Path, { request }: Context): Promise<HttpRequestHandlerResult> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
@@ -146,8 +144,8 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHtt
   }
 
   private findMatchedTracker<
-    Method extends HttpInterceptorSchemaMethod<Schema>,
-    Path extends HttpInterceptorSchemaPath<Schema, Method>,
+    Method extends HttpServiceSchemaMethod<Schema>,
+    Path extends HttpServiceSchemaPath<Schema, Method>,
   >(
     method: Method,
     path: Path,
@@ -160,14 +158,14 @@ class HttpInterceptor<Schema extends HttpInterceptorSchema> implements PublicHtt
   }
 
   clear() {
-    for (const method of HTTP_INTERCEPTOR_METHODS) {
+    for (const method of HTTP_METHODS) {
       this.bypassMethodTrackers(method);
       this.trackersByMethod[method].clear();
     }
     this.worker.clearInterceptorHandlers(this);
   }
 
-  private bypassMethodTrackers(method: HttpInterceptorMethod) {
+  private bypassMethodTrackers(method: HttpMethod) {
     for (const trackers of this.trackersByMethod[method].values()) {
       for (const tracker of trackers) {
         tracker.bypass();

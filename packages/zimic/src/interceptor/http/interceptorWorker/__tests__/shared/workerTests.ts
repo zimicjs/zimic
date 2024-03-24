@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HTTP_METHODS, HttpServiceSchema } from '@/http/types/schema';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 
-import { HTTP_INTERCEPTOR_METHODS, HttpInterceptorSchema } from '../../../interceptor/types/schema';
 import InvalidHttpInterceptorWorkerPlatform from '../../errors/InvalidHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
@@ -33,7 +33,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     const spiedRequestHandler = vi.fn(requestHandler);
 
     function createDefaultHttpInterceptor(worker: HttpInterceptorWorker) {
-      return createHttpInterceptor<HttpInterceptorSchema>({
+      return createHttpInterceptor<HttpServiceSchema>({
         worker,
         baseURL,
       });
@@ -131,7 +131,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       }
     });
 
-    describe.each(HTTP_INTERCEPTOR_METHODS)('Method: %s', (method) => {
+    describe.each(HTTP_METHODS)('Method: %s', (method) => {
       it(`should intercept ${method} requests after started`, async () => {
         interceptorWorker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
         await interceptorWorker.start();

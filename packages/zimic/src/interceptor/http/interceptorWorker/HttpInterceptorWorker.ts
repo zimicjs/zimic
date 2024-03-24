@@ -10,16 +10,16 @@ import {
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { HttpResponse, HttpRequest, DefaultBody } from '@/http/types/requests';
+import {
+  HttpMethod,
+  HttpServiceMethodSchema,
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceSchema,
+} from '@/http/types/schema';
 import { Default } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import { HttpInterceptor } from '../interceptor/types/public';
-import {
-  HttpInterceptorMethod,
-  HttpInterceptorMethodSchema,
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-} from '../interceptor/types/schema';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
@@ -181,9 +181,9 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use<Schema extends HttpInterceptorSchema>(
+  use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptor<Schema>,
-    method: HttpInterceptorMethod,
+    method: HttpMethod,
     url: string,
     handler: HttpRequestHandler,
   ) {
@@ -212,7 +212,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     this.httpHandlerGroups = [];
   }
 
-  clearInterceptorHandlers<Schema extends HttpInterceptorSchema>(interceptor: HttpInterceptor<Schema>) {
+  clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptor<Schema>) {
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
 
     const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
@@ -241,7 +241,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }
 
-  static async parseRawRequest<MethodSchema extends HttpInterceptorMethodSchema>(
+  static async parseRawRequest<MethodSchema extends HttpServiceMethodSchema>(
     originalRawRequest: HttpRequest,
   ): Promise<HttpInterceptorRequest<MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
@@ -293,8 +293,8 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   static async parseRawResponse<
-    MethodSchema extends HttpInterceptorMethodSchema,
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+    MethodSchema extends HttpServiceMethodSchema,
+    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();

@@ -1,9 +1,9 @@
-import type { JSONCompatible } from 'zimic';
+import type { HttpSchema } from 'zimic';
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
-export type GitHubRepository = JSONCompatible<{
+export type GitHubRepository = HttpSchema.Body<{
   id: number;
   full_name: string;
   html_url: string;

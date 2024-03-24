@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
@@ -10,7 +11,6 @@ import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -137,10 +137,10 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having headers', async () => {
-    type UserDeletionRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserDeletionRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserDeletionResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserDeletionResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -205,7 +205,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having search params', async () => {
-    type UserDeletionSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserDeletionSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -256,7 +256,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having headers restrictions', async () => {
-    type UserDeletionHeaders = HttpInterceptorSchema.Headers<{
+    type UserDeletionHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -329,7 +329,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having search params restrictions', async () => {
-    type UserDeletionSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserDeletionSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -385,7 +385,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having body restrictions', async () => {
-    type UserDeletionBody = HttpInterceptorSchema.Body<{
+    type UserDeletionBody = HttpSchema.Body<{
       tags?: string[];
       other?: string;
     }>;

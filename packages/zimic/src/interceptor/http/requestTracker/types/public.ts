@@ -1,13 +1,13 @@
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import {
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceSchema,
+  HttpServiceSchemaMethod,
+  HttpServiceSchemaPath,
+} from '@/http/types/schema';
 import { Default } from '@/types/utils';
 
-import {
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-  HttpInterceptorSchemaMethod,
-  HttpInterceptorSchemaPath,
-} from '../../interceptor/types/schema';
 import {
   HttpRequestHeadersSchema,
   HttpInterceptorRequest,
@@ -19,31 +19,31 @@ import {
 } from './requests';
 
 export type HttpRequestTrackerHeadersStaticRestriction<
-  Schema extends HttpInterceptorSchema,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Schema extends HttpServiceSchema,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Method extends HttpServiceSchemaMethod<Schema>,
 > =
   | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
   | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
 export type HttpRequestTrackerSearchParamsStaticRestriction<
-  Schema extends HttpInterceptorSchema,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Schema extends HttpServiceSchema,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Method extends HttpServiceSchemaMethod<Schema>,
 > =
   | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
   | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
 export type HttpRequestTrackerBodyStaticRestriction<
-  Schema extends HttpInterceptorSchema,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Schema extends HttpServiceSchema,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Method extends HttpServiceSchemaMethod<Schema>,
 > = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
 
 export interface HttpRequestTrackerStaticRestriction<
-  Schema extends HttpInterceptorSchema,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
+  Schema extends HttpServiceSchema,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Method extends HttpServiceSchemaMethod<Schema>,
 > {
   headers?: HttpRequestTrackerHeadersStaticRestriction<Schema, Path, Method>;
   searchParams?: HttpRequestTrackerSearchParamsStaticRestriction<Schema, Path, Method>;
@@ -52,15 +52,15 @@ export interface HttpRequestTrackerStaticRestriction<
 }
 
 export type HttpRequestTrackerComputedRestriction<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Default<Schema[Path][Method]>>) => boolean;
 
 export type HttpRequestTrackerRestriction<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
 > =
   | HttpRequestTrackerStaticRestriction<Schema, Path, Method>
   | HttpRequestTrackerComputedRestriction<Schema, Method, Path>;
@@ -76,12 +76,10 @@ export type HttpRequestTrackerRestriction<
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
  */
 export interface HttpRequestTracker<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<
-    Default<Default<Schema[Path][Method]>['response']>
-  > = never,
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > {
   /**
    * @returns The method that matches this tracker.
@@ -111,9 +109,7 @@ export interface HttpRequestTracker<
    *   status code.
    * @see {@link https://github.com/diego-aquino/zimic#trackerrespond}
    */
-  respond: <
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
-  >(
+  respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,

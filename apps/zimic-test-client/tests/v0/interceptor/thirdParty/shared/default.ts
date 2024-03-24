@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpRequest, HttpResponse, HttpSearchParams, JSONCompatible, JSONSerialized } from 'zimic0';
-import { HttpInterceptorSchema, createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
+import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONSerialized } from 'zimic0';
+import { createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
@@ -19,46 +19,46 @@ interface UserWithPassword extends User {
 
 type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
-type LoginResult = JSONCompatible<{
+type LoginResult = HttpSchema.Body<{
   accessToken: string;
   refreshToken: string;
 }>;
 
-type RequestError = JSONCompatible<{
+type RequestError = HttpSchema.Body<{
   code: string;
   message: string;
 }>;
 
-type ValidationError = JSONCompatible<
+type ValidationError = HttpSchema.Body<
   RequestError & {
     code: 'validation_error';
   }
 >;
 
-type UnauthorizedError = JSONCompatible<
+type UnauthorizedError = HttpSchema.Body<
   RequestError & {
     code: 'unauthorized';
   }
 >;
 
-type NotFoundError = JSONCompatible<
+type NotFoundError = HttpSchema.Body<
   RequestError & {
     code: 'not_found';
   }
 >;
 
-type ConflictError = JSONCompatible<
+type ConflictError = HttpSchema.Body<
   RequestError & {
     code: 'conflict';
   }
 >;
 
-type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+type UserListSearchParams = HttpSchema.SearchParams<{
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
 }>;
 
-type UsersSchema = HttpInterceptorSchema.Root<{
+type UserPaths = HttpSchema.Paths<{
   '/users': {
     POST: {
       request: {
@@ -85,7 +85,7 @@ type UsersSchema = HttpInterceptorSchema.Root<{
   };
 }>;
 
-type UserByIdSchema = HttpInterceptorSchema.Root<{
+type UserByIdPaths = HttpSchema.Paths<{
   '/users/:id': {
     GET: {
       response: {
@@ -111,7 +111,7 @@ type UserByIdSchema = HttpInterceptorSchema.Root<{
   };
 }>;
 
-type SessionSchema = HttpInterceptorSchema.Root<{
+type SessionPaths = HttpSchema.Paths<{
   '/session/login': {
     POST: {
       request: {
@@ -150,15 +150,15 @@ type SessionSchema = HttpInterceptorSchema.Root<{
   };
 }>;
 
-type AuthServiceSchema = HttpInterceptorSchema.Root<UsersSchema & UserByIdSchema & SessionSchema>;
+type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
 
-type Notification = JSONCompatible<{
+type Notification = HttpSchema.Body<{
   id: string;
   userId: string;
   content: string;
 }>;
 
-type NotificationServiceSchema = HttpInterceptorSchema.Root<{
+type NotificationServiceSchema = HttpSchema.Paths<{
   '/notifications/:userId': {
     GET: {
       response: {

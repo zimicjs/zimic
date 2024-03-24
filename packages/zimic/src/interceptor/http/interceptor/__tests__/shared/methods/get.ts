@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
@@ -10,7 +11,6 @@ import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -136,10 +136,10 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting GET requests having headers', async () => {
-    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserListRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserListResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -205,7 +205,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting GET requests having search params', async () => {
-    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserListSearchParams = HttpSchema.SearchParams<{
       name?: string;
       orderBy?: ('name' | 'createdAt')[];
       page?: `${number}`;
@@ -259,7 +259,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting GET requests having headers restrictions', async () => {
-    type UserListHeaders = HttpInterceptorSchema.Headers<{
+    type UserListHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -332,7 +332,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting GET requests having search params restrictions', async () => {
-    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserListSearchParams = HttpSchema.SearchParams<{
       name?: string;
       orderBy?: ('name' | 'createdAt')[];
       page?: `${number}`;

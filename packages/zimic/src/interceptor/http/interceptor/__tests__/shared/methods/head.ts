@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
@@ -9,7 +10,6 @@ import { JSONCompatible } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -104,10 +104,10 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests having headers', async () => {
-    type UserHeadRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserHeadRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserHeadResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserHeadResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -170,7 +170,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests having search params', async () => {
-    type UserHeadSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserHeadSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -218,7 +218,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests having headers restrictions', async () => {
-    type UserHeadHeaders = HttpInterceptorSchema.Headers<{
+    type UserHeadHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -290,7 +290,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests having search params restrictions', async () => {
-    type UserHeadSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserHeadSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 

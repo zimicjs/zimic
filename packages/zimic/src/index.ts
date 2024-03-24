@@ -19,4 +19,20 @@ export type {
   HttpResponse,
 } from './http/types/requests';
 
+export type {
+  HttpSchema,
+  HttpMethod,
+  HttpServiceRequestSchema,
+  HttpServiceResponseSchema,
+  HttpServiceResponseSchemaByStatusCode,
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceMethodSchema,
+  HttpServiceMethodsSchema,
+  HttpServiceSchema,
+  HttpServiceSchemaMethod,
+  LiteralHttpServiceSchemaPath,
+  NonLiteralHttpServiceSchemaPath,
+  HttpServiceSchemaPath,
+} from './http/types/schema';
+
 export { HttpSearchParams, HttpHeaders };

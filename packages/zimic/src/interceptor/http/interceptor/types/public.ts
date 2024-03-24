@@ -1,5 +1,6 @@
+import { HttpServiceSchema } from '@/http/types/schema';
+
 import { HttpInterceptorMethodHandler } from './handlers';
-import { HttpInterceptorSchema } from './schema';
 
 /**
  * Interceptor to handle matched HTTP requests and return mock responses. The methods, paths, status codes, parameters
@@ -11,7 +12,7 @@ import { HttpInterceptorSchema } from './schema';
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
  */
 
-export interface HttpInterceptor<Schema extends HttpInterceptorSchema> {
+export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/diego-aquino/zimic#interceptorbaseurl}

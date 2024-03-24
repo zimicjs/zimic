@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
@@ -10,7 +11,6 @@ import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -139,10 +139,10 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
     });
   });
   it('should support intercepting PATCH requests having headers', async () => {
-    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -207,7 +207,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests having search params', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -258,7 +258,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests having headers restrictions', async () => {
-    type UserUpdateHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -331,7 +331,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests having search params restrictions', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -387,7 +387,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests having body restrictions', async () => {
-    type UserUpdateBody = HttpInterceptorSchema.Body<Partial<User>>;
+    type UserUpdateBody = HttpSchema.Body<Partial<User>>;
 
     await usingHttpInterceptor<{
       '/users/:id': {

@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
@@ -9,7 +10,6 @@ import { JSONCompatible } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -119,10 +119,10 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having headers', async () => {
-    type FilterOptionsRequestHeaders = HttpInterceptorSchema.Headers<{
+    type FilterOptionsRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type FilterOptionsResponseHeaders = HttpInterceptorSchema.Headers<{
+    type FilterOptionsResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -185,7 +185,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having search params', async () => {
-    type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
+    type FiltersOptionsSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -233,7 +233,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having headers restrictions', async () => {
-    type FiltersOptionsHeaders = HttpInterceptorSchema.Headers<{
+    type FiltersOptionsHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -305,7 +305,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having search params restrictions', async () => {
-    type FiltersOptionsSearchParams = HttpInterceptorSchema.SearchParams<{
+    type FiltersOptionsSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -356,7 +356,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having body restrictions', async () => {
-    type FiltersOptionsBody = HttpInterceptorSchema.Body<{
+    type FiltersOptionsBody = HttpSchema.Body<{
       tags?: string[];
       other?: string;
     }>;

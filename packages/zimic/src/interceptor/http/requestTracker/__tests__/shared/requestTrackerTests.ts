@@ -3,9 +3,9 @@ import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vit
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
-import { HttpInterceptorSchema } from '@/interceptor/http/interceptor/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
@@ -25,17 +25,17 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
   describe('Shared', () => {
     const baseURL = 'http://localhost:3000';
 
-    type HeadersSchema = HttpInterceptorSchema.Headers<{
+    type HeadersSchema = HttpSchema.Headers<{
       accept?: string;
       'content-type'?: string;
     }>;
 
-    type SearchParamsSchema = HttpInterceptorSchema.SearchParams<{
+    type SearchParamsSchema = HttpSchema.SearchParams<{
       name?: string;
       other?: string;
     }>;
 
-    type MethodSchema = HttpInterceptorSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       request: {
         headers: HeadersSchema;
         searchParams: SearchParamsSchema;
@@ -51,7 +51,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       };
     }>;
 
-    type Schema = HttpInterceptorSchema.Root<{
+    type Schema = HttpSchema.Paths<{
       '/users': {
         POST: MethodSchema;
       };

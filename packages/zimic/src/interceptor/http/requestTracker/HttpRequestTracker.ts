@@ -1,15 +1,15 @@
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import {
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceSchema,
+  HttpServiceSchemaMethod,
+  HttpServiceSchemaPath,
+} from '@/http/types/schema';
 import { Default } from '@/types/utils';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptor from '../interceptor/HttpInterceptor';
-import {
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-  HttpInterceptorSchemaMethod,
-  HttpInterceptorSchemaPath,
-} from '../interceptor/types/schema';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import {
   HttpRequestTrackerRestriction,
@@ -26,12 +26,10 @@ import {
 } from './types/requests';
 
 class HttpRequestTracker<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<
-    Default<Default<Schema[Path][Method]>['response']>
-  > = never,
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
   private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
@@ -64,7 +62,7 @@ class HttpRequestTracker<
   }
 
   respond<
-    NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+    NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
@@ -84,7 +82,7 @@ class HttpRequestTracker<
   }
 
   private isResponseDeclarationFactory<
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
