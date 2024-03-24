@@ -59,7 +59,9 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [Testing](#testing)
 - [`zimic` API](#zimic-api)
   - [`HttpHeaders`](#httpheaders)
+    - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpSearchParams`](#httpsearchparams)
+    - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
   - [`HttpInterceptorWorker`](#httpinterceptorworker)
     - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
@@ -81,6 +83,9 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [`HttpRequestTracker`](#httprequesttracker)
     - [`tracker.method()`](#trackermethod)
     - [`tracker.path()`](#trackerpath)
+    - [`tracker.with(restrictions)`](#trackerwithrestrictions)
+      - [Static restrictions](#static-restrictions)
+      - [Computed restrictions](#computed-restrictions)
     - [`tracker.respond(declaration)`](#trackerresponddeclaration)
       - [Static responses](#static-responses)
       - [Computed responses](#computed-responses)
@@ -306,6 +311,45 @@ const contentType = headers.get('content-type');
 console.log(contentType); // 'application/json'
 ```
 
+#### Comparing `HttpHeaders`
+
+`HttpHeaders` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other headers:
+
+```ts
+import { HttpSchema, HttpHeaders } from 'zimic';
+
+type HeaderSchema = HttpSchema.Headers<{
+  accept?: string;
+  'content-type'?: string;
+}>;
+
+const headers1 = new HttpHeaders<HeaderSchema>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const headers2 = new HttpHeaders<HeaderSchema>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const headers3 = new HttpHeaders<
+  HeaderSchema & {
+    'x-custom-header'?: string;
+  }
+>({
+  accept: '*/*',
+  'content-type': 'application/json',
+  'x-custom-header': 'value',
+});
+
+console.log(headers1.equals(headers2)); // true
+console.log(headers1.equals(headers3)); // false
+
+console.log(headers1.contains(headers2)); // true
+console.log(headers1.contains(headers3)); // false
+```
+
 ### `HttpSearchParams`
 
 A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
@@ -328,6 +372,46 @@ console.log(names); // ['user 1', 'user 2']
 
 const page = searchParams.get('page');
 console.log(page); // '1'
+```
+
+#### Comparing `HttpSearchParams`
+
+`HttpSearchParams` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other search
+params:
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+
+type SearchParamsSchema = HttpSchema.SearchParams<{
+  names?: string[];
+  page?: `${number}`;
+}>;
+
+const searchParams1 = new HttpSearchParams<SearchParamsSchema>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const searchParams2 = new HttpSearchParams<SearchParamsSchema>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const searchParams3 = new HttpSearchParams<
+  SearchParamsSchema & {
+    orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}[]`;
+  }
+>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+  orderBy: ['name.asc'],
+});
+
+console.log(searchParams1.equals(searchParams2)); // true
+console.log(searchParams1.equals(searchParams3)); // false
+
+console.log(searchParams1.contains(searchParams2)); // true
+console.log(searchParams1.contains(searchParams3)); // false
 ```
 
 ## `zimic/interceptor` API
@@ -979,6 +1063,68 @@ const tracker = interceptor.get('/users');
 const path = tracker.path();
 console.log(path); // '/users'
 ```
+
+#### `tracker.with(restrictions)`
+
+Declares restrictions to match intercepted requests. `headers`, `searchParams`, and `body` are supported to limit which
+requests match the tracker. If multiple restrictions are declared, either in a single object or multiple calls to
+`.with()`, all restrictions must be met for requests to match the tracker, essentially creating an AND condition.
+
+##### Static restrictions
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
+match the tracker, regardless of having more properties or values. In the example above, requests with more headers than
+`content-type: application/json` will still match the tracker. The same applies to search params and body restrictions.
+
+If you want to match only requests with the exact values declared, you can use `exact: true`:
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+    exact: true, // Only match requests with these exact headers and body should match
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+##### Computed restrictions
+
+A function is also supported, in case the restrictions are dynamic.
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with((request) => {
+    const accept = request.headers.get('accept');
+    return accept !== null && accept.startsWith('application');
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
+and `.searchParams`, which are typed based on the interceptor schema. The function should return a boolean, indicating
+whether the request matches the tracker.
 
 #### `tracker.respond(declaration)`
 
