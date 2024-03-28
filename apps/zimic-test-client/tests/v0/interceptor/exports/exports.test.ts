@@ -3,43 +3,47 @@ import {
   type JSONValue,
   type JSONCompatible,
   type JSONSerialized,
-  type DefaultBody,
+  type HttpBody,
   type HttpRequest,
   type HttpResponse,
   HttpSearchParams,
+  type HttpSearchParamsInit,
   type HttpSearchParamsSchema,
   type HttpSearchParamsSchemaTuple,
+  type StrictURLSearchParams,
+  HttpHeaders,
+  type HttpHeadersInit,
   type HttpHeadersSchema,
   type HttpHeadersSchemaTuple,
-  HttpHeaders,
+  type StrictHeaders,
   type HttpSchema,
   type HttpMethod,
+  type HttpServiceSchema,
   type HttpServiceMethodsSchema,
   type HttpServiceMethodSchema,
   type HttpServiceRequestSchema,
-  type HttpServiceResponseSchema,
   type HttpServiceResponseSchemaByStatusCode,
+  type HttpServiceResponseSchema,
   type HttpServiceResponseSchemaStatusCode,
-  type HttpServiceSchema,
   type HttpServiceSchemaMethod,
   type HttpServiceSchemaPath,
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
 } from 'zimic0';
 import {
-  createHttpInterceptor,
   createHttpInterceptorWorker,
   type HttpInterceptorWorker,
+  type HttpInterceptorWorkerOptions,
+  type HttpInterceptorWorkerPlatform,
+  createHttpInterceptor,
   type HttpInterceptor,
   type HttpInterceptorOptions,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
+  type TrackedHttpInterceptorRequest,
   type HttpRequestTracker,
   type HttpRequestTrackerResponseDeclaration,
   type HttpRequestTrackerResponseDeclarationFactory,
-  type TrackedHttpInterceptorRequest,
-  type HttpInterceptorWorkerPlatform,
-  type HttpInterceptorWorkerOptions,
   InvalidHttpInterceptorWorkerPlatform,
   MismatchedHttpInterceptorWorkerPlatform,
   NotStartedHttpInterceptorWorkerError,
@@ -49,41 +53,27 @@ import {
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
-    expectTypeOf(createHttpInterceptor).not.toBeAny();
-    expect(typeof createHttpInterceptor).toBe('function');
-
-    expectTypeOf(createHttpInterceptorWorker).not.toBeAny();
-    expect(typeof createHttpInterceptorWorker).toBe('function');
-
     expectTypeOf<JSONValue>().not.toBeAny();
     expectTypeOf<JSONCompatible<never>>().not.toBeAny();
     expectTypeOf<JSONSerialized<never>>().not.toBeAny();
 
-    expectTypeOf<DefaultBody>().not.toBeAny();
+    expectTypeOf<HttpBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorker>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
-
-    expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
-    expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
-
-    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
-
-    expectTypeOf<HttpHeaders>().not.toBeAny();
-    expect(new HttpHeaders()).toBeInstanceOf(Headers);
-
-    expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
-    expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
 
     expectTypeOf<HttpSearchParams>().not.toBeAny();
     expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
+    expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
+
+    expectTypeOf<HttpHeaders>().not.toBeAny();
+    expect(new HttpHeaders()).toBeInstanceOf(Headers);
+    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
@@ -95,22 +85,37 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Body<never>>().not.toBeAny();
 
-    expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<HttpMethod>().not.toBeAny();
-    expectTypeOf<HttpServiceRequestSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny();
+    expectTypeOf<HttpServiceSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();
-
-    expectTypeOf<HttpServiceSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny();
+    expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
+
+    expectTypeOf(createHttpInterceptorWorker).not.toBeAny();
+    expect(typeof createHttpInterceptorWorker).toBe('function');
+    expectTypeOf<HttpInterceptorWorker>().not.toBeAny();
+    expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
+    expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
+
+    expectTypeOf(createHttpInterceptor).not.toBeAny();
+    expect(typeof createHttpInterceptor).toBe('function');
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
+    expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
+    expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
+
+    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
 
     expectTypeOf<InvalidHttpInterceptorWorkerPlatform>().not.toBeAny();
     expect(typeof InvalidHttpInterceptorWorkerPlatform).toBe('function');
