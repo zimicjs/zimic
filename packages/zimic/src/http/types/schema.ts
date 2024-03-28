@@ -2,7 +2,7 @@ import { IfAny, Prettify, UnionToIntersection } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
-import { DefaultBody } from './requests';
+import { HttpBody } from './requests';
 
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 export type HttpMethod = (typeof HTTP_METHODS)[number];
@@ -10,12 +10,12 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
   searchParams?: HttpSearchParamsSchema;
-  body?: DefaultBody;
+  body?: HttpBody;
 }
 
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
-  body?: DefaultBody;
+  body?: HttpBody;
 }
 
 export interface HttpServiceResponseSchemaByStatusCode {
@@ -48,7 +48,7 @@ export namespace HttpSchema {
   export type Response<Schema extends HttpServiceResponseSchema> = Prettify<Schema>;
   export type Headers<Schema extends HttpHeadersSchema> = Prettify<Schema>;
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Prettify<Schema>;
-  export type Body<Schema extends DefaultBody> = Prettify<Schema>;
+  export type Body<Schema extends HttpBody> = Prettify<Schema>;
 }
 
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<

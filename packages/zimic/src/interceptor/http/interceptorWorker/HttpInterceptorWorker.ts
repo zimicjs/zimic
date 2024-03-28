@@ -9,7 +9,7 @@ import {
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
-import { HttpResponse, HttpRequest, DefaultBody } from '@/http/types/requests';
+import { HttpResponse, HttpRequest, HttpBody } from '@/http/types/requests';
 import {
   HttpMethod,
   HttpServiceMethodSchema,
@@ -193,7 +193,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     const httpHandler = http[lowercaseMethod](url, async (context) => {
       const result = await handler({
         ...context,
-        request: context.request as MSWStrictRequest<DefaultBody>,
+        request: context.request as MSWStrictRequest<HttpBody>,
       });
 
       if (result.bypass) {
@@ -229,7 +229,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     Declaration extends {
       status: number;
       headers?: HttpHeadersInit<HeadersSchema>;
-      body?: DefaultBody;
+      body?: HttpBody;
     },
     HeadersSchema extends HttpHeadersSchema,
   >(responseDeclaration: Declaration) {
@@ -337,7 +337,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
   }
 
-  static async parseRawBody<Body extends DefaultBody>(requestOrResponse: HttpRequest | HttpResponse) {
+  static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {
     const bodyAsText = await requestOrResponse.text();
 
     try {
