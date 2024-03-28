@@ -17,7 +17,7 @@ interface UserWithPassword extends User {
   password: string;
 }
 
-type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
+type UserCreationPayload = HttpSchema.Body<Omit<JSONSerialized<UserWithPassword>, 'id'>>;
 
 type LoginResult = HttpSchema.Body<{
   accessToken: string;
