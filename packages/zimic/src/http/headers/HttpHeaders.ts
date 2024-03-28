@@ -12,7 +12,7 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
 }
 
 /**
- * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
+ * An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers Headers} class.
  */
 class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
@@ -73,6 +73,10 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     >;
   }
 
+  /**
+   * Checks if this headers object is equal to another set of headers. Equality is defined as having the same keys and
+   * values, regardless of the order of keys.
+   */
   equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     for (const [key, value] of otherHeaders.entries()) {
       const otherValue = super.get.call(this, key);
@@ -91,6 +95,11 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     return true;
   }
 
+  /**
+   * Checks if this headers object contains another set of headers. This method is less strict than
+   * {@link HttpHeaders.equals} and only requires that all keys and values in the other headers are present in these
+   * headers.
+   */
   contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     for (const [key, value] of otherHeaders.entries()) {
       const otherValue = super.get.call(this, key);

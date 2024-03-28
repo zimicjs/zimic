@@ -16,7 +16,7 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
 }
 
 /**
- * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
+ * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams} class.
  */
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {
@@ -98,10 +98,19 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
     >;
   }
 
+  /**
+   * Checks if the current search parameters are equal to another set of search parameters. Equality is defined as
+   * having the same keys and values, regardless of the order of the keys.
+   */
   equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
   }
 
+  /**
+   * Checks if the current search parameters contain another set of search parameters. This method is less strict than
+   * {@link HttpSearchParams.equals} and only requires that all keys and values in the other search parameters are
+   * present in these search parameters.
+   */
   contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     for (const [key, value] of otherParams.entries()) {
       if (!super.has.call(this, key, value)) {
