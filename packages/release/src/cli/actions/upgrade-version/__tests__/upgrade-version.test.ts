@@ -44,19 +44,19 @@ describe('Upgrade version command', () => {
     config.metadata[0].partialVersions.appendTo = [];
 
     readJSONSpy.mockClear();
-    readJSONSpy.mockImplementation((filePath: string) => {
+    readJSONSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
         return Promise.resolve({ ...metadataFileContent });
       }
-      return Promise.reject(new Error(`File ${filePath} not found.`));
+      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     writeJSONSpy.mockClear();
-    writeJSONSpy.mockImplementation((filePath: string) => {
+    writeJSONSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
         return Promise.resolve();
       }
-      return Promise.reject(new Error(`File ${filePath} not found.`));
+      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     runCommandSpy.mockClear();

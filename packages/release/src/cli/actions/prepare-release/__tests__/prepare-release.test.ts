@@ -56,20 +56,20 @@ describe('Prepare release command', () => {
     config.tagSuffix = undefined;
 
     readJSONSpy.mockClear();
-    readJSONSpy.mockImplementation((filePath: string) => {
+    readJSONSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
         return Promise.resolve({ ...metadataFileContent });
       }
-      return Promise.reject(new Error(`File ${filePath} not found.`));
+      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     writeJSONSpy.mockClear();
-    writeJSONSpy.mockImplementation((filePath: string, newMetadataFileContent: MetadataFileContent) => {
+    writeJSONSpy.mockImplementation((filePath, newMetadataFileContent) => {
       if (filePath === metadataFilePath) {
         Object.assign(metadataFileContent, newMetadataFileContent);
         return Promise.resolve();
       }
-      return Promise.reject(new Error(`File ${filePath} not found.`));
+      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     runCommandSpy.mockClear();
