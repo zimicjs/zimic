@@ -49,7 +49,7 @@ runs:
         registry-url: ${{ inputs.node-registry-url }}
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v2
+      uses: pnpm/action-setup@v3
 
     - name: Get pnpm store directory
       id: pnpm-store
