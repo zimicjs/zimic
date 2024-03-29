@@ -31,7 +31,46 @@ env:
 
 jobs:
   ci-general:
-    name: CI (general)
+    name: CI General
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NODE_VERSION: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
+          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
+          install-playwright-browsers: true
+
+      - name: Check formatting style
+        uses: ./.github/actions/zimic-style-check
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Lint code and check types
+        run: |
+          pnpm turbo \
+            types:check lint:turbo \
+            --continue \
+            --concurrency 100% \
+            ${{ steps.zimic-setup.outputs.install-filters }}
+
+  ci-node:
+    name: CI Node.js
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -39,6 +78,7 @@ jobs:
       fail-fast: false
       matrix:
         node-version:
+          - 18
           - 20
 
     env:
@@ -54,60 +94,7 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ matrix.node-version }}
-          turbo-token: ${{ env.TURBO_TOKEN }}
-          turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS }}
-          build: ${{ env.BUILD_OPTIONS }}
-          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
-          install-playwright-browsers: true
-
-      - name: Check formatting style
-        uses: ./.github/actions/zimic-style-check
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Lint code and check types
-        run: |
-          pnpm turbo \
-            types:check lint:turbo \
-            --continue \
-            --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
-
-      - name: Run tests
-        run: |
-          pnpm turbo \
-            test:turbo \
-            --continue \
-            --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
-
-  ci-node-compatibility:
-    name: CI (Node.js compatibility)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version:
-          - 18
-
-    env:
-      NODE_VERSION: ${{ matrix.node-version }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Setup Zimic
-        id: zimic-setup
-        uses: ./.github/actions/zimic-setup
-        with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }} !@zimic/release
@@ -124,16 +111,14 @@ jobs:
             ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !@zimic/release
 
-  ci-typescript-compatibility:
-    name: CI (TypeScript compatibility)
+  ci-typescript:
+    name: CI TypeScript
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
-        node-version:
-          - 20
         typescript-version:
           - 4.7
           - 4.8
@@ -145,7 +130,7 @@ jobs:
           - 5.4
 
     env:
-      NODE_VERSION: ${{ matrix.node-version }}
+      NODE_VERSION: 20
       TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
 
     steps:
@@ -158,7 +143,7 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }} !packages/*
