@@ -76,6 +76,9 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   /**
    * Checks if this headers object is equal to another set of headers. Equality is defined as having the same keys and
    * values, regardless of the order of keys.
+   *
+   * @param otherHeaders The other headers object to compare against.
+   * @returns `true` if the headers are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     for (const [key, value] of otherHeaders.entries()) {
@@ -99,6 +102,9 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * Checks if this headers object contains another set of headers. This method is less strict than
    * {@link HttpHeaders.equals} and only requires that all keys and values in the other headers are present in these
    * headers.
+   *
+   * @param otherHeaders The other headers object to compare against.
+   * @returns `true` if these headers contain the other headers, `false` otherwise.
    */
   contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
     for (const [key, value] of otherHeaders.entries()) {

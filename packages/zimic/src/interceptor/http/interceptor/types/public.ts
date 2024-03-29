@@ -20,72 +20,71 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   baseURL: () => string;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A GET {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
    *   path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original
-   *
-   *   Path as a type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   get: HttpInterceptorMethodHandler<Schema, 'GET'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A POST {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
    *   path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   post: HttpInterceptorMethodHandler<Schema, 'POST'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A PATCH {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
    *   provided path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   patch: HttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A PUT {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
    *   path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   put: HttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A DELETE {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
    *   provided path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   delete: HttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns A HEAD {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
    *   path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   head: HttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
    * @returns An OPTIONS {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
    *   provided path. The path and method must be declared in the interceptor schema.
-   *
-   *   Paths with dynamic parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-   *   type parameter to get type-inference and type-validation.
+   * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
    */
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;

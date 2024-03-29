@@ -26,7 +26,12 @@ export type HttpRequestTrackerResponseDeclaration<
 } & HttpRequestTrackerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
   HttpRequestTrackerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
 
-/** A factory function for creating {@link HttpRequestTrackerResponseDeclaration} objects. */
+/**
+ * A factory function for creating {@link HttpRequestTrackerResponseDeclaration} objects.
+ *
+ * @param request The intercepted request.
+ * @returns The response declaration.
+ */
 export type HttpRequestTrackerResponseDeclarationFactory<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,

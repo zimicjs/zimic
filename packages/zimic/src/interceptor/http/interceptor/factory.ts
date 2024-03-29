@@ -7,8 +7,9 @@ import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
 /**
  * Creates an HTTP interceptor.
  *
- * @param {HttpInterceptorOptions} options The options for the interceptor.
- * @returns {HttpInterceptor} The created HTTP interceptor.
+ * @param options The options for the interceptor.
+ * @returns The created HTTP interceptor.
+ * @throws {InvalidHttpInterceptorWorkerPlatform} When the worker platform is invalid.
  * @see {@link https://github.com/diego-aquino/zimic#createhttpinterceptor}
  */
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(

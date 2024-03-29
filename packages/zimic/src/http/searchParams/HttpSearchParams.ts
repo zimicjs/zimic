@@ -101,6 +101,9 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
   /**
    * Checks if the current search parameters are equal to another set of search parameters. Equality is defined as
    * having the same keys and values, regardless of the order of the keys.
+   *
+   * @param otherParams The other search parameters to compare against.
+   * @returns `true` if the search parameters are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     return this.contains(otherParams) && this.size === otherParams.size;
@@ -110,6 +113,9 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
    * Checks if the current search parameters contain another set of search parameters. This method is less strict than
    * {@link HttpSearchParams.equals} and only requires that all keys and values in the other search parameters are
    * present in these search parameters.
+   *
+   * @param otherParams The other search parameters to check for containment.
+   * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
    */
   contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
     for (const [key, value] of otherParams.entries()) {
