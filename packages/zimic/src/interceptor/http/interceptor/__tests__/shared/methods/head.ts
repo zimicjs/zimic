@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSON } from '@/types/json';
+import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -464,7 +464,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should consider only the last declared response when intercepting HEAD requests', async () => {
-    type ServerErrorResponseBody = JSON<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 
@@ -539,7 +539,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should ignore trackers with bypassed responses when intercepting HEAD requests', async () => {
-    type ServerErrorResponseBody = JSON<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 

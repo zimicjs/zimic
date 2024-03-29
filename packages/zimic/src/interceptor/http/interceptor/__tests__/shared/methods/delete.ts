@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSON } from '@/types/json';
+import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -16,7 +16,7 @@ import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const crypto = await getCrypto();
 
-  type User = JSON<{
+  type User = JSONValue<{
     id: string;
     name: string;
   }>;
@@ -385,7 +385,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests having body restrictions', async () => {
-    type UserDeletionBody = JSON<{
+    type UserDeletionBody = JSONValue<{
       tags?: string[];
       other?: string;
     }>;
@@ -612,7 +612,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should consider only the last declared response when intercepting DELETE requests', async () => {
-    type ServerErrorResponseBody = JSON<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 
@@ -691,7 +691,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should ignore trackers with bypassed responses when intercepting DELETE requests', async () => {
-    type ServerErrorResponseBody = JSON<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 

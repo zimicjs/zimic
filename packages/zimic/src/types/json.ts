@@ -1,7 +1,7 @@
-/** Value that can be represented in JSON. */
-export type JSONValue = { [key: string]: JSONValue } | JSONValue[] | string | number | boolean | null | undefined;
+type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null | undefined;
 
-export type JSON<Type extends JSONValue = JSONValue> = Type;
+/** Value that is compatible and can be represented in JSON. */
+export type JSONValue<Type extends JSON = JSON> = Type;
 
 export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
   ? Type

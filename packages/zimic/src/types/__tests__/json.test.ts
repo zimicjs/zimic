@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { JSON, JSONSerialized, JSONValue } from '../json';
+import { JSONValue, JSONSerialized } from '../json';
 
 describe('JSON types', () => {
   it('should type JSON values correctly', () => {
@@ -42,38 +42,38 @@ describe('JSON types', () => {
   it('should validate if type declarations are JSON-compatible', () => {
     // Checking compatibility with abstract JSON value
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments
-    expectTypeOf<JSON<JSONValue>>().not.toBeAny();
+    expectTypeOf<JSONValue<JSONValue>>().not.toBeAny();
 
-    expectTypeOf<JSON<string>>().not.toBeAny();
-    expectTypeOf<JSON<number>>().not.toBeAny();
-    expectTypeOf<JSON<boolean>>().not.toBeAny();
-    expectTypeOf<JSON<null>>().not.toBeAny();
-    expectTypeOf<JSON<undefined>>().not.toBeAny();
-    expectTypeOf<JSON<string[]>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: string }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a?: string }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: string | undefined }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a?: string | undefined }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: string }[]>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: string; b: { c: { d: string[] } } }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: string | null }>>().not.toBeAny();
-    expectTypeOf<JSON<{ a: null; b: undefined }>>().not.toBeAny();
+    expectTypeOf<JSONValue<string>>().not.toBeAny();
+    expectTypeOf<JSONValue<number>>().not.toBeAny();
+    expectTypeOf<JSONValue<boolean>>().not.toBeAny();
+    expectTypeOf<JSONValue<null>>().not.toBeAny();
+    expectTypeOf<JSONValue<undefined>>().not.toBeAny();
+    expectTypeOf<JSONValue<string[]>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: string }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a?: string }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: string | undefined }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a?: string | undefined }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: string }[]>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: string; b: { c: { d: string[] } } }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: string | null }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: null; b: undefined }>>().not.toBeAny();
 
     // @ts-expect-error Dates are not JSON-compatible
-    expectTypeOf<JSON<Date>>().not.toBeAny();
+    expectTypeOf<JSONValue<Date>>().not.toBeAny();
     // @ts-expect-error Dates are not JSON-compatible
-    expectTypeOf<JSON<{ a: Date[]; b: string }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: Date[]; b: string }>>().not.toBeAny();
     // @ts-expect-error Functions are not JSON-compatible
-    expectTypeOf<JSON<() => void>>().not.toBeAny();
+    expectTypeOf<JSONValue<() => void>>().not.toBeAny();
 
     // @ts-expect-error Object with non-JSON-compatible values are not JSON-compatible
-    expectTypeOf<JSON<{ a: Date }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: Date }>>().not.toBeAny();
     // @ts-expect-error Object with non-JSON-compatible values are not JSON-compatible
-    expectTypeOf<JSON<{ a: () => void }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: () => void }>>().not.toBeAny();
     // @ts-expect-error Object with non-JSON-compatible values are not JSON-compatible
-    expectTypeOf<JSON<{ a: symbol }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: symbol }>>().not.toBeAny();
     // @ts-expect-error Object with non-JSON-compatible values are not JSON-compatible
-    expectTypeOf<JSON<{ a: Error }>>().not.toBeAny();
+    expectTypeOf<JSONValue<{ a: Error }>>().not.toBeAny();
   });
 
   it('should convert types to their JSON-serialized versions', () => {

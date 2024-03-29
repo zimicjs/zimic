@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSON, JSONSerialized } from 'zimic0';
+import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONValue, JSONSerialized } from 'zimic0';
 import { createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
@@ -19,35 +19,35 @@ interface UserWithPassword extends User {
 
 type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
-type LoginResult = JSON<{
+type LoginResult = JSONValue<{
   accessToken: string;
   refreshToken: string;
 }>;
 
-type RequestError = JSON<{
+type RequestError = JSONValue<{
   code: string;
   message: string;
 }>;
 
-type ValidationError = JSON<
+type ValidationError = JSONValue<
   RequestError & {
     code: 'validation_error';
   }
 >;
 
-type UnauthorizedError = JSON<
+type UnauthorizedError = JSONValue<
   RequestError & {
     code: 'unauthorized';
   }
 >;
 
-type NotFoundError = JSON<
+type NotFoundError = JSONValue<
   RequestError & {
     code: 'not_found';
   }
 >;
 
-type ConflictError = JSON<
+type ConflictError = JSONValue<
   RequestError & {
     code: 'conflict';
   }
@@ -152,7 +152,7 @@ type SessionPaths = HttpSchema.Paths<{
 
 type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
 
-type Notification = JSON<{
+type Notification = JSONValue<{
   id: string;
   userId: string;
   content: string;

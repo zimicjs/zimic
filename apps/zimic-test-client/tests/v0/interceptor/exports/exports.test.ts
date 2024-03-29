@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
-  type JSON,
+  type JSONValue,
   type JSONSerialized,
   type HttpBody,
   type HttpRequest,
@@ -52,8 +52,8 @@ import {
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
-    expectTypeOf<JSON>().not.toBeAny();
-    expectTypeOf<JSON<never>>().not.toBeAny();
+    expectTypeOf<JSONValue>().not.toBeAny();
+    expectTypeOf<JSONValue<never>>().not.toBeAny();
     expectTypeOf<JSONSerialized<never>>().not.toBeAny();
 
     expectTypeOf<HttpBody>().not.toBeAny();

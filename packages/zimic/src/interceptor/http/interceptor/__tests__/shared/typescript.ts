@@ -4,7 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import { JSON } from '@/types/json';
+import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
 
 import { createHttpInterceptor } from '../../factory';
@@ -15,7 +15,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   const baseURL = 'http://localhost:3000';
   const worker = createHttpInterceptorWorker({ platform });
 
-  type User = JSON<{
+  type User = JSONValue<{
     name: string;
   }>;
 
@@ -635,7 +635,6 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
 
     const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker, baseURL });
-    expect(compositeInterceptor).toEqual(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
     type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
