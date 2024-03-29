@@ -17,6 +17,7 @@ export type HttpRequestTrackerResponseHeadersAttribute<ResponseSchema extends Ht
     ? { headers?: undefined }
     : { headers: HttpHeadersInit<Default<ResponseSchema['headers']>> };
 
+/** A declaration of an HTTP response for an intercepted request. */
 export type HttpRequestTrackerResponseDeclaration<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
@@ -25,6 +26,12 @@ export type HttpRequestTrackerResponseDeclaration<
 } & HttpRequestTrackerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
   HttpRequestTrackerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
 
+/**
+ * A factory function for creating {@link HttpRequestTrackerResponseDeclaration} objects.
+ *
+ * @param request The intercepted request.
+ * @returns The response declaration.
+ */
 export type HttpRequestTrackerResponseDeclarationFactory<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
@@ -45,6 +52,7 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
   null
 >;
 
+/** A strict representation of an intercepted HTTP request. The body is already parsed by default. */
 export interface HttpInterceptorRequest<MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
@@ -63,6 +71,7 @@ export type HttpResponseBodySchema<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
 
+/** A strict representation of an intercepted HTTP response. The body is already parsed by default. */
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
@@ -82,6 +91,7 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES =
     Exclude<keyof Body, keyof HttpInterceptorResponse<never, never>>
   >;
 
+/** A strict representation of a tracked, intercepted HTTP request, along with its response. */
 export interface TrackedHttpInterceptorRequest<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,

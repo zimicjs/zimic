@@ -1,3 +1,4 @@
+/** Error thrown when trying to start a new HTTP interceptor worker while another one is already running. */
 class OtherHttpInterceptorWorkerRunningError extends Error {
   constructor() {
     super(

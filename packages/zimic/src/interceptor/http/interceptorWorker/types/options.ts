@@ -9,6 +9,7 @@ type HttpInterceptorWorkerPlatformUnion = `${HttpInterceptorWorkerPlatformEnum}`
 export type HttpInterceptorWorkerPlatform = HttpInterceptorWorkerPlatformEnum | HttpInterceptorWorkerPlatformUnion;
 export const HttpInterceptorWorkerPlatform = HttpInterceptorWorkerPlatformEnum; // eslint-disable-line @typescript-eslint/no-redeclare
 
+/** Options to create an HTTP interceptor worker. */
 export interface HttpInterceptorWorkerOptions {
   /**
    * The platform used by the worker (`browser` or `node`).
