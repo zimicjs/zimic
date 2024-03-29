@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV", "NODE_VERSION"],
+  "globalEnv": ["NODE_ENV", "NODE_VERSION", "TYPESCRIPT_VERSION"],
   "pipeline": {
     "dev": {
       "cache": false,
