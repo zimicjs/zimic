@@ -1,13 +1,13 @@
 /** Value that can be represented in JSON. */
 export type JSONValue = { [key: string]: JSONValue } | JSONValue[] | string | number | boolean | null | undefined;
 
-export type JSONCompatible<Type extends JSONValue> = Type;
+export type JSON<Type extends JSONValue = JSONValue> = Type;
 
-export type JSONSerialized<Type> = Type extends string | number | boolean | null
+export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
   ? Type
   : Type extends Date
     ? string
-    : Type extends undefined | ((...parameters: unknown[]) => unknown)
+    : Type extends (...parameters: unknown[]) => unknown
       ? never
       : Type extends (infer ArrayItem)[]
         ? JSONSerialized<ArrayItem>[]

@@ -6,6 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSON } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -15,7 +16,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  type Filters = HttpSchema.Body<{
+  type Filters = JSON<{
     name: string;
   }>;
 
@@ -355,7 +356,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests having body restrictions', async () => {
-    type FiltersOptionsBody = HttpSchema.Body<{
+    type FiltersOptionsBody = JSON<{
       tags?: string[];
       other?: string;
     }>;
@@ -558,7 +559,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should consider only the last declared response when intercepting OPTIONS requests', async () => {
-    type ServerErrorResponseBody = HttpSchema.Body<{
+    type ServerErrorResponseBody = JSON<{
       message: string;
     }>;
 
@@ -633,7 +634,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should ignore trackers with bypassed responses when intercepting OPTIONS requests', async () => {
-    type ServerErrorResponseBody = HttpSchema.Body<{
+    type ServerErrorResponseBody = JSON<{
       message: string;
     }>;
 

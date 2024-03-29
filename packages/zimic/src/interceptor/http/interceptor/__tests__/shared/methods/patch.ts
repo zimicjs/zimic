@@ -6,6 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSON } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -18,7 +19,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  type User = HttpSchema.Body<{
+  type User = JSON<{
     id: string;
     name: string;
   }>;
@@ -386,7 +387,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests having body restrictions', async () => {
-    type UserUpdateBody = HttpSchema.Body<Partial<User>>;
+    type UserUpdateBody = JSON<Partial<User>>;
 
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -592,7 +593,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should consider only the last declared response when intercepting PATCH requests', async () => {
-    type ServerErrorResponseBody = HttpSchema.Body<{
+    type ServerErrorResponseBody = JSON<{
       message: string;
     }>;
 
@@ -671,7 +672,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should ignore trackers with bypassed responses when intercepting PATCH requests', async () => {
-    type ServerErrorResponseBody = HttpSchema.Body<{
+    type ServerErrorResponseBody = JSON<{
       message: string;
     }>;
 

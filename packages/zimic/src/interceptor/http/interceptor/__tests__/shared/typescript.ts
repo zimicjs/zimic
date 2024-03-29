@@ -4,6 +4,8 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import { JSON } from '@/types/json';
+import { Prettify } from '@/types/utils';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema } from '../../types/schema';
@@ -13,7 +15,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   const baseURL = 'http://localhost:3000';
   const worker = createHttpInterceptorWorker({ platform });
 
-  type User = HttpSchema.Body<{
+  type User = JSON<{
     name: string;
   }>;
 
@@ -602,7 +604,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
       response: UserCreationResponseByStatusCode;
     }>;
 
-    type UserCreationPath = HttpSchema.Methods<{
+    type UserCreationMethods = HttpSchema.Methods<{
       POST: UserCreationMethod;
     }>;
 
@@ -618,25 +620,25 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
       response: UserGetResponseByStatusCode;
     }>;
 
-    type UserGetPath = HttpSchema.Methods<{
+    type UserGetMethods = HttpSchema.Methods<{
       GET: UserGetMethod;
     }>;
 
-    type UsersRoot = HttpSchema.Paths<{
-      '/users': UserCreationPath;
+    type UserPaths = HttpSchema.Paths<{
+      '/users': UserCreationMethods;
     }>;
 
-    type UserByIdRoot = HttpSchema.Paths<{
-      '/users/:id': UserGetPath;
+    type UserByIdPaths = HttpSchema.Paths<{
+      '/users/:id': UserGetMethods;
     }>;
 
-    type InterceptorSchema = HttpSchema.Paths<UsersRoot & UserByIdRoot>;
+    type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
 
     const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker, baseURL });
-    expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
+    expect(compositeInterceptor).toEqual(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
     type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
-    expectTypeOf<CompositeInterceptorSchema>().toEqualTypeOf<InlineInterceptorSchema>();
+    expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
   });
 }

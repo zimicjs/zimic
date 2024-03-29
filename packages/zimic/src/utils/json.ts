@@ -1,4 +1,4 @@
-import { JSONValue } from '..';
+import { JSONValue } from '@/types/json';
 
 function isPrimitiveJSONValue<Value extends JSONValue>(value: Value): value is Exclude<Value, object> {
   return typeof value !== 'object' || value === null;

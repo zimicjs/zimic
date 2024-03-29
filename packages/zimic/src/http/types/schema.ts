@@ -48,7 +48,6 @@ export namespace HttpSchema {
   export type Response<Schema extends HttpServiceResponseSchema> = Prettify<Schema>;
   export type Headers<Schema extends HttpHeadersSchema> = Prettify<Schema>;
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Prettify<Schema>;
-  export type Body<Schema extends HttpBody> = Prettify<Schema>;
 }
 
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
