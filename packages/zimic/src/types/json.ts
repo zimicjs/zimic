@@ -4,8 +4,8 @@ type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null 
 export type JSONValue<Type extends JSON = JSON> = Type;
 
 /**
- * Recursively converts a type to its JSON-serialized version. Functions are excluded and dates are converted to
- * strings.
+ * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and non-JSON values are
+ * excluded.
  */
 export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
   ? Type
