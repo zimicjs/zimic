@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import type { HttpSchema } from 'zimic';
+import type { JSON } from 'zimic';
 import { z } from 'zod';
 
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
@@ -11,7 +11,7 @@ const getGitHubRepositorySchema = z.object({
   name: z.string(),
 });
 
-export type GitHubRepository = HttpSchema.Body<{
+export type GitHubRepository = JSON<{
   id: number;
   full_name: string;
   html_url: string;
