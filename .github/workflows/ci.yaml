@@ -145,8 +145,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS }} !packages/*
-          build: ${{ env.BUILD_OPTIONS }} !packages/*
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
           build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
           install-playwright-browsers: false
 
@@ -155,8 +155,9 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            --filter zimic-test-client \
-            --filter zimic-example-*
+            ${{ steps.zimic-setup.outputs.install-filters }} \
+            --filter !zimic \
+            --filter !@zimic/*
 
       - name: Check types
         run: |
@@ -164,4 +165,6 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
+            ${{ steps.zimic-setup.outputs.install-filters }} \
+            --filter !zimic \
+            --filter !@zimic/*
