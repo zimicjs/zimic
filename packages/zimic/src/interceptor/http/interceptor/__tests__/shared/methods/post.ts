@@ -2,15 +2,15 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSONCompatible } from '@/types/json';
+import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePostHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -19,7 +19,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  type User = JSONCompatible<{
+  type User = JSONValue<{
     id: string;
     name: string;
   }>;
@@ -146,10 +146,10 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests having headers', async () => {
-    type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserCreationRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserCreationResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -217,7 +217,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests having search params', async () => {
-    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserCreationSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -269,7 +269,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests having headers restrictions', async () => {
-    type UserCreationHeaders = HttpInterceptorSchema.Headers<{
+    type UserCreationHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -342,7 +342,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests having search params restrictions', async () => {
-    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserCreationSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -587,7 +587,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should consider only the last declared response when intercepting POST requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 
@@ -671,7 +671,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should ignore trackers with bypassed responses when intercepting POST requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 

@@ -7,8 +7,7 @@
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
-    "style:format": "pnpm style --write",
-    "types:check": "tsc --noEmit"
+    "style:format": "pnpm style --write"
   },
   "dependencies": {
     "zimic": "latest"

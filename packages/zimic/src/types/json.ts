@@ -1,13 +1,14 @@
-/** Value that can be represented in JSON. */
-export type JSONValue = { [key: string]: JSONValue } | JSONValue[] | string | number | boolean | null | undefined;
+type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null | undefined;
 
-export type JSONCompatible<Type extends JSONValue> = Type;
+/** Value that is compatible and can be represented in JSON. */
+export type JSONValue<Type extends JSON = JSON> = Type;
 
-export type JSONSerialized<Type> = Type extends string | number | boolean | null
+export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
   ? Type
   : Type extends Date
     ? string
-    : Type extends undefined | ((...parameters: unknown[]) => unknown)
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Type extends (...parameters: any[]) => any
       ? never
       : Type extends (infer ArrayItem)[]
         ? JSONSerialized<ArrayItem>[]

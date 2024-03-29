@@ -1,7 +1,7 @@
+import { HttpServiceSchema } from '@/http/types/schema';
 import { HttpInterceptor, HttpInterceptorOptions, createHttpInterceptor } from '@/interceptor';
-import { HttpInterceptorSchema } from '@/interceptor/http/interceptor/types/schema';
 
-export async function usingHttpInterceptor<Schema extends HttpInterceptorSchema>(
+export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
   callback: (interceptor: HttpInterceptor<Schema>) => Promise<void> | void,
 ) {

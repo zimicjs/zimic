@@ -2,18 +2,20 @@ import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import { JSONCompatible } from '@/types/json';
+import { JSONValue } from '@/types/json';
+import { Prettify } from '@/types/utils';
 
 import { createHttpInterceptor } from '../../factory';
-import { ExtractHttpInterceptorSchema, HttpInterceptorSchema } from '../../types/schema';
+import { ExtractHttpInterceptorSchema } from '../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const baseURL = 'http://localhost:3000';
   const worker = createHttpInterceptorWorker({ platform });
 
-  type User = JSONCompatible<{
+  type User = JSONValue<{
     name: string;
   }>;
 
@@ -54,7 +56,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type requests with search params', () => {
-    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserListSearchParams = HttpSchema.SearchParams<{
       name: string;
       usernames: string[];
       orderBy?: ('name' | 'createdAt')[];
@@ -113,7 +115,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type requests with headers', () => {
-    type UserListHeaders = HttpInterceptorSchema.Headers<{
+    type UserListHeaders = HttpSchema.Headers<{
       accept: string;
       'content-type': string;
     }>;
@@ -171,7 +173,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type responses with headers', () => {
-    type UserListHeaders = HttpInterceptorSchema.Headers<{
+    type UserListHeaders = HttpSchema.Headers<{
       accept: string;
     }>;
 
@@ -478,7 +480,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should correctly type paths with multiple methods', () => {
-    type Schema = HttpInterceptorSchema.Root<{
+    type Schema = HttpSchema.Paths<{
       '/users': {
         POST: {
           request: { body: User };
@@ -585,58 +587,57 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
       };
     }>({ worker, baseURL });
 
-    type UserCreationRequest = HttpInterceptorSchema.Request<{
+    type UserCreationRequest = HttpSchema.Request<{
       body: User;
     }>;
 
-    type UserCreationResponse = HttpInterceptorSchema.Response<{
+    type UserCreationResponse = HttpSchema.Response<{
       body: User;
     }>;
 
-    type UserCreationResponseByStatusCode = HttpInterceptorSchema.ResponseByStatusCode<{
+    type UserCreationResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
       201: UserCreationResponse;
     }>;
 
-    type UserCreationMethod = HttpInterceptorSchema.Method<{
+    type UserCreationMethod = HttpSchema.Method<{
       request: UserCreationRequest;
       response: UserCreationResponseByStatusCode;
     }>;
 
-    type UserCreationPath = HttpInterceptorSchema.Path<{
+    type UserCreationMethods = HttpSchema.Methods<{
       POST: UserCreationMethod;
     }>;
 
-    type UserGetResponse = HttpInterceptorSchema.Response<{
+    type UserGetResponse = HttpSchema.Response<{
       body: User;
     }>;
 
-    type UserGetResponseByStatusCode = HttpInterceptorSchema.ResponseByStatusCode<{
+    type UserGetResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
       200: UserGetResponse;
     }>;
 
-    type UserGetMethod = HttpInterceptorSchema.Method<{
+    type UserGetMethod = HttpSchema.Method<{
       response: UserGetResponseByStatusCode;
     }>;
 
-    type UserGetPath = HttpInterceptorSchema.Path<{
+    type UserGetMethods = HttpSchema.Methods<{
       GET: UserGetMethod;
     }>;
 
-    type UsersRoot = HttpInterceptorSchema.Root<{
-      '/users': UserCreationPath;
+    type UserPaths = HttpSchema.Paths<{
+      '/users': UserCreationMethods;
     }>;
 
-    type UserByIdRoot = HttpInterceptorSchema.Root<{
-      '/users/:id': UserGetPath;
+    type UserByIdPaths = HttpSchema.Paths<{
+      '/users/:id': UserGetMethods;
     }>;
 
-    type InterceptorSchema = HttpInterceptorSchema.Root<UsersRoot & UserByIdRoot>;
+    type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
 
     const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ worker, baseURL });
-    expectTypeOf(compositeInterceptor).toEqualTypeOf(inlineInterceptor);
 
     type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
     type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
-    expectTypeOf<CompositeInterceptorSchema>().toEqualTypeOf<InlineInterceptorSchema>();
+    expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
   });
 }

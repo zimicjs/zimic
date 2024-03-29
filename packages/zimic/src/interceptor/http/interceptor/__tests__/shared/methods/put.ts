@@ -2,15 +2,15 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSONCompatible } from '@/types/json';
+import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -19,7 +19,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  type User = JSONCompatible<{
+  type User = JSONValue<{
     id: string;
     name: string;
   }>;
@@ -139,10 +139,10 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
     });
   });
   it('should support intercepting PUT requests having headers', async () => {
-    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -207,7 +207,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests having search params', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -258,7 +258,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests having headers restrictions', async () => {
-    type UserUpdateHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateHeaders = HttpSchema.Headers<{
       'content-type'?: string;
       accept?: string;
     }>;
@@ -331,7 +331,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests having search params restrictions', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
       tag?: string;
     }>;
 
@@ -387,7 +387,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests having body restrictions', async () => {
-    type UserUpdateBody = HttpInterceptorSchema.Body<User>;
+    type UserUpdateBody = JSONValue<User>;
 
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -588,7 +588,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should consider only the last declared response when intercepting PUT requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 
@@ -667,7 +667,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should ignore trackers with bypassed responses when intercepting PUT requests', async () => {
-    type ServerErrorResponseBody = JSONCompatible<{
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
 
