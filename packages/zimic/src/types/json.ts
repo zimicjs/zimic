@@ -7,7 +7,8 @@ export type JSONSerialized<Type> = Type extends string | number | boolean | null
   ? Type
   : Type extends Date
     ? string
-    : Type extends (...parameters: unknown[]) => unknown
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Type extends (...parameters: any[]) => any
       ? never
       : Type extends (infer ArrayItem)[]
         ? JSONSerialized<ArrayItem>[]

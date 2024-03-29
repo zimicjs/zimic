@@ -65,6 +65,8 @@ describe('JSON types', () => {
     expectTypeOf<JSONValue<{ a: Date[]; b: string }>>().not.toBeAny();
     // @ts-expect-error Functions are not JSON-compatible
     expectTypeOf<JSONValue<() => void>>().not.toBeAny();
+    // @ts-expect-error Functions are not JSON-compatible
+    expectTypeOf<JSONValue<(value: string, otherValue: Map<number, string>) => Error>>().not.toBeAny();
 
     // @ts-expect-error Object with non-JSON-compatible values are not JSON-compatible
     expectTypeOf<JSONValue<{ a: Date }>>().not.toBeAny();
@@ -105,6 +107,14 @@ describe('JSON types', () => {
     expectTypeOf<JSONSerialized<() => void>>().toEqualTypeOf<never>();
     expectTypeOf<JSONSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
     expectTypeOf<JSONSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();
+    expectTypeOf<
+      JSONSerialized<{
+        a: (value: string, otherValue: Map<number, string>) => Error;
+        b: string;
+      }>
+    >().toEqualTypeOf<{
+      b: string;
+    }>();
     expectTypeOf<JSONSerialized<{ a: symbol; b: string }>>().toEqualTypeOf<{ b: string }>();
     expectTypeOf<
       JSONSerialized<{
