@@ -216,7 +216,11 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
 
     const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
-    this._internalWorker?.resetHandlers(...httpHandlersToKeep);
+
+    this._internalWorker?.resetHandlers();
+    for (const handler of httpHandlersToKeep) {
+      this._internalWorker?.use(handler);
+    }
 
     this.httpHandlerGroups = httpHandlerGroupsToKeep;
   }
