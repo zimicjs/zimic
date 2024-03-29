@@ -1,4 +1,4 @@
-import { IfAny, Prettify, UnionToIntersection } from '@/types/utils';
+import { IfAny, UnionToIntersection } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
@@ -40,14 +40,14 @@ export interface HttpServiceSchema {
 }
 
 export namespace HttpSchema {
-  export type Paths<Schema extends HttpServiceSchema> = Prettify<Schema>;
-  export type Methods<Schema extends HttpServiceMethodsSchema> = Prettify<Schema>;
-  export type Method<Schema extends HttpServiceMethodSchema> = Prettify<Schema>;
-  export type Request<Schema extends HttpServiceRequestSchema> = Prettify<Schema>;
-  export type ResponseByStatusCode<Schema extends HttpServiceResponseSchemaByStatusCode> = Prettify<Schema>;
-  export type Response<Schema extends HttpServiceResponseSchema> = Prettify<Schema>;
-  export type Headers<Schema extends HttpHeadersSchema> = Prettify<Schema>;
-  export type SearchParams<Schema extends HttpSearchParamsSchema> = Prettify<Schema>;
+  export type Paths<Schema extends HttpServiceSchema> = Schema;
+  export type Methods<Schema extends HttpServiceMethodsSchema> = Schema;
+  export type Method<Schema extends HttpServiceMethodSchema> = Schema;
+  export type Request<Schema extends HttpServiceRequestSchema> = Schema;
+  export type ResponseByStatusCode<Schema extends HttpServiceResponseSchemaByStatusCode> = Schema;
+  export type Response<Schema extends HttpServiceResponseSchema> = Schema;
+  export type Headers<Schema extends HttpHeadersSchema> = Schema;
+  export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
 }
 
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
