@@ -164,5 +164,4 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
-            --filter '!packages/*'
+            ${{ steps.zimic-setup.outputs.install-filters }}
