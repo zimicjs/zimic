@@ -94,7 +94,7 @@
     "vitest": "1.2.2"
   },
   "peerDependencies": {
-    "typescript": ">=4.7.x <5.4"
+    "typescript": ">=4.7.x <5.5"
   },
   "peerDependenciesMeta": {
     "typescript": {
