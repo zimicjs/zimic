@@ -80,7 +80,7 @@ runs:
           echo "${filterOptions[@]}"
         }
 
-        if [[ ${{ inputs.install }} == '' ]]; then
+        if [[ '${{ inputs.install }}' == '' ]]; then
           workspaceRootInstallFlag=''
           partialInstallFlag=''
           installFlag=''
@@ -93,8 +93,7 @@ runs:
         echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
         pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
-
-        if [[ ${{ inputs.build }} == '' ]]; then
+        if [[ '${{ inputs.build }}' == '' ]]; then
           buildFlag=''
         else
           buildFlag="$(composeFilterOptions ${{ inputs.build }})"
