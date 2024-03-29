@@ -28,6 +28,7 @@ export type {
 export type { HttpRequestTracker } from './http/requestTracker/types/public';
 
 export type { HttpInterceptorOptions } from './http/interceptor/types/options';
+export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
 export type { HttpInterceptor } from './http/interceptor/types/public';
 

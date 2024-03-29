@@ -37,6 +37,7 @@ import {
   createHttpInterceptor,
   type HttpInterceptor,
   type HttpInterceptorOptions,
+  type ExtractHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
   type TrackedHttpInterceptorRequest,
@@ -107,6 +108,7 @@ describe('Exports', () => {
     expect(typeof createHttpInterceptor).toBe('function');
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
+    expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
