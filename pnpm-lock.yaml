@@ -100,9 +100,6 @@ importers:
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../packages/tsconfig
-      typescript:
-        specifier: ^5.4.3
-        version: 5.4.3
 
   examples/with-jest-jsdom:
     dependencies:
