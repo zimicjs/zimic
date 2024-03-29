@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONSerialized } from 'zimic0';
+import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSON, JSONSerialized } from 'zimic0';
 import { createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
@@ -17,37 +17,37 @@ interface UserWithPassword extends User {
   password: string;
 }
 
-type UserCreationPayload = HttpSchema.Body<Omit<JSONSerialized<UserWithPassword>, 'id'>>;
+type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
-type LoginResult = HttpSchema.Body<{
+type LoginResult = JSON<{
   accessToken: string;
   refreshToken: string;
 }>;
 
-type RequestError = HttpSchema.Body<{
+type RequestError = JSON<{
   code: string;
   message: string;
 }>;
 
-type ValidationError = HttpSchema.Body<
+type ValidationError = JSON<
   RequestError & {
     code: 'validation_error';
   }
 >;
 
-type UnauthorizedError = HttpSchema.Body<
+type UnauthorizedError = JSON<
   RequestError & {
     code: 'unauthorized';
   }
 >;
 
-type NotFoundError = HttpSchema.Body<
+type NotFoundError = JSON<
   RequestError & {
     code: 'not_found';
   }
 >;
 
-type ConflictError = HttpSchema.Body<
+type ConflictError = JSON<
   RequestError & {
     code: 'conflict';
   }
@@ -152,7 +152,7 @@ type SessionPaths = HttpSchema.Paths<{
 
 type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
 
-type Notification = HttpSchema.Body<{
+type Notification = JSON<{
   id: string;
   userId: string;
   content: string;
