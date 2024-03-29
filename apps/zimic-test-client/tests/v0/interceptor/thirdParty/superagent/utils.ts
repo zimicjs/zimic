@@ -22,7 +22,7 @@ export async function superagentAsFetch(request: Request): Promise<Response> {
       throw error;
     }
 
-    const superagentResponse = error.response as SuperagentResponse;
+    const { response: superagentResponse } = error as Error & { response: SuperagentResponse };
 
     return new Response(superagentResponse.text, {
       status: superagentResponse.status,

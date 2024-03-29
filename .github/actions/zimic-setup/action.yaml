@@ -69,8 +69,6 @@ runs:
       id: install-dependencies
       shell: bash
       run: |
-        workspaceRootInstallFlag='--filter zimic-root'
-
         function composeFilterOptions() {
           filterEntries=${*}
           filterOptions=()
@@ -82,13 +80,25 @@ runs:
           echo "${filterOptions[@]}"
         }
 
-        partialInstallFlag="$(composeFilterOptions ${{ inputs.install }})"
-        installFlag="$workspaceRootInstallFlag $partialInstallFlag"
-        echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
+        if [[ '${{ inputs.install }}' == '' ]]; then
+          workspaceRootInstallFlag=''
+          partialInstallFlag=''
+          installFlag=''
+        else
+          workspaceRootInstallFlag='--filter zimic-root'
+          partialInstallFlag="$(composeFilterOptions ${{ inputs.install }})"
+          installFlag="$workspaceRootInstallFlag $partialInstallFlag"
+        fi
 
+        echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
         pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
-        buildFlag="$(composeFilterOptions ${{ inputs.build }})"
+        if [[ '${{ inputs.build }}' == '' ]]; then
+          buildFlag=''
+        else
+          buildFlag="$(composeFilterOptions ${{ inputs.build }})"
+        fi
+
         echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT
         NODE_ENV='${{ inputs.build-node-env }}' pnpm turbo build $buildFlag
 
