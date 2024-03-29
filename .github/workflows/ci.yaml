@@ -14,6 +14,8 @@ concurrency:
 
 env:
   CI: true
+  IS_PULL_REQUEST_TO_MAIN:
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && 'true' || 'false' }}
   TURBO_LOG_ORDER: stream
   TURBO_TOKEN:
     ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
@@ -28,16 +30,15 @@ env:
     "{./packages/*}[HEAD^1]..."' || './packages/*' }}
 
 jobs:
-  ci:
-    name: CI
+  ci-general:
+    name: CI (general)
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
         node-version:
-          - 18
           - 20
 
     env:
@@ -58,9 +59,7 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          build-node-env:
-            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && 'development'
-            || 'production' }}
+          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
           install-playwright-browsers: true
 
       - name: Check formatting style
@@ -74,7 +73,7 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}
+            ${{ steps.zimic-setup.outputs.install-filters }}
 
       - name: Run tests
         run: |
@@ -82,4 +81,104 @@ jobs:
             test:turbo \
             --continue \
             --concurrency 100% \
-            ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && steps.zimic-setup.outputs.install-filters || '' }}
+            ${{ steps.zimic-setup.outputs.install-filters }}
+
+  ci-node-compatibility:
+    name: CI (Node.js compatibility)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 18
+
+    env:
+      NODE_VERSION: ${{ matrix.node-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ matrix.node-version }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: ${{ env.INSTALL_OPTIONS }} !@zimic/release
+          build: ${{ env.BUILD_OPTIONS }} !@zimic/release
+          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
+          install-playwright-browsers: true
+
+      - name: Run tests
+        run: |
+          pnpm turbo \
+            test:turbo \
+            --continue \
+            --concurrency 100% \
+            ${{ steps.zimic-setup.outputs.install-filters }} \
+            --filter !@zimic/release
+
+  ci-typescript-compatibility:
+    name: CI (TypeScript compatibility)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 20
+        typescript-version:
+          - 4.7
+          - 4.8
+          - 4.9
+          - 5.0
+          - 5.1
+          - 5.2
+          - 5.3
+          - 5.4
+
+    env:
+      NODE_VERSION: ${{ matrix.node-version }}
+      TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Zimic
+        id: zimic-setup
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ matrix.node-version }}
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: ${{ env.INSTALL_OPTIONS }} !packages/*
+          build: ${{ env.BUILD_OPTIONS }} !packages/*
+          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
+          install-playwright-browsers: false
+
+      - name: Set TypeScript version
+        run: |
+          pnpm update \
+            typescript@${{ matrix.typescript-version }} \
+            --recursive \
+            --filter zimic-test-client \
+            --filter zimic-example-*
+
+      - name: Check types
+        run: |
+          pnpm turbo \
+            types:check \
+            --continue \
+            --concurrency 100% \
+            ${{ steps.zimic-setup.outputs.install-filters }} \
+            --filter '!packages/*'
