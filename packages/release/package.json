@@ -32,21 +32,21 @@
   "dependencies": {
     "fs-extra": "^10.1.0",
     "yargs": "^17.7.2",
-    "zod": "^3.22.3",
-    "zx": "^4.2.0"
+    "zod": "^3.22.4",
+    "zx": "^4.3.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.13",
-    "@types/node": "^20.11.20",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.30",
     "@types/yargs": "^17.0.32",
-    "@vitest/coverage-istanbul": "^1.2.1",
+    "@vitest/coverage-istanbul": "1.2.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "dotenv-cli": "^7.0.0",
+    "dotenv-cli": "^7.3.0",
     "tsup": "^8.0.1",
-    "tsx": "^4.6.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.1.2"
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.3",
+    "vitest": "1.2.2"
   }
 }
