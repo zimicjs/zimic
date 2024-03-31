@@ -316,4 +316,122 @@ describe('HttpHeaders', () => {
       ]),
     );
   });
+
+  it('should support checking equality with other headers', () => {
+    const headers = new HttpHeaders<{
+      accept?: string;
+      'content-type'?: `application/${string}`;
+      'keep-alive'?: string;
+    }>({
+      accept: '*/*',
+      'content-type': 'application/json',
+    });
+
+    const otherHeaders = new HttpHeaders<{
+      accept?: string;
+      'content-type'?: `application/${string}`;
+    }>({
+      accept: '*/*',
+      'content-type': 'application/json',
+    });
+
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.append('accept', 'application/xml');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    headers.set('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    otherHeaders.delete('accept');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    otherHeaders.append('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.append('accept', 'application/json');
+    otherHeaders.append('accept', 'application/json');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    otherHeaders.append('accept', 'image/png');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    otherHeaders.set('accept', '*/*, application/json');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.set('accept', '*/*');
+    otherHeaders.set('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    otherHeaders.set('content-type', 'application/xml');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    otherHeaders.set('content-type', 'application/json');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.delete('accept');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    headers.set('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.set('keep-alive', 'timeout=5');
+    expect(headers.equals(otherHeaders)).toBe(false);
+    headers.delete('keep-alive');
+    expect(headers.equals(otherHeaders)).toBe(true);
+  });
+
+  it('should support checking containment with other headers', () => {
+    const headers = new HttpHeaders<{
+      accept?: string;
+      'content-type'?: `${string}/${string}`;
+      'keep-alive'?: string;
+    }>({
+      accept: '*/*',
+      'content-type': 'application/json',
+    });
+
+    const otherHeaders = new HttpHeaders<{
+      accept?: string;
+      'content-type'?: `${string}/${string}`;
+    }>({
+      accept: '*/*',
+      'content-type': 'application/json',
+    });
+
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.append('accept', 'application/xml');
+    expect(headers.contains(otherHeaders)).toBe(true);
+    headers.set('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    otherHeaders.delete('accept');
+    expect(headers.contains(otherHeaders)).toBe(true);
+    otherHeaders.append('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.append('accept', 'application/json');
+    otherHeaders.append('accept', 'application/json');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    otherHeaders.append('accept', 'image/png');
+    expect(headers.contains(otherHeaders)).toBe(false);
+    otherHeaders.set('accept', '*/*, application/json');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.set('accept', '*/*');
+    otherHeaders.set('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    otherHeaders.set('content-type', 'application/xml');
+    expect(headers.contains(otherHeaders)).toBe(false);
+    otherHeaders.set('content-type', 'application/json');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.delete('accept');
+    expect(headers.contains(otherHeaders)).toBe(false);
+    headers.set('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.set('keep-alive', 'timeout=5');
+    expect(headers.contains(otherHeaders)).toBe(true);
+    headers.delete('keep-alive');
+    expect(headers.contains(otherHeaders)).toBe(true);
+  });
 });

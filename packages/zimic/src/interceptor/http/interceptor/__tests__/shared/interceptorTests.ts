@@ -1,8 +1,8 @@
 import { describe } from 'vitest';
 
+import { HttpMethod } from '@/http/types/schema';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
 
-import { HttpInterceptorMethod } from '../../types/schema';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
@@ -27,7 +27,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
   });
 
   describe('Methods', () => {
-    const methodTestFactories: Record<HttpInterceptorMethod, () => void> = {
+    const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
       GET: declareGetHttpInterceptorTests.bind(null, options),
       POST: declarePostHttpInterceptorTests.bind(null, options),
       PUT: declarePutHttpInterceptorTests.bind(null, options),
@@ -38,8 +38,8 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     };
 
     for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
-      describe(method, () => {
-        methodTestFactory();
+      describe(method, async () => {
+        await methodTestFactory();
       });
     }
   });

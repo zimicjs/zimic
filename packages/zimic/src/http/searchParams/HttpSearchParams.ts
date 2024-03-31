@@ -1,6 +1,6 @@
 import { ReplaceBy, Defined, ArrayItemIfArray, NonArrayKey, ArrayKey } from '@/types/utils';
 
-import { HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './types';
+import { HttpSearchParamsSchema, HttpSearchParamsInit } from './types';
 
 function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
@@ -16,13 +16,11 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
 }
 
 /**
- * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
+ * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams} class.
  */
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends URLSearchParams {
-  constructor(
-    init?: string | URLSearchParams | Schema | HttpSearchParams<Schema> | HttpSearchParamsSchemaTuple<Schema>[],
-  ) {
+  constructor(init?: HttpSearchParamsInit<Schema>) {
     if (init instanceof URLSearchParams || Array.isArray(init) || typeof init === 'string' || !init) {
       super(init);
     } else {
@@ -98,6 +96,34 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = never> extends UR
     return super[Symbol.iterator]() as IterableIterator<
       [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]
     >;
+  }
+
+  /**
+   * Checks if the current search parameters are equal to another set of search parameters. Equality is defined as
+   * having the same keys and values, regardless of the order of the keys.
+   *
+   * @param otherParams The other search parameters to compare against.
+   * @returns `true` if the search parameters are equal, `false` otherwise.
+   */
+  equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+    return this.contains(otherParams) && this.size === otherParams.size;
+  }
+
+  /**
+   * Checks if the current search parameters contain another set of search parameters. This method is less strict than
+   * {@link HttpSearchParams.equals} and only requires that all keys and values in the other search parameters are
+   * present in these search parameters.
+   *
+   * @param otherParams The other search parameters to check for containment.
+   * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
+   */
+  contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
+    for (const [key, value] of otherParams.entries()) {
+      if (!super.has.call(this, key, value)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 

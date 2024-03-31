@@ -2,24 +2,38 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONValue } from '@/types/json';
+import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const crypto = await getCrypto();
+
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  interface User {
+  type User = JSONValue<{
+    id: string;
     name: string;
-  }
+  }>;
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   beforeAll(async () => {
     await worker.start();
@@ -35,7 +49,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should support intercepting PATCH requests with a static response body', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -43,7 +57,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond({
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -52,7 +66,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -75,23 +89,23 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should support intercepting PATCH requests with a computed response body, based on the request body', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
-          request: { body: User };
+          request: { body: Partial<User> };
           response: {
             200: { body: User };
           };
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<User>();
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<Partial<User>>();
+
+        const updatedUser: User = { ...users[0], ...request.body };
 
         return {
           status: 200,
-          body: {
-            name: request.body.name,
-          },
+          body: updatedUser,
         };
       });
       expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
@@ -101,90 +115,40 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
       const userName = 'User (other)';
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
-      expect(updatedUsers).toEqual<User>({ name: userName });
+      expect(updatedUsers).toEqual<User>({ ...users[0], name: userName });
 
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
-      expect(updateRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(updateRequest.body).toEqualTypeOf<Partial<User>>();
+      expect(updateRequest.body).toEqual<Partial<User>>({ name: userName });
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
       expect(updateRequest.response.status).toEqual(200);
 
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
-      expect(updateRequest.response.body).toEqual<User>({ name: userName });
+      expect(updateRequest.response.body).toEqual<User>({ ...users[0], name: userName });
     });
   });
-
-  it('should support intercepting PATCH requests having search params', async () => {
-    type UserUpdateSearchParams = HttpInterceptorSchema.SearchParams<{
-      tag?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        PATCH: {
-          request: {
-            searchParams: UserUpdateSearchParams;
-          };
-          response: {
-            200: { body: User };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
-
-        return {
-          status: 200,
-          body: users[0],
-        };
-      });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const updateRequests = updateTracker.requests();
-      expect(updateRequests).toHaveLength(0);
-
-      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
-        tag: 'admin',
-      });
-
-      const updateResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'PATCH' });
-      expect(updateResponse.status).toBe(200);
-
-      expect(updateRequests).toHaveLength(1);
-      const [updateRequest] = updateRequests;
-      expect(updateRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
-      expect(updateRequest.searchParams).toBeInstanceOf(HttpSearchParams);
-      expect(updateRequest.searchParams).toEqual(searchParams);
-      expect(updateRequest.searchParams.get('tag')).toBe('admin');
-    });
-  });
-
   it('should support intercepting PATCH requests having headers', async () => {
-    type UserUpdateRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserUpdateResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserUpdateResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           request: {
             headers: UserUpdateRequestHeaders;
@@ -198,7 +162,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond((request) => {
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
@@ -219,7 +183,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PATCH',
         headers: {
           accept: 'application/json',
@@ -242,6 +206,246 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
     });
   });
 
+  it('should support intercepting PATCH requests having search params', async () => {
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          request: {
+            searchParams: UserUpdateSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+        return {
+          status: 200,
+          body: users[0],
+        };
+      });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
+        tag: 'admin',
+      });
+
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PATCH',
+      });
+      expect(updateResponse.status).toBe(200);
+
+      expect(updateRequests).toHaveLength(1);
+      const [updateRequest] = updateRequests;
+      expect(updateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(updateRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+      expect(updateRequest.searchParams).toBeInstanceOf(HttpSearchParams);
+      expect(updateRequest.searchParams).toEqual(searchParams);
+      expect(updateRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting PATCH requests having headers restrictions', async () => {
+    type UserUpdateHeaders = HttpSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          request: {
+            headers: UserUpdateHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch<'/users/:id'>(`/users/${users[0].id}`)
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserUpdateHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting PATCH requests having search params restrictions', async () => {
+    type UserUpdateSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          request: {
+            searchParams: UserUpdateSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch<'/users/:id'>(`/users/${users[0].id}`)
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
+        tag: 'admin',
+      });
+
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PATCH',
+      });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+        method: 'PATCH',
+      });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(1);
+    });
+  });
+
+  it('should support intercepting PATCH requests having body restrictions', async () => {
+    type UserUpdateBody = JSONValue<Partial<User>>;
+
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          request: {
+            body: UserUpdateBody;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const updateTracker = interceptor
+        .patch<'/users/:id'>(`/users/${users[0].id}`)
+        .with({
+          body: { name: users[0].name },
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserUpdateBody>();
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const updateRequests = updateTracker.requests();
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: users[0].name,
+        } satisfies UserUpdateBody),
+      });
+      expect(updateResponse.status).toBe(200);
+      expect(updateRequests).toHaveLength(1);
+
+      let updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: users[1].name,
+        } satisfies UserUpdateBody),
+      });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(1);
+
+      updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({} satisfies UserUpdateBody),
+      });
+      await expectToThrowFetchError(updateResponsePromise);
+      expect(updateRequests).toHaveLength(1);
+    });
+  });
+
   it('should support intercepting PATCH requests with a dynamic path', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -261,7 +465,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
 
-      const genericUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PATCH' });
+      const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(genericUpdateResponse.status).toBe(200);
 
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
@@ -282,7 +486,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.patch<'/users/:id'>(`/users/${1}`).respond({
+      const specificUpdateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -291,7 +495,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
 
-      const specificUpdateResponse = await fetch(`${baseURL}/users/${1}`, { method: 'PATCH' });
+      const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(specificUpdateResponse.status).toBe(200);
 
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
@@ -310,16 +514,16 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
       expect(specificUpdateRequest.response.body).toEqual(users[0]);
 
-      const unmatchedUpdatePromise = fetch(`${baseURL}/users/${2}`, { method: 'PATCH' });
+      const unmatchedUpdatePromise = fetch(`${baseURL}/users/:id/${2}`, { method: 'PATCH' });
       await expectToThrowFetchError(unmatchedUpdatePromise);
     });
   });
 
   it('should not intercept a PATCH request without a registered response', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
-          request: { body: User };
+          request: { body: Partial<User> };
           response: {
             200: { body: User };
           };
@@ -328,32 +532,32 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
     }>({ worker, baseURL }, async (interceptor) => {
       const userName = 'User (other)';
 
-      let updatePromise = fetch(`${baseURL}/users`, {
+      let updatePromise = fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       await expectToThrowFetchError(updatePromise);
 
-      const updateTrackerWithoutResponse = interceptor.patch('/users');
+      const updateTrackerWithoutResponse = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`);
       expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       let [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
-      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<Partial<User>>();
       expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
-      updatePromise = fetch(`${baseURL}/users`, {
+      updatePromise = fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       await expectToThrowFetchError(updatePromise);
 
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
-      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<Partial<User>>();
       expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const updateTrackerWithResponse = updateTrackerWithoutResponse.respond({
@@ -361,9 +565,9 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         body: users[0],
       });
 
-      const updateResponse = await fetch(`${baseURL}/users`, {
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       expect(updateResponse.status).toBe(200);
 
@@ -377,8 +581,8 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const [updateRequest] = updateRequestsWithResponse;
       expect(updateRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(updateRequest.body).toEqualTypeOf<User>();
-      expect(updateRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(updateRequest.body).toEqualTypeOf<Partial<User>>();
+      expect(updateRequest.body).toEqual<Partial<User>>({ name: userName });
 
       expectTypeOf(updateRequest.response.status).toEqualTypeOf<200>();
       expect(updateRequest.response.status).toEqual(200);
@@ -389,12 +593,12 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
   });
 
   it('should consider only the last declared response when intercepting PATCH requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -404,7 +608,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .patch('/users')
+        .patch<'/users/:id'>(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -417,7 +621,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -436,7 +640,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.patch('/users').respond({
+      const errorUpdateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -444,7 +648,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -468,12 +672,12 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
   });
 
   it('should ignore trackers with bypassed responses when intercepting PATCH requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -483,7 +687,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .patch('/users')
+        .patch<'/users/:id'>(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -493,7 +697,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       await expectToThrowFetchError(updatePromise);
 
       updateTracker.respond({
@@ -505,7 +709,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      let updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       let updatedUsers = (await updateResponse.json()) as User;
@@ -524,7 +728,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.patch('/users').respond({
+      const errorUpdateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -532,7 +736,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const errorUpdateRequests = errorUpdateTracker.requests();
       expect(errorUpdateRequests).toHaveLength(0);
 
-      const otherUpdateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(otherUpdateResponse.status).toBe(500);
 
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
@@ -555,7 +759,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
       errorUpdateTracker.bypass();
 
-      updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       updatedUsers = (await updateResponse.json()) as User;
@@ -580,7 +784,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should ignore all trackers after cleared when intercepting PATCH requests', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -588,7 +792,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond({
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -598,14 +802,14 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const initialUpdateRequests = updateTracker.requests();
       expect(initialUpdateRequests).toHaveLength(0);
 
-      const updatePromise = fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       await expectToThrowFetchError(updatePromise);
     });
   });
 
   it('should support creating new trackers after cleared', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -613,14 +817,14 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      let updateTracker = interceptor.patch('/users').respond({
+      let updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
 
       interceptor.clear();
 
-      updateTracker = interceptor.patch('/users').respond({
+      updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[1],
       });
@@ -628,7 +832,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;
@@ -651,7 +855,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
 
   it('should support reusing current trackers after cleared', async () => {
     await usingHttpInterceptor<{
-      '/users': {
+      '/users/:id': {
         PATCH: {
           response: {
             200: { body: User };
@@ -659,7 +863,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.patch('/users').respond({
+      const updateTracker = interceptor.patch<'/users/:id'>(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -674,7 +878,7 @@ export function declarePatchHttpInterceptorTests({ platform }: SharedHttpInterce
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
 
-      const updateResponse = await fetch(`${baseURL}/users`, { method: 'PATCH' });
+      const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
 
       const updatedUsers = (await updateResponse.json()) as User;

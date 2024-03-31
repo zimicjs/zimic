@@ -1,5 +1,6 @@
 import { HttpInterceptorWorker } from '../../interceptorWorker/types/public';
 
+/** Options to create an HTTP interceptor. */
 export interface HttpInterceptorOptions {
   /**
    * The {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker} instance for the

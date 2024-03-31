@@ -1,6 +1,6 @@
 import { Default, Defined, ReplaceBy } from '@/types/utils';
 
-import { HttpHeadersSchema, HttpHeadersSchemaTuple } from './types';
+import { HttpHeadersSchema, HttpHeadersInit } from './types';
 
 function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schema) {
   return Object.entries(schema).reduce<Record<string, string>>((accumulated, [key, value]) => {
@@ -11,14 +11,8 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
   }, {});
 }
 
-export type HttpHeadersInit<Schema extends HttpHeadersSchema> =
-  | Headers
-  | Schema
-  | HttpHeaders<Schema>
-  | HttpHeadersSchemaTuple<Schema>[];
-
 /**
- * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
+ * An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers Headers} class.
  */
 class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
@@ -55,11 +49,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   forEach<This extends HttpHeaders<Schema>>(
-    callback: <Key extends keyof Schema & string>(
-      value: Defined<Schema[Key]>,
-      key: Key,
-      parent: HttpHeaders<Schema>,
-    ) => void,
+    callback: <Key extends keyof Schema & string>(value: Defined<Schema[Key]>, key: Key, parent: Headers) => void,
     thisArg?: This,
   ): void {
     super.forEach(callback as (value: string, key: string, parent: Headers) => void, thisArg);
@@ -81,6 +71,71 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     return super[Symbol.iterator]() as IterableIterator<
       [keyof Schema & string, Defined<Schema[keyof Schema & string]>]
     >;
+  }
+
+  /**
+   * Checks if this headers object is equal to another set of headers. Equality is defined as having the same keys and
+   * values, regardless of the order of keys.
+   *
+   * @param otherHeaders The other headers object to compare against.
+   * @returns `true` if the headers are equal, `false` otherwise.
+   */
+  equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+    for (const [key, value] of otherHeaders.entries()) {
+      const otherValue = super.get.call(this, key);
+      if (value !== otherValue) {
+        return false;
+      }
+    }
+
+    for (const otherKey of this.keys()) {
+      const hasKey = super.has.call(otherHeaders, otherKey);
+      if (!hasKey) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Checks if this headers object contains another set of headers. This method is less strict than
+   * {@link HttpHeaders.equals} and only requires that all keys and values in the other headers are present in these
+   * headers.
+   *
+   * @param otherHeaders The other headers object to compare against.
+   * @returns `true` if these headers contain the other headers, `false` otherwise.
+   */
+  contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
+    for (const [key, value] of otherHeaders.entries()) {
+      const otherValue = super.get.call(this, key);
+
+      if (otherValue === null) {
+        return false;
+      }
+
+      const valueItems = this.splitHeaderValues(value);
+      const otherValueItems = this.splitHeaderValues(otherValue);
+
+      if (otherValueItems.length < valueItems.length) {
+        return false;
+      }
+
+      for (const valueItem of valueItems) {
+        if (!otherValueItems.includes(valueItem)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private splitHeaderValues(value: string) {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
   }
 }
 

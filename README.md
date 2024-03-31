@@ -11,6 +11,8 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="#table-of-contents">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#examples">Examples</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/users/diego-aquino/projects/5">Roadmap</a>
@@ -18,8 +20,12 @@
 
 ---
 
-> 🚧 This project is under active development! Check our
-> [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6). Contributors and ideas are welcome!
+> [!NOTE]
+>
+> 🚧 This project is still experimental and under active development!
+>
+> Check our [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6). Contributors and ideas are
+> welcome!
 
 Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by
 [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
@@ -57,7 +63,9 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [Testing](#testing)
 - [`zimic` API](#zimic-api)
   - [`HttpHeaders`](#httpheaders)
+    - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpSearchParams`](#httpsearchparams)
+    - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
 - [`zimic/interceptor` API](#zimicinterceptor-api)
   - [`HttpInterceptorWorker`](#httpinterceptorworker)
     - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
@@ -67,7 +75,7 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
     - [`worker.isRunning()`](#workerisrunning)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`createHttpInterceptor`](#createhttpinterceptor)
-    - [`HttpInterceptor` schema](#httpinterceptor-schema)
+    - [Declaring service schemas](#declaring-service-schemas)
       - [Declaring paths](#declaring-paths)
       - [Declaring methods](#declaring-methods)
       - [Declaring requests](#declaring-requests)
@@ -79,10 +87,14 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
   - [`HttpRequestTracker`](#httprequesttracker)
     - [`tracker.method()`](#trackermethod)
     - [`tracker.path()`](#trackerpath)
+    - [`tracker.with(restriction)`](#trackerwithrestriction)
+      - [Static restrictions](#static-restrictions)
+      - [Computed restrictions](#computed-restrictions)
     - [`tracker.respond(declaration)`](#trackerresponddeclaration)
       - [Static responses](#static-responses)
       - [Computed responses](#computed-responses)
     - [`tracker.bypass()`](#trackerbypass)
+    - [`tracker.clear()`](#trackerclear)
     - [`tracker.requests()`](#trackerrequests)
 - [CLI](#cli)
   - [`zimic --version`](#zimic---version)
@@ -151,116 +163,159 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
 
 ### Basic usage
 
-To start using Zimic, create a [worker](#httpinterceptorworker) targeting your platform.
+1. To start using Zimic, create a [worker](#httpinterceptorworker) targeting your platform.
 
-```ts
-import { createHttpInterceptorWorker } from 'zimic/interceptor';
+   ```ts
+   import { createHttpInterceptorWorker } from 'zimic/interceptor';
 
-const worker = createHttpInterceptorWorker({
-  platform: 'node', // or 'browser'
-});
-```
+   const worker = createHttpInterceptorWorker({
+     platform: 'node', // Or 'browser'
+   });
+   ```
 
-Then, create your first [interceptor](#httpinterceptor):
+2. Then, create your first [interceptor](#httpinterceptor):
 
-```ts
-import { createHttpInterceptor } from 'zimic/interceptor';
+   ```ts
+   import { JSONValue } from 'zimic';
+   import { createHttpInterceptor } from 'zimic/interceptor';
 
-const interceptor = createHttpInterceptor<{
-  '/users': {
-    GET: {
-      response: {
-        200: { body: User[] };
-      };
-    };
-  };
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
-```
+   type User = JSONValue<{
+     username: string;
+   }>;
 
-In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET` method.
-The response for a successful request is an array of `User` objects. Learn more about declaring interceptor schemas at
-[`HttpInterceptor` schema](#httpinterceptor-schema).
+   const interceptor = createHttpInterceptor<{
+     '/users': {
+       GET: {
+         response: {
+           200: { body: User[] };
+         };
+       };
+     };
+   }>({
+     worker,
+     baseURL: 'http://localhost:3000',
+   });
+   ```
 
-Finally, start the worker to intercept requests:
+   In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET`
+   method. The response for a successful request is an array of `User` objects, which is checked to be a valid JSON
+   using `JSONValue`. Learn more at [Declaring service schemas](#declaring-service-schemas).
 
-```ts
-await worker.start();
-```
+3. Finally, start the worker to intercept requests:
 
-Now, you can start intercepting requests and returning mock responses!
+   ```ts
+   await worker.start();
+   ```
 
-```ts
-const listTracker = interceptor.get('/users').respond({
-  status: 200,
-  body: [{ username: 'diego-aquino' }],
-});
+4. Now, you can start intercepting requests and returning mock responses!
 
-const response = await fetch('http://localhost:3000/users');
-const users = await response.json();
-console.log(users); // [{ username: 'diego-aquino' }]
-```
+   ```ts
+   const listTracker = interceptor.get('/users').respond({
+     status: 200,
+     body: [{ username: 'diego-aquino' }],
+   });
 
-More examples are available at [`zimic/interceptor` API](#zimicinterceptor-api).
+   const response = await fetch('http://localhost:3000/users');
+   const users = await response.json();
+   console.log(users); // [{ username: 'diego-aquino' }]
+   ```
+
+More usage examples and recommendations are available at [`zimic/interceptor` API](#zimicinterceptor-api) and
+[Examples](#examples).
 
 ### Testing
 
 We recommend managing the lifecycle of your workers and interceptors using `beforeAll` and `afterAll` hooks in your test
 setup file. An example using Jest/Vitest structure:
 
-```ts
-// tests/setup.ts
-import { createHttpInterceptorWorker, createHttpInterceptor } from 'zimic/interceptor';
+1. Create a worker:
 
-// create a worker
-const worker = createHttpInterceptorWorker({
-  platform: 'node',
-});
+   `tests/interceptors/worker.ts`
 
-const userInterceptor = createHttpInterceptor<{
-  // declare your schema
-}>({
-  worker,
-  baseURL: 'http://localhost:3000',
-});
+   ```ts
+   import { createHttpInterceptorWorker } from 'zimic/interceptor';
 
-const logInterceptor = createHttpInterceptor<{
-  // declare your schema
-}>({
-  worker,
-  baseURL: 'http://localhost:3001',
-});
+   const worker = createHttpInterceptorWorker({
+     platform: 'node', // Or 'browser'
+   });
 
-beforeAll(async () => {
-  // start intercepting requests
-  await worker.start();
-});
+   export default worker;
+   ```
 
-beforeEach(async () => {
-  // clear all interceptors to make sure no tests affect each other
-  userInterceptor.clear();
-  logInterceptor.clear();
-});
+2. Create interceptors for your services:
 
-afterAll(async () => {
-  // stop intercepting requests
-  await worker.stop();
-});
-```
+   `tests/interceptors/userInterceptor.ts`
+
+   ```ts
+   import { createHttpInterceptor } from 'zimic/interceptor';
+   import worker from './worker';
+
+   const userInterceptor = createHttpInterceptor<{
+     // User service schema
+   }>({
+     worker,
+     baseURL: 'http://localhost:3000',
+   });
+
+   export default userInterceptor;
+   ```
+
+   `tests/interceptors/analyticsInterceptor.ts`
+
+   ```ts
+   import { createHttpInterceptor } from 'zimic/interceptor';
+   import worker from './worker';
+
+   const analyticsInterceptor = createHttpInterceptor<{
+     // Analytics service schema
+   }>({
+     worker,
+     baseURL: 'http://localhost:3001',
+   });
+
+   export default analyticsInterceptor;
+   ```
+
+3. Create a setup file to manage lifecycle of the worker and the interceptors:
+
+   `tests/setup.ts`
+
+   ```ts
+   import userInterceptor from './interceptors/userInterceptor';
+   import analyticsInterceptor from './interceptors/analyticsInterceptor';
+
+   beforeAll(async () => {
+     // Start intercepting requests
+     await worker.start();
+   });
+
+   beforeEach(async () => {
+     // Clear all interceptors to make sure no tests affect each other
+     userInterceptor.clear();
+     analyticsInterceptor.clear();
+   });
+
+   afterAll(async () => {
+     // Stop intercepting requests
+     await worker.stop();
+   });
+   ```
 
 ---
 
 ## `zimic` API
 
-This module provides general utilities, such as HTTP classes.
+This module provides general resources, such as HTTP classes and types.
+
+> [!TIP]
+>
+> All APIs are documented using [JSDoc](https://jsdoc.app), so you can view detailed descriptions directly in your IDE.
 
 ### `HttpHeaders`
 
 A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class, with a strictly-typed
-schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic abstractions to provide type safety when
-applying mocks.
+schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to provide type safety when applying
+mocks.
 
 ```ts
 import { HttpHeaders } from 'zimic';
@@ -277,11 +332,51 @@ const contentType = headers.get('content-type');
 console.log(contentType); // 'application/json'
 ```
 
+#### Comparing `HttpHeaders`
+
+`HttpHeaders` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other headers:
+
+```ts
+import { HttpSchema, HttpHeaders } from 'zimic';
+
+type HeaderSchema = HttpSchema.Headers<{
+  accept?: string;
+  'content-type'?: string;
+}>;
+
+const headers1 = new HttpHeaders<HeaderSchema>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const headers2 = new HttpHeaders<HeaderSchema>({
+  accept: '*/*',
+  'content-type': 'application/json',
+});
+
+const headers3 = new HttpHeaders<
+  HeaderSchema & {
+    'x-custom-header'?: string;
+  }
+>({
+  accept: '*/*',
+  'content-type': 'application/json',
+  'x-custom-header': 'value',
+});
+
+console.log(headers1.equals(headers2)); // true
+console.log(headers1.equals(headers3)); // false
+
+console.log(headers1.contains(headers2)); // true
+console.log(headers1.contains(headers3)); // false
+console.log(headers3.contains(headers1)); // true
+```
+
 ### `HttpSearchParams`
 
 A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
-strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic abstractions
-to provide type safety when applying mocks.
+strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic to provide
+type safety when applying mocks.
 
 ```ts
 import { HttpSearchParams } from 'zimic';
@@ -301,12 +396,54 @@ const page = searchParams.get('page');
 console.log(page); // '1'
 ```
 
+#### Comparing `HttpSearchParams`
+
+`HttpSearchParams` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other search
+params:
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+
+type SearchParamsSchema = HttpSchema.SearchParams<{
+  names?: string[];
+  page?: `${number}`;
+}>;
+
+const searchParams1 = new HttpSearchParams<SearchParamsSchema>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const searchParams2 = new HttpSearchParams<SearchParamsSchema>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+});
+
+const searchParams3 = new HttpSearchParams<
+  SearchParamsSchema & {
+    orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}[]`;
+  }
+>({
+  names: ['user 1', 'user 2'],
+  page: '1',
+  orderBy: ['name.asc'],
+});
+
+console.log(searchParams1.equals(searchParams2)); // true
+console.log(searchParams1.equals(searchParams3)); // false
+
+console.log(searchParams1.contains(searchParams2)); // true
+console.log(searchParams1.contains(searchParams3)); // false
+console.log(searchParams3.contains(searchParams1)); // true
+```
+
 ## `zimic/interceptor` API
 
-This module provides a set of utilities to create HTTP interceptors for both Node.js and browser environments.
+This module provides a set of resources to create HTTP interceptors for both Node.js and browser environments.
 
-All APIs are documented using [JSDoc](https://jsdoc.app) comments, so you can view detailed descriptions directly in
-your IDE!
+> [!TIP]
+>
+> All APIs are documented using [JSDoc](https://jsdoc.app), so you can view detailed descriptions directly in your IDE.
 
 ### `HttpInterceptorWorker`
 
@@ -324,9 +461,7 @@ Creates an HTTP interceptor worker. A platform is required to specify the enviro
   ```ts
   import { createHttpInterceptorWorker } from 'zimic/interceptor';
 
-  const worker = createHttpInterceptorWorker({
-    platform: 'node',
-  });
+  const worker = createHttpInterceptorWorker({ platform: 'node' });
   ```
 
 - Browser:
@@ -334,9 +469,7 @@ Creates an HTTP interceptor worker. A platform is required to specify the enviro
   ```ts
   import { createHttpInterceptorWorker } from 'zimic/interceptor';
 
-  const worker = createHttpInterceptorWorker({
-    platform: 'browser',
-  });
+  const worker = createHttpInterceptorWorker({ platform: 'browser' });
   ```
 
 #### `worker.platform()`
@@ -385,22 +518,24 @@ Each interceptor represents a service and can be used to mock its paths and meth
 
 #### `createHttpInterceptor`
 
-Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
-interceptor schemas at [`HttpInterceptor` schema](#httpinterceptor-schema).
+Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
+[Declaring service schemas](#declaring-service-schemas).
 
 ```ts
+import { JSONValue } from 'zimic';
 import { createHttpInterceptorWorker, createHttpInterceptor } from 'zimic/interceptor';
 
-const worker = createHttpInterceptorWorker({
-  platform: 'node',
-});
+const worker = createHttpInterceptorWorker({ platform: 'node' });
+
+type User = JSONValue<{
+  username: string;
+}>;
 
 const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
         200: { body: User };
-        404: { body: NotFoundError };
       };
     };
   };
@@ -410,31 +545,55 @@ const interceptor = createHttpInterceptor<{
 });
 ```
 
-#### `HttpInterceptor` schema
+#### Declaring service schemas
 
-HTTP interceptor schemas define the structure of the real services being mocked. This includes paths, methods, request
-and response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying
-mocks.
+HTTP service schemas define the structure of the real services being used. This includes paths, methods, request and
+response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying mocks.
 
 <details>
   <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
+import { HttpSchema, JSONValue } from 'zimic';
 import { createHttpInterceptor } from 'zimic/interceptor';
 
+// Declaring base types
+type User = JSONValue<{
+  username: string;
+}>;
+
+type UserCreationBody = JSONValue<{
+  username: string;
+}>;
+
+type NotFoundError = JSONValue<{
+  message: string;
+}>;
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  name?: string;
+  orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
+}>;
+
+// Creating the interceptor
 const interceptor = createHttpInterceptor<{
   '/users': {
     POST: {
       request: {
-        body: {
-          username: string;
-        };
+        headers: { accept: string };
+        body: UserCreationBody;
       };
       response: {
-        201: { body: User };
+        201: {
+          headers: { 'content-type': string };
+          body: User;
+        };
       };
     };
     GET: {
+      request: {
+        searchParams: UserListSearchParams;
+      };
       response: {
         200: { body: User[] };
         404: { body: NotFoundError };
@@ -447,14 +606,6 @@ const interceptor = createHttpInterceptor<{
       response: {
         200: { body: User };
         404: { body: NotFoundError };
-      };
-    };
-  };
-
-  '/posts': {
-    GET: {
-      response: {
-        200: { body: Post[] };
       };
     };
   };
@@ -470,54 +621,76 @@ const interceptor = createHttpInterceptor<{
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+import { HttpSchema, JSONValue } from 'zimic';
+import { createHttpInterceptor } from 'zimic/interceptor';
 
-type UserPaths = HttpInterceptorSchema.Root<{
-  '/users': {
-    POST: {
-      request: {
-        body: {
-          username: string;
-        };
-      };
-      response: {
-        201: { body: User };
+// Declaring the base types
+type User = JSONValue<{
+  username: string;
+}>;
+
+type UserCreationBody = JSONValue<{
+  username: string;
+}>;
+
+type NotFoundError = JSONValue<{
+  message: string;
+}>;
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  name?: string;
+  orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
+}>;
+
+// Declaring user methods
+type UserMethods = HttpSchema.Methods<{
+  POST: {
+    request: {
+      headers: { accept: string };
+      body: UserCreationBody;
+    };
+    response: {
+      201: {
+        headers: { 'content-type': string };
+        body: User;
       };
     };
+  };
 
-    GET: {
-      response: {
-        200: { body: User[] };
-        404: { body: NotFoundError };
-      };
+  GET: {
+    request: {
+      searchParams: UserListSearchParams;
+    };
+    response: {
+      200: { body: User[] };
+      404: { body: NotFoundError };
     };
   };
 }>;
 
-type UserByIdPaths = HttpInterceptorSchema.Root<{
-  '/users/:id': {
-    GET: {
-      response: {
-        200: { body: User };
-        404: { body: NotFoundError };
-      };
+type UserGetByIdMethods = HttpSchema.Methods<{
+  GET: {
+    response: {
+      200: { body: User };
+      404: { body: NotFoundError };
     };
   };
 }>;
 
-type PostPaths = HttpInterceptorSchema.Root<{
-  '/posts': {
-    GET: {
-      response: {
-        200: { body: Post[] };
-      };
-    };
-  };
+// Declaring user paths
+type UserPaths = HttpSchema.Paths<{
+  '/users': UserMethods;
 }>;
 
-type InterceptorSchema = HttpInterceptorSchema.Root<UserPaths & UserByIdPaths & PostPaths>;
+type UserByIdPaths = HttpSchema.Paths<{
+  '/users/:id': UserGetByIdMethods;
+}>;
 
-const interceptor = createHttpInterceptor<InterceptorSchema>({
+// Declaring interceptor schema
+type ServiceSchema = UserPaths & UserByIdPaths;
+
+// Creating the interceptor
+const interceptor = createHttpInterceptor<ServiceSchema>({
   worker,
   baseURL: 'http://localhost:3000',
 });
@@ -527,20 +700,20 @@ const interceptor = createHttpInterceptor<InterceptorSchema>({
 
 ##### Declaring paths
 
-At the root level, each key represents a path or route:
+At the root level, each key represents a path or route of the service:
 
 ```ts
 import { createHttpInterceptor } from 'zimic/interceptor';
 
 const interceptor = createHttpInterceptor<{
   '/users': {
-    // path schema
+    // Path schema
   };
   '/users/:id': {
-    // path schema
+    // Path schema
   };
   '/posts': {
-    // path schema
+    // Path schema
   };
 }>({
   worker,
@@ -550,24 +723,25 @@ const interceptor = createHttpInterceptor<{
 
 <details>
   <summary>
-    Alternatively, you can also compose root level paths using the utility type <code>HttpInterceptorSchema.Root</code>:
+    Alternatively, you can also compose paths using the utility type <code>HttpSchema.Paths</code>:
   </summary>
 
 ```ts
-import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+import { HttpSchema } from 'zimic';
+import { createHttpInterceptor } from 'zimic/interceptor';
 
-type UserPaths = HttpInterceptorSchema.Root<{
+type UserPaths = HttpSchema.Paths<{
   '/users': {
-    // path schema
+    // Path schema
   };
   '/users/:id': {
-    // path schema
+    // Path schema
   };
 }>;
 
-type PostPaths = HttpInterceptorSchema.Root<{
+type PostPaths = HttpSchema.Paths<{
   '/posts': {
-    // path schema
+    // Path schema
   };
 }>;
 
@@ -590,13 +764,13 @@ import { createHttpInterceptor } from 'zimic/interceptor';
 const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
-      // method schema
+      // Method schema
     };
     POST: {
-      // method schema
+      // Method schema
     };
   };
-  // other paths
+  // Other paths
 }>({
   worker,
   baseURL: 'http://localhost:3000',
@@ -606,18 +780,19 @@ const interceptor = createHttpInterceptor<{
 <details>
   <summary>
     Similarly to <a href="#declaring-paths">paths</a>, you can also compose methods using the utility type
-    <code>HttpInterceptorSchema.Method</code>:
+    <code>HttpSchema.Methods</code>:
   </summary>
 
 ```ts
-import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+import { HttpSchema } from 'zimic';
+import { createHttpInterceptor } from 'zimic/interceptor';
 
-type UserMethods = HttpInterceptorSchema.Method<{
+type UserMethods = HttpSchema.Methods<{
   GET: {
-    // method schema
+    // Method schema
   };
   POST: {
-    // method schema
+    // Method schema
   };
 }>;
 
@@ -636,61 +811,69 @@ const interceptor = createHttpInterceptor<{
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
 
-> **Tip**: You only need to declare the properties you want to use in your mocks. For example, if you are referencing
-> only the header `accept`, you need to declare only it. Similarly, if you are not using any headers, search params, or
-> body, you can omit them.
-
 ```ts
+import { HttpSchema, JSONValue } from 'zimic';
 import { createHttpInterceptor } from 'zimic/interceptor';
+
+type UserCreationBody = JSONValue<{
+  username: string;
+}>;
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
 
 const interceptor = createHttpInterceptor<{
   '/users': {
     POST: {
       request: {
-        headers: {
-          accept: string;
-        };
-        body: {
-          username: string;
-        };
+        body: UserCreationBody;
       };
       // ...
     };
 
     GET: {
       request: {
-        searchParams: {
-          username?: string;
-        };
+        searchParams: UserListSearchParams;
       };
       // ...
     };
-
-    // other methods
+    // Other methods
   };
-  // other paths
+  // Other paths
 }>({
   worker,
   baseURL: 'http://localhost:3000',
 });
 ```
 
+> [!TIP]
+>
+> You only need to include in the schema the properties you want to use in your mocks. Headers, search params, or body
+> fields that are not used do not need to be declared, keeping your type definitions clean and concise.
+
+> [!IMPORTANT]
+>
+> Body types cannot be declared using the keyword `interface`, because interfaces do not have implicit index signatures
+> as types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare bodies
+> using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
+
 <details>
   <summary>
-    You can also compose requests using the utility type <code>HttpInterceptorSchema.Request</code>, similarly to
+    You can also compose requests using the utility type <code>HttpSchema.Request</code>, similarly to
     <a href="#declaring-methods">methods</a>:
   </summary>
 
 ```ts
-import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+import { HttpSchema, JSONValue } from 'zimic';
+import { createHttpInterceptor } from 'zimic/interceptor';
 
-type UserCreationRequest = HttpInterceptorSchema.Request<{
-  headers: {
-    accept: '*/*';
-  };
-  body: {
-    username: string;
-  };
+type UserCreationBody = JSONValue<{
+  username: string;
+}>;
+
+type UserCreationRequest = HttpSchema.Request<{
+  body: UserCreationBody;
 }>;
 
 const interceptor = createHttpInterceptor<{
@@ -712,66 +895,76 @@ const interceptor = createHttpInterceptor<{
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
-> **Tip**: Similarly to [Declaring requests](#declaring-requests), you only need to declare the properties you want to
-> use in your mocks. For example, if you are referencing only the header `content-type`, you can declare only it. If you
-> are not using any headers or body, you can omit them.
-
 ```ts
+import { JSONValue } from 'zimic';
 import { createHttpInterceptor } from 'zimic/interceptor';
+
+type User = JSONValue<{
+  username: string;
+}>;
+
+type NotFoundError = JSONValue<{
+  message: string;
+}>;
 
 const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       // ...
       response: {
-        200: {
-          headers: {
-            'content-type': string;
-          };
-          body: User;
-        };
-        404: {
-          headers: {
-            'content-type': string;
-          };
-          body: NotFoundError;
-        };
+        200: { body: User };
+        404: { body: NotFoundError };
       };
     };
-    // other methods
+    // Other methods
   };
-  // other paths
+  // Other paths
 }>({
   worker,
   baseURL: 'http://localhost:3000',
 });
 ```
 
+> [!TIP]
+>
+> Similarly to [Declaring requests](#declaring-requests), you only need to include in the schema the properties you want
+> to use in your mocks. Headers, search params, or body fields that are not used do not need to be declared, keeping
+> your type definitions clean and concise.
+
+> [!IMPORTANT]
+>
+> Also similarly to [Declaring requests](#declaring-requests), body types cannot be declared using the keyword
+> `interface`, because interfaces do not have implicit index signatures as types do. Part of Zimic's JSON validation
+> relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
+> type is a valid JSON, you can use the utility type `JSONValue`.
+
 <details>
   <summary>
-    You can also compose responses using the utility types <code>HttpInterceptorSchema.ResponseByStatusCode</code> and
-    <code>HttpInterceptorSchema.Response</code>, similarly to <a href="#declaring-requests">requests</a>:
+    You can also compose responses using the utility types <code>HttpSchema.ResponseByStatusCode</code> and
+    <code>HttpSchema.Response</code>, similarly to <a href="#declaring-requests">requests</a>:
   </summary>
 
 ```ts
-import { createHttpInterceptor, HttpInterceptorSchema } from 'zimic/interceptor';
+import { HttpSchema, JSONValue } from 'zimic';
+import { createHttpInterceptor } from 'zimic/interceptor';
 
+type User = JSONValue<{
+  username: string;
+}>;
 
-type SuccessUserGetResponse = HttpInterceptorSchema.Response<{
-  headers: {
-    'content-type': string;
-  };
+type NotFoundError = JSONValue<{
+  message: string;
+}>;
+
+type SuccessUserGetResponse = HttpSchema.Response<{
   body: User;
 }>;
 
-type NotFoundUserGetResponse = **HttpInterceptorSchema**.Response<{
-  headers: {
-    'content-type': string;
-  };
+type NotFoundUserGetResponse = HttpSchema.Response<{
   body: NotFoundError;
 }>;
 
-type UserGetResponses = HttpInterceptorSchema.ResponseByStatusCode<{
+type UserGetResponses = HttpSchema.ResponseByStatusCode<{
   200: SuccessUserGetResponse;
   404: NotFoundUserGetResponse;
 }>;
@@ -779,12 +972,9 @@ type UserGetResponses = HttpInterceptorSchema.ResponseByStatusCode<{
 const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
-      // ...
       response: UserGetResponses;
     };
-    // other methods
   };
-  // other paths
 }>({
   worker,
   baseURL: 'http://localhost:3000',
@@ -824,7 +1014,7 @@ const interceptor = createHttpInterceptor<{
   baseURL: 'http://localhost:3000',
 });
 
-// intercept any GET requests to http://localhost:3000/users and return this response
+// Intercept any GET requests to http://localhost:3000/users and return this response
 const listTracker = interceptor.get('/users').respond({
   status: 200
   body: [{ username: 'diego-aquino' }],
@@ -857,8 +1047,8 @@ const interceptor = createHttpInterceptor<{
   baseURL: 'http://localhost:3000',
 });
 
-interceptor.get('/users/:id'); // matches any id
-interceptor.get<'/users/:id'>(`/users/${1}`); // only matches id 1 (notice the original path as a type parameter)
+interceptor.get('/users/:id'); // Matches any id
+interceptor.get<'/users/:id'>(`/users/${1}`); // Only matches id 1 (notice the original path as a type parameter)
 ```
 
 #### `interceptor.clear()`
@@ -903,6 +1093,69 @@ const path = tracker.path();
 console.log(path); // '/users'
 ```
 
+#### `tracker.with(restriction)`
+
+Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
+which requests will match the tracker and receive the mock response. If multiple restrictions are declared, either in a
+single object or with multiple calls to `.with()`, all of them must be met, essentially creating an AND condition.
+
+##### Static restrictions
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
+match the tracker, regardless of having more properties or values. In the example above, requests with more headers than
+`content-type: application/json` will still match the tracker. The same applies to search params and body restrictions.
+
+If you want to match only requests with the exact values declared, you can use `exact: true`:
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+    exact: true, // Only requests with these exact headers and body will match
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+##### Computed restrictions
+
+A function is also supported to declare restrictions, in case they are dynamic.
+
+```ts
+const creationTracker = interceptor
+  .post('/users')
+  .with((request) => {
+    const accept = request.headers.get('accept');
+    return accept !== null && accept.startsWith('application');
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
+and `.searchParams`, which are typed based on the interceptor schema. The function should return a boolean: `true` if
+the request matches the tracker and should receive the mock response; `false` otherwise and the request should bypass
+the tracker.
+
 #### `tracker.respond(declaration)`
 
 Declares a response to return for matched intercepted requests.
@@ -921,7 +1174,7 @@ const listTracker = interceptor.get('/users').respond({
 
 ##### Computed responses
 
-A function is also supported, in case the response is dynamic:
+A function is also supported to declare a response, in case it is dynamic:
 
 ```ts
 const listTracker = interceptor.get('/users').respond((request) => {
@@ -938,9 +1191,14 @@ and `.searchParams`, which are typed based on the interceptor schema.
 
 #### `tracker.bypass()`
 
-Clears any declared response and intercepted requests, and makes the tracker stop matching intercepted requests. The
-next tracker, created before this one, that matches the same method and path will be used if present. If not, the
-requests to the method and path will not be intercepted.
+Clears any response declared with [`.respond(declaration)`](#trackerresponddeclaration), making the tracker stop
+matching requests. The next tracker, created before this one, that matches the same method and path will be used if
+present. If not, the requests of the method and path will not be intercepted.
+
+To make the tracker match requests again, register a new response with `tracker.respond()`.
+
+This method is useful to skip a tracker. It is more gentle than [`tracker.clear()`](#trackerclear), as it only removed
+the response, keeping restrictions and intercepted requests.
 
 ```ts
 const listTracker1 = interceptor.get('/users').respond({
@@ -954,8 +1212,38 @@ const listTracker2 = interceptor.get('/users').respond({
 });
 
 listTracker2.bypass();
+// Now, GET requests to /users will match listTracker1 and return an empty array
 
-// GET requests to /users will match listTracker1 and return an empty array
+listTracker2.requests(); // Still contains the intercepted requests up to the bypass
+```
+
+#### `tracker.clear()`
+
+Clears any response declared with [`.respond(declaration)`](#trackerresponddeclaration), restrictions declared with
+[`.with(restriction)`](#trackerwithrestriction), and intercepted requests, making the tracker stop matching requests.
+The next tracker, created before this one, that matches the same method and path will be used if present. If not, the
+requests of the method and path will not be intercepted.
+
+To make the tracker match requests again, register a new response with `tracker.respond()`.
+
+This method is useful to reset trackers to a clean state between tests. It is more aggressive than
+[`tracker.bypass()`](#trackerbypass), as it also clears restrictions and intercepted requests.
+
+```ts
+const listTracker1 = interceptor.get('/users').respond({
+  status: 200,
+  body: [],
+});
+
+const listTracker2 = interceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+
+listTracker2.clear();
+// Now, GET requests to /users will match listTracker1 and return an empty array
+
+listTracker2.requests(); // Now empty
 ```
 
 #### `tracker.requests()`

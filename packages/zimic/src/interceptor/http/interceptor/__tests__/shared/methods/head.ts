@@ -2,13 +2,14 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
@@ -102,59 +103,11 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
     });
   });
 
-  it('should support intercepting HEAD requests having search params', async () => {
-    type UserHeadSearchParams = HttpInterceptorSchema.SearchParams<{
-      tag?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        HEAD: {
-          request: {
-            searchParams: UserHeadSearchParams;
-          };
-          response: {
-            200: {};
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
-
-        return {
-          status: 200,
-        };
-      });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const headRequests = headTracker.requests();
-      expect(headRequests).toHaveLength(0);
-
-      const searchParams = new HttpSearchParams<UserHeadSearchParams>({
-        tag: 'admin',
-      });
-
-      const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
-      expect(headResponse.status).toBe(200);
-
-      expect(headRequests).toHaveLength(1);
-      const [headRequest] = headRequests;
-      expect(headRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(headRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
-      expect(headRequest.searchParams).toBeInstanceOf(HttpSearchParams);
-      expect(headRequest.searchParams).toEqual(searchParams);
-      expect(headRequest.searchParams.get('tag')).toBe('admin');
-    });
-  });
-
   it('should support intercepting HEAD requests having headers', async () => {
-    type UserHeadRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserHeadRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserHeadResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserHeadResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -213,6 +166,177 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(headRequest.response.headers).toBeInstanceOf(HttpHeaders);
       expect(headRequest.response.headers.get('content-type')).toBe('application/json');
       expect(headRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
+  it('should support intercepting HEAD requests having search params', async () => {
+    type UserHeadSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          request: {
+            searchParams: UserHeadSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const headTracker = interceptor.head('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+        return {
+          status: 200,
+        };
+      });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserHeadSearchParams>({
+        tag: 'admin',
+      });
+
+      const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
+      expect(headResponse.status).toBe(200);
+
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+      expect(headRequest.searchParams).toBeInstanceOf(HttpSearchParams);
+      expect(headRequest.searchParams).toEqual(searchParams);
+      expect(headRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting HEAD requests having headers restrictions', async () => {
+    type UserHeadHeaders = HttpSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          request: {
+            headers: UserHeadHeaders;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const headTracker = interceptor
+        .head('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+          };
+        });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserHeadHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD', headers });
+      expect(headResponse.status).toBe(200);
+      expect(headRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD', headers });
+      expect(headResponse.status).toBe(200);
+      expect(headRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
+      await expectToThrowFetchError(headResponsePromise);
+      expect(headRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
+      await expectToThrowFetchError(headResponsePromise);
+      expect(headRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting HEAD requests having search params restrictions', async () => {
+    type UserHeadSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          request: {
+            searchParams: UserHeadSearchParams;
+          };
+          response: {
+            200: {};
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const headTracker = interceptor
+        .head('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+          };
+        });
+      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const headRequests = headTracker.requests();
+      expect(headRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserHeadSearchParams>({
+        tag: 'admin',
+      });
+
+      const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
+      expect(headResponse.status).toBe(200);
+      expect(headRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const headResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
+      await expectToThrowFetchError(headResponsePromise);
+      expect(headRequests).toHaveLength(1);
     });
   });
 
@@ -340,9 +464,9 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should consider only the last declared response when intercepting HEAD requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {
@@ -415,9 +539,9 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should ignore trackers with bypassed responses when intercepting HEAD requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {

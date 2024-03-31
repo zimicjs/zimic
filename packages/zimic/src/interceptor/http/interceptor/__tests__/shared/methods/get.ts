@@ -2,21 +2,35 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONValue } from '@/types/json';
+import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  interface User {
-    name: string;
-  }
+export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const crypto = await getCrypto();
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  type User = JSONValue<{
+    id: string;
+    name: string;
+  }>;
+
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
@@ -84,6 +98,7 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const user: User = {
+        id: crypto.randomUUID(),
         name: 'User (computed)',
       };
 
@@ -120,65 +135,11 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
     });
   });
 
-  it('should support intercepting GET requests having search params', async () => {
-    type UserListSearchParams = HttpInterceptorSchema.SearchParams<{
-      name?: string;
-      orderBy?: ('name' | 'createdAt')[];
-      page?: `${number}`;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          request: {
-            searchParams: UserListSearchParams;
-          };
-          response: {
-            200: { body: User[] };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
-
-        return {
-          status: 200,
-          body: users,
-        };
-      });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const listRequests = listTracker.requests();
-      expect(listRequests).toHaveLength(0);
-
-      const searchParams = new HttpSearchParams<UserListSearchParams>({
-        name: 'User 1',
-        orderBy: ['createdAt', 'name'],
-      });
-
-      const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      expect(listResponse.status).toBe(200);
-
-      expect(listRequests).toHaveLength(1);
-      const [listRequest] = listRequests;
-      expect(listRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(listRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
-      expect(listRequest.searchParams).toBeInstanceOf(HttpSearchParams);
-      expect(listRequest.searchParams).toEqual(searchParams);
-      expect(listRequest.searchParams.get('name')).toBe('User 1');
-      expect(listRequest.searchParams.getAll('orderBy')).toEqual(['createdAt', 'name']);
-      expect(listRequest.searchParams.get('page')).toBe(null);
-    });
-  });
-
   it('should support intercepting GET requests having headers', async () => {
-    type UserListRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserListRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserListResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserListResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -240,6 +201,203 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
       expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
       expect(listRequest.response.headers.get('content-type')).toBe('application/json');
       expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
+  it('should support intercepting GET requests having search params', async () => {
+    type UserListSearchParams = HttpSchema.SearchParams<{
+      name?: string;
+      orderBy?: ('name' | 'createdAt')[];
+      page?: `${number}`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+        return {
+          status: 200,
+          body: users,
+        };
+      });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserListSearchParams>({
+        name: 'User 1',
+        orderBy: ['createdAt', 'name'],
+      });
+
+      const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      expect(listRequests).toHaveLength(1);
+      const [listRequest] = listRequests;
+      expect(listRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(listRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+      expect(listRequest.searchParams).toBeInstanceOf(HttpSearchParams);
+      expect(listRequest.searchParams).toEqual(searchParams);
+      expect(listRequest.searchParams.get('name')).toBe('User 1');
+      expect(listRequest.searchParams.getAll('orderBy')).toEqual(['createdAt', 'name']);
+      expect(listRequest.searchParams.get('page')).toBe(null);
+    });
+  });
+
+  it('should support intercepting GET requests having headers restrictions', async () => {
+    type UserListHeaders = HttpSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor
+        .get('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users,
+          };
+        });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserListHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
+      await expectToThrowFetchError(listResponsePromise);
+      expect(listRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
+      await expectToThrowFetchError(listResponsePromise);
+      expect(listRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting GET requests having search params restrictions', async () => {
+    type UserListSearchParams = HttpSchema.SearchParams<{
+      name?: string;
+      orderBy?: ('name' | 'createdAt')[];
+      page?: `${number}`;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const listTracker = interceptor
+        .get('/users')
+        .with({
+          searchParams: {
+            name: 'User 1',
+          },
+        })
+        .with((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return request.searchParams.getAll('orderBy').length > 0;
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 200,
+            body: users,
+          };
+        });
+      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const listRequests = listTracker.requests();
+      expect(listRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserListSearchParams>({
+        name: 'User 1',
+        orderBy: ['createdAt', 'name'],
+      });
+
+      const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+      expect(listRequests).toHaveLength(1);
+
+      searchParams.delete('orderBy');
+
+      let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      await expectToThrowFetchError(listResponsePromise);
+      expect(listRequests).toHaveLength(1);
+
+      searchParams.append('orderBy', 'name');
+      searchParams.set('name', 'User 2');
+
+      listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
+      await expectToThrowFetchError(listResponsePromise);
+      expect(listRequests).toHaveLength(1);
     });
   });
 
@@ -379,9 +537,9 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
   });
 
   it('should consider only the last declared response when intercepting GET requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {
@@ -458,9 +616,9 @@ export function declareGetHttpInterceptorTests({ platform }: SharedHttpIntercept
   });
 
   it('should ignore trackers with bypassed responses when intercepting GET requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {

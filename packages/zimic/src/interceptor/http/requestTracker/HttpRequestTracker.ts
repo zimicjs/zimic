@@ -1,14 +1,22 @@
+import HttpHeaders from '@/http/headers/HttpHeaders';
+import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import {
+  HttpServiceResponseSchemaStatusCode,
+  HttpServiceSchema,
+  HttpServiceSchemaMethod,
+  HttpServiceSchemaPath,
+} from '@/http/types/schema';
 import { Default } from '@/types/utils';
+import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptor from '../interceptor/HttpInterceptor';
-import {
-  HttpInterceptorResponseSchemaStatusCode,
-  HttpInterceptorSchema,
-  HttpInterceptorSchemaMethod,
-  HttpInterceptorSchemaPath,
-} from '../interceptor/types/schema';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import { HttpRequestTracker as PublicHttpRequestTracker } from './types/public';
+import {
+  HttpRequestTrackerRestriction,
+  HttpRequestTrackerComputedRestriction,
+  HttpRequestTracker as PublicHttpRequestTracker,
+  HttpRequestTrackerStaticRestriction,
+} from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -18,14 +26,13 @@ import {
 } from './types/requests';
 
 class HttpRequestTracker<
-  Schema extends HttpInterceptorSchema,
-  Method extends HttpInterceptorSchemaMethod<Schema>,
-  Path extends HttpInterceptorSchemaPath<Schema, Method>,
-  StatusCode extends HttpInterceptorResponseSchemaStatusCode<
-    Default<Default<Schema[Path][Method]>['response']>
-  > = never,
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
+  private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<
@@ -47,8 +54,15 @@ class HttpRequestTracker<
     return this._path;
   }
 
+  with(
+    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
+  ): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+    this.restrictions.push(restriction);
+    return this;
+  }
+
   respond<
-    NewStatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+    NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
@@ -68,7 +82,7 @@ class HttpRequestTracker<
   }
 
   private isResponseDeclarationFactory<
-    StatusCode extends HttpInterceptorResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
@@ -79,12 +93,76 @@ class HttpRequestTracker<
 
   bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
-    this.interceptedRequests = [];
     return this;
   }
 
-  matchesRequest(_request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
-    return this.createResponseDeclaration !== undefined;
+  clear(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+    this.restrictions = [];
+    this.interceptedRequests = [];
+    return this.bypass();
+  }
+
+  matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+    const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
+    return hasDeclaredResponse && this.matchesRequestRestrictions(request);
+  }
+
+  private matchesRequestRestrictions(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+    return this.restrictions.every((restriction) => {
+      if (this.isComputedRequestRestriction(restriction)) {
+        return restriction(request);
+      }
+      return (
+        this.matchesRequestHeadersRestrictions(request, restriction) &&
+        this.matchesRequestSearchParamsRestrictions(request, restriction) &&
+        this.matchesRequestBodyRestrictions(request, restriction)
+      );
+    });
+  }
+
+  private matchesRequestHeadersRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ) {
+    if (restriction.headers === undefined) {
+      return true;
+    }
+
+    const restrictedHeaders = new HttpHeaders(restriction.headers);
+    return restriction.exact ? request.headers.equals(restrictedHeaders) : request.headers.contains(restrictedHeaders);
+  }
+
+  private matchesRequestSearchParamsRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ) {
+    if (restriction.searchParams === undefined) {
+      return true;
+    }
+
+    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
+    return restriction.exact
+      ? request.searchParams.equals(restrictedSearchParams)
+      : request.searchParams.contains(restrictedSearchParams);
+  }
+
+  private matchesRequestBodyRestrictions(
+    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+  ) {
+    if (restriction.body === undefined) {
+      return true;
+    }
+
+    return restriction.exact
+      ? jsonEquals(request.body, restriction.body)
+      : jsonContains(request.body, restriction.body);
+  }
+
+  private isComputedRequestRestriction(
+    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
+  ): restriction is HttpRequestTrackerComputedRestriction<Schema, Method, Path> {
+    return typeof restriction === 'function';
   }
 
   async applyResponseDeclaration(

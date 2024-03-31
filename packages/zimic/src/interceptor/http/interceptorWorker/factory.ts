@@ -5,8 +5,8 @@ import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/pu
 /**
  * Creates an HTTP interceptor worker.
  *
- * @param {HttpInterceptorWorkerOptions} options The options for the worker.
- * @returns {HttpInterceptorWorker} The created HTTP interceptor worker.
+ * @param options The options for the worker.
+ * @returns The created HTTP interceptor worker.
  * @see {@link https://github.com/diego-aquino/zimic#createhttpinterceptorworker}
  */
 export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): PublicHttpInterceptorWorker {

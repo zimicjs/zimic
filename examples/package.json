@@ -7,8 +7,7 @@
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
-    "style:format": "pnpm style --write",
-    "types:check": "tsc --noEmit"
+    "style:format": "pnpm style --write"
   },
   "dependencies": {
     "zimic": "latest"
@@ -16,7 +15,6 @@
   "devDependencies": {
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
-    "@zimic/tsconfig": "workspace:*",
-    "typescript": "^5.3.3"
+    "@zimic/tsconfig": "workspace:*"
   }
 }

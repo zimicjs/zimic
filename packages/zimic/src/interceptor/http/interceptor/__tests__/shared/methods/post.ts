@@ -2,24 +2,40 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { JSONValue } from '@/types/json';
+import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorSchema } from '../../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export function declarePostHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declarePostHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const crypto = await getCrypto();
+
   const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
   const baseURL = 'http://localhost:3000';
 
-  interface User {
+  type User = JSONValue<{
+    id: string;
     name: string;
-  }
+  }>;
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  type UserCreationBody = Omit<User, 'id'>;
+
+  const users: User[] = [
+    {
+      id: crypto.randomUUID(),
+      name: 'User 1',
+    },
+    {
+      id: crypto.randomUUID(),
+      name: 'User 2',
+    },
+  ];
 
   beforeAll(async () => {
     await worker.start();
@@ -77,7 +93,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     await usingHttpInterceptor<{
       '/users': {
         POST: {
-          request: { body: User };
+          request: { body: UserCreationBody };
           response: {
             201: { body: User };
           };
@@ -85,11 +101,12 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<User>();
+        expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
 
         return {
           status: 201,
           body: {
+            id: crypto.randomUUID(),
             name: request.body.name,
           },
         };
@@ -103,85 +120,36 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       const creationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
 
       const createdUsers = (await creationResponse.json()) as User;
-      expect(createdUsers).toEqual<User>({ name: userName });
+      expect(createdUsers).toEqual<User>({
+        id: expect.any(String) as string,
+        name: userName,
+      });
 
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<User>();
-      expect(creationRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(creationRequest.body).toEqualTypeOf<UserCreationBody>();
+      expect(creationRequest.body).toEqual<UserCreationBody>({ name: userName });
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
       expect(creationRequest.response.status).toEqual(201);
 
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
-      expect(creationRequest.response.body).toEqual<User>({ name: userName });
-    });
-  });
-
-  it('should support intercepting POST requests having search params', async () => {
-    type UserCreationSearchParams = HttpInterceptorSchema.SearchParams<{
-      tag?: string;
-    }>;
-
-    await usingHttpInterceptor<{
-      '/users': {
-        POST: {
-          request: {
-            searchParams: UserCreationSearchParams;
-          };
-          response: {
-            201: { body: User };
-          };
-        };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
-
-        return {
-          status: 201,
-          body: users[0],
-        };
-      });
-      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
-
-      const creationRequests = creationTracker.requests();
-      expect(creationRequests).toHaveLength(0);
-
-      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
-        tag: 'admin',
-      });
-
-      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
-      expect(creationResponse.status).toBe(201);
-
-      const createdUsers = (await creationResponse.json()) as User;
-      expect(createdUsers).toEqual(users[0]);
-
-      expect(creationRequests).toHaveLength(1);
-      const [creationRequest] = creationRequests;
-      expect(creationRequest).toBeInstanceOf(Request);
-
-      expectTypeOf(creationRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
-      expect(creationRequest.searchParams).toBeInstanceOf(HttpSearchParams);
-      expect(creationRequest.searchParams).toEqual(searchParams);
-      expect(creationRequest.searchParams.get('tag')).toBe('admin');
+      expect(creationRequest.response.body).toEqual<User>(createdUsers);
     });
   });
 
   it('should support intercepting POST requests having headers', async () => {
-    type UserCreationRequestHeaders = HttpInterceptorSchema.Headers<{
+    type UserCreationRequestHeaders = HttpSchema.Headers<{
       accept?: string;
     }>;
-    type UserCreationResponseHeaders = HttpInterceptorSchema.Headers<{
+    type UserCreationResponseHeaders = HttpSchema.Headers<{
       'content-type'?: `application/${string}`;
       'cache-control'?: string;
     }>;
@@ -245,6 +213,230 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
       expect(creationRequest.response.headers.get('content-type')).toBe('application/json');
       expect(creationRequest.response.headers.get('cache-control')).toBe('no-cache');
+    });
+  });
+
+  it('should support intercepting POST requests having search params', async () => {
+    type UserCreationSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            searchParams: UserCreationSearchParams;
+          };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor.post('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+        return {
+          status: 201,
+          body: users[0],
+        };
+      });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+        tag: 'admin',
+      });
+
+      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+
+      const createdUsers = (await creationResponse.json()) as User;
+      expect(createdUsers).toEqual(users[0]);
+
+      expect(creationRequests).toHaveLength(1);
+      const [creationRequest] = creationRequests;
+      expect(creationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(creationRequest.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+      expect(creationRequest.searchParams).toBeInstanceOf(HttpSearchParams);
+      expect(creationRequest.searchParams).toEqual(searchParams);
+      expect(creationRequest.searchParams.get('tag')).toBe('admin');
+    });
+  });
+
+  it('should support intercepting POST requests having headers restrictions', async () => {
+    type UserCreationHeaders = HttpSchema.Headers<{
+      'content-type'?: string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            headers: UserCreationHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          headers: { 'content-type': 'application/json' },
+        })
+        .with((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return request.headers.get('accept')?.includes('application/json') ?? false;
+        })
+        .respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const headers = new HttpHeaders<UserCreationHeaders>({
+        'content-type': 'application/json',
+        accept: 'application/json',
+      });
+
+      let creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(1);
+
+      headers.append('accept', 'application/xml');
+
+      creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(2);
+
+      headers.delete('accept');
+
+      let creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
+      await expectToThrowFetchError(creationResponsePromise);
+      expect(creationRequests).toHaveLength(2);
+
+      headers.set('accept', 'application/json');
+      headers.set('content-type', 'text/plain');
+
+      creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
+      await expectToThrowFetchError(creationResponsePromise);
+      expect(creationRequests).toHaveLength(2);
+    });
+  });
+
+  it('should support intercepting POST requests having search params restrictions', async () => {
+    type UserCreationSearchParams = HttpSchema.SearchParams<{
+      tag?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            searchParams: UserCreationSearchParams;
+          };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          searchParams: { tag: 'admin' },
+        })
+        .respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+          return {
+            status: 201,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const searchParams = new HttpSearchParams<UserCreationSearchParams>({
+        tag: 'admin',
+      });
+
+      const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      expect(creationResponse.status).toBe(201);
+      expect(creationRequests).toHaveLength(1);
+
+      searchParams.delete('tag');
+
+      const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
+      await expectToThrowFetchError(creationResponsePromise);
+      expect(creationRequests).toHaveLength(1);
+    });
+  });
+
+  it('should support intercepting POST requests having body restrictions', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: {
+            body: UserCreationBody;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ worker, baseURL }, async (interceptor) => {
+      const creationTracker = interceptor
+        .post('/users')
+        .with({
+          body: { name: users[0].name },
+        })
+        .respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
+
+          return {
+            status: 200,
+            body: users[0],
+          };
+        });
+      expect(creationTracker).toBeInstanceOf(HttpRequestTracker);
+
+      const creationRequests = creationTracker.requests();
+      expect(creationRequests).toHaveLength(0);
+
+      const creationResponse = await fetch(`${baseURL}/users`, {
+        method: 'POST',
+        body: JSON.stringify(users[0] satisfies UserCreationBody),
+      });
+      expect(creationResponse.status).toBe(200);
+      expect(creationRequests).toHaveLength(1);
+
+      const creationResponsePromise = fetch(`${baseURL}/users`, {
+        method: 'POST',
+        body: JSON.stringify(users[1] satisfies UserCreationBody),
+      });
+      await expectToThrowFetchError(creationResponsePromise);
+      expect(creationRequests).toHaveLength(1);
     });
   });
 
@@ -325,7 +517,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
     await usingHttpInterceptor<{
       '/users': {
         POST: {
-          request: { body: User };
+          request: { body: UserCreationBody };
           response: {
             201: { body: User };
           };
@@ -336,7 +528,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       let creationPromise = fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectToThrowFetchError(creationPromise);
 
@@ -347,19 +539,19 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       let [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
-      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<UserCreationBody>();
       expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       creationPromise = fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectToThrowFetchError(creationPromise);
 
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
-      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<User>();
+      expectTypeOf<typeof creationRequestWithoutResponse.body>().toEqualTypeOf<UserCreationBody>();
       expectTypeOf<typeof creationRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       const creationTrackerWithResponse = creationTrackerWithoutResponse.respond({
@@ -369,7 +561,7 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       const creationResponse = await fetch(`${baseURL}/users`, {
         method: 'POST',
-        body: JSON.stringify({ name: userName } satisfies User),
+        body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
 
@@ -383,8 +575,8 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
       const [creationRequest] = creationRequestsWithResponse;
       expect(creationRequest).toBeInstanceOf(Request);
 
-      expectTypeOf(creationRequest.body).toEqualTypeOf<User>();
-      expect(creationRequest.body).toEqual<User>({ name: userName });
+      expectTypeOf(creationRequest.body).toEqualTypeOf<UserCreationBody>();
+      expect(creationRequest.body).toEqual<UserCreationBody>({ name: userName });
 
       expectTypeOf(creationRequest.response.status).toEqualTypeOf<201>();
       expect(creationRequest.response.status).toEqual(201);
@@ -395,9 +587,9 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should consider only the last declared response when intercepting POST requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {
@@ -479,9 +671,9 @@ export function declarePostHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should ignore trackers with bypassed responses when intercepting POST requests', async () => {
-    interface ServerErrorResponseBody {
+    type ServerErrorResponseBody = JSONValue<{
       message: string;
-    }
+    }>;
 
     await usingHttpInterceptor<{
       '/users': {
