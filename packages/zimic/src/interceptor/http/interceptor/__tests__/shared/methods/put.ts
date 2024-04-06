@@ -9,7 +9,7 @@ import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTra
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -48,7 +48,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -88,7 +88,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests with a computed response body, based on the request body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: { body: User };
@@ -147,7 +147,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: {
@@ -211,7 +211,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: {
@@ -263,7 +263,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: {
@@ -335,7 +335,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: {
@@ -389,7 +389,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   it('should support intercepting PUT requests having body restrictions', async () => {
     type UserUpdateBody = JSONValue<User>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: {
@@ -442,7 +442,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support intercepting PUT requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -515,7 +515,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should not intercept a PUT request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           request: { body: User };
@@ -592,7 +592,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -671,7 +671,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -778,7 +778,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should ignore all trackers after cleared when intercepting PUT requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -803,7 +803,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {
@@ -849,7 +849,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PUT: {
           response: {

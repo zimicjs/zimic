@@ -7,14 +7,16 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default } from '@/types/utils';
+import { joinURLPaths } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
 import HttpRequestTracker from '../requestTracker/HttpRequestTracker';
 import { HttpRequestTracker as PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
-import { HttpInterceptorMethodHandler } from './types/handlers';
-import { HttpInterceptorOptions } from './types/options';
+import { SyncHttpInterceptorMethodHandler } from './types/handlers';
+import { LocalHttpInterceptorOptions } from './types/options';
 import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
 
@@ -22,8 +24,10 @@ import { HttpInterceptorRequestContext } from './types/requests';
 type AnyHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
 
 class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInterceptor<Schema> {
+  readonly type = 'local';
+
+  private worker: HttpInterceptorWorker;
   private _baseURL: string;
-  protected worker: HttpInterceptorWorker;
 
   private trackersByMethod: {
     [Method in HttpMethod]: Map<string, AnyHttpRequestTracker[]>;
@@ -37,42 +41,42 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
     OPTIONS: new Map(),
   };
 
-  constructor(options: HttpInterceptorOptions) {
+  constructor(options: LocalHttpInterceptorOptions) {
+    this.worker = options.worker satisfies PublicHttpInterceptorWorker as unknown as HttpInterceptorWorker;
     this._baseURL = options.baseURL;
-    this.worker = options.worker as HttpInterceptorWorker;
   }
 
   baseURL() {
     return this._baseURL;
   }
 
-  get: HttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
+  get: SyncHttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
     return this.createHttpRequestTracker('GET' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'GET'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  post: HttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
+  post: SyncHttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
     return this.createHttpRequestTracker('POST' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'POST'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  patch: HttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
+  patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
     return this.createHttpRequestTracker('PATCH' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  put: HttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
+  put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
     return this.createHttpRequestTracker('PUT' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'PUT'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  delete: HttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
+  delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
     return this.createHttpRequestTracker('DELETE' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  head: HttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
+  head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
     return this.createHttpRequestTracker('HEAD' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
+  options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
     return this.createHttpRequestTracker('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
-  }) as HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+  }) as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   private createHttpRequestTracker<
     Method extends HttpServiceSchemaMethod<Schema>,
@@ -99,7 +103,7 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
     if (isFirstTrackerForMethodPath) {
       this.trackersByMethod[tracker.method()].set(tracker.path(), methodPathTrackers);
 
-      const pathWithBaseURL = this.applyBaseURL(tracker.path());
+      const pathWithBaseURL = joinURLPaths(this.baseURL(), tracker.path());
 
       this.worker.use(this, tracker.method(), pathWithBaseURL, async (context) => {
         const response = await this.handleInterceptedRequest(
@@ -110,12 +114,6 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
         return response;
       });
     }
-  }
-
-  private applyBaseURL(path: string) {
-    const baseURLWithoutTrailingSlash = this._baseURL.replace(/\/$/, '');
-    const pathWithoutLeadingSlash = path.replace(/^\//, '');
-    return `${baseURLWithoutTrailingSlash}/${pathWithoutLeadingSlash}`;
   }
 
   private async handleInterceptedRequest<

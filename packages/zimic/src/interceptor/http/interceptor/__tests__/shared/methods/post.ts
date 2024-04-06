@@ -9,7 +9,7 @@ import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTra
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -50,7 +50,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -90,7 +90,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests with a computed response body, based on the request body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: UserCreationBody };
@@ -154,7 +154,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -221,7 +221,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -274,7 +274,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -346,7 +346,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -394,7 +394,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests having body restrictions', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -441,7 +441,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         POST: {
           response: {
@@ -514,7 +514,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should not intercept a POST request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: UserCreationBody };
@@ -591,7 +591,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -675,7 +675,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -782,7 +782,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should ignore all trackers after cleared when intercepting POST requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -807,7 +807,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -853,7 +853,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         POST: {
           response: {

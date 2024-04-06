@@ -26,19 +26,18 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
-import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
-import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
+import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
-import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
 import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
+  readonly type = 'local';
+
   private static runningInstance?: HttpInterceptorWorker;
 
-  private _platform: HttpInterceptorWorkerPlatform;
   private _internalWorker?: HttpWorker;
   private _isRunning = false;
 
@@ -46,18 +45,6 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     interceptor: HttpInterceptor<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
   }[] = [];
-
-  constructor(options: HttpInterceptorWorkerOptions) {
-    this._platform = this.validatePlatform(options.platform);
-  }
-
-  private validatePlatform(platform: HttpInterceptorWorkerPlatform) {
-    const platformOptions = Object.values(HttpInterceptorWorkerPlatform) as string[];
-    if (!platformOptions.includes(platform)) {
-      throw new InvalidHttpInterceptorWorkerPlatform(platform);
-    }
-    return platform;
-  }
 
   internalWorkerOrThrow() {
     if (!this._internalWorker) {
@@ -74,27 +61,17 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   private async createInternalWorker() {
-    if (this._platform === 'browser') {
-      const { setupWorker } = await import('msw/browser');
-
-      if (typeof setupWorker === 'undefined') {
-        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
-      }
-
-      return setupWorker();
-    } else {
-      const { setupServer } = await import('msw/node');
-
-      if (typeof setupServer === 'undefined') {
-        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
-      }
-
+    const { setupServer } = await import('msw/node');
+    if (typeof setupServer !== 'undefined') {
       return setupServer();
     }
-  }
 
-  platform() {
-    return this._platform;
+    const { setupWorker } = await import('msw/browser');
+    if (typeof setupWorker !== 'undefined') {
+      return setupWorker();
+    }
+
+    throw new UnknownHttpInterceptorWorkerPlatform();
   }
 
   isRunning() {

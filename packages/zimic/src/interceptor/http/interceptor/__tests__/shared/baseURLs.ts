@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
@@ -29,7 +29,7 @@ export function declareBaseURLHttpInterceptorTests(options: SharedHttpIntercepto
     { baseURL: `${defaultBaseURL}/api`, path: '/path' },
     { baseURL: `${defaultBaseURL}/api/`, path: '/path' },
   ])(`should handle base URL $baseURL and path $path correctly`, async ({ baseURL, path }) => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       ':any': {
         GET: {
           response: {

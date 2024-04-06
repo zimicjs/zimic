@@ -12,3 +12,7 @@ export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestI
     clearTimeout(timeout);
   }
 }
+
+export function joinURLPaths(...paths: string[]) {
+  return paths.map((path) => path.replace(/^\/|\/$/g, '')).join('/');
+}

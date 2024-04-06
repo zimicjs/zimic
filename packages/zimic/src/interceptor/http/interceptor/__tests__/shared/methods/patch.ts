@@ -9,7 +9,7 @@ import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTra
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -48,7 +48,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -88,7 +88,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests with a computed response body, based on the request body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: { body: Partial<User> };
@@ -147,7 +147,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: {
@@ -211,7 +211,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: {
@@ -263,7 +263,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: {
@@ -335,7 +335,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: {
@@ -389,7 +389,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   it('should support intercepting PATCH requests having body restrictions', async () => {
     type UserUpdateBody = JSONValue<Partial<User>>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: {
@@ -447,7 +447,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support intercepting PATCH requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -520,7 +520,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should not intercept a PATCH request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           request: { body: Partial<User> };
@@ -597,7 +597,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -676,7 +676,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -783,7 +783,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should ignore all trackers after cleared when intercepting PATCH requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -808,7 +808,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {
@@ -854,7 +854,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         PATCH: {
           response: {

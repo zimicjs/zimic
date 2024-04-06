@@ -8,7 +8,7 @@ import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInte
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -33,7 +33,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -69,7 +69,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests with a computed response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: { body: Filters };
@@ -127,7 +127,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: {
@@ -189,7 +189,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: {
@@ -238,7 +238,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: {
@@ -309,7 +309,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: {
@@ -361,7 +361,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       other?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           request: {
@@ -436,7 +436,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support intercepting OPTIONS requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters/:id': {
         OPTIONS: {
           response: {
@@ -501,7 +501,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should not intercept a OPTIONS request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -563,7 +563,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -638,7 +638,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -738,7 +738,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should ignore all trackers after cleared when intercepting OPTIONS requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -763,7 +763,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
@@ -805,7 +805,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {

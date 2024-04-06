@@ -6,9 +6,9 @@ import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 
-import InvalidHttpInterceptorWorkerPlatform from '../../errors/InvalidHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
+import InvalidHttpInterceptorWorkerPlatform from '../../errors/UnknownHttpInterceptorWorkerPlatform';
 import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '../../types/options';

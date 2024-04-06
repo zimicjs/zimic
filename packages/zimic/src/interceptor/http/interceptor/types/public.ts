@@ -1,18 +1,12 @@
 import { HttpServiceSchema } from '@/http/types/schema';
 
-import { HttpInterceptorMethodHandler } from './handlers';
+import {
+  HttpInterceptorMethodHandler,
+  SyncHttpInterceptorMethodHandler,
+  AsyncHttpInterceptorMethodHandler,
+} from './handlers';
 
-/**
- * Interceptor to handle matched HTTP requests and return mock responses. The methods, paths, status codes, parameters
- * and responses are statically-typed based on the provided service schema.
- *
- * To intercept HTTP requests, an interceptor needs a running
- * {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker}.
- *
- * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
- */
-
-export interface HttpInterceptor<Schema extends HttpServiceSchema> {
+interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/diego-aquino/zimic#interceptorbaseurl}
@@ -99,4 +93,44 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
    * @see {@link https://github.com/diego-aquino/zimic#interceptorclear}
    */
   clear: () => void;
+}
+
+/**
+ * Interceptor to handle matched HTTP requests and return mock responses. The methods, paths, status codes, parameters
+ * and responses are statically-typed based on the provided service schema.
+ *
+ * To intercept HTTP requests, an interceptor needs a running
+ * {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker}.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
+ */
+
+export interface HttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
+  readonly type: 'local';
+
+  get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
+  post: SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
+  patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
+  delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+
+  clear: () => void;
+}
+
+export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
+  readonly type: 'remote';
+
+  pathPrefix: () => string;
+
+  get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
+  post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
+  patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
+  delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+
+  clear: () => Promise<void>;
 }

@@ -9,7 +9,7 @@ import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTra
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -48,7 +48,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -88,7 +88,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests with a computed response body, based on the request body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: { body: Partial<User> };
@@ -145,7 +145,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -209,7 +209,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -261,7 +261,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -333,7 +333,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -390,7 +390,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       other?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -466,7 +466,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -539,7 +539,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should not intercept a DELETE request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: { body: Partial<User> };
@@ -616,7 +616,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -695,7 +695,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -802,7 +802,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should ignore all trackers after cleared when intercepting DELETE requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -827,7 +827,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -873,7 +873,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {

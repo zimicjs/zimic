@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import MismatchedHttpInterceptorWorkerPlatform from '../errors/MismatchedHttpInterceptorWorkerPlatform';
+import UnknownHttpInterceptorWorkerPlatform from '../errors/UnknownHttpInterceptorWorkerPlatform';
 import { createHttpInterceptorWorker } from '../factory';
 import { HttpInterceptorWorkerPlatform } from '../types/options';
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
@@ -23,6 +23,6 @@ describe('HttpInterceptorWorker (Node.js)', () => {
 
     await expect(async () => {
       await interceptorWorker.start();
-    }).rejects.toThrowError(new MismatchedHttpInterceptorWorkerPlatform(mismatchedPlatform));
+    }).rejects.toThrowError(new UnknownHttpInterceptorWorkerPlatform(mismatchedPlatform));
   });
 });

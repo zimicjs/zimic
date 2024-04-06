@@ -8,7 +8,7 @@ import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInte
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
@@ -29,7 +29,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests with a static response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -65,7 +65,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests with a computed response body', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -112,7 +112,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       'cache-control'?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           request: {
@@ -174,7 +174,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           request: {
@@ -223,7 +223,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       accept?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           request: {
@@ -294,7 +294,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       tag?: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           request: {
@@ -341,7 +341,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support intercepting HEAD requests with a dynamic path', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users/:id': {
         HEAD: {
           response: {
@@ -406,7 +406,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should not intercept a HEAD request without a registered response', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -468,7 +468,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -543,7 +543,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       message: string;
     }>;
 
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -643,7 +643,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should ignore all trackers after cleared when intercepting HEAD requests', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -668,7 +668,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
@@ -710,7 +710,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    await usingHttpInterceptor<{
+    await usingLocalHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {

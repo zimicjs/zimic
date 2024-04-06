@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
+import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, vi } from 'vitest';
 import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONValue, JSONSerialized } from 'zimic0';
 import { createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
 
@@ -169,32 +169,67 @@ type NotificationServiceSchema = HttpSchema.Paths<{
 }>;
 
 function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
-  const { platform, fetch } = options;
+  const { fetch } = options;
 
-  const worker = createHttpInterceptorWorker({ platform });
+  // const localWorker = createHttpInterceptorWorker({
+  //   type: 'local',
+  // });
+
+  // const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+  //   worker: localWorker,
+  //   baseURL: 'http://localhost:3000',
+  // });
+
+  // const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+  //   worker: localWorker,
+  //   baseURL: 'http://localhost:3001',
+  // });
+
+  // beforeAll(async () => {
+  //   await localWorker.start();
+  // });
+
+  // beforeEach(() => {
+  //   authInterceptor.clear();
+  //   notificationInterceptor.clear();
+  // });
+
+  // afterAll(async () => {
+  //   await localWorker.stop();
+  // });
+
+  // ---
+
+  const remoteWorker = createHttpInterceptorWorker({
+    type: 'remote',
+    serverURL: 'http://localhost:3000',
+  });
 
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3000',
+    worker: remoteWorker,
+    pathPrefix: `auth-${crypto.randomUUID()}`,
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3001',
+    worker: remoteWorker,
+    pathPrefix: `notifications-${crypto.randomUUID()}`,
   });
 
   beforeAll(async () => {
-    await worker.start();
+    await remoteWorker.start();
   });
 
-  beforeEach(() => {
-    authInterceptor.clear();
-    notificationInterceptor.clear();
+  beforeEach(async () => {
+    await authInterceptor.clear();
+    await notificationInterceptor.clear();
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await remoteWorker.stop();
   });
+
+  // vi.spyOn(process.env, 'SERVICE_URL', 'get').mockReturnValue(interceptor.url());
+  // process.env.SERVICE_URL = interceptor.baseURL();
 
   function serializeUser(user: User): JSONSerialized<User> {
     return {
@@ -217,7 +252,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       const creationPayload: UserCreationPayload = {
         name: user.name,
         email: user.email,
-        password: 'password',
+        password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
 
@@ -234,7 +269,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should support creating users', async () => {
-        const creationTracker = authInterceptor
+        const creationTracker = await authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -270,7 +305,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
 
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -301,7 +336,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationTracker = authInterceptor
+        const creationTracker = await authInterceptor
           .post('/users')
           .with({
             body: invalidPayload,
@@ -314,7 +349,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await createUser(invalidPayload);
         expect(response.status).toBe(400);
 
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -344,7 +379,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationTracker = authInterceptor
+        const creationTracker = await authInterceptor
           .post('/users')
           .with({
             body: conflictingPayload,
@@ -357,7 +392,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await createUser(conflictingPayload);
         expect(response.status).toBe(409);
 
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -403,8 +438,8 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         },
       ];
 
-      beforeEach(() => {
-        authInterceptor.get('/users').respond({
+      beforeEach(async () => {
+        await authInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
@@ -419,7 +454,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should list users', async () => {
-        const listTracker = authInterceptor.get('/users').respond({
+        const listTracker = await authInterceptor.get('/users').respond({
           status: 200,
           body: users.map(serializeUser),
         });
@@ -430,7 +465,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listTracker.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -457,7 +492,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = authInterceptor
+        const listTracker = await authInterceptor
           .get('/users')
           .with({
             searchParams: { name: user.name },
@@ -473,7 +508,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listTracker.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -503,7 +538,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = authInterceptor
+        const listTracker = await authInterceptor
           .get('/users')
           .with({
             searchParams: { orderBy: ['email.desc'] },
@@ -521,7 +556,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(orderedUsers.map(serializeUser));
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listTracker.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -565,7 +600,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(serializeUser(user));
 
-        const getRequests = getTracker.requests();
+        const getRequests = await getTracker.requests();
         expect(getRequests).toHaveLength(1);
 
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -593,7 +628,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = authInterceptor.get('/users/:id').respond({
+        const getTracker = await authInterceptor.get('/users/:id').respond({
           status: 404,
           body: notFoundError,
         });
@@ -601,7 +636,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await getUserById(user.id);
         expect(response.status).toBe(404);
 
-        const getRequests = getTracker.requests();
+        const getRequests = await getTracker.requests();
         expect(getRequests).toHaveLength(1);
 
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -639,7 +674,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(204);
 
-        const deleteRequests = deleteTracker.requests();
+        const deleteRequests = await deleteTracker.requests();
         expect(deleteRequests).toHaveLength(1);
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -675,7 +710,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(404);
 
-        const deleteRequests = getTracker.requests();
+        const deleteRequests = await getTracker.requests();
         expect(deleteRequests).toHaveLength(1);
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -710,8 +745,8 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     };
 
     describe('Notification list', () => {
-      beforeEach(() => {
-        notificationInterceptor.get('/notifications/:userId').respond({
+      beforeEach(async () => {
+        await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [],
         });
@@ -725,7 +760,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should list notifications', async () => {
-        const listTracker = notificationInterceptor.get('/notifications/:userId').respond({
+        const listTracker = await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [notification],
         });
@@ -736,7 +771,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         let returnedNotifications = (await response.json()) as Notification[];
         expect(returnedNotifications).toEqual([notification]);
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listTracker.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -758,7 +793,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([notification]);
 
-        listTracker.bypass();
+        await listTracker.bypass();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -767,9 +802,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(listTracker.requests()).toHaveLength(1);
+        expect(await listTracker.requests()).toHaveLength(1);
 
-        listTracker.clear();
+        await listTracker.clear();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -778,7 +813,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(listTracker.requests()).toHaveLength(0);
+        expect(await listTracker.requests()).toHaveLength(0);
       });
     });
   });

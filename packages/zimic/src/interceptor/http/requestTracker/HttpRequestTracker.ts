@@ -32,6 +32,8 @@ class HttpRequestTracker<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
+  readonly type = 'local';
+
   private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 

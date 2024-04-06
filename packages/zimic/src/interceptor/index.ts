@@ -1,17 +1,14 @@
-import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
-import MismatchedHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './http/interceptorWorker/errors/OtherHttpInterceptorWorkerRunningError';
+import UnknownHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
 
 export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
-export type { HttpInterceptorWorkerOptions } from './http/interceptorWorker/types/options';
-export { HttpInterceptorWorkerPlatform } from './http/interceptorWorker/types/options';
+export type { HttpInterceptorWorkerOptions, HttpInterceptorWorkerType } from './http/interceptorWorker/types/options';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export {
-  InvalidHttpInterceptorWorkerPlatform,
-  MismatchedHttpInterceptorWorkerPlatform,
+  UnknownHttpInterceptorWorkerPlatform,
   NotStartedHttpInterceptorWorkerError,
   OtherHttpInterceptorWorkerRunningError,
   UnregisteredServiceWorkerError,
