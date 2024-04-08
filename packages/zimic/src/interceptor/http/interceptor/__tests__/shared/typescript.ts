@@ -4,6 +4,8 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import { HttpRequestTrackerPath } from '@/interceptor/http/requestTracker/types/utils';
 import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
@@ -13,8 +15,11 @@ import { ExtractHttpInterceptorSchema } from '../../types/schema';
 import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const worker = createHttpInterceptorWorker({
+    type: 'local',
+  }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform });
 
   type User = JSONValue<{
     name: string;
@@ -24,6 +29,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   beforeAll(async () => {
     await worker.start();
+    expect(worker.platform()).toBe(platform);
   });
 
   afterAll(async () => {

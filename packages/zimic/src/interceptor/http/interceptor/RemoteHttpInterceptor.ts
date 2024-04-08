@@ -26,13 +26,31 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     return this._pathPrefix;
   }
 
-  get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'> = (() => {}) as any;
-  post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'> = (() => {}) as any;
-  patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = (() => {}) as any;
-  put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'> = (() => {}) as any;
-  delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = (() => {}) as any;
-  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = (() => {}) as any;
-  options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = (() => {}) as any;
+  get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+
+  post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+  patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+
+  put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+
+  delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
+
+  options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = (() => {
+    throw new Error('Method not implemented.');
+  }) as any;
 
   clear() {
     return Promise.resolve();

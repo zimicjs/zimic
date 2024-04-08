@@ -1,18 +1,24 @@
 import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareBaseURLHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { platform } = options;
-  const defaultBaseURL = 'http://localhost:3000';
 
-  const worker = createHttpInterceptorWorker({ platform });
+  const worker = createHttpInterceptorWorker({
+    type: 'local',
+  }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+
+  const baseURL = 'http://localhost:3000';
 
   beforeAll(async () => {
     await worker.start();
+    expect(worker.platform()).toBe(platform);
   });
 
   afterAll(async () => {
@@ -20,14 +26,14 @@ export function declareBaseURLHttpInterceptorTests(options: SharedHttpIntercepto
   });
 
   it.each([
-    { baseURL: defaultBaseURL, path: 'path' },
-    { baseURL: `${defaultBaseURL}/`, path: 'path' },
-    { baseURL: `${defaultBaseURL}`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/api`, path: 'path' },
-    { baseURL: `${defaultBaseURL}/api/`, path: 'path' },
-    { baseURL: `${defaultBaseURL}/api`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/api/`, path: '/path' },
+    { baseURL, path: 'path' },
+    { baseURL: `${baseURL}/`, path: 'path' },
+    { baseURL: `${baseURL}`, path: '/path' },
+    { baseURL: `${baseURL}/`, path: '/path' },
+    { baseURL: `${baseURL}/api`, path: 'path' },
+    { baseURL: `${baseURL}/api/`, path: 'path' },
+    { baseURL: `${baseURL}/api`, path: '/path' },
+    { baseURL: `${baseURL}/api/`, path: '/path' },
   ])(`should handle base URL $baseURL and path $path correctly`, async ({ baseURL, path }) => {
     await usingLocalHttpInterceptor<{
       ':any': {

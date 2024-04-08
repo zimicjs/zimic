@@ -6,9 +6,11 @@ import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
+import { HttpInterceptor as PublicHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import HttpRequestTracker from '../../HttpRequestTracker';
@@ -57,11 +59,18 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       };
     }>;
 
-    const worker = createHttpInterceptorWorker({ platform });
-    const interceptor = createHttpInterceptor<Schema>({ worker, baseURL }) as HttpInterceptor<Schema>;
+    const worker = createHttpInterceptorWorker({
+      type: 'local',
+    }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+
+    const interceptor = createHttpInterceptor<Schema>({
+      worker,
+      baseURL,
+    }) satisfies PublicHttpInterceptor<Schema> as HttpInterceptor<Schema>;
 
     beforeAll(async () => {
       await worker.start();
+      expect(worker.platform()).toBe(platform);
     });
 
     afterAll(async () => {

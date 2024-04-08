@@ -1,3 +1,5 @@
+import { HttpInterceptorWorkerPlatform } from './options';
+
 interface BaseHttpInterceptorWorker {
   /**
    * Starts the worker, allowing it to be used by interceptors.
@@ -40,6 +42,8 @@ interface BaseHttpInterceptorWorker {
  */
 export interface HttpInterceptorWorker extends BaseHttpInterceptorWorker {
   readonly type: 'local';
+
+  platform: () => HttpInterceptorWorkerPlatform | null;
 }
 
 export interface RemoteHttpInterceptorWorker extends BaseHttpInterceptorWorker {

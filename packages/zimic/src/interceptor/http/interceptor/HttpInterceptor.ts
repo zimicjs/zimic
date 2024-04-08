@@ -42,7 +42,7 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
   };
 
   constructor(options: LocalHttpInterceptorOptions) {
-    this.worker = options.worker satisfies PublicHttpInterceptorWorker as unknown as HttpInterceptorWorker;
+    this.worker = options.worker satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
     this._baseURL = options.baseURL;
   }
 

@@ -1,3 +1,5 @@
+export type HttpInterceptorWorkerPlatform = 'node' | 'browser';
+
 export interface LocalHttpInterceptorWorkerOptions {
   type: 'local';
 }

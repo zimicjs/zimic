@@ -5,6 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
@@ -32,11 +33,15 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
     },
   ];
 
-  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
+  const worker = createHttpInterceptorWorker({
+    type: 'local',
+  }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+
   const baseURL = 'http://localhost:3000';
 
   beforeAll(async () => {
     await worker.start();
+    expect(worker.platform()).toBe(platform);
   });
 
   afterEach(() => {

@@ -74,6 +74,16 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 
+  platform() {
+    if (this.hasInternalBrowserWorker()) {
+      return 'browser';
+    }
+    if (this.hasInternalNodeWorker()) {
+      return 'node';
+    }
+    return null;
+  }
+
   isRunning() {
     return this._isRunning;
   }
