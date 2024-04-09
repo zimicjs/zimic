@@ -44,8 +44,6 @@ import {
   type HttpRequestTracker,
   type HttpRequestTrackerResponseDeclaration,
   type HttpRequestTrackerResponseDeclarationFactory,
-  InvalidHttpInterceptorWorkerPlatform,
-  MismatchedHttpInterceptorWorkerPlatform,
   NotStartedHttpInterceptorWorkerError,
   OtherHttpInterceptorWorkerRunningError,
   UnregisteredServiceWorkerError,
@@ -117,10 +115,6 @@ describe('Exports', () => {
     expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
 
-    expectTypeOf<InvalidHttpInterceptorWorkerPlatform>().not.toBeAny();
-    expect(typeof InvalidHttpInterceptorWorkerPlatform).toBe('function');
-    expectTypeOf<MismatchedHttpInterceptorWorkerPlatform>().not.toBeAny();
-    expect(typeof MismatchedHttpInterceptorWorkerPlatform).toBe('function');
     expectTypeOf<NotStartedHttpInterceptorWorkerError>().not.toBeAny();
     expect(typeof NotStartedHttpInterceptorWorkerError).toBe('function');
     expectTypeOf<OtherHttpInterceptorWorkerRunningError>().not.toBeAny();

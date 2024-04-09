@@ -4,7 +4,11 @@ import UnknownHttpInterceptorWorkerPlatform from './http/interceptorWorker/error
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
 
 export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
-export type { HttpInterceptorWorkerOptions, HttpInterceptorWorkerType } from './http/interceptorWorker/types/options';
+export type {
+  HttpInterceptorWorkerOptions,
+  HttpInterceptorWorkerType,
+  HttpInterceptorWorkerPlatform,
+} from './http/interceptorWorker/types/options';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export {
