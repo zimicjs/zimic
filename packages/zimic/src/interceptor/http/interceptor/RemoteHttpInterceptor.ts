@@ -26,30 +26,46 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     return this._pathPrefix;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'> = (() => {
     throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'> = (() => {
     throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = (() => {
     throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'> = (() => {
     throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = (() => {
     throw new Error('Method not implemented.');
-  }) as any;
-  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = (() => {
-    throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = (() => {
+    throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any;
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = (() => {
     throw new Error('Method not implemented.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
   clear() {

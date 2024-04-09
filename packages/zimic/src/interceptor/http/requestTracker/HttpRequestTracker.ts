@@ -9,7 +9,7 @@ import {
 import { Default } from '@/types/utils';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
-import HttpInterceptor from '../interceptor/HttpInterceptor';
+import LocalHttpInterceptor from '../interceptor/LocalHttpInterceptor';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import {
   HttpRequestTrackerRestriction,
@@ -43,7 +43,7 @@ class HttpRequestTracker<
   >;
 
   constructor(
-    private interceptor: HttpInterceptor<Schema>,
+    private interceptor: LocalHttpInterceptor<Schema>,
     private _method: Method,
     private _path: Path,
   ) {}

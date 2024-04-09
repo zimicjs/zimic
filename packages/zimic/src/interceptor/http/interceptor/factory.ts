@@ -1,18 +1,19 @@
 import { HttpServiceSchema } from '@/http/types/schema';
 
-import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
 import UnknownHttpInterceptorWorkerError from './errors/UnknownHttpInterceptorWorkerError';
-import HttpInterceptor from './HttpInterceptor';
+import LocalHttpInterceptor from './LocalHttpInterceptor';
 import RemoteHttpInterceptor from './RemoteHttpInterceptor';
 import { HttpInterceptorOptions, LocalHttpInterceptorOptions, RemoteHttpInterceptorOptions } from './types/options';
 import {
-  HttpInterceptor as PublicHttpInterceptor,
+  HttpInterceptor,
+  LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
 } from './types/public';
 
 function areLocalHttpInterceptorOptions(options: HttpInterceptorOptions): options is LocalHttpInterceptorOptions {
-  return options.worker instanceof HttpInterceptorWorker;
+  return options.worker instanceof LocalHttpInterceptorWorker;
 }
 
 function areRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): options is RemoteHttpInterceptorOptions {
@@ -29,17 +30,20 @@ function areRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): optio
  */
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions,
-): PublicHttpInterceptor<Schema>;
+): PublicLocalHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: RemoteHttpInterceptorOptions,
 ): PublicRemoteHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
-): PublicHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
+): HttpInterceptor<Schema>;
+export function createHttpInterceptor<Schema extends HttpServiceSchema>(
+  options: HttpInterceptorOptions,
+): HttpInterceptor<Schema> {
   const worker: unknown = options.worker;
 
   if (areLocalHttpInterceptorOptions(options)) {
-    return new HttpInterceptor<Schema>(options);
+    return new LocalHttpInterceptor<Schema>(options);
   } else if (areRemoteHttpInterceptorOptions(options)) {
     return new RemoteHttpInterceptor<Schema>(options);
   }

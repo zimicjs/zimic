@@ -5,12 +5,12 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
-import HttpInterceptor from '@/interceptor/http/interceptor/HttpInterceptor';
-import { HttpInterceptor as PublicHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
+import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
+import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
-import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import HttpRequestTracker from '../../HttpRequestTracker';
@@ -61,12 +61,12 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
     const worker = createHttpInterceptorWorker({
       type: 'local',
-    }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+    }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
 
     const interceptor = createHttpInterceptor<Schema>({
       worker,
       baseURL,
-    }) satisfies PublicHttpInterceptor<Schema> as HttpInterceptor<Schema>;
+    }) satisfies PublicLocalHttpInterceptor<Schema> as LocalHttpInterceptor<Schema>;
 
     beforeAll(async () => {
       await worker.start();
@@ -91,7 +91,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
     });
 
@@ -102,7 +102,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
       tracker.with({});
@@ -114,7 +114,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.bypass();
@@ -140,7 +140,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.clear();
@@ -172,7 +172,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       const response = await tracker.applyResponseDeclaration(parsedRequest);
 
       expect(response.status).toBe(responseStatus);
@@ -195,7 +195,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       tracker.respond(responseFactory);
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       const response = await tracker.applyResponseDeclaration(parsedRequest);
 
       expect(response.status).toBe(responseStatus);
@@ -208,7 +208,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       await expect(async () => {
         await tracker.applyResponseDeclaration(parsedRequest);
@@ -222,14 +222,14 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       });
 
       const firstRequest = new Request(baseURL);
-      const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
+      const parsedFirstRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
 
       const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
       const firstResponse = Response.json(firstResponseDeclaration.body, {
         status: firstResponseDeclaration.status,
       });
       const firstResponseClone = firstResponse.clone();
-      const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
+      const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
@@ -242,13 +242,13 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
       const secondRequest = new Request(`${baseURL}/path`);
-      const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
+      const parsedSecondRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
       const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
 
       const secondResponse = Response.json(secondResponseDeclaration.body, {
         status: secondResponseDeclaration.status,
       });
-      const parsedSecondResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
+      const parsedSecondResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
       tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
@@ -272,14 +272,14 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       });
 
       const firstRequest = new Request(baseURL);
-      const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
+      const parsedFirstRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
 
       const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
       const firstResponse = Response.json(firstResponseDeclaration.body, {
         status: firstResponseDeclaration.status,
       });
       const firstResponseClone = firstResponse.clone();
-      const parsedFirstResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
+      const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
@@ -307,11 +307,11 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         method: 'POST',
         body: JSON.stringify({ name: 'User' } satisfies MethodSchema['request']['body']),
       });
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
       const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
+      const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
       tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
@@ -347,11 +347,11 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       });
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
       const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
       const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
+      const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
       tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
@@ -392,7 +392,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
             for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
               const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -402,7 +402,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpSearchParams<SearchParamsSchema>({}),
             ]) {
               const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -428,7 +428,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
             ]) {
               const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -437,7 +437,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpSearchParams<SearchParamsSchema>({}),
             ]) {
               const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -465,7 +465,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
           ]) {
             const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
             expect(tracker.matchesRequest(parsedRequest)).toBe(true);
           }
 
@@ -474,7 +474,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             new HttpSearchParams<SearchParamsSchema>({}),
           ]) {
             const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
         });
@@ -498,7 +498,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
             for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-type': contentType })]) {
               const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -508,7 +508,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpHeaders<HeadersSchema>({}),
             ]) {
               const request = new Request(baseURL, { headers: mismatchingHeaders });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -534,7 +534,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
             ]) {
               const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -543,7 +543,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               new HttpHeaders<HeadersSchema>({}),
             ]) {
               const request = new Request(baseURL, { headers: mismatchingHeaders });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -571,7 +571,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             new HttpHeaders<HeadersSchema>({ 'content-type': `${contentType}/other` }),
           ]) {
             const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
             expect(tracker.matchesRequest(parsedRequest)).toBe(true);
           }
 
@@ -580,7 +580,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             new HttpHeaders<HeadersSchema>({}),
           ]) {
             const request = new Request(baseURL, { headers: mismatchingHeaders });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
         });
@@ -607,7 +607,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
                 method: 'POST',
                 body: JSON.stringify(matchingBody),
               });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -620,7 +620,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
                 method: 'POST',
                 body: JSON.stringify(mismatchingBody),
               });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -650,7 +650,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
                 method: 'POST',
                 body: JSON.stringify(matchingBody),
               });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
               expect(tracker.matchesRequest(parsedRequest)).toBe(true);
             }
 
@@ -659,7 +659,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
                 method: 'POST',
                 body: JSON.stringify(mismatchingBody),
               });
-              const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+              const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
               expect(tracker.matchesRequest(parsedRequest)).toBe(false);
             }
           },
@@ -688,7 +688,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               method: 'POST',
               body: JSON.stringify(matchingBody),
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
             expect(tracker.matchesRequest(parsedRequest)).toBe(true);
           }
 
@@ -697,7 +697,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
               method: 'POST',
               body: JSON.stringify(mismatchingBody),
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
         });
@@ -761,7 +761,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`, {
               headers: matchingHeaders,
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
             expect(tracker.matchesRequest(parsedRequest)).toBe(true);
           }
 
@@ -769,7 +769,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`, {
               headers: matchingHeaders,
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
         }
@@ -779,7 +779,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`, {
               headers: mismatchingHeaders,
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
 
@@ -787,7 +787,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
             const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`, {
               headers: mismatchingHeaders,
             });
-            const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+            const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
             expect(tracker.matchesRequest(parsedRequest)).toBe(false);
           }
         }
@@ -798,7 +798,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.clear();
@@ -826,7 +826,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const tracker = new HttpRequestTracker<Schema, 'POST', '/users'>(interceptor, 'POST', '/users');
 
       const request = new Request(baseURL);
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+      const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
       tracker.bypass();

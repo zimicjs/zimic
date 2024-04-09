@@ -9,24 +9,24 @@ import {
 import { Default } from '@/types/utils';
 import { joinURLPaths } from '@/utils/fetch';
 
-import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '../interceptorWorker/types/public';
+import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
+import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
 import HttpRequestTracker from '../requestTracker/HttpRequestTracker';
 import { HttpRequestTracker as PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
-import { HttpInterceptor as PublicHttpInterceptor } from './types/public';
+import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyHttpRequestTracker = HttpRequestTracker<any, any, any, any>;
 
-class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInterceptor<Schema> {
+class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
   readonly type = 'local';
 
-  private worker: HttpInterceptorWorker;
+  private worker: LocalHttpInterceptorWorker;
   private _baseURL: string;
 
   private trackersByMethod: {
@@ -42,7 +42,7 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
   };
 
   constructor(options: LocalHttpInterceptorOptions) {
-    this.worker = options.worker satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+    this.worker = options.worker satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
     this._baseURL = options.baseURL;
   }
 
@@ -121,20 +121,20 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
     Path extends HttpServiceSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(method: Method, path: Path, { request }: Context): Promise<HttpRequestHandlerResult> {
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
+    const parsedRequest = await LocalHttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
     const matchedTracker = this.findMatchedTracker(method, path, parsedRequest);
 
     if (matchedTracker) {
       const responseDeclaration = await matchedTracker.applyResponseDeclaration(parsedRequest);
-      const responseToParse = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
-      const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
+      const responseToParse = LocalHttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
+      const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
       >(responseToParse);
 
       matchedTracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-      const responseToReturn = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
+      const responseToReturn = LocalHttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       return { response: responseToReturn };
     } else {
       return { bypass: true };
@@ -172,4 +172,4 @@ class HttpInterceptor<Schema extends HttpServiceSchema> implements PublicHttpInt
   }
 }
 
-export default HttpInterceptor;
+export default LocalHttpInterceptor;

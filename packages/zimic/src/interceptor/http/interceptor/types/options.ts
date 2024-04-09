@@ -1,11 +1,11 @@
-import { HttpInterceptorWorker, RemoteHttpInterceptorWorker } from '../../interceptorWorker/types/public';
+import { LocalHttpInterceptorWorker, RemoteHttpInterceptorWorker } from '../../interceptorWorker/types/public';
 
 export interface LocalHttpInterceptorOptions {
   /**
    * The {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker} instance for the
    * interceptor. The worker must be running for this interceptor to intercept requests.
    */
-  worker: HttpInterceptorWorker;
+  worker: LocalHttpInterceptorWorker;
 
   /** The base URL used by the interceptor. This URL will be prepended to any paths used by the interceptor. */
   baseURL: string;

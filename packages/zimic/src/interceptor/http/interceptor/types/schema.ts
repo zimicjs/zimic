@@ -1,4 +1,4 @@
-import { HttpInterceptor } from './public';
+import { LocalHttpInterceptor } from './public';
 
 export type ExtractHttpInterceptorSchema<Interceptor> =
-  Interceptor extends HttpInterceptor<infer Schema> ? Schema : never;
+  Interceptor extends LocalHttpInterceptor<infer Schema> ? Schema : never;

@@ -105,7 +105,7 @@ interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
  */
 
-export interface HttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
+export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
   readonly type: 'local';
 
   get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -134,3 +134,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends
 
   clear: () => Promise<void>;
 }
+
+export type HttpInterceptor<Schema extends HttpServiceSchema> =
+  | LocalHttpInterceptor<Schema>
+  | RemoteHttpInterceptor<Schema>;

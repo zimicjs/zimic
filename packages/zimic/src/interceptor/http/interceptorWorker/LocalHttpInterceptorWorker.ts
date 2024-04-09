@@ -30,15 +30,20 @@ import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterce
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
-import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
+import { HttpInterceptorWorkerPlatform } from './types/options';
+import {
+  InternalHttpInterceptorWorker,
+  LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker,
+} from './types/public';
 import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
 
-class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
+class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, InternalHttpInterceptorWorker {
   readonly type = 'local';
 
-  private static runningInstance?: HttpInterceptorWorker;
+  private static runningInstance?: LocalHttpInterceptorWorker;
 
   private _internalWorker?: HttpWorker;
+  private _platform: HttpInterceptorWorkerPlatform | null = null;
   private _isRunning = false;
 
   private httpHandlerGroups: {
@@ -75,13 +80,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   platform() {
-    if (this.hasInternalBrowserWorker()) {
-      return 'browser';
-    }
-    if (this.hasInternalNodeWorker()) {
-      return 'node';
-    }
-    return null;
+    return this._platform;
   }
 
   isRunning() {
@@ -89,7 +88,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   async start() {
-    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
+    if (LocalHttpInterceptorWorker.runningInstance && LocalHttpInterceptorWorker.runningInstance !== this) {
       throw new OtherHttpInterceptorWorkerRunningError();
     }
 
@@ -102,12 +101,14 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
 
     if (this.isInternalBrowserWorker(internalWorker)) {
       await this.startInBrowser(internalWorker, sharedOptions);
+      this._platform = 'browser';
     } else {
       this.startInNode(internalWorker, sharedOptions);
+      this._platform = 'node';
     }
 
     this._isRunning = true;
-    HttpInterceptorWorker.runningInstance = this;
+    LocalHttpInterceptorWorker.runningInstance = this;
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -145,7 +146,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
     this.clearHandlers();
 
     this._isRunning = false;
-    HttpInterceptorWorker.runningInstance = undefined;
+    LocalHttpInterceptorWorker.runningInstance = undefined;
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
@@ -250,14 +251,14 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
 
     const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
       has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (LocalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
+        if (LocalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
         if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
@@ -298,14 +299,14 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
       has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (LocalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
       get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
+        if (LocalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
         if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
@@ -340,4 +341,4 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 }
 
-export default HttpInterceptorWorker;
+export default LocalHttpInterceptorWorker;

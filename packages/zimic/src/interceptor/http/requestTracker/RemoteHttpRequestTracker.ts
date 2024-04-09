@@ -6,7 +6,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 
-import HttpInterceptor from '../interceptor/HttpInterceptor';
+import LocalHttpInterceptor from '../interceptor/LocalHttpInterceptor';
 import {
   HttpRequestTrackerRestriction,
   PendingRemoteHttpRequestTracker,
@@ -29,7 +29,7 @@ class RemoteHttpRequestTracker<
   readonly type = 'remote';
 
   constructor(
-    private interceptor: HttpInterceptor<Schema>,
+    private interceptor: LocalHttpInterceptor<Schema>,
     private _method: Method,
     private _path: Path,
   ) {}

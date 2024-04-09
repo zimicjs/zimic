@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 
 import UnregisteredServiceWorkerError from '../errors/UnregisteredServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
-import HttpInterceptorWorker from '../HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from '../LocalHttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform } from '../types/options';
 import { BrowserHttpWorker } from '../types/requests';
 
@@ -14,7 +14,7 @@ describe('HttpInterceptorWorker (browser, no worker)', () => {
   it('should throw an error after failing to start without a registered service worker', async () => {
     const interceptorWorker = createHttpInterceptorWorker({
       type: 'local',
-    }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+    }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
 
     const interceptorStartPromise = interceptorWorker.start();
     await expect(interceptorStartPromise).rejects.toThrowError(new UnregisteredServiceWorkerError());
@@ -25,7 +25,7 @@ describe('HttpInterceptorWorker (browser, no worker)', () => {
   it('should throw an error after failing to start due to a unknown error', async () => {
     const interceptorWorker = createHttpInterceptorWorker({
       type: 'local',
-    }) satisfies PublicHttpInterceptorWorker as HttpInterceptorWorker;
+    }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
 
     const internalBrowserWorker = (await interceptorWorker.internalWorkerOrLoad()) as BrowserHttpWorker;
     const unknownError = new Error('Unknown error');

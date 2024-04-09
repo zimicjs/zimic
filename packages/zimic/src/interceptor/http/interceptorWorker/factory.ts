@@ -1,5 +1,5 @@
 import UnknownHttpInterceptorWorkerTypeError from './errors/UnknownHttpInterceptorWorkerTypeError';
-import HttpInterceptorWorker from './HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from './LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from './RemoteHttpInterceptorWorker';
 import {
   HttpInterceptorWorkerOptions,
@@ -7,8 +7,9 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from './types/options';
 import {
-  HttpInterceptorWorker as PublicHttpInterceptorWorker,
+  LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker,
   RemoteHttpInterceptorWorker as PublicRemoteHttpInterceptorWorker,
+  HttpInterceptorWorker,
 } from './types/public';
 
 function areLocalHttpInterceptorOptions(
@@ -30,17 +31,18 @@ function areRemoteHttpInterceptorWorkerOptions(
  * @returns The created HTTP interceptor worker.
  * @see {@link https://github.com/diego-aquino/zimic#createhttpinterceptorworker}
  */
-export function createHttpInterceptorWorker(options: LocalHttpInterceptorWorkerOptions): PublicHttpInterceptorWorker;
+export function createHttpInterceptorWorker(
+  options: LocalHttpInterceptorWorkerOptions,
+): PublicLocalHttpInterceptorWorker;
 export function createHttpInterceptorWorker(
   options: RemoteHttpInterceptorWorkerOptions,
 ): PublicRemoteHttpInterceptorWorker;
-export function createHttpInterceptorWorker(
-  options: HttpInterceptorWorkerOptions,
-): PublicHttpInterceptorWorker | PublicRemoteHttpInterceptorWorker {
+export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): HttpInterceptorWorker;
+export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): HttpInterceptorWorker {
   const type: unknown = options.type;
 
   if (areLocalHttpInterceptorOptions(options)) {
-    return new HttpInterceptorWorker();
+    return new LocalHttpInterceptorWorker();
   } else if (areRemoteHttpInterceptorWorkerOptions(options)) {
     return new RemoteHttpInterceptorWorker(options);
   }
