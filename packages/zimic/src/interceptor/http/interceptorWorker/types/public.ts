@@ -54,7 +54,7 @@ export interface LocalHttpInterceptorWorker extends BaseHttpInterceptorWorker {
 export interface RemoteHttpInterceptorWorker extends BaseHttpInterceptorWorker {
   readonly type: 'remote';
 
-  serverURL: () => string;
+  mockServerURL: () => string;
 }
 
 export type HttpInterceptorWorker = LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;

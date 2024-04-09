@@ -14,12 +14,12 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   private _pathPrefix: string;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.worker = options.worker satisfies PublicRemoteHttpInterceptorWorker as unknown as RemoteHttpInterceptorWorker;
+    this.worker = options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker;
     this._pathPrefix = options.pathPrefix;
   }
 
   baseURL() {
-    return joinURLPaths(this.worker.serverURL(), this.pathPrefix());
+    return joinURLPaths(this.worker.mockServerURL(), this.pathPrefix());
   }
 
   pathPrefix() {

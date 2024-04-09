@@ -9,7 +9,7 @@ import {
 import {
   LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker,
   RemoteHttpInterceptorWorker as PublicRemoteHttpInterceptorWorker,
-  HttpInterceptorWorker,
+  HttpInterceptorWorker as PublicHttpInterceptorWorker,
 } from './types/public';
 
 function areLocalHttpInterceptorOptions(
@@ -37,9 +37,9 @@ export function createHttpInterceptorWorker(
 export function createHttpInterceptorWorker(
   options: RemoteHttpInterceptorWorkerOptions,
 ): PublicRemoteHttpInterceptorWorker;
-export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): HttpInterceptorWorker;
-export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): HttpInterceptorWorker {
-  const type: unknown = options.type;
+export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): PublicHttpInterceptorWorker;
+export function createHttpInterceptorWorker(options: HttpInterceptorWorkerOptions): PublicHttpInterceptorWorker {
+  const type = options.type;
 
   if (areLocalHttpInterceptorOptions(options)) {
     return new LocalHttpInterceptorWorker();

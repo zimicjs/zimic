@@ -12,16 +12,16 @@ import { HttpRequestHandler } from './types/requests';
 class RemoteHttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker, InternalHttpInterceptorWorker {
   readonly type = 'remote';
 
-  private _serverURL: string;
+  private _mockServerURL: string;
   private _platform: HttpInterceptorWorkerPlatform | null = null;
   private _isRunning = false;
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
-    this._serverURL = options.serverURL;
+    this._mockServerURL = options.mockServerURL;
   }
 
-  serverURL() {
-    return this._serverURL;
+  mockServerURL() {
+    return this._mockServerURL;
   }
 
   platform() {

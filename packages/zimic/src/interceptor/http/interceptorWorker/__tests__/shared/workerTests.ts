@@ -26,7 +26,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
   const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
     { type: 'local' },
-    { type: 'remote', serverURL: baseURL },
+    { type: 'remote', mockServerURL: baseURL },
   ];
 
   describe.each(workerOptionsArray)('Shared (type $type)', (workerOptions) => {

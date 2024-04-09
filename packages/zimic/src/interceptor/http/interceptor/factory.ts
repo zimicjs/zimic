@@ -7,7 +7,7 @@ import LocalHttpInterceptor from './LocalHttpInterceptor';
 import RemoteHttpInterceptor from './RemoteHttpInterceptor';
 import { HttpInterceptorOptions, LocalHttpInterceptorOptions, RemoteHttpInterceptorOptions } from './types/options';
 import {
-  HttpInterceptor,
+  HttpInterceptor as PublicHttpInterceptor,
   LocalHttpInterceptor as PublicLocalHttpInterceptor,
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
 } from './types/public';
@@ -36,11 +36,11 @@ export function createHttpInterceptor<Schema extends HttpServiceSchema>(
 ): PublicRemoteHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
-): HttpInterceptor<Schema>;
+): PublicHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
-): HttpInterceptor<Schema> {
-  const worker: unknown = options.worker;
+): PublicHttpInterceptor<Schema> {
+  const worker = options.worker;
 
   if (areLocalHttpInterceptorOptions(options)) {
     return new LocalHttpInterceptor<Schema>(options);
