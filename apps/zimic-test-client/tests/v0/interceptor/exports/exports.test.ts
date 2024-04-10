@@ -27,7 +27,6 @@ import {
   type HttpServiceSchemaMethod,
   type HttpServiceSchemaPath,
   type LiteralHttpServiceSchemaPath,
-  type NonLiteralHttpServiceSchemaPath,
 } from 'zimic0';
 import {
   createHttpInterceptorWorker,
@@ -94,7 +93,6 @@ describe('Exports', () => {
     expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny();
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
 
     expectTypeOf(createHttpInterceptorWorker).not.toBeAny();
     expect(typeof createHttpInterceptorWorker).toBe('function');

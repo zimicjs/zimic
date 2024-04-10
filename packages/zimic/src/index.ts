@@ -25,7 +25,6 @@ export type {
   HttpServiceSchema,
   HttpServiceSchemaMethod,
   LiteralHttpServiceSchemaPath,
-  NonLiteralHttpServiceSchemaPath,
   HttpServiceSchemaPath,
 } from './http/types/schema';
 

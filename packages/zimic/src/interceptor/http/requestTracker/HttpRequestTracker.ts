@@ -14,7 +14,7 @@ import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import {
   HttpRequestTrackerRestriction,
   HttpRequestTrackerComputedRestriction,
-  HttpRequestTracker as PublicHttpRequestTracker,
+  LocalHttpRequestTracker as PublicHttpRequestTracker,
   HttpRequestTrackerStaticRestriction,
 } from './types/public';
 import {

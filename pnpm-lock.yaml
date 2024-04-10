@@ -84,6 +84,9 @@ importers:
       vitest:
         specifier: 1.2.2
         version: 1.2.2(@types/node@20.11.30)(@vitest/browser@1.2.2)
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
 
   examples:
     dependencies:
@@ -8335,7 +8338,6 @@ packages:
 
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-    dev: false
 
   /zx@4.3.0:
     resolution: {integrity: sha512-KuEjpu5QFIMx0wWfzknDRhY98s7a3tWNRmYt19XNmB7AfOmz5zISA4+3Q8vlJc2qguxMn89uSxhPDCldPa3YLA==}

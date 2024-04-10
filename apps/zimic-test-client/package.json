@@ -8,7 +8,7 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test": "dotenv -c test -- dotenv -c development -- bash -c \"zimic server start --on-ready 'vitest'\"",
     "test:turbo": "pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",
@@ -33,6 +33,7 @@
     "playwright": "^1.42.1",
     "superagent": "^8.1.2",
     "typescript": "^5.4.3",
-    "vitest": "1.2.2"
+    "vitest": "1.2.2",
+    "zod": "^3.22.4"
   }
 }

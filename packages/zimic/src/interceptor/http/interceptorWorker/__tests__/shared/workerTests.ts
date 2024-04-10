@@ -22,15 +22,21 @@ import { HttpRequestHandler } from '../../types/requests';
 export function declareSharedHttpInterceptorWorkerTests(options: { platform: HttpInterceptorWorkerPlatform }) {
   const { platform } = options;
 
-  const baseURL = 'http://localhost:3000';
+  const interceptBaseURL = 'http://localhost:3000';
+  const mockServerURL = 'http://localhost:3001';
 
   const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
     { type: 'local' },
-    { type: 'remote', mockServerURL: baseURL },
+    {
+      type: 'remote',
+      mockServerURL,
+    },
   ];
 
   describe.each(workerOptionsArray)('Shared (type $type)', (workerOptions) => {
     let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker | undefined;
+
+    const baseURL = workerOptions.type === 'local' ? interceptBaseURL : mockServerURL;
 
     const responseStatus = 200;
     const responseBody = { success: true };
@@ -49,9 +55,9 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
     function createDefaultHttpInterceptor(worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker) {
       if (worker instanceof LocalHttpInterceptorWorker) {
-        return createHttpInterceptor({ worker, baseURL });
+        return createHttpInterceptor<{}>({ worker, baseURL });
       } else {
-        return createHttpInterceptor({ worker, pathPrefix: 'path' });
+        return createHttpInterceptor<{}>({ worker, pathPrefix: 'path' });
       }
     }
 

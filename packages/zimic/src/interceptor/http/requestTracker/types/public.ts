@@ -65,7 +65,7 @@ export type HttpRequestTrackerRestriction<
   | HttpRequestTrackerStaticRestriction<Schema, Path, Method>
   | HttpRequestTrackerComputedRestriction<Schema, Method, Path>;
 
-interface BaseHttpRequestTracker<
+export interface BaseHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -177,7 +177,7 @@ interface BaseHttpRequestTracker<
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
  */
-export interface HttpRequestTracker<
+export interface LocalHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -187,17 +187,17 @@ export interface HttpRequestTracker<
 
   with: (
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ) => HttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  bypass: () => HttpRequestTracker<Schema, Method, Path, StatusCode>;
+  bypass: () => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  clear: () => HttpRequestTracker<Schema, Method, Path, StatusCode>;
+  clear: () => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   requests: () => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[];
 }
@@ -257,3 +257,12 @@ export interface RemoteHttpRequestTracker<
 > extends PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
   readonly type: 'remote';
 }
+
+export type HttpRequestTracker<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+> =
+  | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+  | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;

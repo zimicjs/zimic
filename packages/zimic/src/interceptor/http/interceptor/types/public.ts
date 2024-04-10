@@ -6,7 +6,7 @@ import {
   AsyncHttpInterceptorMethodHandler,
 } from './handlers';
 
-interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
+export interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/diego-aquino/zimic#interceptorbaseurl}

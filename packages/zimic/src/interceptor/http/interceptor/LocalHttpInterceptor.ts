@@ -13,7 +13,7 @@ import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpIntercepto
 import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
 import HttpRequestTracker from '../requestTracker/HttpRequestTracker';
-import { HttpRequestTracker as PublicHttpRequestTracker } from '../requestTracker/types/public';
+import { LocalHttpRequestTracker as PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
@@ -50,31 +50,31 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     return this._baseURL;
   }
 
-  get: SyncHttpInterceptorMethodHandler<Schema, 'GET'> = ((path) => {
+  get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('GET' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  post: SyncHttpInterceptorMethodHandler<Schema, 'POST'> = ((path) => {
+  post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('POST' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = ((path) => {
+  patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('PATCH' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'> = ((path) => {
+  put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('PUT' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = ((path) => {
+  delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('DELETE' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = ((path) => {
+  head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('HEAD' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = ((path) => {
+  options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this.createHttpRequestTracker('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
   }) as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
