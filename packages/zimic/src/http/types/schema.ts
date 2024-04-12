@@ -100,6 +100,27 @@ export type NonLiteralHttpServiceSchemaPath<
   Method extends HttpServiceSchemaMethod<Schema>,
 > = AllowAnyStringInPathParameters<LiteralHttpServiceSchemaPath<Schema, Method>>;
 
+type RecursiveNonLiteralHttpServiceSchemaPathToLiteral<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method>,
+> =
+  NonLiteralPath extends AllowAnyStringInPathParameters<LiteralPath>
+    ? NonLiteralPath extends `${AllowAnyStringInPathParameters<LiteralPath>}/${string}`
+      ? never
+      : LiteralPath
+    : never;
+
+export type NonLiteralHttpServiceSchemaPathToLiteral<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method> = LiteralHttpServiceSchemaPath<Schema, Method>,
+> = LiteralPath extends LiteralPath
+  ? RecursiveNonLiteralHttpServiceSchemaPathToLiteral<Schema, Method, NonLiteralPath, LiteralPath>
+  : never;
+
 /** Extracts the paths from an HTTP service schema containing certain methods. */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>

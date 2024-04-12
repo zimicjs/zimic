@@ -1,9 +1,10 @@
 import {
-  AllowAnyStringInPathParameters,
   HttpMethod,
   HttpServiceSchema,
   HttpServiceSchemaMethod,
   LiteralHttpServiceSchemaPath,
+  NonLiteralHttpServiceSchemaPath,
+  NonLiteralHttpServiceSchemaPathToLiteral,
 } from '@/http/types/schema';
 
 import { HttpRequestTracker } from '../../requestTracker/types/public';
@@ -14,12 +15,9 @@ export interface EffectiveHttpInterceptorMethodHandler<
 > {
   <Path extends LiteralHttpServiceSchemaPath<Schema, Method>>(path: Path): HttpRequestTracker<Schema, Method, Path>;
 
-  <
-    Path extends LiteralHttpServiceSchemaPath<Schema, Method> | void = void,
-    ActualPath extends Exclude<Path, void> = Exclude<Path, void>,
-  >(
-    path: AllowAnyStringInPathParameters<ActualPath>,
-  ): HttpRequestTracker<Schema, Method, ActualPath>;
+  <NonLiteralPath extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
+    path: NonLiteralPath,
+  ): HttpRequestTracker<Schema, Method, NonLiteralHttpServiceSchemaPathToLiteral<Schema, Method, NonLiteralPath>>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -376,7 +376,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       genericHeadTracker.bypass();
 
-      const specificHeadTracker = interceptor.head<'/users/:id'>(`/users/${1}`).respond({
+      const specificHeadTracker = interceptor.head(`/users/${1}`).respond({
         status: 200,
       });
       expect(specificHeadTracker).toBeInstanceOf(HttpRequestTracker);

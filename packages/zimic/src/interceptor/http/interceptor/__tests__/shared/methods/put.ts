@@ -57,7 +57,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -98,7 +98,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         const updatedUser: User = { ...users[0], ...request.body };
@@ -162,7 +162,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
         expect(request.headers).toBeInstanceOf(HttpHeaders);
 
@@ -223,7 +223,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
         expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
@@ -276,7 +276,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put<'/users/:id'>(`/users/${users[0].id}`)
+        .put(`/users/${users[0].id}`)
         .with({
           headers: { 'content-type': 'application/json' },
         })
@@ -348,7 +348,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put<'/users/:id'>(`/users/${users[0].id}`)
+        .put(`/users/${users[0].id}`)
         .with({
           searchParams: { tag: 'admin' },
         })
@@ -402,7 +402,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put<'/users/:id'>(`/users/${users[0].id}`)
+        .put(`/users/${users[0].id}`)
         .with({
           body: { ...users[0], name: users[1].name },
         })
@@ -481,7 +481,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
 
       genericUpdateTracker.bypass();
 
-      const specificUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const specificUpdateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -533,7 +533,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       });
       await expectToThrowFetchError(updatePromise);
 
-      const updateTrackerWithoutResponse = interceptor.put<'/users/:id'>(`/users/${users[0].id}`);
+      const updateTrackerWithoutResponse = interceptor.put(`/users/${users[0].id}`);
       expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
@@ -603,7 +603,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put<'/users/:id'>(`/users/${users[0].id}`)
+        .put(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -635,7 +635,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const errorUpdateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -682,7 +682,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const updateTracker = interceptor
-        .put<'/users/:id'>(`/users/${users[0].id}`)
+        .put(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -723,7 +723,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const errorUpdateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -787,7 +787,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -812,14 +812,14 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      let updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      let updateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
 
       interceptor.clear();
 
-      updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      updateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[1],
       });
@@ -858,7 +858,7 @@ export async function declarePutHttpInterceptorTests({ platform }: SharedHttpInt
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const updateTracker = interceptor.put<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const updateTracker = interceptor.put(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
