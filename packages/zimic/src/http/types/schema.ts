@@ -1,4 +1,4 @@
-import { IfAny, UnionToIntersection } from '@/types/utils';
+import { IfAny, Prettify, UnionToIntersection } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
@@ -87,18 +87,17 @@ export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, 
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
-export type AllowAnyStringInPathParameters<Path extends string> =
-  Path extends `${infer Prefix}:${string}/${infer Suffix}`
-    ? `${Prefix}${string}/${AllowAnyStringInPathParameters<Suffix>}`
-    : Path extends `${infer Prefix}:${string}`
-      ? `${Prefix}${string}`
-      : Path;
+type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
+  ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
+  : Path extends `${infer Prefix}:${string}`
+    ? `${Prefix}${string}`
+    : Path;
 
 /** Extracts the non-literal paths from an HTTP service schema containing certain methods. */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = AllowAnyStringInPathParameters<LiteralHttpServiceSchemaPath<Schema, Method>>;
+> = AllowAnyStringInPathParams<LiteralHttpServiceSchemaPath<Schema, Method>>;
 
 type RecursiveNonLiteralHttpServiceSchemaPathToLiteral<
   Schema extends HttpServiceSchema,
@@ -106,8 +105,8 @@ type RecursiveNonLiteralHttpServiceSchemaPathToLiteral<
   NonLiteralPath extends string,
   LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method>,
 > =
-  NonLiteralPath extends AllowAnyStringInPathParameters<LiteralPath>
-    ? NonLiteralPath extends `${AllowAnyStringInPathParameters<LiteralPath>}/${string}`
+  NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
+    ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
       ? never
       : LiteralPath
     : never;
@@ -125,3 +124,12 @@ export type NonLiteralHttpServiceSchemaPathToLiteral<
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
   | NonLiteralHttpServiceSchemaPath<Schema, Method>;
+
+type RecursivePathParamsSchemaFromPath<Path extends string> =
+  Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
+    ? { [Name in ParamName]: string } & RecursivePathParamsSchemaFromPath<Suffix>
+    : Path extends `${infer _Prefix}:${infer ParamName}`
+      ? { [Name in ParamName]: string }
+      : {};
+
+export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
