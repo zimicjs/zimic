@@ -227,158 +227,320 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   describe('Dynamic paths', () => {
     const interceptor = createHttpInterceptor<{
+      '/:any': {
+        GET: { response: { 200: { body: 'path /:any' } } };
+      };
+
       '/users': {
-        POST: {
-          request: { body: User };
-          response: {
-            201: { body: User };
-          };
-        };
+        POST: { response: { 201: { body: 'path /users' } } };
+      };
+      '/users/:any': {
+        GET: { response: { 200: { body: 'path /users/:any' } } };
       };
 
-      '/users/:userId': {
-        GET: {
-          response: {
-            200: { body: User };
-          };
-        };
+      '/groups': {
+        GET: { response: { 200: { body: 'path /groups' } } };
       };
-
+      '/groups/users': {
+        GET: { response: { 200: { body: 'path /groups/users' } } };
+      };
+      '/groups/users/:any': {
+        GET: { response: { 200: { body: 'path /groups/users/:any' } } };
+      };
       '/groups/:groupId': {
-        GET: {
-          response: {
-            200: { body: { users: User[] } };
-          };
-        };
+        GET: { response: { 200: { body: 'path /groups/:groupId' } } };
       };
-
       '/groups/:groupId/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-          };
-        };
+        GET: { response: { 200: { body: 'path /groups/:groupId/users' } } };
       };
-
+      '/groups/:groupId/:userId': {
+        GET: { response: { 200: { body: 'path /groups/:groupId/:userId' } } };
+      };
+      '/groups/:groupId/users/other': {
+        GET: { response: { 200: { body: 'path /groups/:groupId/users/other' } } };
+      };
       '/groups/:groupId/users/:userId': {
-        GET: {
-          response: {
-            200: { body: User };
-          };
-        };
+        GET: { response: { 200: { body: 'path /groups/:groupId/users/:userId' } } };
+      };
+      '/groups/:groupId/users/:userId/other': {
+        GET: { response: { 200: { body: 'path /groups/:groupId/users/:userId/other' } } };
+      };
+      '/groups/:groupId/users/:userId/:otherId': {
+        GET: { response: { 200: { body: 'path /groups/:groupId/users/:userId/:otherId' } } };
+      };
+      '/groups/:groupId/users/:userId/:otherId/suffix': {
+        GET: { response: { 200: { body: 'path /groups/:groupId/users/:userId/:otherId/suffix' } } };
       };
     }>({ worker, baseURL });
 
-    it('should correctly type requests with dynamic paths containing one parameter at the end of the path', () => {
-      const genericCreationTracker = interceptor.get('/groups/:groupId').respond((request) => {
+    it('should correctly type requests with static paths that conflict with a dynamic path, preferring the former', () => {
+      const getTracker = interceptor.get('/groups/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: { users },
+          body: 'path /groups/users',
         };
       });
 
-      expectTypeOf<HttpRequestTrackerPath<typeof genericCreationTracker>>().toEqualTypeOf<'/groups/:groupId'>();
+      expectTypeOf<HttpRequestTrackerPath<typeof getTracker>>().toEqualTypeOf<'/groups/users'>();
 
-      const genericCreationRequests = genericCreationTracker.requests();
-      type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
+      const getRequests = getTracker.requests();
+      type GetRequestBody = (typeof getRequests)[number]['body'];
+      expectTypeOf<GetRequestBody>().toEqualTypeOf<null>();
+      type GetResponseBody = (typeof getRequests)[number]['response']['body'];
+      expectTypeOf<GetResponseBody>().toEqualTypeOf<'path /groups/users'>();
+
+      const otherTracker = interceptor.get(`/groups/${1}/users/other`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/other',
+        };
+      });
+
+      expectTypeOf<HttpRequestTrackerPath<typeof otherTracker>>().toEqualTypeOf<'/groups/:groupId/users/other'>();
+
+      const otherGetRequests = otherTracker.requests();
+      type OtherGetRequestBody = (typeof otherGetRequests)[number]['body'];
+      expectTypeOf<OtherGetRequestBody>().toEqualTypeOf<null>();
+      type OtherGetResponseBody = (typeof otherGetRequests)[number]['response']['body'];
+      expectTypeOf<OtherGetResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/other'>();
+    });
+
+    it('should correctly type requests with dynamic paths containing one parameter at the start of the path', () => {
+      const genericGetTracker = interceptor.get('/:any').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /:any',
+        };
+      });
+
+      expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/:any'>();
+
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
       expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
-      type GenericResponseBody = (typeof genericCreationRequests)[number]['response']['body'];
-      expectTypeOf<GenericResponseBody>().toEqualTypeOf<{ users: User[] }>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /:any'>();
 
-      const specificCreationTracker = interceptor.get(`/groups/${1}`).respond((request) => {
+      const specificGetTracker = interceptor.get(`/${1}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: { users },
+          body: 'path /:any',
         };
       });
 
-      expectTypeOf<HttpRequestTrackerPath<typeof specificCreationTracker>>().toEqualTypeOf<'/groups/:groupId'>();
+      expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >();
 
-      const specificCreationRequests = specificCreationTracker.requests();
-      type SpecificRequestBody = (typeof specificCreationRequests)[number]['body'];
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
       expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
-      type SpecificResponseBody = (typeof specificCreationRequests)[number]['response']['body'];
-      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<{ users: User[] }>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
     });
 
     it('should correctly type requests with dynamic paths containing one parameter in the middle of the path', () => {
-      const genericCreationTracker = interceptor.get('/groups/:groupId/users').respond((request) => {
+      const genericGetTracker = interceptor.get('/groups/:groupId/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: users,
+          body: 'path /groups/:groupId/users',
         };
       });
 
-      expectTypeOf<HttpRequestTrackerPath<typeof genericCreationTracker>>().toEqualTypeOf<'/groups/:groupId/users'>();
+      expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/groups/:groupId/users'>();
 
-      const genericCreationRequests = genericCreationTracker.requests();
-      type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
       expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
-      type GenericResponseBody = (typeof genericCreationRequests)[number]['response']['body'];
-      expectTypeOf<GenericResponseBody>().toEqualTypeOf<User[]>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users'>();
 
-      const specificCreationTracker = interceptor.get(`/groups/${1}/users`).respond((request) => {
+      const specificGetTracker = interceptor.get(`/groups/${1}/users`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: users,
+          body: 'path /groups/:groupId/users',
         };
       });
 
-      expectTypeOf<HttpRequestTrackerPath<typeof specificCreationTracker>>().toEqualTypeOf<'/groups/:groupId/users'>();
+      expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >();
 
-      const specificCreationRequests = specificCreationTracker.requests();
-      type SpecificRequestBody = (typeof specificCreationRequests)[number]['body'];
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
       expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
-      type SpecificResponseBody = (typeof specificCreationRequests)[number]['response']['body'];
-      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<User[]>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
     });
 
-    it('should correctly type requests with dynamic paths containing multiple parameters', () => {
-      const genericCreationTracker = interceptor.get('/groups/:groupId/users/:userId').respond((request) => {
+    it('should correctly type requests with dynamic paths containing one parameter at the end of the path', () => {
+      const genericGetTracker = interceptor.get('/groups/:groupId').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: users[0],
+          body: 'path /groups/:groupId',
         };
       });
 
-      expectTypeOf<
-        HttpRequestTrackerPath<typeof genericCreationTracker>
-      >().toEqualTypeOf<'/groups/:groupId/users/:userId'>();
+      expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/groups/:groupId'>();
 
-      const genericCreationRequests = genericCreationTracker.requests();
-      type GenericRequestBody = (typeof genericCreationRequests)[number]['body'];
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
       expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
-      type GenericResponseBody = (typeof genericCreationRequests)[number]['response']['body'];
-      expectTypeOf<GenericResponseBody>().toEqualTypeOf<User>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId'>();
 
-      const specificCreationTracker = interceptor.get(`/groups/${1}/users/${2}`).respond((request) => {
+      const specificGetTracker = interceptor.get(`/groups/${1}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
 
         return {
           status: 200,
-          body: users[0],
+          body: 'path /groups/:groupId',
+        };
+      });
+
+      expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >();
+
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
+      expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
+    });
+
+    it('should correctly type requests with dynamic paths containing multiple, non-consecutive parameters', () => {
+      const genericGetTracker = interceptor.get('/groups/:groupId/users/:userId').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId',
         };
       });
 
       expectTypeOf<
-        HttpRequestTrackerPath<typeof specificCreationTracker>
+        HttpRequestTrackerPath<typeof genericGetTracker>
       >().toEqualTypeOf<'/groups/:groupId/users/:userId'>();
 
-      const specificCreationRequests = specificCreationTracker.requests();
-      type SpecificRequestBody = (typeof specificCreationRequests)[number]['body'];
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
+      expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId'>();
+
+      const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId',
+        };
+      });
+
+      expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >();
+
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
       expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
-      type SpecificResponseBody = (typeof specificCreationRequests)[number]['response']['body'];
-      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<User>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId'>();
+    });
+
+    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters', () => {
+      const genericGetTracker = interceptor.get('/groups/:groupId/users/:userId/:otherId').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId/:otherId',
+        };
+      });
+
+      expectTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId'>();
+
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
+      expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId/:otherId'>();
+
+      const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}/${3}`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId/:otherId',
+        };
+      });
+
+      expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >();
+
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
+      expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
+    });
+
+    it('should correctly type requests with dynamic paths containing multiple, consecutive parameters ending with static path', () => {
+      const genericGetTracker = interceptor.get('/groups/:groupId/users/:userId/:otherId/suffix').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId/:otherId/suffix',
+        };
+      });
+
+      expectTypeOf<
+        HttpRequestTrackerPath<typeof genericGetTracker>
+      >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId/suffix'>();
+
+      const genericGetRequests = genericGetTracker.requests();
+      type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
+      expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
+      type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
+      expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId/:otherId/suffix'>();
+
+      const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}/${3}/suffix`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+
+        return {
+          status: 200,
+          body: 'path /groups/:groupId/users/:userId/:otherId/suffix',
+        };
+      });
+
+      expectTypeOf<
+        HttpRequestTrackerPath<typeof specificGetTracker>
+      >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId/suffix'>();
+
+      const specificGetRequests = specificGetTracker.requests();
+      type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
+      expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
+      type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
+      expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
     });
   });
 

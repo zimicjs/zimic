@@ -4,7 +4,7 @@ import {
   HttpServiceSchemaMethod,
   LiteralHttpServiceSchemaPath,
   NonLiteralHttpServiceSchemaPath,
-  NonLiteralHttpServiceSchemaPathToLiteral,
+  InferLiteralHttpServiceSchemaPath,
 } from '@/http/types/schema';
 
 import { HttpRequestTracker } from '../../requestTracker/types/public';
@@ -17,7 +17,7 @@ export interface EffectiveHttpInterceptorMethodHandler<
 
   <NonLiteralPath extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
     path: NonLiteralPath,
-  ): HttpRequestTracker<Schema, Method, NonLiteralHttpServiceSchemaPathToLiteral<Schema, Method, NonLiteralPath>>;
+  ): HttpRequestTracker<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, NonLiteralPath>>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
