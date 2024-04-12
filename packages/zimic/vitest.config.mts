@@ -19,6 +19,7 @@ export const defaultConfig: UserConfig = {
         branches: 100,
       },
       exclude: [
+        '**/local/**',
         '**/public/**',
         '**/.eslintrc.js',
         '**/.lintstagedrc.js',

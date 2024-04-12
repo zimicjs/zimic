@@ -40,7 +40,7 @@ export function declareBaseURLHttpInterceptorTests(options: SharedHttpIntercepto
     }>({ worker, baseURL }, async (interceptor) => {
       expect(interceptor.baseURL()).toBe(baseURL);
 
-      const tracker = interceptor.get<':any'>(path).respond({
+      const tracker = interceptor.get(path).respond({
         status: 200,
       });
 

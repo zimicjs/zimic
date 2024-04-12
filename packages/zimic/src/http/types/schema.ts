@@ -1,4 +1,4 @@
-import { IfAny, UnionToIntersection } from '@/types/utils';
+import { IfAny, Prettify, UnionToIntersection, UnionHasMoreThanOneType } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
@@ -87,20 +87,61 @@ export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, 
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
-export type AllowAnyStringInPathParameters<Path extends string> =
-  Path extends `${infer Prefix}:${string}/${infer Suffix}`
-    ? `${Prefix}${string}/${AllowAnyStringInPathParameters<Suffix>}`
-    : Path extends `${infer Prefix}:${string}`
-      ? `${Prefix}${string}`
-      : Path;
+type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
+  ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
+  : Path extends `${infer Prefix}:${string}`
+    ? `${Prefix}${string}`
+    : Path;
 
 /** Extracts the non-literal paths from an HTTP service schema containing certain methods. */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = AllowAnyStringInPathParameters<LiteralHttpServiceSchemaPath<Schema, Method>>;
+> = AllowAnyStringInPathParams<LiteralHttpServiceSchemaPath<Schema, Method>>;
+
+type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
+  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
+  : Path;
+
+type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
+  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
+
+export type PreferMostStaticLiteralPath<Path extends string> =
+  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
+
+type RecursiveInferHttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method>,
+> =
+  NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
+    ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
+      ? never
+      : LiteralPath
+    : never;
+
+export type InferLiteralHttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method> = LiteralHttpServiceSchemaPath<Schema, Method>,
+> = PreferMostStaticLiteralPath<
+  LiteralPath extends LiteralPath
+    ? RecursiveInferHttpServiceSchemaPath<Schema, Method, NonLiteralPath, LiteralPath>
+    : never
+>;
 
 /** Extracts the paths from an HTTP service schema containing certain methods. */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
   | NonLiteralHttpServiceSchemaPath<Schema, Method>;
+
+type RecursivePathParamsSchemaFromPath<Path extends string> =
+  Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
+    ? { [Name in ParamName]: string } & RecursivePathParamsSchemaFromPath<Suffix>
+    : Path extends `${infer _Prefix}:${infer ParamName}`
+      ? { [Name in ParamName]: string }
+      : {};
+
+export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;

@@ -57,7 +57,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -98,7 +98,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond((request) => {
+      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<Partial<User>>();
 
         return {
@@ -475,7 +475,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const genericDeletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const genericDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -505,7 +505,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
 
       genericDeletionTracker.bypass();
 
-      const specificDeletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const specificDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -627,7 +627,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const deletionTracker = interceptor
-        .delete<'/users/:id'>(`/users/${users[0].id}`)
+        .delete(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -659,7 +659,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
       expect(deletionRequest.response.body).toEqual(users[1]);
 
-      const errorDeletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const errorDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -706,7 +706,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       };
     }>({ worker, baseURL }, async (interceptor) => {
       const deletionTracker = interceptor
-        .delete<'/users/:id'>(`/users/${users[0].id}`)
+        .delete(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -747,7 +747,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
       expect(deletionRequest.response.body).toEqual(users[1]);
 
-      const errorDeletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const errorDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
@@ -811,7 +811,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
@@ -836,14 +836,14 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      let deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      let deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });
 
       interceptor.clear();
 
-      deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[1],
       });
@@ -882,7 +882,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         };
       };
     }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete<'/users/:id'>(`/users/${users[0].id}`).respond({
+      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
         status: 200,
         body: users[0],
       });

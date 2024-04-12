@@ -554,7 +554,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should support getting users by id', async () => {
-        const getTracker = authInterceptor.get<'/users/:id'>(`/users/${user.id}`).respond({
+        const getTracker = authInterceptor.get(`/users/${user.id}`).respond({
           status: 200,
           body: serializeUser(user),
         });
@@ -632,7 +632,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should support deleting users by id', async () => {
-        const deleteTracker = authInterceptor.delete<'/users/:id'>(`/users/${user.id}`).respond({
+        const deleteTracker = authInterceptor.delete(`/users/${user.id}`).respond({
           status: 204,
         });
 
@@ -667,7 +667,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = authInterceptor.delete<'/users/:id'>(`/users/${user.id}`).respond({
+        const getTracker = authInterceptor.delete(`/users/${user.id}`).respond({
           status: 404,
           body: notFoundError,
         });
