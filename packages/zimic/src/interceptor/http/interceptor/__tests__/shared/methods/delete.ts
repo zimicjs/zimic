@@ -3,18 +3,18 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { platform, baseURL, worker, interceptorOptions } = options;
+
   const crypto = await getCrypto();
 
   type User = JSONValue<{
@@ -33,12 +33,6 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
     },
   ];
 
-  const worker = createHttpInterceptorWorker({
-    type: 'local',
-  }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
-
-  const baseURL = 'http://localhost:3000';
-
   beforeAll(async () => {
     await worker.start();
     expect(worker.platform()).toBe(platform);
@@ -53,7 +47,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests with a static response body', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -61,14 +55,17 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -77,6 +74,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const deletedUsers = (await deletionResponse.json()) as User;
       expect(deletedUsers).toEqual(users[0]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -93,7 +91,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support intercepting DELETE requests with a computed response body, based on the request body', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: { body: Partial<User> };
@@ -102,17 +100,20 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<Partial<User>>();
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<Partial<User>>();
 
-        return {
-          status: 200,
-          body: users[0],
-        };
-      });
+          return {
+            status: 200,
+            body: users[0],
+          };
+        }),
+        worker,
+      );
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const userName = 'User (other)';
@@ -126,6 +127,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const deletedUsers = (await deletionResponse.json()) as User;
       expect(deletedUsers).toEqual<User>(users[0]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -150,7 +152,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       'cache-control'?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -164,26 +166,29 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/:id`).respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/:id`).respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionRequestHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
+          const acceptHeader = request.headers.get('accept')!;
+          expect(acceptHeader).toBe('application/json');
 
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users[0],
-        };
-      });
+          return {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+              'cache-control': 'no-cache',
+            },
+            body: users[0],
+          };
+        }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
@@ -194,6 +199,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       });
       expect(deletionResponse.status).toBe(200);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -214,7 +220,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       tag?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -225,19 +231,22 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/:id`).respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/:id`).respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-        return {
-          status: 200,
-          body: users[0],
-        };
-      });
+          return {
+            status: 200,
+            body: users[0],
+          };
+        }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserDeletionSearchParams>({
@@ -249,6 +258,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       });
       expect(deletionResponse.status).toBe(200);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -266,7 +276,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       accept?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -277,30 +287,33 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor
-        .delete(`/users/:id`)
-        .with({
-          headers: { 'content-type': 'application/json' },
-        })
-        .with((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor
+          .delete(`/users/:id`)
+          .with({
+            headers: { 'content-type': 'application/json' },
+          })
+          .with((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return request.headers.get('accept')?.includes('application/json') ?? false;
-        })
-        .respond((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+            return request.headers.get('accept')?.includes('application/json') ?? false;
+          })
+          .respond((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return {
-            status: 200,
-            body: users[0],
-          };
-        });
+            return {
+              status: 200,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserDeletionHeaders>({
@@ -310,18 +323,21 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
 
       let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
       expect(deletionResponse.status).toBe(200);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
       expect(deletionResponse.status).toBe(200);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let deletionResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
       await expectToThrowFetchError(deletionResponsePromise);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
@@ -329,6 +345,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
 
       deletionResponsePromise = fetch(`${baseURL}/users`, { method: 'DELETE', headers });
       await expectToThrowFetchError(deletionResponsePromise);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
     });
   });
@@ -338,7 +355,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       tag?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -349,24 +366,27 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor
-        .delete(`/users/:id`)
-        .with({
-          searchParams: { tag: 'admin' },
-        })
-        .respond((request) => {
-          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
-          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor
+          .delete(`/users/:id`)
+          .with({
+            searchParams: { tag: 'admin' },
+          })
+          .respond((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserDeletionSearchParams>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-          return {
-            status: 200,
-            body: users[0],
-          };
-        });
+            return {
+              status: 200,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserDeletionSearchParams>({
@@ -377,6 +397,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         method: 'DELETE',
       });
       expect(deletionResponse.status).toBe(200);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
 
       searchParams.delete('tag');
@@ -385,6 +406,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         method: 'DELETE',
       });
       await expectToThrowFetchError(listResponsePromise);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
     });
   });
@@ -395,7 +417,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       other?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: {
@@ -406,28 +428,31 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor
-        .delete(`/users/:id`)
-        .with({
-          body: { tags: ['admin'] },
-        })
-        .with((request) => {
-          expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor
+          .delete(`/users/:id`)
+          .with({
+            body: { tags: ['admin'] },
+          })
+          .with((request) => {
+            expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
 
-          return request.body.other?.startsWith('extra') ?? false;
-        })
-        .respond((request) => {
-          expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
+            return request.body.other?.startsWith('extra') ?? false;
+          })
+          .respond((request) => {
+            expectTypeOf(request.body).toEqualTypeOf<UserDeletionBody>();
 
-          return {
-            status: 200,
-            body: users[0],
-          };
-        });
+            return {
+              status: 200,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
@@ -438,6 +463,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         } satisfies UserDeletionBody),
       });
       expect(deletionResponse.status).toBe(200);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
 
       deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
@@ -448,6 +474,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         } satisfies UserDeletionBody),
       });
       expect(deletionResponse.status).toBe(200);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
 
       let deletionResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
@@ -457,6 +484,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         } satisfies UserDeletionBody),
       });
       await expectToThrowFetchError(deletionResponsePromise);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
 
       deletionResponsePromise = fetch(`${baseURL}/users`, {
@@ -466,12 +494,13 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         } satisfies UserDeletionBody),
       });
       await expectToThrowFetchError(deletionResponsePromise);
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
     });
   });
 
   it('should support intercepting DELETE requests with a dynamic path', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -479,14 +508,17 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const genericDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const genericDeletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(genericDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const genericDeletionRequests = genericDeletionTracker.requests();
+      let genericDeletionRequests = await promiseIfRemote(genericDeletionTracker.requests(), worker);
       expect(genericDeletionRequests).toHaveLength(0);
 
       const genericDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -495,6 +527,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const genericDeletedUser = (await genericDeletionResponse.json()) as User;
       expect(genericDeletedUser).toEqual(users[0]);
 
+      genericDeletionRequests = await promiseIfRemote(genericDeletionTracker.requests(), worker);
       expect(genericDeletionRequests).toHaveLength(1);
       const [genericDeletionRequest] = genericDeletionRequests;
       expect(genericDeletionRequest).toBeInstanceOf(Request);
@@ -508,15 +541,18 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(genericDeletionRequest.response.body).toEqualTypeOf<User>();
       expect(genericDeletionRequest.response.body).toEqual(users[0]);
 
-      genericDeletionTracker.bypass();
+      await promiseIfRemote(genericDeletionTracker.bypass(), worker);
 
-      const specificDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+      const specificDeletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(specificDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const specificDeletionRequests = specificDeletionTracker.requests();
+      let specificDeletionRequests = await promiseIfRemote(specificDeletionTracker.requests(), worker);
       expect(specificDeletionRequests).toHaveLength(0);
 
       const specificDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -525,6 +561,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const specificDeletedUser = (await specificDeletionResponse.json()) as User;
       expect(specificDeletedUser).toEqual(users[0]);
 
+      specificDeletionRequests = await promiseIfRemote(specificDeletionTracker.requests(), worker);
       expect(specificDeletionRequests).toHaveLength(1);
       const [specificDeletionRequest] = specificDeletionRequests;
       expect(specificDeletionRequest).toBeInstanceOf(Request);
@@ -544,7 +581,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should not intercept a DELETE request without a registered response', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           request: { body: Partial<User> };
@@ -553,7 +590,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       const userName = 'User (other)';
 
       let deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, {
@@ -562,10 +599,10 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       });
       await expectToThrowFetchError(deletionPromise);
 
-      const deletionTrackerWithoutResponse = interceptor.delete(`/users/:id`);
+      const deletionTrackerWithoutResponse = await promiseIfRemote(interceptor.delete(`/users/:id`), worker);
       expect(deletionTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const deletionRequestsWithoutResponse = deletionTrackerWithoutResponse.requests();
+      let deletionRequestsWithoutResponse = await promiseIfRemote(deletionTrackerWithoutResponse.requests(), worker);
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
 
       let [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
@@ -578,6 +615,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       });
       await expectToThrowFetchError(deletionPromise);
 
+      deletionRequestsWithoutResponse = await promiseIfRemote(deletionTrackerWithoutResponse.requests(), worker);
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
 
       [deletionRequestWithoutResponse] = deletionRequestsWithoutResponse;
@@ -598,8 +636,9 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const deletedUsers = (await deletionResponse.json()) as User;
       expect(deletedUsers).toEqual(users[0]);
 
+      deletionRequestsWithoutResponse = await promiseIfRemote(deletionTrackerWithoutResponse.requests(), worker);
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
-      const deletionRequestsWithResponse = deletionTrackerWithResponse.requests();
+      const deletionRequestsWithResponse = await promiseIfRemote(deletionTrackerWithResponse.requests(), worker);
       expect(deletionRequestsWithResponse).toHaveLength(1);
 
       const [deletionRequest] = deletionRequestsWithResponse;
@@ -621,7 +660,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       message: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -630,19 +669,22 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor
-        .delete(`/users/${users[0].id}`)
-        .respond({
-          status: 200,
-          body: users[0],
-        })
-        .respond({
-          status: 200,
-          body: users[1],
-        });
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor
+          .delete(`/users/${users[0].id}`)
+          .respond({
+            status: 200,
+            body: users[0],
+          })
+          .respond({
+            status: 200,
+            body: users[1],
+          }),
+        worker,
+      );
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -651,6 +693,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const deletionUsers = (await deletionResponse.json()) as User;
       expect(deletionUsers).toEqual(users[1]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -664,12 +707,15 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
       expect(deletionRequest.response.body).toEqual(users[1]);
 
-      const errorDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorDeletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorDeletionRequests = errorDeletionTracker.requests();
+      let errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), worker);
       expect(errorDeletionRequests).toHaveLength(0);
 
       const otherDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -678,8 +724,10 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const serverError = (await otherDeletionResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
 
+      errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), worker);
       expect(errorDeletionRequests).toHaveLength(1);
       const [errorDeletionRequest] = errorDeletionRequests;
       expect(errorDeletionRequest).toBeInstanceOf(Request);
@@ -700,7 +748,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       message: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -709,28 +757,35 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor
-        .delete(`/users/${users[0].id}`)
-        .respond({
-          status: 200,
-          body: users[0],
-        })
-        .bypass();
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor
+          .delete(`/users/${users[0].id}`)
+          .respond({
+            status: 200,
+            body: users[0],
+          })
+          .bypass(),
+        worker,
+      );
 
-      const initialDeletionRequests = deletionTracker.requests();
+      let initialDeletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(initialDeletionRequests).toHaveLength(0);
 
       const deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
       await expectToThrowFetchError(deletionPromise);
 
-      deletionTracker.respond({
-        status: 200,
-        body: users[1],
-      });
+      await promiseIfRemote(
+        deletionTracker.respond({
+          status: 200,
+          body: users[1],
+        }),
+        worker,
+      );
 
+      initialDeletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(initialDeletionRequests).toHaveLength(0);
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -739,6 +794,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       let createdUsers = (await deletionResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       let [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -752,12 +808,15 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(deletionRequest.response.body).toEqualTypeOf<User>();
       expect(deletionRequest.response.body).toEqual(users[1]);
 
-      const errorDeletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorDeletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorDeletionRequests = errorDeletionTracker.requests();
+      let errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), worker);
       expect(errorDeletionRequests).toHaveLength(0);
 
       const otherDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -766,8 +825,10 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const serverError = (await otherDeletionResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
 
+      errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), worker);
       expect(errorDeletionRequests).toHaveLength(1);
       const [errorDeletionRequest] = errorDeletionRequests;
       expect(errorDeletionRequest).toBeInstanceOf(Request);
@@ -781,7 +842,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       expectTypeOf(errorDeletionRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorDeletionRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      errorDeletionTracker.bypass();
+      await promiseIfRemote(errorDeletionTracker.bypass(), worker);
 
       deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
@@ -789,8 +850,10 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       createdUsers = (await deletionResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), worker);
       expect(errorDeletionRequests).toHaveLength(1);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(2);
       [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -807,7 +870,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should ignore all trackers after cleared when intercepting DELETE requests', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -815,15 +878,18 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const initialDeletionRequests = deletionTracker.requests();
+      const initialDeletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(initialDeletionRequests).toHaveLength(0);
 
       const deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -832,7 +898,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -840,20 +906,26 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      let deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      let deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[1],
-      });
+      deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[1],
+        }),
+        worker,
+      );
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -862,6 +934,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const createdUsers = (await deletionResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);
@@ -878,7 +951,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
   });
 
   it('should support reusing previous trackers after cleared', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
           response: {
@@ -886,20 +959,26 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const deletionTracker = interceptor.delete(`/users/${users[0].id}`).respond({
-        status: 200,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const deletionTracker = await promiseIfRemote(
+        interceptor.delete(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      deletionTracker.respond({
-        status: 200,
-        body: users[1],
-      });
+      await promiseIfRemote(
+        deletionTracker.respond({
+          status: 200,
+          body: users[1],
+        }),
+        worker,
+      );
 
-      const deletionRequests = deletionTracker.requests();
+      let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
 
       const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
@@ -908,6 +987,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       const createdUsers = (await deletionResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(1);
       const [deletionRequest] = deletionRequests;
       expect(deletionRequest).toBeInstanceOf(Request);

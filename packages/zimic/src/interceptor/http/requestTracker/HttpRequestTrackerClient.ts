@@ -196,7 +196,7 @@ class HttpRequestTrackerClient<
   }
 
   requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
-    return this.interceptedRequests;
+    return [...this.interceptedRequests];
   }
 }
 

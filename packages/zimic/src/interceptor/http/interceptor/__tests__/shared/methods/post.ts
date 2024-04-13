@@ -3,25 +3,19 @@ import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
-import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
-export async function declarePostHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { platform, baseURL, worker, interceptorOptions } = options;
+
   const crypto = await getCrypto();
-
-  const worker = createHttpInterceptorWorker({
-    type: 'local',
-  }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
-
-  const baseURL = 'http://localhost:3000';
 
   type User = JSONValue<{
     id: string;
@@ -55,7 +49,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests with a static response body', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -63,14 +57,17 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond({
-        status: 201,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -79,6 +76,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[0]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -95,7 +93,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support intercepting POST requests with a computed response body, based on the request body', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: UserCreationBody };
@@ -104,21 +102,24 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond((request) => {
+          expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
 
-        return {
-          status: 201,
-          body: {
-            id: crypto.randomUUID(),
-            name: request.body.name,
-          },
-        };
-      });
+          return {
+            status: 201,
+            body: {
+              id: crypto.randomUUID(),
+              name: request.body.name,
+            },
+          };
+        }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const userName = 'User (other)';
@@ -135,6 +136,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
         name: userName,
       });
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -159,7 +161,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       'cache-control'?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -173,26 +175,29 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationRequestHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
+          const acceptHeader = request.headers.get('accept')!;
+          expect(acceptHeader).toBe('application/json');
 
-        return {
-          status: 201,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users[0],
-        };
-      });
+          return {
+            status: 201,
+            headers: {
+              'content-type': 'application/json',
+              'cache-control': 'no-cache',
+            },
+            body: users[0],
+          };
+        }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, {
@@ -206,6 +211,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[0]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -226,7 +232,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       tag?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -237,19 +243,22 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-        return {
-          status: 201,
-          body: users[0],
-        };
-      });
+          return {
+            status: 201,
+            body: users[0],
+          };
+        }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserCreationSearchParams>({
@@ -262,6 +271,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[0]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -279,7 +289,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       accept?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -290,30 +300,33 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor
-        .post('/users')
-        .with({
-          headers: { 'content-type': 'application/json' },
-        })
-        .with((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor
+          .post('/users')
+          .with({
+            headers: { 'content-type': 'application/json' },
+          })
+          .with((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return request.headers.get('accept')?.includes('application/json') ?? false;
-        })
-        .respond((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+            return request.headers.get('accept')?.includes('application/json') ?? false;
+          })
+          .respond((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return {
-            status: 200,
-            body: users[0],
-          };
-        });
+            return {
+              status: 200,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserCreationHeaders>({
@@ -323,18 +336,21 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
 
       let creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
       expect(creationResponse.status).toBe(200);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       creationResponse = await fetch(`${baseURL}/users`, { method: 'POST', headers });
       expect(creationResponse.status).toBe(200);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
       await expectToThrowFetchError(creationResponsePromise);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
@@ -342,6 +358,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
 
       creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
       await expectToThrowFetchError(creationResponsePromise);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
     });
   });
@@ -351,7 +368,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       tag?: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -362,24 +379,27 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor
-        .post('/users')
-        .with({
-          searchParams: { tag: 'admin' },
-        })
-        .respond((request) => {
-          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
-          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor
+          .post('/users')
+          .with({
+            searchParams: { tag: 'admin' },
+          })
+          .respond((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserCreationSearchParams>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-          return {
-            status: 201,
-            body: users[0],
-          };
-        });
+            return {
+              status: 201,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserCreationSearchParams>({
@@ -388,18 +408,20 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
 
       const creationResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
       expect(creationResponse.status).toBe(201);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
 
       searchParams.delete('tag');
 
       const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
       await expectToThrowFetchError(creationResponsePromise);
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
     });
   });
 
   it('should support intercepting POST requests having body restrictions', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: {
@@ -410,23 +432,26 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor
-        .post('/users')
-        .with({
-          body: { name: users[0].name },
-        })
-        .respond((request) => {
-          expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor
+          .post('/users')
+          .with({
+            body: { name: users[0].name },
+          })
+          .respond((request) => {
+            expectTypeOf(request.body).toEqualTypeOf<UserCreationBody>();
 
-          return {
-            status: 200,
-            body: users[0],
-          };
-        });
+            return {
+              status: 200,
+              body: users[0],
+            };
+          }),
+        worker,
+      );
       expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, {
@@ -434,6 +459,8 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
         body: JSON.stringify(users[0] satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(200);
+
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
 
       const creationResponsePromise = fetch(`${baseURL}/users`, {
@@ -441,12 +468,14 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
         body: JSON.stringify(users[1] satisfies UserCreationBody),
       });
       await expectToThrowFetchError(creationResponsePromise);
+
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
     });
   });
 
   it('should support intercepting POST requests with a dynamic path', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users/:id': {
         POST: {
           response: {
@@ -454,14 +483,17 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const genericCreationTracker = interceptor.post('/users/:id').respond({
-        status: 201,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const genericCreationTracker = await promiseIfRemote(
+        interceptor.post('/users/:id').respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(genericCreationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const genericCreationRequests = genericCreationTracker.requests();
+      let genericCreationRequests = await promiseIfRemote(genericCreationTracker.requests(), worker);
       expect(genericCreationRequests).toHaveLength(0);
 
       const genericCreationResponse = await fetch(`${baseURL}/users/${1}`, { method: 'POST' });
@@ -470,6 +502,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const genericCreatedUser = (await genericCreationResponse.json()) as User;
       expect(genericCreatedUser).toEqual(users[0]);
 
+      genericCreationRequests = await promiseIfRemote(genericCreationTracker.requests(), worker);
       expect(genericCreationRequests).toHaveLength(1);
       const [genericCreationRequest] = genericCreationRequests;
       expect(genericCreationRequest).toBeInstanceOf(Request);
@@ -483,15 +516,18 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       expectTypeOf(genericCreationRequest.response.body).toEqualTypeOf<User>();
       expect(genericCreationRequest.response.body).toEqual(users[0]);
 
-      genericCreationTracker.bypass();
+      await promiseIfRemote(genericCreationTracker.bypass(), worker);
 
-      const specificCreationTracker = interceptor.post(`/users/${1}`).respond({
-        status: 201,
-        body: users[0],
-      });
+      const specificCreationTracker = await promiseIfRemote(
+        interceptor.post(`/users/${1}`).respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
       expect(specificCreationTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const specificCreationRequests = specificCreationTracker.requests();
+      let specificCreationRequests = await promiseIfRemote(specificCreationTracker.requests(), worker);
       expect(specificCreationRequests).toHaveLength(0);
 
       const specificCreationResponse = await fetch(`${baseURL}/users/${1}`, { method: 'POST' });
@@ -500,6 +536,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const specificCreatedUser = (await specificCreationResponse.json()) as User;
       expect(specificCreatedUser).toEqual(users[0]);
 
+      specificCreationRequests = await promiseIfRemote(specificCreationTracker.requests(), worker);
       expect(specificCreationRequests).toHaveLength(1);
       const [specificCreationRequest] = specificCreationRequests;
       expect(specificCreationRequest).toBeInstanceOf(Request);
@@ -519,7 +556,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should not intercept a POST request without a registered response', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           request: { body: UserCreationBody };
@@ -528,7 +565,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       const userName = 'User (other)';
 
       let creationPromise = fetch(`${baseURL}/users`, {
@@ -537,10 +574,10 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       });
       await expectToThrowFetchError(creationPromise);
 
-      const creationTrackerWithoutResponse = interceptor.post('/users');
+      const creationTrackerWithoutResponse = await promiseIfRemote(interceptor.post('/users'), worker);
       expect(creationTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const creationRequestsWithoutResponse = creationTrackerWithoutResponse.requests();
+      let creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       let [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
@@ -553,6 +590,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       });
       await expectToThrowFetchError(creationPromise);
 
+      creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);
 
       [creationRequestWithoutResponse] = creationRequestsWithoutResponse;
@@ -573,8 +611,9 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[0]);
 
+      creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);
-      const creationRequestsWithResponse = creationTrackerWithResponse.requests();
+      const creationRequestsWithResponse = await promiseIfRemote(creationTrackerWithResponse.requests(), worker);
       expect(creationRequestsWithResponse).toHaveLength(1);
 
       const [creationRequest] = creationRequestsWithResponse;
@@ -596,7 +635,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       message: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -605,24 +644,30 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor
-        .post('/users')
-        .respond({
-          status: 201,
-          body: users[0],
-        })
-        .respond({
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor
+          .post('/users')
+          .respond({
+            status: 201,
+            body: users[0],
+          })
+          .respond({
+            status: 201,
+            body: users[1],
+          }),
+        worker,
+      );
+
+      await promiseIfRemote(
+        creationTracker.respond({
           status: 201,
           body: users[1],
-        });
+        }),
+        worker,
+      );
 
-      creationTracker.respond({
-        status: 201,
-        body: users[1],
-      });
-
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -631,6 +676,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -644,12 +690,15 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
       expect(creationRequest.response.body).toEqual(users[1]);
 
-      const errorCreationTracker = interceptor.post('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorCreationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorCreationRequests = errorCreationTracker.requests();
+      let errorCreationRequests = await promiseIfRemote(errorCreationTracker.requests(), worker);
       expect(errorCreationRequests).toHaveLength(0);
 
       const otherCreationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -658,8 +707,10 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const serverError = (await otherCreationResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
 
+      errorCreationRequests = await promiseIfRemote(errorCreationTracker.requests(), worker);
       expect(errorCreationRequests).toHaveLength(1);
       const [errorCreationRequest] = errorCreationRequests;
       expect(errorCreationRequest).toBeInstanceOf(Request);
@@ -680,7 +731,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       message: string;
     }>;
 
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -689,28 +740,35 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor
-        .post('/users')
-        .respond({
-          status: 201,
-          body: users[0],
-        })
-        .bypass();
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor
+          .post('/users')
+          .respond({
+            status: 201,
+            body: users[0],
+          })
+          .bypass(),
+        worker,
+      );
 
-      const initialCreationRequests = creationTracker.requests();
+      let initialCreationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
       await expectToThrowFetchError(creationPromise);
 
-      creationTracker.respond({
-        status: 201,
-        body: users[1],
-      });
+      await promiseIfRemote(
+        creationTracker.respond({
+          status: 201,
+          body: users[1],
+        }),
+        worker,
+      );
 
+      initialCreationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(initialCreationRequests).toHaveLength(0);
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       let creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -719,6 +777,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       let createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       let [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -732,12 +791,15 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       expectTypeOf(creationRequest.response.body).toEqualTypeOf<User>();
       expect(creationRequest.response.body).toEqual(users[1]);
 
-      const errorCreationTracker = interceptor.post('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorCreationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorCreationRequests = errorCreationTracker.requests();
+      let errorCreationRequests = await promiseIfRemote(errorCreationTracker.requests(), worker);
       expect(errorCreationRequests).toHaveLength(0);
 
       const otherCreationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -746,8 +808,10 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const serverError = (await otherCreationResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
 
+      errorCreationRequests = await promiseIfRemote(errorCreationTracker.requests(), worker);
       expect(errorCreationRequests).toHaveLength(1);
       const [errorCreationRequest] = errorCreationRequests;
       expect(errorCreationRequest).toBeInstanceOf(Request);
@@ -761,7 +825,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       expectTypeOf(errorCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      errorCreationTracker.bypass();
+      await promiseIfRemote(errorCreationTracker.bypass(), worker);
 
       creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
       expect(creationResponse.status).toBe(201);
@@ -769,8 +833,10 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      errorCreationRequests = await promiseIfRemote(errorCreationTracker.requests(), worker);
       expect(errorCreationRequests).toHaveLength(1);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
       [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -787,7 +853,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should ignore all trackers after cleared when intercepting POST requests', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -795,15 +861,18 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond({
-        status: 201,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const initialCreationRequests = creationTracker.requests();
+      const initialCreationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
@@ -812,7 +881,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support creating new trackers after cleared', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -820,20 +889,26 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      let creationTracker = interceptor.post('/users').respond({
-        status: 201,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      let creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      creationTracker = interceptor.post('/users').respond({
-        status: 201,
-        body: users[1],
-      });
+      creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 201,
+          body: users[1],
+        }),
+        worker,
+      );
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -842,6 +917,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);
@@ -858,7 +934,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
   });
 
   it('should support reusing current trackers after cleared', async () => {
-    await usingLocalHttpInterceptor<{
+    await usingHttpInterceptor<{
       '/users': {
         POST: {
           response: {
@@ -866,20 +942,26 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond({
-        status: 201,
-        body: users[0],
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const creationTracker = await promiseIfRemote(
+        interceptor.post('/users').respond({
+          status: 201,
+          body: users[0],
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      creationTracker.respond({
-        status: 201,
-        body: users[1],
-      });
+      await promiseIfRemote(
+        creationTracker.respond({
+          status: 201,
+          body: users[1],
+        }),
+        worker,
+      );
 
-      const creationRequests = creationTracker.requests();
+      let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
 
       const creationResponse = await fetch(`${baseURL}/users`, { method: 'POST' });
@@ -888,6 +970,7 @@ export async function declarePostHttpInterceptorTests({ platform }: SharedHttpIn
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
+      creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
       const [creationRequest] = creationRequests;
       expect(creationRequest).toBeInstanceOf(Request);

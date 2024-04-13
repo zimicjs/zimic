@@ -246,7 +246,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-      const interceptedRequests = tracker.requests();
+      let interceptedRequests = tracker.requests();
       expect(interceptedRequests).toHaveLength(1);
 
       expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -265,6 +265,8 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
+      expect(interceptedRequests).toHaveLength(1);
+      interceptedRequests = tracker.requests();
       expect(interceptedRequests).toHaveLength(2);
 
       expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -300,7 +302,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-      const interceptedRequests = tracker.requests();
+      let interceptedRequests = tracker.requests();
       expect(interceptedRequests).toHaveLength(1);
 
       expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -311,6 +313,9 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       tracker.clear();
 
       expect(interceptedRequests).toHaveLength(1);
+      interceptedRequests = tracker.requests();
+      expect(interceptedRequests).toHaveLength(1);
+
       expect(tracker.requests()).toHaveLength(0);
     });
 

@@ -1,21 +1,18 @@
 import { expect } from 'vitest';
 
-import { PossiblePromise } from '@/types/utils';
-
-export async function expectPossiblePromise<FulfilledResult>(
-  possiblePromise: PossiblePromise<FulfilledResult>,
+export function expectPossiblePromise<FulfilledResult>(
+  value: FulfilledResult,
   options: {
     shouldBePromise: boolean;
   },
-): Promise<FulfilledResult> {
+): FulfilledResult {
   const { shouldBePromise } = options;
 
   if (shouldBePromise) {
-    expect(possiblePromise).toBeInstanceOf(Promise);
-    await expect(possiblePromise).resolves.not.toThrowError();
-    return possiblePromise;
+    expect(value).toBeInstanceOf(Promise);
   } else {
-    expect(possiblePromise).not.toBeInstanceOf(Promise);
-    return possiblePromise;
+    expect(value).not.toBeInstanceOf(Promise);
   }
+
+  return value;
 }

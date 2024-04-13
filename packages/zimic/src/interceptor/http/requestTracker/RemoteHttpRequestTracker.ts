@@ -23,17 +23,21 @@ import {
 } from './types/requests';
 
 class RemoteHttpRequestTracker<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>
+    Schema extends HttpServiceSchema,
+    Method extends HttpServiceSchemaMethod<Schema>,
+    Path extends HttpServiceSchemaPath<Schema, Method>,
+    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  >
+  extends Promise<unknown>
+  implements PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
   readonly type = 'remote';
 
   private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
 
   constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    super(() => {});
     this._client = new HttpRequestTrackerClient(interceptor, method, path);
   }
 

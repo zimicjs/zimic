@@ -31,31 +31,31 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
 
   get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.get(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.post(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.patch(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.put(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.delete(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.head(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.options(path);
-  }) as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+  }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   clear() {
     this._client.clear();

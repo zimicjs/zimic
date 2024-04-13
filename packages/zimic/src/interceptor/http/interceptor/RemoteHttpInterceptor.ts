@@ -38,31 +38,31 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
 
   get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.get(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.post(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.patch(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.put(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.delete(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.head(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
     return this._client.options(path);
-  }) as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+  }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   async clear() {
     await new Promise<void>((resolve) => {
