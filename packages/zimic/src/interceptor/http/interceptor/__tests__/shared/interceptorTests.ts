@@ -1,15 +1,17 @@
 import { describe } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import {
   HttpInterceptorWorkerOptions,
   HttpInterceptorWorkerPlatform,
 } from '@/interceptor/http/interceptorWorker/types/options';
-import { PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import { joinURLPaths } from '@/utils/fetch';
+import {
+  createInternalHttpInterceptorWorker,
+  getDefaultBaseURL,
+  createDefaultInterceptorOptions,
+} from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
@@ -44,53 +46,29 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     },
   ];
 
-  function getPathPrefix(workerOptions: HttpInterceptorWorkerOptions) {
-    return workerOptions.type === 'local' ? '' : ' /prefix';
-  }
-
-  function getBaseURL(workerOptions: HttpInterceptorWorkerOptions) {
-    const baseURLWithoutPrefix = workerOptions.type === 'local' ? interceptBaseURL : mockServerURL;
-    return joinURLPaths(baseURLWithoutPrefix, getPathPrefix(workerOptions));
-  }
-
-  function createWorker(workerOptions: HttpInterceptorWorkerOptions) {
-    return createHttpInterceptorWorker(workerOptions) satisfies PublicHttpInterceptorWorker as
-      | LocalHttpInterceptorWorker
-      | RemoteHttpInterceptorWorker;
-  }
-
-  function getInterceptorOptions(
-    worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker,
-    workerOptions: HttpInterceptorWorkerOptions,
-  ): HttpInterceptorOptions {
-    return worker.type === 'local'
-      ? { worker, baseURL: getBaseURL(workerOptions) }
-      : { worker, pathPrefix: getPathPrefix(workerOptions) };
-  }
-
   describe('Types', () => {
     declareTypeHttpInterceptorTests(options);
   });
 
   describe.each(workerOptionsArray)('Base URLs (type $type)', (workerOptions) => {
-    const worker = createWorker(workerOptions);
+    const worker = createInternalHttpInterceptorWorker(workerOptions);
 
     declareBaseURLHttpInterceptorTests({
       ...options,
       worker,
-      baseURL: getBaseURL(workerOptions),
-      interceptorOptions: getInterceptorOptions(worker, workerOptions),
+      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, mockServerURL }),
+      interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
     });
   });
 
   describe.each(workerOptionsArray)('Methods (type $type)', (workerOptions) => {
-    const worker = createWorker(workerOptions);
+    const worker = createInternalHttpInterceptorWorker(workerOptions);
 
     const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
       ...options,
       worker,
-      baseURL: getBaseURL(workerOptions),
-      interceptorOptions: getInterceptorOptions(worker, workerOptions),
+      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, mockServerURL }),
+      interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
     };
 
     const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
