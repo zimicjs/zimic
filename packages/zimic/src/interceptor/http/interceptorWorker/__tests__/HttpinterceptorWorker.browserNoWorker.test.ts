@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 
 import UnregisteredServiceWorkerError from '../errors/UnregisteredServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';

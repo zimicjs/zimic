@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
 
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SharedHttpInterceptorTestsOptions } from './interceptorTests';

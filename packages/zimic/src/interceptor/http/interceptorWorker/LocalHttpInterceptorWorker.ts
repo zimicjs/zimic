@@ -1,53 +1,31 @@
 import {
   HttpHandler as MSWHttpHandler,
-  HttpResponse as MSWHttpResponse,
   SharedOptions as MSWWorkerSharedOptions,
   StrictRequest as MSWStrictRequest,
   http,
   passthrough,
 } from 'msw';
 
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
-import { HttpResponse, HttpRequest, HttpBody } from '@/http/types/requests';
-import {
-  HttpMethod,
-  HttpServiceMethodSchema,
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-} from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { HttpBody } from '@/http/types/requests';
+import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 
-import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
-import { HttpInterceptor } from '../interceptor/types/public';
-import {
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
-  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
-  HttpInterceptorRequest,
-  HttpInterceptorResponse,
-} from '../requestTracker/types/requests';
+import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
-import { HttpInterceptorWorkerPlatform } from './types/options';
-import {
-  InternalHttpInterceptorWorker,
-  LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker,
-} from './types/public';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { PublicLocalHttpInterceptorWorker } from './types/public';
 import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
 
-class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, InternalHttpInterceptorWorker {
+class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements PublicLocalHttpInterceptorWorker {
   readonly type = 'local';
 
   private static runningInstance?: LocalHttpInterceptorWorker;
-
   private _internalWorker?: HttpWorker;
-  private _platform: HttpInterceptorWorkerPlatform | null = null;
-  private _isRunning = false;
 
   private httpHandlerGroups: {
-    interceptor: HttpInterceptor<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
   }[] = [];
 
@@ -79,20 +57,12 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 
-  platform() {
-    return this._platform;
-  }
-
-  isRunning() {
-    return this._isRunning;
-  }
-
   async start() {
     if (LocalHttpInterceptorWorker.runningInstance && LocalHttpInterceptorWorker.runningInstance !== this) {
       throw new OtherHttpInterceptorWorkerRunningError();
     }
 
-    if (this._isRunning) {
+    if (this.isRunning()) {
       return;
     }
 
@@ -101,13 +71,13 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
 
     if (this.isInternalBrowserWorker(internalWorker)) {
       await this.startInBrowser(internalWorker, sharedOptions);
-      this._platform = 'browser';
+      this.setPlatform('browser');
     } else {
       this.startInNode(internalWorker, sharedOptions);
-      this._platform = 'node';
+      this.setPlatform('node');
     }
 
-    this._isRunning = true;
+    this.setIsRunning(true);
     LocalHttpInterceptorWorker.runningInstance = this;
   }
 
@@ -131,7 +101,7 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
   }
 
   async stop() {
-    if (!this._isRunning) {
+    if (!this.isRunning()) {
       return;
     }
 
@@ -145,7 +115,7 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
 
     this.clearHandlers();
 
-    this._isRunning = false;
+    this.setIsRunning(false);
     LocalHttpInterceptorWorker.runningInstance = undefined;
   }
 
@@ -170,7 +140,7 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
   }
 
   use<Schema extends HttpServiceSchema>(
-    interceptor: HttpInterceptor<Schema>,
+    interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
     handler: HttpRequestHandler,
@@ -200,7 +170,7 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
     this.httpHandlerGroups = [];
   }
 
-  clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptor<Schema>) {
+  clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
 
     const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
@@ -215,129 +185,6 @@ class LocalHttpInterceptorWorker implements PublicLocalHttpInterceptorWorker, In
 
   interceptorsWithHandlers() {
     return this.httpHandlerGroups.map((group) => group.interceptor);
-  }
-
-  static createResponseFromDeclaration<
-    Declaration extends {
-      status: number;
-      headers?: HttpHeadersInit<HeadersSchema>;
-      body?: HttpBody;
-    },
-    HeadersSchema extends HttpHeadersSchema,
-  >(responseDeclaration: Declaration) {
-    const response = MSWHttpResponse.json(responseDeclaration.body, {
-      headers: new HttpHeaders(responseDeclaration.headers),
-      status: responseDeclaration.status,
-    });
-
-    return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
-  }
-
-  static async parseRawRequest<MethodSchema extends HttpServiceMethodSchema>(
-    originalRawRequest: HttpRequest,
-  ): Promise<HttpInterceptorRequest<MethodSchema>> {
-    const rawRequest = originalRawRequest.clone();
-    const rawRequestClone = rawRequest.clone();
-
-    type BodySchema = Default<Default<MethodSchema['request']>['body']>;
-    const parsedBody = await this.parseRawBody<BodySchema>(rawRequest);
-
-    type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
-    const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
-
-    const parsedURL = new URL(rawRequest.url);
-    type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
-    const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
-
-    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
-      has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (LocalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
-          return false;
-        }
-        return Reflect.has(target, property);
-      },
-
-      get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
-        if (LocalHttpInterceptorWorker.isHiddenRequestProperty(property)) {
-          return undefined;
-        }
-        if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
-          return parsedBody;
-        }
-        if (property === ('headers' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
-          return headers;
-        }
-        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
-          return searchParams;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
-          return rawRequestClone;
-        }
-        return Reflect.get(target, property, target) as unknown;
-      },
-    });
-
-    return parsedRequest;
-  }
-
-  private static isHiddenRequestProperty(property: string) {
-    return (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
-  }
-
-  static async parseRawResponse<
-    MethodSchema extends HttpServiceMethodSchema,
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-  >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
-    const rawResponse = originalRawResponse.clone();
-    const rawResponseClone = rawResponse.clone();
-
-    type BodySchema = Default<Default<MethodSchema['response']>[StatusCode]['body']>;
-    const parsedBody = await this.parseRawBody<BodySchema>(rawResponse);
-
-    type HeadersSchema = Default<Default<MethodSchema['response']>[StatusCode]['headers']>;
-    const headers = new HttpHeaders<HeadersSchema>(rawResponse.headers);
-
-    const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {
-      has(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (LocalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
-          return false;
-        }
-        return Reflect.has(target, property);
-      },
-
-      get(target, property: keyof HttpInterceptorResponse<MethodSchema, StatusCode>) {
-        if (LocalHttpInterceptorWorker.isHiddenResponseProperty(property)) {
-          return undefined;
-        }
-        if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return headers;
-        }
-        if (property === ('body' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return parsedBody;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return rawResponseClone;
-        }
-        return Reflect.get(target, property, target) as unknown;
-      },
-    });
-
-    return parsedRequest;
-  }
-
-  private static isHiddenResponseProperty(property: string) {
-    return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
-  }
-
-  static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {
-    const bodyAsText = await requestOrResponse.text();
-
-    try {
-      const jsonParsedBody = JSON.parse(bodyAsText) as Body;
-      return jsonParsedBody;
-    } catch {
-      return bodyAsText || null;
-    }
   }
 }
 

@@ -1,75 +1,73 @@
-import { HttpServiceSchema } from '@/http/types/schema';
+import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
 import { joinURLPaths } from '@/utils/fetch';
 
 import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
-import { RemoteHttpInterceptorWorker as PublicRemoteHttpInterceptorWorker } from '../interceptorWorker/types/public';
+import { PublicRemoteHttpInterceptorWorker } from '../interceptorWorker/types/public';
+import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
+import HttpInterceptorClient from './HttpInterceptorClient';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
-import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
+import { PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
   readonly type = 'remote';
 
-  private worker: RemoteHttpInterceptorWorker;
+  private _client: HttpInterceptorClient<Schema>;
   private _pathPrefix: string;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.worker = options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker;
+    this._client = new HttpInterceptorClient<Schema>({
+      worker: options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker,
+      Tracker: RemoteHttpRequestTracker,
+      baseURL: joinURLPaths(options.worker.mockServerURL(), options.pathPrefix),
+    });
     this._pathPrefix = options.pathPrefix;
   }
 
+  client() {
+    return this._client;
+  }
+
   baseURL() {
-    return joinURLPaths(this.worker.mockServerURL(), this.pathPrefix());
+    return this._client.baseURL();
   }
 
   pathPrefix() {
     return this._pathPrefix;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.get(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.post(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.patch(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.put(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.delete(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.head(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'> = (() => {
-    throw new Error('Method not implemented.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }) as any;
+  options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+    return this._client.options(path);
+  }) as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
-  clear() {
-    return Promise.resolve();
+  async clear() {
+    await new Promise<void>((resolve) => {
+      this._client.clear({ onCommit: resolve });
+    });
   }
 }
 

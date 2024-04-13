@@ -6,11 +6,7 @@ import UnknownHttpInterceptorWorkerError from './errors/UnknownHttpInterceptorWo
 import LocalHttpInterceptor from './LocalHttpInterceptor';
 import RemoteHttpInterceptor from './RemoteHttpInterceptor';
 import { HttpInterceptorOptions, LocalHttpInterceptorOptions, RemoteHttpInterceptorOptions } from './types/options';
-import {
-  HttpInterceptor as PublicHttpInterceptor,
-  LocalHttpInterceptor as PublicLocalHttpInterceptor,
-  RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
-} from './types/public';
+import { PublicHttpInterceptor, PublicLocalHttpInterceptor, PublicRemoteHttpInterceptor } from './types/public';
 
 function areLocalHttpInterceptorOptions(options: HttpInterceptorOptions): options is LocalHttpInterceptorOptions {
   return options.worker instanceof LocalHttpInterceptorWorker;

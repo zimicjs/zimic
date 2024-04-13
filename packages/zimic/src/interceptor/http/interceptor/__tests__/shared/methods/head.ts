@@ -5,8 +5,8 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
@@ -46,7 +46,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       const headTracker = interceptor.head('/users').respond({
         status: 200,
       });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -82,7 +82,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       const headTracker = interceptor.head('/users').respond(() => ({
         status: 200,
       }));
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -146,7 +146,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           },
         };
       });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -199,7 +199,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           status: 200,
         };
       });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -259,7 +259,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
             status: 200,
           };
         });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -324,7 +324,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
             status: 200,
           };
         });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequests = headTracker.requests();
       expect(headRequests).toHaveLength(0);
@@ -358,7 +358,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       const genericHeadTracker = interceptor.head('/users/:id').respond({
         status: 200,
       });
-      expect(genericHeadTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(genericHeadTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const genericHeadRequests = genericHeadTracker.requests();
       expect(genericHeadRequests).toHaveLength(0);
@@ -384,7 +384,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       const specificHeadTracker = interceptor.head(`/users/${1}`).respond({
         status: 200,
       });
-      expect(specificHeadTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(specificHeadTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const specificHeadRequests = specificHeadTracker.requests();
       expect(specificHeadRequests).toHaveLength(0);
@@ -424,7 +424,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       await expectToThrowFetchError(fetchPromise);
 
       const headTrackerWithoutResponse = interceptor.head('/users');
-      expect(headTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      expect(headTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
       const headRequestsWithoutResponse = headTrackerWithoutResponse.requests();
       expect(headRequestsWithoutResponse).toHaveLength(0);

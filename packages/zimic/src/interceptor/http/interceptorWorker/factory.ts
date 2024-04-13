@@ -7,9 +7,9 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from './types/options';
 import {
-  LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker,
-  RemoteHttpInterceptorWorker as PublicRemoteHttpInterceptorWorker,
-  HttpInterceptorWorker as PublicHttpInterceptorWorker,
+  PublicLocalHttpInterceptorWorker,
+  PublicRemoteHttpInterceptorWorker,
+  PublicHttpInterceptorWorker,
 } from './types/public';
 
 function areLocalHttpInterceptorOptions(

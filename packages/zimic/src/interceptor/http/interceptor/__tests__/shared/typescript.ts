@@ -5,7 +5,7 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import { HttpRequestTrackerPath } from '@/interceptor/http/requestTracker/types/utils';
 import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';

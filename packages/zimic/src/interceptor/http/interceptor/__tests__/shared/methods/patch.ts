@@ -5,8 +5,8 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
@@ -66,7 +66,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
         status: 200,
         body: users[0],
       });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -113,7 +113,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
           body: updatedUser,
         };
       });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -183,7 +183,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
           body: users[0],
         };
       });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -237,7 +237,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
           body: users[0],
         };
       });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -300,7 +300,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
             body: users[0],
           };
         });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -366,7 +366,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
             body: users[0],
           };
         });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -419,7 +419,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
             body: users[0],
           };
         });
-      expect(updateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequests = updateTracker.requests();
       expect(updateRequests).toHaveLength(0);
@@ -465,7 +465,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
         status: 200,
         body: users[0],
       });
-      expect(genericUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(genericUpdateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const genericUpdateRequests = genericUpdateTracker.requests();
       expect(genericUpdateRequests).toHaveLength(0);
@@ -495,7 +495,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
         status: 200,
         body: users[0],
       });
-      expect(specificUpdateTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(specificUpdateTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const specificUpdateRequests = specificUpdateTracker.requests();
       expect(specificUpdateRequests).toHaveLength(0);
@@ -544,7 +544,7 @@ export async function declarePatchHttpInterceptorTests({ platform }: SharedHttpI
       await expectToThrowFetchError(updatePromise);
 
       const updateTrackerWithoutResponse = interceptor.patch(`/users/${users[0].id}`);
-      expect(updateTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      expect(updateTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
       const updateRequestsWithoutResponse = updateTrackerWithoutResponse.requests();
       expect(updateRequestsWithoutResponse).toHaveLength(0);

@@ -65,7 +65,7 @@ export type HttpRequestTrackerRestriction<
   | HttpRequestTrackerStaticRestriction<Schema, Path, Method>
   | HttpRequestTrackerComputedRestriction<Schema, Method, Path>;
 
-export interface BaseHttpRequestTracker<
+export interface PublicBaseHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -103,7 +103,7 @@ export interface BaseHttpRequestTracker<
 
   with: (
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ) => BaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
    * Declares a response to return for matched intercepted requests.
@@ -120,7 +120,7 @@ export interface BaseHttpRequestTracker<
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ) => BaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
    * Clears any response declared with
@@ -137,7 +137,7 @@ export interface BaseHttpRequestTracker<
    * @returns The same tracker, now without a declared responses.
    * @see {@link https://github.com/diego-aquino/zimic#trackerbypass}
    */
-  bypass: () => BaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  bypass: () => PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
    * Clears any response declared with
@@ -155,7 +155,7 @@ export interface BaseHttpRequestTracker<
    * @returns The same tracker, now cleared of any declared responses, restrictions, and intercepted requests.
    * @see {@link https://github.com/diego-aquino/zimic#trackerclear}
    */
-  clear: () => BaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  clear: () => PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   /**
    * @returns The intercepted requests that matched this tracker, along with the responses returned to each of them.
@@ -177,64 +177,67 @@ export interface BaseHttpRequestTracker<
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesttracker}
  */
-export interface LocalHttpRequestTracker<
+export interface PublicLocalHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> extends BaseHttpRequestTracker<Schema, Method, Path, StatusCode> {
+> extends PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode> {
   readonly type: 'local';
 
   with: (
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ) => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ) => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  bypass: () => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  bypass: () => PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  clear: () => LocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  clear: () => PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   requests: () => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[];
 }
 
-export interface SyncedRemoteHttpRequestTracker<
+export interface PublicSyncedRemoteHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> extends BaseHttpRequestTracker<Schema, Method, Path, StatusCode> {
+> extends PublicBaseHttpRequestTracker<Schema, Method, Path, StatusCode> {
   with: (
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ) => PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ) => PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  ) => PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  bypass: () => PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  bypass: () => PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
-  clear: () => PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  clear: () => PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
 
   requests: () => Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]>;
 }
 
-export interface PendingRemoteHttpRequestTracker<
+export interface PublicPendingRemoteHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> extends SyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
-  then: <FulfilledResult = SyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>, RejectedResult = never>(
+> extends PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  then: <
+    FulfilledResult = PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+    RejectedResult = never,
+  >(
     onFulfilled?:
       | ((
-          tracker: SyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+          tracker: PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
@@ -242,27 +245,27 @@ export interface PendingRemoteHttpRequestTracker<
 
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
-  ) => Promise<SyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult>;
+  ) => Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult>;
 
   finally: (
     onFinally?: (() => void) | null,
-  ) => Promise<PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>>;
+  ) => Promise<PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>>;
 }
 
-export interface RemoteHttpRequestTracker<
+export interface PublicRemoteHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> extends PendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
+> extends PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
   readonly type: 'remote';
 }
 
-export type HttpRequestTracker<
+export type PublicHttpRequestTracker<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > =
-  | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
-  | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;
+  | PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+  | PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>;

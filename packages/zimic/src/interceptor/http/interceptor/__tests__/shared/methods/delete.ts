@@ -5,8 +5,8 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
@@ -66,7 +66,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         status: 200,
         body: users[0],
       });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -181,7 +181,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           body: users[0],
         };
       });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -235,7 +235,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
           body: users[0],
         };
       });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -298,7 +298,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
             body: users[0],
           };
         });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -364,7 +364,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
             body: users[0],
           };
         });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -425,7 +425,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
             body: users[0],
           };
         });
-      expect(deletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequests = deletionTracker.requests();
       expect(deletionRequests).toHaveLength(0);
@@ -484,7 +484,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         status: 200,
         body: users[0],
       });
-      expect(genericDeletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(genericDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const genericDeletionRequests = genericDeletionTracker.requests();
       expect(genericDeletionRequests).toHaveLength(0);
@@ -514,7 +514,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
         status: 200,
         body: users[0],
       });
-      expect(specificDeletionTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(specificDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const specificDeletionRequests = specificDeletionTracker.requests();
       expect(specificDeletionRequests).toHaveLength(0);
@@ -563,7 +563,7 @@ export async function declareDeleteHttpInterceptorTests({ platform }: SharedHttp
       await expectToThrowFetchError(deletionPromise);
 
       const deletionTrackerWithoutResponse = interceptor.delete(`/users/:id`);
-      expect(deletionTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      expect(deletionTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
       const deletionRequestsWithoutResponse = deletionTrackerWithoutResponse.requests();
       expect(deletionRequestsWithoutResponse).toHaveLength(0);

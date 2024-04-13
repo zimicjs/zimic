@@ -5,8 +5,8 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
 import { usingLocalHttpInterceptor } from '@tests/utils/interceptors';
@@ -50,7 +50,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const optionsTracker = interceptor.options('/filters').respond({
         status: 200,
       });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -91,7 +91,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           status: 200,
         };
       });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -161,7 +161,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           },
         };
       });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -214,7 +214,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
           status: 200,
         };
       });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -274,7 +274,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
             status: 200,
           };
         });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -339,7 +339,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
             status: 200,
           };
         });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -395,7 +395,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
             status: 200,
           };
         });
-      expect(optionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequests = optionsTracker.requests();
       expect(optionsRequests).toHaveLength(0);
@@ -453,7 +453,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const genericOptionsTracker = interceptor.options('/filters/:id').respond({
         status: 200,
       });
-      expect(genericOptionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(genericOptionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const genericOptionsRequests = genericOptionsTracker.requests();
       expect(genericOptionsRequests).toHaveLength(0);
@@ -479,7 +479,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       const specificOptionsTracker = interceptor.options(`/filters/${1}`).respond({
         status: 200,
       });
-      expect(specificOptionsTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(specificOptionsTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const specificOptionsRequests = specificOptionsTracker.requests();
       expect(specificOptionsRequests).toHaveLength(0);
@@ -519,7 +519,7 @@ export function declareOptionsHttpInterceptorTests({ platform }: SharedHttpInter
       await expectToThrowFetchError(fetchPromise);
 
       const optionsTrackerWithoutResponse = interceptor.options('/filters');
-      expect(optionsTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      expect(optionsTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
       const optionsRequestsWithoutResponse = optionsTrackerWithoutResponse.requests();
       expect(optionsRequestsWithoutResponse).toHaveLength(0);

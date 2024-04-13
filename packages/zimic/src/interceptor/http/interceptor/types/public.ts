@@ -6,7 +6,7 @@ import {
   AsyncHttpInterceptorMethodHandler,
 } from './handlers';
 
-export interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
+export interface PublicBaseHttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/diego-aquino/zimic#interceptorbaseurl}
@@ -105,7 +105,8 @@ export interface BaseHttpInterceptor<Schema extends HttpServiceSchema> {
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
  */
 
-export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
+export interface PublicLocalHttpInterceptor<Schema extends HttpServiceSchema>
+  extends PublicBaseHttpInterceptor<Schema> {
   readonly type: 'local';
 
   get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -119,7 +120,8 @@ export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends 
   clear: () => void;
 }
 
-export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends BaseHttpInterceptor<Schema> {
+export interface PublicRemoteHttpInterceptor<Schema extends HttpServiceSchema>
+  extends PublicBaseHttpInterceptor<Schema> {
   readonly type: 'remote';
 
   pathPrefix: () => string;
@@ -135,6 +137,6 @@ export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends
   clear: () => Promise<void>;
 }
 
-export type HttpInterceptor<Schema extends HttpServiceSchema> =
-  | LocalHttpInterceptor<Schema>
-  | RemoteHttpInterceptor<Schema>;
+export type PublicHttpInterceptor<Schema extends HttpServiceSchema> =
+  | PublicLocalHttpInterceptor<Schema>
+  | PublicRemoteHttpInterceptor<Schema>;

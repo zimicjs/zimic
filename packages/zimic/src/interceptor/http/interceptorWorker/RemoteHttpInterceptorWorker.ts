@@ -1,22 +1,19 @@
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 
-import { HttpInterceptor } from '../interceptor/types/public';
+import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
+import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
-import {
-  InternalHttpInterceptorWorker,
-  RemoteHttpInterceptorWorker as PublicRemoteHttpInterceptorWorker,
-} from './types/public';
+import { PublicRemoteHttpInterceptorWorker } from './types/public';
 import { HttpRequestHandler } from './types/requests';
 
-class RemoteHttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker, InternalHttpInterceptorWorker {
+class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
   private _mockServerURL: string;
-  private _platform: HttpInterceptorWorkerPlatform | null = null;
-  private _isRunning = false;
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
+    super();
     this._mockServerURL = options.mockServerURL;
   }
 
@@ -24,17 +21,9 @@ class RemoteHttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker, 
     return this._mockServerURL;
   }
 
-  platform() {
-    return this._platform;
-  }
-
-  isRunning() {
-    return this._isRunning;
-  }
-
   async start() {
-    this._platform = await this.readPlatform();
-    this._isRunning = true;
+    this.setPlatform(await this.readPlatform());
+    this.setIsRunning(true);
     return Promise.resolve();
   }
 
@@ -53,12 +42,12 @@ class RemoteHttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker, 
   }
 
   async stop() {
-    this._isRunning = false;
+    this.setIsRunning(false);
     return Promise.resolve();
   }
 
   use<Schema extends HttpServiceSchema>(
-    _interceptor: HttpInterceptor<Schema>,
+    _interceptor: HttpInterceptorClient<Schema>,
     _method: HttpMethod,
     _url: string,
     _handler: HttpRequestHandler,
@@ -70,12 +59,12 @@ class RemoteHttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker, 
     return Promise.resolve();
   }
 
-  clearInterceptorHandlers<Schema extends HttpServiceSchema>(_interceptor: HttpInterceptor<Schema>) {
+  clearInterceptorHandlers<Schema extends HttpServiceSchema>(_interceptor: HttpInterceptorClient<Schema>) {
     return Promise.resolve();
   }
 
   interceptorsWithHandlers() {
-    return Promise.resolve([]);
+    return [];
   }
 }
 

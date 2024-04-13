@@ -1,11 +1,6 @@
-import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { PossiblePromise } from '@/types/utils';
-
-import { HttpInterceptor } from '../../interceptor/types/public';
 import { HttpInterceptorWorkerPlatform } from './options';
-import { HttpRequestHandler } from './requests';
 
-export interface BaseHttpInterceptorWorker {
+export interface PublicBaseHttpInterceptorWorker {
   platform: () => HttpInterceptorWorkerPlatform | null;
 
   /**
@@ -47,36 +42,14 @@ export interface BaseHttpInterceptorWorker {
  *
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptorworker}
  */
-export interface LocalHttpInterceptorWorker extends BaseHttpInterceptorWorker {
+export interface PublicLocalHttpInterceptorWorker extends PublicBaseHttpInterceptorWorker {
   readonly type: 'local';
 }
 
-export interface RemoteHttpInterceptorWorker extends BaseHttpInterceptorWorker {
+export interface PublicRemoteHttpInterceptorWorker extends PublicBaseHttpInterceptorWorker {
   readonly type: 'remote';
 
   mockServerURL: () => string;
 }
 
-export type HttpInterceptorWorker = LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
-
-export interface InternalHttpInterceptorWorker extends BaseHttpInterceptorWorker {
-  isRunning: () => boolean;
-
-  start: () => Promise<void>;
-  stop: () => Promise<void>;
-
-  use: <Schema extends HttpServiceSchema>(
-    interceptor: HttpInterceptor<Schema>,
-    method: HttpMethod,
-    url: string,
-    handler: HttpRequestHandler,
-  ) => PossiblePromise<void>;
-
-  clearHandlers: () => PossiblePromise<void>;
-  clearInterceptorHandlers: <Schema extends HttpServiceSchema>(
-    _interceptor: HttpInterceptor<Schema>,
-  ) => PossiblePromise<void>;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interceptorsWithHandlers: () => PossiblePromise<HttpInterceptor<any>[]>;
-}
+export type PublicHttpInterceptorWorker = PublicLocalHttpInterceptorWorker | PublicRemoteHttpInterceptorWorker;

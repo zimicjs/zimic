@@ -5,8 +5,8 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { LocalHttpInterceptorWorker as PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@tests/utils/crypto';
 import { expectToThrowFetchError } from '@tests/utils/fetch';
@@ -66,7 +66,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
         status: 200,
         body: users,
       });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -111,7 +111,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
         status: 200,
         body: [user],
       }));
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -180,7 +180,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           body: users,
         };
       });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -237,7 +237,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           body: users,
         };
       });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -301,7 +301,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
             body: users,
           };
         });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -377,7 +377,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
             body: users,
           };
         });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequests = listTracker.requests();
       expect(listRequests).toHaveLength(0);
@@ -420,7 +420,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
         status: 200,
         body: users[0],
       });
-      expect(genericGetTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(genericGetTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const genericGetRequests = genericGetTracker.requests();
       expect(genericGetRequests).toHaveLength(0);
@@ -450,7 +450,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
         status: 200,
         body: users[0],
       });
-      expect(specificGetTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(specificGetTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
       const specificGetRequests = specificGetTracker.requests();
       expect(specificGetRequests).toHaveLength(0);
@@ -493,7 +493,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       await expectToThrowFetchError(fetchPromise);
 
       const listTrackerWithoutResponse = interceptor.get('/users');
-      expect(listTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      expect(listTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
 
       const listRequestsWithoutResponse = listTrackerWithoutResponse.requests();
       expect(listRequestsWithoutResponse).toHaveLength(0);
