@@ -1,10 +1,8 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
 import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONValue, JSONSerialized } from 'zimic0';
 import {
-  HttpInterceptor,
   HttpInterceptorWorkerOptions,
   LocalHttpInterceptorWorkerOptions,
-  RemoteHttpInterceptor,
   RemoteHttpInterceptorWorkerOptions,
   createHttpInterceptor,
   createHttpInterceptorWorker,
@@ -217,27 +215,18 @@ function prepareRemoteWorkerAndInterceptors(workerOptions: RemoteHttpInterceptor
 }
 
 function prepareWorkerAndInterceptors(workerOptions: HttpInterceptorWorkerOptions) {
-  const { worker, authInterceptor, notificationInterceptor } =
-    workerOptions.type === 'local'
-      ? prepareLocalWorkerAndInterceptors(workerOptions)
-      : prepareRemoteWorkerAndInterceptors(workerOptions);
-
-  const interceptors = {
-    auth: authInterceptor satisfies HttpInterceptor<AuthServiceSchema> as RemoteHttpInterceptor<AuthServiceSchema>,
-    notifications:
-      notificationInterceptor satisfies HttpInterceptor<NotificationServiceSchema> as RemoteHttpInterceptor<NotificationServiceSchema>,
-  };
-
-  return { worker, interceptors };
+  return workerOptions.type === 'local'
+    ? prepareLocalWorkerAndInterceptors(workerOptions)
+    : prepareRemoteWorkerAndInterceptors(workerOptions);
 }
 
 function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   const { platform, fetch, workerOptions } = options;
 
-  const { worker, interceptors } = prepareWorkerAndInterceptors(workerOptions);
+  const { worker, authInterceptor, notificationInterceptor } = prepareWorkerAndInterceptors(workerOptions);
 
-  const authBaseURL = interceptors.auth.baseURL();
-  const notificationBaseURL = interceptors.notifications.baseURL();
+  const authBaseURL = authInterceptor.baseURL();
+  const notificationBaseURL = notificationInterceptor.baseURL();
 
   beforeAll(async () => {
     await worker.start();
@@ -245,8 +234,8 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   });
 
   beforeEach(async () => {
-    await interceptors.auth.clear();
-    await interceptors.notifications.clear();
+    await authInterceptor.clear();
+    await notificationInterceptor.clear();
   });
 
   afterAll(async () => {
@@ -294,7 +283,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       }
 
       it('should support creating users', async () => {
-        const creationTracker = await interceptors.auth
+        const creationTracker = await authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -361,7 +350,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationTracker = interceptors.auth
+        const creationTracker = authInterceptor
           .post('/users')
           .with({
             body: invalidPayload,
@@ -404,7 +393,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationTracker = interceptors.auth
+        const creationTracker = authInterceptor
           .post('/users')
           .with({
             body: conflictingPayload,
@@ -464,7 +453,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       ];
 
       beforeEach(async () => {
-        await interceptors.auth.get('/users').respond({
+        await authInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
@@ -479,7 +468,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       }
 
       it('should list users', async () => {
-        const listTracker = await interceptors.auth.get('/users').respond({
+        const listTracker = await authInterceptor.get('/users').respond({
           status: 200,
           body: users.map(serializeUser),
         });
@@ -517,7 +506,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = interceptors.auth
+        const listTracker = authInterceptor
           .get('/users')
           .with({
             searchParams: { name: user.name },
@@ -563,7 +552,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = interceptors.auth
+        const listTracker = authInterceptor
           .get('/users')
           .with({
             searchParams: { orderBy: ['email.desc'] },
@@ -614,7 +603,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       }
 
       it('should support getting users by id', async () => {
-        const getTracker = await interceptors.auth.get(`/users/${user.id}`).respond({
+        const getTracker = await authInterceptor.get(`/users/${user.id}`).respond({
           status: 200,
           body: serializeUser(user),
         });
@@ -654,7 +643,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = await interceptors.auth.get('/users/:id').respond({
+        const getTracker = await authInterceptor.get('/users/:id').respond({
           status: 404,
           body: notFoundError,
         });
@@ -694,7 +683,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       }
 
       it('should support deleting users by id', async () => {
-        const deleteTracker = await interceptors.auth.delete(`/users/${user.id}`).respond({
+        const deleteTracker = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 204,
         });
 
@@ -730,7 +719,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = await interceptors.auth.delete(`/users/${user.id}`).respond({
+        const getTracker = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 404,
           body: notFoundError,
         });
@@ -775,7 +764,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
 
     describe('Notification list', () => {
       beforeEach(async () => {
-        await interceptors.notifications.get('/notifications/:userId').respond({
+        await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [],
         });
@@ -789,7 +778,7 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
       }
 
       it('should list notifications', async () => {
-        const listTracker = await interceptors.notifications.get('/notifications/:userId').respond({
+        const listTracker = await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [notification],
         });
