@@ -70,11 +70,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
 
     if (this.isInternalBrowserWorker(internalWorker)) {
-      await this.startInBrowser(internalWorker, sharedOptions);
       this.setPlatform('browser');
+      await this.startInBrowser(internalWorker, sharedOptions);
     } else {
-      this.startInNode(internalWorker, sharedOptions);
       this.setPlatform('node');
+      this.startInNode(internalWorker, sharedOptions);
     }
 
     this.setIsRunning(true);

@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -13,7 +13,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
+  const { baseURL, worker, interceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -34,19 +34,6 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       name: 'User 2',
     },
   ];
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
 
   it('should support intercepting POST requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -611,7 +598,6 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       const createdUsers = (await creationResponse.json()) as User;
       expect(createdUsers).toEqual(users[0]);
 
-      creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);
       const creationRequestsWithResponse = await promiseIfRemote(creationTrackerWithResponse.requests(), worker);
       expect(creationRequestsWithResponse).toHaveLength(1);

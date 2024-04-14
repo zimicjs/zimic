@@ -1,4 +1,4 @@
-import { describe } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
@@ -53,6 +53,15 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
   describe.each(workerOptionsArray)('Base URLs (type $type)', (workerOptions) => {
     const worker = createInternalHttpInterceptorWorker(workerOptions);
 
+    beforeAll(async () => {
+      await worker.start();
+      expect(worker.platform()).toBe(options.platform);
+    });
+
+    afterAll(async () => {
+      await worker.stop();
+    });
+
     declareBaseURLHttpInterceptorTests({
       ...options,
       worker,
@@ -70,6 +79,19 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, mockServerURL }),
       interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
     };
+
+    beforeAll(async () => {
+      await worker.start();
+      expect(worker.platform()).toBe(options.platform);
+    });
+
+    afterEach(() => {
+      expect(worker.interceptorsWithHandlers()).toHaveLength(0);
+    });
+
+    afterAll(async () => {
+      await worker.stop();
+    });
 
     const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
       GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),

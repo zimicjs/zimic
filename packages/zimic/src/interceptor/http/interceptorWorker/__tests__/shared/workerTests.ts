@@ -415,7 +415,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         let interceptorsWithHandlers = worker.interceptorsWithHandlers();
 
         expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
 
         let response = await fetch(`${baseURL}/path`, { method });
         expect(response.status).toBe(200);
@@ -437,8 +437,8 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers();
         expect(interceptorsWithHandlers).toHaveLength(2);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
-        expect(interceptorsWithHandlers[1]).toBe(otherInterceptor);
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
+        expect(interceptorsWithHandlers[1]).toBe(otherInterceptor.client());
 
         response = await fetch(`${baseURL}/path`, { method });
         expect(response.status).toBe(204);
@@ -456,7 +456,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers();
         expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor);
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
 
         response = await fetch(`${baseURL}/path`, { method });
         expect(response.status).toBe(200);
@@ -470,7 +470,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         expect(okHandlerContext.params).toEqual({});
         expect(okHandlerContext.cookies).toEqual({});
 
-        await promiseIfRemote(worker.clearInterceptorHandlers(otherInterceptor.client()), worker);
+        await promiseIfRemote(worker.clearInterceptorHandlers(interceptor.client()), worker);
 
         interceptorsWithHandlers = worker.interceptorsWithHandlers();
         expect(interceptorsWithHandlers).toHaveLength(0);

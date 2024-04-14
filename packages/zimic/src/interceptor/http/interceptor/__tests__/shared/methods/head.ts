@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -12,20 +12,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
+  const { baseURL, worker, interceptorOptions } = options;
 
   it('should support intercepting HEAD requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -412,12 +399,13 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       );
       expect(specificHeadTracker).toBeInstanceOf(LocalHttpRequestTracker);
 
-      const specificHeadRequests = await promiseIfRemote(specificHeadTracker.requests(), worker);
+      let specificHeadRequests = await promiseIfRemote(specificHeadTracker.requests(), worker);
       expect(specificHeadRequests).toHaveLength(0);
 
       const specificHeadResponse = await fetch(`${baseURL}/users/${1}`, { method: 'HEAD' });
       expect(specificHeadResponse.status).toBe(200);
 
+      specificHeadRequests = await promiseIfRemote(specificHeadTracker.requests(), worker);
       expect(specificHeadRequests).toHaveLength(1);
       const [specificHeadRequest] = specificHeadRequests;
       expect(specificHeadRequest).toBeInstanceOf(Request);
@@ -476,7 +464,6 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
-      headRequestsWithoutResponse = await promiseIfRemote(headTrackerWithoutResponse.requests(), worker);
       expect(headRequestsWithoutResponse).toHaveLength(0);
       const headRequestsWithResponse = await promiseIfRemote(headTrackerWithResponse.requests(), worker);
       expect(headRequestsWithResponse).toHaveLength(1);

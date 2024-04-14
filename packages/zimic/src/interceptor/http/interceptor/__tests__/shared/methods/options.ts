@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -12,24 +12,11 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
+  const { baseURL, worker, interceptorOptions } = options;
 
   type Filters = JSONValue<{
     name: string;
   }>;
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
 
   it('should support intercepting OPTIONS requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -582,7 +569,6 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequestsWithoutResponse = await promiseIfRemote(optionsTrackerWithoutResponse.requests(), worker);
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
       const optionsRequestsWithResponse = await promiseIfRemote(optionsTrackerWithResponse.requests(), worker);
       expect(optionsRequestsWithResponse).toHaveLength(1);

@@ -15,7 +15,7 @@ import { PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorke
 import { joinURLPaths } from '@/utils/fetch';
 
 export function getDefaultPathPrefix(workerOptions: HttpInterceptorWorkerOptions) {
-  return workerOptions.type === 'local' ? '' : ' /prefix';
+  return workerOptions.type === 'local' ? '' : '/prefix';
 }
 
 export function getDefaultBaseURL(

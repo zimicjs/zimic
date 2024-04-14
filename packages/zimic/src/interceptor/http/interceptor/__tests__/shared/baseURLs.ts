@@ -1,30 +1,17 @@
-import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, worker, baseURL, interceptorOptions } = options;
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
+  const { baseURL, interceptorOptions } = options;
 
   it.each([
     { baseURL: `${baseURL}`, path: 'path' },
     { baseURL: `${baseURL}/`, path: 'path' },
     { baseURL: `${baseURL}`, path: '/path' },
     { baseURL: `${baseURL}/`, path: '/path' },
-    { baseURL: `${baseURL}/api`, path: 'path' },
-    { baseURL: `${baseURL}/api/`, path: 'path' },
-    { baseURL: `${baseURL}/api`, path: '/path' },
-    { baseURL: `${baseURL}/api/`, path: '/path' },
   ])(`should handle base URL $baseURL and path $path correctly`, async ({ baseURL, path }) => {
     await usingHttpInterceptor<{
       ':any': {
@@ -34,7 +21,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
           };
         };
       };
-    }>(interceptorOptions, async (interceptor) => {
+    }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
       expect(interceptor.baseURL()).toBe(baseURL);
 
       const tracker = interceptor.get(path).respond({

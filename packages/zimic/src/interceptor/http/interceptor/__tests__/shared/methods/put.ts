@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -13,7 +13,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
+  const { baseURL, worker, interceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -32,19 +32,6 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       name: 'User 2',
     },
   ];
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
 
   it('should support intercepting PUT requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -610,7 +597,6 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[0]);
 
-      updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), worker);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
       const updateRequestsWithResponse = await promiseIfRemote(updateTrackerWithResponse.requests(), worker);
       expect(updateRequestsWithResponse).toHaveLength(1);

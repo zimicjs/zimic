@@ -14,5 +14,12 @@ export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestI
 }
 
 export function joinURLPaths(...paths: string[]) {
-  return paths.map((path) => path.replace(/^\/|\/$/g, '')).join('/');
+  return paths
+    .map((path, index) => {
+      const isLast = index === paths.length - 1;
+      const trimmedPath = path.trim();
+      return isLast ? trimmedPath.replace(/^\/+/, '') : trimmedPath.replace(/^\/+|\/+$/, '');
+    })
+    .filter((path) => path.length > 0)
+    .join('/');
 }

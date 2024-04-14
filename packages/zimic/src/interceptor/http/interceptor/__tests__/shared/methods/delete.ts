@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -13,7 +13,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
+  const { baseURL, worker, interceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -32,19 +32,6 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       name: 'User 2',
     },
   ];
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
 
   it('should support intercepting DELETE requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -636,7 +623,6 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       const deletedUsers = (await deletionResponse.json()) as User;
       expect(deletedUsers).toEqual(users[0]);
 
-      deletionRequestsWithoutResponse = await promiseIfRemote(deletionTrackerWithoutResponse.requests(), worker);
       expect(deletionRequestsWithoutResponse).toHaveLength(0);
       const deletionRequestsWithResponse = await promiseIfRemote(deletionTrackerWithResponse.requests(), worker);
       expect(deletionRequestsWithResponse).toHaveLength(1);

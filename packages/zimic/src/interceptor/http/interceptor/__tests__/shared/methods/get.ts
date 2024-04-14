@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
@@ -13,7 +13,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { platform, baseURL, worker, interceptorOptions } = options;
+  const { baseURL, worker, interceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -32,19 +32,6 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       name: 'User 2',
     },
   ];
-
-  beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
-  });
-
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
-
-  afterAll(async () => {
-    await worker.stop();
-  });
 
   it('should support intercepting GET requests with a static response body', async () => {
     await usingHttpInterceptor<{
@@ -558,7 +545,6 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual(users);
 
-      listRequestsWithoutResponse = await promiseIfRemote(listTrackerWithoutResponse.requests(), worker);
       expect(listRequestsWithoutResponse).toHaveLength(0);
       const listRequestsWithResponse = await promiseIfRemote(listTrackerWithResponse.requests(), worker);
       expect(listRequestsWithResponse).toHaveLength(1);

@@ -332,9 +332,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
 
       expect(interceptedRequests).toHaveLength(1);
       interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
-      expect(interceptedRequests).toHaveLength(1);
-
-      expect(await promiseIfRemote(tracker.requests(), worker)).toHaveLength(0);
+      expect(interceptedRequests).toHaveLength(0);
     });
 
     it('should provide access to the raw intercepted requests and responses', async () => {
