@@ -75,8 +75,11 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:adapt-relative-paths README.md"
   },
   "dependencies": {
+    "@types/ws": "^8.5.10",
     "chalk": "^5.3.0",
+    "isomorphic-ws": "^5.0.0",
     "msw": "^2.2.13",
+    "ws": "^8.16.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
