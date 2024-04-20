@@ -119,7 +119,9 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
       return response;
     });
 
-    registerCommitCallback(listenerResult, options.onCommit);
+    if (options.onCommit) {
+      registerCommitCallback(listenerResult, options.onCommit);
+    }
   }
 
   private async handleInterceptedRequest<
@@ -168,7 +170,10 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
     }
 
     const clearResult = this.worker.clearInterceptorHandlers(this);
-    registerCommitCallback(clearResult, options.onCommit);
+
+    if (options.onCommit) {
+      registerCommitCallback(clearResult, options.onCommit);
+    }
   }
 
   private bypassMethodTrackers(method: HttpMethod, options: AsyncCommitOptions = {}) {
@@ -180,7 +185,9 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
       }
     }
 
-    registerMultipleCommitCallback(bypassResults, options.onCommit);
+    if (options.onCommit) {
+      registerMultipleCommitCallback(bypassResults, options.onCommit);
+    }
   }
 }
 

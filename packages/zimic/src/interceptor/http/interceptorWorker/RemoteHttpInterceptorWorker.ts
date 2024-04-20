@@ -1,4 +1,7 @@
+import { ServerWebSocketSchema } from '@/cli/server/types/schema';
+import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
@@ -6,34 +9,72 @@ import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpIntercepto
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { PublicRemoteHttpInterceptorWorker } from './types/public';
-import { HttpRequestHandler } from './types/requests';
+import { HttpRequestHandler, HttpRequestHandlerContext } from './types/requests';
+
+type HttpHandler = (context: HttpRequestHandlerContext) => Promise<HttpResponse | null>;
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
-  private _httpServerURL: URL;
-  private websocketClient: WebSocketClient<{}>;
+  private _httpURL: URL;
+  private websocketClient: WebSocketClient<ServerWebSocketSchema>;
+
+  private httpHandlers: {
+    [Method in HttpMethod]: Map<
+      string,
+      {
+        interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+        httpHandler: HttpHandler;
+      }
+    >;
+  } = {
+    GET: new Map(),
+    POST: new Map(),
+    PATCH: new Map(),
+    PUT: new Map(),
+    DELETE: new Map(),
+    HEAD: new Map(),
+    OPTIONS: new Map(),
+  };
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    this._httpServerURL = new URL(options.mockServerURL);
+    this._httpURL = new URL(options.mockServerURL);
 
-    const webSocketServerURL = new URL(this._httpServerURL);
-    webSocketServerURL.protocol = 'ws';
+    const webSocketURL = new URL(this._httpURL);
+    webSocketURL.protocol = 'ws';
 
     this.websocketClient = new WebSocketClient({
-      url: webSocketServerURL.toString(),
+      url: webSocketURL.toString(),
     });
   }
 
   mockServerURL() {
-    return this._httpServerURL.toString();
+    return this._httpURL.toString();
   }
 
   async start() {
     this.setPlatform(await this.readPlatform());
+
     await this.websocketClient.start();
+
+    this.websocketClient.onEvent('interceptors/responses/create', async (message) => {
+      const { request: serializedRequest } = message.data;
+      const request = deserializeRequest(serializedRequest);
+
+      const httpHandlerGroup = this.httpHandlers[request.method as HttpMethod].get(request.url);
+
+      if (!httpHandlerGroup) {
+        return { response: null };
+      }
+
+      const { httpHandler } = httpHandlerGroup;
+      const response = await httpHandler({ request });
+      const serializedResponse = response ? await serializeResponse(response) : null;
+      return { response: serializedResponse };
+    });
+
     this.setIsRunning(true);
   }
 
@@ -56,25 +97,63 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     this.setIsRunning(false);
   }
 
-  use<Schema extends HttpServiceSchema>(
-    _interceptor: HttpInterceptorClient<Schema>,
-    _method: HttpMethod,
-    _url: string,
-    _handler: HttpRequestHandler,
+  async use<Schema extends HttpServiceSchema>(
+    interceptor: HttpInterceptorClient<Schema>,
+    method: HttpMethod,
+    url: string,
+    handler: HttpRequestHandler,
   ) {
-    return Promise.resolve();
+    const normalizedURL = super.normalizeUseURL(url);
+
+    this.httpHandlers[method].set(normalizedURL, {
+      interceptor,
+      httpHandler: async (context) => {
+        const result = await handler(context);
+        return result.bypass ? null : result.response;
+      },
+    });
+
+    await this.websocketClient.send('interceptors/workers/commit/use', {
+      url: normalizedURL,
+      method,
+    });
   }
 
-  clearHandlers() {
-    return Promise.resolve();
+  async clearHandlers() {
+    for (const methodHandlers of Object.values(this.httpHandlers)) {
+      methodHandlers.clear();
+    }
+    await this.websocketClient.send('interceptors/workers/uncommit/use', undefined);
   }
 
-  clearInterceptorHandlers<Schema extends HttpServiceSchema>(_interceptor: HttpInterceptorClient<Schema>) {
-    return Promise.resolve();
+  async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
+    const groupsToUncommit: { url: string; method: HttpMethod }[] = [];
+
+    for (const [method, methodHandlers] of Object.entries(this.httpHandlers)) {
+      for (const [url, httpHandlerGroup] of methodHandlers) {
+        if (httpHandlerGroup.interceptor === interceptor) {
+          groupsToUncommit.push({ url, method });
+          methodHandlers.delete(url);
+        }
+      }
+    }
+
+    const uncommitPromises = groupsToUncommit.map(async ({ url, method }) => {
+      await this.websocketClient.send('interceptors/workers/uncommit/use', { url, method });
+    });
+    await Promise.all(uncommitPromises);
   }
 
   interceptorsWithHandlers() {
-    return [];
+    const interceptors = new Set<HttpInterceptorClient<any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    for (const methodHandlers of Object.values(this.httpHandlers)) {
+      for (const { interceptor } of methodHandlers.values()) {
+        interceptors.add(interceptor);
+      }
+    }
+
+    return Array.from(interceptors);
   }
 }
 

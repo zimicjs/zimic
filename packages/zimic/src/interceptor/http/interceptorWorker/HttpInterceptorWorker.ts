@@ -184,6 +184,12 @@ abstract class HttpInterceptorWorker {
       return bodyAsText || null;
     }
   }
+
+  protected normalizeUseURL(urlAsString: string) {
+    const url = new URL(urlAsString);
+    const normalizedURL = `${url.origin}${url.pathname}`;
+    return normalizedURL;
+  }
 }
 
 export default HttpInterceptorWorker;

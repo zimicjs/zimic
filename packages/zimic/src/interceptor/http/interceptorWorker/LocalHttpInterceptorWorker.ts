@@ -148,16 +148,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const httpHandler = http[lowercaseMethod](url, async (context) => {
+    const normalizedURL = super.normalizeUseURL(url);
+
+    const httpHandler = http[lowercaseMethod](normalizedURL, async (context) => {
       const result = await handler({
         ...context,
         request: context.request as MSWStrictRequest<HttpBody>,
       });
-
-      if (result.bypass) {
-        return passthrough();
-      }
-      return result.response;
+      return result.bypass ? passthrough() : result.response;
     });
 
     internalWorker.use(httpHandler);

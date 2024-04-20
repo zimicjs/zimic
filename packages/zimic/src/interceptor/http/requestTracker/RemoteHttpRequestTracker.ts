@@ -84,6 +84,7 @@ class RemoteHttpRequestTracker<
   }
 
   requests(): Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]> {
+    // TODO
     return Promise.resolve(this._client.requests());
   }
 
@@ -115,18 +116,21 @@ class RemoteHttpRequestTracker<
       | null,
     _onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
+    // TODO
     return Promise.resolve(undefined as never);
   }
 
   catch<RejectedResult = never>(
     _onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult> {
+    // TODO
     return Promise.resolve(undefined as never);
   }
 
   finally(
     _onFinally?: (() => void) | null,
   ): Promise<PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>> {
+    // TODO
     return Promise.resolve(undefined as never);
   }
 }

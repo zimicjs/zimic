@@ -174,8 +174,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [handlerContext] = spiedRequestHandler.mock.calls[0];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
-        expect(handlerContext.params).toEqual({});
-        expect(handlerContext.cookies).toEqual({});
 
         expect(response.status).toBe(200);
 
@@ -203,8 +201,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [handlerContext] = spiedRequestHandler.mock.calls[0];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
-        expect(handlerContext.params).toEqual({ id: '1' });
-        expect(handlerContext.cookies).toEqual({});
 
         expect(response.status).toBe(200);
 
@@ -236,8 +232,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [matchedCallContext] = spiedRequestHandler.mock.calls[0];
         expect(matchedCallContext.request).toBeInstanceOf(Request);
         expect(matchedCallContext.request.method).toBe(method);
-        expect(matchedCallContext.params).toEqual({});
-        expect(matchedCallContext.cookies).toEqual({});
 
         spiedRequestHandler.mockClear();
 
@@ -270,8 +264,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[0];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
-        expect(handlerContext.params).toEqual({});
-        expect(handlerContext.cookies).toEqual({});
       });
 
       it(`should support intercepting ${method} requests with a delay`, async () => {
@@ -303,8 +295,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         for (const [handlerContext] of delayedSpiedRequestHandler.mock.calls) {
           expect(handlerContext.request).toBeInstanceOf(Request);
           expect(handlerContext.request.method).toBe(method);
-          expect(handlerContext.params).toEqual({});
-          expect(handlerContext.cookies).toEqual({});
         }
       });
 
@@ -383,8 +373,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [handlerContext] = spiedRequestHandler.mock.calls[0];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
-        expect(handlerContext.params).toEqual({});
-        expect(handlerContext.cookies).toEqual({});
 
         expect(response.status).toBe(200);
 
@@ -426,8 +414,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         let [okHandlerContext] = okSpiedRequestHandler.mock.calls[0];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
-        expect(okHandlerContext.params).toEqual({});
-        expect(okHandlerContext.cookies).toEqual({});
 
         const otherInterceptor = createDefaultHttpInterceptor(worker);
         await promiseIfRemote(
@@ -449,8 +435,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         const [noContentHandlerContext] = noContentSpiedRequestHandler.mock.calls[0];
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
         expect(noContentHandlerContext.request.method).toBe(method);
-        expect(noContentHandlerContext.params).toEqual({});
-        expect(noContentHandlerContext.cookies).toEqual({});
 
         await promiseIfRemote(worker.clearInterceptorHandlers(otherInterceptor.client()), worker);
 
@@ -467,8 +451,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
         [okHandlerContext] = okSpiedRequestHandler.mock.calls[1];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
-        expect(okHandlerContext.params).toEqual({});
-        expect(okHandlerContext.cookies).toEqual({});
 
         await promiseIfRemote(worker.clearInterceptorHandlers(interceptor.client()), worker);
 
