@@ -1,4 +1,5 @@
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
@@ -10,21 +11,30 @@ import { HttpRequestHandler } from './types/requests';
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
-  private _mockServerURL: string;
+  private _httpServerURL: URL;
+  private websocketClient: WebSocketClient<{}>;
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
-    this._mockServerURL = options.mockServerURL;
+
+    this._httpServerURL = new URL(options.mockServerURL);
+
+    const webSocketServerURL = new URL(this._httpServerURL);
+    webSocketServerURL.protocol = 'ws';
+
+    this.websocketClient = new WebSocketClient({
+      url: webSocketServerURL.toString(),
+    });
   }
 
   mockServerURL() {
-    return this._mockServerURL;
+    return this._httpServerURL.toString();
   }
 
   async start() {
     this.setPlatform(await this.readPlatform());
+    await this.websocketClient.start();
     this.setIsRunning(true);
-    return Promise.resolve();
   }
 
   private async readPlatform() {
@@ -42,8 +52,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   }
 
   async stop() {
+    await this.websocketClient.stop();
     this.setIsRunning(false);
-    return Promise.resolve();
   }
 
   use<Schema extends HttpServiceSchema>(

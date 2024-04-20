@@ -1,8 +1,11 @@
-import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import { createServerAdapter } from '@whatwg-node/server';
+import { createServer, Server as HttpServer } from 'http';
 
-import WebsocketServer from '@/cli/server/websocket/WebsocketServer';
+import { deserializeResponse, serializeRequest } from '@/utils/fetch';
+import WebSocketServer from '@/websocket/WebSocketServer';
 
 import { PublicServer } from './types/public';
+import { RemoteHttpInterceptorWebSocketSchema } from './types/schema';
 
 export interface ServerOptions {
   port: number;
@@ -13,7 +16,7 @@ export interface ServerOptions {
 
 class Server implements PublicServer {
   private httpServer: HttpServer;
-  private websocketServer: WebsocketServer<{}>;
+  private websocketServer: WebSocketServer<RemoteHttpInterceptorWebSocketSchema>;
 
   private _port: number;
   private _hostname: string;
@@ -21,11 +24,12 @@ class Server implements PublicServer {
   private onReady?: () => Promise<void> | void;
 
   constructor(options: ServerOptions) {
-    this.httpServer = createServer({ joinDuplicateHeaders: true }, (request, response) => {
-      this.handleHttpRequest(request, response);
-    });
+    this.httpServer = createServer(
+      { joinDuplicateHeaders: true },
+      createServerAdapter((request) => this.handleHttpRequest(request)),
+    );
 
-    this.websocketServer = new WebsocketServer({
+    this.websocketServer = new WebSocketServer({
       httpServer: this.httpServer,
     });
 
@@ -35,9 +39,14 @@ class Server implements PublicServer {
     this.onReady = options.onReady;
   }
 
-  private handleHttpRequest(_request: IncomingMessage, response: ServerResponse) {
-    response.statusCode = 404;
-    response.end();
+  private async handleHttpRequest(request: Request) {
+    const serializedRequest = await serializeRequest(request);
+    const { response: serializedResponse } = await this.websocketServer.request(
+      'interceptors/requests/create-response',
+      { request: serializedRequest },
+    );
+    const response = deserializeResponse(serializedResponse);
+    return response;
   }
 
   port() {

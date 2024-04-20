@@ -24,7 +24,7 @@ type AnyHttpRequestTracker = HttpRequestTrackerClient<any, any, any, any>;
 
 class HttpInterceptorClient<Schema extends HttpServiceSchema> {
   private worker: HttpInterceptorWorker;
-  private _baseURL: string;
+  private _baseURL: URL;
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
   private Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
@@ -47,12 +47,12 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
     Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
   }) {
     this.worker = options.worker;
-    this._baseURL = options.baseURL;
+    this._baseURL = new URL(options.baseURL);
     this.Tracker = options.Tracker;
   }
 
   baseURL() {
-    return this._baseURL;
+    return this._baseURL.toString();
   }
 
   get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>, options: AsyncCommitOptions = {}) {

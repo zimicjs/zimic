@@ -1,74 +1,72 @@
 import crypto from 'crypto';
-import { Server as HttpServer } from 'http';
-import IsomorphicWebSocket from 'isomorphic-ws';
+import { WebSocket as ClientSocket } from 'isomorphic-ws';
 
+import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import { WebSocket } from './types';
 
-const { WebSocketServer } = IsomorphicWebSocket;
-
-interface WebsocketServerOptions {
-  httpServer: HttpServer;
-}
-
-class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
-  private server: InstanceType<typeof WebSocketServer> | undefined;
-  private httpServer: HttpServer;
-
-  private sockets = new Set<IsomorphicWebSocket>();
+abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
+  private sockets = new Set<ClientSocket>();
 
   private listeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: Set<WebSocket.MessageListener<Schema, Channel>>;
   } = {};
 
-  constructor(options: WebsocketServerOptions) {
-    this.httpServer = options.httpServer;
-  }
-
-  isRunning() {
-    return this.server !== undefined;
-  }
-
-  async start() {
-    this.server = new WebSocketServer({
-      server: this.httpServer,
-    });
-
+  protected async registerSocket(socket: ClientSocket) {
     const startPromise = new Promise((resolve, reject) => {
-      this.server?.once('listening', resolve);
-      this.server?.once('error', reject);
+      socket.once('open', resolve);
+      socket.once('error', reject);
     });
 
-    this.server.on('connection', (socket) => {
-      this.sockets.add(socket);
+    socket.on('message', (rawMessage) => {
+      const bufferedMessage = Array.isArray(rawMessage) ? Buffer.concat(rawMessage) : Buffer.from(rawMessage);
+      const parsedMessage = this.parseMessage(bufferedMessage.toString('utf8'));
+      this.notifyListeners(parsedMessage);
+    });
 
-      socket.on('message', (data) => {
-        const bufferedData = Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data);
-        const parsedMessage = JSON.parse(bufferedData.toString('utf8')) as unknown;
-
-        if (this.isServiceMessage(parsedMessage)) {
-          this.handleServiceMessage(parsedMessage);
-        }
-      });
-
-      socket.on('error', (error) => {
-        console.error(error);
-      });
-
-      socket.on('close', () => {
-        this.sockets.delete(socket);
-      });
+    socket.on('close', () => {
+      this.sockets.delete(socket);
     });
 
     await startPromise;
 
-    this.server.on('error', (error) => {
+    socket.on('error', (error) => {
       console.error(error);
     });
+
+    this.sockets.add(socket);
   }
 
-  private isServiceMessage(
-    message: unknown,
-  ): message is WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>> {
+  private parseMessage(stringifiedMessage: string): WebSocket.ServiceMessage<Schema> {
+    let parsedMessage: unknown;
+
+    try {
+      parsedMessage = JSON.parse(stringifiedMessage) as unknown;
+    } catch (error) {
+      console.error(error);
+      throw new InvalidWebSocketMessage(stringifiedMessage);
+    }
+
+    if (!this.isValidMessage(parsedMessage)) {
+      throw new InvalidWebSocketMessage(parsedMessage);
+    }
+
+    if (this.isReplyMessage(parsedMessage)) {
+      return {
+        id: parsedMessage.id,
+        channel: parsedMessage.channel,
+        requestId: parsedMessage.requestId,
+        data: parsedMessage.data,
+      };
+    }
+
+    return {
+      id: parsedMessage.id,
+      channel: parsedMessage.channel,
+      data: parsedMessage.data,
+    };
+  }
+
+  private isValidMessage(message: unknown): message is WebSocket.ServiceMessage<Schema> {
     return (
       typeof message === 'object' &&
       message !== null &&
@@ -76,11 +74,12 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
       typeof message.id === 'string' &&
       'channel' in message &&
       typeof message.channel === 'string' &&
+      (!('requestId' in message) || typeof message.requestId === 'string') &&
       'data' in message
     );
   }
 
-  private handleServiceMessage(message: WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>>) {
+  private notifyListeners(message: WebSocket.ServiceMessage<Schema>) {
     const channelListeners = this.listeners[message.channel];
 
     if (channelListeners) {
@@ -90,23 +89,10 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     }
   }
 
-  async stop() {
-    await this.closeSockets();
-
-    await new Promise<void>((resolve, reject) => {
-      this.server?.once('close', resolve);
-      this.server?.once('error', reject);
-      this.server?.close();
-    });
-
-    this.server = undefined;
-    this.sockets.clear();
-  }
-
-  private async closeSockets() {
+  protected async closeSockets(sockets: Set<ClientSocket> = this.sockets) {
     const closingPromises: Promise<void>[] = [];
 
-    for (const socket of this.sockets) {
+    for (const socket of sockets) {
       closingPromises.push(
         new Promise<void>((resolve, reject) => {
           socket.once('close', resolve);
@@ -117,6 +103,8 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     }
 
     await Promise.all(closingPromises);
+
+    this.sockets.clear();
   }
 
   createRequestMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
@@ -131,7 +119,7 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     return requestMessage;
   }
 
-  async request<Channel extends WebSocket.RequestServiceChannel<Schema>>(
+  async request<Channel extends WebSocket.ServiceChannel<Schema>>(
     channel: Channel,
     eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
   ) {
@@ -141,7 +129,7 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     await this.sendMessage(request);
 
     const response = await responsePromise;
-    return response;
+    return response.data;
   }
 
   async waitForReply<Channel extends WebSocket.ServiceChannel<Schema>>(
@@ -164,7 +152,7 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     return 'requestId' in message;
   }
 
-  async reply<Channel extends WebSocket.RequestServiceChannel<Schema>>(
+  async reply<Channel extends WebSocket.ServiceChannel<Schema>>(
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
   ) {
@@ -172,7 +160,7 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     await this.sendMessage(reply);
   }
 
-  createReplyMessage<Channel extends WebSocket.RequestServiceChannel<Schema>>(
+  createReplyMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
   ) {
@@ -189,12 +177,11 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, Channel>,
   ) {
     const sendingPromises: Promise<void>[] = [];
+    const stringifiedMessage = JSON.stringify(message);
 
     for (const socket of this.sockets) {
       sendingPromises.push(
         new Promise<void>((resolve, reject) => {
-          const stringifiedMessage = JSON.stringify(message);
-
           socket.send(stringifiedMessage, (error) => {
             if (error) {
               reject(error);
@@ -230,4 +217,4 @@ class WebsocketServer<Schema extends WebSocket.ServiceSchema> {
   }
 }
 
-export default WebsocketServer;
+export default WebSocketHandler;
