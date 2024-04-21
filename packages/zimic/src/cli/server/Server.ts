@@ -54,15 +54,19 @@ class Server implements PublicServer {
   }
 
   private async handleHttpRequest(request: Request) {
-    const workerSockets = this.workerSockets[request.method as HttpMethod].get(request.url) ?? [];
+    const workerSockets = this.workerSockets[request.method as HttpMethod].get(request.url) ?? new Set();
     const serializedRequest = await serializeRequest(request);
 
-    for (const socket of workerSockets) {
-      const { response: serializedResponse } = await this.websocketServer.request(
+    const responsePromises = Array.from(workerSockets, (socket) => {
+      return this.websocketServer.request(
         'interceptors/responses/create',
         { request: serializedRequest },
         { sockets: [socket] },
       );
+    });
+
+    for (const responsePromise of responsePromises) {
+      const { response: serializedResponse } = await responsePromise;
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
