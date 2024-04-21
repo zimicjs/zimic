@@ -23,7 +23,6 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
   private worker: HttpInterceptorWorker;
   private _baseURL: URL;
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   private Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
   private trackersByMethod: {
