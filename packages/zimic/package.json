@@ -56,6 +56,7 @@
   },
   "scripts": {
     "dev": "pnpm build --watch",
+    "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
