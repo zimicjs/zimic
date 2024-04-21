@@ -4,7 +4,7 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
@@ -13,20 +13,19 @@ import { HttpRequestHandler, HttpRequestHandlerContext } from './types/requests'
 
 type HttpHandler = (context: HttpRequestHandlerContext) => Promise<HttpResponse | null>;
 
+interface HttpHandlerGroup {
+  interceptor: AnyHttpInterceptorClient;
+  httpHandler: HttpHandler;
+}
+
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
-  private _httpURL: URL;
+  private _httpServerURL: URL;
   private websocketClient: WebSocketClient<ServerWebSocketSchema>;
 
   private httpHandlers: {
-    [Method in HttpMethod]: Map<
-      string,
-      {
-        interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-        httpHandler: HttpHandler;
-      }
-    >;
+    [Method in HttpMethod]: Map<string, HttpHandlerGroup>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -40,30 +39,29 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    this._httpURL = new URL(options.mockServerURL);
+    this._httpServerURL = new URL(options.mockServerURL);
 
-    const webSocketURL = new URL(this._httpURL);
-    webSocketURL.protocol = 'ws';
+    const webSocketServerURL = new URL(this._httpServerURL);
+    webSocketServerURL.protocol = 'ws';
 
     this.websocketClient = new WebSocketClient({
-      url: webSocketURL.toString(),
+      url: webSocketServerURL.toString(),
     });
   }
 
   mockServerURL() {
-    return this._httpURL.toString();
+    return this._httpServerURL.toString();
   }
 
   async start() {
-    this.setPlatform(await this.readPlatform());
-
     await this.websocketClient.start();
 
     this.websocketClient.onEvent('interceptors/responses/create', async (message) => {
       const { request: serializedRequest } = message.data;
-      const request = deserializeRequest(serializedRequest);
 
-      const httpHandlerGroup = this.httpHandlers[request.method as HttpMethod].get(request.url);
+      const request = deserializeRequest(serializedRequest);
+      const method = request.method as HttpMethod;
+      const httpHandlerGroup = this.httpHandlers[method].get(request.url);
 
       if (!httpHandlerGroup) {
         return { response: null };
@@ -75,18 +73,20 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       return { response: serializedResponse };
     });
 
+    this.setPlatform(await this.readPlatform());
+
     this.setIsRunning(true);
   }
 
-  private async readPlatform() {
+  private async readPlatform(): Promise<HttpInterceptorWorkerPlatform> {
     const { setupServer } = await import('msw/node');
     if (typeof setupServer !== 'undefined') {
-      return 'node' satisfies HttpInterceptorWorkerPlatform;
+      return 'node';
     }
 
     const { setupWorker } = await import('msw/browser');
     if (typeof setupWorker !== 'undefined') {
-      return 'browser' satisfies HttpInterceptorWorkerPlatform;
+      return 'browser';
     }
 
     throw new UnknownHttpInterceptorWorkerPlatform();
@@ -145,7 +145,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   }
 
   interceptorsWithHandlers() {
-    const interceptors = new Set<HttpInterceptorClient<any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const interceptors = new Set<AnyHttpInterceptorClient>();
 
     for (const methodHandlers of Object.values(this.httpHandlers)) {
       for (const { interceptor } of methodHandlers.values()) {

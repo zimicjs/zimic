@@ -10,7 +10,6 @@ import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestTrackerClient from './HttpRequestTrackerClient';
 import {
   HttpRequestTrackerRestriction,
-  PublicPendingRemoteHttpRequestTracker,
   PublicRemoteHttpRequestTracker,
   PublicSyncedRemoteHttpRequestTracker,
 } from './types/public';
@@ -34,10 +33,10 @@ class RemoteHttpRequestTracker<
   readonly type = 'remote';
 
   private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
+  private syncPromises: Promise<unknown>[] = [];
 
-  constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    super(() => {});
+  constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>, method: Method, path: Path) {
+    super(() => {}); // eslint-disable-line @typescript-eslint/no-empty-function
     this._client = new HttpRequestTrackerClient(interceptor, method, path);
   }
 
@@ -67,9 +66,8 @@ class RemoteHttpRequestTracker<
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
-    this._client.respond(declaration);
-
     const newThis = this as unknown as RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+    newThis._client.respond(declaration);
     return newThis;
   }
 
@@ -84,7 +82,6 @@ class RemoteHttpRequestTracker<
   }
 
   requests(): Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]> {
-    // TODO
     return Promise.resolve(this._client.requests());
   }
 
@@ -105,33 +102,51 @@ class RemoteHttpRequestTracker<
     this._client.registerInterceptedRequest(request, response);
   }
 
+  registerSyncPromise(promise: Promise<unknown>) {
+    this.syncPromises.push(promise);
+  }
+
   then<
     FulfilledResult = PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
     RejectedResult = never,
   >(
-    _onFulfilled?:
+    onFulfilled?:
       | ((
           tracker: PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
-    _onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
-    // TODO
-    return Promise.resolve(undefined as never);
+    return Promise.all(this.syncPromises).then(() => {
+      this.syncPromises = [];
+
+      if (onFulfilled) {
+        return onFulfilled(this);
+      } else {
+        return this as unknown as FulfilledResult;
+      }
+    }, onRejected);
   }
 
   catch<RejectedResult = never>(
-    _onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult> {
-    // TODO
-    return Promise.resolve(undefined as never);
+    return this.then(null, onRejected);
   }
 
   finally(
-    _onFinally?: (() => void) | null,
-  ): Promise<PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>> {
-    // TODO
-    return Promise.resolve(undefined as never);
+    onFinally?: (() => void) | null,
+  ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>> {
+    return this.then(
+      (_tracker) => {
+        onFinally?.();
+        return this;
+      },
+      (_error) => {
+        onFinally?.();
+        return this;
+      },
+    );
   }
 }
 

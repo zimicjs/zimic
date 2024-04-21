@@ -12,7 +12,7 @@ import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/Loc
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
 import { PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
-import { joinURLPaths } from '@/utils/fetch';
+import { joinURL } from '@/utils/fetch';
 
 export function getDefaultPathPrefix(workerOptions: HttpInterceptorWorkerOptions) {
   return workerOptions.type === 'local' ? '' : '/prefix';
@@ -26,7 +26,7 @@ export function getDefaultBaseURL(
   },
 ) {
   const baseURLWithoutPrefix = workerOptions.type === 'local' ? urls.interceptBaseURL : urls.mockServerURL;
-  return joinURLPaths(baseURLWithoutPrefix, getDefaultPathPrefix(workerOptions));
+  return joinURL(baseURLWithoutPrefix, getDefaultPathPrefix(workerOptions));
 }
 
 export function createInternalHttpInterceptorWorker(workerOptions: HttpInterceptorWorkerOptions) {

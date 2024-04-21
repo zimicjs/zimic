@@ -15,7 +15,7 @@ export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestI
   }
 }
 
-export function joinURLPaths(...paths: string[]) {
+export function joinURL(...paths: string[]) {
   return paths
     .map((path, index) => {
       const isLast = index === paths.length - 1;

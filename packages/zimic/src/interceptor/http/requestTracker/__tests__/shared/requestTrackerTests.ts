@@ -4,6 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpSchema } from '@/http/types/schema';
+import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
@@ -90,6 +91,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       mockServerURL,
     });
     const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
+    const interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
 
     beforeAll(async () => {
       await worker.start();
@@ -101,7 +103,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide access to the method and path', () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       expectTypeOf<typeof tracker.method>().toEqualTypeOf<() => 'POST'>();
       expect(tracker.method()).toBe('POST');
@@ -111,7 +113,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should not match any request if contains no declared response', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -119,7 +121,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should match any request if contains a declared response and no restrictions', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -134,7 +136,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should not match any request if bypassed', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -166,7 +168,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should not match any request if cleared', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -201,7 +203,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
       const responseStatus = 200;
       const responseBody = { success: true } as const;
 
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: responseStatus,
         body: responseBody,
       });
@@ -226,7 +228,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         body: responseBody,
       }));
 
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
       await promiseIfRemote(tracker.respond(responseFactory), worker);
 
       const request = new Request(baseURL);
@@ -240,7 +242,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should throw an error if trying to create a response without a declared response', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -251,7 +253,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should keep track of the intercepted requests and responses', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -303,7 +305,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should clear the intercepted requests and responses after cleared', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -336,7 +338,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide access to the raw intercepted requests and responses', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -379,7 +381,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users').respond({
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
         status: 200,
         body: { success: true },
       });
@@ -418,7 +420,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const name = 'User';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 searchParams: { name },
                 exact,
@@ -451,7 +453,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const name = 'User';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 searchParams: { name },
                 exact,
@@ -484,7 +486,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         it('should match only specific requests if contains a declared response and a computed search params restriction', async () => {
           const name = 'User';
 
-          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
             .with((request) => {
               expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
               expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
@@ -524,7 +526,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const contentType = 'application/json';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 headers: { 'content-type': contentType },
                 exact,
@@ -557,7 +559,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const contentType = 'application/json';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 headers: { 'content-type': contentType },
                 exact,
@@ -590,7 +592,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         it('should match only specific requests if contains a declared response and a computed header restriction', async () => {
           const contentType = 'application/json';
 
-          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HeadersSchema>>();
               expect(request.headers).toBeInstanceOf(HttpHeaders);
@@ -630,7 +632,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const name = 'User';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 body: { name },
                 exact,
@@ -669,7 +671,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
           async ({ exact }) => {
             const name = 'User';
 
-            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+            const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
               .with({
                 body: { name },
                 exact,
@@ -706,7 +708,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         it('should match only specific requests if contains a declared response and a computed body restriction', async () => {
           const name = 'User';
 
-          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+          const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
             .with((request) => {
               expectTypeOf(request.body).toEqualTypeOf<MethodSchema['request']['body']>();
 
@@ -745,7 +747,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
         const name = 'User';
         const contentType = 'application/json';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users')
+        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             headers: { 'content-type': contentType },
             searchParams: { name },
@@ -833,7 +835,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should clear restrictions after cleared', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -867,7 +869,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     });
 
     it('should not clear restrictions after bypassed', async () => {
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptor.client(), 'POST', '/users');
+      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
       const request = new Request(baseURL);
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);

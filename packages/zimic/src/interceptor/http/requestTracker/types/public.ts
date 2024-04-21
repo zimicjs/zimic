@@ -249,7 +249,7 @@ export interface PublicPendingRemoteHttpRequestTracker<
 
   finally: (
     onFinally?: (() => void) | null,
-  ) => Promise<PublicPendingRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>>;
+  ) => Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>>;
 }
 
 export interface PublicRemoteHttpRequestTracker<
