@@ -74,7 +74,7 @@ class Server implements PublicServer {
       }
     }
 
-    return new Response('Request bypassed', { status: 503 });
+    return new Response('Request bypassed', { status: 501 });
   }
 
   port() {
