@@ -16,7 +16,7 @@ export interface ServerOptions {
 
 class Server implements PublicServer {
   private httpServer: HttpServer;
-  private websocketServer: WebSocketServer<ServerWebSocketSchema>;
+  private webSocketServer: WebSocketServer<ServerWebSocketSchema>;
 
   private _hostname: string;
   private _port?: number;
@@ -39,7 +39,7 @@ class Server implements PublicServer {
       createServerAdapter((request) => this.handleHttpRequest(request)),
     );
 
-    this.websocketServer = new WebSocketServer({
+    this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
     });
 
@@ -54,7 +54,7 @@ class Server implements PublicServer {
     for (let index = workerSockets.length - 1; index >= 0; index--) {
       const socket = workerSockets[index];
 
-      const { response: serializedResponse } = await this.websocketServer.request(
+      const { response: serializedResponse } = await this.webSocketServer.request(
         'interceptors/responses/create',
         { request: serializedRequest },
         { sockets: [socket] },
@@ -78,14 +78,15 @@ class Server implements PublicServer {
   }
 
   isRunning() {
-    return this.httpServer.listening && this.websocketServer.isRunning();
+    return this.httpServer.listening && this.webSocketServer.isRunning();
   }
 
   async start() {
+    const webSocketServerStartPromise = this.webSocketServer.start();
     await this.startHttpServer();
-    await this.websocketServer.start();
+    await webSocketServerStartPromise;
 
-    this.websocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
+    this.webSocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
       const { method, url } = message.data;
 
       const sockets = this.workerSockets[method].get(url) ?? [];
@@ -100,7 +101,7 @@ class Server implements PublicServer {
       });
     });
 
-    this.websocketServer.onEvent('interceptors/workers/use/uncommit', (message, socket) => {
+    this.webSocketServer.onEvent('interceptors/workers/use/uncommit', (message, socket) => {
       if (!message.data) {
         this.removeWorkerSocket(socket);
         return;
@@ -131,9 +132,8 @@ class Server implements PublicServer {
 
   private async startHttpServer() {
     await new Promise<void>((resolve, reject) => {
-      this.httpServer.once('listening', resolve);
       this.httpServer.once('error', reject);
-      this.httpServer.listen(this._port, this._hostname);
+      this.httpServer.listen(this._port, this._hostname, resolve);
     });
 
     const httpAddress = this.httpServer.address();
@@ -143,7 +143,7 @@ class Server implements PublicServer {
   }
 
   async stop() {
-    await this.websocketServer.stop();
+    await this.webSocketServer.stop();
     await this.stopHttpServer();
   }
 

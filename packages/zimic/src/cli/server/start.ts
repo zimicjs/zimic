@@ -58,9 +58,8 @@ async function startServer({
   const server = new Server({ hostname, port });
 
   for (const exitEvent of PROCESS_EXIT_EVENTS) {
-    process.on(exitEvent, async (exitCode: number) => {
+    process.on(exitEvent, async () => {
       await server.stop();
-      process.exit(exitCode);
     });
   }
 
