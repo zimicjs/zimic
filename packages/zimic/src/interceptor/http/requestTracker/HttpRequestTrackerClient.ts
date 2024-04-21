@@ -200,4 +200,7 @@ class HttpRequestTrackerClient<
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyHttpRequestTrackerClient = HttpRequestTrackerClient<any, any, any, any>;
+
 export default HttpRequestTrackerClient;

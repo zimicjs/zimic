@@ -12,15 +12,12 @@ import { joinURLPaths } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
-import HttpRequestTrackerClient from '../requestTracker/HttpRequestTrackerClient';
+import HttpRequestTrackerClient, { AnyHttpRequestTrackerClient } from '../requestTracker/HttpRequestTrackerClient';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
 import { PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { HttpInterceptorRequestContext } from './types/requests';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyHttpRequestTracker = HttpRequestTrackerClient<any, any, any, any>;
 
 class HttpInterceptorClient<Schema extends HttpServiceSchema> {
   private worker: HttpInterceptorWorker;
@@ -30,7 +27,7 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
   private Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
   private trackersByMethod: {
-    [Method in HttpMethod]: Map<string, AnyHttpRequestTracker[]>;
+    [Method in HttpMethod]: Map<string, AnyHttpRequestTrackerClient[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -177,7 +174,7 @@ class HttpInterceptorClient<Schema extends HttpServiceSchema> {
   }
 
   private bypassMethodTrackers(method: HttpMethod, options: AsyncCommitOptions = {}) {
-    const bypassResults: (Promise<AnyHttpRequestTracker> | AnyHttpRequestTracker)[] = [];
+    const bypassResults: (Promise<AnyHttpRequestTrackerClient> | AnyHttpRequestTrackerClient)[] = [];
 
     for (const trackers of this.trackersByMethod[method].values()) {
       for (const tracker of trackers) {
