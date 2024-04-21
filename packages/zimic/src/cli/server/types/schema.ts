@@ -3,18 +3,18 @@ import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
 import { WebSocket } from '@/websocket/types';
 
 export type ServerWebSocketSchema = WebSocket.ServiceSchema<{
-  'interceptors/workers/commit/use': {
+  'interceptors/workers/use/commit': {
     event: {
       url: string;
       method: HttpMethod;
     };
   };
 
-  'interceptors/workers/uncommit/use': {
+  'interceptors/workers/use/uncommit': {
     event?: {
       url: string;
       method: HttpMethod;
-    };
+    }[];
   };
 
   'interceptors/responses/create': {

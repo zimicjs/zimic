@@ -1,7 +1,6 @@
 export interface PublicServer {
-  port: () => number;
   hostname: () => string;
-  ephemeral: () => boolean;
+  port: () => number | undefined;
   isRunning: () => boolean;
 
   start: () => Promise<void>;

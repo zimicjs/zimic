@@ -28,7 +28,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       await this.notifyListeners(parsedMessage, socket);
     });
 
-    socket.on('close', () => {
+    socket.once('close', () => {
       this.sockets.delete(socket);
     });
 

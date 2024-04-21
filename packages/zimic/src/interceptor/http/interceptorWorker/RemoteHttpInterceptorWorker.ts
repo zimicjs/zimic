@@ -93,6 +93,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   }
 
   async stop() {
+    await this.websocketClient.send('interceptors/workers/use/uncommit', undefined);
     await this.websocketClient.stop();
     this.setIsRunning(false);
   }
@@ -113,7 +114,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       },
     });
 
-    await this.websocketClient.send('interceptors/workers/commit/use', {
+    await this.websocketClient.send('interceptors/workers/use/commit', {
       url: normalizedURL,
       method,
     });
@@ -123,7 +124,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     for (const methodHandlers of Object.values(this.httpHandlers)) {
       methodHandlers.clear();
     }
-    await this.websocketClient.send('interceptors/workers/uncommit/use', undefined);
+    await this.websocketClient.send('interceptors/workers/use/uncommit', undefined);
   }
 
   async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
@@ -138,10 +139,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       }
     }
 
-    const uncommitPromises = groupsToUncommit.map(async ({ url, method }) => {
-      await this.websocketClient.send('interceptors/workers/uncommit/use', { url, method });
-    });
-    await Promise.all(uncommitPromises);
+    await this.websocketClient.send('interceptors/workers/use/uncommit', groupsToUncommit);
   }
 
   interceptorsWithHandlers() {

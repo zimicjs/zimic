@@ -10,23 +10,19 @@ import { PublicServer } from './types/public';
 import { ServerWebSocketSchema } from './types/schema';
 
 export interface ServerOptions {
-  port: number;
-  hostname?: string;
-  ephemeral?: boolean;
-  onReady?: () => Promise<void> | void;
+  hostname: string;
+  port?: number;
 }
 
 class Server implements PublicServer {
   private httpServer: HttpServer;
   private websocketServer: WebSocketServer<ServerWebSocketSchema>;
 
-  private _port: number;
   private _hostname: string;
-  private _ephemeral: boolean;
-  private onReady?: () => Promise<void> | void;
+  private _port?: number;
 
   private workerSockets: {
-    [Method in HttpMethod]: Map<string, Set<Socket>>;
+    [Method in HttpMethod]: Map<string, Socket[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -47,26 +43,22 @@ class Server implements PublicServer {
       httpServer: this.httpServer,
     });
 
+    this._hostname = options.hostname;
     this._port = options.port;
-    this._hostname = options.hostname ?? '0.0.0.0';
-    this._ephemeral = options.ephemeral ?? false;
-    this.onReady = options.onReady;
   }
 
   private async handleHttpRequest(request: Request) {
-    const workerSockets = this.workerSockets[request.method as HttpMethod].get(request.url) ?? new Set();
+    const workerSockets = this.workerSockets[request.method as HttpMethod].get(request.url) ?? [];
     const serializedRequest = await serializeRequest(request);
 
-    const responsePromises = Array.from(workerSockets, (socket) => {
-      return this.websocketServer.request(
+    for (let index = workerSockets.length - 1; index >= 0; index--) {
+      const socket = workerSockets[index];
+
+      const { response: serializedResponse } = await this.websocketServer.request(
         'interceptors/responses/create',
         { request: serializedRequest },
         { sockets: [socket] },
       );
-    });
-
-    for (const responsePromise of responsePromises) {
-      const { response: serializedResponse } = await responsePromise;
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
@@ -77,16 +69,12 @@ class Server implements PublicServer {
     return new Response('Request bypassed', { status: 501 });
   }
 
-  port() {
-    return this._port;
-  }
-
   hostname() {
     return this._hostname;
   }
 
-  ephemeral() {
-    return this._ephemeral;
+  port() {
+    return this._port;
   }
 
   isRunning() {
@@ -97,32 +85,47 @@ class Server implements PublicServer {
     await this.startHttpServer();
     await this.websocketServer.start();
 
-    this.websocketServer.onEvent('interceptors/workers/commit/use', (message, socket) => {
+    this.websocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
       const { method, url } = message.data;
 
-      const sockets = this.workerSockets[method].get(url) ?? new Set();
-      sockets.add(socket);
+      const sockets = this.workerSockets[method].get(url) ?? [];
+      if (!sockets.includes(socket)) {
+        sockets.push(socket);
+      }
+
       this.workerSockets[method].set(url, sockets);
+
+      socket.once('close', () => {
+        this.removeWorkerSocket(socket);
+      });
     });
 
-    this.websocketServer.onEvent('interceptors/workers/uncommit/use', (message, socket) => {
-      if (message.data) {
-        const { method, url } = message.data;
+    this.websocketServer.onEvent('interceptors/workers/use/uncommit', (message, socket) => {
+      if (!message.data) {
+        this.removeWorkerSocket(socket);
+        return;
+      }
 
-        const sockets = this.workerSockets[method].get(url);
-        sockets?.delete(socket);
-      } else {
-        for (const methodSockets of Object.values(this.workerSockets)) {
-          for (const sockets of methodSockets.values()) {
-            sockets.delete(socket);
-          }
-        }
+      const groupsToUncommit = message.data;
+      for (const { method, url } of groupsToUncommit) {
+        this.removeWorkerSocketByURLAndMethod(socket, url, method);
       }
     });
+  }
 
-    if (this._ephemeral) {
-      await this.onReady?.();
-      await this.stop();
+  private removeWorkerSocket(socketToRemove: Socket) {
+    for (const [method, methodSockets] of Object.entries(this.workerSockets)) {
+      for (const url of methodSockets.keys()) {
+        this.removeWorkerSocketByURLAndMethod(socketToRemove, url, method);
+      }
+    }
+  }
+
+  private removeWorkerSocketByURLAndMethod(socketToRemove: Socket, url: string, method: HttpMethod) {
+    const sockets = this.workerSockets[method].get(url);
+    if (sockets) {
+      const filteredSockets = sockets.filter((socket) => socket !== socketToRemove);
+      this.workerSockets[method].set(url, filteredSockets);
     }
   }
 
@@ -132,6 +135,11 @@ class Server implements PublicServer {
       this.httpServer.once('error', reject);
       this.httpServer.listen(this._port, this._hostname);
     });
+
+    const httpAddress = this.httpServer.address();
+    if (typeof httpAddress !== 'string') {
+      this._port = httpAddress?.port;
+    }
   }
 
   async stop() {
