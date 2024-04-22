@@ -43,18 +43,12 @@ const PROCESS_EXIT_EVENTS = [
 interface ServerStartOptions {
   hostname: string;
   port?: number;
-  onReady?: string;
-  onReadyShell?: string;
+  onReadyCommand?: string;
+  onReadyCommandShell?: string;
   ephemeral: boolean;
 }
 
-async function startServer({
-  hostname,
-  port,
-  onReady: onReadyCommand,
-  onReadyShell: onReadyCommandShell,
-  ephemeral,
-}: ServerStartOptions) {
+async function startServer({ hostname, port, onReadyCommand, onReadyCommandShell, ephemeral }: ServerStartOptions) {
   const server = new Server({ hostname, port });
 
   for (const exitEvent of PROCESS_EXIT_EVENTS) {

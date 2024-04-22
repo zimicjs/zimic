@@ -28,7 +28,7 @@ async function runCLI() {
       yargs
         .command(
           'start',
-          'Start the mock server.',
+          'Start a mock server.',
           (yargs) =>
             yargs
               .option('hostname', {
@@ -44,18 +44,26 @@ async function runCLI() {
               })
               .option('on-ready', {
                 type: 'string',
-                description: 'A command to run when the server is ready.',
+                description: 'A command to run when the server is ready to accept connections.',
+                alias: 'r',
               })
               .option('on-ready-shell', {
                 type: 'string',
                 description: 'The shell to use when running the on-ready command. Defaults to the system shell.',
+                alias: 's',
               })
               .option('ephemeral', {
                 type: 'boolean',
                 description: 'Whether the server should stop automatically after the on-ready command finishes.',
-                default: true,
+                alias: 'e',
+                default: false,
               }),
-          (cliArguments) => startServer(cliArguments),
+          (cliArguments) =>
+            startServer({
+              ...cliArguments,
+              onReadyCommand: cliArguments.onReady,
+              onReadyCommandShell: cliArguments.onReadyShell,
+            }),
         )
         .demandCommand(),
     )
