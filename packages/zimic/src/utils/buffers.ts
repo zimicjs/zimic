@@ -1,12 +1,22 @@
-export function convertReadableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
+export type IsomorphicBufferConstructor = BufferConstructor | typeof import('buffer/').Buffer;
+type IsomorphicBuffer = InstanceType<IsomorphicBufferConstructor>;
+
+export async function getBuffer(): Promise<IsomorphicBufferConstructor> {
+  const globalBufferConstructor = globalThis.Buffer as BufferConstructor | undefined;
+  return globalBufferConstructor ?? (await import('buffer/')).Buffer;
+}
+
+export async function convertReadableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promise<IsomorphicBuffer> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
+
+  const buffer = await getBuffer();
 
   return new Promise((resolve) => {
     function pump() {
       void reader.read().then(({ done, value }) => {
         if (done) {
-          resolve(Buffer.concat(chunks));
+          resolve(buffer.concat(chunks));
           return;
         }
 

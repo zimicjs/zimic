@@ -355,6 +355,9 @@ importers:
       '@whatwg-node/server':
         specifier: ^0.9.33
         version: 0.9.33
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
