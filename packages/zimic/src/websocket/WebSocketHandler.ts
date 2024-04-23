@@ -79,8 +79,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       typeof message.id === 'string' &&
       'channel' in message &&
       typeof message.channel === 'string' &&
-      (!('requestId' in message) || typeof message.requestId === 'string') &&
-      'data' in message
+      (!('requestId' in message) || typeof message.requestId === 'string')
     );
   }
 
