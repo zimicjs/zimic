@@ -282,6 +282,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   ) {
     this.listeners[channel]?.reply.delete(listener);
   }
+
+  removeAllListeners() {
+    this.listeners = {};
+  }
 }
 
 export default WebSocketHandler;

@@ -8,6 +8,7 @@ import {
 
 import { HttpBody } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { createURLIgnoringNonPathComponents } from '@/utils/fetch';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
@@ -144,9 +145,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const normalizedURL = super.normalizeUseURL(url);
+    const normalizedURL = createURLIgnoringNonPathComponents(url);
 
-    const httpHandler = http[lowercaseMethod](normalizedURL, async (context) => {
+    const httpHandler = http[lowercaseMethod](normalizedURL.toString(), async (context) => {
       const result = await handler({
         ...context,
         request: context.request as MSWStrictRequest<HttpBody>,

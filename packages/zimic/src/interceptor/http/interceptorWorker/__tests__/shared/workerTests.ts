@@ -241,8 +241,12 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         expect(response.status).toBe(200);
 
-        const body = (await response.json()) as typeof responseBody;
-        expect(body).toEqual(responseBody);
+        if (method === 'HEAD') {
+          expect(response.body).toBe(null);
+        } else {
+          const body = (await response.json()) as typeof responseBody;
+          expect(body).toEqual(responseBody);
+        }
       });
 
       it(`should intercept ${method} requests after started, considering dynamic paths with a specific match`, async () => {
@@ -429,8 +433,12 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
 
         expect(response.status).toBe(200);
 
-        const body = (await response.json()) as typeof responseBody;
-        expect(body).toEqual(responseBody);
+        if (method === 'HEAD') {
+          expect(response.body).toBe(null);
+        } else {
+          const body = (await response.json()) as typeof responseBody;
+          expect(body).toEqual(responseBody);
+        }
       });
 
       it(`should not intercept ${method} requests handled by a cleared interceptor`, async () => {

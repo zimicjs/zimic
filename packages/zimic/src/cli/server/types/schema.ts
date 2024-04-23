@@ -10,7 +10,7 @@ export type ServerWebSocketSchema = WebSocket.ServiceSchema<{
     };
   };
 
-  'interceptors/workers/use/uncommit': {
+  'interceptors/workers/use/reset': {
     event?: {
       url: string;
       method: HttpMethod;

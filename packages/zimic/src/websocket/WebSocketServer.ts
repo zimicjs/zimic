@@ -1,5 +1,5 @@
 import { Server as HttpServer } from 'http';
-import { WebSocketServer as ServerSocket } from 'isomorphic-ws';
+import { WebSocketServer as ServerSocket, WebSocket as ClientSocket } from 'isomorphic-ws';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
@@ -22,36 +22,71 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   }
 
   async start() {
+    if (this.isRunning()) {
+      return;
+    }
+
     const webSocketServer = new ServerSocket({
       server: this.httpServer,
     });
 
-    const startPromise = new Promise((resolve, reject) => {
-      webSocketServer.once('listening', resolve);
-      webSocketServer.once('error', reject);
+    const startPromise = new Promise<void>((resolve, reject) => {
+      function handleServerListening() {
+        webSocketServer.off('error', handleServerError); // eslint-disable-line @typescript-eslint/no-use-before-define
+        resolve();
+      }
+
+      function handleServerError(error: unknown) {
+        webSocketServer.off('listening', handleServerListening);
+        reject(error);
+      }
+
+      webSocketServer.once('listening', handleServerListening);
+      webSocketServer.once('error', handleServerError);
     });
 
-    webSocketServer.on('connection', async (socket) => {
-      await super.registerSocket(socket);
-    });
-
+    webSocketServer.on('connection', this.handleWebSocketServerConnection);
     await startPromise;
-
-    webSocketServer.on('error', (error) => {
-      console.error(error);
-    });
+    webSocketServer.on('error', this.handleWebSocketServerError);
 
     this.webSocketServer = webSocketServer;
   }
 
+  private handleWebSocketServerConnection = async (socket: ClientSocket) => {
+    await super.registerSocket(socket);
+  };
+
+  private handleWebSocketServerError = (error: unknown) => {
+    console.error(error);
+  };
+
   async stop() {
+    if (!this.isRunning()) {
+      return;
+    }
+
     await super.closeSockets();
 
     await new Promise<void>((resolve, reject) => {
-      this.webSocketServer?.once('close', resolve);
-      this.webSocketServer?.once('error', reject);
+      const handleServerClose = () => {
+        this.webSocketServer?.off('error', handleServerError); // eslint-disable-line @typescript-eslint/no-use-before-define
+        resolve();
+      };
+
+      const handleServerError = (error: unknown) => {
+        this.webSocketServer?.off('close', handleServerClose);
+        reject(error);
+      };
+
+      this.webSocketServer?.once('close', handleServerClose);
+      this.webSocketServer?.once('error', handleServerError);
       this.webSocketServer?.close();
     });
+
+    super.removeAllListeners();
+
+    this.webSocketServer?.off('connection', this.handleWebSocketServerConnection);
+    this.webSocketServer?.off('error', this.handleWebSocketServerError);
 
     this.webSocketServer = undefined;
   }

@@ -2,6 +2,20 @@ import { JSONValue } from '..';
 
 import { convertReadableStreamToBuffer, convertBufferToReadableStream } from './buffers';
 
+export function createURLIgnoringNonPathComponents(rawURL: string) {
+  const url = new URL(rawURL);
+  url.hash = '';
+  url.search = '';
+  url.username = '';
+  url.password = '';
+  return url;
+}
+
+export function createRegexFromURL(url: string) {
+  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/, '/(?<$1>[^/]+)');
+  return new RegExp(`^${urlWithReplacedPathParams}$`);
+}
+
 export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestInit & { timeout: number }) {
   const abort = new AbortController();
 
