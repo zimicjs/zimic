@@ -196,7 +196,9 @@ class HttpRequestTrackerClient<
   }
 
   requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
-    return [...this.interceptedRequests];
+    const interceptedRequestsCopy = [...this.interceptedRequests];
+    Object.freeze(interceptedRequestsCopy);
+    return interceptedRequestsCopy;
   }
 }
 
