@@ -6,7 +6,7 @@ export interface LocalHttpInterceptorWorkerOptions {
 
 export interface RemoteHttpInterceptorWorkerOptions {
   type: 'remote';
-  mockServerURL: string;
+  serverURL: string;
 }
 
 /**

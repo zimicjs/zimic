@@ -31,7 +31,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
     { type: 'local' },
     {
       type: 'remote',
-      mockServerURL,
+      serverURL: mockServerURL,
     },
   ];
 
@@ -55,11 +55,9 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
       }
 
       const serverPort = server.port();
-
       if (serverPort === undefined) {
         throw new Error('Mock server has no defined port and is not running.');
       }
-
       return mockServerURL.replace('$PORT', serverPort.toString());
     }
 
@@ -69,7 +67,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: { platform: Htt
           ? workerOptions
           : {
               type: 'remote',
-              mockServerURL: getBaseURL(),
+              serverURL: getBaseURL(),
             };
       const worker = createHttpInterceptorWorker(processedWorkerOptions) satisfies PublicHttpInterceptorWorker;
       return worker as LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;

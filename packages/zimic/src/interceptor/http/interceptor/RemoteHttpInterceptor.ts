@@ -19,7 +19,7 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
       worker: options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker,
       Tracker: RemoteHttpRequestTracker,
-      baseURL: joinURL(options.worker.mockServerURL(), options.pathPrefix),
+      baseURL: joinURL(options.worker.serverURL(), options.pathPrefix),
     });
     this._pathPrefix = options.pathPrefix;
   }

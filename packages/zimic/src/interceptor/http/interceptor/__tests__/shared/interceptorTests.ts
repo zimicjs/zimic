@@ -42,7 +42,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     { type: 'local' },
     {
       type: 'remote',
-      mockServerURL,
+      serverURL: mockServerURL,
     },
   ];
 

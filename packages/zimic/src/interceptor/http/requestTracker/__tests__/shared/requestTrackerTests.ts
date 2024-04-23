@@ -46,7 +46,7 @@ export function declareSharedHttpRequestTrackerTests(options: { platform: HttpIn
     },
     {
       Tracker: RemoteHttpRequestTracker,
-      workerOptions: { type: 'remote', mockServerURL },
+      workerOptions: { type: 'remote', serverURL: mockServerURL },
     },
   ];
 

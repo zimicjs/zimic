@@ -49,7 +49,7 @@ export interface PublicLocalHttpInterceptorWorker extends PublicBaseHttpIntercep
 export interface PublicRemoteHttpInterceptorWorker extends PublicBaseHttpInterceptorWorker {
   readonly type: 'remote';
 
-  mockServerURL: () => string;
+  serverURL: () => string;
 }
 
 export type PublicHttpInterceptorWorker = PublicLocalHttpInterceptorWorker | PublicRemoteHttpInterceptorWorker;

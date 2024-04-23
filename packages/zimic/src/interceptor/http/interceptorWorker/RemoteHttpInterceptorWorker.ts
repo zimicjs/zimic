@@ -28,7 +28,7 @@ interface HttpHandlerGroup {
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
-  private _httpServerURL: URL;
+  private _serverURL: URL;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
 
   private httpHandlers: {
@@ -46,9 +46,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    this._httpServerURL = new URL(options.mockServerURL);
+    this._serverURL = new URL(options.serverURL);
 
-    const webSocketServerURL = new URL(this._httpServerURL);
+    const webSocketServerURL = new URL(this._serverURL);
     webSocketServerURL.protocol = 'ws';
 
     this.webSocketClient = new WebSocketClient({
@@ -56,8 +56,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     });
   }
 
-  mockServerURL() {
-    return this._httpServerURL.toString();
+  serverURL() {
+    return this._serverURL.toString();
   }
 
   async start() {
