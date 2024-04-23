@@ -1,5 +1,7 @@
 import { JSONValue } from '..';
 
+import { convertReadableStreamToBuffer, convertBufferToReadableStream } from './buffers';
+
 export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestInit & { timeout: number }) {
   const abort = new AbortController();
 
@@ -40,35 +42,6 @@ export type SerializedHttpRequest = JSONValue<{
   referrerPolicy: ReferrerPolicy;
   body: string | null;
 }>;
-
-function convertReadableStreamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-
-  return new Promise((resolve) => {
-    function pump() {
-      void reader.read().then(({ done, value }) => {
-        if (done) {
-          resolve(Buffer.concat(chunks));
-          return;
-        }
-
-        chunks.push(value);
-        pump();
-      });
-    }
-
-    pump();
-  });
-}
-
-function convertBufferToReadableStream(buffer: Buffer): ReadableStream<Uint8Array> {
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(buffer);
-    },
-  });
-}
 
 export async function serializeRequest(request: Request): Promise<SerializedHttpRequest> {
   const bufferedBody = request.body ? await convertReadableStreamToBuffer(request.body) : null;
@@ -115,20 +88,23 @@ export type SerializedResponse = JSONValue<{
 }>;
 
 export async function serializeResponse(response: Response): Promise<SerializedResponse> {
-  const bufferedBody = response.body ? await convertReadableStreamToBuffer(response.body) : null;
+  const containsBody = response.body !== null;
+  const bufferedBody = containsBody ? await convertReadableStreamToBuffer(response.body) : null;
+  const serializedBody = bufferedBody?.toString('base64') ?? null;
 
   return {
     status: response.status,
     statusText: response.statusText,
     headers: Object.fromEntries(response.headers),
-    body: bufferedBody?.toString('base64') ?? null,
+    body: serializedBody,
   };
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
   const bufferedBody = serializedResponse.body ? Buffer.from(serializedResponse.body, 'base64') : null;
+  const streamBody = bufferedBody ? convertBufferToReadableStream(bufferedBody) : null;
 
-  return new Response(bufferedBody ? convertBufferToReadableStream(bufferedBody) : null, {
+  return new Response(streamBody, {
     status: serializedResponse.status,
     statusText: serializedResponse.statusText,
     headers: new Headers(serializedResponse.headers),
