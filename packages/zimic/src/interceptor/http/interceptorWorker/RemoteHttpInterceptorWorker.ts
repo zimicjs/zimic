@@ -5,6 +5,7 @@ import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
@@ -22,10 +23,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   readonly type = 'remote';
 
   private _httpServerURL: URL;
-  private websocketClient: WebSocketClient<ServerWebSocketSchema>;
+  private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
 
   private httpHandlers: {
-    [Method in HttpMethod]: Map<string, HttpHandlerGroup>;
+    [Method in HttpMethod]: Map<string, HttpHandlerGroup[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -44,7 +45,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     const webSocketServerURL = new URL(this._httpServerURL);
     webSocketServerURL.protocol = 'ws';
 
-    this.websocketClient = new WebSocketClient({
+    this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
     });
   }
@@ -54,28 +55,37 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   }
 
   async start() {
-    await this.websocketClient.start();
+    if (super.isRunning()) {
+      return;
+    }
 
-    this.websocketClient.onEvent('interceptors/responses/create', async (message) => {
+    super.ensureEmptyRunningInstance();
+
+    await this.webSocketClient.start();
+
+    this.webSocketClient.onEvent('interceptors/responses/create', async (message) => {
       const { request: serializedRequest } = message.data;
 
       const request = deserializeRequest(serializedRequest);
       const method = request.method as HttpMethod;
-      const httpHandlerGroup = this.httpHandlers[method].get(request.url);
+      const httpHandlerGroup = this.httpHandlers[method].get(request.url)?.at(-1);
 
       if (!httpHandlerGroup) {
         return { response: null };
       }
 
       const { httpHandler } = httpHandlerGroup;
-      const response = await httpHandler({ request });
+
+      const rawResponse = await httpHandler({ request });
+      const response = rawResponse && method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
+
       const serializedResponse = response ? await serializeResponse(response) : null;
       return { response: serializedResponse };
     });
 
-    this.setPlatform(await this.readPlatform());
-
-    this.setIsRunning(true);
+    super.setPlatform(await this.readPlatform());
+    super.markAsRunningInstance();
+    super.setIsRunning(true);
   }
 
   private async readPlatform(): Promise<HttpInterceptorWorkerPlatform> {
@@ -93,9 +103,15 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   }
 
   async stop() {
-    await this.websocketClient.send('interceptors/workers/use/uncommit', undefined);
-    await this.websocketClient.stop();
-    this.setIsRunning(false);
+    if (!super.isRunning()) {
+      return;
+    }
+
+    await this.clearHandlers();
+    await this.webSocketClient.stop();
+
+    super.setIsRunning(false);
+    super.clearRunningInstance();
   }
 
   async use<Schema extends HttpServiceSchema>(
@@ -104,17 +120,25 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     url: string,
     handler: HttpRequestHandler,
   ) {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     const normalizedURL = super.normalizeUseURL(url);
 
-    this.httpHandlers[method].set(normalizedURL, {
+    const httpHandlerGroups = this.httpHandlers[method].get(normalizedURL) ?? [];
+
+    httpHandlerGroups.push({
       interceptor,
-      httpHandler: async (context) => {
+      async httpHandler(context) {
         const result = await handler(context);
         return result.bypass ? null : result.response;
       },
     });
 
-    await this.websocketClient.send('interceptors/workers/use/commit', {
+    this.httpHandlers[method].set(normalizedURL, httpHandlerGroups);
+
+    await this.webSocketClient.send('interceptors/workers/use/commit', {
       url: normalizedURL,
       method,
     });
@@ -124,30 +148,39 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     for (const methodHandlers of Object.values(this.httpHandlers)) {
       methodHandlers.clear();
     }
-    await this.websocketClient.send('interceptors/workers/use/uncommit', undefined);
+    await this.webSocketClient.send('interceptors/workers/use/uncommit', undefined);
   }
 
   async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const groupsToUncommit: { url: string; method: HttpMethod }[] = [];
 
     for (const [method, methodHandlers] of Object.entries(this.httpHandlers)) {
-      for (const [url, httpHandlerGroup] of methodHandlers) {
-        if (httpHandlerGroup.interceptor === interceptor) {
+      for (const [url, httpHandlerGroups] of methodHandlers) {
+        const interceptorIndex = httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
+
+        if (interceptorIndex !== -1) {
+          httpHandlerGroups.splice(interceptorIndex, 1);
+        }
+
+        if (httpHandlerGroups.length === 0) {
           groupsToUncommit.push({ url, method });
-          methodHandlers.delete(url);
         }
       }
     }
 
-    await this.websocketClient.send('interceptors/workers/use/uncommit', groupsToUncommit);
+    if (groupsToUncommit.length > 0) {
+      await this.webSocketClient.send('interceptors/workers/use/uncommit', groupsToUncommit);
+    }
   }
 
   interceptorsWithHandlers() {
-    const interceptors = new Set<AnyHttpInterceptorClient>();
+    const interceptors: AnyHttpInterceptorClient[] = [];
 
-    for (const methodHandlers of Object.values(this.httpHandlers)) {
-      for (const { interceptor } of methodHandlers.values()) {
-        interceptors.add(interceptor);
+    for (const methodHandlerGroups of Object.values(this.httpHandlers)) {
+      for (const groups of methodHandlerGroups.values()) {
+        for (const group of groups) {
+          interceptors.push(group.interceptor);
+        }
       }
     }
 

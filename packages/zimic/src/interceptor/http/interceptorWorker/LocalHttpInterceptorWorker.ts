@@ -11,7 +11,6 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
-import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
@@ -21,7 +20,6 @@ import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } fro
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements PublicLocalHttpInterceptorWorker {
   readonly type = 'local';
 
-  private static runningInstance?: LocalHttpInterceptorWorker;
   private _internalWorker?: HttpWorker;
 
   private httpHandlerGroups: {
@@ -58,27 +56,25 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
   }
 
   async start() {
-    if (LocalHttpInterceptorWorker.runningInstance && LocalHttpInterceptorWorker.runningInstance !== this) {
-      throw new OtherHttpInterceptorWorkerRunningError();
-    }
-
-    if (this.isRunning()) {
+    if (super.isRunning()) {
       return;
     }
+
+    super.ensureEmptyRunningInstance();
 
     const internalWorker = await this.internalWorkerOrLoad();
     const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
 
     if (this.isInternalBrowserWorker(internalWorker)) {
-      this.setPlatform('browser');
+      super.setPlatform('browser');
       await this.startInBrowser(internalWorker, sharedOptions);
     } else {
-      this.setPlatform('node');
+      super.setPlatform('node');
       this.startInNode(internalWorker, sharedOptions);
     }
 
-    this.setIsRunning(true);
-    LocalHttpInterceptorWorker.runningInstance = this;
+    super.markAsRunningInstance();
+    super.setIsRunning(true);
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -115,8 +111,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
 
     this.clearHandlers();
 
-    this.setIsRunning(false);
-    LocalHttpInterceptorWorker.runningInstance = undefined;
+    super.setIsRunning(false);
+    super.clearRunningInstance();
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
@@ -155,7 +151,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
         ...context,
         request: context.request as MSWStrictRequest<HttpBody>,
       });
-      return result.bypass ? passthrough() : result.response;
+
+      if (result.bypass) {
+        return passthrough();
+      }
+
+      const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
+      return response;
     });
 
     internalWorker.use(httpHandler);

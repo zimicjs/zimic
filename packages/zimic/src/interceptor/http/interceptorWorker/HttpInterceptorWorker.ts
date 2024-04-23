@@ -19,10 +19,13 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
+import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import { HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpRequestHandler } from './types/requests';
 
 abstract class HttpInterceptorWorker {
+  private static runningInstance?: HttpInterceptorWorker;
+
   private _platform: HttpInterceptorWorkerPlatform | null = null;
   private _isRunning = false;
 
@@ -43,6 +46,20 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract start(): Promise<void>;
+
+  protected ensureEmptyRunningInstance() {
+    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
+      throw new OtherHttpInterceptorWorkerRunningError();
+    }
+  }
+
+  protected markAsRunningInstance() {
+    HttpInterceptorWorker.runningInstance = this;
+  }
+
+  protected clearRunningInstance() {
+    HttpInterceptorWorker.runningInstance = undefined;
+  }
 
   abstract stop(): Promise<void>;
 

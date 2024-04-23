@@ -1,4 +1,4 @@
-import { createServerAdapter } from '@whatwg-node/server';
+import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { createServer, Server as HttpServer } from 'http';
 import { WebSocket as Socket } from 'isomorphic-ws';
 
@@ -34,10 +34,17 @@ class Server implements PublicServer {
   };
 
   constructor(options: ServerOptions) {
-    this.httpServer = createServer(
-      { joinDuplicateHeaders: true },
-      createServerAdapter((request) => this.handleHttpRequest(request)),
-    );
+    this.httpServer = createServer({ joinDuplicateHeaders: true }, async (nodeRequest, nodeResponse) => {
+      const request = normalizeNodeRequest(nodeRequest, Request);
+      const response = await this.handleHttpRequest(request);
+
+      if (response === null) {
+        nodeResponse.destroy();
+        return;
+      }
+
+      await sendNodeResponse(response, nodeResponse, nodeRequest);
+    });
 
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
@@ -66,7 +73,7 @@ class Server implements PublicServer {
       }
     }
 
-    return new Response('Request bypassed', { status: 501 });
+    return null;
   }
 
   hostname() {
@@ -82,6 +89,10 @@ class Server implements PublicServer {
   }
 
   async start() {
+    if (this.isRunning()) {
+      return;
+    }
+
     const webSocketServerStartPromise = this.webSocketServer.start();
     await this.startHttpServer();
     await webSocketServerStartPromise;
@@ -143,12 +154,18 @@ class Server implements PublicServer {
   }
 
   async stop() {
-    await this.webSocketServer.stop();
+    if (!this.isRunning()) {
+      return;
+    }
+
+    const webSocketServerStopPromise = this.webSocketServer.stop();
     await this.stopHttpServer();
+    await webSocketServerStopPromise;
   }
 
   private async stopHttpServer() {
     await new Promise<void>((resolve, reject) => {
+      this.httpServer.closeAllConnections();
       this.httpServer.close((error) => {
         if (error) {
           reject(error);
