@@ -4,8 +4,8 @@ import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/g
 
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
-describe('HttpInterceptorWorker (browser)', () => {
-  declareSharedHttpInterceptorWorkerTests({
+describe('HttpInterceptorWorker (browser)', async () => {
+  await declareSharedHttpInterceptorWorkerTests({
     platform: 'browser',
 
     startServer() {

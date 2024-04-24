@@ -4,10 +4,10 @@ import Server from '@/cli/server/Server';
 
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
-describe('HttpInterceptorWorker (Node.js)', () => {
+describe('HttpInterceptorWorker (Node.js)', async () => {
   const server = new Server();
 
-  declareSharedHttpInterceptorWorkerTests({
+  await declareSharedHttpInterceptorWorkerTests({
     platform: 'node',
 
     async startServer() {

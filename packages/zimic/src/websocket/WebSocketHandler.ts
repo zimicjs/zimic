@@ -261,6 +261,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return new Promise<void>((resolve, reject) => {
       if (isClientSide()) {
         socket.send(stringifiedMessage);
+        // TODO: wait for the message to be sent before resolving the promise
         resolve();
       } else {
         socket.send(stringifiedMessage, (error) => {
