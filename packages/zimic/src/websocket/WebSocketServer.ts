@@ -1,8 +1,10 @@
 import { Server as HttpServer } from 'http';
-import { WebSocketServer as ServerSocket, WebSocket as ClientSocket } from 'isomorphic-ws';
+import ClientSocket from 'isomorphic-ws';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
+
+const { WebSocketServer: ServerSocket } = ClientSocket;
 
 interface WebSocketServerOptions {
   httpServer: HttpServer;
@@ -52,7 +54,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     this.webSocketServer = webSocketServer;
   }
 
-  private handleWebSocketServerConnection = async (socket: ClientSocket) => {
+  private handleWebSocketServerConnection = async (socket: InstanceType<typeof ClientSocket>) => {
     await super.registerSocket(socket);
   };
 

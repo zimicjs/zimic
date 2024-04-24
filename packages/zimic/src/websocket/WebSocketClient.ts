@@ -1,4 +1,4 @@
-import { WebSocket as ClientSocket } from 'isomorphic-ws';
+import ClientSocket from 'isomorphic-ws';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';

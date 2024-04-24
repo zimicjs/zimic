@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -299,7 +299,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       headers.delete('accept');
 
       let optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
-      await expectToThrowFetchError(optionsResponsePromise);
+      await expectFetchError(optionsResponsePromise);
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
 
@@ -307,7 +307,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       headers.set('content-type', 'text/plain');
 
       optionsResponsePromise = fetch(`${baseURL}/users`, { method: 'OPTIONS', headers });
-      await expectToThrowFetchError(optionsResponsePromise);
+      await expectFetchError(optionsResponsePromise);
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
     });
@@ -363,7 +363,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       searchParams.delete('tag');
 
       const optionsResponsePromise = fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(optionsResponsePromise);
+      await expectFetchError(optionsResponsePromise);
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(1);
     });
@@ -440,7 +440,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           tags: ['admin'],
         } satisfies FiltersOptionsBody),
       });
-      await expectToThrowFetchError(optionsResponsePromise);
+      await expectFetchError(optionsResponsePromise);
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
 
@@ -450,7 +450,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           tags: [],
         } satisfies FiltersOptionsBody),
       });
-      await expectToThrowFetchError(optionsResponsePromise);
+      await expectFetchError(optionsResponsePromise);
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
     });
@@ -525,7 +525,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(specificOptionsRequest.response.body).toBe(null);
 
       const unmatchedOptionsPromise = fetch(`${baseURL}/filters/${2}`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(unmatchedOptionsPromise);
+      await expectFetchError(unmatchedOptionsPromise);
     });
   });
 
@@ -540,7 +540,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       };
     }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       const optionsTrackerWithoutResponse = await promiseIfRemote(interceptor.options('/filters'), worker);
       expect(optionsTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
@@ -553,7 +553,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       optionsRequestsWithoutResponse = await promiseIfRemote(optionsTrackerWithoutResponse.requests(), worker);
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
@@ -702,7 +702,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(optionsPromise);
+      await expectFetchError(optionsPromise);
 
       const noContentOptionsTracker = await promiseIfRemote(
         optionsTracker.respond({
@@ -815,7 +815,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectToThrowFetchError(optionsPromise);
+      await expectFetchError(optionsPromise);
     });
   });
 

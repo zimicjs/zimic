@@ -1,4 +1,4 @@
-import { WebSocket as ClientSocket } from 'isomorphic-ws';
+import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
 import { JSONValue } from '..';
 

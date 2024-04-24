@@ -1,7 +1,5 @@
 import { JSONValue } from '..';
 
-import { convertReadableStreamToBuffer, convertBufferToReadableStream } from './buffers';
-
 export function createURLIgnoringNonPathComponents(rawURL: string) {
   const url = new URL(rawURL);
   url.hash = '';
@@ -58,7 +56,8 @@ export type SerializedHttpRequest = JSONValue<{
 }>;
 
 export async function serializeRequest(request: Request): Promise<SerializedHttpRequest> {
-  const bufferedBody = request.body ? await convertReadableStreamToBuffer(request.body) : null;
+  const requestClone = request.clone();
+  const serializedBody = request.body ? await requestClone.text() : null;
 
   return {
     url: request.url,
@@ -72,13 +71,11 @@ export async function serializeRequest(request: Request): Promise<SerializedHttp
     redirect: request.redirect,
     referrer: request.referrer,
     referrerPolicy: request.referrerPolicy,
-    body: bufferedBody?.toString('base64') ?? null,
+    body: serializedBody,
   };
 }
 
 export function deserializeRequest(serializedRequest: SerializedHttpRequest): Request {
-  const bufferedBody = serializedRequest.body ? Buffer.from(serializedRequest.body, 'base64') : null;
-
   return new Request(serializedRequest.url, {
     method: serializedRequest.method,
     mode: serializedRequest.mode,
@@ -90,7 +87,7 @@ export function deserializeRequest(serializedRequest: SerializedHttpRequest): Re
     redirect: serializedRequest.redirect,
     referrer: serializedRequest.referrer,
     referrerPolicy: serializedRequest.referrerPolicy,
-    body: bufferedBody ? convertBufferToReadableStream(bufferedBody) : null,
+    body: serializedRequest.body,
   });
 }
 
@@ -102,9 +99,8 @@ export type SerializedResponse = JSONValue<{
 }>;
 
 export async function serializeResponse(response: Response): Promise<SerializedResponse> {
-  const containsBody = response.body !== null;
-  const bufferedBody = containsBody ? await convertReadableStreamToBuffer(response.body) : null;
-  const serializedBody = bufferedBody?.toString('base64') ?? null;
+  const responseClone = response.clone();
+  const serializedBody = response.body ? await responseClone.text() : null;
 
   return {
     status: response.status,
@@ -115,10 +111,7 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
-  const bufferedBody = serializedResponse.body ? Buffer.from(serializedResponse.body, 'base64') : null;
-  const streamBody = bufferedBody ? convertBufferToReadableStream(bufferedBody) : null;
-
-  return new Response(streamBody, {
+  return new Response(serializedResponse.body, {
     status: serializedResponse.status,
     statusText: serializedResponse.statusText,
     headers: new Headers(serializedResponse.headers),

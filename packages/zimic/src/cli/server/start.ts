@@ -1,35 +1,6 @@
-import { spawn } from 'child_process';
+import { runCommand } from '@/utils/processes';
 
 import Server from './Server';
-
-async function runCommand(
-  command: string,
-  options: {
-    shell?: boolean | string;
-  },
-) {
-  await new Promise<void>((resolve, reject) => {
-    const onReadyProcess = spawn(command, {
-      shell: options.shell,
-      stdio: 'inherit',
-    });
-
-    onReadyProcess.once('exit', (code) => {
-      onReadyProcess.removeAllListeners();
-
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`The command '${command}' exited with code ${code}.`));
-      }
-    });
-
-    onReadyProcess.once('error', (error) => {
-      onReadyProcess.removeAllListeners();
-      reject(error);
-    });
-  });
-}
 
 const PROCESS_EXIT_EVENTS = [
   'beforeExit',

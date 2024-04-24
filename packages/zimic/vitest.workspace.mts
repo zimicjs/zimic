@@ -26,6 +26,7 @@ export default defineWorkspace([
         environment: undefined,
         include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
         exclude: ['**/*.node.test.ts', '**/*.browserNoWorker.test.ts'],
+        globalSetup: './tests/globalSetup/serverOnBrowser.ts',
         browser: {
           name: browserName,
           provider: 'playwright',

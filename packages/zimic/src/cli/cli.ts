@@ -35,7 +35,7 @@ async function runCLI() {
                 type: 'string',
                 description: 'The hostname to start the server on.',
                 alias: 'h',
-                default: '0.0.0.0',
+                default: 'localhost',
               })
               .option('port', {
                 type: 'number',

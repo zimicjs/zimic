@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -282,7 +282,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       headers.delete('accept');
 
       let headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
 
       headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
@@ -291,7 +291,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       headers.set('content-type', 'text/plain');
 
       headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
 
       headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
@@ -345,7 +345,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       searchParams.delete('tag');
 
       const headResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
       headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
     });
@@ -420,7 +420,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expect(specificHeadRequest.response.body).toBe(null);
 
       const unmatchedHeadPromise = fetch(`${baseURL}/users/${2}`, { method: 'HEAD' });
-      await expectToThrowFetchError(unmatchedHeadPromise);
+      await expectFetchError(unmatchedHeadPromise);
     });
   });
 
@@ -435,7 +435,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       };
     }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       const headTrackerWithoutResponse = await promiseIfRemote(interceptor.head('/users'), worker);
       expect(headTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
@@ -448,7 +448,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expectTypeOf<typeof headRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       headRequestsWithoutResponse = await promiseIfRemote(headTrackerWithoutResponse.requests(), worker);
       expect(headRequestsWithoutResponse).toHaveLength(0);
@@ -597,7 +597,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(headPromise);
+      await expectFetchError(headPromise);
 
       const noContentHeadTracker = await promiseIfRemote(
         headTracker.respond({
@@ -710,7 +710,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(headPromise);
+      await expectFetchError(headPromise);
     });
   });
 

@@ -6,8 +6,8 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@tests/utils/crypto';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { getCrypto } from '@/utils/crypto';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -325,7 +325,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       headers.delete('accept');
 
       let updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
-      await expectToThrowFetchError(updateResponsePromise);
+      await expectFetchError(updateResponsePromise);
       updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
       expect(updateRequests).toHaveLength(2);
 
@@ -333,7 +333,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       headers.set('content-type', 'text/plain');
 
       updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
-      await expectToThrowFetchError(updateResponsePromise);
+      await expectFetchError(updateResponsePromise);
       updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
       expect(updateRequests).toHaveLength(2);
     });
@@ -394,7 +394,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
         method: 'PATCH',
       });
-      await expectToThrowFetchError(updateResponsePromise);
+      await expectFetchError(updateResponsePromise);
       updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
       expect(updateRequests).toHaveLength(1);
     });
@@ -454,7 +454,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           name: users[0].name,
         } satisfies UserUpdateBody),
       });
-      await expectToThrowFetchError(updateResponsePromise);
+      await expectFetchError(updateResponsePromise);
       updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
       expect(updateRequests).toHaveLength(1);
     });
@@ -537,7 +537,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expect(specificUpdateRequest.response.body).toEqual(users[0]);
 
       const unmatchedUpdatePromise = fetch(`${baseURL}/users/${users[1].id}`, { method: 'PATCH' });
-      await expectToThrowFetchError(unmatchedUpdatePromise);
+      await expectFetchError(unmatchedUpdatePromise);
     });
   });
 
@@ -558,7 +558,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         method: 'PATCH',
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
-      await expectToThrowFetchError(updatePromise);
+      await expectFetchError(updatePromise);
 
       const updateTrackerWithoutResponse = await promiseIfRemote(interceptor.patch(`/users/${users[0].id}`), worker);
       expect(updateTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
@@ -574,7 +574,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         method: 'PATCH',
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
-      await expectToThrowFetchError(updatePromise);
+      await expectFetchError(updatePromise);
 
       updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), worker);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
@@ -733,7 +733,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
-      await expectToThrowFetchError(updatePromise);
+      await expectFetchError(updatePromise);
 
       await promiseIfRemote(
         updateTracker.respond({
@@ -853,7 +853,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
-      await expectToThrowFetchError(updatePromise);
+      await expectFetchError(updatePromise);
     });
   });
 

@@ -6,8 +6,8 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@tests/utils/crypto';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { getCrypto } from '@/utils/crypto';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -327,7 +327,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       headers.delete('accept');
 
       let listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
       listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
 
@@ -335,7 +335,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       headers.set('content-type', 'text/plain');
 
       listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
       listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
     });
@@ -404,7 +404,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       searchParams.delete('orderBy');
 
       let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
 
       listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
@@ -413,7 +413,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       searchParams.set('name', 'User 2');
 
       listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
 
       listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
@@ -497,7 +497,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(specificGetRequest.response.body).toEqual(users[0]);
 
       const unmatchedGetPromise = fetch(`${baseURL}/users/${2}`, { method: 'GET' });
-      await expectToThrowFetchError(unmatchedGetPromise);
+      await expectFetchError(unmatchedGetPromise);
     });
   });
 
@@ -512,7 +512,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       };
     }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       const listTrackerWithoutResponse = await promiseIfRemote(interceptor.get('/users'), worker);
       expect(listTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
@@ -525,7 +525,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       expectTypeOf<typeof listRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
       listRequestsWithoutResponse = await promiseIfRemote(listTrackerWithoutResponse.requests(), worker);
       expect(listRequestsWithoutResponse).toHaveLength(0);
@@ -682,7 +682,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(listPromise);
+      await expectFetchError(listPromise);
 
       await promiseIfRemote(
         listTracker.respond({
@@ -802,7 +802,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(listPromise);
+      await expectFetchError(listPromise);
     });
   });
 

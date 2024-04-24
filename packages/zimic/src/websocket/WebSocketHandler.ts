@@ -1,13 +1,16 @@
-import crypto from 'crypto';
-import { WebSocket as ClientSocket } from 'isomorphic-ws';
+import ClientSocket from 'isomorphic-ws';
 
 import { Collection } from '@/types/utils';
+import { IsomorphicCrypto, getCrypto } from '@/utils/crypto';
+import { isClientSide } from '@/utils/environment';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import { WebSocket } from './types';
 
 abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sockets = new Set<ClientSocket>();
+
+  private _crypto?: IsomorphicCrypto;
 
   private listeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: {
@@ -16,29 +19,46 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     };
   } = {};
 
+  private async crypto() {
+    if (!this._crypto) {
+      this._crypto = await getCrypto();
+    }
+    return this._crypto;
+  }
+
   protected async registerSocket(socket: ClientSocket) {
     const startPromise = new Promise((resolve, reject) => {
-      socket.once('open', resolve);
-      socket.once('error', reject);
+      socket.addEventListener('open', resolve);
+      socket.addEventListener('error', reject);
     });
 
-    socket.on('message', async (rawMessage) => {
-      const bufferedMessage = Array.isArray(rawMessage) ? Buffer.concat(rawMessage) : Buffer.from(rawMessage);
-      const parsedMessage = this.parseMessage(bufferedMessage.toString('utf8'));
-      await this.notifyListeners(parsedMessage, socket);
+    socket.addEventListener('message', async (rawMessage) => {
+      const stringifiedMessageData = this.readRawMessageData(rawMessage.data);
+      const parsedMessageData = this.parseMessage(stringifiedMessageData);
+      await this.notifyListeners(parsedMessageData, socket);
     });
 
-    socket.once('close', () => {
+    socket.addEventListener('close', () => {
       this.sockets.delete(socket);
     });
 
     await startPromise;
 
-    socket.on('error', (error) => {
+    socket.addEventListener('error', (error) => {
       console.error(error);
     });
 
     this.sockets.add(socket);
+  }
+
+  private readRawMessageData(data: ClientSocket.Data) {
+    if (typeof data === 'string') {
+      return data;
+    }
+    if (Array.isArray(data)) {
+      return Buffer.concat(data).toString('utf-8');
+    }
+    return Buffer.from(data).toString('utf-8');
   }
 
   private parseMessage(stringifiedMessage: string): WebSocket.ServiceMessage<Schema> {
@@ -124,8 +144,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     for (const socket of sockets) {
       closingPromises.push(
         new Promise<void>((resolve, reject) => {
-          socket.once('close', resolve);
-          socket.once('error', reject);
+          socket.addEventListener('close', () => resolve());
+          socket.addEventListener('error', reject);
           socket.close();
         }),
       );
@@ -136,10 +156,12 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     this.sockets.clear();
   }
 
-  createEventMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
+  async createEventMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
     channel: Channel,
     eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
   ) {
+    const crypto = await this.crypto();
+
     const eventMessage: WebSocket.ServiceEventMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel,
@@ -155,7 +177,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const event = this.createEventMessage(channel, eventData);
+    const event = await this.createEventMessage(channel, eventData);
     await this.sendMessage(event, options.sockets);
   }
 
@@ -166,7 +188,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const request = this.createEventMessage(channel, requestData);
+    const request = await this.createEventMessage(channel, requestData);
 
     const responsePromise = this.waitForReply(channel, request.id);
     await this.sendMessage(request, options.sockets);
@@ -202,14 +224,16 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       sockets?: Collection<ClientSocket>;
     } = {},
   ) {
-    const reply = this.createReplyMessage(request, replyData);
+    const reply = await this.createReplyMessage(request, replyData);
     await this.sendMessage(reply, options.sockets);
   }
 
-  createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
+  async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
   ) {
+    const crypto = await this.crypto();
+
     const replyMessage: WebSocket.ServiceReplyMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
       channel: request.channel,
@@ -227,20 +251,27 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     const stringifiedMessage = JSON.stringify(message);
 
     for (const socket of sockets) {
-      sendingPromises.push(
-        new Promise<void>((resolve, reject) => {
-          socket.send(stringifiedMessage, (error) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve();
-            }
-          });
-        }),
-      );
+      sendingPromises.push(this.sendSocketMessage(socket, stringifiedMessage));
     }
 
     await Promise.all(sendingPromises);
+  }
+
+  private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (isClientSide()) {
+        socket.send(stringifiedMessage);
+        resolve();
+      } else {
+        socket.send(stringifiedMessage, (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
+      }
+    });
   }
 
   onEvent<Channel extends WebSocket.ServiceChannel<Schema>>(

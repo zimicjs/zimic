@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-export async function expectToThrowFetchError(
+export async function expectFetchError(
   value: Promise<unknown> | (() => Promise<unknown>),
   options: { canBeAborted?: boolean } = {},
 ) {

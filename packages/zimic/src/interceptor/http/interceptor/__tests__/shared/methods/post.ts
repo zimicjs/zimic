@@ -6,8 +6,8 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@tests/utils/crypto';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { getCrypto } from '@/utils/crypto';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
@@ -336,7 +336,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       headers.delete('accept');
 
       let creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
-      await expectToThrowFetchError(creationResponsePromise);
+      await expectFetchError(creationResponsePromise);
       creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
 
@@ -344,7 +344,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       headers.set('content-type', 'text/plain');
 
       creationResponsePromise = fetch(`${baseURL}/users`, { method: 'POST', headers });
-      await expectToThrowFetchError(creationResponsePromise);
+      await expectFetchError(creationResponsePromise);
       creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(2);
     });
@@ -401,7 +401,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       searchParams.delete('tag');
 
       const creationResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'POST' });
-      await expectToThrowFetchError(creationResponsePromise);
+      await expectFetchError(creationResponsePromise);
       creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
     });
@@ -454,7 +454,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         method: 'POST',
         body: JSON.stringify(users[1] satisfies UserCreationBody),
       });
-      await expectToThrowFetchError(creationResponsePromise);
+      await expectFetchError(creationResponsePromise);
 
       creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(1);
@@ -538,7 +538,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       expect(specificCreationRequest.response.body).toEqual(users[0]);
 
       const unmatchedCreationPromise = fetch(`${baseURL}/users/${2}`, { method: 'POST' });
-      await expectToThrowFetchError(unmatchedCreationPromise);
+      await expectFetchError(unmatchedCreationPromise);
     });
   });
 
@@ -559,7 +559,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         method: 'POST',
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
-      await expectToThrowFetchError(creationPromise);
+      await expectFetchError(creationPromise);
 
       const creationTrackerWithoutResponse = await promiseIfRemote(interceptor.post('/users'), worker);
       expect(creationTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
@@ -575,7 +575,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         method: 'POST',
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
-      await expectToThrowFetchError(creationPromise);
+      await expectFetchError(creationPromise);
 
       creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);
@@ -742,7 +742,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
-      await expectToThrowFetchError(creationPromise);
+      await expectFetchError(creationPromise);
 
       await promiseIfRemote(
         creationTracker.respond({
@@ -862,7 +862,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       expect(initialCreationRequests).toHaveLength(0);
 
       const creationPromise = fetch(`${baseURL}/users`, { method: 'POST' });
-      await expectToThrowFetchError(creationPromise);
+      await expectFetchError(creationPromise);
     });
   });
 

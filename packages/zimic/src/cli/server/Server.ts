@@ -1,8 +1,8 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { createServer, Server as HttpServer } from 'http';
-import { WebSocket as Socket } from 'isomorphic-ws';
+import type { WebSocket as Socket } from 'isomorphic-ws';
 
-import { HttpMethod } from '@/http/types/schema';
+import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import {
   createRegexFromURL,
   createURLIgnoringNonPathComponents,
@@ -14,8 +14,10 @@ import WebSocketServer from '@/websocket/WebSocketServer';
 import { PublicServer } from './types/public';
 import { ServerWebSocketSchema } from './types/schema';
 
+const ALLOWED_CORS_HTTP_METHODS = HTTP_METHODS.join(', ');
+
 export interface ServerOptions {
-  hostname: string;
+  hostname?: string;
   port?: number;
 }
 
@@ -45,16 +47,23 @@ class Server implements PublicServer {
 
   private knownWorkerSockets = new Set<Socket>();
 
-  constructor(options: ServerOptions) {
+  constructor(options: ServerOptions = {}) {
     this.httpServer = createServer({ joinDuplicateHeaders: true }, async (nodeRequest, nodeResponse) => {
       const request = normalizeNodeRequest(nodeRequest, Request);
       const response = await this.handleHttpRequest(request);
+
+      if (request.method === 'OPTIONS' && response === null) {
+        const optionsResponse = new Response(null, { status: 200 });
+        this.setCorsHeaders(optionsResponse);
+        await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
+      }
 
       if (response === null) {
         nodeResponse.destroy();
         return;
       }
 
+      this.setCorsHeaders(response);
       await sendNodeResponse(response, nodeResponse, nodeRequest);
     });
 
@@ -62,7 +71,7 @@ class Server implements PublicServer {
       httpServer: this.httpServer,
     });
 
-    this._hostname = options.hostname;
+    this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
   }
 
@@ -91,6 +100,13 @@ class Server implements PublicServer {
     }
 
     return null;
+  }
+
+  private setCorsHeaders(response: Response) {
+    response.headers.set('access-control-allow-origin', '*');
+    response.headers.set('access-control-request-method', '*');
+    response.headers.set('access-control-allow-methods', ALLOWED_CORS_HTTP_METHODS);
+    response.headers.set('access-control-allow-headers', '*');
   }
 
   hostname() {
@@ -146,7 +162,7 @@ class Server implements PublicServer {
 
   private registerWorkerSocketIfUnknown(socket: Socket) {
     if (!this.knownWorkerSockets.has(socket)) {
-      socket.once('close', () => {
+      socket.addEventListener('close', () => {
         this.removeWorkerSocket(socket);
       });
 
