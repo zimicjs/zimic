@@ -52,7 +52,7 @@ export function declareSharedHttpRequestTrackerTests(options: {
     },
   ];
 
-  describe.each(optionsArray)('Shared (type $type)', ({ Tracker, workerOptions }) => {
+  describe.each(optionsArray)('Shared (type $workerOptions.type)', ({ Tracker, workerOptions }) => {
     type HeadersSchema = HttpSchema.Headers<{
       accept?: string;
       'content-type'?: string;
@@ -381,7 +381,7 @@ export function declareSharedHttpRequestTrackerTests(options: {
 
       expectTypeOf(interceptedRequests[0].raw).toEqualTypeOf<HttpRequest<MethodSchema['request']['body']>>();
       expect(interceptedRequests[0].raw).toBeInstanceOf(Request);
-      expect(interceptedRequests[0].raw.url).toBe(`${baseURL}/`);
+      expect(interceptedRequests[0].raw.url).toBe(request.url);
       expect(interceptedRequests[0].raw.method).toBe('POST');
       expect(interceptedRequests[0].raw.headers).toEqual(request.headers);
       expectTypeOf(interceptedRequests[0].raw.json).toEqualTypeOf<() => Promise<MethodSchema['request']['body']>>();
@@ -421,14 +421,16 @@ export function declareSharedHttpRequestTrackerTests(options: {
 
       for (const hiddenProperty of HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES) {
         expect(interceptedRequests[0]).not.toHaveProperty(hiddenProperty);
-        expect((interceptedRequests[0] as unknown as Request)[hiddenProperty]).toBe(undefined);
+        // @ts-expect-error Trying to access the hidden property.
+        expect(interceptedRequests[0][hiddenProperty]).toBe(undefined);
       }
 
       expect(interceptedRequests[0].response).toEqual(parsedResponse);
 
       for (const hiddenProperty of HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES) {
         expect(interceptedRequests[0].response).not.toHaveProperty(hiddenProperty);
-        expect((interceptedRequests[0].response as unknown as Response)[hiddenProperty]).toBe(undefined);
+        // @ts-expect-error Trying to access the hidden property.
+        expect(interceptedRequests[0].response[hiddenProperty]).toBe(undefined);
       }
     });
 

@@ -21,23 +21,47 @@ import {
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
+const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
+
 class RemoteHttpRequestTracker<
-    Schema extends HttpServiceSchema,
-    Method extends HttpServiceSchemaMethod<Schema>,
-    Path extends HttpServiceSchemaPath<Schema, Method>,
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-  >
-  extends Promise<unknown>
-  implements PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  Path extends HttpServiceSchemaPath<Schema, Method>,
+  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+> implements PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>
 {
   readonly type = 'remote';
 
   private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
+
   private syncPromises: Promise<unknown>[] = [];
+  private synced: this;
 
   constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>, method: Method, path: Path) {
-    super(() => {}); // eslint-disable-line @typescript-eslint/no-empty-function
     this._client = new HttpRequestTrackerClient(interceptor, method, path);
+    this.synced = this.createSyncedProxy();
+  }
+
+  private createSyncedProxy() {
+    return new Proxy(this, {
+      has: (target, property: keyof RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>) => {
+        if (this.isHiddenPropertyWhenSynced(property)) {
+          return false;
+        }
+        return Reflect.has(target, property);
+      },
+
+      get: (target, property: keyof RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>) => {
+        if (this.isHiddenPropertyWhenSynced(property)) {
+          return undefined;
+        }
+        return Reflect.get(target, property);
+      },
+    });
+  }
+
+  private isHiddenPropertyWhenSynced(property: string) {
+    return PENDING_PROPERTIES.has(property);
   }
 
   client() {
@@ -117,15 +141,19 @@ class RemoteHttpRequestTracker<
       | null,
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
-    return Promise.all(this.syncPromises).then(() => {
-      this.syncPromises = [];
+    const promisesToWait = new Set(this.syncPromises);
 
-      if (onFulfilled) {
-        return onFulfilled(this);
-      } else {
-        return this as unknown as FulfilledResult;
-      }
-    }, onRejected);
+    return Promise.all(promisesToWait)
+      .then(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
+
+        if (this.syncPromises.length === 0) {
+          return this.synced;
+        }
+        return this;
+      })
+      .then(onFulfilled, onRejected);
   }
 
   catch<RejectedResult = never>(

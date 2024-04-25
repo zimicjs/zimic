@@ -143,7 +143,7 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenRequestProperty(property: string) {
-    return (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
   static async parseRawResponse<
@@ -188,7 +188,7 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenResponseProperty(property: string) {
-    return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
   static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {

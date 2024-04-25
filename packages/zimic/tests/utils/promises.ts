@@ -9,9 +9,13 @@ export function expectPossiblePromise<FulfilledResult>(
   const { shouldBePromise } = options;
 
   if (shouldBePromise) {
-    expect(value).toBeInstanceOf(Promise);
+    expect(value).toHaveProperty('then', expect.any(Function));
+    expect(value).toHaveProperty('catch', expect.any(Function));
+    expect(value).toHaveProperty('finally', expect.any(Function));
   } else {
-    expect(value).not.toBeInstanceOf(Promise);
+    expect(value).not.toHaveProperty('then');
+    expect(value).not.toHaveProperty('catch');
+    expect(value).not.toHaveProperty('finally');
   }
 
   return value;
