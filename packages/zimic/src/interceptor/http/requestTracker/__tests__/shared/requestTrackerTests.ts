@@ -19,6 +19,7 @@ import {
 } from '@/interceptor/http/interceptorWorker/types/options';
 import { PossiblePromise } from '@/types/utils';
 import { createInternalHttpInterceptorWorker, createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { AccessResources } from '@tests/utils/workers';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
@@ -33,10 +34,10 @@ import {
 export function declareSharedHttpRequestTrackerTests(options: {
   platform: HttpInterceptorWorkerPlatform;
   startServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorWorkerType) => { baseURL: string; pathPrefix: string };
+  getAccessResources: (type: HttpInterceptorWorkerType) => Promise<AccessResources>;
   stopServer?: () => PossiblePromise<void>;
 }) {
-  const { platform, startServer, getBaseURL, stopServer } = options;
+  const { platform, startServer, getAccessResources, stopServer } = options;
 
   const optionsArray: (
     | { Tracker: typeof LocalHttpRequestTracker; workerOptions: LocalHttpInterceptorWorkerOptions }
@@ -97,7 +98,7 @@ export function declareSharedHttpRequestTrackerTests(options: {
         await startServer?.();
       }
 
-      ({ baseURL, pathPrefix } = getBaseURL(workerOptions.type));
+      ({ baseURL, pathPrefix } = await getAccessResources(workerOptions.type));
 
       worker = createInternalHttpInterceptorWorker(
         workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL: baseURL },

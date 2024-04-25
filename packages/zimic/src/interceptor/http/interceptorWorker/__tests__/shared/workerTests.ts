@@ -6,6 +6,7 @@ import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectFetchError } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
+import { AccessResources } from '@tests/utils/workers';
 
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
@@ -23,10 +24,10 @@ import { promiseIfRemote } from '../utils/promises';
 export function declareSharedHttpInterceptorWorkerTests(options: {
   platform: HttpInterceptorWorkerPlatform;
   startServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorWorkerType) => { baseURL: string; pathPrefix: string };
+  getAccessResources: (type: HttpInterceptorWorkerType) => Promise<AccessResources>;
   stopServer?: () => PossiblePromise<void>;
 }) {
-  const { platform, startServer, getBaseURL, stopServer } = options;
+  const { platform, startServer, getAccessResources, stopServer } = options;
 
   const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
     { type: 'local' },
@@ -69,7 +70,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         await startServer?.();
       }
 
-      ({ baseURL, pathPrefix } = getBaseURL(workerOptions.type));
+      ({ baseURL, pathPrefix } = await getAccessResources(workerOptions.type));
 
       spiedRequestHandler.mockClear();
     });

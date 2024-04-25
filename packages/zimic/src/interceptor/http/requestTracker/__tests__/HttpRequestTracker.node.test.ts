@@ -1,7 +1,7 @@
-import { describe, expect } from 'vitest';
+import { describe } from 'vitest';
 
 import Server from '@/cli/server/Server';
-import { joinURL } from '@/utils/fetch';
+import { getNodeAccessResources } from '@tests/utils/workers';
 
 import { declareSharedHttpRequestTrackerTests } from './shared/requestTrackerTests';
 
@@ -15,24 +15,8 @@ describe('HttpRequestTracker (Node.js)', () => {
       await server.start();
     },
 
-    getBaseURL(type) {
-      if (type === 'local') {
-        return {
-          baseURL: 'http://localhost:3000',
-          pathPrefix: '',
-        };
-      }
-
-      const hostname = server.hostname();
-      const port = server.port()!;
-      expect(port).not.toBe(null);
-
-      const pathPrefix = `path-${crypto.randomUUID()}`;
-
-      return {
-        baseURL: joinURL(`http://${hostname}:${port}`, pathPrefix),
-        pathPrefix,
-      };
+    getAccessResources(type) {
+      return getNodeAccessResources(type, server);
     },
 
     async stopServer() {

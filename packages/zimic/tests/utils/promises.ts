@@ -12,7 +12,7 @@ export function expectPossiblePromise<FulfilledResult>(
     expect(value).toHaveProperty('then', expect.any(Function));
     expect(value).toHaveProperty('catch', expect.any(Function));
     expect(value).toHaveProperty('finally', expect.any(Function));
-  } else {
+  } else if (value !== undefined && value !== null) {
     expect(value).not.toHaveProperty('then');
     expect(value).not.toHaveProperty('catch');
     expect(value).not.toHaveProperty('finally');
