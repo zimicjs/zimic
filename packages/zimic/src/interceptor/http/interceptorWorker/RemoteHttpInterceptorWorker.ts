@@ -147,20 +147,28 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       },
     });
 
-    await this.webSocketClient.send('interceptors/workers/use/commit', {
+    await this.webSocketClient.request('interceptors/workers/use/commit', {
       url: normalizedURLAsString,
       method,
     });
   }
 
   async clearHandlers() {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     for (const methodHandlers of Object.values(this.httpHandlers)) {
       methodHandlers.length = 0;
     }
-    await this.webSocketClient.send('interceptors/workers/use/reset', undefined);
+    await this.webSocketClient.request('interceptors/workers/use/reset', undefined);
   }
 
   async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     for (const handlerGroups of Object.values(this.httpHandlers)) {
       const handlerGroupIndexToRemove = handlerGroups.findIndex((group) => group.interceptor === interceptor);
 
@@ -176,7 +184,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       }));
     });
 
-    await this.webSocketClient.send('interceptors/workers/use/reset', groupsToRecommit);
+    await this.webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
   }
 
   interceptorsWithHandlers() {

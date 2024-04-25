@@ -82,19 +82,19 @@ export async function declareSharedHttpInterceptorWorkerTests(options: {
     }
 
     beforeEach(async () => {
-      if (worker) {
-        await promiseIfRemote(worker.clearHandlers(), worker);
-      }
-      spiedRequestHandler.mockClear();
-
       if (workerOptions.type === 'remote') {
         const { hostname, port } = await startServer();
         serverHostname = hostname;
         serverPort = port;
       }
+
+      spiedRequestHandler.mockClear();
     });
 
     afterEach(async () => {
+      if (worker?.isRunning()) {
+        await promiseIfRemote(worker.clearHandlers(), worker);
+      }
       await worker?.stop();
 
       if (workerOptions.type === 'remote') {

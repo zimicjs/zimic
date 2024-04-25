@@ -8,6 +8,7 @@ export type ServerWebSocketSchema = WebSocket.ServiceSchema<{
       url: string;
       method: HttpMethod;
     };
+    reply: {};
   };
 
   'interceptors/workers/use/reset': {
@@ -15,6 +16,7 @@ export type ServerWebSocketSchema = WebSocket.ServiceSchema<{
       url: string;
       method: HttpMethod;
     }[];
+    reply: {};
   };
 
   'interceptors/responses/create': {

@@ -98,7 +98,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
   }
 
   async stop() {
-    if (!this.isRunning()) {
+    if (!super.isRunning()) {
       return;
     }
 
@@ -142,6 +142,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     url: string,
     handler: HttpRequestHandler,
   ) {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
@@ -167,11 +171,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
   }
 
   clearHandlers() {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     this._internalWorker?.resetHandlers();
     this.httpHandlerGroups = [];
   }
 
   clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
+    if (!super.isRunning()) {
+      throw new NotStartedHttpInterceptorWorkerError();
+    }
+
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
 
     const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);

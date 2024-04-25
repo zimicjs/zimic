@@ -5,6 +5,7 @@ import { IsomorphicCrypto, getCrypto } from '@/utils/crypto';
 import { isClientSide } from '@/utils/environment';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
+import NotStartedWebSocketHandlerError from './errors/NotStartedWebSocketHandlerError';
 import { WebSocket } from './types';
 
 abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
@@ -18,6 +19,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       reply: Set<WebSocket.ReplyMessageListener<Schema, Channel>>;
     };
   } = {};
+
+  abstract isRunning(): boolean;
 
   private async crypto() {
     if (!this._crypto) {
@@ -170,17 +173,6 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return eventMessage;
   }
 
-  async send<Channel extends WebSocket.EventServiceChannel<Schema>>(
-    channel: Channel,
-    eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
-    options: {
-      sockets?: Collection<ClientSocket>;
-    } = {},
-  ) {
-    const event = await this.createEventMessage(channel, eventData);
-    await this.sendMessage(event, options.sockets);
-  }
-
   async request<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     channel: Channel,
     requestData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
@@ -258,10 +250,13 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
+    if (!this.isRunning()) {
+      throw new NotStartedWebSocketHandlerError();
+    }
+
     return new Promise<void>((resolve, reject) => {
       if (isClientSide()) {
         socket.send(stringifiedMessage);
-        // TODO: wait for the message to be sent before resolving the promise
         resolve();
       } else {
         socket.send(stringifiedMessage, (error) => {

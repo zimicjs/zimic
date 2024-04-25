@@ -86,6 +86,7 @@ class Server implements PublicServer {
       const { url, method } = message.data;
       this.registerHttpHandlerGroup(url, method, socket);
       this.registerWorkerSocketIfUnknown(socket);
+      return {};
     });
 
     this.webSocketServer.onEvent('interceptors/workers/use/reset', (message, socket) => {
@@ -97,6 +98,8 @@ class Server implements PublicServer {
       }
 
       this.registerWorkerSocketIfUnknown(socket);
+
+      return {};
     });
   }
 

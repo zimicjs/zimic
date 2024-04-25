@@ -28,13 +28,13 @@ export namespace WebSocket {
 
   export type ServiceChannel<Schema extends ServiceSchema> = keyof Schema & string;
 
-  export type EventServiceChannel<Schema extends ServiceSchema> = {
+  export type EventWithNoReplyServiceChannel<Schema extends ServiceSchema> = {
     [Channel in ServiceChannel<Schema>]: Schema[Channel]['reply'] extends JSONValue ? never : Channel;
   }[ServiceChannel<Schema>];
 
   export type EventWithReplyServiceChannel<Schema extends ServiceSchema> = Exclude<
     ServiceChannel<Schema>,
-    EventServiceChannel<Schema>
+    EventWithNoReplyServiceChannel<Schema>
   >;
 
   export type ServiceEventMessage<
