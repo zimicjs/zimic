@@ -7,11 +7,7 @@ import {
   HttpInterceptorWorkerOptions,
   HttpInterceptorWorkerPlatform,
 } from '@/interceptor/http/interceptorWorker/types/options';
-import {
-  createInternalHttpInterceptorWorker,
-  getDefaultBaseURL,
-  createDefaultInterceptorOptions,
-} from '@tests/utils/interceptors';
+import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
@@ -65,7 +61,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     declareBaseURLHttpInterceptorTests({
       ...options,
       worker,
-      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, mockServerURL }),
+      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, serverURL: mockServerURL }),
       interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
     });
   });
@@ -76,7 +72,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
       ...options,
       worker,
-      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, mockServerURL }),
+      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, serverURL: mockServerURL }),
       interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
     };
 
