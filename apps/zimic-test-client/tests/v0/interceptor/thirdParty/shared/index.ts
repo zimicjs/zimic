@@ -19,7 +19,7 @@ function declareClientTests(options: ClientTestOptions) {
     { type: 'local' },
     {
       type: 'remote',
-      mockServerURL: `http://localhost:${environment.ZIMIC_SERVER_PORT}`,
+      serverURL: `http://localhost:${environment.ZIMIC_SERVER_PORT}`,
     },
   ];
 
