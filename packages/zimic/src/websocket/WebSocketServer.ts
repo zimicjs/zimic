@@ -68,6 +68,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     }
 
     await super.closeSockets();
+    super.removeAllListeners();
 
     await new Promise<void>((resolve, reject) => {
       const handleServerClose = () => {
@@ -85,11 +86,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       this.webSocketServer?.close();
     });
 
-    super.removeAllListeners();
-
-    this.webSocketServer?.off('connection', this.handleWebSocketServerConnection);
-    this.webSocketServer?.off('error', this.handleWebSocketServerError);
-
+    this.webSocketServer?.removeAllListeners();
     this.webSocketServer = undefined;
   }
 }

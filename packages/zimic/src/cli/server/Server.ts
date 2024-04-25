@@ -27,8 +27,8 @@ interface HttpHandlerGroup {
 }
 
 class Server implements PublicServer {
-  private httpServer: HttpServer;
-  private webSocketServer: WebSocketServer<ServerWebSocketSchema>;
+  private httpServer?: HttpServer;
+  private webSocketServer?: WebSocketServer<ServerWebSocketSchema>;
 
   private _hostname: string;
   private _port?: number;
@@ -48,65 +48,8 @@ class Server implements PublicServer {
   private knownWorkerSockets = new Set<Socket>();
 
   constructor(options: ServerOptions = {}) {
-    this.httpServer = createServer({ joinDuplicateHeaders: true }, async (nodeRequest, nodeResponse) => {
-      const request = normalizeNodeRequest(nodeRequest, Request);
-      const response = await this.handleHttpRequest(request);
-
-      if (request.method === 'OPTIONS' && response === null) {
-        const optionsResponse = new Response(null, { status: 200 });
-        this.setCorsHeaders(optionsResponse);
-        await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
-      }
-
-      if (response === null) {
-        nodeResponse.destroy();
-        return;
-      }
-
-      this.setCorsHeaders(response);
-      await sendNodeResponse(response, nodeResponse, nodeRequest);
-    });
-
-    this.webSocketServer = new WebSocketServer({
-      httpServer: this.httpServer,
-    });
-
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
-  }
-
-  private async handleHttpRequest(request: Request) {
-    const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
-    const serializedRequest = await serializeRequest(request);
-
-    for (let index = handlerGroup.length - 1; index >= 0; index--) {
-      const handler = handlerGroup[index];
-
-      const matchesHandlerURL = handler.url.regex.test(request.url);
-      if (!matchesHandlerURL) {
-        continue;
-      }
-
-      const { response: serializedResponse } = await this.webSocketServer.request(
-        'interceptors/responses/create',
-        { request: serializedRequest },
-        { sockets: [handler.socket] },
-      );
-
-      if (serializedResponse) {
-        const response = deserializeResponse(serializedResponse);
-        return response;
-      }
-    }
-
-    return null;
-  }
-
-  private setCorsHeaders(response: Response) {
-    response.headers.set('access-control-allow-origin', '*');
-    response.headers.set('access-control-request-method', '*');
-    response.headers.set('access-control-allow-methods', ALLOWED_CORS_HTTP_METHODS);
-    response.headers.set('access-control-allow-headers', '*');
   }
 
   hostname() {
@@ -118,13 +61,22 @@ class Server implements PublicServer {
   }
 
   isRunning() {
-    return this.httpServer.listening && this.webSocketServer.isRunning();
+    return !!this.httpServer?.listening && !!this.webSocketServer?.isRunning();
   }
 
   async start() {
     if (this.isRunning()) {
       return;
     }
+
+    this.httpServer = createServer({
+      keepAlive: true,
+      joinDuplicateHeaders: true,
+    });
+
+    this.webSocketServer = new WebSocketServer({
+      httpServer: this.httpServer,
+    });
 
     const webSocketServerStartPromise = this.webSocketServer.start();
     await this.startHttpServer();
@@ -178,17 +130,43 @@ class Server implements PublicServer {
 
   private async startHttpServer() {
     await new Promise<void>((resolve, reject) => {
-      this.httpServer.once('error', reject);
-      this.httpServer.listen(this._port, this._hostname, () => {
-        this.httpServer.off('error', reject);
+      const handleStartSuccess = () => {
+        this.httpServer?.off('error', handleStartError); // eslint-disable-line @typescript-eslint/no-use-before-define
         resolve();
-      });
+      };
+
+      const handleStartError = (error: unknown) => {
+        this.httpServer?.off('listening', handleStartSuccess);
+        reject(error);
+      };
+
+      this.httpServer?.listen(this._port, this._hostname, handleStartSuccess);
+      this.httpServer?.once('error', handleStartError);
     });
 
-    const httpAddress = this.httpServer.address();
+    const httpAddress = this.httpServer?.address();
     if (typeof httpAddress !== 'string') {
       this._port = httpAddress?.port;
     }
+
+    this.httpServer?.on('request', async (nodeRequest, nodeResponse) => {
+      const request = normalizeNodeRequest(nodeRequest, Request);
+      const response = await this.handleHttpRequest(request);
+
+      if (request.method === 'OPTIONS' && response === null) {
+        const optionsResponse = new Response(null, { status: 200 });
+        this.setCorsHeaders(optionsResponse);
+        await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
+      }
+
+      if (response === null) {
+        nodeResponse.destroy();
+        return;
+      }
+
+      this.setCorsHeaders(response);
+      await sendNodeResponse(response, nodeResponse, nodeRequest);
+    });
   }
 
   async stop() {
@@ -196,15 +174,18 @@ class Server implements PublicServer {
       return;
     }
 
-    const webSocketServerStopPromise = this.webSocketServer.stop();
+    const webSocketServerStopPromise = this.webSocketServer?.stop();
     await this.stopHttpServer();
     await webSocketServerStopPromise;
+
+    this.httpServer?.removeAllListeners();
+    this.httpServer = undefined;
   }
 
   private async stopHttpServer() {
     await new Promise<void>((resolve, reject) => {
-      this.httpServer.closeAllConnections();
-      this.httpServer.close((error) => {
+      this.httpServer?.closeAllConnections();
+      this.httpServer?.close((error) => {
         if (error) {
           reject(error);
         } else {
@@ -212,6 +193,44 @@ class Server implements PublicServer {
         }
       });
     });
+  }
+
+  private async handleHttpRequest(request: Request) {
+    if (!this.webSocketServer) {
+      return null;
+    }
+
+    const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
+    const serializedRequest = await serializeRequest(request);
+
+    for (let index = handlerGroup.length - 1; index >= 0; index--) {
+      const handler = handlerGroup[index];
+
+      const matchesHandlerURL = handler.url.regex.test(request.url);
+      if (!matchesHandlerURL) {
+        continue;
+      }
+
+      const { response: serializedResponse } = await this.webSocketServer.request(
+        'interceptors/responses/create',
+        { request: serializedRequest },
+        { sockets: [handler.socket] },
+      );
+
+      if (serializedResponse) {
+        const response = deserializeResponse(serializedResponse);
+        return response;
+      }
+    }
+
+    return null;
+  }
+
+  private setCorsHeaders(response: Response) {
+    response.headers.set('access-control-allow-origin', '*');
+    response.headers.set('access-control-request-method', '*');
+    response.headers.set('access-control-allow-methods', ALLOWED_CORS_HTTP_METHODS);
+    response.headers.set('access-control-allow-headers', '*');
   }
 }
 
