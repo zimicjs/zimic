@@ -10,7 +10,7 @@ export function createURLIgnoringNonPathComponents(rawURL: string) {
 }
 
 export function createRegexFromURL(url: string) {
-  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/, '/(?<$1>[^/]+)');
+  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/, '/(?<$1>[^/]+)').replace(/(\/+)$/, '(?:$1)?');
   return new RegExp(`^${urlWithReplacedPathParams}$`);
 }
 

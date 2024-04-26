@@ -12,7 +12,7 @@ import {
 import { Default } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
-import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
@@ -21,7 +21,7 @@ import {
 } from '../requestTracker/types/requests';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
 import { HttpInterceptorWorkerPlatform } from './types/options';
-import { HttpRequestHandler } from './types/requests';
+import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
   private static runningInstance?: HttpInterceptorWorker;
@@ -67,7 +67,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
-    handler: HttpRequestHandler,
+    createResponse: HttpResponseFactory,
   ): Promise<void> | void;
 
   abstract clearHandlers(): Promise<void> | void;
@@ -76,8 +76,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
   ): Promise<void> | void;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  abstract interceptorsWithHandlers(): HttpInterceptorClient<any>[];
+  abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
   static createResponseFromDeclaration<
     Declaration extends {

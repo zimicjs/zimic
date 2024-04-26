@@ -1,12 +1,8 @@
-import { ServerWebSocketSchema } from '@/cli/server/types/schema';
+import { HttpHandlerCommit, ServerWebSocketSchema } from '@/cli/server/types/schema';
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import {
-  createURLIgnoringNonPathComponents,
-  createRegexFromURL,
-  deserializeRequest,
-  serializeResponse,
-} from '@/utils/fetch';
+import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
+import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -15,33 +11,25 @@ import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpIntercepto
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { PublicRemoteHttpInterceptorWorker } from './types/public';
-import { HttpRequestHandler, HttpRequestHandlerContext } from './types/requests';
+import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
 
-type HttpHandler = (context: HttpRequestHandlerContext) => Promise<HttpResponse | null>;
-
-interface HttpHandlerGroup {
-  url: { original: string; regex: RegExp };
+interface HttpHandler {
+  id: string;
+  url: string;
+  method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
-  httpHandler: HttpHandler;
+  createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
   readonly type = 'remote';
 
+  private _crypto?: IsomorphicCrypto;
+
   private _serverURL: URL;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
 
-  private httpHandlers: {
-    [Method in HttpMethod]: HttpHandlerGroup[];
-  } = {
-    GET: [],
-    POST: [],
-    PATCH: [],
-    PUT: [],
-    DELETE: [],
-    HEAD: [],
-    OPTIONS: [],
-  };
+  private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
@@ -54,6 +42,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
     });
+  }
+
+  private async crypto() {
+    if (!this._crypto) {
+      this._crypto = await getCrypto();
+    }
+    return this._crypto;
   }
 
   serverURL() {
@@ -70,20 +65,16 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     await this.webSocketClient.start();
 
     this.webSocketClient.onEvent('interceptors/responses/create', async (message) => {
-      const { request: serializedRequest } = message.data;
+      const { handlerId, request: serializedRequest } = message.data;
 
-      const request = deserializeRequest(serializedRequest);
-      const method = request.method as HttpMethod;
-      const handlerGroup = this.httpHandlers[method].findLast((group) => group.url.regex.test(request.url));
-
-      if (!handlerGroup) {
+      const handler = this.httpHandlers.get(handlerId);
+      if (!handler) {
         return { response: null };
       }
 
-      const { httpHandler } = handlerGroup;
-
-      const rawResponse = await httpHandler({ request });
-      const response = rawResponse && method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
+      const request = deserializeRequest(serializedRequest);
+      const rawResponse = await handler.createResponse({ request });
+      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
       const serializedResponse = response ? await serializeResponse(response) : null;
       return { response: serializedResponse };
@@ -124,31 +115,31 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
-    handler: HttpRequestHandler,
+    createResponse: HttpResponseFactory,
   ) {
     if (!super.isRunning()) {
       throw new NotStartedHttpInterceptorWorkerError();
     }
 
-    const handlerGroups = this.httpHandlers[method];
+    const crypto = await this.crypto();
+    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url);
-    const normalizedURLAsString = normalizedURL.toString();
-
-    handlerGroups.push({
-      url: {
-        original: normalizedURLAsString,
-        regex: createRegexFromURL(normalizedURLAsString),
-      },
+    const handler: HttpHandler = {
+      id: crypto.randomUUID(),
+      url: normalizedURL,
+      method,
       interceptor,
-      async httpHandler(context) {
-        const result = await handler(context);
+      async createResponse(context) {
+        const result = await createResponse(context);
         return result.bypass ? null : result.response;
       },
-    });
+    };
+
+    this.httpHandlers.set(handler.id, handler);
 
     await this.webSocketClient.request('interceptors/workers/use/commit', {
-      url: normalizedURLAsString,
+      id: handler.id,
+      url: normalizedURL,
       method,
     });
   }
@@ -158,9 +149,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       throw new NotStartedHttpInterceptorWorkerError();
     }
 
-    for (const methodHandlers of Object.values(this.httpHandlers)) {
-      methodHandlers.length = 0;
-    }
+    this.httpHandlers.clear();
+
     await this.webSocketClient.request('interceptors/workers/use/reset', undefined);
   }
 
@@ -169,29 +159,23 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       throw new NotStartedHttpInterceptorWorkerError();
     }
 
-    for (const handlerGroups of Object.values(this.httpHandlers)) {
-      const handlerGroupIndexToRemove = handlerGroups.findIndex((group) => group.interceptor === interceptor);
-
-      if (handlerGroupIndexToRemove !== -1) {
-        handlerGroups.splice(handlerGroupIndexToRemove, 1);
+    for (const handler of this.httpHandlers.values()) {
+      if (handler.interceptor === interceptor) {
+        this.httpHandlers.delete(handler.id);
       }
     }
 
-    const groupsToRecommit = Object.entries(this.httpHandlers).flatMap(([method, handlerGroups]) => {
-      return handlerGroups.map(({ url }) => ({
-        url: url.original,
-        method,
-      }));
-    });
+    const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
+      id: handler.id,
+      url: handler.url,
+      method: handler.method,
+    }));
 
     await this.webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
   }
 
   interceptorsWithHandlers() {
-    const interceptors = Object.values(this.httpHandlers).flatMap<AnyHttpInterceptorClient>((methodHandlerGroups) => {
-      return methodHandlerGroups.map((group) => group.interceptor);
-    });
-
+    const interceptors = Array.from(this.httpHandlers.values(), (handler) => handler.interceptor);
     return interceptors;
   }
 }

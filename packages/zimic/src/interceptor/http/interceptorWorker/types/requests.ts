@@ -7,25 +7,24 @@ import { PossiblePromise } from '@/types/utils';
 export type HttpWorker = BrowserMSWWorker | NodeMSWWorker;
 export { BrowserMSWWorker as BrowserHttpWorker, NodeMSWWorker as NodeHttpWorker };
 
-export interface HttpRequestHandlerContext<Body extends HttpBody = HttpBody> {
+export interface HttpResponseFactoryContext<Body extends HttpBody = HttpBody> {
   request: HttpRequest<Body>;
 }
 
-export interface EffectiveHttpRequestHandlerResult<Body extends HttpBody = HttpBody> {
+export interface EffectiveHttpResponseFactoryResult<Body extends HttpBody = HttpBody> {
   bypass?: never;
   response: HttpResponse<Body>;
 }
 
-export interface BypassedHttpRequestHandlerResult {
+export interface BypassedHttpResponseFactoryResult {
   bypass: true;
   response?: never;
 }
 
-export type HttpRequestHandlerResult<Body extends HttpBody = HttpBody> =
-  | EffectiveHttpRequestHandlerResult<Body>
-  | BypassedHttpRequestHandlerResult;
+export type HttpResponseFactoryResult<Body extends HttpBody = HttpBody> =
+  | EffectiveHttpResponseFactoryResult<Body>
+  | BypassedHttpResponseFactoryResult;
 
-export type HttpRequestHandler<
-  RequestBody extends HttpBody = HttpBody,
-  ResponseBody extends HttpBody = HttpBody,
-> = (context: { request: HttpRequest<RequestBody> }) => PossiblePromise<HttpRequestHandlerResult<ResponseBody>>;
+export type HttpResponseFactory<RequestBody extends HttpBody = HttpBody, ResponseBody extends HttpBody = HttpBody> = (
+  context: HttpResponseFactoryContext<RequestBody>,
+) => PossiblePromise<HttpResponseFactoryResult<ResponseBody>>;

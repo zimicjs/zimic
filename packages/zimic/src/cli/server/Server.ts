@@ -12,7 +12,7 @@ import {
 import WebSocketServer from '@/websocket/WebSocketServer';
 
 import { PublicServer } from './types/public';
-import { ServerWebSocketSchema } from './types/schema';
+import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
 const ALLOWED_CORS_HTTP_METHODS = HTTP_METHODS.join(', ');
 
@@ -21,7 +21,8 @@ export interface ServerOptions {
   port?: number;
 }
 
-interface HttpHandlerGroup {
+interface HttpHandler {
+  id: string;
   url: { regex: RegExp };
   socket: Socket;
 }
@@ -34,7 +35,7 @@ class Server implements PublicServer {
   private _port?: number;
 
   private httpHandlerGroups: {
-    [Method in HttpMethod]: HttpHandlerGroup[];
+    [Method in HttpMethod]: HttpHandler[];
   } = {
     GET: [],
     POST: [],
@@ -83,8 +84,8 @@ class Server implements PublicServer {
     await webSocketServerStartPromise;
 
     this.webSocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
-      const { url, method } = message.data;
-      this.registerHttpHandlerGroup(url, method, socket);
+      const commit = message.data;
+      this.registerHttpHandlerGroup(commit, socket);
       this.registerWorkerSocketIfUnknown(socket);
       return {};
     });
@@ -92,9 +93,9 @@ class Server implements PublicServer {
     this.webSocketServer.onEvent('interceptors/workers/use/reset', (message, socket) => {
       this.removeWorkerSocket(socket);
 
-      const groupsToRecommit = message.data ?? [];
-      for (const { url, method } of groupsToRecommit) {
-        this.registerHttpHandlerGroup(url, method, socket);
+      const resetCommits = message.data ?? [];
+      for (const commit of resetCommits) {
+        this.registerHttpHandlerGroup(commit, socket);
       }
 
       this.registerWorkerSocketIfUnknown(socket);
@@ -103,14 +104,14 @@ class Server implements PublicServer {
     });
   }
 
-  private registerHttpHandlerGroup(url: string, method: HttpMethod, socket: Socket) {
+  private registerHttpHandlerGroup({ id, url, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url);
-    const normalizedURLAsString = normalizedURL.toString();
+    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
 
     handlerGroups.push({
-      url: { regex: createRegexFromURL(normalizedURLAsString) },
+      id,
+      url: { regex: createRegexFromURL(normalizedURL) },
       socket,
     });
   }
@@ -204,19 +205,24 @@ class Server implements PublicServer {
     }
 
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
+
+    const normalizedURL = createURLIgnoringNonPathComponents(request.url).toString();
     const serializedRequest = await serializeRequest(request);
 
     for (let index = handlerGroup.length - 1; index >= 0; index--) {
       const handler = handlerGroup[index];
 
-      const matchesHandlerURL = handler.url.regex.test(request.url);
+      const matchesHandlerURL = handler.url.regex.test(normalizedURL);
       if (!matchesHandlerURL) {
         continue;
       }
 
       const { response: serializedResponse } = await this.webSocketServer.request(
         'interceptors/responses/create',
-        { request: serializedRequest },
+        {
+          handlerId: handler.id,
+          request: serializedRequest,
+        },
         { sockets: [handler.socket] },
       );
 

@@ -11,7 +11,7 @@ import { AsyncCommitOptions, registerMultipleCommitCallback } from '@/utils/asyn
 import { joinURL } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
-import { HttpRequestHandlerResult } from '../interceptorWorker/types/requests';
+import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
 import HttpRequestTrackerClient, { AnyHttpRequestTrackerClient } from '../requestTracker/HttpRequestTrackerClient';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
@@ -123,7 +123,7 @@ class HttpInterceptorClient<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, { request }: Context): Promise<HttpRequestHandlerResult> {
+  >(method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
     const matchedTracker = this.findMatchedTracker(method, path, parsedRequest);
 

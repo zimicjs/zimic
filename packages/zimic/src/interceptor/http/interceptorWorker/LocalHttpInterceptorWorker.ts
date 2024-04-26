@@ -16,7 +16,7 @@ import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpIntercepto
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { PublicLocalHttpInterceptorWorker } from './types/public';
-import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
+import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements PublicLocalHttpInterceptorWorker {
   readonly type = 'local';
@@ -140,7 +140,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
-    handler: HttpRequestHandler,
+    createResponse: HttpResponseFactory,
   ) {
     if (!super.isRunning()) {
       throw new NotStartedHttpInterceptorWorkerError();
@@ -149,10 +149,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url);
+    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
 
-    const httpHandler = http[lowercaseMethod](normalizedURL.toString(), async (context) => {
-      const result = await handler({
+    const httpHandler = http[lowercaseMethod](normalizedURL, async (context) => {
+      const result = await createResponse({
         ...context,
         request: context.request as MSWStrictRequest<HttpBody>,
       });

@@ -35,10 +35,13 @@ class RemoteHttpRequestTracker<
   private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
 
   private syncPromises: Promise<unknown>[] = [];
+
+  private unsynced: this;
   private synced: this;
 
   constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>, method: Method, path: Path) {
     this._client = new HttpRequestTrackerClient(interceptor, method, path);
+    this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
 
@@ -80,7 +83,7 @@ class RemoteHttpRequestTracker<
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
   ): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
     this._client.with(restriction);
-    return this;
+    return this.unsynced;
   }
 
   respond<
@@ -90,19 +93,19 @@ class RemoteHttpRequestTracker<
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
-    const newThis = this as unknown as RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
-    newThis._client.respond(declaration);
-    return newThis;
+    const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+    newUnsyncedThis._client.respond(declaration);
+    return newUnsyncedThis;
   }
 
   bypass(): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
     this._client.bypass();
-    return this;
+    return this.unsynced;
   }
 
   clear(): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
     this._client.clear();
-    return this;
+    return this.unsynced;
   }
 
   requests(): Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]> {
@@ -148,10 +151,7 @@ class RemoteHttpRequestTracker<
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        if (this.syncPromises.length === 0) {
-          return this.synced;
-        }
-        return this;
+        return this.syncPromises.length === 0 ? this.synced : this.unsynced;
       })
       .then(onFulfilled, onRejected);
   }
@@ -168,11 +168,11 @@ class RemoteHttpRequestTracker<
     return this.then(
       (_tracker) => {
         onFinally?.();
-        return this;
+        return this.synced;
       },
       (_error) => {
         onFinally?.();
-        return this;
+        return this.synced;
       },
     );
   }
