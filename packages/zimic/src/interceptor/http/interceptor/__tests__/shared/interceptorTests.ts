@@ -6,8 +6,11 @@ import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/Re
 import {
   HttpInterceptorWorkerOptions,
   HttpInterceptorWorkerPlatform,
+  HttpInterceptorWorkerType,
 } from '@/interceptor/http/interceptorWorker/types/options';
+import { PossiblePromise } from '@/types/utils';
 import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
+import { AccessResources } from '@tests/utils/workers';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
@@ -22,63 +25,54 @@ import { declareTypeHttpInterceptorTests } from './typescript';
 
 export interface SharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorWorkerPlatform;
+  startServer?: () => PossiblePromise<void>;
+  getAccessResources: (type: HttpInterceptorWorkerType) => Promise<AccessResources>;
+  stopServer?: () => PossiblePromise<void>;
 }
 
 export interface RuntimeSharedHttpInterceptorTestsOptions extends SharedHttpInterceptorTestsOptions {
-  worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
-  baseURL: string;
-  interceptorOptions: HttpInterceptorOptions;
+  getWorker: () => LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  getBaseURL: () => string;
+  getPathPrefix: () => string;
+  getInterceptorOptions: () => HttpInterceptorOptions;
 }
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
-  const interceptBaseURL = 'http://localhost:3000';
-  const mockServerURL = 'http://localhost:3001';
-
-  const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
-    { type: 'local' },
-    {
-      type: 'remote',
-      serverURL: mockServerURL,
-    },
-  ];
+  const { platform, startServer, getAccessResources, stopServer } = options;
 
   describe('Types', () => {
     declareTypeHttpInterceptorTests(options);
   });
 
-  describe.each(workerOptionsArray)('Base URLs (type $type)', (workerOptions) => {
-    const worker = createInternalHttpInterceptorWorker(workerOptions);
+  const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
+    { type: 'local' },
+    { type: 'remote', serverURL: '<temporary>' },
+  ];
+
+  describe.each(workerOptionsArray)('type $type', (workerOptions) => {
+    let serverURL: string;
+    let baseURL: string;
+    let pathPrefix: string;
+
+    let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
 
     beforeAll(async () => {
+      if (workerOptions.type === 'remote') {
+        await startServer?.();
+      }
+
+      ({
+        serverURL,
+        clientBaseURL: baseURL,
+        clientPathPrefix: pathPrefix,
+      } = await getAccessResources(workerOptions.type));
+
+      worker = createInternalHttpInterceptorWorker(
+        workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
+      );
+
       await worker.start();
-      expect(worker.platform()).toBe(options.platform);
-    });
-
-    afterAll(async () => {
-      await worker.stop();
-    });
-
-    declareBaseURLHttpInterceptorTests({
-      ...options,
-      worker,
-      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, serverURL: mockServerURL }),
-      interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
-    });
-  });
-
-  describe.each(workerOptionsArray)('Methods (type $type)', (workerOptions) => {
-    const worker = createInternalHttpInterceptorWorker(workerOptions);
-
-    const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
-      ...options,
-      worker,
-      baseURL: getDefaultBaseURL(workerOptions, { interceptBaseURL, serverURL: mockServerURL }),
-      interceptorOptions: createDefaultInterceptorOptions(worker, workerOptions, { interceptBaseURL, mockServerURL }),
-    };
-
-    beforeAll(async () => {
-      await worker.start();
-      expect(worker.platform()).toBe(options.platform);
+      expect(worker.platform()).toBe(platform);
     });
 
     afterEach(() => {
@@ -87,22 +81,48 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     afterAll(async () => {
       await worker.stop();
+
+      if (workerOptions.type === 'remote') {
+        await stopServer?.();
+      }
     });
 
-    const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
-      GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
-      POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
-      PUT: declarePutHttpInterceptorTests.bind(null, runtimeOptions),
-      PATCH: declarePatchHttpInterceptorTests.bind(null, runtimeOptions),
-      DELETE: declareDeleteHttpInterceptorTests.bind(null, runtimeOptions),
-      HEAD: declareHeadHttpInterceptorTests.bind(null, runtimeOptions),
-      OPTIONS: declareOptionsHttpInterceptorTests.bind(null, runtimeOptions),
+    const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
+      ...options,
+      getWorker() {
+        return worker;
+      },
+      getBaseURL() {
+        return baseURL;
+      },
+      getPathPrefix() {
+        return pathPrefix;
+      },
+      getInterceptorOptions() {
+        return worker instanceof LocalHttpInterceptorWorker ? { worker, baseURL } : { worker, pathPrefix };
+      },
     };
 
-    for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
-      describe(method, async () => {
-        await methodTestFactory();
-      });
-    }
+    describe('Base URLs', () => {
+      declareBaseURLHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Methods', () => {
+      const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
+        GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
+        POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
+        PUT: declarePutHttpInterceptorTests.bind(null, runtimeOptions),
+        PATCH: declarePatchHttpInterceptorTests.bind(null, runtimeOptions),
+        DELETE: declareDeleteHttpInterceptorTests.bind(null, runtimeOptions),
+        HEAD: declareHeadHttpInterceptorTests.bind(null, runtimeOptions),
+        OPTIONS: declareOptionsHttpInterceptorTests.bind(null, runtimeOptions),
+      };
+
+      for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
+        describe(method, async () => {
+          await methodTestFactory();
+        });
+      }
+    });
   });
 }

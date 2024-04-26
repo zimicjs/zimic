@@ -1,19 +1,23 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { baseURL, worker, interceptorOptions } = options;
+  const { getBaseURL, getWorker, getInterceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -35,6 +39,20 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
     },
   ];
 
+  let baseURL: string;
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let interceptorOptions: HttpInterceptorOptions;
+
+  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    worker = getWorker();
+    interceptorOptions = getInterceptorOptions();
+
+    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+  });
+
   it('should support intercepting POST requests with a static response body', async () => {
     await usingHttpInterceptor<{
       '/users': {
@@ -52,7 +70,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -104,7 +122,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -182,7 +200,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -243,7 +261,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -311,7 +329,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -384,7 +402,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -436,7 +454,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           }),
         worker,
       );
-      expect(creationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTracker).toBeInstanceOf(Tracker);
 
       let creationRequests = await promiseIfRemote(creationTracker.requests(), worker);
       expect(creationRequests).toHaveLength(0);
@@ -478,7 +496,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(genericCreationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(genericCreationTracker).toBeInstanceOf(Tracker);
 
       let genericCreationRequests = await promiseIfRemote(genericCreationTracker.requests(), worker);
       expect(genericCreationRequests).toHaveLength(0);
@@ -512,7 +530,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         }),
         worker,
       );
-      expect(specificCreationTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(specificCreationTracker).toBeInstanceOf(Tracker);
 
       let specificCreationRequests = await promiseIfRemote(specificCreationTracker.requests(), worker);
       expect(specificCreationRequests).toHaveLength(0);
@@ -562,7 +580,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       await expectFetchError(creationPromise);
 
       const creationTrackerWithoutResponse = await promiseIfRemote(interceptor.post('/users'), worker);
-      expect(creationTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(creationTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
       let creationRequestsWithoutResponse = await promiseIfRemote(creationTrackerWithoutResponse.requests(), worker);
       expect(creationRequestsWithoutResponse).toHaveLength(0);

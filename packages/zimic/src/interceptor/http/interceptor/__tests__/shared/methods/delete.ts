@@ -1,19 +1,23 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { baseURL, worker, interceptorOptions } = options;
+  const { getBaseURL, getWorker, getInterceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -33,6 +37,20 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     },
   ];
 
+  let baseURL: string;
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let interceptorOptions: HttpInterceptorOptions;
+
+  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    worker = getWorker();
+    interceptorOptions = getInterceptorOptions();
+
+    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+  });
+
   it('should support intercepting DELETE requests with a static response body', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
@@ -50,7 +68,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -173,7 +191,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -231,7 +249,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -298,7 +316,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -371,7 +389,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -437,7 +455,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           }),
         worker,
       );
-      expect(deletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTracker).toBeInstanceOf(Tracker);
 
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), worker);
       expect(deletionRequests).toHaveLength(0);
@@ -503,7 +521,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         }),
         worker,
       );
-      expect(genericDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(genericDeletionTracker).toBeInstanceOf(Tracker);
 
       let genericDeletionRequests = await promiseIfRemote(genericDeletionTracker.requests(), worker);
       expect(genericDeletionRequests).toHaveLength(0);
@@ -537,7 +555,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         }),
         worker,
       );
-      expect(specificDeletionTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(specificDeletionTracker).toBeInstanceOf(Tracker);
 
       let specificDeletionRequests = await promiseIfRemote(specificDeletionTracker.requests(), worker);
       expect(specificDeletionRequests).toHaveLength(0);
@@ -587,7 +605,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       await expectFetchError(deletionPromise);
 
       const deletionTrackerWithoutResponse = await promiseIfRemote(interceptor.delete(`/users/:id`), worker);
-      expect(deletionTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(deletionTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
       let deletionRequestsWithoutResponse = await promiseIfRemote(deletionTrackerWithoutResponse.requests(), worker);
       expect(deletionRequestsWithoutResponse).toHaveLength(0);

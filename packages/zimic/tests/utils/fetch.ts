@@ -1,8 +1,12 @@
 import { expect } from 'vitest';
 
+interface ExpectFetchErrorOptions {
+  canBeAborted?: boolean;
+}
+
 export async function expectFetchError(
   value: Promise<unknown> | (() => Promise<unknown>),
-  options: { canBeAborted?: boolean } = {},
+  options: ExpectFetchErrorOptions = {},
 ) {
   const { canBeAborted = false } = options;
 
@@ -15,4 +19,17 @@ export async function expectFetchError(
 
   const errorMessageExpression = new RegExp(`^${errorMessageOptions.join('|')}$`);
   await expect(value).rejects.toThrowError(errorMessageExpression);
+}
+
+export async function expectFetchErrorOrDefaultOptionsResponse(
+  fetchPromise: Promise<Response>,
+  options: { hasDefaultResponse: boolean } & ExpectFetchErrorOptions,
+) {
+  if (options.hasDefaultResponse) {
+    const response = await fetchPromise;
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('');
+  } else {
+    await expectFetchError(fetchPromise, options);
+  }
 }

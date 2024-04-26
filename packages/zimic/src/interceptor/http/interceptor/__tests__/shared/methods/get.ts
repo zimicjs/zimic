@@ -1,19 +1,23 @@
-import { expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
 
 export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { baseURL, worker, interceptorOptions } = options;
+  const { getBaseURL, getWorker, getInterceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -33,6 +37,20 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
     },
   ];
 
+  let baseURL: string;
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let interceptorOptions: HttpInterceptorOptions;
+
+  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    worker = getWorker();
+    interceptorOptions = getInterceptorOptions();
+
+    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+  });
+
   it('should support intercepting GET requests with a static response body', async () => {
     await usingHttpInterceptor<{
       '/users': {
@@ -50,7 +68,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -99,7 +117,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         })),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -172,7 +190,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -233,7 +251,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -301,7 +319,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           }),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -385,7 +403,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           }),
         worker,
       );
-      expect(listTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTracker).toBeInstanceOf(Tracker);
 
       let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
@@ -437,7 +455,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         worker,
       );
-      expect(genericGetTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(genericGetTracker).toBeInstanceOf(Tracker);
 
       let genericGetRequests = await promiseIfRemote(genericGetTracker.requests(), worker);
       expect(genericGetRequests).toHaveLength(0);
@@ -471,7 +489,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         worker,
       );
-      expect(specificGetTracker).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(specificGetTracker).toBeInstanceOf(Tracker);
 
       let specificGetRequests = await promiseIfRemote(specificGetTracker.requests(), worker);
       expect(specificGetRequests).toHaveLength(0);
@@ -515,7 +533,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       await expectFetchError(fetchPromise);
 
       const listTrackerWithoutResponse = await promiseIfRemote(interceptor.get('/users'), worker);
-      expect(listTrackerWithoutResponse).toBeInstanceOf(LocalHttpRequestTracker);
+      expect(listTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
       let listRequestsWithoutResponse = await promiseIfRemote(listTrackerWithoutResponse.requests(), worker);
       expect(listRequestsWithoutResponse).toHaveLength(0);

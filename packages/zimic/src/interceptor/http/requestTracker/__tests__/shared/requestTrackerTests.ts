@@ -86,6 +86,7 @@ export function declareSharedHttpRequestTrackerTests(options: {
       };
     }>;
 
+    let serverURL: string;
     let baseURL: string;
     let pathPrefix: string;
 
@@ -98,10 +99,14 @@ export function declareSharedHttpRequestTrackerTests(options: {
         await startServer?.();
       }
 
-      ({ baseURL, pathPrefix } = await getAccessResources(workerOptions.type));
+      ({
+        serverURL,
+        clientBaseURL: baseURL,
+        clientPathPrefix: pathPrefix,
+      } = await getAccessResources(workerOptions.type));
 
       worker = createInternalHttpInterceptorWorker(
-        workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL: baseURL },
+        workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
       );
 
       interceptor = createInternalHttpInterceptor<Schema>(
