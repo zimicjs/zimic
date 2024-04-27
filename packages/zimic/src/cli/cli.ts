@@ -10,6 +10,7 @@ async function runCLI() {
   await yargs(hideBin(process.argv))
     .scriptName('zimic')
     .version(version)
+    .showHelpOnFail(false)
     .demandCommand()
 
     .command('browser', 'Browser', (yargs) =>

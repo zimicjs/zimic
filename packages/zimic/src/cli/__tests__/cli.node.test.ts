@@ -34,32 +34,31 @@ describe('CLI', () => {
 
     await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(rootHelpOutput);
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
     consoleErrorSpy.mockRestore();
   });
 
-  describe('Version', () => {
-    it('should show the CLI version', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+  it('should show a help message', async () => {
+    processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
 
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+    await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(version);
-      consoleLogSpy.mockRestore();
-    });
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith(rootHelpOutput);
+    consoleLogSpy.mockRestore();
   });
 
-  describe('Help', () => {
-    it('should show a help message', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+  it('should show the CLI version', async () => {
+    processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
 
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+    await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(rootHelpOutput);
-      consoleLogSpy.mockRestore();
-    });
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith(version);
+    consoleLogSpy.mockRestore();
   });
 
   describe('Browser', () => {
@@ -76,14 +75,26 @@ describe('CLI', () => {
       '  --version  Show version number                                       [boolean]',
     ].join('\n');
 
+    it('should show a help message', async () => {
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', '--help']);
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+      expect(consoleLogSpy).toHaveBeenCalledWith(browserHelpOutput);
+      consoleLogSpy.mockRestore();
+    });
+
     it('should throw an error if no command is provided', async () => {
       processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser']);
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
 
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(browserHelpOutput);
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+      consoleErrorSpy.mockRestore();
     });
 
     describe('Init', () => {
@@ -101,6 +112,17 @@ describe('CLI', () => {
         '  --version  Show version number                                       [boolean]',
       ].join('\n');
 
+      it('should show a help message', async () => {
+        processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init', '--help']);
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+
+        await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
+
+        expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+        expect(consoleLogSpy).toHaveBeenCalledWith(browserInitHelpOutput);
+        consoleLogSpy.mockRestore();
+      });
+
       it('should copy the service worker file to the provided public directory', async () => {
         const makeDirectorySpy = vi.spyOn(filesystem, 'mkdir').mockImplementation(vi.fn());
         const copyFileSpy = vi.spyOn(filesystem, 'copyFile').mockImplementation(vi.fn());
@@ -114,12 +136,17 @@ describe('CLI', () => {
 
         const absolutePublicDirectory = path.resolve(publicDirectory);
 
+        expect(makeDirectorySpy).toHaveBeenCalledTimes(1);
         expect(makeDirectorySpy).toHaveBeenCalledWith(absolutePublicDirectory, { recursive: true });
+
         const serviceWorkerDestinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
+        expect(copyFileSpy).toHaveBeenCalledTimes(1);
         expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
+        expect(consoleLogSpy).toHaveBeenCalledTimes(3);
         expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining(absolutePublicDirectory));
         expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining(serviceWorkerDestinationPath));
+        consoleLogSpy.mockRestore();
       });
 
       it('should throw an error if no public directory is provided', async () => {
@@ -128,8 +155,9 @@ describe('CLI', () => {
 
         await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith(browserInitHelpOutput);
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
         expect(consoleErrorSpy).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+        consoleErrorSpy.mockRestore();
       });
     });
   });
