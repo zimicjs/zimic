@@ -370,7 +370,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         const response = await fetch(baseURL, { method });
 
-        expect(spiedRequestHandler).toHaveBeenCalledTimes(1);
+        expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
         const [handlerContext] = spiedRequestHandler.mock.calls[0];
         expect(handlerContext.request).toBeInstanceOf(Request);
@@ -426,7 +426,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         expect(response.status).toBe(204);
 
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(1);
+        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
         const [noContentHandlerContext] = noContentSpiedRequestHandler.mock.calls[0];
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
@@ -441,8 +441,8 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch + 1);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(1);
+        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch * 2);
+        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
         [okHandlerContext] = okSpiedRequestHandler.mock.calls[1];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
@@ -456,8 +456,8 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
         await expectFetchErrorOrDefaultOptionsResponse(fetchPromise, { hasDefaultResponse, canBeAborted: true });
 
-        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch + 1);
-        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(1);
+        expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch * 2);
+        expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
       });
 
       it(`should thrown an error if trying to apply a ${method} handler before started`, async () => {
