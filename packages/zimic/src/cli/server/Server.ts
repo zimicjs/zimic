@@ -253,7 +253,9 @@ class Server implements PublicServer {
       }
 
       const value = DEFAULT_ACCESS_CONTROL_HEADERS[key];
-      response.headers.set(key, value);
+      if (value) {
+        response.headers.set(key, value);
+      }
     }
   }
 }

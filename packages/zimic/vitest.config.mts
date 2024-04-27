@@ -30,6 +30,9 @@ export const defaultConfig: UserConfig = {
       ],
     },
   },
+  define: {
+    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
