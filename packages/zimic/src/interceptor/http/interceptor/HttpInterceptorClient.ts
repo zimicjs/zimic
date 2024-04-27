@@ -24,7 +24,7 @@ class HttpInterceptorClient<
   TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
 > {
   private worker: HttpInterceptorWorker;
-  private _baseURL: URL;
+  private _baseURL: string;
 
   private Tracker: TrackerConstructor;
 
@@ -42,12 +42,12 @@ class HttpInterceptorClient<
 
   constructor(options: { worker: HttpInterceptorWorker; baseURL: string; Tracker: TrackerConstructor }) {
     this.worker = options.worker;
-    this._baseURL = new URL(options.baseURL);
+    this._baseURL = options.baseURL;
     this.Tracker = options.Tracker;
   }
 
   baseURL() {
-    return this._baseURL.toString();
+    return this._baseURL;
   }
 
   get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {

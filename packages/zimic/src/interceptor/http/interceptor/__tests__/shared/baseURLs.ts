@@ -30,7 +30,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
           };
         };
       }>({ ...interceptorOptions, baseURL, pathPrefix }, async (interceptor) => {
-        expect(interceptor.baseURL()).toBe(new URL(baseURL).toString());
+        expect(interceptor.baseURL()).toBe(baseURL);
 
         const tracker = await promiseIfRemote(
           interceptor.get(path).respond({
