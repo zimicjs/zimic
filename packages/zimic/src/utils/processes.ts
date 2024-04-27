@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn } from 'cross-spawn';
 
 class CommandFailureError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
