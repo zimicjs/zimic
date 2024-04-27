@@ -1,25 +1,28 @@
 import { spawn } from 'child_process';
 
-export async function runCommand(
-  command: string,
-  options: {
-    shell?: boolean | string;
-  },
-) {
+class CommandFailureError extends Error {
+  constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
+    super(`The command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);
+    this.name = 'CommandFailureError';
+  }
+}
+
+export async function runCommand(command: string, commandArguments: string[]) {
   await new Promise<void>((resolve, reject) => {
-    const childProcess = spawn(command, {
-      shell: options.shell,
+    const childProcess = spawn(command, commandArguments, {
       stdio: 'inherit',
     });
 
-    childProcess.once('exit', (code) => {
+    childProcess.once('exit', (exitCode, signal) => {
       childProcess.removeAllListeners();
 
-      if (code === 0) {
+      if (exitCode === 0) {
         resolve();
-      } else {
-        reject(new Error(`The command '${command}' exited with code ${code}.`));
+        return;
       }
+
+      const error = new CommandFailureError(command, exitCode, signal);
+      reject(error);
     });
 
     childProcess.once('error', (error) => {

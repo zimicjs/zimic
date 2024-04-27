@@ -12,11 +12,11 @@ describe('CLI', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   const rootHelpOutput = [
-    'cli.js <command>',
+    'zimic <command>',
     '',
     'Commands:',
-    '  cli.js browser  Browser',
-    '  cli.js server   Server',
+    '  zimic browser  Browser',
+    '  zimic server   Server',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -64,12 +64,12 @@ describe('CLI', () => {
 
   describe('Browser', () => {
     const browserHelpOutput = [
-      'cli.js browser',
+      'zimic browser',
       '',
       'Browser',
       '',
       'Commands:',
-      '  cli.js browser init <publicDirectory>  Initialize the browser service worker.',
+      '  zimic browser init <publicDirectory>  Initialize the browser service worker.',
       '',
       'Options:',
       '  --help     Show help                                                 [boolean]',
@@ -88,7 +88,7 @@ describe('CLI', () => {
 
     describe('Init', () => {
       const browserInitHelpOutput = [
-        'cli.js browser init <publicDirectory>',
+        'zimic browser init <publicDirectory>',
         '',
         'Initialize the browser service worker.',
         '',
