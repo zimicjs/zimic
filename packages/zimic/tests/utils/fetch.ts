@@ -1,5 +1,7 @@
 import { expect } from 'vitest';
 
+import { DEFAULT_PREFLIGHT_STATUS_CODE } from '@/cli/server/constants';
+
 interface ExpectFetchErrorOptions {
   canBeAborted?: boolean;
 }
@@ -21,13 +23,13 @@ export async function expectFetchError(
   await expect(value).rejects.toThrowError(errorMessageExpression);
 }
 
-export async function expectFetchErrorOrDefaultOptionsResponse(
+export async function expectFetchErrorOrPreflightResponse(
   fetchPromise: Promise<Response>,
-  options: { hasDefaultResponse: boolean } & ExpectFetchErrorOptions,
+  options: { shouldBePreflight: boolean } & ExpectFetchErrorOptions,
 ) {
-  if (options.hasDefaultResponse) {
+  if (options.shouldBePreflight) {
     const response = await fetchPromise;
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(DEFAULT_PREFLIGHT_STATUS_CODE);
     expect(await response.text()).toBe('');
   } else {
     await expectFetchError(fetchPromise, options);

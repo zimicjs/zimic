@@ -10,7 +10,7 @@ import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/Re
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { expectFetchErrorOrDefaultOptionsResponse } from '@tests/utils/fetch';
+import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -25,7 +25,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
-  let hasDefaultResponse: boolean;
+  let overridesPreflightResponse: boolean;
   let numberOfRequestsIncludingPrefetch: number;
 
   type MessageResponseBody = JSONValue<{
@@ -39,7 +39,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
 
-    hasDefaultResponse = worker instanceof RemoteHttpInterceptorWorker;
+    overridesPreflightResponse = worker instanceof RemoteHttpInterceptorWorker;
     numberOfRequestsIncludingPrefetch = platform === 'browser' && worker instanceof RemoteHttpInterceptorWorker ? 2 : 1;
   });
 
@@ -317,7 +317,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       headers.delete('content-type');
 
       let optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
-      await expectFetchErrorOrDefaultOptionsResponse(optionsResponsePromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
 
@@ -325,7 +327,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       headers.set('content-type', 'text/plain');
 
       optionsResponsePromise = fetch(`${baseURL}/users`, { method: 'OPTIONS', headers });
-      await expectFetchErrorOrDefaultOptionsResponse(optionsResponsePromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
     });
@@ -384,7 +388,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       searchParams.delete('tag');
 
       const optionsResponsePromise = fetch(`${baseURL}/filters?${searchParams.toString()}`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(optionsResponsePromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
     });
@@ -461,7 +467,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(specificOptionsRequest.response.body).toBe(null);
 
       const unmatchedOptionsPromise = fetch(`${baseURL}/filters/${2}`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(unmatchedOptionsPromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(unmatchedOptionsPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
     });
   });
 
@@ -476,7 +484,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       };
     }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(fetchPromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(fetchPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
 
       const optionsTrackerWithoutResponse = await promiseIfRemote(interceptor.options('/filters'), worker);
       expect(optionsTrackerWithoutResponse).toBeInstanceOf(Tracker);
@@ -489,7 +499,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(fetchPromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(fetchPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
 
       optionsRequestsWithoutResponse = await promiseIfRemote(optionsTrackerWithoutResponse.requests(), worker);
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
@@ -636,7 +648,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(optionsPromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(optionsPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
 
       const otherOptionsTracker = await promiseIfRemote(
         optionsTracker.respond({
@@ -758,7 +772,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
-      await expectFetchErrorOrDefaultOptionsResponse(optionsPromise, { hasDefaultResponse });
+      await expectFetchErrorOrPreflightResponse(optionsPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
     });
   });
 

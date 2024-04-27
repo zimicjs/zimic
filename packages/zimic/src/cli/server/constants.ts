@@ -17,3 +17,5 @@ export const PERMISSIVE_ACCESS_CONTROL_HEADERS: AccessControlHeaders = {
   'access-control-expose-headers': '*',
   'access-control-max-age': '0',
 };
+
+export const DEFAULT_PREFLIGHT_STATUS_CODE = 204;

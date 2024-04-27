@@ -1,5 +1,5 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
-import { createServer, Server as HttpServer } from 'http';
+import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
@@ -11,7 +11,7 @@ import {
 } from '@/utils/fetch';
 import WebSocketServer from '@/websocket/WebSocketServer';
 
-import { PERMISSIVE_ACCESS_CONTROL_HEADERS } from './constants';
+import { PERMISSIVE_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 import { PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
@@ -155,24 +155,7 @@ class Server implements PublicServer {
       this._port = httpAddress?.port;
     }
 
-    this.httpServer?.on('request', async (nodeRequest, nodeResponse) => {
-      const request = normalizeNodeRequest(nodeRequest, Request);
-      const response = await this.handleHttpRequest(request);
-
-      if (request.method === 'OPTIONS' && response === null) {
-        const optionsResponse = new Response(null, { status: 200 });
-        this.setDefaultAccessControlHeaders(optionsResponse);
-        await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
-      }
-
-      if (response === null) {
-        nodeResponse.destroy();
-        return;
-      }
-
-      this.setDefaultAccessControlHeaders(response);
-      await sendNodeResponse(response, nodeResponse, nodeRequest);
-    });
+    this.httpServer?.on('request', this.handleHttpRequest);
   }
 
   async stop() {
@@ -202,7 +185,28 @@ class Server implements PublicServer {
     });
   }
 
-  private async handleHttpRequest(request: Request) {
+  private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
+    const request = normalizeNodeRequest(nodeRequest, Request);
+    const response = await this.createResponseForRequest(request);
+
+    if (response) {
+      this.setDefaultAccessControlHeaders(response);
+      await sendNodeResponse(response, nodeResponse, nodeRequest);
+      return;
+    }
+
+    const isUnhandledPreflightResponse = request.method === 'OPTIONS';
+
+    if (isUnhandledPreflightResponse) {
+      const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
+      this.setDefaultAccessControlHeaders(defaultPreflightResponse);
+      await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
+    }
+
+    nodeResponse.destroy();
+  };
+
+  private async createResponseForRequest(request: Request) {
     if (!this.webSocketServer) {
       return null;
     }
