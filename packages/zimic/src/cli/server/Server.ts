@@ -116,13 +116,16 @@ class Server implements PublicServer {
   }
 
   private registerWorkerSocketIfUnknown(socket: Socket) {
-    if (!this.knownWorkerSockets.has(socket)) {
-      socket.addEventListener('close', () => {
-        this.removeWorkerSocket(socket);
-      });
-
-      this.knownWorkerSockets.add(socket);
+    if (this.knownWorkerSockets.has(socket)) {
+      return;
     }
+
+    socket.addEventListener('close', () => {
+      this.removeWorkerSocket(socket);
+      this.knownWorkerSockets.delete(socket);
+    });
+
+    this.knownWorkerSockets.add(socket);
   }
 
   private removeWorkerSocket(socketToRemove: Socket) {
@@ -158,7 +161,7 @@ class Server implements PublicServer {
 
       if (request.method === 'OPTIONS' && response === null) {
         const optionsResponse = new Response(null, { status: 200 });
-        this.setAccessControlHeaders(optionsResponse);
+        this.setDefaultAccessControlHeaders(optionsResponse);
         await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
       }
 
@@ -167,7 +170,7 @@ class Server implements PublicServer {
         return;
       }
 
-      this.setAccessControlHeaders(response);
+      this.setDefaultAccessControlHeaders(response);
       await sendNodeResponse(response, nodeResponse, nodeRequest);
     });
   }
@@ -227,6 +230,7 @@ class Server implements PublicServer {
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
+        this.setDefaultAccessControlHeaders(response);
         return response;
       }
     }
@@ -234,9 +238,11 @@ class Server implements PublicServer {
     return null;
   }
 
-  private setAccessControlHeaders(response: Response) {
+  private setDefaultAccessControlHeaders(response: Response) {
     for (const [key, value] of Object.entries(PERMISSIVE_ACCESS_CONTROL_HEADERS)) {
-      response.headers.set(key, value);
+      if (!response.headers.has(key)) {
+        response.headers.set(key, value);
+      }
     }
   }
 }
