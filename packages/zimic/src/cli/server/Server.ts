@@ -2,7 +2,7 @@ import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { createServer, Server as HttpServer } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
-import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
+import { HttpMethod } from '@/http/types/schema';
 import {
   createRegexFromURL,
   createURLIgnoringNonPathComponents,
@@ -11,10 +11,9 @@ import {
 } from '@/utils/fetch';
 import WebSocketServer from '@/websocket/WebSocketServer';
 
+import { PERMISSIVE_ACCESS_CONTROL_HEADERS } from './constants';
 import { PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
-
-const ALLOWED_CORS_HTTP_METHODS = HTTP_METHODS.join(', ');
 
 export interface ServerOptions {
   hostname?: string;
@@ -159,7 +158,7 @@ class Server implements PublicServer {
 
       if (request.method === 'OPTIONS' && response === null) {
         const optionsResponse = new Response(null, { status: 200 });
-        this.setCorsHeaders(optionsResponse);
+        this.setAccessControlHeaders(optionsResponse);
         await sendNodeResponse(optionsResponse, nodeResponse, nodeRequest);
       }
 
@@ -168,7 +167,7 @@ class Server implements PublicServer {
         return;
       }
 
-      this.setCorsHeaders(response);
+      this.setAccessControlHeaders(response);
       await sendNodeResponse(response, nodeResponse, nodeRequest);
     });
   }
@@ -235,11 +234,10 @@ class Server implements PublicServer {
     return null;
   }
 
-  private setCorsHeaders(response: Response) {
-    response.headers.set('access-control-allow-origin', '*');
-    response.headers.set('access-control-request-method', '*');
-    response.headers.set('access-control-allow-methods', ALLOWED_CORS_HTTP_METHODS);
-    response.headers.set('access-control-allow-headers', '*');
+  private setAccessControlHeaders(response: Response) {
+    for (const [key, value] of Object.entries(PERMISSIVE_ACCESS_CONTROL_HEADERS)) {
+      response.headers.set(key, value);
+    }
   }
 }
 
