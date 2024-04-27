@@ -11,7 +11,7 @@ import {
 } from '@/utils/fetch';
 import WebSocketServer from '@/websocket/WebSocketServer';
 
-import { PERMISSIVE_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 import { PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
@@ -190,7 +190,7 @@ class Server implements PublicServer {
     const response = await this.createResponseForRequest(request);
 
     if (response) {
-      this.setDefaultAccessControlHeaders(response);
+      this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
       await sendNodeResponse(response, nodeResponse, nodeRequest);
       return;
     }
@@ -243,11 +243,17 @@ class Server implements PublicServer {
     return null;
   }
 
-  private setDefaultAccessControlHeaders(response: Response) {
-    for (const [key, value] of Object.entries(PERMISSIVE_ACCESS_CONTROL_HEADERS)) {
-      if (!response.headers.has(key)) {
-        response.headers.set(key, value);
+  private setDefaultAccessControlHeaders(
+    response: Response,
+    headersToSet = Object.keys(DEFAULT_ACCESS_CONTROL_HEADERS),
+  ) {
+    for (const key of headersToSet) {
+      if (response.headers.has(key)) {
+        continue;
       }
+
+      const value = DEFAULT_ACCESS_CONTROL_HEADERS[key];
+      response.headers.set(key, value);
     }
   }
 }

@@ -1,6 +1,6 @@
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
-import { PERMISSIVE_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/cli/server/constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/cli/server/constants';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
@@ -56,7 +56,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsTracker = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -100,7 +100,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           return {
             status: 200,
-            headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           };
         }),
         worker,
@@ -162,7 +162,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           return {
             status: 200,
-            headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           };
         }),
         worker,
@@ -192,7 +192,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsRequest.response.headers).toEqualTypeOf<HttpHeaders<AccessControlHeaders>>();
       expect(optionsRequest.response.headers).toBeInstanceOf(HttpHeaders);
       expect(Object.fromEntries(optionsRequest.response.headers.entries())).toEqual(
-        expect.objectContaining(PERMISSIVE_ACCESS_CONTROL_HEADERS),
+        expect.objectContaining(DEFAULT_ACCESS_CONTROL_HEADERS),
       );
     });
   });
@@ -221,7 +221,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
           return {
             status: 200,
-            headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           };
         }),
         worker,
@@ -287,7 +287,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
             return {
               status: 200,
-              headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
             };
           }),
         worker,
@@ -366,7 +366,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
             return {
               status: 200,
-              headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
             };
           }),
         worker,
@@ -409,7 +409,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const genericOptionsTracker = await promiseIfRemote(
         interceptor.options('/filters/:id').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -440,7 +440,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const specificOptionsTracker = await promiseIfRemote(
         interceptor.options(`/filters/${1}`).respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -512,7 +512,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const optionsTrackerWithResponse = optionsTrackerWithoutResponse.respond({
         status: 200,
-        headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+        headers: DEFAULT_ACCESS_CONTROL_HEADERS,
       });
 
       const optionsResponse = await fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
@@ -553,7 +553,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsTracker = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           body: {},
         }),
         worker,
@@ -585,7 +585,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsWithMessageTracker = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           body: { message: 'ok' },
         }),
         worker,
@@ -637,7 +637,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           .options('/filters')
           .respond({
             status: 200,
-            headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
             body: {},
           })
           .bypass(),
@@ -655,7 +655,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const otherOptionsTracker = await promiseIfRemote(
         optionsTracker.respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           body: { message: 'ok' },
         }),
         worker,
@@ -689,7 +689,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsTrackerWithMessage = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           body: { message: 'other-ok' },
         }),
         worker,
@@ -761,7 +761,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsTracker = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -791,7 +791,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -801,7 +801,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsTracker = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -843,7 +843,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await promiseIfRemote(
         optionsTracker.respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );
@@ -853,7 +853,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const otherOptionsTracker = await promiseIfRemote(
         optionsTracker.respond({
           status: 200,
-          headers: PERMISSIVE_ACCESS_CONTROL_HEADERS,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         worker,
       );

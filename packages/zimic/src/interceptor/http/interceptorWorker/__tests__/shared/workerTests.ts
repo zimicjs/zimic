@@ -197,7 +197,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[0];
+        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
@@ -218,7 +218,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[0];
+        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
@@ -242,7 +242,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [matchedCallContext] = spiedRequestHandler.mock.calls[0];
+        const [matchedCallContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(matchedCallContext.request).toBeInstanceOf(Request);
         expect(matchedCallContext.request.method).toBe(method);
 
@@ -274,7 +274,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[0];
+        const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
       });
@@ -388,7 +388,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [handlerContext] = spiedRequestHandler.mock.calls[0];
+        const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
@@ -423,7 +423,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
         expect(noContentSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let [okHandlerContext] = okSpiedRequestHandler.mock.calls[0];
+        let [okHandlerContext] = okSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
@@ -444,7 +444,8 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
         expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        const [noContentHandlerContext] = noContentSpiedRequestHandler.mock.calls[0];
+        const [noContentHandlerContext] =
+          noContentSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
         expect(noContentHandlerContext.request.method).toBe(method);
 
@@ -460,7 +461,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch * 2);
         expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-        [okHandlerContext] = okSpiedRequestHandler.mock.calls[1];
+        [okHandlerContext] = okSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch * 2 - 1];
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
