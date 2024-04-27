@@ -190,7 +190,6 @@ class Server implements PublicServer {
 
   private async stopHttpServer() {
     await new Promise<void>((resolve, reject) => {
-      this.httpServer?.closeAllConnections();
       this.httpServer?.close((error) => {
         if (error) {
           reject(error);
@@ -198,6 +197,8 @@ class Server implements PublicServer {
           resolve();
         }
       });
+
+      this.httpServer?.closeAllConnections();
     });
   }
 
