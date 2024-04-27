@@ -194,17 +194,19 @@ function prepareLocalWorkerAndInterceptors(workerOptions: LocalHttpInterceptorWo
   };
 }
 
-function prepareRemoteWorkerAndInterceptors(workerOptions: RemoteHttpInterceptorWorkerOptions) {
+async function prepareRemoteWorkerAndInterceptors(workerOptions: RemoteHttpInterceptorWorkerOptions) {
+  const crypto = await getCrypto();
+
   const worker = createHttpInterceptorWorker(workerOptions);
 
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     worker,
-    pathPrefix: '/auth',
+    pathPrefix: `/auth-${crypto.randomUUID()}`,
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     worker,
-    pathPrefix: '/notifications',
+    pathPrefix: `/notifications-${crypto.randomUUID()}`,
   });
 
   return {
@@ -220,10 +222,10 @@ function prepareWorkerAndInterceptors(workerOptions: HttpInterceptorWorkerOption
     : prepareRemoteWorkerAndInterceptors(workerOptions);
 }
 
-function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
+async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   const { platform, fetch, workerOptions } = options;
 
-  const { worker, authInterceptor, notificationInterceptor } = prepareWorkerAndInterceptors(workerOptions);
+  const { worker, authInterceptor, notificationInterceptor } = await prepareWorkerAndInterceptors(workerOptions);
 
   const authBaseURL = authInterceptor.baseURL();
   const notificationBaseURL = notificationInterceptor.baseURL();
@@ -241,9 +243,6 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   afterAll(async () => {
     await worker.stop();
   });
-
-  // vi.spyOn(process.env, 'SERVICE_URL', 'get').mockReturnValue(interceptor.url());
-  // process.env.SERVICE_URL = interceptor.baseURL();
 
   function serializeUser(user: User): JSONSerialized<User> {
     return {
@@ -317,13 +316,14 @@ function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
           birthDate: creationPayload.birthDate,
         });
 
-        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
-
         const creationRequests = await creationTracker.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(creationRequests[0].searchParams.size).toBe(0);
+
+        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
+        expect(creationRequests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(creationPayload);
