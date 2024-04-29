@@ -27,7 +27,7 @@ export interface HttpServiceResponseSchemaByStatusCode {
 
 export namespace HttpServiceResponseSchemaByStatusCode {
   export interface NoBody {
-    [statusCode: number]: Omit<HttpServiceResponseSchema, 'body'> & { body?: never };
+    [statusCode: number]: Omit<HttpServiceResponseSchema, 'body'> & { body?: null };
   }
 }
 
@@ -44,7 +44,7 @@ export interface HttpServiceMethodSchema {
 
 export namespace HttpServiceMethodSchema {
   export interface NoRequestBody extends Omit<HttpServiceMethodSchema, 'request'> {
-    request?: Omit<HttpServiceRequestSchema, 'body'> & { body?: never };
+    request?: Omit<HttpServiceRequestSchema, 'body'> & { body?: null };
   }
 
   export interface NoBody extends Omit<NoRequestBody, 'response'> {
