@@ -1,5 +1,6 @@
 import { runCommand } from '@/utils/processes';
 
+import { logWithPrefix } from '../utils/console';
 import Server from './Server';
 
 const PROCESS_EXIT_EVENTS = [
@@ -21,8 +22,11 @@ interface ServerStartOptions {
   };
 }
 
+export let singletonServer: Server | undefined;
+
 async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
   const server = new Server({ hostname, port });
+  singletonServer = server;
 
   for (const exitEvent of PROCESS_EXIT_EVENTS) {
     process.on(exitEvent, async () => {
@@ -31,6 +35,8 @@ async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOp
   }
 
   await server.start();
+
+  await logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on '${server.url()}'.`);
 
   if (onReady) {
     await runCommand(onReady.command, onReady.arguments);

@@ -1,6 +1,6 @@
 import { spawn } from 'cross-spawn';
 
-class CommandFailureError extends Error {
+export class CommandFailureError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
     super(`The command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);
     this.name = 'CommandFailureError';

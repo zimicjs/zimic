@@ -60,6 +60,13 @@ class Server implements PublicServer {
     return this._port;
   }
 
+  url() {
+    if (this._port === undefined) {
+      return undefined;
+    }
+    return `http://${this._hostname}:${this._port}`;
+  }
+
   isRunning() {
     return !!this.httpServer?.listening && !!this.webSocketServer?.isRunning();
   }

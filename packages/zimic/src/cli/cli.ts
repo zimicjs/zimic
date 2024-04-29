@@ -16,7 +16,7 @@ async function runCLI() {
     .command('browser', 'Browser', (yargs) =>
       yargs.demandCommand().command(
         'init <publicDirectory>',
-        'Initialize the browser service worker.',
+        'Initialize the browser service worker configuration.',
         (yargs) =>
           yargs.positional('publicDirectory', {
             type: 'string',
