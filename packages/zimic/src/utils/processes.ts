@@ -1,5 +1,14 @@
 import { spawn } from 'cross-spawn';
 
+export const PROCESS_EXIT_EVENTS = [
+  'beforeExit',
+  'uncaughtExceptionMonitor',
+  'SIGINT',
+  'SIGTERM',
+  'SIGHUP',
+  'SIGBREAK',
+] as const;
+
 export class CommandFailureError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
     super(`The command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);

@@ -1,16 +1,7 @@
-import { runCommand } from '@/utils/processes';
+import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
 import { logWithPrefix } from '../utils/console';
 import Server from './Server';
-
-const PROCESS_EXIT_EVENTS = [
-  'beforeExit',
-  'uncaughtExceptionMonitor',
-  'SIGINT',
-  'SIGTERM',
-  'SIGHUP',
-  'SIGBREAK',
-] as const;
 
 interface ServerStartOptions {
   hostname: string;

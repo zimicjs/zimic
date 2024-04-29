@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { version } from '@@/package.json';
 
-import { CommandFailureError } from '@/utils/processes';
+import { PossiblePromise } from '@/types/utils';
+import { CommandFailureError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import { MOCK_SERVICE_WORKER_PATH } from '../browser/init';
@@ -15,6 +16,7 @@ import { singletonServer as server } from '../server/start';
 
 describe('CLI', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
+  const processOnSpy = vi.spyOn(process, 'on');
 
   const rootHelpOutput = [
     'zimic <command>',
@@ -29,7 +31,10 @@ describe('CLI', () => {
   ].join('\n');
 
   beforeEach(() => {
+    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
+
+    processOnSpy.mockClear();
   });
 
   it('should throw an error if no command is provided', async () => {
@@ -398,6 +403,41 @@ describe('CLI', () => {
 
           expect(spies.error).toHaveBeenCalledTimes(1);
           expect(spies.error).toHaveBeenCalledWith(new CommandFailureError('node', exitCode, null));
+        });
+      });
+
+      it.each(PROCESS_EXIT_EVENTS)('should stop the sever after a process exit event: %s', async (exitEvent) => {
+        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+
+        const exitEventListeners: (() => PossiblePromise<void>)[] = [];
+
+        vi.spyOn(process, 'on').mockImplementation((event, listener) => {
+          if (event === exitEvent) {
+            exitEventListeners.push(listener);
+          }
+          return process;
+        });
+
+        await usingIgnoredConsole(['log'], async (spies) => {
+          await runCLI();
+
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
+
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+          );
+
+          expect(exitEventListeners).toHaveLength(1);
+
+          for (const listener of exitEventListeners) {
+            await listener();
+          }
+
+          expect(server!.isRunning()).toBe(false);
         });
       });
     });
