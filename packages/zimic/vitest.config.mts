@@ -22,6 +22,7 @@ export const defaultConfig: UserConfig = {
       exclude: [
         '**/local/**',
         '**/public/**',
+        '**/tests/globalSetup/**',
         '**/.eslintrc.js',
         '**/.lintstagedrc.js',
         '**/types/**',

@@ -11,6 +11,8 @@ import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
+import LocalHttpRequestTracker from './LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from './RemoteHttpRequestTracker';
 import {
   HttpRequestTrackerRestriction,
   HttpRequestTrackerComputedRestriction,
@@ -42,6 +44,9 @@ class HttpRequestTrackerClient<
     private interceptor: HttpInterceptorClient<Schema>,
     private _method: Method,
     private _path: Path,
+    private tracker:
+      | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
   ) {}
 
   method() {
@@ -71,10 +76,9 @@ class HttpRequestTrackerClient<
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
       ? declaration
       : () => declaration;
-
     newThis.interceptedRequests = [];
 
-    this.interceptor.registerRequestTracker(newThis);
+    this.interceptor.registerRequestTracker(this.tracker);
 
     return newThis;
   }

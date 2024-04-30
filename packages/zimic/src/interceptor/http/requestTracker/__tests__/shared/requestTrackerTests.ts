@@ -928,5 +928,98 @@ export function declareSharedHttpRequestTrackerTests(options: {
       );
       expect(tracker.matchesRequest(parsedRequest)).toBe(false);
     });
+
+    describe.skipIf(Tracker === RemoteHttpRequestTracker)('Promise-like', () => {
+      it('should be then-able', async () => {
+        const tracker = new RemoteHttpRequestTracker<Schema, 'POST', '/users'>(
+          interceptorClient,
+          'POST',
+          '/users',
+        ).respond({
+          status: 200,
+          body: { success: true },
+        });
+
+        const request = new Request(baseURL);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(tracker).toHaveProperty('then', expect.any(Function));
+        expect(tracker).toHaveProperty('catch', expect.any(Function));
+        expect(tracker).toHaveProperty('finally', expect.any(Function));
+
+        const fulfillmentListener = vi.fn((syncedTracker) => {
+          expect(tracker).toEqual(syncedTracker);
+
+          expect(syncedTracker).not.toHaveProperty('then');
+          expect(syncedTracker).toHaveProperty('catch', expect.any(Function));
+          expect(syncedTracker).toHaveProperty('finally', expect.any(Function));
+
+          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        });
+
+        await tracker.with({}).then(fulfillmentListener);
+
+        expect(fulfillmentListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should be catch-able', async () => {
+        const tracker = new RemoteHttpRequestTracker<Schema, 'POST', '/users'>(
+          interceptorClient,
+          'POST',
+          '/users',
+        ).respond({
+          status: 200,
+          body: { success: true },
+        });
+
+        const request = new Request(baseURL);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(tracker).toHaveProperty('then', expect.any(Function));
+        expect(tracker).toHaveProperty('catch', expect.any(Function));
+        expect(tracker).toHaveProperty('finally', expect.any(Function));
+
+        // @ts-expect-error Forcing an exception in an internal method
+        tracker.syncPromises = 'not-an-array';
+
+        const rejectionListener = vi.fn((error: Error) => {
+          expect(error).toBeInstanceOf(Error);
+          expect(error.message).toBe('this.syncPromises.filter is not a function');
+        });
+
+        await tracker.with({}).catch(rejectionListener);
+
+        expect(rejectionListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should be finally-able', async () => {
+        const tracker = new RemoteHttpRequestTracker<Schema, 'POST', '/users'>(
+          interceptorClient,
+          'POST',
+          '/users',
+        ).respond({
+          status: 200,
+          body: { success: true },
+        });
+
+        const request = new Request(baseURL);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+
+        expect(tracker).toHaveProperty('then', expect.any(Function));
+        expect(tracker).toHaveProperty('catch', expect.any(Function));
+        expect(tracker).toHaveProperty('finally', expect.any(Function));
+
+        const finallyListener = vi.fn(() => {
+          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        });
+
+        await tracker.with({}).finally(finallyListener);
+
+        expect(finallyListener).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 }

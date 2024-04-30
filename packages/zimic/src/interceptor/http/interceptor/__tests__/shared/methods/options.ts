@@ -314,9 +314,18 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
       expect(optionsRequests).toHaveLength(2);
 
-      headers.delete('content-type');
+      headers.delete('accept');
 
       let optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
+      await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
+      expect(optionsRequests).toHaveLength(2);
+
+      headers.delete('content-type');
+
+      optionsResponsePromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS', headers });
       await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
         shouldBePreflight: overridesPreflightResponse,
       });

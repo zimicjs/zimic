@@ -29,7 +29,7 @@ class LocalHttpRequestTracker<
   private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
 
   constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    this._client = new HttpRequestTrackerClient(interceptor, method, path);
+    this._client = new HttpRequestTrackerClient(interceptor, method, path, this);
   }
 
   client() {

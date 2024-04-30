@@ -2,7 +2,7 @@ import { HttpHandlerCommit, ServerWebSocketSchema } from '@/cli/server/types/sch
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
-import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse } from '@/utils/fetch';
+import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse, validatedURL } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -26,7 +26,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
   private _crypto?: IsomorphicCrypto;
 
-  private _serverURL: URL;
+  private _serverURL: string;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
@@ -34,10 +34,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    this._serverURL = new URL(options.serverURL);
+    this._serverURL = validatedURL(options.serverURL, {
+      protocols: ['http', 'https'],
+    });
 
     const webSocketServerURL = new URL(this._serverURL);
-    webSocketServerURL.protocol = 'ws';
+    webSocketServerURL.protocol = 'ws:';
 
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
@@ -92,10 +94,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     }
 
     const { setupWorker } = await import('msw/browser');
+    /* istanbul ignore else -- @preserve */
     if (typeof setupWorker !== 'undefined') {
       return 'browser';
     }
 
+    /* istanbul ignore next -- @preserve
+     * Ignoring because checking unknown platforms is currently not possible in Vitest */
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 

@@ -1,5 +1,7 @@
 import ClientSocket from 'isomorphic-ws';
 
+import { validatedURL } from '@/utils/fetch';
+
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
@@ -8,17 +10,15 @@ interface WebSocketClientOptions {
 }
 
 class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
-  private _url: string;
+  private url: string;
 
   private socket?: ClientSocket;
 
   constructor(options: WebSocketClientOptions) {
     super();
-    this._url = options.url;
-  }
-
-  url() {
-    return this._url;
+    this.url = validatedURL(options.url, {
+      protocols: ['ws'],
+    });
   }
 
   isRunning() {
@@ -26,7 +26,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   }
 
   async start() {
-    const socket = new ClientSocket(this._url);
+    const socket = new ClientSocket(this.url);
     await super.registerSocket(socket);
     this.socket = socket;
   }

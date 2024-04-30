@@ -10,6 +10,7 @@ import { AccessResources } from '@tests/utils/workers';
 
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
+import UnknownHttpInterceptorWorkerTypeError from '../../errors/UnknownHttpInterceptorWorkerTypeError';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
@@ -45,7 +46,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
   const spiedRequestHandler = vi.fn(requestHandler);
 
   describe.each(workerOptionsArray)('Shared (type $type)', (workerOptions) => {
-    let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+    let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker | undefined;
 
     let serverURL: string;
     let baseURL: string;
@@ -78,7 +79,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
     });
 
     afterEach(async () => {
-      await worker.stop();
+      await worker?.stop();
 
       if (workerOptions.type === 'remote') {
         await stopServer?.();
@@ -312,7 +313,7 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
 
         const interceptor = createDefaultHttpInterceptor(worker);
         await expect(async () => {
-          await worker.use(interceptor.client(), method, baseURL, spiedRequestHandler);
+          await worker?.use(interceptor.client(), method, baseURL, spiedRequestHandler);
         }).rejects.toThrowError(Error);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -480,15 +481,45 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
       });
 
-      it(`should thrown an error if trying to apply a ${method} handler before started`, async () => {
+      it(`should throw an error if trying to apply a ${method} handler before started`, async () => {
         worker = createWorker();
 
         const interceptor = createDefaultHttpInterceptor(worker);
 
         await expect(async () => {
-          await worker.use(interceptor.client(), method, baseURL, spiedRequestHandler);
+          await worker?.use(interceptor.client(), method, baseURL, spiedRequestHandler);
         }).rejects.toThrowError(NotStartedHttpInterceptorWorkerError);
       });
     });
+
+    it('should throw an error if trying to clear handler without a started worker', async () => {
+      worker = createWorker();
+      expect(worker.isRunning()).toBe(false);
+
+      await expect(async () => {
+        await worker?.clearHandlers();
+      }).rejects.toThrowError(new NotStartedHttpInterceptorWorkerError());
+    });
+
+    it('should throw an error if trying to clear interceptor handlers without a started worker', async () => {
+      worker = createWorker();
+      expect(worker.isRunning()).toBe(false);
+
+      const interceptor = createDefaultHttpInterceptor(worker);
+
+      await expect(async () => {
+        await worker?.clearInterceptorHandlers(interceptor.client());
+      }).rejects.toThrowError(new NotStartedHttpInterceptorWorkerError());
+    });
+  });
+
+  it('should throw an error if initialized with an invalid type', () => {
+    // @ts-expect-error Testing invalid type.
+    const unknownType: HttpInterceptorWorkerType = 'unknown';
+
+    expect(() => {
+      // @ts-expect-error Testing invalid type.
+      createInternalHttpInterceptorWorker({ type: unknownType });
+    }).toThrowError(new UnknownHttpInterceptorWorkerTypeError(unknownType));
   });
 }

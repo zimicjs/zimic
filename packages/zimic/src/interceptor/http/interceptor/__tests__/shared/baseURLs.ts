@@ -4,6 +4,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import { joinURL } from '@/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './interceptorTests';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -31,6 +32,12 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       }>({ ...interceptorOptions, baseURL, pathPrefix }, async (interceptor) => {
         expect(interceptor.baseURL()).toBe(baseURL);
+
+        if (interceptor instanceof RemoteHttpInterceptor) {
+          expect(interceptor.pathPrefix()).toBe(pathPrefix);
+        } else {
+          expect(interceptor).not.toHaveProperty('pathPrefix' satisfies keyof RemoteHttpInterceptor<{}>);
+        }
 
         const tracker = await promiseIfRemote(
           interceptor.get(path).respond({

@@ -383,6 +383,19 @@ describe('CLI', () => {
         });
       });
 
+      it('should throw an error if the on-ready command executable is not found', async () => {
+        const unknownCommand = 'unknown';
+
+        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
+
+        await usingIgnoredConsole(['error'], async (spies) => {
+          await expect(runCLI()).rejects.toThrowError(`spawn ${unknownCommand} ENOENT`);
+
+          expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.error).toHaveBeenCalledWith(new Error(`spawn ${unknownCommand} ENOENT`));
+        });
+      });
+
       it('should throw an error if the on-ready command fails', async () => {
         const exitCode = 137;
 
@@ -403,6 +416,29 @@ describe('CLI', () => {
 
           expect(spies.error).toHaveBeenCalledTimes(1);
           expect(spies.error).toHaveBeenCalledWith(new CommandFailureError('node', exitCode, null));
+        });
+      });
+
+      it('should throw an error if the on-ready command is killed by a signal', async () => {
+        const signal = 'SIGINT';
+
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'server',
+          'start',
+          '--ephemeral',
+          '--',
+          'node',
+          '-e',
+          `process.kill(process.pid, '${signal}')`,
+        ]);
+
+        await usingIgnoredConsole(['error'], async (spies) => {
+          await expect(runCLI()).rejects.toThrowError(`The command 'node' exited after signal ${signal}.`);
+
+          expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.error).toHaveBeenCalledWith(new CommandFailureError('node', null, signal));
         });
       });
 

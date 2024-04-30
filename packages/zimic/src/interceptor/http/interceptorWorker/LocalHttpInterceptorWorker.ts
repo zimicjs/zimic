@@ -49,10 +49,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     }
 
     const { setupWorker } = await import('msw/browser');
+    /* istanbul ignore else -- @preserve */
     if (typeof setupWorker !== 'undefined') {
       return setupWorker();
     }
 
+    /* istanbul ignore next -- @preserve
+     * Ignoring because checking unknown platforms is currently not possible in Vitest */
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 
@@ -142,10 +145,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     url: string,
     createResponse: HttpResponseFactory,
   ) {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
-    }
-
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
@@ -171,26 +170,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
   }
 
   clearHandlers() {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
-    }
-
-    this._internalWorker?.resetHandlers();
+    const internalWorker = this.internalWorkerOrThrow();
+    internalWorker.resetHandlers();
     this.httpHandlerGroups = [];
   }
 
   clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
-    }
+    const internalWorker = this.internalWorkerOrThrow();
 
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
-
     const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
 
-    this._internalWorker?.resetHandlers();
+    internalWorker.resetHandlers();
+
     for (const handler of httpHandlersToKeep) {
-      this._internalWorker?.use(handler);
+      internalWorker.use(handler);
     }
 
     this.httpHandlerGroups = httpHandlerGroupsToKeep;

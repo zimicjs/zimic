@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
@@ -12,6 +12,8 @@ import { PossiblePromise } from '@/types/utils';
 import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
 import { AccessResources } from '@tests/utils/workers';
 
+import UnknownHttpInterceptorWorkerError from '../../errors/UnknownHttpInterceptorWorkerError';
+import { createHttpInterceptor } from '../../factory';
 import { HttpInterceptorOptions } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
@@ -39,6 +41,17 @@ export interface RuntimeSharedHttpInterceptorTestsOptions extends SharedHttpInte
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { platform, startServer, getAccessResources, stopServer } = options;
+
+  describe('Default', () => {
+    it('should throw an error if the worker is not known', () => {
+      const unknownWorker = new (class UnknownWorker {})();
+
+      expect(() => {
+        // @ts-expect-error Forcing an invalid worker
+        createHttpInterceptor({ worker: unknownWorker });
+      }).toThrowError(new UnknownHttpInterceptorWorkerError(unknownWorker));
+    });
+  });
 
   describe('Types', () => {
     declareTypeHttpInterceptorTests(options);

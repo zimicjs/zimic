@@ -7,8 +7,8 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { AsyncCommitOptions, registerMultipleCommitCallback } from '@/utils/async';
-import { joinURL } from '@/utils/fetch';
+import { AsyncCommitOptions } from '@/utils/async';
+import { joinURL, validatedURL } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
@@ -28,7 +28,7 @@ class HttpInterceptorClient<
 
   private Tracker: TrackerConstructor;
 
-  private trackersByMethod: {
+  private trackerClientsByMethod: {
     [Method in HttpMethod]: Map<string, AnyHttpRequestTrackerClient[]>;
   } = {
     GET: new Map(),
@@ -42,7 +42,9 @@ class HttpInterceptorClient<
 
   constructor(options: { worker: HttpInterceptorWorker; baseURL: string; Tracker: TrackerConstructor }) {
     this.worker = options.worker;
-    this._baseURL = options.baseURL;
+    this._baseURL = validatedURL(options.baseURL, {
+      protocols: ['http', 'https'],
+    });
     this.Tracker = options.Tracker;
   }
 
@@ -83,7 +85,7 @@ class HttpInterceptorClient<
     Path extends HttpServiceSchemaPath<Schema, Method>,
   >(method: Method, path: Path): PublicHttpRequestTracker<Schema, Method, Path> {
     const tracker = new this.Tracker<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
-    this.registerRequestTracker(tracker.client());
+    this.registerRequestTracker(tracker);
     return tracker;
   }
 
@@ -91,18 +93,22 @@ class HttpInterceptorClient<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
     StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-  >(tracker: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>) {
-    const methodPathTrackers = this.trackersByMethod[tracker.method()].get(tracker.path()) ?? [];
-    if (!methodPathTrackers.includes(tracker)) {
-      methodPathTrackers.push(tracker);
+  >(
+    tracker:
+      | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+  ) {
+    const trackerClients = this.trackerClientsByMethod[tracker.method()].get(tracker.path()) ?? [];
+    if (!trackerClients.includes(tracker.client())) {
+      trackerClients.push(tracker.client());
     }
 
-    const isFirstTrackerForMethodPath = methodPathTrackers.length === 1;
+    const isFirstTrackerForMethodPath = trackerClients.length === 1;
     if (!isFirstTrackerForMethodPath) {
       return;
     }
 
-    this.trackersByMethod[tracker.method()].set(tracker.path(), methodPathTrackers);
+    this.trackerClientsByMethod[tracker.method()].set(tracker.path(), trackerClients);
     const pathWithBaseURL = joinURL(this.baseURL(), tracker.path());
 
     const registrationResult = this.worker.use(this, tracker.method(), pathWithBaseURL, async (context) => {
@@ -153,7 +159,7 @@ class HttpInterceptorClient<
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   HttpRequestTrackerClient<Schema, Method, Path, any> | undefined {
-    const methodPathTrackers = this.trackersByMethod[method].get(path);
+    const methodPathTrackers = this.trackerClientsByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
   }
@@ -163,21 +169,21 @@ class HttpInterceptorClient<
 
     for (const method of HTTP_METHODS) {
       clearResults.push(...this.bypassMethodTrackers(method));
-      this.trackersByMethod[method].clear();
+      this.trackerClientsByMethod[method].clear();
     }
 
     const clearResult = this.worker.clearInterceptorHandlers(this);
     clearResults.push(clearResult);
 
     if (options.onCommit) {
-      registerMultipleCommitCallback(clearResults, options.onCommit);
+      void Promise.all(clearResults).then(options.onCommit);
     }
   }
 
   private bypassMethodTrackers(method: HttpMethod) {
     const bypassResults: PossiblePromise<AnyHttpRequestTrackerClient>[] = [];
 
-    for (const trackers of this.trackersByMethod[method].values()) {
+    for (const trackers of this.trackerClientsByMethod[method].values()) {
       for (const tracker of trackers) {
         bypassResults.push(tracker.bypass());
       }

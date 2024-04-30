@@ -40,7 +40,7 @@ class RemoteHttpRequestTracker<
   private synced: this;
 
   constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>, method: Method, path: Path) {
-    this._client = new HttpRequestTrackerClient(interceptor, method, path);
+    this._client = new HttpRequestTrackerClient(interceptor, method, path, this);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
@@ -142,7 +142,8 @@ class RemoteHttpRequestTracker<
           tracker: PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
-    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
     const promisesToWait = new Set(this.syncPromises);
 
@@ -157,24 +158,16 @@ class RemoteHttpRequestTracker<
   }
 
   catch<RejectedResult = never>(
-    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
   ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult> {
-    return this.then(null, onRejected);
+    return this.then().catch(onRejected);
   }
 
   finally(
     onFinally?: (() => void) | null,
   ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>> {
-    return this.then(
-      (_tracker) => {
-        onFinally?.();
-        return this.synced;
-      },
-      (_error) => {
-        onFinally?.();
-        return this.synced;
-      },
-    );
+    return this.then().finally(onFinally);
   }
 }
 
