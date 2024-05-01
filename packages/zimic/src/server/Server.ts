@@ -85,9 +85,8 @@ class Server implements PublicServer {
       httpServer: this.httpServer,
     });
 
-    const webSocketServerStartPromise = this.webSocketServer.start();
     await this.startHttpServer();
-    await webSocketServerStartPromise;
+    this.webSocketServer.start();
 
     this.webSocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
       const commit = message.data;
@@ -143,18 +142,18 @@ class Server implements PublicServer {
 
   private async startHttpServer() {
     await new Promise<void>((resolve, reject) => {
-      const handleStartSuccess = () => {
-        this.httpServer?.off('error', handleStartError); // eslint-disable-line @typescript-eslint/no-use-before-define
-        resolve();
-      };
-
       const handleStartError = (error: unknown) => {
-        this.httpServer?.off('listening', handleStartSuccess);
+        this.httpServer?.off('listening', handleStartSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
         reject(error);
       };
 
-      this.httpServer?.listen(this._port, this._hostname, handleStartSuccess);
+      const handleStartSuccess = () => {
+        this.httpServer?.off('error', handleStartError);
+        resolve();
+      };
+
       this.httpServer?.once('error', handleStartError);
+      this.httpServer?.listen(this._port, this._hostname, handleStartSuccess);
     });
 
     const httpAddress = this.httpServer?.address();

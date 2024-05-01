@@ -22,6 +22,11 @@ export async function runCommand(command: string, commandArguments: string[]) {
       stdio: 'inherit',
     });
 
+    childProcess.once('error', (error) => {
+      childProcess.removeAllListeners();
+      reject(error);
+    });
+
     childProcess.once('exit', (exitCode, signal) => {
       childProcess.removeAllListeners();
 
@@ -31,11 +36,6 @@ export async function runCommand(command: string, commandArguments: string[]) {
       }
 
       const error = new CommandFailureError(command, exitCode, signal);
-      reject(error);
-    });
-
-    childProcess.once('error', (error) => {
-      childProcess.removeAllListeners();
       reject(error);
     });
   });

@@ -23,33 +23,15 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     return this.webSocketServer !== undefined;
   }
 
-  async start() {
+  start() {
     if (this.isRunning()) {
       return;
     }
 
-    const webSocketServer = new ServerSocket({
-      server: this.httpServer,
-    });
+    const webSocketServer = new ServerSocket({ server: this.httpServer });
 
-    const startPromise = new Promise<void>((resolve, reject) => {
-      function handleServerListening() {
-        webSocketServer.off('error', handleServerError); // eslint-disable-line @typescript-eslint/no-use-before-define
-        resolve();
-      }
-
-      function handleServerError(error: unknown) {
-        webSocketServer.off('listening', handleServerListening);
-        reject(error);
-      }
-
-      webSocketServer.once('listening', handleServerListening);
-      webSocketServer.once('error', handleServerError);
-    });
-
-    webSocketServer.on('connection', this.handleWebSocketServerConnection);
-    await startPromise;
     webSocketServer.on('error', this.handleWebSocketServerError);
+    webSocketServer.on('connection', this.handleWebSocketServerConnection);
 
     this.webSocketServer = webSocketServer;
   }
@@ -71,18 +53,18 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     super.removeAllListeners();
 
     await new Promise<void>((resolve, reject) => {
-      const handleServerClose = () => {
-        this.webSocketServer?.off('error', handleServerError); // eslint-disable-line @typescript-eslint/no-use-before-define
-        resolve();
-      };
-
       const handleServerError = (error: unknown) => {
-        this.webSocketServer?.off('close', handleServerClose);
+        this.webSocketServer?.off('close', handleServerClose); // eslint-disable-line @typescript-eslint/no-use-before-define
         reject(error);
       };
 
-      this.webSocketServer?.once('close', handleServerClose);
+      const handleServerClose = () => {
+        this.webSocketServer?.off('error', handleServerError);
+        resolve();
+      };
+
       this.webSocketServer?.once('error', handleServerError);
+      this.webSocketServer?.once('close', handleServerClose);
       this.webSocketServer?.close();
     });
 

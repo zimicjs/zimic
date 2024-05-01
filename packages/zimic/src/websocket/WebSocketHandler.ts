@@ -31,8 +31,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   protected async registerSocket(socket: ClientSocket) {
     const startPromise = new Promise((resolve, reject) => {
-      socket.addEventListener('open', resolve);
       socket.addEventListener('error', reject);
+      socket.addEventListener('open', resolve);
     });
 
     socket.addEventListener('message', async (rawMessage) => {
@@ -147,8 +147,18 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     for (const socket of sockets) {
       closingPromises.push(
         new Promise<void>((resolve, reject) => {
-          socket.addEventListener('close', () => resolve());
-          socket.addEventListener('error', reject);
+          function handleCloseError(error: unknown) {
+            socket.removeEventListener('close', handleCloseSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+            reject(error);
+          }
+
+          function handleCloseSuccess() {
+            socket.removeEventListener('error', handleCloseError);
+            resolve();
+          }
+
+          socket.addEventListener('error', handleCloseError);
+          socket.addEventListener('close', handleCloseSuccess);
           socket.close();
         }),
       );
