@@ -27,7 +27,7 @@ async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOp
 
   await server.start();
 
-  await logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on '${server.url()}'.`);
+  await logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on '${server.httpURL()}'.`);
 
   if (onReady) {
     await runCommand(onReady.command, onReady.arguments);

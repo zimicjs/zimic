@@ -60,7 +60,7 @@ class Server implements PublicServer {
     return this._port;
   }
 
-  url() {
+  httpURL() {
     if (this._port === undefined) {
       return undefined;
     }
@@ -175,6 +175,8 @@ class Server implements PublicServer {
     await webSocketServerStopPromise;
 
     this.httpServer?.removeAllListeners();
+
+    this.webSocketServer = undefined;
     this.httpServer = undefined;
   }
 
@@ -214,8 +216,10 @@ class Server implements PublicServer {
   };
 
   private async createResponseForRequest(request: Request) {
+    /* istanbul ignore next
+     * This should never happen since the server is always started before handling requests. */
     if (!this.webSocketServer) {
-      return null;
+      throw new Error('The web socket server is not running.');
     }
 
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
@@ -242,7 +246,6 @@ class Server implements PublicServer {
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
-        this.setDefaultAccessControlHeaders(response);
         return response;
       }
     }
