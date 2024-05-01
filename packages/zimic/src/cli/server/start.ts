@@ -1,7 +1,7 @@
+import { logWithPrefix } from '@/cli/utils/console';
 import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
-import { logWithPrefix } from '../utils/console';
-import Server from './Server';
+import Server from '../../server/Server';
 
 interface ServerStartOptions {
   hostname: string;

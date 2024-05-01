@@ -1,6 +1,6 @@
 import { describe } from 'vitest';
 
-import Server from '@/cli/server/Server';
+import Server from '@/server/Server';
 import { getNodeAccessResources } from '@tests/utils/workers';
 
 import { declareSharedHttpInterceptorTests } from './shared/interceptorTests';

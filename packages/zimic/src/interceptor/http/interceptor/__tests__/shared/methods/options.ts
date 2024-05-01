@@ -1,6 +1,5 @@
 import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
-import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/cli/server/constants';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
@@ -9,6 +8,7 @@ import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/Loc
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
 import { JSONValue } from '@/types/json';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';

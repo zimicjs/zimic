@@ -1,6 +1,6 @@
-import { HttpHandlerCommit, ServerWebSocketSchema } from '@/cli/server/types/schema';
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse, validatedURL } from '@/utils/fetch';
 import WebSocketClient from '@/websocket/WebSocketClient';

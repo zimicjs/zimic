@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
-import Server from '@/cli/server/Server';
 import { HttpInterceptorWorkerType } from '@/interceptor';
+import Server from '@/server/Server';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/fetch';
 import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/globalSetup/serverOnBrowser';

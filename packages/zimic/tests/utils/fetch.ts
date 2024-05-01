@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { DEFAULT_PREFLIGHT_STATUS_CODE } from '@/cli/server/constants';
+import { DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';
 
 interface ExpectFetchErrorOptions {
   canBeAborted?: boolean;
