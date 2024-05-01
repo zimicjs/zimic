@@ -133,6 +133,10 @@ class RemoteHttpRequestTracker<
     this.syncPromises.push(promise);
   }
 
+  isSynced(): boolean {
+    return this.syncPromises.length === 0;
+  }
+
   then<
     FulfilledResult = PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
     RejectedResult = never,
@@ -152,7 +156,7 @@ class RemoteHttpRequestTracker<
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        return this.syncPromises.length === 0 ? this.synced : this.unsynced;
+        return this.isSynced() ? this.synced : this.unsynced;
       })
       .then(onFulfilled, onRejected);
   }

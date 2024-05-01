@@ -70,12 +70,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
       const { handlerId, request: serializedRequest } = message.data;
 
       const handler = this.httpHandlers.get(handlerId);
-      if (!handler) {
-        return { response: null };
-      }
-
       const request = deserializeRequest(serializedRequest);
-      const rawResponse = await handler.createResponse({ request });
+      const rawResponse = (await handler?.createResponse({ request })) ?? null;
       const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
       const serializedResponse = response ? await serializeResponse(response) : null;

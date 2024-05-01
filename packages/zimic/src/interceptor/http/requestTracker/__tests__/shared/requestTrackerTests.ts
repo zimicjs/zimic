@@ -18,6 +18,7 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/interceptor/http/interceptorWorker/types/options';
 import { PossiblePromise } from '@/types/utils';
+import { waitForDelay } from '@/utils/time';
 import { createInternalHttpInterceptorWorker, createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import { AccessResources } from '@tests/utils/workers';
 
@@ -940,9 +941,45 @@ export function declareSharedHttpRequestTrackerTests(options: {
           body: { success: true },
         });
 
-        const request = new Request(baseURL);
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        expect(tracker).toHaveProperty('then', expect.any(Function));
+        expect(tracker).toHaveProperty('catch', expect.any(Function));
+        expect(tracker).toHaveProperty('finally', expect.any(Function));
+
+        const fulfillmentListener = vi.fn((syncedTracker) => {
+          expect(syncedTracker).toEqual(tracker);
+          expect(tracker.isSynced()).toBe(true);
+
+          expect(syncedTracker).not.toHaveProperty('then');
+          expect(syncedTracker).toHaveProperty('catch', expect.any(Function));
+          expect(syncedTracker).toHaveProperty('finally', expect.any(Function));
+        });
+
+        expect(tracker.isSynced()).toBe(true);
+
+        const pendingTracker = tracker.with({});
+        expect(pendingTracker).toEqual(tracker);
+
+        expect(tracker.isSynced()).toBe(true);
+        tracker.registerSyncPromise(waitForDelay(100));
+        expect(tracker.isSynced()).toBe(false);
+
+        await pendingTracker.then(fulfillmentListener);
+
+        expect(tracker.isSynced()).toBe(true);
+        expect(pendingTracker.isSynced()).toBe(true);
+
+        expect(fulfillmentListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should wait until synced before resolving, even if new sync promises were added while waiting', async () => {
+        const tracker = new RemoteHttpRequestTracker<Schema, 'POST', '/users'>(
+          interceptorClient,
+          'POST',
+          '/users',
+        ).respond({
+          status: 200,
+          body: { success: true },
+        });
 
         expect(tracker).toHaveProperty('then', expect.any(Function));
         expect(tracker).toHaveProperty('catch', expect.any(Function));
@@ -950,15 +987,28 @@ export function declareSharedHttpRequestTrackerTests(options: {
 
         const fulfillmentListener = vi.fn((syncedTracker) => {
           expect(tracker).toEqual(syncedTracker);
+          expect(tracker.isSynced()).toBe(true);
 
           expect(syncedTracker).not.toHaveProperty('then');
           expect(syncedTracker).toHaveProperty('catch', expect.any(Function));
           expect(syncedTracker).toHaveProperty('finally', expect.any(Function));
-
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
         });
 
-        await tracker.with({}).then(fulfillmentListener);
+        const delayedSyncPromises = [waitForDelay(200), waitForDelay(100), waitForDelay(300)];
+
+        expect(tracker.isSynced()).toBe(true);
+        tracker.registerSyncPromise(delayedSyncPromises[0]);
+        expect(tracker.isSynced()).toBe(false);
+
+        const thenPromise = tracker.with({}).then(fulfillmentListener);
+
+        tracker.registerSyncPromise(delayedSyncPromises[1]);
+        tracker.registerSyncPromise(delayedSyncPromises[2]);
+        expect(tracker.isSynced()).toBe(false);
+
+        await thenPromise;
+
+        expect(tracker.isSynced()).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
@@ -972,10 +1022,6 @@ export function declareSharedHttpRequestTrackerTests(options: {
           status: 200,
           body: { success: true },
         });
-
-        const request = new Request(baseURL);
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
         expect(tracker).toHaveProperty('then', expect.any(Function));
         expect(tracker).toHaveProperty('catch', expect.any(Function));
@@ -1004,19 +1050,25 @@ export function declareSharedHttpRequestTrackerTests(options: {
           body: { success: true },
         });
 
-        const request = new Request(baseURL);
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
-
         expect(tracker).toHaveProperty('then', expect.any(Function));
         expect(tracker).toHaveProperty('catch', expect.any(Function));
         expect(tracker).toHaveProperty('finally', expect.any(Function));
 
-        const finallyListener = vi.fn(() => {
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
-        });
+        const finallyListener = vi.fn();
 
-        await tracker.with({}).finally(finallyListener);
+        expect(tracker.isSynced()).toBe(true);
+
+        const pendingTracker = tracker.with({});
+        expect(pendingTracker).toEqual(tracker);
+
+        expect(tracker.isSynced()).toBe(true);
+        tracker.registerSyncPromise(waitForDelay(100));
+        expect(tracker.isSynced()).toBe(false);
+
+        await pendingTracker.finally(finallyListener);
+
+        expect(tracker.isSynced()).toBe(true);
+        expect(pendingTracker.isSynced()).toBe(true);
 
         expect(finallyListener).toHaveBeenCalledTimes(1);
       });
