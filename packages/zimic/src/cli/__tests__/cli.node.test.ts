@@ -316,6 +316,32 @@ describe('CLI', () => {
         });
       });
 
+      it('should throw an error if the provided port is already in use', async () => {
+        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '-p', '3000']);
+
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
+          await runCLI();
+
+          const initialServer = server;
+
+          expect(initialServer).toBeDefined();
+          expect(initialServer!.isRunning()).toBe(true);
+          expect(initialServer!.hostname()).toBe('localhost');
+          expect(initialServer!.port()).toBe(3000);
+
+          try {
+            await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
+
+            expect(spies.error).toHaveBeenCalledTimes(1);
+            expect(spies.error).toHaveBeenCalledWith(
+              new Error('listen EADDRINUSE: address already in use 127.0.0.1:3000'),
+            );
+          } finally {
+            await initialServer?.stop();
+          }
+        });
+      });
+
       it('should stop the server after the on-ready command finishes if ephemeral is true', async () => {
         const temporarySaveFileContent = crypto.randomUUID();
 
@@ -388,7 +414,7 @@ describe('CLI', () => {
 
         processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
           await expect(runCLI()).rejects.toThrowError(`spawn ${unknownCommand} ENOENT`);
 
           expect(spies.error).toHaveBeenCalledTimes(1);
@@ -411,7 +437,7 @@ describe('CLI', () => {
           `process.exit(${exitCode})`,
         ]);
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
           await expect(runCLI()).rejects.toThrowError(`The command 'node' exited with code ${exitCode}.`);
 
           expect(spies.error).toHaveBeenCalledTimes(1);
@@ -434,7 +460,7 @@ describe('CLI', () => {
           `process.kill(process.pid, '${signal}')`,
         ]);
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
           await expect(runCLI()).rejects.toThrowError(`The command 'node' exited after signal ${signal}.`);
 
           expect(spies.error).toHaveBeenCalledTimes(1);

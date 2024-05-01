@@ -184,6 +184,8 @@ class Server implements PublicServer {
     await new Promise<void>((resolve, reject) => {
       this.httpServer?.close((error) => {
         if (error) {
+          /* istanbul ignore next -- @preserve
+           * This should never happen since the server is not stopped unless running. */
           reject(error);
         } else {
           resolve();
@@ -216,7 +218,7 @@ class Server implements PublicServer {
   };
 
   private async createResponseForRequest(request: Request) {
-    /* istanbul ignore next
+    /* istanbul ignore next -- @preserve
      * This should never happen since the server is always started before handling requests. */
     if (!this.webSocketServer) {
       throw new Error('The web socket server is not running.');
