@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';
 
 interface ExpectFetchErrorOptions {
   canBeAborted?: boolean;
@@ -31,6 +31,10 @@ export async function expectFetchErrorOrPreflightResponse(
     const response = await fetchPromise;
     expect(response.status).toBe(DEFAULT_PREFLIGHT_STATUS_CODE);
     expect(await response.text()).toBe('');
+
+    for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+      expect(response.headers.get(header)).toBe(value);
+    }
   } else {
     await expectFetchError(fetchPromise, options);
   }
