@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HTTP_METHODS } from '@/http/types/schema';
+import { DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
@@ -38,13 +39,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
   const responseStatus = 200;
   const responseBody = { success: true };
 
-  function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponseFactoryResult> {
-    const response = Response.json(responseBody, { status: responseStatus });
-    return { response };
-  }
-
-  const spiedRequestHandler = vi.fn(requestHandler);
-
   describe.each(workerOptionsArray)('Shared (type $type)', (workerOptions) => {
     let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker | undefined;
 
@@ -74,8 +68,6 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         clientBaseURL: baseURL,
         clientPathPrefix: pathPrefix,
       } = await getAccessResources(workerOptions.type));
-
-      spiedRequestHandler.mockClear();
     });
 
     afterEach(async () => {
@@ -175,6 +167,18 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
       const numberOfRequestsIncludingPrefetch =
         platform === 'browser' && workerOptions.type === 'remote' && method === 'OPTIONS' ? 2 : 1;
 
+      const defaultHeaders = overridesPreflightResponse ? DEFAULT_ACCESS_CONTROL_HEADERS : undefined;
+
+      function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponseFactoryResult> {
+        const response = Response.json(responseBody, {
+          status: responseStatus,
+          headers: defaultHeaders,
+        });
+        return { response };
+      }
+
+      const spiedRequestHandler = vi.fn(requestHandler);
+
       async function expectMatchedBodyIfNotHead(response: Response) {
         if (method === 'HEAD') {
           expect(await response.text()).toBe('');
@@ -183,6 +187,10 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
           expect(matchedBody).toEqual(responseBody);
         }
       }
+
+      beforeEach(() => {
+        spiedRequestHandler.mockClear();
+      });
 
       it(`should intercept ${method} requests after started`, async () => {
         worker = createWorker();
@@ -402,11 +410,11 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
         await worker.start();
 
         const okSpiedRequestHandler = vi.fn(spiedRequestHandler).mockImplementation(() => {
-          const response = new Response(null, { status: 200 });
+          const response = new Response(null, { status: 200, headers: defaultHeaders });
           return { response };
         });
         const noContentSpiedRequestHandler = vi.fn(spiedRequestHandler).mockImplementation(() => {
-          const response = new Response(null, { status: 204 });
+          const response = new Response(null, { status: 204, headers: defaultHeaders });
           return { response };
         });
 

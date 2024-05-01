@@ -10,7 +10,7 @@ import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttp
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
 import { JSONValue } from '@/types/json';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -482,7 +482,39 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should not intercept a OPTIONS request without a registered response', async () => {
+  it('should throw an error if intercepting an OPTIONS request without proper access-control headers', async () => {
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: { headers: {} };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const optionsTracker = await promiseIfRemote(
+        interceptor.options('/filters').respond({
+          status: 200,
+          headers: {},
+        }),
+        worker,
+      );
+
+      const initialOptionsRequests = await promiseIfRemote(optionsTracker.requests(), worker);
+      expect(initialOptionsRequests).toHaveLength(0);
+
+      const optionsPromise = fetch(`${baseURL}/filters`, { method: 'OPTIONS' });
+
+      if (worker instanceof RemoteHttpInterceptorWorker && platform === 'browser') {
+        await expectFetchError(optionsPromise);
+      } else {
+        const optionsResponse = await optionsPromise;
+        expect(optionsResponse.status).toBe(200);
+      }
+    });
+  });
+
+  it('should not intercept an OPTIONS request without a registered response', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
