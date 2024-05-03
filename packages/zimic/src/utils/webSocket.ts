@@ -22,6 +22,11 @@ export async function waitForOpenClientSocket(socket: ClientSocket) {
 }
 
 export async function closeClientSocket(socket: ClientSocket) {
+  const isAlreadyClosed = socket.readyState === socket.CLOSED;
+  if (isAlreadyClosed) {
+    return;
+  }
+
   await new Promise<void>((resolve, reject) => {
     /* istanbul ignore next -- @preserve
      * This is not expected since the socket does not normally throw closing errors. */
@@ -57,6 +62,10 @@ export async function closeServerSocket(socket: InstanceType<typeof ServerSocket
 
     socket.once('error', handleServerError);
     socket.once('close', handleServerClose);
+
+    for (const client of socket.clients) {
+      client.terminate();
+    }
     socket.close();
   });
 }

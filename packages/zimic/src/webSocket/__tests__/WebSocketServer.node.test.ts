@@ -89,6 +89,25 @@ describe('Web socket server', () => {
     expect(server.isRunning()).toBe(false);
   });
 
+  it('should terminate connected clients before stopping', async () => {
+    server = new WebSocketServer({ httpServer });
+    server.start();
+    expect(server.isRunning()).toBe(true);
+
+    rawClient = new ClientSocket(`ws://localhost:${httpServerPort}`);
+    await waitForOpenClientSocket(rawClient);
+
+    expect(rawClient.readyState).toBe(rawClient.OPEN);
+
+    await server.stop();
+    expect(server.isRunning()).toBe(false);
+
+    await waitFor(() => {
+      expect(rawClient).toBeDefined();
+      expect(rawClient?.readyState).toBe(rawClient?.CLOSED);
+    });
+  });
+
   it('should log http server errors to the console', async () => {
     server = new WebSocketServer({ httpServer });
     server.start();

@@ -32,19 +32,16 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
 
     const webSocketServer = new ServerSocket({ server: this.httpServer });
 
-    webSocketServer.on('error', this.handleWebSocketServerError);
-    webSocketServer.on('connection', this.handleWebSocketServerConnection);
+    webSocketServer.on('error', (error) => {
+      console.error(error);
+    });
+
+    webSocketServer.on('connection', async (socket) => {
+      await super.registerSocket(socket);
+    });
 
     this.webSocketServer = webSocketServer;
   }
-
-  private handleWebSocketServerConnection = async (socket: InstanceType<typeof ClientSocket>) => {
-    await super.registerSocket(socket);
-  };
-
-  private handleWebSocketServerError = (error: unknown) => {
-    console.error(error);
-  };
 
   async stop() {
     if (!this.webSocketServer || !this.isRunning()) {
