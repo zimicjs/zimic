@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
-import { DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
+import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
@@ -14,7 +15,7 @@ import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterc
 import UnknownHttpInterceptorWorkerTypeError from '../../errors/UnknownHttpInterceptorWorkerTypeError';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker, { SUPPORTED_BASE_URL_PROTOCOLS } from '../../RemoteHttpInterceptorWorker';
 import {
   HttpInterceptorWorkerOptions,
   HttpInterceptorWorkerPlatform,
@@ -162,12 +163,58 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
       }
     });
 
+    if (workerOptions.type === 'remote') {
+      it('should throw an error if provided an invalid server URL', () => {
+        const invalidServerURL = 'invalid';
+
+        expect(() => {
+          createInternalHttpInterceptorWorker({ ...workerOptions, serverURL: invalidServerURL });
+        }).toThrowError('Invalid URL');
+      });
+
+      it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
+        'should not throw an error if provided a supported server URL protocol: %s',
+        (supportedProtocol) => {
+          const url = `${supportedProtocol}://localhost:3000`;
+
+          expect(() => {
+            createInternalHttpInterceptorWorker({ ...workerOptions, serverURL: url });
+          }).not.toThrowError();
+        },
+      );
+
+      const exampleUnsupportedProtocols = ['ws', 'wss', 'ftp'];
+
+      it.each(exampleUnsupportedProtocols)(
+        'should throw an error if provided an unsupported server URL protocol: %s',
+        (unsupportedProtocol) => {
+          expect(SUPPORTED_BASE_URL_PROTOCOLS).not.toContain(unsupportedProtocol);
+
+          const url = `${unsupportedProtocol}://localhost:3000`;
+
+          expect(() => {
+            createInternalHttpInterceptorWorker({ ...workerOptions, serverURL: url });
+          }).toThrowError(new TypeError(`Expected URL with protocol (http|https), but got '${unsupportedProtocol}'`));
+        },
+      );
+    }
+
     describe.each(HTTP_METHODS)('Method: %s', (method) => {
       const overridesPreflightResponse = workerOptions.type === 'remote' && method === 'OPTIONS';
       const numberOfRequestsIncludingPrefetch =
         platform === 'browser' && workerOptions.type === 'remote' && method === 'OPTIONS' ? 2 : 1;
 
-      const defaultHeaders = overridesPreflightResponse ? DEFAULT_ACCESS_CONTROL_HEADERS : undefined;
+      const defaultHeaders = new HttpHeaders<AccessControlHeaders>();
+
+      if (overridesPreflightResponse) {
+        for (const [header, value] of Object.entries(DEFAULT_ACCESS_CONTROL_HEADERS)) {
+          /* istanbul ignore else -- @preserve
+           * This is always true during tests because we force max-age=0 to disable CORS caching. */
+          if (value) {
+            defaultHeaders.set(header, value);
+          }
+        }
+      }
 
       function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponseFactoryResult> {
         const response = Response.json(responseBody, {

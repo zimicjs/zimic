@@ -1,10 +1,10 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { joinURL } from '@/utils/fetch';
+import { joinURL, validatedURL } from '@/utils/fetch';
 
 import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
 import { PublicRemoteHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
-import HttpInterceptorClient from './HttpInterceptorClient';
+import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { PublicRemoteHttpInterceptor } from './types/public';
@@ -16,11 +16,15 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   private _pathPrefix: string;
 
   constructor(options: RemoteHttpInterceptorOptions) {
+    const joinedBaseURL = joinURL(options.worker.serverURL(), options.pathPrefix);
+    const baseURL = validatedURL(joinedBaseURL, { protocols: SUPPORTED_BASE_URL_PROTOCOLS });
+
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
       worker: options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker,
       Tracker: RemoteHttpRequestTracker,
-      baseURL: joinURL(options.worker.serverURL(), options.pathPrefix),
+      baseURL,
     });
+
     this._pathPrefix = options.pathPrefix;
   }
 

@@ -19,6 +19,8 @@ import { PublicHttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import { HttpInterceptorRequestContext } from './types/requests';
 
+export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
+
 class HttpInterceptorClient<
   Schema extends HttpServiceSchema,
   TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
@@ -43,7 +45,7 @@ class HttpInterceptorClient<
   constructor(options: { worker: HttpInterceptorWorker; baseURL: string; Tracker: TrackerConstructor }) {
     this.worker = options.worker;
     this._baseURL = validatedURL(options.baseURL, {
-      protocols: ['http', 'https'],
+      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
     this.Tracker = options.Tracker;
   }

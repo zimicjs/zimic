@@ -53,6 +53,8 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     super.removeAllListeners();
 
     await new Promise<void>((resolve, reject) => {
+      /* istanbul ignore next -- @preserve
+       * This is not expected since the server is not stopped unless it is running. */
       const handleServerError = (error: unknown) => {
         this.webSocketServer?.off('close', handleServerClose); // eslint-disable-line @typescript-eslint/no-use-before-define
         reject(error);

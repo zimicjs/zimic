@@ -482,7 +482,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should throw an error if intercepting an OPTIONS request without proper access-control headers', async () => {
+  it('should result in a browser error after returning a remote OPTIONS request without proper access-control headers', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {

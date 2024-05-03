@@ -33,6 +33,7 @@ export interface SharedHttpInterceptorTestsOptions {
 }
 
 export interface RuntimeSharedHttpInterceptorTestsOptions extends SharedHttpInterceptorTestsOptions {
+  type: HttpInterceptorWorkerType;
   getWorker: () => LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   getBaseURL: () => string;
   getPathPrefix: () => string;
@@ -102,6 +103,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
       ...options,
+      type: workerOptions.type,
       getWorker() {
         return worker;
       },

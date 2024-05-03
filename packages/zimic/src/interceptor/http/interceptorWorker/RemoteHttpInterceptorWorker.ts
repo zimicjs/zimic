@@ -3,6 +3,7 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse, validatedURL } from '@/utils/fetch';
+import { WebSocket } from '@/websocket/types';
 import WebSocketClient from '@/websocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -12,6 +13,8 @@ import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { PublicRemoteHttpInterceptorWorker } from './types/public';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
+
+export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
 
 interface HttpHandler {
   id: string;
@@ -34,9 +37,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    this._serverURL = validatedURL(options.serverURL, {
-      protocols: ['http', 'https'],
-    });
+    this._serverURL = validatedURL(options.serverURL, { protocols: SUPPORTED_BASE_URL_PROTOCOLS });
 
     const webSocketServerURL = new URL(this._serverURL);
     webSocketServerURL.protocol = 'ws:';
@@ -65,23 +66,26 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     super.ensureEmptyRunningInstance();
 
     await this.webSocketClient.start();
-
-    this.webSocketClient.onEvent('interceptors/responses/create', async (message) => {
-      const { handlerId, request: serializedRequest } = message.data;
-
-      const handler = this.httpHandlers.get(handlerId);
-      const request = deserializeRequest(serializedRequest);
-      const rawResponse = (await handler?.createResponse({ request })) ?? null;
-      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
-
-      const serializedResponse = response ? await serializeResponse(response) : null;
-      return { response: serializedResponse };
-    });
+    this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
 
     super.setPlatform(await this.readPlatform());
     super.markAsRunningInstance();
     super.setIsRunning(true);
   }
+
+  private createResponse = async (
+    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/responses/create'>,
+  ) => {
+    const { handlerId, request: serializedRequest } = message.data;
+
+    const handler = this.httpHandlers.get(handlerId);
+    const request = deserializeRequest(serializedRequest);
+    const rawResponse = (await handler?.createResponse({ request })) ?? null;
+    const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
+
+    const serializedResponse = response ? await serializeResponse(response) : null;
+    return { response: serializedResponse };
+  };
 
   private async readPlatform(): Promise<HttpInterceptorWorkerPlatform> {
     const { setupServer } = await import('msw/node');
@@ -106,6 +110,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     }
 
     await this.clearHandlers();
+    this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
     await this.webSocketClient.stop();
 
     super.setIsRunning(false);

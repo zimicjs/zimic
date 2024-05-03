@@ -9,6 +9,8 @@ import {
   deserializeResponse,
   serializeRequest,
 } from '@/utils/fetch';
+import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
+import { WebSocket } from '@/websocket/types';
 import WebSocketServer from '@/websocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
@@ -80,34 +82,56 @@ class Server implements PublicServer {
       keepAlive: true,
       joinDuplicateHeaders: true,
     });
+    await this.startHttpServer(this.httpServer);
 
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
     });
-
-    await this.startHttpServer();
-    this.webSocketServer.start();
-
-    this.webSocketServer.onEvent('interceptors/workers/use/commit', (message, socket) => {
-      const commit = message.data;
-      this.registerHttpHandlerGroup(commit, socket);
-      this.registerWorkerSocketIfUnknown(socket);
-      return {};
-    });
-
-    this.webSocketServer.onEvent('interceptors/workers/use/reset', (message, socket) => {
-      this.removeWorkerSocket(socket);
-
-      const resetCommits = message.data ?? [];
-      for (const commit of resetCommits) {
-        this.registerHttpHandlerGroup(commit, socket);
-      }
-
-      this.registerWorkerSocketIfUnknown(socket);
-
-      return {};
-    });
+    this.startWebSocketServer(this.webSocketServer);
   }
+
+  private async startHttpServer(httpServer: HttpServer) {
+    await startHttpServer(httpServer, {
+      hostname: this._hostname,
+      port: this._port,
+    });
+
+    httpServer.on('request', this.handleHttpRequest);
+
+    this._port = getHttpServerPort(httpServer);
+  }
+
+  private startWebSocketServer(webSocketServer: WebSocketServer<ServerWebSocketSchema>) {
+    webSocketServer.start();
+    webSocketServer.onEvent('interceptors/workers/use/commit', this.commitWorker);
+    webSocketServer.onEvent('interceptors/workers/use/reset', this.resetWorker);
+  }
+
+  private commitWorker = (
+    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/commit'>,
+    socket: Socket,
+  ) => {
+    const commit = message.data;
+    this.registerHttpHandlerGroup(commit, socket);
+    this.registerWorkerSocketIfUnknown(socket);
+    return {};
+  };
+
+  private resetWorker = (
+    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/reset'>,
+    socket: Socket,
+  ) => {
+    this.removeWorkerSocket(socket);
+
+    const resetCommits = message.data ?? [];
+    for (const commit of resetCommits) {
+      this.registerHttpHandlerGroup(commit, socket);
+    }
+
+    this.registerWorkerSocketIfUnknown(socket);
+
+    return {};
+  };
 
   private registerHttpHandlerGroup({ id, url, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
@@ -140,59 +164,26 @@ class Server implements PublicServer {
     }
   }
 
-  private async startHttpServer() {
-    await new Promise<void>((resolve, reject) => {
-      const handleStartError = (error: unknown) => {
-        this.httpServer?.off('listening', handleStartSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
-        reject(error);
-      };
-
-      const handleStartSuccess = () => {
-        this.httpServer?.off('error', handleStartError);
-        resolve();
-      };
-
-      this.httpServer?.once('error', handleStartError);
-      this.httpServer?.listen(this._port, this._hostname, handleStartSuccess);
-    });
-
-    const httpAddress = this.httpServer?.address();
-    if (typeof httpAddress !== 'string') {
-      this._port = httpAddress?.port;
-    }
-
-    this.httpServer?.on('request', this.handleHttpRequest);
-  }
-
   async stop() {
-    if (!this.isRunning()) {
+    if (!this.httpServer || !this.isRunning()) {
       return;
     }
 
-    const webSocketServerStopPromise = this.webSocketServer?.stop();
-    await this.stopHttpServer();
-    await webSocketServerStopPromise;
+    await this.stopWebSocketServer();
+    await this.stopHttpServer(this.httpServer);
+  }
 
-    this.httpServer?.removeAllListeners();
-
-    this.webSocketServer = undefined;
+  private async stopHttpServer(httpServer: HttpServer) {
+    await stopHttpServer(httpServer);
+    httpServer.removeAllListeners();
     this.httpServer = undefined;
   }
 
-  private async stopHttpServer() {
-    await new Promise<void>((resolve, reject) => {
-      this.httpServer?.close((error) => {
-        if (error) {
-          /* istanbul ignore next -- @preserve
-           * This should never happen since the server is not stopped unless running. */
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-
-      this.httpServer?.closeAllConnections();
-    });
+  private async stopWebSocketServer() {
+    this.webSocketServer?.offEvent('interceptors/workers/use/commit', this.commitWorker);
+    this.webSocketServer?.offEvent('interceptors/workers/use/reset', this.resetWorker);
+    await this.webSocketServer?.stop();
+    this.webSocketServer = undefined;
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
@@ -218,7 +209,7 @@ class Server implements PublicServer {
 
   private async createResponseForRequest(request: Request) {
     /* istanbul ignore next -- @preserve
-     * This should never happen since the server is always started before handling requests. */
+     * This is not expected since the server is always started before handling requests. */
     if (!this.webSocketServer) {
       throw new Error('The web socket server is not running.');
     }
@@ -264,6 +255,8 @@ class Server implements PublicServer {
       }
 
       const value = DEFAULT_ACCESS_CONTROL_HEADERS[key];
+      /* istanbul ignore else -- @preserve
+       * This is always true during tests because we force max-age=0 to disable CORS caching. */
       if (value) {
         response.headers.set(key, value);
       }

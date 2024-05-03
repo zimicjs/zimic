@@ -58,10 +58,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     if (typeof data === 'string') {
       return data;
     }
-    if (Array.isArray(data)) {
-      return Buffer.concat(data).toString('utf-8');
-    }
-    return Buffer.from(data).toString('utf-8');
+    /* istanbul ignore next -- @preserve
+     * All supported websocket messages should be encoded as strings. */
+    throw new InvalidWebSocketMessage(data);
   }
 
   private parseMessage(stringifiedMessage: string): WebSocket.ServiceMessage<Schema> {
@@ -147,6 +146,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     for (const socket of sockets) {
       closingPromises.push(
         new Promise<void>((resolve, reject) => {
+          /* istanbul ignore next -- @preserve
+           * This is not expected since the socket does not normally throw closing errors. */
           function handleCloseError(error: unknown) {
             socket.removeEventListener('close', handleCloseSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
             reject(error);

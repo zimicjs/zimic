@@ -3,16 +3,15 @@ import { JSONValue } from '..';
 export function validatedURL(
   rawURL: string,
   options: {
-    protocols?: ('http' | 'https' | 'ws')[];
-  } = {},
+    protocols: string[];
+  },
 ) {
   const url = new URL(rawURL);
 
-  const allowedProtocols: string[] | undefined = options.protocols;
   const protocol = url.protocol.replace(/:$/, '');
 
-  if (allowedProtocols && !allowedProtocols.includes(protocol)) {
-    throw new TypeError(`Expected URL with protocol '${options.protocols}', but got '${url.protocol}'`);
+  if (!options.protocols.includes(protocol)) {
+    throw new TypeError(`Expected URL with protocol (${options.protocols.join('|')}), but got '${protocol}'`);
   }
 
   return rawURL;
