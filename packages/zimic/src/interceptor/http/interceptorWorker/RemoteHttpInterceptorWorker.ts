@@ -3,8 +3,8 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse, validatedURL } from '@/utils/fetch';
-import { WebSocket } from '@/websocket/types';
-import WebSocketClient from '@/websocket/WebSocketClient';
+import { WebSocket } from '@/webSocket/types';
+import WebSocketClient from '@/webSocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
@@ -100,7 +100,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     }
 
     /* istanbul ignore next -- @preserve
-     * Ignoring because checking unknown platforms is currently not possible in Vitest */
+     * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 

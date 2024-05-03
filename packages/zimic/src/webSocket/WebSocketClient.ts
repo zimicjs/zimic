@@ -32,7 +32,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   }
 
   async stop() {
-    await super.closeSockets();
+    await super.closeClientSockets();
     this.socket = undefined;
   }
 }

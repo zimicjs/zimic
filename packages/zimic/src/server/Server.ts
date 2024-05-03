@@ -10,8 +10,8 @@ import {
   serializeRequest,
 } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
-import { WebSocket } from '@/websocket/types';
-import WebSocketServer from '@/websocket/WebSocketServer';
+import { WebSocket } from '@/webSocket/types';
+import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 import { PublicServer } from './types/public';

@@ -3,6 +3,7 @@ import ClientSocket from 'isomorphic-ws';
 import { Collection } from '@/types/utils';
 import { IsomorphicCrypto, getCrypto } from '@/utils/crypto';
 import { isClientSide } from '@/utils/environment';
+import { closeClientSocket, waitForOpenClientSocket } from '@/utils/webSocket';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from './errors/NotStartedWebSocketHandlerError';
@@ -30,37 +31,51 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   protected async registerSocket(socket: ClientSocket) {
-    const startPromise = new Promise((resolve, reject) => {
-      socket.addEventListener('error', reject);
-      socket.addEventListener('open', resolve);
-    });
+    const openPromise = waitForOpenClientSocket(socket);
 
-    socket.addEventListener('message', async (rawMessage) => {
-      const stringifiedMessageData = this.readRawMessageData(rawMessage.data);
-      const parsedMessageData = this.parseMessage(stringifiedMessageData);
-      await this.notifyListeners(parsedMessageData, socket);
-    });
+    const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
+      await this.handleSocketMessage(socket, rawMessage);
+    };
+    socket.addEventListener('message', handleSocketMessage);
 
-    socket.addEventListener('close', () => {
-      this.sockets.delete(socket);
-    });
+    await openPromise;
 
-    await startPromise;
-
-    socket.addEventListener('error', (error) => {
+    /* istanbul ignore next -- @preserve
+     * It is difficult to reliably simulate socket errors in tests. */
+    function handleSocketError(error: ClientSocket.ErrorEvent) {
       console.error(error);
-    });
+    }
+    socket.addEventListener('error', handleSocketError);
+
+    const handleSocketClose = () => {
+      socket.removeEventListener('message', handleSocketMessage);
+      socket.removeEventListener('error', handleSocketError);
+      socket.removeEventListener('close', handleSocketClose);
+      this.removeSocket(socket);
+    };
+    socket.addEventListener('close', handleSocketClose);
 
     this.sockets.add(socket);
   }
 
+  private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {
+    try {
+      const stringifiedMessageData = this.readRawMessageData(rawMessage.data);
+      const parsedMessageData = this.parseMessage(stringifiedMessageData);
+      await this.notifyListeners(parsedMessageData, socket);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   private readRawMessageData(data: ClientSocket.Data) {
+    /* istanbul ignore else -- @preserve
+     * All supported websocket messages should be encoded as strings. */
     if (typeof data === 'string') {
       return data;
+    } else {
+      throw new InvalidWebSocketMessage(data);
     }
-    /* istanbul ignore next -- @preserve
-     * All supported websocket messages should be encoded as strings. */
-    throw new InvalidWebSocketMessage(data);
   }
 
   private parseMessage(stringifiedMessage: string): WebSocket.ServiceMessage<Schema> {
@@ -68,13 +83,12 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
     try {
       parsedMessage = JSON.parse(stringifiedMessage) as unknown;
-    } catch (error) {
-      console.error(error);
+    } catch {
       throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
     if (!this.isValidMessage(parsedMessage)) {
-      throw new InvalidWebSocketMessage(parsedMessage);
+      throw new InvalidWebSocketMessage(stringifiedMessage);
     }
 
     if (this.isReplyMessage(parsedMessage)) {
@@ -114,6 +128,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private async notifyReplyListeners(message: WebSocket.ServiceReplyMessage<Schema>, socket: ClientSocket) {
+    /* istanbul ignore next -- @preserve */
     const listeners = this.listeners[message.channel]?.reply ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
@@ -127,50 +142,27 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>>,
     socket: ClientSocket,
   ) {
+    /* istanbul ignore next -- @preserve */
     const listeners = this.listeners[message.channel]?.event ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
       const replyData = await listener(message, socket);
-
-      if (replyData !== undefined) {
-        await this.reply(message, replyData, { sockets: [socket] });
-      }
+      await this.reply(message, replyData, { sockets: [socket] });
     });
 
     await Promise.all(listenerPromises);
   }
 
-  protected async closeSockets(sockets: Set<ClientSocket> = this.sockets) {
-    const closingPromises: Promise<void>[] = [];
-
-    for (const socket of sockets) {
-      closingPromises.push(
-        new Promise<void>((resolve, reject) => {
-          /* istanbul ignore next -- @preserve
-           * This is not expected since the socket does not normally throw closing errors. */
-          function handleCloseError(error: unknown) {
-            socket.removeEventListener('close', handleCloseSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
-            reject(error);
-          }
-
-          function handleCloseSuccess() {
-            socket.removeEventListener('error', handleCloseError);
-            resolve();
-          }
-
-          socket.addEventListener('error', handleCloseError);
-          socket.addEventListener('close', handleCloseSuccess);
-          socket.close();
-        }),
-      );
-    }
-
+  protected async closeClientSockets(sockets: Set<ClientSocket> = this.sockets) {
+    const closingPromises = Array.from(sockets, (socket) => closeClientSocket(socket));
     await Promise.all(closingPromises);
-
-    this.sockets.clear();
   }
 
-  async createEventMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
+  private removeSocket(socket: ClientSocket) {
+    this.sockets.delete(socket);
+  }
+
+  private async createEventMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
     channel: Channel,
     eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
   ) {
@@ -224,14 +216,14 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
     options: {
-      sockets?: Collection<ClientSocket>;
-    } = {},
+      sockets: Collection<ClientSocket>;
+    },
   ) {
     const reply = await this.createReplyMessage(request, replyData);
     await this.sendMessage(reply, options.sockets);
   }
 
-  async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
+  private async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
   ) {
@@ -250,6 +242,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
+    if (!this.isRunning()) {
+      throw new NotStartedWebSocketHandlerError();
+    }
+
     const sendingPromises: Promise<void>[] = [];
     const stringifiedMessage = JSON.stringify(message);
 
@@ -261,16 +257,14 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
-    if (!this.isRunning()) {
-      throw new NotStartedWebSocketHandlerError();
-    }
-
     return new Promise<void>((resolve, reject) => {
       if (isClientSide()) {
         socket.send(stringifiedMessage);
         resolve();
       } else {
         socket.send(stringifiedMessage, (error) => {
+          /* istanbul ignore if -- @preserve
+           * It is difficult to reliably simulate socket errors in tests. */
           if (error) {
             reject(error);
           } else {

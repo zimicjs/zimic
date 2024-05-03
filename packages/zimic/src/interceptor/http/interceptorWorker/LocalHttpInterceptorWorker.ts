@@ -55,7 +55,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     }
 
     /* istanbul ignore next -- @preserve
-     * Ignoring because checking unknown platforms is currently not possible in Vitest */
+     * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
     throw new UnknownHttpInterceptorWorkerPlatform();
   }
 

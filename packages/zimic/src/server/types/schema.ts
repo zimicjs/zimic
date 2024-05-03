@@ -1,7 +1,7 @@
 import { HttpMethod } from '@/http/types/schema';
 import { JSONValue } from '@/types/json';
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
-import { WebSocket } from '@/websocket/types';
+import { WebSocket } from '@/webSocket/types';
 
 export type HttpHandlerCommit = JSONValue<{
   id: string;

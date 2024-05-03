@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import Server from '../Server';
 
+// These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
+// interceptor tests are covered here. The main aspects of this class should be tested in the CLI and the remote
+// interceptor tests.
 describe('Server', () => {
   let server: Server | undefined;
 
