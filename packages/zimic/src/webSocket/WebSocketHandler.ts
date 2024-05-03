@@ -128,7 +128,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private async notifyReplyListeners(message: WebSocket.ServiceReplyMessage<Schema>, socket: ClientSocket) {
-    /* istanbul ignore next -- @preserve */
+    /* istanbul ignore next -- @preserve
+     * Reply listeners are always present when notified in normal conditions. If they were not present, the request
+     * would reach a timeout and not be responded. The empty set serves as a fallback. */
     const listeners = this.listeners[message.channel]?.reply ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
@@ -142,7 +144,6 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>>,
     socket: ClientSocket,
   ) {
-    /* istanbul ignore next -- @preserve */
     const listeners = this.listeners[message.channel]?.event ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
@@ -174,6 +175,17 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       data: eventData,
     };
     return eventMessage;
+  }
+
+  async send<Channel extends WebSocket.EventWithNoReplyServiceChannel<Schema>>(
+    channel: Channel,
+    eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
+    options: {
+      sockets?: Collection<ClientSocket>;
+    } = {},
+  ) {
+    const event = await this.createEventMessage(channel, eventData);
+    await this.sendMessage(event, options.sockets);
   }
 
   async request<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(

@@ -1,10 +1,13 @@
+import { expect } from 'vitest';
+
+import { PossiblePromise } from '@/types/utils';
 import { waitForDelay } from '@/utils/time';
 
-/* istanbul ignore next -- @preserve
- * Wait for timeouts are not expected in the normal execution of tests. */
 function prepareWaitForTimeoutError(lastError: unknown, timeout: number) {
   const timeoutErrorMessage = `Assertion did not succeed after retrying for ${timeout}ms`;
 
+  /* istanbul ignore else -- @preserve
+   * The else is a fallback for when the error is not an instance of Error. */
   if (lastError instanceof Error) {
     lastError.message = `${timeoutErrorMessage}: ${lastError.message}`;
     return lastError;
@@ -20,7 +23,7 @@ export interface WaitForOptions {
 }
 
 export function waitFor<ReturnType>(
-  callback: () => Promise<ReturnType> | ReturnType,
+  callback: () => PossiblePromise<ReturnType>,
   options: WaitForOptions = {},
 ): Promise<Awaited<ReturnType>> {
   const { timeout = 1000, interval = 50 } = options;
@@ -29,8 +32,6 @@ export function waitFor<ReturnType>(
     let isSettled = false;
     let lastError: unknown = null;
 
-    /* istanbul ignore next -- @preserve
-     * Wait for timeouts are not expected in the normal execution of tests. */
     const waitRejectTimeout = setTimeout(() => {
       isSettled = true;
       const timeoutError = prepareWaitForTimeoutError(lastError, timeout);
@@ -49,4 +50,13 @@ export function waitFor<ReturnType>(
       }
     }
   });
+}
+
+export async function waitForNot(callback: () => PossiblePromise<void>, options?: WaitForOptions) {
+  await expect(
+    waitFor(callback, {
+      timeout: 100,
+      ...options,
+    }),
+  ).rejects.toThrowError();
 }

@@ -3,6 +3,12 @@ import ClientSocket from 'isomorphic-ws';
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
 export async function waitForOpenClientSocket(socket: ClientSocket) {
+  const isOpen = socket.readyState === socket.OPEN;
+
+  if (isOpen) {
+    return;
+  }
+
   await new Promise<void>((resolve, reject) => {
     /* istanbul ignore next -- @preserve
      * This is not expected since the socket does not normally throw opening errors. */
@@ -23,6 +29,7 @@ export async function waitForOpenClientSocket(socket: ClientSocket) {
 
 export async function closeClientSocket(socket: ClientSocket) {
   const isAlreadyClosed = socket.readyState === socket.CLOSED;
+
   if (isAlreadyClosed) {
     return;
   }
@@ -48,24 +55,14 @@ export async function closeClientSocket(socket: ClientSocket) {
 
 export async function closeServerSocket(socket: InstanceType<typeof ServerSocket>) {
   await new Promise<void>((resolve, reject) => {
-    /* istanbul ignore next -- @preserve
-     * This is not expected since the server is not stopped unless it is running. */
-    function handleServerError(error: unknown) {
-      socket.off('close', handleServerClose); // eslint-disable-line @typescript-eslint/no-use-before-define
-      reject(error);
-    }
-
-    function handleServerClose() {
-      socket.off('error', handleServerError);
-      resolve();
-    }
-
-    socket.once('error', handleServerError);
-    socket.once('close', handleServerClose);
-
-    for (const client of socket.clients) {
-      client.terminate();
-    }
-    socket.close();
+    socket.close((error) => {
+      /* istanbul ignore if -- @preserve
+       * This is not expected since the server is not stopped unless it is running. */
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
   });
 }

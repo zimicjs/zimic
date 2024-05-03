@@ -3,10 +3,11 @@ import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { getCrypto } from '@/utils/crypto';
 import { startHttpServer, stopHttpServer } from '@/utils/http';
 import { closeServerSocket } from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { waitFor } from '@tests/utils/time';
+import { waitFor, waitForNot } from '@tests/utils/time';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
@@ -15,26 +16,31 @@ import WebSocketClient from '../WebSocketClient';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
-// These are integration tests for the web socket client. Only features not easily reproducible by the remote
-// interceptor tests are covered here. The main aspects of this class should be tested in the remote interceptor tests.
-describe('Web socket client', () => {
+describe('Web socket client', async () => {
+  const crypto = await getCrypto();
+
   const httpServer = createServer();
-  let httpServerPort: number;
+  let port: number;
 
   type Schema = WebSocket.ServiceSchema<{
-    'my-channel': {
+    'no-reply': {
       event: { message: string };
-      reply: {};
+    };
+    'with-reply': {
+      event: { question: string };
+      reply: { response: string };
     };
   }>;
 
-  let rawServer: InstanceType<typeof ServerSocket> | undefined;
   let client: WebSocketClient<Schema> | undefined;
+  let rawServer: InstanceType<typeof ServerSocket> | undefined;
 
   beforeEach(async () => {
     await startHttpServer(httpServer);
+
     const httpServerAddress = httpServer.address() as AddressInfo;
-    httpServerPort = httpServerAddress.port;
+    port = httpServerAddress.port;
+    expect(port).toEqual(expect.any(Number));
 
     rawServer = new ServerSocket({ server: httpServer });
   });
@@ -51,97 +57,471 @@ describe('Web socket client', () => {
     await stopHttpServer(httpServer);
   });
 
-  it('should support being started', async () => {
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
+  describe('Lifecycle', () => {
+    it('should support being started', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-    expect(client.isRunning()).toBe(false);
+      expect(client.isRunning()).toBe(false);
 
-    await client.start();
+      await client.start();
 
-    expect(client.isRunning()).toBe(true);
+      expect(client.isRunning()).toBe(true);
+    });
+
+    it('should not throw an error if being started multiple times', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(client.isRunning()).toBe(false);
+
+      await client.start();
+      await client.start();
+      await client.start();
+
+      expect(client.isRunning()).toBe(true);
+    });
+
+    it('should support being stopped', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      await client.start();
+      expect(client.isRunning()).toBe(true);
+
+      await client.stop();
+
+      expect(client.isRunning()).toBe(false);
+    });
+
+    it('should not throw an error if being stopped multiple times', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      await client.start();
+      expect(client.isRunning()).toBe(true);
+
+      await client.stop();
+      await client.stop();
+      await client.stop();
+
+      expect(client.isRunning()).toBe(false);
+    });
   });
 
-  it('should not throw an error if being started multiple times', async () => {
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
+  describe('Messages', () => {
+    it('should support sending event messages to servers', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
 
-    expect(client.isRunning()).toBe(false);
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-    await client.start();
-    await client.start();
-    await client.start();
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
 
-    expect(client.isRunning()).toBe(true);
-  });
+      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      const eventMessages: EventMessage[] = [];
 
-  it('should support being stopped', async () => {
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
+      rawServerSockets[0].addEventListener('message', (message) => {
+        if (typeof message.data !== 'string') {
+          throw new Error('Unexpected message type');
+        }
+        eventMessages.push(JSON.parse(message.data) as EventMessage);
+      });
 
-    await client.start();
-    expect(client.isRunning()).toBe(true);
-
-    await client.stop();
-
-    expect(client.isRunning()).toBe(false);
-  });
-
-  it('should not throw an error if being stopped multiple times', async () => {
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
-
-    await client.start();
-    expect(client.isRunning()).toBe(true);
-
-    await client.stop();
-    await client.stop();
-    await client.stop();
-
-    expect(client.isRunning()).toBe(false);
-  });
-
-  it('should log an error after receiving a message that is not JSON-compatible', async () => {
-    const rawServerSockets: ClientSocket[] = [];
-    rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
-
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
-
-    expect(rawServerSockets).toHaveLength(0);
-    await client.start();
-    expect(rawServerSockets).toHaveLength(1);
-
-    await usingIgnoredConsole(['error'], async (spies) => {
-      const invalidMessage = 'invalid-message';
-      rawServerSockets[0].send(invalidMessage);
+      const eventMessage: EventMessage['data'] = { message: 'test' };
+      await client.send('no-reply', eventMessage);
 
       await waitFor(() => {
-        expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+        expect(eventMessages).toHaveLength(1);
+      });
+      expect(eventMessages[0]).toEqual<EventMessage>({
+        id: expect.any(String) as string,
+        channel: 'no-reply',
+        data: eventMessage,
+      });
+    });
+
+    it('should support receiving event messages from servers', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+
+      const eventMessage: EventMessage['data'] = { message: 'test' };
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'no-reply',
+          data: eventMessage,
+        } satisfies EventMessage),
+      );
+    });
+
+    it('should support requesting replies from servers', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      const requestMessages: RequestMessage[] = [];
+
+      rawServerSockets[0].addEventListener('message', (message) => {
+        if (typeof message.data !== 'string') {
+          throw new Error('Unexpected message type');
+        }
+        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+      });
+
+      const requestMessage: RequestMessage['data'] = { question: 'test' };
+      const replyPromise = client.request('with-reply', requestMessage);
+
+      await waitFor(() => {
+        expect(requestMessages).toHaveLength(1);
+      });
+      expect(requestMessages[0]).toEqual<RequestMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        data: requestMessage,
+      });
+
+      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      const replyMessage: ReplyMessage['data'] = { response: 'answer' };
+
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'with-reply',
+          requestId: requestMessages[0].id,
+          data: replyMessage,
+        } satisfies ReplyMessage),
+      );
+
+      const receivedReplyMessage = await replyPromise;
+      expect(receivedReplyMessage).toEqual(replyMessage);
+    });
+
+    it('should support receiving reply requests from servers', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      const requestMessages: RequestMessage[] = [];
+
+      client.onEvent('with-reply', (message) => {
+        requestMessages.push(message);
+        return { response: 'answer' };
+      });
+
+      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      const replyMessages: ReplyMessage[] = [];
+
+      rawServerSockets[0].addEventListener('message', (message) => {
+        if (typeof message.data !== 'string') {
+          throw new Error('Unexpected message type');
+        }
+        const parsedMessage = JSON.parse(message.data) as ReplyMessage;
+        console.log(parsedMessage.id);
+        replyMessages.push(parsedMessage);
+      });
+
+      const requestMessage: RequestMessage['data'] = { question: 'test' };
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'with-reply',
+          data: requestMessage,
+        } satisfies RequestMessage),
+      );
+
+      await waitFor(() => {
+        expect(requestMessages).toHaveLength(1);
+      });
+      expect(requestMessages[0]).toEqual<RequestMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        data: requestMessage,
+      });
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
+      });
+      expect(replyMessages[0]).toEqual<ReplyMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        requestId: requestMessages[0].id,
+        data: { response: 'answer' },
       });
     });
   });
 
-  it('should log an error after receiving a JSON message not following the expected structure', async () => {
-    const rawServerSockets: ClientSocket[] = [];
-    rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+  describe('Listeners', () => {
+    it('should support listening to events', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
 
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-    expect(rawServerSockets).toHaveLength(0);
-    await client.start();
-    expect(rawServerSockets).toHaveLength(1);
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
-      const invalidMessage = JSON.stringify({ type: 'invalid-message' });
-      rawServerSockets[0].send(invalidMessage);
+      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      const eventMessages: EventMessage[] = [];
+
+      client.onEvent('no-reply', (message) => {
+        eventMessages.push(message);
+      });
+
+      const eventMessage: EventMessage['data'] = { message: 'test' };
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'no-reply',
+          data: eventMessage,
+        } satisfies EventMessage),
+      );
 
       await waitFor(() => {
-        expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+        expect(eventMessages).toHaveLength(1);
+      });
+      expect(eventMessages[0]).toEqual<EventMessage>({
+        id: expect.any(String) as string,
+        channel: 'no-reply',
+        data: eventMessage,
+      });
+    });
+
+    it('should support stopping listening to events', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      const eventMessages: EventMessage[] = [];
+
+      const listener = client.onEvent('no-reply', (message) => {
+        eventMessages.push(message);
+      });
+
+      client.offEvent('no-reply', listener);
+
+      const eventMessage: EventMessage['data'] = { message: 'test' };
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'no-reply',
+          data: eventMessage,
+        } satisfies EventMessage),
+      );
+
+      rawServerSockets[0].send(
+        JSON.stringify({
+          id: crypto.randomUUID(),
+          channel: 'no-reply',
+          data: eventMessage,
+        } satisfies EventMessage),
+      );
+
+      await waitForNot(() => {
+        expect(eventMessages.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should support listening to replies', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      const replyMessages: ReplyMessage[] = [];
+
+      client.onReply('with-reply', (message) => {
+        replyMessages.push(message);
+      });
+
+      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      const requestMessages: RequestMessage[] = [];
+
+      rawServerSockets[0].addEventListener('message', (message) => {
+        if (typeof message.data !== 'string') {
+          throw new Error('Unexpected message type');
+        }
+        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+      });
+
+      const requestMessage: RequestMessage['data'] = { question: 'test' };
+      const replyPromise = client.request('with-reply', requestMessage);
+
+      await waitFor(() => {
+        expect(requestMessages).toHaveLength(1);
+      });
+      expect(requestMessages[0]).toEqual<RequestMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        data: requestMessage,
+      });
+
+      await waitForNot(() => {
+        expect(replyMessages.length).toBeGreaterThan(0);
+      });
+
+      const replyMessage: ReplyMessage['data'] = { response: 'answer' };
+
+      const fullReplyMessage = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        requestId: requestMessages[0].id,
+        data: replyMessage,
+      } satisfies ReplyMessage;
+
+      rawServerSockets[0].send(JSON.stringify(fullReplyMessage));
+
+      const receivedReplyMessage = await replyPromise;
+      expect(receivedReplyMessage).toEqual(replyMessage);
+
+      await waitFor(() => {
+        expect(replyMessages).toHaveLength(1);
+      });
+      expect(replyMessages[0]).toEqual(fullReplyMessage);
+    });
+
+    it('should support stopping listening to replies', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      const requestMessages: RequestMessage[] = [];
+
+      rawServerSockets[0].addEventListener('message', (message) => {
+        if (typeof message.data !== 'string') {
+          throw new Error('Unexpected message type');
+        }
+        requestMessages.push(JSON.parse(message.data) as RequestMessage);
+      });
+
+      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      const replyMessages: ReplyMessage[] = [];
+
+      const listener = client.onReply('with-reply', (message) => {
+        replyMessages.push(message);
+      });
+
+      const requestMessage: RequestMessage['data'] = { question: 'test' };
+      const replyPromise = client.request('with-reply', requestMessage);
+
+      await waitFor(() => {
+        expect(requestMessages).toHaveLength(1);
+      });
+      expect(requestMessages[0]).toEqual<RequestMessage>({
+        id: expect.any(String) as string,
+        channel: 'with-reply',
+        data: requestMessage,
+      });
+
+      await waitForNot(() => {
+        expect(replyMessages.length).toBeGreaterThan(0);
+      });
+
+      client.offReply('with-reply', listener);
+
+      const replyMessage: ReplyMessage['data'] = { response: 'answer' };
+
+      const fullReplyMessage = {
+        id: crypto.randomUUID(),
+        channel: 'with-reply',
+        requestId: requestMessages[0].id,
+        data: replyMessage,
+      } satisfies ReplyMessage;
+
+      rawServerSockets[0].send(JSON.stringify(fullReplyMessage));
+
+      const receivedReplyMessage = await replyPromise;
+      expect(receivedReplyMessage).toEqual(replyMessage);
+
+      await waitForNot(() => {
+        expect(replyMessages.length).toBeGreaterThan(0);
       });
     });
   });
 
-  it('should throw an error if trying to send a message not running', async () => {
-    client = new WebSocketClient({ url: `ws://localhost:${httpServerPort}` });
+  describe('Error management', () => {
+    it('should log an error after receiving a message that is not JSON-compatible', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
 
-    await expect(async () => {
-      await client?.request('my-channel', { message: 'test' });
-    }).rejects.toThrowError(new NotStartedWebSocketHandlerError());
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      await usingIgnoredConsole(['error'], async (spies) => {
+        const invalidMessage = 'invalid-message';
+        rawServerSockets[0].send(invalidMessage);
+
+        await waitFor(() => {
+          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+        });
+      });
+    });
+
+    it('should log an error after receiving a JSON message not following the expected structure', async () => {
+      const rawServerSockets: ClientSocket[] = [];
+      rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      expect(rawServerSockets).toHaveLength(0);
+      await client.start();
+      expect(rawServerSockets).toHaveLength(1);
+
+      await usingIgnoredConsole(['error'], async (spies) => {
+        const invalidMessage = JSON.stringify({ type: 'invalid-message' });
+        rawServerSockets[0].send(invalidMessage);
+
+        await waitFor(() => {
+          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+        });
+      });
+    });
+
+    it('should throw an error if trying to send a message not running', async () => {
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      await expect(async () => {
+        await client?.send('no-reply', { message: 'test' });
+      }).rejects.toThrowError(new NotStartedWebSocketHandlerError());
+    });
   });
 });
