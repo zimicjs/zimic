@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT, DEFAULT_SERVER_RPC_TIMEOUT } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
+import { getCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandFailureError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -13,7 +14,9 @@ import runCLI from '../cli';
 import { singletonServer as server } from '../server/start';
 import { delayToHttpServerListen, delayToHttpServerClose } from './utils';
 
-describe('CLI (server)', () => {
+describe('CLI (server)', async () => {
+  const crypto = await getCrypto();
+
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOnSpy = vi.spyOn(process, 'on');
 
