@@ -4,6 +4,7 @@ import { HttpMethod } from '@/http/types/schema';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
+import { PossiblePromise } from '@/types/utils';
 import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
 
 import UnknownHttpInterceptorWorkerError from '../../errors/UnknownHttpInterceptorWorkerError';
@@ -102,7 +103,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     });
 
     describe('Methods', () => {
-      const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
+      const methodTestFactories: Record<HttpMethod, () => PossiblePromise<void>> = {
         GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
         POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
         PUT: declarePutHttpInterceptorTests.bind(null, runtimeOptions),

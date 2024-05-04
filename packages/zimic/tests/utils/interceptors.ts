@@ -11,6 +11,7 @@ import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/Loc
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
 import { PublicHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
+import { PossiblePromise } from '@/types/utils';
 
 export function createInternalHttpInterceptorWorker(workerOptions: HttpInterceptorWorkerOptions) {
   return createHttpInterceptorWorker(workerOptions) satisfies PublicHttpInterceptorWorker as
@@ -28,7 +29,7 @@ export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
 
 export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions,
-  callback: (interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>) => Promise<void> | void,
+  callback: (interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>) => PossiblePromise<void>,
 ) {
   const interceptor = createInternalHttpInterceptor<Schema>(options);
 

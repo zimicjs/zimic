@@ -7,7 +7,6 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { AsyncCommitOptions } from '@/utils/async';
 import { joinURL, validatedURL } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
@@ -166,7 +165,7 @@ class HttpInterceptorClient<
     return matchedTracker;
   }
 
-  clear(options: AsyncCommitOptions = {}) {
+  clear(options: { onCommit?: () => void } = {}) {
     const clearResults: PossiblePromise<AnyHttpRequestTrackerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {

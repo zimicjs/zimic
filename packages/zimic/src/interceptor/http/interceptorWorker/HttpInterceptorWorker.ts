@@ -9,7 +9,7 @@ import {
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
 } from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -68,13 +68,13 @@ abstract class HttpInterceptorWorker {
     method: HttpMethod,
     url: string,
     createResponse: HttpResponseFactory,
-  ): Promise<void> | void;
+  ): PossiblePromise<void>;
 
-  abstract clearHandlers(): Promise<void> | void;
+  abstract clearHandlers(): PossiblePromise<void>;
 
   abstract clearInterceptorHandlers<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,
-  ): Promise<void> | void;
+  ): PossiblePromise<void>;
 
   abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 

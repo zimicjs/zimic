@@ -94,7 +94,7 @@ class Server implements PublicServer {
     return !!this._httpServer?.listening && !!this._webSocketServer?.isRunning();
   }
 
-  private httpServerOrThrow() {
+  private httpServer() {
     /* istanbul ignore if -- @preserve
      * The HTTP server is initialized before using this method in normal conditions. */
     if (!this._httpServer) {
@@ -103,7 +103,7 @@ class Server implements PublicServer {
     return this._httpServer;
   }
 
-  private webSocketServerOrThrow() {
+  private webSocketServer() {
     /* istanbul ignore if -- @preserve
      * The web socket server is initialized before using this method in normal conditions. */
     if (!this._webSocketServer) {
@@ -132,7 +132,7 @@ class Server implements PublicServer {
   }
 
   private async startHttpServer() {
-    const httpServer = this.httpServerOrThrow();
+    const httpServer = this.httpServer();
 
     await startHttpServer(httpServer, {
       hostname: this._hostname,
@@ -145,7 +145,7 @@ class Server implements PublicServer {
   }
 
   private startWebSocketServer() {
-    const webSocketServer = this.webSocketServerOrThrow();
+    const webSocketServer = this.webSocketServer();
 
     webSocketServer.start();
     webSocketServer.onEvent('interceptors/workers/use/commit', this.commitWorker);
@@ -219,7 +219,7 @@ class Server implements PublicServer {
   }
 
   private async stopHttpServer() {
-    const httpServer = this.httpServerOrThrow();
+    const httpServer = this.httpServer();
 
     await stopHttpServer(httpServer, {
       timeout: this._lifeCycleTimeout,
@@ -230,7 +230,7 @@ class Server implements PublicServer {
   }
 
   private async stopWebSocketServer() {
-    const webSocketServer = this.webSocketServerOrThrow();
+    const webSocketServer = this.webSocketServer();
 
     webSocketServer.offEvent('interceptors/workers/use/commit', this.commitWorker);
     webSocketServer.offEvent('interceptors/workers/use/reset', this.resetWorker);
@@ -261,7 +261,7 @@ class Server implements PublicServer {
   };
 
   private async createResponseForRequest(request: Request) {
-    const webSocketServer = this.webSocketServerOrThrow();
+    const webSocketServer = this.webSocketServer();
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
 
     const normalizedURL = createURLIgnoringNonPathComponents(request.url).toString();
