@@ -10,6 +10,7 @@ import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/ut
 import { createInternalHttpInterceptor, createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
 import { AccessResources } from '@tests/utils/workers';
 
+import { DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT } from '../../constants';
 import NotStartedHttpInterceptorWorkerError from '../../errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from '../../errors/OtherHttpInterceptorWorkerRunningError';
 import UnknownHttpInterceptorWorkerTypeError from '../../errors/UnknownHttpInterceptorWorkerTypeError';
@@ -197,6 +198,26 @@ export function declareSharedHttpInterceptorWorkerTests(options: {
           }).toThrowError(new TypeError(`Expected URL with protocol (http|https), but got '${unsupportedProtocol}'`));
         },
       );
+
+      it('should use a default RPC timeout when not provided', () => {
+        worker = createWorker() as RemoteHttpInterceptorWorker;
+        expect(worker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+
+        expect(worker.rpcTimeout()).toBe(DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT);
+      });
+
+      it('should use the provided RPC timeout', () => {
+        const rpcTimeout = 1000;
+
+        worker = createInternalHttpInterceptorWorker({
+          ...workerOptions,
+          serverURL,
+          rpcTimeout,
+        }) as RemoteHttpInterceptorWorker;
+        expect(worker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+
+        expect(worker.rpcTimeout()).toBe(rpcTimeout);
+      });
     }
 
     describe.each(HTTP_METHODS)('Method: %s', (method) => {

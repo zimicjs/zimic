@@ -86,7 +86,7 @@ describe('CLI (server)', () => {
       `                                                       [number] [default: ${DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT}]`,
       '      --rpc-timeout         The maximum time in milliseconds to wait for interce',
       '                            ptor remote procedure calls before timing out.',
-      `                                                      [number] [default: ${DEFAULT_SERVER_RPC_TIMEOUT}]`,
+      `                                                       [number] [default: ${DEFAULT_SERVER_RPC_TIMEOUT}]`,
     ].join('\n');
 
     beforeEach(async () => {

@@ -7,6 +7,7 @@ import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import { DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT } from './constants';
 import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
@@ -31,6 +32,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
   private _serverURL: string;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
+  private _rpcTimeout: number;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
@@ -42,8 +44,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     const webSocketServerURL = new URL(this._serverURL);
     webSocketServerURL.protocol = 'ws:';
 
+    this._rpcTimeout = options.rpcTimeout ?? DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT;
+
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
+      socketTimeout: this._rpcTimeout,
+      messageTimeout: this._rpcTimeout,
     });
   }
 
@@ -56,6 +62,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
   serverURL() {
     return this._serverURL.toString();
+  }
+
+  rpcTimeout() {
+    return this._rpcTimeout;
   }
 
   async start() {

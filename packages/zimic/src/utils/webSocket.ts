@@ -26,7 +26,7 @@ export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
 }
 
 export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 15 * 1000;
-export const DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT = 5 * 60 * 1000;
+export const DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT = 1 * 60 * 1000;
 
 export async function waitForOpenClientSocket(
   socket: ClientSocket,

@@ -7,6 +7,7 @@ export interface LocalHttpInterceptorWorkerOptions {
 export interface RemoteHttpInterceptorWorkerOptions {
   type: 'remote';
   serverURL: string;
+  rpcTimeout?: number;
 }
 
 /**
