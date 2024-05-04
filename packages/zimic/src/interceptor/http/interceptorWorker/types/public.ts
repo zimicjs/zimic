@@ -1,19 +1,7 @@
 import { HttpInterceptorWorkerPlatform } from './options';
 
-/**
- * Worker used by interceptors to intercept HTTP requests and return mock responses. To start intercepting requests, the
- * worker must be started.
- *
- * In a project, all interceptors can share the same worker.
- *
- * @see {@link https://github.com/diego-aquino/zimic#httpinterceptorworker}
- */
-export interface HttpInterceptorWorker {
-  /**
-   * @returns The platform used by the worker (`browser` or `node`).
-   * @see {@link https://github.com/diego-aquino/zimic#workerplatform}
-   */
-  platform: () => HttpInterceptorWorkerPlatform;
+export interface PublicBaseHttpInterceptorWorker {
+  platform: () => HttpInterceptorWorkerPlatform | null;
 
   /**
    * Starts the worker, allowing it to be used by interceptors.
@@ -45,3 +33,23 @@ export interface HttpInterceptorWorker {
    */
   isRunning: () => boolean;
 }
+
+/**
+ * Worker used by interceptors to intercept HTTP requests and return mock responses. To start intercepting requests, the
+ * worker must be started.
+ *
+ * In a project, all interceptors must share the same worker.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#httpinterceptorworker}
+ */
+export interface PublicLocalHttpInterceptorWorker extends PublicBaseHttpInterceptorWorker {
+  readonly type: 'local';
+}
+
+export interface PublicRemoteHttpInterceptorWorker extends PublicBaseHttpInterceptorWorker {
+  readonly type: 'remote';
+
+  serverURL: () => string;
+}
+
+export type PublicHttpInterceptorWorker = PublicLocalHttpInterceptorWorker | PublicRemoteHttpInterceptorWorker;

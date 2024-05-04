@@ -1,17 +1,24 @@
-import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
-import MismatchedHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/MismatchedHttpInterceptorWorkerPlatform';
 import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './http/interceptorWorker/errors/OtherHttpInterceptorWorkerRunningError';
+import UnknownHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
 
-export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
-export type { HttpInterceptorWorkerOptions } from './http/interceptorWorker/types/options';
-export { HttpInterceptorWorkerPlatform } from './http/interceptorWorker/types/options';
+export type {
+  PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker,
+  PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker,
+  PublicHttpInterceptorWorker as HttpInterceptorWorker,
+} from './http/interceptorWorker/types/public';
+export type {
+  LocalHttpInterceptorWorkerOptions,
+  RemoteHttpInterceptorWorkerOptions,
+  HttpInterceptorWorkerOptions,
+  HttpInterceptorWorkerType,
+  HttpInterceptorWorkerPlatform,
+} from './http/interceptorWorker/types/options';
 
 export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
 export {
-  InvalidHttpInterceptorWorkerPlatform,
-  MismatchedHttpInterceptorWorkerPlatform,
+  UnknownHttpInterceptorWorkerPlatform,
   NotStartedHttpInterceptorWorkerError,
   OtherHttpInterceptorWorkerRunningError,
   UnregisteredServiceWorkerError,
@@ -25,11 +32,25 @@ export type {
   TrackedHttpInterceptorRequest,
 } from './http/requestTracker/types/requests';
 
-export type { HttpRequestTracker } from './http/requestTracker/types/public';
+export type {
+  PublicLocalHttpRequestTracker as LocalHttpRequestTracker,
+  PublicRemoteHttpRequestTracker as RemoteHttpRequestTracker,
+  PublicSyncedRemoteHttpRequestTracker as SyncedRemoteHttpRequestTracker,
+  PublicPendingRemoteHttpRequestTracker as PendingRemoteHttpRequestTracker,
+  PublicHttpRequestTracker as HttpRequestTracker,
+} from './http/requestTracker/types/public';
 
-export type { HttpInterceptorOptions } from './http/interceptor/types/options';
+export type {
+  LocalHttpInterceptorOptions,
+  RemoteHttpInterceptorOptions,
+  HttpInterceptorOptions,
+} from './http/interceptor/types/options';
 export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
-export type { HttpInterceptor } from './http/interceptor/types/public';
+export type {
+  PublicLocalHttpInterceptor as LocalHttpInterceptor,
+  PublicRemoteHttpInterceptor as RemoteHttpInterceptor,
+  PublicHttpInterceptor as HttpInterceptor,
+} from './http/interceptor/types/public';
 
 export { createHttpInterceptor } from './http/interceptor/factory';

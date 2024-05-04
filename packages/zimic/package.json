@@ -56,6 +56,7 @@
   },
   "scripts": {
     "dev": "pnpm build --watch",
+    "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -75,12 +76,18 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:adapt-relative-paths README.md"
   },
   "dependencies": {
+    "@whatwg-node/server": "^0.9.33",
     "chalk": "^5.3.0",
+    "cross-spawn": "^7.0.3",
+    "isomorphic-ws": "^5.0.0",
     "msw": "^2.2.13",
+    "ws": "^8.16.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
     "@types/node": "^20.11.30",
+    "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "1.2.2",
     "@vitest/coverage-istanbul": "1.2.2",
@@ -92,6 +99,9 @@
     "tsup": "^8.0.1",
     "typescript": "^5.4.3",
     "vitest": "1.2.2"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8"
   },
   "peerDependencies": {
     "typescript": ">=4.7.x <5.5"

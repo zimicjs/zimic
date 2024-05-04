@@ -2,28 +2,28 @@ import {
   HttpMethod,
   HttpServiceSchema,
   HttpServiceSchemaMethod,
-  LiteralHttpServiceSchemaPath,
   NonLiteralHttpServiceSchemaPath,
   InferLiteralHttpServiceSchemaPath,
 } from '@/http/types/schema';
 
-import { HttpRequestTracker } from '../../requestTracker/types/public';
+import { PublicLocalHttpRequestTracker, PublicRemoteHttpRequestTracker } from '../../requestTracker/types/public';
 
-export interface EffectiveHttpInterceptorMethodHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-> {
-  <Path extends LiteralHttpServiceSchemaPath<Schema, Method>>(path: Path): HttpRequestTracker<Schema, Method, Path>;
+export type SyncHttpInterceptorMethodHandler<Schema extends HttpServiceSchema, Method extends HttpMethod> =
+  Method extends HttpServiceSchemaMethod<Schema>
+    ? <Path extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
+        path: Path,
+      ) => PublicLocalHttpRequestTracker<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, Path>>
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (path: never) => PublicLocalHttpRequestTracker<any, any, never>;
 
-  <NonLiteralPath extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
-    path: NonLiteralPath,
-  ): HttpRequestTracker<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, NonLiteralPath>>;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type EmptyHttpInterceptorMethodHandler = (path: never) => HttpRequestTracker<any, any, never>;
+export type AsyncHttpInterceptorMethodHandler<Schema extends HttpServiceSchema, Method extends HttpMethod> =
+  Method extends HttpServiceSchemaMethod<Schema>
+    ? <Path extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
+        path: Path,
+      ) => PublicRemoteHttpRequestTracker<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, Path>>
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (path: never) => PublicRemoteHttpRequestTracker<any, any, never>;
 
 export type HttpInterceptorMethodHandler<Schema extends HttpServiceSchema, Method extends HttpMethod> =
-  Method extends HttpServiceSchemaMethod<Schema>
-    ? EffectiveHttpInterceptorMethodHandler<Schema, Method>
-    : EmptyHttpInterceptorMethodHandler;
+  | SyncHttpInterceptorMethodHandler<Schema, Method>
+  | AsyncHttpInterceptorMethodHandler<Schema, Method>;

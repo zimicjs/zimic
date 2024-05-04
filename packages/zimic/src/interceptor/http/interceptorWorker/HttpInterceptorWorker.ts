@@ -1,11 +1,4 @@
-import {
-  HttpHandler as MSWHttpHandler,
-  HttpResponse as MSWHttpResponse,
-  SharedOptions as MSWWorkerSharedOptions,
-  StrictRequest as MSWStrictRequest,
-  http,
-  passthrough,
-} from 'msw';
+import { HttpResponse as MSWHttpResponse } from 'msw';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
@@ -16,218 +9,74 @@ import {
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
 } from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
-import { HttpInterceptor } from '../interceptor/types/public';
+import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
-import InvalidHttpInterceptorWorkerPlatform from './errors/InvalidHttpInterceptorWorkerPlatform';
-import MismatchedHttpInterceptorWorkerPlatform from './errors/MismatchedHttpInterceptorWorkerPlatform';
-import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
 import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
-import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
-import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from './types/options';
-import { HttpInterceptorWorker as PublicHttpInterceptorWorker } from './types/public';
-import { BrowserHttpWorker, HttpRequestHandler, HttpWorker, NodeHttpWorker } from './types/requests';
+import { HttpInterceptorWorkerPlatform } from './types/options';
+import { HttpResponseFactory } from './types/requests';
 
-class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
+abstract class HttpInterceptorWorker {
   private static runningInstance?: HttpInterceptorWorker;
 
-  private _platform: HttpInterceptorWorkerPlatform;
-  private _internalWorker?: HttpWorker;
+  private _platform: HttpInterceptorWorkerPlatform | null = null;
   private _isRunning = false;
-
-  private httpHandlerGroups: {
-    interceptor: HttpInterceptor<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-    httpHandler: MSWHttpHandler;
-  }[] = [];
-
-  constructor(options: HttpInterceptorWorkerOptions) {
-    this._platform = this.validatePlatform(options.platform);
-  }
-
-  private validatePlatform(platform: HttpInterceptorWorkerPlatform) {
-    const platformOptions = Object.values(HttpInterceptorWorkerPlatform) as string[];
-    if (!platformOptions.includes(platform)) {
-      throw new InvalidHttpInterceptorWorkerPlatform(platform);
-    }
-    return platform;
-  }
-
-  internalWorkerOrThrow() {
-    if (!this._internalWorker) {
-      throw new NotStartedHttpInterceptorWorkerError();
-    }
-    return this._internalWorker;
-  }
-
-  async internalWorkerOrLoad() {
-    if (!this._internalWorker) {
-      this._internalWorker = await this.createInternalWorker();
-    }
-    return this._internalWorker;
-  }
-
-  private async createInternalWorker() {
-    if (this._platform === 'browser') {
-      const { setupWorker } = await import('msw/browser');
-
-      if (typeof setupWorker === 'undefined') {
-        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
-      }
-
-      return setupWorker();
-    } else {
-      const { setupServer } = await import('msw/node');
-
-      if (typeof setupServer === 'undefined') {
-        throw new MismatchedHttpInterceptorWorkerPlatform(this._platform);
-      }
-
-      return setupServer();
-    }
-  }
 
   platform() {
     return this._platform;
+  }
+
+  protected setPlatform(platform: HttpInterceptorWorkerPlatform) {
+    this._platform = platform;
   }
 
   isRunning() {
     return this._isRunning;
   }
 
-  async start() {
+  protected setIsRunning(isRunning: boolean) {
+    this._isRunning = isRunning;
+  }
+
+  abstract start(): Promise<void>;
+
+  protected ensureEmptyRunningInstance() {
     if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
       throw new OtherHttpInterceptorWorkerRunningError();
     }
+  }
 
-    if (this._isRunning) {
-      return;
-    }
-
-    const internalWorker = await this.internalWorkerOrLoad();
-    const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
-
-    if (this.isInternalBrowserWorker(internalWorker)) {
-      await this.startInBrowser(internalWorker, sharedOptions);
-    } else {
-      this.startInNode(internalWorker, sharedOptions);
-    }
-
-    this._isRunning = true;
+  protected markAsRunningInstance() {
     HttpInterceptorWorker.runningInstance = this;
   }
 
-  private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
-    try {
-      await internalWorker.start({ ...sharedOptions, quiet: true });
-    } catch (error) {
-      this.handleBrowserWorkerStartError(error);
-    }
-  }
-
-  private handleBrowserWorkerStartError(error: unknown) {
-    if (UnregisteredServiceWorkerError.matchesRawError(error)) {
-      throw new UnregisteredServiceWorkerError();
-    }
-    throw error;
-  }
-
-  private startInNode(internalWorker: NodeHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
-    internalWorker.listen(sharedOptions);
-  }
-
-  async stop() {
-    if (!this._isRunning) {
-      return;
-    }
-
-    const internalWorker = await this.internalWorkerOrLoad();
-
-    if (this.isInternalBrowserWorker(internalWorker)) {
-      this.stopInBrowser(internalWorker);
-    } else {
-      this.stopInNode(internalWorker);
-    }
-
-    this.clearHandlers();
-
-    this._isRunning = false;
+  protected clearRunningInstance() {
     HttpInterceptorWorker.runningInstance = undefined;
   }
 
-  private stopInBrowser(internalWorker: BrowserHttpWorker) {
-    internalWorker.stop();
-  }
+  abstract stop(): Promise<void>;
 
-  private stopInNode(internalWorker: NodeHttpWorker) {
-    internalWorker.close();
-  }
-
-  private isInternalBrowserWorker(worker: HttpWorker): worker is BrowserHttpWorker {
-    return 'start' in worker && 'stop' in worker;
-  }
-
-  hasInternalBrowserWorker() {
-    return this.isInternalBrowserWorker(this.internalWorkerOrThrow());
-  }
-
-  hasInternalNodeWorker() {
-    return !this.hasInternalBrowserWorker();
-  }
-
-  use<Schema extends HttpServiceSchema>(
-    interceptor: HttpInterceptor<Schema>,
+  abstract use<Schema extends HttpServiceSchema>(
+    interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
-    handler: HttpRequestHandler,
-  ) {
-    const internalWorker = this.internalWorkerOrThrow();
-    const lowercaseMethod = method.toLowerCase<typeof method>();
+    createResponse: HttpResponseFactory,
+  ): PossiblePromise<void>;
 
-    const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const result = await handler({
-        ...context,
-        request: context.request as MSWStrictRequest<HttpBody>,
-      });
+  abstract clearHandlers(): PossiblePromise<void>;
 
-      if (result.bypass) {
-        return passthrough();
-      }
-      return result.response;
-    });
+  abstract clearInterceptorHandlers<Schema extends HttpServiceSchema>(
+    interceptor: HttpInterceptorClient<Schema>,
+  ): PossiblePromise<void>;
 
-    internalWorker.use(httpHandler);
-
-    this.httpHandlerGroups.push({ interceptor, httpHandler });
-  }
-
-  clearHandlers() {
-    this._internalWorker?.resetHandlers();
-    this.httpHandlerGroups = [];
-  }
-
-  clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptor<Schema>) {
-    const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
-
-    const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
-
-    this._internalWorker?.resetHandlers();
-    for (const handler of httpHandlersToKeep) {
-      this._internalWorker?.use(handler);
-    }
-
-    this.httpHandlerGroups = httpHandlerGroupsToKeep;
-  }
-
-  interceptorsWithHandlers() {
-    return this.httpHandlerGroups.map((group) => group.interceptor);
-  }
+  abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
   static createResponseFromDeclaration<
     Declaration extends {
@@ -293,7 +142,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   private static isHiddenRequestProperty(property: string) {
-    return (HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
   static async parseRawResponse<
@@ -338,7 +187,7 @@ class HttpInterceptorWorker implements PublicHttpInterceptorWorker {
   }
 
   private static isHiddenResponseProperty(property: string) {
-    return (HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES as Set<string>).has(property);
+    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
   static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {

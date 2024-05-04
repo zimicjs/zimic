@@ -1,19 +1,24 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@tests/utils/crypto';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { getCrypto } from '@/utils/crypto';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
-export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { getBaseURL, getWorker, getInterceptorOptions } = options;
+
   const crypto = await getCrypto();
 
   type User = JSONValue<{
@@ -32,19 +37,18 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
     },
   ];
 
-  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
-  const baseURL = 'http://localhost:3000';
+  let baseURL: string;
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let interceptorOptions: HttpInterceptorOptions;
 
-  beforeAll(async () => {
-    await worker.start();
-  });
+  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    worker = getWorker();
+    interceptorOptions = getInterceptorOptions();
 
-  afterAll(async () => {
-    await worker.stop();
+    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
   });
 
   it('should support intercepting GET requests with a static response body', async () => {
@@ -56,14 +60,17 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -72,6 +79,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual(users);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -96,19 +104,22 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       const user: User = {
         id: crypto.randomUUID(),
         name: 'User (computed)',
       };
 
-      const listTracker = interceptor.get('/users').respond(() => ({
-        status: 200,
-        body: [user],
-      }));
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond(() => ({
+          status: 200,
+          body: [user],
+        })),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -117,6 +128,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual<User[]>([user]);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -158,26 +170,29 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListRequestHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
+          const acceptHeader = request.headers.get('accept')!;
+          expect(acceptHeader).toBe('application/json');
 
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-          body: users,
-        };
-      });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+          return {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+              'cache-control': 'no-cache',
+            },
+            body: users,
+          };
+        }),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, {
@@ -189,6 +204,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expect(listResponse.status).toBe(200);
       expect(listResponse.headers.get('content-type')).toBe('application/json');
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -222,19 +238,22 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-        return {
-          status: 200,
-          body: users,
-        };
-      });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+          return {
+            status: 200,
+            body: users,
+          };
+        }),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserListSearchParams>({
@@ -245,6 +264,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -275,30 +295,33 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor
-        .get('/users')
-        .with({
-          headers: { 'content-type': 'application/json' },
-        })
-        .with((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({
+            headers: { 'content-type': 'application/json' },
+          })
+          .with((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return request.headers.get('accept')?.includes('application/json') ?? false;
-        })
-        .respond((request) => {
-          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
-          expect(request.headers).toBeInstanceOf(HttpHeaders);
+            return request.headers.get('accept')?.includes('application/json') ?? false;
+          })
+          .respond((request) => {
+            expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+            expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          return {
-            status: 200,
-            body: users,
-          };
-        });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+            return {
+              status: 200,
+              body: users,
+            };
+          }),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserListHeaders>({
@@ -308,25 +331,30 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
 
       let listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
       expect(listResponse.status).toBe(200);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       listResponse = await fetch(`${baseURL}/users`, { method: 'GET', headers });
       expect(listResponse.status).toBe(200);
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       listResponsePromise = fetch(`${baseURL}/users`, { method: 'GET', headers });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
     });
   });
@@ -349,32 +377,35 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor
-        .get('/users')
-        .with({
-          searchParams: {
-            name: 'User 1',
-          },
-        })
-        .with((request) => {
-          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
-          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .with({
+            searchParams: {
+              name: 'User 1',
+            },
+          })
+          .with((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-          return request.searchParams.getAll('orderBy').length > 0;
-        })
-        .respond((request) => {
-          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
-          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+            return request.searchParams.getAll('orderBy').length > 0;
+          })
+          .respond((request) => {
+            expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+            expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-          return {
-            status: 200,
-            body: users,
-          };
-        });
-      expect(listTracker).toBeInstanceOf(HttpRequestTracker);
+            return {
+              status: 200,
+              body: users,
+            };
+          }),
+        worker,
+      );
+      expect(listTracker).toBeInstanceOf(Tracker);
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserListSearchParams>({
@@ -384,19 +415,25 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
 
       const listResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
 
       searchParams.delete('orderBy');
 
       let listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
 
       searchParams.append('orderBy', 'name');
       searchParams.set('name', 'User 2');
 
       listResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'GET' });
-      await expectToThrowFetchError(listResponsePromise);
+      await expectFetchError(listResponsePromise);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
     });
   });
@@ -410,14 +447,17 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const genericGetTracker = interceptor.get('/users/:id').respond({
-        status: 200,
-        body: users[0],
-      });
-      expect(genericGetTracker).toBeInstanceOf(HttpRequestTracker);
+    }>(interceptorOptions, async (interceptor) => {
+      const genericGetTracker = await promiseIfRemote(
+        interceptor.get('/users/:id').respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
+      expect(genericGetTracker).toBeInstanceOf(Tracker);
 
-      const genericGetRequests = genericGetTracker.requests();
+      let genericGetRequests = await promiseIfRemote(genericGetTracker.requests(), worker);
       expect(genericGetRequests).toHaveLength(0);
 
       const genericGetResponse = await fetch(`${baseURL}/users/${1}`, { method: 'GET' });
@@ -426,6 +466,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const genericFetchedUser = (await genericGetResponse.json()) as User;
       expect(genericFetchedUser).toEqual(users[0]);
 
+      genericGetRequests = await promiseIfRemote(genericGetTracker.requests(), worker);
       expect(genericGetRequests).toHaveLength(1);
       const [genericGetRequest] = genericGetRequests;
       expect(genericGetRequest).toBeInstanceOf(Request);
@@ -439,15 +480,18 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(genericGetRequest.response.body).toEqualTypeOf<User>();
       expect(genericGetRequest.response.body).toEqual(users[0]);
 
-      genericGetTracker.bypass();
+      await promiseIfRemote(genericGetTracker.bypass(), worker);
 
-      const specificGetTracker = interceptor.get(`/users/${1}`).respond({
-        status: 200,
-        body: users[0],
-      });
-      expect(specificGetTracker).toBeInstanceOf(HttpRequestTracker);
+      const specificGetTracker = await promiseIfRemote(
+        interceptor.get(`/users/${1}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        worker,
+      );
+      expect(specificGetTracker).toBeInstanceOf(Tracker);
 
-      const specificGetRequests = specificGetTracker.requests();
+      let specificGetRequests = await promiseIfRemote(specificGetTracker.requests(), worker);
       expect(specificGetRequests).toHaveLength(0);
 
       const specificGetResponse = await fetch(`${baseURL}/users/${1}`, { method: 'GET' });
@@ -456,6 +500,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const specificFetchedUser = (await specificGetResponse.json()) as User;
       expect(specificFetchedUser).toEqual(users[0]);
 
+      specificGetRequests = await promiseIfRemote(specificGetTracker.requests(), worker);
       expect(specificGetRequests).toHaveLength(1);
       const [specificGetRequest] = specificGetRequests;
       expect(specificGetRequest).toBeInstanceOf(Request);
@@ -470,7 +515,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expect(specificGetRequest.response.body).toEqual(users[0]);
 
       const unmatchedGetPromise = fetch(`${baseURL}/users/${2}`, { method: 'GET' });
-      await expectToThrowFetchError(unmatchedGetPromise);
+      await expectFetchError(unmatchedGetPromise);
     });
   });
 
@@ -483,14 +528,14 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
-      const listTrackerWithoutResponse = interceptor.get('/users');
-      expect(listTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      const listTrackerWithoutResponse = await promiseIfRemote(interceptor.get('/users'), worker);
+      expect(listTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
-      const listRequestsWithoutResponse = listTrackerWithoutResponse.requests();
+      let listRequestsWithoutResponse = await promiseIfRemote(listTrackerWithoutResponse.requests(), worker);
       expect(listRequestsWithoutResponse).toHaveLength(0);
 
       let [listRequestWithoutResponse] = listRequestsWithoutResponse;
@@ -498,8 +543,9 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf<typeof listRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
+      listRequestsWithoutResponse = await promiseIfRemote(listTrackerWithoutResponse.requests(), worker);
       expect(listRequestsWithoutResponse).toHaveLength(0);
 
       [listRequestWithoutResponse] = listRequestsWithoutResponse;
@@ -518,7 +564,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expect(fetchedUsers).toEqual(users);
 
       expect(listRequestsWithoutResponse).toHaveLength(0);
-      const listRequestsWithResponse = listTrackerWithResponse.requests();
+      const listRequestsWithResponse = await promiseIfRemote(listTrackerWithResponse.requests(), worker);
       expect(listRequestsWithResponse).toHaveLength(1);
 
       const [listRequestWithResponse] = listRequestsWithResponse;
@@ -550,19 +596,22 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .respond({
-          status: 200,
-          body: [],
-        });
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .respond({
+            status: 200,
+            body: users,
+          })
+          .respond({
+            status: 200,
+            body: [],
+          }),
+        worker,
+      );
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -571,6 +620,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -584,12 +634,15 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
       expect(listRequest.response.body).toEqual([]);
 
-      const errorListTracker = interceptor.get('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorListTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorListRequests = errorListTracker.requests();
+      let errorListRequests = await promiseIfRemote(errorListTracker.requests(), worker);
       expect(errorListRequests).toHaveLength(0);
 
       const otherListResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -598,8 +651,10 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
 
+      errorListRequests = await promiseIfRemote(errorListTracker.requests(), worker);
       expect(errorListRequests).toHaveLength(1);
       const [errorListRequest] = errorListRequests;
       expect(errorListRequest).toBeInstanceOf(Request);
@@ -629,28 +684,35 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor
-        .get('/users')
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .bypass();
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor
+          .get('/users')
+          .respond({
+            status: 200,
+            body: users,
+          })
+          .bypass(),
+        worker,
+      );
 
-      const initialListRequests = listTracker.requests();
+      let initialListRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(listPromise);
+      await expectFetchError(listPromise);
 
-      listTracker.respond({
-        status: 200,
-        body: [],
-      });
+      await promiseIfRemote(
+        listTracker.respond({
+          status: 200,
+          body: [],
+        }),
+        worker,
+      );
 
+      initialListRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(initialListRequests).toHaveLength(0);
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       let listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -659,6 +721,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       let fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       let [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -672,12 +735,15 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(listRequest.response.body).toEqualTypeOf<User[]>();
       expect(listRequest.response.body).toEqual([]);
 
-      const errorListTracker = interceptor.get('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorListTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        worker,
+      );
 
-      const errorListRequests = errorListTracker.requests();
+      let errorListRequests = await promiseIfRemote(errorListTracker.requests(), worker);
       expect(errorListRequests).toHaveLength(0);
 
       const otherListResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -686,8 +752,10 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const serverError = (await otherListResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
 
+      errorListRequests = await promiseIfRemote(errorListTracker.requests(), worker);
       expect(errorListRequests).toHaveLength(1);
       const [errorListRequest] = errorListRequests;
       expect(errorListRequest).toBeInstanceOf(Request);
@@ -701,7 +769,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       expectTypeOf(errorListRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorListRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      errorListTracker.bypass();
+      await promiseIfRemote(errorListTracker.bypass(), worker);
 
       listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
       expect(listResponse.status).toBe(200);
@@ -709,8 +777,10 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
+      errorListRequests = await promiseIfRemote(errorListTracker.requests(), worker);
       expect(errorListRequests).toHaveLength(1);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(2);
       [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -735,19 +805,22 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const initialListRequests = listTracker.requests();
+      const initialListRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(initialListRequests).toHaveLength(0);
 
       const listPromise = fetch(`${baseURL}/users`, { method: 'GET' });
-      await expectToThrowFetchError(listPromise);
+      await expectFetchError(listPromise);
     });
   });
 
@@ -760,20 +833,26 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      let listTracker = interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      let listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      listTracker = interceptor.get('/users').respond({
-        status: 200,
-        body: [],
-      });
+      listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: [],
+        }),
+        worker,
+      );
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -782,6 +861,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);
@@ -806,20 +886,26 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      listTracker.respond({
-        status: 200,
-        body: [],
-      });
+      await promiseIfRemote(
+        listTracker.respond({
+          status: 200,
+          body: [],
+        }),
+        worker,
+      );
 
-      const listRequests = listTracker.requests();
+      let listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(0);
 
       const listResponse = await fetch(`${baseURL}/users`, { method: 'GET' });
@@ -828,6 +914,7 @@ export async function declareGetHttpInterceptorTests({ platform }: SharedHttpInt
       const fetchedUsers = (await listResponse.json()) as User[];
       expect(fetchedUsers).toEqual([]);
 
+      listRequests = await promiseIfRemote(listTracker.requests(), worker);
       expect(listRequests).toHaveLength(1);
       const [listRequest] = listRequests;
       expect(listRequest).toBeInstanceOf(Request);

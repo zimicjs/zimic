@@ -6,7 +6,7 @@ export type Default<Type, IfEmpty = never> = undefined extends Type
 
 export type IfAny<Type, Yes, No> = 0 extends 1 & Type ? Yes : No;
 
-export type PossiblePromise<Type> = Type | Promise<Type>;
+export type PossiblePromise<Type> = Type | PromiseLike<Type>;
 
 export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union) => void : never) extends (
   intersectedUnion: infer IntersectedUnion,
@@ -37,3 +37,5 @@ export type ArrayKey<Type> = keyof PickArrayProperties<Type>;
 export type NonArrayKey<Type> = Exclude<keyof Type, ArrayKey<Type>>;
 
 export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
+
+export type Collection<Type> = Type[] | Set<Type>;

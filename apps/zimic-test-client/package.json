@@ -8,7 +8,7 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test": "dotenv -v NODE_ENV=test -- zimic server start --port 4000 --ephemeral -- vitest",
     "test:turbo": "pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:prepare": "pnpm deps:build && pnpm deps:install",

@@ -1,7 +1,7 @@
 import { createHttpInterceptorWorker } from 'zimic/interceptor';
 
 const interceptorWorker = createHttpInterceptorWorker({
-  platform: 'node',
+  type: 'local',
 });
 
 export default interceptorWorker;

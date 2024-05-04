@@ -9,12 +9,13 @@ import {
 import { Default } from '@/types/utils';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
-import HttpInterceptor from '../interceptor/HttpInterceptor';
+import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
+import LocalHttpRequestTracker from './LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from './RemoteHttpRequestTracker';
 import {
   HttpRequestTrackerRestriction,
   HttpRequestTrackerComputedRestriction,
-  HttpRequestTracker as PublicHttpRequestTracker,
   HttpRequestTrackerStaticRestriction,
 } from './types/public';
 import {
@@ -25,13 +26,12 @@ import {
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
-class HttpRequestTracker<
+class HttpRequestTrackerClient<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicHttpRequestTracker<Schema, Method, Path, StatusCode>
-{
+> {
   private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
@@ -41,9 +41,12 @@ class HttpRequestTracker<
   >;
 
   constructor(
-    private interceptor: HttpInterceptor<Schema>,
+    private interceptor: HttpInterceptorClient<Schema>,
     private _method: Method,
     private _path: Path,
+    private tracker:
+      | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
   ) {}
 
   method() {
@@ -56,7 +59,7 @@ class HttpRequestTracker<
 
   with(
     restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+  ): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
     this.restrictions.push(restriction);
     return this;
   }
@@ -67,16 +70,15 @@ class HttpRequestTracker<
     declaration:
       | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
-  ): HttpRequestTracker<Schema, Method, Path, NewStatusCode> {
-    const newThis = this as unknown as HttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+  ): HttpRequestTrackerClient<Schema, Method, Path, NewStatusCode> {
+    const newThis = this as unknown as HttpRequestTrackerClient<Schema, Method, Path, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
       ? declaration
       : () => declaration;
-
     newThis.interceptedRequests = [];
 
-    this.interceptor.registerRequestTracker(newThis);
+    this.interceptor.registerRequestTracker(this.tracker);
 
     return newThis;
   }
@@ -91,12 +93,12 @@ class HttpRequestTracker<
     return typeof declaration === 'function';
   }
 
-  bypass(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+  bypass(): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
     return this;
   }
 
-  clear(): HttpRequestTracker<Schema, Method, Path, StatusCode> {
+  clear(): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
     this.restrictions = [];
     this.interceptedRequests = [];
     return this.bypass();
@@ -198,8 +200,13 @@ class HttpRequestTracker<
   }
 
   requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
-    return this.interceptedRequests;
+    const interceptedRequestsCopy = [...this.interceptedRequests];
+    Object.freeze(interceptedRequestsCopy);
+    return interceptedRequestsCopy;
   }
 }
 
-export default HttpRequestTracker;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyHttpRequestTrackerClient = HttpRequestTrackerClient<any, any, any, any>;
+
+export default HttpRequestTrackerClient;

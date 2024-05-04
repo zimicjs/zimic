@@ -1,69 +1,130 @@
-import { afterAll, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
+import { joinURL } from '@/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
+import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
+import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
+import { HttpInterceptorOptions } from '../../types/options';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-export function declareBaseURLHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
-  const { platform } = options;
-  const defaultBaseURL = 'http://localhost:3000';
+export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { getBaseURL, getPathPrefix, getWorker, getInterceptorOptions } = options;
 
-  const worker = createHttpInterceptorWorker({ platform });
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let defaultBaseURL: string;
+  let defaultPathPrefix: string;
+  let interceptorOptions: HttpInterceptorOptions;
 
-  beforeAll(async () => {
-    await worker.start();
+  beforeEach(() => {
+    worker = getWorker();
+    defaultBaseURL = getBaseURL();
+    defaultPathPrefix = getPathPrefix();
+    interceptorOptions = getInterceptorOptions();
   });
 
-  afterAll(async () => {
-    await worker.stop();
-  });
-
-  it.each([
-    { baseURL: defaultBaseURL, path: 'path' },
-    { baseURL: `${defaultBaseURL}/`, path: 'path' },
-    { baseURL: `${defaultBaseURL}`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/api`, path: 'path' },
-    { baseURL: `${defaultBaseURL}/api/`, path: 'path' },
-    { baseURL: `${defaultBaseURL}/api`, path: '/path' },
-    { baseURL: `${defaultBaseURL}/api/`, path: '/path' },
-  ])(`should handle base URL $baseURL and path $path correctly`, async ({ baseURL, path }) => {
-    await usingHttpInterceptor<{
-      ':any': {
-        GET: {
-          response: {
-            200: {};
+  it('should handle base URLs and paths correctly', async () => {
+    for (const { baseURL, pathPrefix, path } of [
+      { baseURL: `${defaultBaseURL}`, pathPrefix: `${defaultPathPrefix}`, path: 'path' },
+      { baseURL: `${defaultBaseURL}/`, pathPrefix: `${defaultPathPrefix}/`, path: 'path' },
+      { baseURL: `${defaultBaseURL}`, pathPrefix: `${defaultPathPrefix}`, path: '/path' },
+      { baseURL: `${defaultBaseURL}/`, pathPrefix: `${defaultPathPrefix}/`, path: '/path' },
+    ]) {
+      await usingHttpInterceptor<{
+        ':any': {
+          GET: {
+            response: {
+              200: {};
+            };
           };
         };
-      };
-    }>({ worker, baseURL }, async (interceptor) => {
-      expect(interceptor.baseURL()).toBe(baseURL);
+      }>({ ...interceptorOptions, baseURL, pathPrefix }, async (interceptor) => {
+        expect(interceptor.baseURL()).toBe(baseURL);
 
-      const tracker = interceptor.get(path).respond({
-        status: 200,
+        if (interceptor instanceof RemoteHttpInterceptor) {
+          expect(interceptor.pathPrefix()).toBe(pathPrefix);
+        } else {
+          expect(interceptor).not.toHaveProperty('pathPrefix' satisfies keyof RemoteHttpInterceptor<{}>);
+        }
+
+        const tracker = await promiseIfRemote(
+          interceptor.get(path).respond({
+            status: 200,
+          }),
+          worker,
+        );
+
+        let requests = await tracker.requests();
+        expect(requests).toHaveLength(0);
+
+        const url = joinURL(baseURL, path);
+
+        const response = await fetch(url, { method: 'GET' });
+        expect(response.status).toBe(200);
+
+        requests = await tracker.requests();
+        expect(requests).toHaveLength(1);
+        const [request] = requests;
+        expect(request).toBeInstanceOf(Request);
+
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+        expect(request.body).toBe(null);
+
+        expectTypeOf(request.response.status).toEqualTypeOf<200>();
+        expect(request.response.status).toEqual(200);
+
+        expectTypeOf(request.response.body).toEqualTypeOf<null>();
+        expect(request.response.body).toEqual(null);
       });
-
-      const requests = tracker.requests();
-      expect(requests).toHaveLength(0);
-
-      const url = `${baseURL}/${path}`.replace(/(\w)\/{2,}(\w)/g, '$1/$2');
-
-      const response = await fetch(url, { method: 'GET' });
-      expect(response.status).toBe(200);
-
-      expect(requests).toHaveLength(1);
-      const [request] = requests;
-      expect(request).toBeInstanceOf(Request);
-
-      expectTypeOf(request.body).toEqualTypeOf<null>();
-      expect(request.body).toBe(null);
-
-      expectTypeOf(request.response.status).toEqualTypeOf<200>();
-      expect(request.response.status).toEqual(200);
-
-      expectTypeOf(request.response.body).toEqualTypeOf<null>();
-      expect(request.response.body).toEqual(null);
-    });
+    }
   });
+
+  if (options.type === 'local') {
+    it('should throw an error if provided an invalid base URL', async () => {
+      const handler = vi.fn();
+
+      const invalidURL = 'invalid';
+
+      await expect(async () => {
+        await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
+      }).rejects.toThrowError('Invalid URL');
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
+      'should not throw an error if provided a supported base URL protocol: %s',
+      async (supportedProtocol) => {
+        const url = `${supportedProtocol}://localhost:3000`;
+        const handler = vi.fn();
+
+        const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
+        await expect(interceptorPromise).resolves.not.toThrowError();
+
+        expect(handler).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    const exampleUnsupportedProtocols = ['ws', 'wss', 'ftp'];
+
+    it.each(exampleUnsupportedProtocols)(
+      'should throw an error if provided an unsupported base URL protocol: %s',
+      async (unsupportedProtocol) => {
+        expect(SUPPORTED_BASE_URL_PROTOCOLS).not.toContain(unsupportedProtocol);
+
+        const url = `${unsupportedProtocol}://localhost:3000`;
+        const handler = vi.fn();
+
+        const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
+        await expect(interceptorPromise).rejects.toThrowError(
+          new TypeError(`Expected URL with protocol (http|https), but got '${unsupportedProtocol}'`),
+        );
+
+        expect(handler).not.toHaveBeenCalled();
+      },
+    );
+  }
 }

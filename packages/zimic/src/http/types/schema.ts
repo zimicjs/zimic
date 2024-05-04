@@ -25,6 +25,12 @@ export interface HttpServiceResponseSchemaByStatusCode {
   [statusCode: number]: HttpServiceResponseSchema;
 }
 
+export namespace HttpServiceResponseSchemaByStatusCode {
+  export interface NoBody {
+    [statusCode: number]: Omit<HttpServiceResponseSchema, 'body'> & { body?: null };
+  }
+}
+
 /** Extracts the status codes used in response schema by status code. */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
@@ -36,10 +42,26 @@ export interface HttpServiceMethodSchema {
   response?: HttpServiceResponseSchemaByStatusCode;
 }
 
+export namespace HttpServiceMethodSchema {
+  export interface NoRequestBody extends Omit<HttpServiceMethodSchema, 'request'> {
+    request?: Omit<HttpServiceRequestSchema, 'body'> & { body?: null };
+  }
+
+  export interface NoBody extends Omit<NoRequestBody, 'response'> {
+    response?: HttpServiceResponseSchemaByStatusCode.NoBody;
+  }
+}
+
 /** A schema representing the structures of HTTP request and response by method. */
-export type HttpServiceMethodsSchema = {
-  [Method in HttpMethod]?: HttpServiceMethodSchema;
-};
+export interface HttpServiceMethodsSchema {
+  GET?: HttpServiceMethodSchema.NoRequestBody;
+  POST?: HttpServiceMethodSchema;
+  PUT?: HttpServiceMethodSchema;
+  PATCH?: HttpServiceMethodSchema;
+  DELETE?: HttpServiceMethodSchema;
+  HEAD?: HttpServiceMethodSchema.NoBody;
+  OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
+}
 
 /** A schema representing the structures of paths, methods, requests, and responses for an HTTP service. */
 export interface HttpServiceSchema {

@@ -4,17 +4,22 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import { PublicLocalHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/types/public';
 import { HttpRequestTrackerPath } from '@/interceptor/http/requestTracker/types/utils';
 import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema } from '../../types/schema';
-import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
+import { SharedHttpInterceptorTestsOptions } from './types';
 
 export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
+  const worker = createHttpInterceptorWorker({
+    type: 'local',
+  }) satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker;
+
   const baseURL = 'http://localhost:3000';
-  const worker = createHttpInterceptorWorker({ platform });
 
   type User = JSONValue<{
     name: string;
@@ -24,6 +29,7 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
 
   beforeAll(async () => {
     await worker.start();
+    expect(worker.platform()).toBe(platform);
   });
 
   afterAll(async () => {
@@ -223,6 +229,84 @@ export function declareTypeHttpInterceptorTests({ platform }: SharedHttpIntercep
     const creationRequests = creationTracker.requests();
     type ResponseHeaders = (typeof creationRequests)[number]['response']['headers'];
     expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+  });
+
+  it('should not allow declaring response bodies for methods that do not support them', () => {
+    // @ts-expect-error GET methods do not support request bodies
+    createHttpInterceptor<{ '/users': { GET: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { request: {} } } }>({ worker, baseURL });
+
+    // @ts-expect-error HEAD methods do not support request bodies
+    createHttpInterceptor<{ '/users': { HEAD: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { request: {} } } }>({ worker, baseURL });
+
+    // @ts-expect-error OPTIONS methods do not support request bodies
+    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { request: {} } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { POST: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { request: {} } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { PUT: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { request: {} } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { PATCH: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { request: {} } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { DELETE: { request: { body: User } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { request: { body: null } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { request: { body: undefined } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { request: {} } } }>({ worker, baseURL });
+  });
+
+  it('should not allow declaring response bodies for methods that do not support them', () => {
+    // @ts-expect-error HEAD methods do not support request bodies
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: {} } } } }>({ worker, baseURL });
+
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({ worker, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: {} } } } }>({ worker, baseURL });
   });
 
   describe('Dynamic paths', () => {

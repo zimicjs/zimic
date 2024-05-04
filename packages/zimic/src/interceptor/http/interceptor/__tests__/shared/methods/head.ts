@@ -1,31 +1,34 @@
-import { afterAll, afterEach, beforeAll, expect, expectTypeOf, it } from 'vitest';
+import { beforeEach, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
-import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import HttpRequestTracker from '@/interceptor/http/requestTracker/HttpRequestTracker';
-import { JSONValue } from '@/types/json';
-import { expectToThrowFetchError } from '@tests/utils/fetch';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
+import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
+import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { SharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { HttpInterceptorOptions } from '../../../types/options';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
-export function declareHeadHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
-  const worker = createHttpInterceptorWorker({ platform }) as HttpInterceptorWorker;
-  const baseURL = 'http://localhost:3000';
+export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { getBaseURL, getWorker, getInterceptorOptions } = options;
 
-  beforeAll(async () => {
-    await worker.start();
-  });
+  let baseURL: string;
+  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  let interceptorOptions: HttpInterceptorOptions;
 
-  afterEach(() => {
-    expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-  });
+  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
-  afterAll(async () => {
-    await worker.stop();
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    worker = getWorker();
+    interceptorOptions = getInterceptorOptions();
+
+    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
   });
 
   it('should support intercepting HEAD requests with a static response body', async () => {
@@ -37,18 +40,22 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond({
-        status: 200,
-      });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 200,
+        }),
+        worker,
+      );
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -73,18 +80,22 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond(() => ({
-        status: 200,
-      }));
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor.head('/users').respond(() => ({
+          status: 200,
+        })),
+        worker,
+      );
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -125,25 +136,28 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
-        expect(request.headers).toBeInstanceOf(HttpHeaders);
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor.head('/users').respond((request) => {
+          expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadRequestHeaders>>();
+          expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-        const acceptHeader = request.headers.get('accept')!;
-        expect(acceptHeader).toBe('application/json');
+          const acceptHeader = request.headers.get('accept')!;
+          expect(acceptHeader).toBe('application/json');
 
-        return {
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-            'cache-control': 'no-cache',
-          },
-        };
-      });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+          return {
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+              'cache-control': 'no-cache',
+            },
+          };
+        }),
+        worker,
+      );
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, {
@@ -154,6 +168,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       });
       expect(headResponse.status).toBe(200);
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -185,18 +200,21 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
-        expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor.head('/users').respond((request) => {
+          expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserHeadSearchParams>>();
+          expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
-        return {
-          status: 200,
-        };
-      });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+          return {
+            status: 200,
+          };
+        }),
+        worker,
+      );
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserHeadSearchParams>({
@@ -206,6 +224,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -234,7 +253,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .with({
@@ -254,9 +273,9 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
             status: 200,
           };
         });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserHeadHeaders>({
@@ -266,25 +285,32 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       let headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD', headers });
       expect(headResponse.status).toBe(200);
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD', headers });
       expect(headResponse.status).toBe(200);
+
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
+
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
       headResponsePromise = fetch(`${baseURL}/users`, { method: 'HEAD', headers });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
+
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
     });
   });
@@ -305,7 +331,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       const headTracker = interceptor
         .head('/users')
         .with({
@@ -319,9 +345,9 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
             status: 200,
           };
         });
-      expect(headTracker).toBeInstanceOf(HttpRequestTracker);
+      expect(headTracker).toBeInstanceOf(Tracker);
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserHeadSearchParams>({
@@ -330,12 +356,14 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
 
       const headResponse = await fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
       expect(headResponse.status).toBe(200);
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
 
       searchParams.delete('tag');
 
       const headResponsePromise = fetch(`${baseURL}/users?${searchParams.toString()}`, { method: 'HEAD' });
-      await expectToThrowFetchError(headResponsePromise);
+      await expectFetchError(headResponsePromise);
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
     });
   });
@@ -349,18 +377,22 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const genericHeadTracker = interceptor.head('/users/:id').respond({
-        status: 200,
-      });
-      expect(genericHeadTracker).toBeInstanceOf(HttpRequestTracker);
+    }>(interceptorOptions, async (interceptor) => {
+      const genericHeadTracker = await promiseIfRemote(
+        interceptor.head('/users/:id').respond({
+          status: 200,
+        }),
+        worker,
+      );
+      expect(genericHeadTracker).toBeInstanceOf(Tracker);
 
-      const genericHeadRequests = genericHeadTracker.requests();
+      let genericHeadRequests = await promiseIfRemote(genericHeadTracker.requests(), worker);
       expect(genericHeadRequests).toHaveLength(0);
 
       const genericHeadResponse = await fetch(`${baseURL}/users/${1}`, { method: 'HEAD' });
       expect(genericHeadResponse.status).toBe(200);
 
+      genericHeadRequests = await promiseIfRemote(genericHeadTracker.requests(), worker);
       expect(genericHeadRequests).toHaveLength(1);
       const [genericHeadRequest] = genericHeadRequests;
       expect(genericHeadRequest).toBeInstanceOf(Request);
@@ -374,19 +406,23 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf(genericHeadRequest.response.body).toEqualTypeOf<null>();
       expect(genericHeadRequest.response.body).toBe(null);
 
-      genericHeadTracker.bypass();
+      await promiseIfRemote(genericHeadTracker.bypass(), worker);
 
-      const specificHeadTracker = interceptor.head(`/users/${1}`).respond({
-        status: 200,
-      });
-      expect(specificHeadTracker).toBeInstanceOf(HttpRequestTracker);
+      const specificHeadTracker = await promiseIfRemote(
+        interceptor.head(`/users/${1}`).respond({
+          status: 200,
+        }),
+        worker,
+      );
+      expect(specificHeadTracker).toBeInstanceOf(Tracker);
 
-      const specificHeadRequests = specificHeadTracker.requests();
+      let specificHeadRequests = await promiseIfRemote(specificHeadTracker.requests(), worker);
       expect(specificHeadRequests).toHaveLength(0);
 
       const specificHeadResponse = await fetch(`${baseURL}/users/${1}`, { method: 'HEAD' });
       expect(specificHeadResponse.status).toBe(200);
 
+      specificHeadRequests = await promiseIfRemote(specificHeadTracker.requests(), worker);
       expect(specificHeadRequests).toHaveLength(1);
       const [specificHeadRequest] = specificHeadRequests;
       expect(specificHeadRequest).toBeInstanceOf(Request);
@@ -401,7 +437,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(specificHeadRequest.response.body).toBe(null);
 
       const unmatchedHeadPromise = fetch(`${baseURL}/users/${2}`, { method: 'HEAD' });
-      await expectToThrowFetchError(unmatchedHeadPromise);
+      await expectFetchError(unmatchedHeadPromise);
     });
   });
 
@@ -414,14 +450,14 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
+    }>(interceptorOptions, async (interceptor) => {
       let fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
-      const headTrackerWithoutResponse = interceptor.head('/users');
-      expect(headTrackerWithoutResponse).toBeInstanceOf(HttpRequestTracker);
+      const headTrackerWithoutResponse = await promiseIfRemote(interceptor.head('/users'), worker);
+      expect(headTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
-      const headRequestsWithoutResponse = headTrackerWithoutResponse.requests();
+      let headRequestsWithoutResponse = await promiseIfRemote(headTrackerWithoutResponse.requests(), worker);
       expect(headRequestsWithoutResponse).toHaveLength(0);
 
       let [headRequestWithoutResponse] = headRequestsWithoutResponse;
@@ -429,8 +465,9 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf<typeof headRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
       fetchPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(fetchPromise);
+      await expectFetchError(fetchPromise);
 
+      headRequestsWithoutResponse = await promiseIfRemote(headTrackerWithoutResponse.requests(), worker);
       expect(headRequestsWithoutResponse).toHaveLength(0);
 
       [headRequestWithoutResponse] = headRequestsWithoutResponse;
@@ -445,7 +482,7 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expect(headResponse.status).toBe(200);
 
       expect(headRequestsWithoutResponse).toHaveLength(0);
-      const headRequestsWithResponse = headTrackerWithResponse.requests();
+      const headRequestsWithResponse = await promiseIfRemote(headTrackerWithResponse.requests(), worker);
       expect(headRequestsWithResponse).toHaveLength(1);
 
       const [headRequestWithResponse] = headRequestsWithResponse;
@@ -464,36 +501,36 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
   });
 
   it('should consider only the last declared response when intercepting HEAD requests', async () => {
-    type ServerErrorResponseBody = JSONValue<{
-      message: string;
-    }>;
-
     await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
             200: {};
             204: {};
-            500: { body: ServerErrorResponseBody };
+            500: {};
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor
-        .head('/users')
-        .respond({
-          status: 200,
-        })
-        .respond({
-          status: 204,
-        });
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor
+          .head('/users')
+          .respond({
+            status: 200,
+          })
+          .respond({
+            status: 204,
+          }),
+        worker,
+      );
 
-      const headRequests = headTracker.requests();
+      let headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -507,22 +544,25 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
 
-      const errorHeadTracker = interceptor.head('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorHeadTracker = await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 500,
+        }),
+        worker,
+      );
 
-      const errorHeadRequests = errorHeadTracker.requests();
+      let errorHeadRequests = await promiseIfRemote(errorHeadTracker.requests(), worker);
       expect(errorHeadRequests).toHaveLength(0);
 
       const otherHeadResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(otherHeadResponse.status).toBe(500);
 
-      const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
-      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expect(await otherHeadResponse.text()).toBe('');
 
+      headRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
 
+      errorHeadRequests = await promiseIfRemote(errorHeadTracker.requests(), worker);
       expect(errorHeadRequests).toHaveLength(1);
       const [errorHeadRequest] = errorHeadRequests;
       expect(errorHeadRequest).toBeInstanceOf(Request);
@@ -533,51 +573,55 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
       expect(errorHeadRequest.response.status).toEqual(500);
 
-      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(errorHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<null>();
+      expect(errorHeadRequest.response.body).toBe(null);
     });
   });
 
   it('should ignore trackers with bypassed responses when intercepting HEAD requests', async () => {
-    type ServerErrorResponseBody = JSONValue<{
-      message: string;
-    }>;
-
     await usingHttpInterceptor<{
       '/users': {
         HEAD: {
           response: {
             200: {};
             204: {};
-            500: { body: ServerErrorResponseBody };
+            500: {};
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor
-        .head('/users')
-        .respond({
-          status: 200,
-        })
-        .bypass();
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor
+          .head('/users')
+          .respond({
+            status: 200,
+          })
+          .bypass(),
+        worker,
+      );
 
-      const initialHeadRequests = headTracker.requests();
+      let initialHeadRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(headPromise);
+      await expectFetchError(headPromise);
 
-      const noContentHeadTracker = headTracker.respond({
-        status: 204,
-      });
+      const noContentHeadTracker = await promiseIfRemote(
+        headTracker.respond({
+          status: 204,
+        }),
+        worker,
+      );
 
+      initialHeadRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(initialHeadRequests).toHaveLength(0);
-      const headRequests = noContentHeadTracker.requests();
+      let headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       let headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
+      headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       let [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -591,22 +635,25 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
       expect(headRequest.response.body).toBe(null);
 
-      const errorHeadTracker = interceptor.head('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
+      const errorHeadTracker = await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 500,
+        }),
+        worker,
+      );
 
-      const errorHeadRequests = errorHeadTracker.requests();
+      let errorHeadRequests = await promiseIfRemote(errorHeadTracker.requests(), worker);
       expect(errorHeadRequests).toHaveLength(0);
 
       const otherHeadResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(otherHeadResponse.status).toBe(500);
 
-      const serverError = (await otherHeadResponse.json()) as ServerErrorResponseBody;
-      expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expect(await otherHeadResponse.text()).toBe('');
 
+      headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
 
+      errorHeadRequests = await promiseIfRemote(errorHeadTracker.requests(), worker);
       expect(errorHeadRequests).toHaveLength(1);
       const [errorHeadRequest] = errorHeadRequests;
       expect(errorHeadRequest).toBeInstanceOf(Request);
@@ -617,16 +664,18 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
       expectTypeOf(errorHeadRequest.response.status).toEqualTypeOf<500>();
       expect(errorHeadRequest.response.status).toEqual(500);
 
-      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
-      expect(errorHeadRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
+      expectTypeOf(errorHeadRequest.response.body).toEqualTypeOf<null>();
+      expect(errorHeadRequest.response.body).toBe(null);
 
-      errorHeadTracker.bypass();
+      await promiseIfRemote(errorHeadTracker.bypass(), worker);
 
       headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
+      errorHeadRequests = await promiseIfRemote(errorHeadTracker.requests(), worker);
       expect(errorHeadRequests).toHaveLength(1);
 
+      headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(2);
       [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -652,18 +701,21 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users').respond({
-        status: 200,
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 200,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const initialHeadRequests = headTracker.requests();
+      const initialHeadRequests = await promiseIfRemote(headTracker.requests(), worker);
       expect(initialHeadRequests).toHaveLength(0);
 
       const headPromise = fetch(`${baseURL}/users`, { method: 'HEAD' });
-      await expectToThrowFetchError(headPromise);
+      await expectFetchError(headPromise);
     });
   });
 
@@ -677,23 +729,30 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      interceptor.head('/users').respond({
-        status: 200,
-      });
+    }>(interceptorOptions, async (interceptor) => {
+      await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 200,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const noContentHeadTracker = interceptor.head('/users').respond({
-        status: 204,
-      });
+      const noContentHeadTracker = await promiseIfRemote(
+        interceptor.head('/users').respond({
+          status: 204,
+        }),
+        worker,
+      );
 
-      const headRequests = noContentHeadTracker.requests();
+      let headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
+      headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
@@ -719,25 +778,32 @@ export function declareHeadHttpInterceptorTests({ platform }: SharedHttpIntercep
           };
         };
       };
-    }>({ worker, baseURL }, async (interceptor) => {
-      const headTracker = interceptor.head('/users');
+    }>(interceptorOptions, async (interceptor) => {
+      const headTracker = await promiseIfRemote(interceptor.head('/users'), worker);
 
-      headTracker.respond({
-        status: 200,
-      });
+      await promiseIfRemote(
+        headTracker.respond({
+          status: 200,
+        }),
+        worker,
+      );
 
-      interceptor.clear();
+      await promiseIfRemote(interceptor.clear(), worker);
 
-      const noContentHeadTracker = headTracker.respond({
-        status: 204,
-      });
+      const noContentHeadTracker = await promiseIfRemote(
+        headTracker.respond({
+          status: 204,
+        }),
+        worker,
+      );
 
-      const headRequests = noContentHeadTracker.requests();
+      let headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(0);
 
       const headResponse = await fetch(`${baseURL}/users`, { method: 'HEAD' });
       expect(headResponse.status).toBe(204);
 
+      headRequests = await promiseIfRemote(noContentHeadTracker.requests(), worker);
       expect(headRequests).toHaveLength(1);
       const [headRequest] = headRequests;
       expect(headRequest).toBeInstanceOf(Request);
