@@ -35,8 +35,8 @@ export async function runCommand(command: string, commandArguments: string[]) {
         return;
       }
 
-      const error = new CommandFailureError(command, exitCode, signal);
-      reject(error);
+      const failureError = new CommandFailureError(command, exitCode, signal);
+      reject(failureError);
     });
   });
 }

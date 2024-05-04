@@ -3,7 +3,13 @@ import ClientSocket from 'isomorphic-ws';
 import { Collection } from '@/types/utils';
 import { IsomorphicCrypto, getCrypto } from '@/utils/crypto';
 import { isClientSide } from '@/utils/environment';
-import { closeClientSocket, waitForOpenClientSocket } from '@/utils/webSocket';
+import {
+  DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
+  DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
+  WebSocketMessageTimeoutError,
+  closeClientSocket,
+  waitForOpenClientSocket,
+} from '@/utils/webSocket';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from './errors/NotStartedWebSocketHandlerError';
@@ -13,6 +19,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sockets = new Set<ClientSocket>();
 
   private _crypto?: IsomorphicCrypto;
+  protected readonly socketTimeout: number;
+  protected readonly messageTimeout: number;
 
   private listeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: {
@@ -20,6 +28,11 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       reply: Set<WebSocket.ReplyMessageListener<Schema, Channel>>;
     };
   } = {};
+
+  protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
+    this.socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
+    this.messageTimeout = options.messageTimeout ?? DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
+  }
 
   abstract isRunning(): boolean;
 
@@ -31,7 +44,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   protected async registerSocket(socket: ClientSocket) {
-    const openPromise = waitForOpenClientSocket(socket);
+    const openPromise = waitForOpenClientSocket(socket, { timeout: this.socketTimeout });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
       await this.handleSocketMessage(socket, rawMessage);
@@ -154,8 +167,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     await Promise.all(listenerPromises);
   }
 
-  protected async closeClientSockets(sockets: Set<ClientSocket> = this.sockets) {
-    const closingPromises = Array.from(sockets, (socket) => closeClientSocket(socket));
+  protected async closeClientSockets(sockets: Collection<ClientSocket> = this.sockets) {
+    const closingPromises = Array.from(sockets, async (socket) => {
+      await closeClientSocket(socket, { timeout: this.socketTimeout });
+    });
     await Promise.all(closingPromises);
   }
 
@@ -197,10 +212,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   ) {
     const request = await this.createEventMessage(channel, requestData);
 
-    const responsePromise = this.waitForReply(channel, request.id);
     await this.sendMessage(request, options.sockets);
-
-    const response = await responsePromise;
+    const response = await this.waitForReply(channel, request.id);
     return response.data;
   }
 
@@ -208,9 +221,15 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     channel: Channel,
     requestId: WebSocket.ServiceEventMessage<Schema, Channel>['id'],
   ) {
-    return new Promise<WebSocket.ServiceReplyMessage<Schema, Channel>>((resolve) => {
+    return new Promise<WebSocket.ServiceReplyMessage<Schema, Channel>>((resolve, reject) => {
+      const replyTimeout = setTimeout(() => {
+        const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
+        reject(timeoutError);
+      }, this.messageTimeout);
+
       const listener = this.onReply(channel, (message) => {
         if (message.requestId === requestId) {
+          clearTimeout(replyTimeout);
           resolve(message);
           this.offReply(channel, listener);
         }
@@ -270,11 +289,19 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
+      const messageTimeout = setTimeout(() => {
+        const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
+        reject(timeoutError);
+      }, this.messageTimeout);
+
       if (isClientSide()) {
         socket.send(stringifiedMessage);
+        clearTimeout(messageTimeout);
         resolve();
       } else {
         socket.send(stringifiedMessage, (error) => {
+          clearTimeout(messageTimeout);
+
           /* istanbul ignore if -- @preserve
            * It is difficult to reliably simulate socket errors in tests. */
           if (error) {

@@ -10,6 +10,8 @@ const { WebSocketServer: ServerSocket } = ClientSocket;
 
 interface WebSocketServerOptions {
   httpServer: HttpServer;
+  socketTimeout?: number;
+  messageTimeout?: number;
 }
 
 class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
@@ -17,7 +19,11 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   private httpServer: HttpServer;
 
   constructor(options: WebSocketServerOptions) {
-    super();
+    super({
+      socketTimeout: options.socketTimeout,
+      messageTimeout: options.messageTimeout,
+    });
+
     this.httpServer = options.httpServer;
   }
 
@@ -37,7 +43,11 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     });
 
     webSocketServer.on('connection', async (socket) => {
-      await super.registerSocket(socket);
+      try {
+        await super.registerSocket(socket);
+      } catch (error) {
+        webSocketServer.emit('error', error);
+      }
     });
 
     this.webSocketServer = webSocketServer;
@@ -51,7 +61,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     await super.closeClientSockets();
     super.removeAllListeners();
 
-    await closeServerSocket(this.webSocketServer);
+    await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
     this.webSocketServer.removeAllListeners();
     this.webSocketServer = undefined;
   }

@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { getCrypto } from '@/utils/crypto';
 import { startHttpServer, stopHttpServer } from '@/utils/http';
-import { closeClientSocket, waitForOpenClientSocket } from '@/utils/webSocket';
+import {
+  closeClientSocket,
+  waitForOpenClientSocket,
+  WebSocketCloseTimeoutError,
+  WebSocketMessageTimeoutError,
+  WebSocketOpenTimeoutError,
+} from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { waitFor, waitForNot } from '@tests/utils/time';
 
@@ -13,6 +19,13 @@ import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketServer from '../WebSocketServer';
+import {
+  delayClientSocketOpen,
+  delayClientSocketClose,
+  delayClientSocketSend,
+  delayServerSocketConnection,
+  delayServerSocketClose,
+} from './utils';
 
 describe('Web socket server', async () => {
   const crypto = await getCrypto();
@@ -96,7 +109,21 @@ describe('Web socket server', async () => {
       expect(server.isRunning()).toBe(false);
     });
 
-    it('should close connected clients before stopping', async () => {
+    it('should throw an error if the server socket close timeout is reached', async () => {
+      const delayedServerSocketClose = delayServerSocketClose(200);
+
+      try {
+        const socketTimeout = 20;
+        server = new WebSocketServer({ httpServer, socketTimeout });
+        server.start();
+
+        await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+      } finally {
+        delayedServerSocketClose.mockRestore();
+      }
+    });
+
+    it('should terminate connected clients before stopping', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
       expect(server.isRunning()).toBe(true);
@@ -112,6 +139,46 @@ describe('Web socket server', async () => {
       await waitFor(() => {
         expect(rawClient!.readyState).toBe(rawClient!.CLOSED);
       });
+    });
+
+    it('should log an error if a client socket open timeout is reached', async () => {
+      const delayedClientSocketAddEventListener = delayClientSocketOpen(200);
+      const delayedServerSocketOn = delayServerSocketConnection();
+
+      try {
+        const socketTimeout = 20;
+        server = new WebSocketServer({ httpServer, socketTimeout });
+        server.start();
+
+        await usingIgnoredConsole(['error'], async (spies) => {
+          rawClient = new ClientSocket(`ws://localhost:${port}`);
+
+          await waitFor(() => {
+            expect(spies.error).toHaveBeenCalledTimes(1);
+          });
+          expect(spies.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
+        });
+      } finally {
+        delayedClientSocketAddEventListener.mockRestore();
+        delayedServerSocketOn.mockRestore();
+      }
+    });
+
+    it('should throw an error if a client socket close timeout is reached', async () => {
+      const delayedClientSocketClose = delayClientSocketClose(200);
+
+      try {
+        const socketTimeout = 20;
+        server = new WebSocketServer({ httpServer, socketTimeout });
+        server.start();
+
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+        await waitForOpenClientSocket(rawClient);
+
+        await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+      } finally {
+        delayedClientSocketClose.mockRestore();
+      }
     });
   });
 
@@ -145,6 +212,25 @@ describe('Web socket server', async () => {
         channel: 'no-reply',
         data: eventMessage,
       });
+    });
+
+    it('should throw an error if a socket message sending timeout is reached', async () => {
+      const delayedClientSocketSend = delayClientSocketSend(200);
+
+      try {
+        const messageTimeout = 20;
+        server = new WebSocketServer({ httpServer, messageTimeout });
+        server.start();
+
+        rawClient = new ClientSocket(`ws://localhost:${port}`);
+        await waitForOpenClientSocket(rawClient);
+
+        await expect(server.send('no-reply', { message: 'test' })).rejects.toThrowError(
+          new WebSocketMessageTimeoutError(messageTimeout),
+        );
+      } finally {
+        delayedClientSocketSend.mockRestore();
+      }
     });
 
     it('should support receiving event messages from clients', async () => {
@@ -210,6 +296,20 @@ describe('Web socket server', async () => {
 
       const receivedReplyMessage = await replyPromise;
       expect(receivedReplyMessage).toEqual(replyMessage);
+    });
+
+    it('should throw an error if the reply request timeout is reached', async () => {
+      const messageTimeout = 20;
+      server = new WebSocketServer({ httpServer, messageTimeout });
+      server.start();
+
+      rawClient = new ClientSocket(`ws://localhost:${port}`);
+      await waitForOpenClientSocket(rawClient);
+
+      const requestMessage = { question: 'test' };
+      await expect(server.request('with-reply', requestMessage)).rejects.toThrowError(
+        new WebSocketMessageTimeoutError(messageTimeout),
+      );
     });
 
     it('should support receiving reply requests from clients', async () => {

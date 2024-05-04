@@ -7,6 +7,8 @@ import WebSocketHandler from './WebSocketHandler';
 
 interface WebSocketClientOptions {
   url: string;
+  socketTimeout?: number;
+  messageTimeout?: number;
 }
 
 class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
@@ -15,24 +17,33 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   private socket?: ClientSocket;
 
   constructor(options: WebSocketClientOptions) {
-    super();
+    super({
+      socketTimeout: options.socketTimeout,
+      messageTimeout: options.messageTimeout,
+    });
+
     this.url = validatedURL(options.url, {
       protocols: ['ws'],
     });
   }
 
   isRunning() {
-    return this.socket !== undefined;
+    return this.socket !== undefined && this.socket.readyState === this.socket.OPEN;
   }
 
   async start() {
-    const socket = new ClientSocket(this.url);
-    await super.registerSocket(socket);
-    this.socket = socket;
+    this.socket = new ClientSocket(this.url);
+
+    try {
+      await super.registerSocket(this.socket);
+    } catch (error) {
+      await this.stop();
+      throw error;
+    }
   }
 
   async stop() {
-    await super.closeClientSockets();
+    await super.closeClientSockets(this.socket ? [this.socket] : []);
     this.socket = undefined;
   }
 }

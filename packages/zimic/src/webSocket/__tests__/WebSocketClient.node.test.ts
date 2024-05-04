@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { getCrypto } from '@/utils/crypto';
 import { startHttpServer, stopHttpServer } from '@/utils/http';
-import { closeServerSocket } from '@/utils/webSocket';
+import {
+  closeServerSocket,
+  WebSocketCloseTimeoutError,
+  WebSocketMessageTimeoutError,
+  WebSocketOpenTimeoutError,
+} from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { waitFor, waitForNot } from '@tests/utils/time';
 
@@ -13,6 +18,7 @@ import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketClient from '../WebSocketClient';
+import { delayClientSocketClose, delayClientSocketOpen, delayClientSocketSend } from './utils';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
@@ -103,6 +109,33 @@ describe('Web socket client', async () => {
 
       expect(client.isRunning()).toBe(false);
     });
+
+    it('should throw an error if the client socket open timeout is reached', async () => {
+      const delayedClientSocketAddEventListener = delayClientSocketOpen(200);
+
+      try {
+        const socketTimeout = 20;
+        client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
+
+        await expect(client.start()).rejects.toThrowError(new WebSocketOpenTimeoutError(socketTimeout));
+      } finally {
+        delayedClientSocketAddEventListener.mockRestore();
+      }
+    });
+
+    it('should throw an error if the client socket close timeout is reached', async () => {
+      const delayedClientSocketClose = delayClientSocketClose(200);
+
+      try {
+        const socketTimeout = 20;
+        client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
+        await client.start();
+
+        await expect(client.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
+      } finally {
+        delayedClientSocketClose.mockRestore();
+      }
+    });
   });
 
   describe('Messages', () => {
@@ -137,6 +170,22 @@ describe('Web socket client', async () => {
         channel: 'no-reply',
         data: eventMessage,
       });
+    });
+
+    it('should log an error if a socket message sending timeout is reached', async () => {
+      const delayedClientSocketSend = delayClientSocketSend(200);
+
+      try {
+        const messageTimeout = 20;
+        client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
+        await client.start();
+
+        await expect(client.send('no-reply', { message: 'test' })).rejects.toThrowError(
+          new WebSocketMessageTimeoutError(messageTimeout),
+        );
+      } finally {
+        delayedClientSocketSend.mockRestore();
+      }
     });
 
     it('should support receiving event messages from servers', async () => {
@@ -209,6 +258,19 @@ describe('Web socket client', async () => {
       expect(receivedReplyMessage).toEqual(replyMessage);
     });
 
+    it('should throw an error if a reply request timeout is reached', async () => {
+      const messageTimeout = 20;
+      client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
+      await client.start();
+
+      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      const requestMessage: RequestMessage['data'] = { question: 'test' };
+
+      await expect(client.request('with-reply', requestMessage)).rejects.toThrowError(
+        new WebSocketMessageTimeoutError(messageTimeout),
+      );
+    });
+
     it('should support receiving reply requests from servers', async () => {
       const rawServerSockets: ClientSocket[] = [];
       rawServer?.on('connection', (socket) => rawServerSockets.push(socket));
@@ -235,7 +297,6 @@ describe('Web socket client', async () => {
           throw new Error('Unexpected message type');
         }
         const parsedMessage = JSON.parse(message.data) as ReplyMessage;
-        console.log(parsedMessage.id);
         replyMessages.push(parsedMessage);
       });
 

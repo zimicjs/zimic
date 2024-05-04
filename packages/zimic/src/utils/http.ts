@@ -26,7 +26,7 @@ export async function startHttpServer(
     timeout?: number;
   } = {},
 ) {
-  const { hostname, port, timeout: timeoutInMilliseconds = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
+  const { hostname, port, timeout: timeoutDuration = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
 
   await new Promise<void>((resolve, reject) => {
     function handleStartError(error: unknown) {
@@ -35,9 +35,9 @@ export async function startHttpServer(
     }
 
     const startTimeout = setTimeout(() => {
-      const timeoutError = new HttpServerStartTimeoutError(timeoutInMilliseconds);
+      const timeoutError = new HttpServerStartTimeoutError(timeoutDuration);
       handleStartError(timeoutError);
-    }, timeoutInMilliseconds);
+    }, timeoutDuration);
 
     function handleStartSuccess() {
       server.off('error', handleStartError);
@@ -51,13 +51,13 @@ export async function startHttpServer(
 }
 
 export async function stopHttpServer(server: HttpServer, options: { timeout?: number } = {}) {
-  const { timeout: timeoutInMilliseconds = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
+  const { timeout: timeoutDuration = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
 
   await new Promise<void>((resolve, reject) => {
     const stopTimeout = setTimeout(() => {
-      const timeoutError = new HttpServerStopTimeoutError(timeoutInMilliseconds);
+      const timeoutError = new HttpServerStopTimeoutError(timeoutDuration);
       reject(timeoutError);
-    }, timeoutInMilliseconds);
+    }, timeoutDuration);
 
     server.close((error) => {
       clearTimeout(stopTimeout);
