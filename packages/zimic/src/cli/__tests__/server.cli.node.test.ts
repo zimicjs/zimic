@@ -112,7 +112,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on localhost if no hostname is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '-p', '3000']);
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--port', '3000']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -130,7 +130,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on the provided hostname', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '-p', '3000']);
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -164,7 +164,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is not an integer, positive number', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '-p', 'abc']);
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
 
       await usingIgnoredConsole(['error'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError(
@@ -179,7 +179,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is already in use', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '-p', '3000']);
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         await runCLI();
@@ -188,16 +188,14 @@ describe('CLI (server)', async () => {
 
         expect(initialServer).toBeDefined();
         expect(initialServer!.isRunning()).toBe(true);
-        expect(initialServer!.hostname()).toBe('localhost');
+        expect(initialServer!.hostname()).toBe('0.0.0.0');
         expect(initialServer!.port()).toBe(3000);
 
         try {
           await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
 
           expect(spies.error).toHaveBeenCalledTimes(1);
-          expect(spies.error).toHaveBeenCalledWith(
-            new Error('listen EADDRINUSE: address already in use 127.0.0.1:3000'),
-          );
+          expect(spies.error).toHaveBeenCalledWith(new Error('listen EADDRINUSE: address already in use 0.0.0.0:3000'));
         } finally {
           await initialServer?.stop();
         }
