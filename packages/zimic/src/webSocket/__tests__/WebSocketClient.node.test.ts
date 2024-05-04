@@ -111,10 +111,10 @@ describe('Web socket client', async () => {
     });
 
     it('should throw an error if the client socket open timeout is reached', async () => {
-      const delayedClientSocketAddEventListener = delayClientSocketOpen(200);
+      const delayedClientSocketAddEventListener = delayClientSocketOpen(300);
 
       try {
-        const socketTimeout = 20;
+        const socketTimeout = 100;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
         expect(client.socketTimeout()).toBe(socketTimeout);
 
@@ -125,10 +125,10 @@ describe('Web socket client', async () => {
     });
 
     it('should throw an error if the client socket close timeout is reached', async () => {
-      const delayedClientSocketClose = delayClientSocketClose(200);
+      const delayedClientSocketClose = delayClientSocketClose(300);
 
       try {
-        const socketTimeout = 20;
+        const socketTimeout = 100;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
         expect(client.socketTimeout()).toBe(socketTimeout);
         await client.start();
@@ -175,10 +175,10 @@ describe('Web socket client', async () => {
     });
 
     it('should log an error if a socket message sending timeout is reached', async () => {
-      const delayedClientSocketSend = delayClientSocketSend(200);
+      const delayedClientSocketSend = delayClientSocketSend(300);
 
       try {
-        const messageTimeout = 20;
+        const messageTimeout = 100;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
         expect(client.messageTimeout()).toBe(messageTimeout);
         await client.start();
@@ -262,7 +262,7 @@ describe('Web socket client', async () => {
     });
 
     it('should throw an error if a reply request timeout is reached', async () => {
-      const messageTimeout = 20;
+      const messageTimeout = 100;
       client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
       expect(client.messageTimeout()).toBe(messageTimeout);
       await client.start();

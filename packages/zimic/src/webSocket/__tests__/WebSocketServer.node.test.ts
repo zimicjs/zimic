@@ -110,10 +110,10 @@ describe('Web socket server', async () => {
     });
 
     it('should throw an error if the server socket close timeout is reached', async () => {
-      const delayedServerSocketClose = delayServerSocketClose(200);
+      const delayedServerSocketClose = delayServerSocketClose(300);
 
       try {
-        const socketTimeout = 20;
+        const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
         expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
@@ -143,11 +143,11 @@ describe('Web socket server', async () => {
     });
 
     it('should log an error if a client socket open timeout is reached', async () => {
-      const delayedClientSocketAddEventListener = delayClientSocketOpen(200);
+      const delayedClientSocketAddEventListener = delayClientSocketOpen(300);
       const delayedServerSocketOn = delayServerSocketConnection();
 
       try {
-        const socketTimeout = 20;
+        const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
         expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
@@ -167,10 +167,10 @@ describe('Web socket server', async () => {
     });
 
     it('should throw an error if a client socket close timeout is reached', async () => {
-      const delayedClientSocketClose = delayClientSocketClose(200);
+      const delayedClientSocketClose = delayClientSocketClose(300);
 
       try {
-        const socketTimeout = 20;
+        const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
         expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
@@ -218,10 +218,10 @@ describe('Web socket server', async () => {
     });
 
     it('should throw an error if a socket message sending timeout is reached', async () => {
-      const delayedClientSocketSend = delayClientSocketSend(200);
+      const delayedClientSocketSend = delayClientSocketSend(300);
 
       try {
-        const messageTimeout = 20;
+        const messageTimeout = 100;
         server = new WebSocketServer({ httpServer, messageTimeout });
         expect(server.messageTimeout()).toBe(messageTimeout);
         server.start();
@@ -303,7 +303,7 @@ describe('Web socket server', async () => {
     });
 
     it('should throw an error if the reply request timeout is reached', async () => {
-      const messageTimeout = 20;
+      const messageTimeout = 100;
       server = new WebSocketServer({ httpServer, messageTimeout });
       expect(server.messageTimeout()).toBe(messageTimeout);
       server.start();
