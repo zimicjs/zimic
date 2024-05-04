@@ -14,12 +14,14 @@ import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
+import NotStartedServerError from './errors/NotStartedServerError';
 import { PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
 export interface ServerOptions {
   hostname?: string;
   port?: number;
+  lifeCycleTimeout?: number;
 }
 
 interface HttpHandler {
@@ -29,11 +31,12 @@ interface HttpHandler {
 }
 
 class Server implements PublicServer {
-  private httpServer?: HttpServer;
-  private webSocketServer?: WebSocketServer<ServerWebSocketSchema>;
+  private _httpServer?: HttpServer;
+  private _webSocketServer?: WebSocketServer<ServerWebSocketSchema>;
 
   private _hostname: string;
   private _port?: number;
+  private _lifeCycleTimeout?: number;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -52,6 +55,7 @@ class Server implements PublicServer {
   constructor(options: ServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
+    this._lifeCycleTimeout = options.lifeCycleTimeout;
   }
 
   hostname() {
@@ -70,7 +74,25 @@ class Server implements PublicServer {
   }
 
   isRunning() {
-    return !!this.httpServer?.listening && !!this.webSocketServer?.isRunning();
+    return !!this._httpServer?.listening && !!this._webSocketServer?.isRunning();
+  }
+
+  private httpServerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * The HTTP server is initialized before using this method in normal conditions. */
+    if (!this._httpServer) {
+      throw new NotStartedServerError();
+    }
+    return this._httpServer;
+  }
+
+  private webSocketServerOrThrow() {
+    /* istanbul ignore if -- @preserve
+     * The web socket server is initialized before using this method in normal conditions. */
+    if (!this._webSocketServer) {
+      throw new NotStartedServerError();
+    }
+    return this._webSocketServer;
   }
 
   async start() {
@@ -78,30 +100,32 @@ class Server implements PublicServer {
       return;
     }
 
-    this.httpServer = createServer({
+    this._httpServer = createServer({
       keepAlive: true,
       joinDuplicateHeaders: true,
     });
-    await this.startHttpServer(this.httpServer);
+    await this.startHttpServer();
 
-    this.webSocketServer = new WebSocketServer({
-      httpServer: this.httpServer,
-    });
-    this.startWebSocketServer(this.webSocketServer);
+    this._webSocketServer = new WebSocketServer({ httpServer: this._httpServer });
+    this.startWebSocketServer();
   }
 
-  private async startHttpServer(httpServer: HttpServer) {
+  private async startHttpServer() {
+    const httpServer = this.httpServerOrThrow();
+
     await startHttpServer(httpServer, {
       hostname: this._hostname,
       port: this._port,
+      timeout: this._lifeCycleTimeout,
     });
+    this._port = getHttpServerPort(httpServer);
 
     httpServer.on('request', this.handleHttpRequest);
-
-    this._port = getHttpServerPort(httpServer);
   }
 
-  private startWebSocketServer(webSocketServer: WebSocketServer<ServerWebSocketSchema>) {
+  private startWebSocketServer() {
+    const webSocketServer = this.webSocketServerOrThrow();
+
     webSocketServer.start();
     webSocketServer.onEvent('interceptors/workers/use/commit', this.commitWorker);
     webSocketServer.onEvent('interceptors/workers/use/reset', this.resetWorker);
@@ -165,25 +189,33 @@ class Server implements PublicServer {
   }
 
   async stop() {
-    if (!this.httpServer || !this.isRunning()) {
+    if (!this.isRunning()) {
       return;
     }
 
+    await this.stopHttpServer();
     await this.stopWebSocketServer();
-    await this.stopHttpServer(this.httpServer);
   }
 
-  private async stopHttpServer(httpServer: HttpServer) {
-    await stopHttpServer(httpServer);
+  private async stopHttpServer() {
+    const httpServer = this.httpServerOrThrow();
+
+    await stopHttpServer(httpServer, {
+      timeout: this._lifeCycleTimeout,
+    });
     httpServer.removeAllListeners();
-    this.httpServer = undefined;
+
+    this._httpServer = undefined;
   }
 
   private async stopWebSocketServer() {
-    this.webSocketServer?.offEvent('interceptors/workers/use/commit', this.commitWorker);
-    this.webSocketServer?.offEvent('interceptors/workers/use/reset', this.resetWorker);
-    await this.webSocketServer?.stop();
-    this.webSocketServer = undefined;
+    const webSocketServer = this.webSocketServerOrThrow();
+
+    webSocketServer.offEvent('interceptors/workers/use/commit', this.commitWorker);
+    webSocketServer.offEvent('interceptors/workers/use/reset', this.resetWorker);
+    await webSocketServer.stop();
+
+    this._webSocketServer = undefined;
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
@@ -208,12 +240,7 @@ class Server implements PublicServer {
   };
 
   private async createResponseForRequest(request: Request) {
-    /* istanbul ignore next -- @preserve
-     * This is not expected since the server is always started before handling requests. */
-    if (!this.webSocketServer) {
-      throw new Error('The web socket server is not running.');
-    }
-
+    const webSocketServer = this.webSocketServerOrThrow();
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
 
     const normalizedURL = createURLIgnoringNonPathComponents(request.url).toString();
@@ -227,7 +254,7 @@ class Server implements PublicServer {
         continue;
       }
 
-      const { response: serializedResponse } = await this.webSocketServer.request(
+      const { response: serializedResponse } = await webSocketServer.request(
         'interceptors/responses/create',
         {
           handlerId: handler.id,
