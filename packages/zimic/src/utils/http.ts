@@ -16,7 +16,7 @@ export class HttpServerStopTimeoutError extends HttpServerTimeoutError {
   }
 }
 
-const DEFAULT_SERVER_LIFECYCLE_TIMEOUT = 15000;
+export const DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT = 15000;
 
 export async function startHttpServer(
   server: HttpServer,
@@ -26,7 +26,7 @@ export async function startHttpServer(
     timeout?: number;
   } = {},
 ) {
-  const { hostname, port, timeout: timeoutInMilliseconds = DEFAULT_SERVER_LIFECYCLE_TIMEOUT } = options;
+  const { hostname, port, timeout: timeoutInMilliseconds = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
 
   await new Promise<void>((resolve, reject) => {
     function handleStartError(error: unknown) {
@@ -51,7 +51,7 @@ export async function startHttpServer(
 }
 
 export async function stopHttpServer(server: HttpServer, options: { timeout?: number } = {}) {
-  const { timeout: timeoutInMilliseconds = DEFAULT_SERVER_LIFECYCLE_TIMEOUT } = options;
+  const { timeout: timeoutInMilliseconds = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
 
   await new Promise<void>((resolve, reject) => {
     const stopTimeout = setTimeout(() => {

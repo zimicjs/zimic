@@ -1,8 +1,4 @@
-import { Server as HttpServer } from 'http';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
-import { waitForDelay } from '@/utils/time';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import Server from '../Server';
 
@@ -79,54 +75,5 @@ describe('Server', () => {
 
     await server.stop();
     expect(server.isRunning()).toBe(false);
-  });
-
-  it('should support having a start timeout', async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const originalListen = HttpServer.prototype.listen;
-
-    vi.spyOn(HttpServer.prototype, 'listen').mockImplementationOnce(function (this: HttpServer, ...args) {
-      void waitForDelay(100).then(() => {
-        originalListen.apply(this, args);
-      });
-      return this;
-    });
-
-    const lifeCycleTimeout = 0;
-
-    server = new Server({ hostname: 'localhost', lifeCycleTimeout });
-    expect(server.isRunning()).toBe(false);
-
-    await expect(async () => {
-      await server!.start();
-    }).rejects.toThrowError(new HttpServerStartTimeoutError(lifeCycleTimeout));
-
-    expect(server.isRunning()).toBe(false);
-  });
-
-  it('should support having a stop timeout', async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const originalClose = HttpServer.prototype.close;
-
-    vi.spyOn(HttpServer.prototype, 'close').mockImplementationOnce(function (this: HttpServer, ...args) {
-      void waitForDelay(100).then(() => {
-        originalClose.apply(this, args);
-      });
-      return this;
-    });
-
-    const lifeCycleTimeout = 0;
-
-    server = new Server({ hostname: 'localhost', lifeCycleTimeout });
-
-    expect(server.isRunning()).toBe(false);
-    await server.start();
-    expect(server.isRunning()).toBe(true);
-
-    await expect(async () => {
-      await server!.stop();
-    }).rejects.toThrowError(new HttpServerStopTimeoutError(lifeCycleTimeout));
-
-    expect(server.isRunning()).toBe(true);
   });
 });

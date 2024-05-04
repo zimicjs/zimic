@@ -1,10 +1,17 @@
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
+import { Server as HttpServer } from 'http';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PossiblePromise } from '@/types/utils';
+import {
+  DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT,
+  HttpServerStartTimeoutError,
+  HttpServerStopTimeoutError,
+} from '@/utils/http';
 import { CommandFailureError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import { waitForDelay } from '@/utils/time';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../cli';
@@ -68,15 +75,19 @@ describe('CLI (server)', () => {
       '                                                                        [string]',
       '',
       'Options:',
-      '      --help       Show help                                           [boolean]',
-      '      --version    Show version number                                 [boolean]',
-      '  -h, --hostname   The hostname to start the server on.',
+      '      --help                Show help                                  [boolean]',
+      '      --version             Show version number                        [boolean]',
+      '  -h, --hostname            The hostname to start the server on.',
       '                                                 [string] [default: "localhost"]',
-      '  -p, --port       The port to start the server on.                     [number]',
-      '  -e, --ephemeral  Whether the server should stop automatically after the on-rea',
-      '                   dy command finishes. If no on-ready command is provided and e',
-      '                   phemeral is true, the server will stop immediately after star',
-      '                   ting.                              [boolean] [default: false]',
+      '  -p, --port                The port to start the server on.            [number]',
+      '  -e, --ephemeral           Whether the server should stop automatically after t',
+      '                            he on-ready command finishes. If no on-ready command',
+      '                             is provided and ephemeral is true, the server will',
+      '                            stop immediately after starting.',
+      '                                                      [boolean] [default: false]',
+      '      --life-cycle-timeout  The maximum time in milliseconds to wait for the ser',
+      '                            ver to start or stop before timing out.',
+      `                                                       [number] [default: ${DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT}]`,
     ].join('\n');
 
     beforeEach(async () => {
@@ -191,6 +202,37 @@ describe('CLI (server)', () => {
       });
     });
 
+    it('should throw an error if the start timeout is reached', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const originalListen = HttpServer.prototype.listen;
+
+      vi.spyOn(HttpServer.prototype, 'listen').mockImplementationOnce(function (this: HttpServer, ...args) {
+        void waitForDelay(200).then(() => {
+          originalListen.apply(this, args);
+        });
+        return this;
+      });
+
+      const lifeCycleTimeout = 50;
+
+      processArgvSpy.mockReturnValue([
+        'node',
+        'cli.js',
+        'server',
+        'start',
+        '--life-cycle-timeout',
+        lifeCycleTimeout.toString(),
+      ]);
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        const startTimeoutError = new HttpServerStartTimeoutError(lifeCycleTimeout);
+        await expect(runCLI()).rejects.toThrowError(startTimeoutError);
+
+        expect(spies.error).toHaveBeenCalledTimes(1);
+        expect(spies.error).toHaveBeenCalledWith(startTimeoutError);
+      });
+    });
+
     it('should stop the server after the on-ready command finishes if ephemeral is true', async () => {
       const temporarySaveFileContent = crypto.randomUUID();
 
@@ -255,6 +297,38 @@ describe('CLI (server)', () => {
 
         const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
         expect(savedFile).toBe(temporarySaveFileContent);
+      });
+    });
+
+    it('should throw an error if the stop timeout is reached', async () => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const originalClose = HttpServer.prototype.close;
+
+      vi.spyOn(HttpServer.prototype, 'close').mockImplementationOnce(function (this: HttpServer, ...args) {
+        void waitForDelay(200).then(() => {
+          originalClose.apply(this, args);
+        });
+        return this;
+      });
+
+      const lifeCycleTimeout = 50;
+
+      processArgvSpy.mockReturnValue([
+        'node',
+        'cli.js',
+        'server',
+        'start',
+        '--ephemeral',
+        '--life-cycle-timeout',
+        lifeCycleTimeout.toString(),
+      ]);
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        const stopTimeoutError = new HttpServerStopTimeoutError(lifeCycleTimeout);
+        await expect(runCLI()).rejects.toThrowError(stopTimeoutError);
+
+        expect(spies.error).toHaveBeenCalledTimes(1);
+        expect(spies.error).toHaveBeenCalledWith(stopTimeoutError);
       });
     });
 

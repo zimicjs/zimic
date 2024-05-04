@@ -3,6 +3,8 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
+import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@/utils/http';
+
 import initializeBrowserServiceWorker from './browser/init';
 import startServer from './server/start';
 
@@ -59,6 +61,12 @@ async function runCLI() {
                 'starting.',
               alias: 'e',
               default: false,
+            })
+            .option('life-cycle-timeout', {
+              type: 'number',
+              description:
+                'The maximum time in milliseconds to wait for the server to start or stop before timing out.',
+              default: DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT,
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();
@@ -68,6 +76,7 @@ async function runCLI() {
             hostname: cliArguments.hostname,
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
+            lifeCycleTimeout: cliArguments.lifeCycleTimeout,
             onReady: onReadyCommand
               ? {
                   command: onReadyCommand.toString(),
