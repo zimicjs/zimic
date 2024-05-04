@@ -19,8 +19,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sockets = new Set<ClientSocket>();
 
   private _crypto?: IsomorphicCrypto;
-  protected readonly socketTimeout: number;
-  protected readonly messageTimeout: number;
+  private _socketTimeout: number;
+  private _messageTimeout: number;
 
   private listeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: {
@@ -30,8 +30,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   } = {};
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
-    this.socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
-    this.messageTimeout = options.messageTimeout ?? DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
+    this._socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
+    this._messageTimeout = options.messageTimeout ?? DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
   }
 
   abstract isRunning(): boolean;
@@ -43,8 +43,16 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return this._crypto;
   }
 
+  socketTimeout() {
+    return this._socketTimeout;
+  }
+
+  messageTimeout() {
+    return this._messageTimeout;
+  }
+
   protected async registerSocket(socket: ClientSocket) {
-    const openPromise = waitForOpenClientSocket(socket, { timeout: this.socketTimeout });
+    const openPromise = waitForOpenClientSocket(socket, { timeout: this._socketTimeout });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
       await this.handleSocketMessage(socket, rawMessage);
@@ -169,7 +177,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   protected async closeClientSockets(sockets: Collection<ClientSocket> = this.sockets) {
     const closingPromises = Array.from(sockets, async (socket) => {
-      await closeClientSocket(socket, { timeout: this.socketTimeout });
+      await closeClientSocket(socket, { timeout: this._socketTimeout });
     });
     await Promise.all(closingPromises);
   }
@@ -223,9 +231,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   ) {
     return new Promise<WebSocket.ServiceReplyMessage<Schema, Channel>>((resolve, reject) => {
       const replyTimeout = setTimeout(() => {
-        const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
+        const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
         reject(timeoutError);
-      }, this.messageTimeout);
+      }, this._messageTimeout);
 
       const listener = this.onReply(channel, (message) => {
         if (message.requestId === requestId) {
@@ -290,9 +298,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const messageTimeout = setTimeout(() => {
-        const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
+        const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
         reject(timeoutError);
-      }, this.messageTimeout);
+      }, this._messageTimeout);
 
       if (isClientSide()) {
         socket.send(stringifiedMessage);

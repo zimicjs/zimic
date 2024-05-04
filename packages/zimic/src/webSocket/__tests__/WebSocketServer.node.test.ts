@@ -115,6 +115,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 20;
         server = new WebSocketServer({ httpServer, socketTimeout });
+        expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
 
         await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
@@ -148,6 +149,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 20;
         server = new WebSocketServer({ httpServer, socketTimeout });
+        expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
 
         await usingIgnoredConsole(['error'], async (spies) => {
@@ -170,6 +172,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 20;
         server = new WebSocketServer({ httpServer, socketTimeout });
+        expect(server.socketTimeout()).toBe(socketTimeout);
         server.start();
 
         rawClient = new ClientSocket(`ws://localhost:${port}`);
@@ -220,6 +223,7 @@ describe('Web socket server', async () => {
       try {
         const messageTimeout = 20;
         server = new WebSocketServer({ httpServer, messageTimeout });
+        expect(server.messageTimeout()).toBe(messageTimeout);
         server.start();
 
         rawClient = new ClientSocket(`ws://localhost:${port}`);
@@ -301,6 +305,7 @@ describe('Web socket server', async () => {
     it('should throw an error if the reply request timeout is reached', async () => {
       const messageTimeout = 20;
       server = new WebSocketServer({ httpServer, messageTimeout });
+      expect(server.messageTimeout()).toBe(messageTimeout);
       server.start();
 
       rawClient = new ClientSocket(`ws://localhost:${port}`);

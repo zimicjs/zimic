@@ -16,7 +16,7 @@ export class HttpServerStopTimeoutError extends HttpServerTimeoutError {
   }
 }
 
-export const DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT = 15000;
+export const DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT = 15 * 1000;
 
 export async function startHttpServer(
   server: HttpServer,

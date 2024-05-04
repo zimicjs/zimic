@@ -1,21 +1,17 @@
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
-import { Server as HttpServer } from 'http';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT, DEFAULT_SERVER_RPC_TIMEOUT } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import {
-  DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT,
-  HttpServerStartTimeoutError,
-  HttpServerStopTimeoutError,
-} from '@/utils/http';
+import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandFailureError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
-import { waitForDelay } from '@/utils/time';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../cli';
 import { singletonServer as server } from '../server/start';
+import { delayToHttpServerListen, delayToHttpServerClose } from './utils';
 
 describe('CLI (server)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
@@ -87,7 +83,10 @@ describe('CLI (server)', () => {
       '                                                      [boolean] [default: false]',
       '      --life-cycle-timeout  The maximum time in milliseconds to wait for the ser',
       '                            ver to start or stop before timing out.',
-      `                                                       [number] [default: ${DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT}]`,
+      `                                                       [number] [default: ${DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT}]`,
+      '      --rpc-timeout         The maximum time in milliseconds to wait for interce',
+      '                            ptor remote procedure calls before timing out.',
+      `                                                      [number] [default: ${DEFAULT_SERVER_RPC_TIMEOUT}]`,
     ].join('\n');
 
     beforeEach(async () => {
@@ -202,19 +201,28 @@ describe('CLI (server)', () => {
       });
     });
 
-    it('should throw an error if the start timeout is reached', async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const originalListen = HttpServer.prototype.listen;
+    it('should start the server with a default timeouts when not provided', async () => {
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
 
-      vi.spyOn(HttpServer.prototype, 'listen').mockImplementationOnce(function (this: HttpServer, ...args) {
-        void waitForDelay(200).then(() => {
-          originalListen.apply(this, args);
-        });
-        return this;
+      await usingIgnoredConsole(['log'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBeGreaterThan(0);
+        expect(server?.lifeCycleTimeout()).toBe(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
+        expect(server!.rpcTimeout()).toBe(DEFAULT_SERVER_RPC_TIMEOUT);
+
+        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.log).toHaveBeenCalledWith(
+          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+        );
       });
+    });
 
-      const lifeCycleTimeout = 50;
-
+    it('should start the server with a custom life cycle timeout when provided', async () => {
+      const lifeCycleTimeout = 1000;
       processArgvSpy.mockReturnValue([
         'node',
         'cli.js',
@@ -224,13 +232,69 @@ describe('CLI (server)', () => {
         lifeCycleTimeout.toString(),
       ]);
 
-      await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const startTimeoutError = new HttpServerStartTimeoutError(lifeCycleTimeout);
-        await expect(runCLI()).rejects.toThrowError(startTimeoutError);
+      await usingIgnoredConsole(['log'], async (spies) => {
+        await runCLI();
 
-        expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(startTimeoutError);
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBeGreaterThan(0);
+        expect(server?.lifeCycleTimeout()).toBe(lifeCycleTimeout);
+        expect(server!.rpcTimeout()).toBe(DEFAULT_SERVER_RPC_TIMEOUT);
+
+        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.log).toHaveBeenCalledWith(
+          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+        );
       });
+    });
+
+    it('should start the server with a custom RPC timeout when provided', async () => {
+      const rpcTimeout = 1000;
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--rpc-timeout', rpcTimeout.toString()]);
+
+      await usingIgnoredConsole(['log'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBeGreaterThan(0);
+        expect(server?.lifeCycleTimeout()).toBe(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
+        expect(server!.rpcTimeout()).toBe(rpcTimeout);
+
+        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.log).toHaveBeenCalledWith(
+          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+        );
+      });
+    });
+
+    it('should throw an error if the start timeout is reached', async () => {
+      const delayedListen = delayToHttpServerListen(200);
+
+      try {
+        const lifeCycleTimeout = 50;
+
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'server',
+          'start',
+          '--life-cycle-timeout',
+          lifeCycleTimeout.toString(),
+        ]);
+
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
+          const timeoutError = new HttpServerStartTimeoutError(lifeCycleTimeout);
+          await expect(runCLI()).rejects.toThrowError(timeoutError);
+
+          expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.error).toHaveBeenCalledWith(timeoutError);
+        });
+      } finally {
+        delayedListen.mockRestore();
+      }
     });
 
     it('should stop the server after the on-ready command finishes if ephemeral is true', async () => {
@@ -301,35 +365,31 @@ describe('CLI (server)', () => {
     });
 
     it('should throw an error if the stop timeout is reached', async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      const originalClose = HttpServer.prototype.close;
+      const delayedClose = delayToHttpServerClose(200);
 
-      vi.spyOn(HttpServer.prototype, 'close').mockImplementationOnce(function (this: HttpServer, ...args) {
-        void waitForDelay(200).then(() => {
-          originalClose.apply(this, args);
+      try {
+        const lifeCycleTimeout = 50;
+
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'server',
+          'start',
+          '--ephemeral',
+          '--life-cycle-timeout',
+          lifeCycleTimeout.toString(),
+        ]);
+
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
+          const timeoutError = new HttpServerStopTimeoutError(lifeCycleTimeout);
+          await expect(runCLI()).rejects.toThrowError(timeoutError);
+
+          expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.error).toHaveBeenCalledWith(timeoutError);
         });
-        return this;
-      });
-
-      const lifeCycleTimeout = 50;
-
-      processArgvSpy.mockReturnValue([
-        'node',
-        'cli.js',
-        'server',
-        'start',
-        '--ephemeral',
-        '--life-cycle-timeout',
-        lifeCycleTimeout.toString(),
-      ]);
-
-      await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const stopTimeoutError = new HttpServerStopTimeoutError(lifeCycleTimeout);
-        await expect(runCLI()).rejects.toThrowError(stopTimeoutError);
-
-        expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(stopTimeoutError);
-      });
+      } finally {
+        delayedClose.mockRestore();
+      }
     });
 
     it('should throw an error if the on-ready command executable is not found', async () => {

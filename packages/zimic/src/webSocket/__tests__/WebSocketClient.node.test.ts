@@ -116,6 +116,7 @@ describe('Web socket client', async () => {
       try {
         const socketTimeout = 20;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
+        expect(client.socketTimeout()).toBe(socketTimeout);
 
         await expect(client.start()).rejects.toThrowError(new WebSocketOpenTimeoutError(socketTimeout));
       } finally {
@@ -129,6 +130,7 @@ describe('Web socket client', async () => {
       try {
         const socketTimeout = 20;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
+        expect(client.socketTimeout()).toBe(socketTimeout);
         await client.start();
 
         await expect(client.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
@@ -178,6 +180,7 @@ describe('Web socket client', async () => {
       try {
         const messageTimeout = 20;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
+        expect(client.messageTimeout()).toBe(messageTimeout);
         await client.start();
 
         await expect(client.send('no-reply', { message: 'test' })).rejects.toThrowError(
@@ -261,6 +264,7 @@ describe('Web socket client', async () => {
     it('should throw an error if a reply request timeout is reached', async () => {
       const messageTimeout = 20;
       client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
+      expect(client.messageTimeout()).toBe(messageTimeout);
       await client.start();
 
       type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
