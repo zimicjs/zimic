@@ -62,7 +62,8 @@ describe('CLI (server)', async () => {
   });
 
   describe('start', () => {
-    const temporarySaveFile = path.join('tmp', 'tmp.txt');
+    const temporarySaveDirectory = path.resolve('tmp');
+    const temporarySaveFile = path.join(temporarySaveDirectory, 'tmp.txt');
 
     const serverStartHelpOutput = [
       'zimic server start [-- onReady]',
@@ -93,6 +94,7 @@ describe('CLI (server)', async () => {
     ].join('\n');
 
     beforeEach(async () => {
+      await filesystem.mkdir(temporarySaveDirectory, { recursive: true });
       await filesystem.rm(temporarySaveFile, { force: true });
     });
 
