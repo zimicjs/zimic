@@ -12,7 +12,7 @@ import { Prettify } from '@/types/utils';
 
 import { createHttpInterceptor } from '../../factory';
 import { ExtractHttpInterceptorSchema } from '../../types/schema';
-import { SharedHttpInterceptorTestsOptions } from './interceptorTests';
+import { SharedHttpInterceptorTestsOptions } from './types';
 
 export function declareTypeHttpInterceptorTests({ platform }: SharedHttpInterceptorTestsOptions) {
   const worker = createHttpInterceptorWorker({

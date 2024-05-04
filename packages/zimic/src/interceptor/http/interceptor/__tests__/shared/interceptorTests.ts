@@ -3,18 +3,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { HttpMethod } from '@/http/types/schema';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
-import {
-  HttpInterceptorWorkerOptions,
-  HttpInterceptorWorkerPlatform,
-  HttpInterceptorWorkerType,
-} from '@/interceptor/http/interceptorWorker/types/options';
-import { PossiblePromise } from '@/types/utils';
+import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
 import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
-import { AccessResources } from '@tests/utils/workers';
 
 import UnknownHttpInterceptorWorkerError from '../../errors/UnknownHttpInterceptorWorkerError';
 import { createHttpInterceptor } from '../../factory';
-import { HttpInterceptorOptions } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
@@ -23,22 +16,8 @@ import { declareOptionsHttpInterceptorTests } from './methods/options';
 import { declarePatchHttpInterceptorTests } from './methods/patch';
 import { declarePostHttpInterceptorTests } from './methods/post';
 import { declarePutHttpInterceptorTests } from './methods/put';
+import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOptions } from './types';
 import { declareTypeHttpInterceptorTests } from './typescript';
-
-export interface SharedHttpInterceptorTestsOptions {
-  platform: HttpInterceptorWorkerPlatform;
-  startServer?: () => PossiblePromise<void>;
-  getAccessResources: (type: HttpInterceptorWorkerType) => Promise<AccessResources>;
-  stopServer?: () => PossiblePromise<void>;
-}
-
-export interface RuntimeSharedHttpInterceptorTestsOptions extends SharedHttpInterceptorTestsOptions {
-  type: HttpInterceptorWorkerType;
-  getWorker: () => LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
-  getBaseURL: () => string;
-  getPathPrefix: () => string;
-  getInterceptorOptions: () => HttpInterceptorOptions;
-}
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { platform, startServer, getAccessResources, stopServer } = options;

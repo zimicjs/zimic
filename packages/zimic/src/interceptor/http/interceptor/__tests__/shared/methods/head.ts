@@ -12,7 +12,7 @@ import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
 export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getWorker, getInterceptorOptions } = options;

@@ -14,7 +14,7 @@ import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/ut
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../interceptorTests';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
 export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, getBaseURL, getWorker, getInterceptorOptions } = options;

@@ -9,7 +9,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
 import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './interceptorTests';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getPathPrefix, getWorker, getInterceptorOptions } = options;
