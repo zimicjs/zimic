@@ -1,27 +1,24 @@
 import { describe } from 'vitest';
-import { HttpInterceptorWorkerOptions, HttpInterceptorWorkerPlatform } from 'zimic0/interceptor';
+import { HttpInterceptorPlatform, HttpInterceptorType } from 'zimic0/interceptor';
 
 import declareDefaultClientTests from './default';
 
-const ZIMIC_SERVER_PORT = 4000;
+export const ZIMIC_SERVER_PORT = 4000;
 
 export interface ClientTestOptions {
-  platform: HttpInterceptorWorkerPlatform;
+  platform: HttpInterceptorPlatform;
   fetch: (request: Request) => Promise<Response>;
 }
 
 export interface ClientTestOptionsByWorkerType extends ClientTestOptions {
-  workerOptions: HttpInterceptorWorkerOptions;
+  type: HttpInterceptorType;
 }
 
 function declareClientTests(options: ClientTestOptions) {
-  const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
-    { type: 'local' },
-    { type: 'remote', serverURL: `http://localhost:${ZIMIC_SERVER_PORT}` },
-  ];
+  const interceptorTypes: HttpInterceptorType[] = ['local', 'remote'];
 
-  describe.each(workerOptionsArray)('Default (type $type)', async (workerOptions) => {
-    await declareDefaultClientTests({ ...options, workerOptions });
+  describe.each(interceptorTypes)('Default (type %s)', async (type) => {
+    await declareDefaultClientTests({ ...options, type });
   });
 }
 

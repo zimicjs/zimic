@@ -30,19 +30,12 @@ import {
   type NonLiteralHttpServiceSchemaPath,
 } from 'zimic0';
 import {
-  createHttpInterceptorWorker,
-  type HttpInterceptorWorker,
-  type LocalHttpInterceptorWorker,
-  type RemoteHttpInterceptorWorker,
-  type HttpInterceptorWorkerOptions,
-  type LocalHttpInterceptorWorkerOptions,
-  type RemoteHttpInterceptorWorkerOptions,
-  type HttpInterceptorWorkerType,
-  type HttpInterceptorWorkerPlatform,
   createHttpInterceptor,
   type HttpInterceptor,
   type LocalHttpInterceptor,
   type RemoteHttpInterceptor,
+  type HttpInterceptorPlatform,
+  type HttpInterceptorType,
   type HttpInterceptorOptions,
   type LocalHttpInterceptorOptions,
   type RemoteHttpInterceptorOptions,
@@ -57,9 +50,8 @@ import {
   type PendingRemoteHttpRequestTracker,
   type HttpRequestTrackerResponseDeclaration,
   type HttpRequestTrackerResponseDeclarationFactory,
-  UnknownHttpInterceptorWorkerPlatform,
-  NotStartedHttpInterceptorWorkerError,
-  OtherHttpInterceptorWorkerRunningError,
+  UnknownHttpInterceptorPlatform,
+  NotStartedHttpInterceptorError,
   UnregisteredServiceWorkerError,
 } from 'zimic0/interceptor';
 
@@ -110,22 +102,13 @@ describe('Exports', () => {
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
 
-    expectTypeOf(createHttpInterceptorWorker).not.toBeAny();
-    expect(typeof createHttpInterceptorWorker).toBe('function');
-    expectTypeOf<HttpInterceptorWorker>().not.toBeAny();
-    expectTypeOf<LocalHttpInterceptorWorker>().not.toBeAny();
-    expectTypeOf<RemoteHttpInterceptorWorker>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorkerOptions>().not.toBeAny();
-    expectTypeOf<LocalHttpInterceptorWorkerOptions>().not.toBeAny();
-    expectTypeOf<RemoteHttpInterceptorWorkerOptions>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorkerType>().not.toBeAny();
-    expectTypeOf<HttpInterceptorWorkerPlatform>().not.toBeAny();
-
     expectTypeOf(createHttpInterceptor).not.toBeAny();
     expect(typeof createHttpInterceptor).toBe('function');
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorPlatform>().not.toBeAny();
+    expectTypeOf<HttpInterceptorType>().not.toBeAny();
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
@@ -142,12 +125,10 @@ describe('Exports', () => {
     expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
 
-    expectTypeOf<UnknownHttpInterceptorWorkerPlatform>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorWorkerPlatform).toBe('function');
-    expectTypeOf<NotStartedHttpInterceptorWorkerError>().not.toBeAny();
-    expect(typeof NotStartedHttpInterceptorWorkerError).toBe('function');
-    expectTypeOf<OtherHttpInterceptorWorkerRunningError>().not.toBeAny();
-    expect(typeof OtherHttpInterceptorWorkerRunningError).toBe('function');
+    expectTypeOf<UnknownHttpInterceptorPlatform>().not.toBeAny();
+    expect(typeof UnknownHttpInterceptorPlatform).toBe('function');
+    expectTypeOf<NotStartedHttpInterceptorError>().not.toBeAny();
+    expect(typeof NotStartedHttpInterceptorError).toBe('function');
     expectTypeOf<UnregisteredServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredServiceWorkerError).toBe('function');
   });
