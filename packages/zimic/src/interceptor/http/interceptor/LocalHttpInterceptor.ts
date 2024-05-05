@@ -1,23 +1,29 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
+import { validatedURL } from '@/utils/fetch';
 
-import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
-import { PublicLocalHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
-import HttpInterceptorClient from './HttpInterceptorClient';
+import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import LocalHttpInterceptorStore from './LocalHttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
-import { PublicLocalHttpInterceptor } from './types/public';
+import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
   readonly type = 'local';
-
+  private store = new LocalHttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
+    const baseURL = validatedURL(options.baseURL, {
+      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+    });
+
+    const worker = this.store.getOrCreateWorker();
+
     this._client = new HttpInterceptorClient<Schema>({
-      worker: options.worker satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker,
+      worker,
       Tracker: LocalHttpRequestTracker,
-      baseURL: options.baseURL,
+      baseURL,
     });
   }
 
@@ -27,6 +33,22 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
 
   baseURL() {
     return this._client.baseURL();
+  }
+
+  platform() {
+    return this._client.platform();
+  }
+
+  isRunning() {
+    return this._client.isRunning();
+  }
+
+  async start() {
+    await this._client.start();
+  }
+
+  async stop() {
+    await this._client.stop();
   }
 
   get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {

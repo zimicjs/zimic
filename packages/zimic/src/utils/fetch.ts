@@ -1,12 +1,16 @@
 import { JSONValue } from '..';
 
+export interface ExtendedURL extends URL {
+  raw: string;
+}
+
 export function validatedURL(
   rawURL: string,
   options: {
     protocols: string[];
   },
 ) {
-  const url = new URL(rawURL);
+  const url = new URL(rawURL) as ExtendedURL;
 
   const protocol = url.protocol.replace(/:$/, '');
 
@@ -14,11 +18,17 @@ export function validatedURL(
     throw new TypeError(`Expected URL with protocol (${options.protocols.join('|')}), but got '${protocol}'`);
   }
 
-  return rawURL;
+  Object.defineProperty(url, 'raw', {
+    value: rawURL,
+    writable: false,
+    enumerable: true,
+    configurable: false,
+  });
+
+  return url;
 }
 
-export function createURLIgnoringNonPathComponents(rawURL: string) {
-  const url = new URL(rawURL);
+export function excludeDynamicParams(url: URL) {
   url.hash = '';
   url.search = '';
   url.username = '';

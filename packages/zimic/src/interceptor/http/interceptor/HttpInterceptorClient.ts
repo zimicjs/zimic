@@ -7,15 +7,17 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { joinURL, validatedURL } from '@/utils/fetch';
+import { ExtendedURL, joinURL } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
 import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
 import HttpRequestTrackerClient, { AnyHttpRequestTrackerClient } from '../requestTracker/HttpRequestTrackerClient';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
-import { PublicHttpRequestTracker } from '../requestTracker/types/public';
+import { HttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
+import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
@@ -25,7 +27,8 @@ class HttpInterceptorClient<
   TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
 > {
   private worker: HttpInterceptorWorker;
-  private _baseURL: string;
+  private _baseURL: ExtendedURL;
+  private _isRunning = false;
 
   private Tracker: TrackerConstructor;
 
@@ -41,16 +44,39 @@ class HttpInterceptorClient<
     OPTIONS: new Map(),
   };
 
-  constructor(options: { worker: HttpInterceptorWorker; baseURL: string; Tracker: TrackerConstructor }) {
+  constructor(options: { worker: HttpInterceptorWorker; baseURL: ExtendedURL; Tracker: TrackerConstructor }) {
     this.worker = options.worker;
-    this._baseURL = validatedURL(options.baseURL, {
-      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
-    });
+    this._baseURL = options.baseURL;
     this.Tracker = options.Tracker;
   }
 
   baseURL() {
-    return this._baseURL;
+    return this._baseURL.raw;
+  }
+
+  platform() {
+    return this.worker.platform();
+  }
+
+  rpcTimeout() {
+    if (this.worker instanceof RemoteHttpInterceptorWorker) {
+      return this.worker.rpcTimeout();
+    }
+    return undefined;
+  }
+
+  isRunning() {
+    return this.worker.isRunning() && this._isRunning;
+  }
+
+  async start() {
+    await this.worker.start();
+    this._isRunning = true;
+  }
+
+  async stop() {
+    await this.worker.stop();
+    this._isRunning = false;
   }
 
   get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
@@ -84,7 +110,11 @@ class HttpInterceptorClient<
   private createHttpRequestTracker<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
-  >(method: Method, path: Path): PublicHttpRequestTracker<Schema, Method, Path> {
+  >(method: Method, path: Path): HttpRequestTracker<Schema, Method, Path> {
+    if (!this.isRunning()) {
+      throw new NotStartedHttpInterceptorError();
+    }
+
     const tracker = new this.Tracker<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
     this.registerRequestTracker(tracker);
     return tracker;
@@ -160,12 +190,20 @@ class HttpInterceptorClient<
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   HttpRequestTrackerClient<Schema, Method, Path, any> | undefined {
+    if (!this.isRunning()) {
+      return undefined;
+    }
+
     const methodPathTrackers = this.trackerClientsByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;
   }
 
-  clear(options: { onCommit?: () => void } = {}) {
+  clear(options: { onCommit?: () => void; onCommitError?: () => void } = {}) {
+    if (!this.isRunning()) {
+      throw new NotStartedHttpInterceptorError();
+    }
+
     const clearResults: PossiblePromise<AnyHttpRequestTrackerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {
@@ -177,7 +215,7 @@ class HttpInterceptorClient<
     clearResults.push(clearResult);
 
     if (options.onCommit) {
-      void Promise.all(clearResults).then(options.onCommit);
+      void Promise.all(clearResults).then(options.onCommit, options.onCommitError);
     }
   }
 

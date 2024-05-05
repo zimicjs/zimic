@@ -5,13 +5,45 @@ import {
   SyncHttpInterceptorMethodHandler,
   AsyncHttpInterceptorMethodHandler,
 } from './handlers';
+import { HttpInterceptorPlatform } from './options';
 
-export interface PublicBaseHttpInterceptor<Schema extends HttpServiceSchema> {
+export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/diego-aquino/zimic#interceptorbaseurl}
    */
   baseURL: () => string;
+
+  /**
+   * @returns The platform the interceptor is running on.
+   * @see {@link https://github.com/diego-aquino/zimic#interceptorplatform}
+   */
+  platform: () => HttpInterceptorPlatform | null;
+
+  /**
+   * @returns Whether the interceptor is currently running and ready to use.
+   * @see {@link https://github.com/diego-aquino/zimic#interceptorisrunning}
+   */
+  isRunning: () => boolean;
+
+  /**
+   * Starts the interceptor, allowing it to intercept HTTP requests.
+   *
+   * When targeting a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal
+   * before starting the worker. This initializes the mock service worker in your public directory.
+   *
+   * @throws {UnregisteredServiceWorkerError} When the worker is targeting a browser environment and the mock service
+   *   worker is not registered.
+   * @see {@link https://github.com/diego-aquino/zimic#interceptorstart}
+   */
+  start: () => Promise<void>;
+
+  /**
+   * Stops the interceptor, preventing it from intercepting HTTP requests.
+   *
+   * @see {@link https://github.com/diego-aquino/zimic#interceptorstop}
+   */
+  stop: () => Promise<void>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -105,8 +137,7 @@ export interface PublicBaseHttpInterceptor<Schema extends HttpServiceSchema> {
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor}
  */
 
-export interface PublicLocalHttpInterceptor<Schema extends HttpServiceSchema>
-  extends PublicBaseHttpInterceptor<Schema> {
+export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends HttpInterceptor<Schema> {
   readonly type: 'local';
 
   get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -120,11 +151,10 @@ export interface PublicLocalHttpInterceptor<Schema extends HttpServiceSchema>
   clear: () => void;
 }
 
-export interface PublicRemoteHttpInterceptor<Schema extends HttpServiceSchema>
-  extends PublicBaseHttpInterceptor<Schema> {
+export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends HttpInterceptor<Schema> {
   readonly type: 'remote';
 
-  pathPrefix: () => string;
+  rcpTimeout: () => number | undefined;
 
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
   post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
@@ -136,7 +166,3 @@ export interface PublicRemoteHttpInterceptor<Schema extends HttpServiceSchema>
 
   clear: () => Promise<void>;
 }
-
-export type PublicHttpInterceptor<Schema extends HttpServiceSchema> =
-  | PublicLocalHttpInterceptor<Schema>
-  | PublicRemoteHttpInterceptor<Schema>;

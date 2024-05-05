@@ -8,17 +8,16 @@ import {
 
 import { HttpBody } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { createURLIgnoringNonPathComponents } from '@/utils/fetch';
+import { excludeDynamicParams } from '@/utils/fetch';
 
+import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
+import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
-import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { PublicLocalHttpInterceptorWorker } from './types/public';
 import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
-class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements PublicLocalHttpInterceptorWorker {
+class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type = 'local';
 
   private _internalWorker?: HttpWorker;
@@ -30,7 +29,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
 
   internalWorkerOrThrow() {
     if (!this._internalWorker) {
-      throw new NotStartedHttpInterceptorWorkerError();
+      throw new NotStartedHttpInterceptorError();
     }
     return this._internalWorker;
   }
@@ -56,15 +55,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
 
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
-    throw new UnknownHttpInterceptorWorkerPlatform();
+    throw new UnknownHttpInterceptorPlatform();
   }
 
   async start() {
     if (super.isRunning()) {
       return;
     }
-
-    super.ensureEmptyRunningInstance();
 
     const internalWorker = await this.internalWorkerOrLoad();
     const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
@@ -77,7 +74,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
       this.startInNode(internalWorker, sharedOptions);
     }
 
-    super.markAsRunningInstance();
     super.setIsRunning(true);
   }
 
@@ -114,9 +110,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
     }
 
     this.clearHandlers();
-
     super.setIsRunning(false);
-    super.clearRunningInstance();
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {
@@ -142,15 +136,15 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker implements Public
   use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    url: string,
+    rawURL: string,
     createResponse: HttpResponseFactory,
   ) {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
+    const url = excludeDynamicParams(new URL(rawURL)).toString();
 
-    const httpHandler = http[lowercaseMethod](normalizedURL, async (context) => {
+    const httpHandler = http[lowercaseMethod](url, async (context) => {
       const result = await createResponse({
         ...context,
         request: context.request as MSWStrictRequest<HttpBody>,

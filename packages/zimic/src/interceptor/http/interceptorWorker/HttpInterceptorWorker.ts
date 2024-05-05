@@ -13,27 +13,24 @@ import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
-import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
-import { HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
-  private static runningInstance?: HttpInterceptorWorker;
-
-  private _platform: HttpInterceptorWorkerPlatform | null = null;
+  private _platform: HttpInterceptorPlatform | null = null;
   private _isRunning = false;
 
   platform() {
     return this._platform;
   }
 
-  protected setPlatform(platform: HttpInterceptorWorkerPlatform) {
+  protected setPlatform(platform: HttpInterceptorPlatform) {
     this._platform = platform;
   }
 
@@ -46,20 +43,6 @@ abstract class HttpInterceptorWorker {
   }
 
   abstract start(): Promise<void>;
-
-  protected ensureEmptyRunningInstance() {
-    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
-      throw new OtherHttpInterceptorWorkerRunningError();
-    }
-  }
-
-  protected markAsRunningInstance() {
-    HttpInterceptorWorker.runningInstance = this;
-  }
-
-  protected clearRunningInstance() {
-    HttpInterceptorWorker.runningInstance = undefined;
-  }
 
   abstract stop(): Promise<void>;
 

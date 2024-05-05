@@ -1,11 +1,10 @@
+import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { PossiblePromise } from '@/types/utils';
 import { AccessResources } from '@tests/utils/workers';
 
-import { HttpInterceptorWorkerPlatform, HttpInterceptorWorkerType } from '../../types/options';
-
 export interface SharedHttpInterceptorWorkerTestOptions {
-  platform: HttpInterceptorWorkerPlatform;
+  platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
-  getAccessResources: (type: HttpInterceptorWorkerType) => Promise<AccessResources>;
+  getAccessResources: (type: HttpInterceptorType) => Promise<AccessResources>;
   stopServer?: () => PossiblePromise<void>;
 }

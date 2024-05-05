@@ -3,12 +3,7 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import {
-  createRegexFromURL,
-  createURLIgnoringNonPathComponents,
-  deserializeResponse,
-  serializeRequest,
-} from '@/utils/fetch';
+import { createRegexFromURL, excludeDynamicParams, deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
@@ -20,7 +15,7 @@ import {
   DEFAULT_SERVER_RPC_TIMEOUT,
 } from './constants';
 import NotStartedServerError from './errors/NotStartedServerError';
-import { PublicServer } from './types/public';
+import { Server as PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
 export interface ServerOptions {
@@ -178,14 +173,14 @@ class Server implements PublicServer {
     return {};
   };
 
-  private registerHttpHandlerGroup({ id, url, method }: HttpHandlerCommit, socket: Socket) {
+  private registerHttpHandlerGroup({ id, url: rawURL, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
+    const url = excludeDynamicParams(new URL(rawURL)).toString();
 
     handlerGroups.push({
       id,
-      url: { regex: createRegexFromURL(normalizedURL) },
+      url: { regex: createRegexFromURL(url) },
       socket,
     });
   }
@@ -264,13 +259,13 @@ class Server implements PublicServer {
     const webSocketServer = this.webSocketServer();
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const normalizedURL = createURLIgnoringNonPathComponents(request.url).toString();
+    const url = excludeDynamicParams(new URL(request.url)).toString();
     const serializedRequest = await serializeRequest(request);
 
     for (let index = handlerGroup.length - 1; index >= 0; index--) {
       const handler = handlerGroup[index];
 
-      const matchesHandlerURL = handler.url.regex.test(normalizedURL);
+      const matchesHandlerURL = handler.url.regex.test(url);
       if (!matchesHandlerURL) {
         continue;
       }
