@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, afterAll } from '@jest/globals';
 import supertest from 'supertest';
 
 import app, { GitHubRepository } from '../src/app';
-import githubInterceptor from './interceptors/githubInterceptor';
+import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {
   beforeAll(async () => {

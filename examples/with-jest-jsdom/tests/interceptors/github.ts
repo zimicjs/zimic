@@ -1,7 +1,6 @@
 import { createHttpInterceptor } from 'zimic/interceptor';
 
 import { GITHUB_API_BASE_URL, GitHubRepository } from '../../src/app';
-import interceptorWorker from './worker';
 
 const githubInterceptor = createHttpInterceptor<{
   '/repos/:owner/:name': {
@@ -13,7 +12,7 @@ const githubInterceptor = createHttpInterceptor<{
     };
   };
 }>({
-  worker: interceptorWorker,
+  type: 'local',
   baseURL: GITHUB_API_BASE_URL,
 });
 
