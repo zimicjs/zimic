@@ -9,10 +9,10 @@ export const PROCESS_EXIT_EVENTS = [
   'SIGBREAK',
 ] as const;
 
-export class CommandFailureError extends Error {
+export class CommandError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
     super(`The command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);
-    this.name = 'CommandFailureError';
+    this.name = 'CommandError';
   }
 }
 
@@ -35,7 +35,7 @@ export async function runCommand(command: string, commandArguments: string[]) {
         return;
       }
 
-      const failureError = new CommandFailureError(command, exitCode, signal);
+      const failureError = new CommandError(command, exitCode, signal);
       reject(failureError);
     });
   });

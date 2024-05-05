@@ -7,7 +7,7 @@ import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT, DEFAULT_SERVER_RPC_TIMEOUT } from '@
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
-import { CommandFailureError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../cli';
@@ -427,7 +427,7 @@ describe('CLI (server)', async () => {
         await expect(runCLI()).rejects.toThrowError(`The command 'node' exited with code ${exitCode}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(new CommandFailureError('node', exitCode, null));
+        expect(spies.error).toHaveBeenCalledWith(new CommandError('node', exitCode, null));
       });
     });
 
@@ -450,7 +450,7 @@ describe('CLI (server)', async () => {
         await expect(runCLI()).rejects.toThrowError(`The command 'node' exited after signal ${signal}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(new CommandFailureError('node', null, signal));
+        expect(spies.error).toHaveBeenCalledWith(new CommandError('node', null, signal));
       });
     });
 
