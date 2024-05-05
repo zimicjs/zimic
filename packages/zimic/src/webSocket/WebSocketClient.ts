@@ -5,6 +5,8 @@ import { validatedURL } from '@/utils/fetch';
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
+const SUPPORTED_WEB_SOCKET_PROTOCOLS = ['ws', 'wss'];
+
 interface WebSocketClientOptions {
   url: string;
   socketTimeout?: number;
@@ -12,7 +14,7 @@ interface WebSocketClientOptions {
 }
 
 class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
-  private url: string;
+  private url: URL;
 
   private socket?: ClientSocket;
 
@@ -23,7 +25,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     });
 
     this.url = validatedURL(options.url, {
-      protocols: ['ws'],
+      protocols: SUPPORTED_WEB_SOCKET_PROTOCOLS,
     });
   }
 
