@@ -114,10 +114,13 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       // @ts-expect-error Testing invalid type.
       const unknownType: HttpInterceptorType = 'unknown';
 
+      const error = new UnknownHttpInterceptorTypeError(unknownType);
+      expect(error).toBeInstanceOf(TypeError);
+
       expect(() => {
         // @ts-expect-error Testing invalid type.
         createHttpInterceptorWorker({ type: unknownType });
-      }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
+      }).toThrowError(error);
     });
 
     it('should throw an error if trying to clear handler without a started worker', async () => {

@@ -203,9 +203,12 @@ export function declareDefaultHttpRequestTrackerTests(
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
+    const error = new NoResponseDefinitionError();
+    expect(error).toBeInstanceOf(TypeError);
+
     await expect(async () => {
       await tracker.applyResponseDeclaration(parsedRequest);
-    }).rejects.toThrowError(new NoResponseDefinitionError());
+    }).rejects.toThrowError(error);
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
