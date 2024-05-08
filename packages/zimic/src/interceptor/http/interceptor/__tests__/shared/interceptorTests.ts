@@ -137,16 +137,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
         }
       });
 
-      it('should throw an error if trying to create a request tracker if not running', async () => {
-        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
-        expect(interceptor.isRunning()).toBe(false);
-
-        await expect(async () => {
-          await interceptor.get('/');
-        }).rejects.toThrowError(new NotStartedHttpInterceptorError());
-      });
-
-      it('should throw an error if trying to be cleared if not running', async () => {
+      it('should throw an error when trying to be cleared if not running', async () => {
         const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
         expect(interceptor.isRunning()).toBe(false);
 

@@ -10,8 +10,9 @@ import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
@@ -793,7 +794,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should ignore all trackers when cleared when intercepting GET requests', async () => {
+  it('should ignore all trackers after cleared when intercepting GET requests', async () => {
     await usingHttpInterceptor<{
       '/users': {
         GET: {
@@ -811,14 +812,134 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), interceptor);
+      let listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(0);
 
-      const initialListRequests = await promiseIfRemote(listTracker.requests(), interceptor);
-      expect(initialListRequests).toHaveLength(0);
+      const listResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
       const listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
       await expectFetchError(listPromise);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
     });
+  });
+
+  it('should ignore all trackers after restarted when intercepting GET requests', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        interceptor,
+      );
+
+      let listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
+
+      expect(interceptor.isRunning()).toBe(true);
+      await interceptor.stop();
+      expect(interceptor.isRunning()).toBe(false);
+
+      let listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await expectFetchError(listPromise);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
+
+      await interceptor.start();
+      expect(interceptor.isRunning()).toBe(true);
+
+      listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      await expectFetchError(listPromise);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
+    });
+  });
+
+  it('should ignore all trackers after restarted when intercepting GET requests, even if another interceptor is still running', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const listTracker = await promiseIfRemote(
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        interceptor,
+      );
+
+      let listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(0);
+
+      const listResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+      expect(listResponse.status).toBe(200);
+
+      listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+      expect(listRequests).toHaveLength(1);
+
+      await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        let listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(listPromise);
+
+        listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+        expect(listRequests).toHaveLength(1);
+
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(listPromise);
+
+        listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
+        expect(listRequests).toHaveLength(1);
+      });
+    });
+  });
+
+  it('should throw an error when trying to create a GET request tracker if not running', async () => {
+    const interceptor = createInternalHttpInterceptor(interceptorOptions);
+    expect(interceptor.isRunning()).toBe(false);
+
+    await expect(async () => {
+      await interceptor.get('/');
+    }).rejects.toThrowError(new NotStartedHttpInterceptorError());
   });
 
   it('should support creating new trackers after cleared', async () => {

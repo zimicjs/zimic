@@ -54,6 +54,9 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   }
 
   async stop() {
+    if (this.isRunning()) {
+      this.clear();
+    }
     await this._client.stop();
   }
 

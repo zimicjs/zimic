@@ -10,8 +10,9 @@ import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
@@ -865,14 +866,134 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), interceptor);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(0);
 
-      const initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
-      expect(initialUpdateRequests).toHaveLength(0);
+      const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+      expect(updateResponse.status).toBe(200);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
       const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
       await expectFetchError(updatePromise);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
     });
+  });
+
+  it('should ignore all trackers after restarted when intercepting PATCH requests', async () => {
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const updateTracker = await promiseIfRemote(
+        interceptor.patch(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        interceptor,
+      );
+
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+      expect(updateResponse.status).toBe(200);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
+
+      expect(interceptor.isRunning()).toBe(true);
+      await interceptor.stop();
+      expect(interceptor.isRunning()).toBe(false);
+
+      let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+      await expectFetchError(updatePromise);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
+
+      await interceptor.start();
+      expect(interceptor.isRunning()).toBe(true);
+
+      updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+      await expectFetchError(updatePromise);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
+    });
+  });
+
+  it('should ignore all trackers after restarted when intercepting PATCH requests, even if another interceptor is still running', async () => {
+    await usingHttpInterceptor<{
+      '/users/:id': {
+        PATCH: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const updateTracker = await promiseIfRemote(
+        interceptor.patch(`/users/${users[0].id}`).respond({
+          status: 200,
+          body: users[0],
+        }),
+        interceptor,
+      );
+
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(0);
+
+      const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+      expect(updateResponse.status).toBe(200);
+
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      expect(updateRequests).toHaveLength(1);
+
+      await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+        await expectFetchError(updatePromise);
+
+        updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+        expect(updateRequests).toHaveLength(1);
+
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
+        await expectFetchError(updatePromise);
+
+        updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+        expect(updateRequests).toHaveLength(1);
+      });
+    });
+  });
+
+  it('should throw an error when trying to create a PATCH request tracker if not running', async () => {
+    const interceptor = createInternalHttpInterceptor(interceptorOptions);
+    expect(interceptor.isRunning()).toBe(false);
+
+    await expect(async () => {
+      await interceptor.patch('/');
+    }).rejects.toThrowError(new NotStartedHttpInterceptorError());
   });
 
   it('should support creating new trackers after cleared', async () => {

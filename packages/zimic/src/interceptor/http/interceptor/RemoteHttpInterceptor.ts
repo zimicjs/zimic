@@ -60,6 +60,9 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   }
 
   async stop() {
+    if (this.isRunning()) {
+      await this.clear();
+    }
     await this._client.stop();
   }
 

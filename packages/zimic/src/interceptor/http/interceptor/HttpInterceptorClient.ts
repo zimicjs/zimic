@@ -201,10 +201,6 @@ class HttpInterceptorClient<
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   HttpRequestTrackerClient<Schema, Method, Path, any> | undefined {
-    if (!this.isRunning()) {
-      return undefined;
-    }
-
     const methodPathTrackers = this.trackerClientsByMethod[method].get(path);
     const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
     return matchedTracker;

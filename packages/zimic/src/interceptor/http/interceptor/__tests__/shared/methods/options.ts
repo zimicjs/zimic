@@ -10,8 +10,9 @@ import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/c
 import { JSONValue } from '@/types/json';
 import { joinURL } from '@/utils/fetch';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
@@ -810,16 +811,136 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(0);
 
-      const initialOptionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
-      expect(initialOptionsRequests).toHaveLength(0);
+      const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
       const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       await expectFetchErrorOrPreflightResponse(optionsPromise, {
         shouldBePreflight: overridesPreflightResponse,
       });
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
     });
+  });
+
+  it('should ignore all trackers after restarted when intercepting OPTIONS requests', async () => {
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: { headers: AccessControlHeaders };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const optionsTracker = await promiseIfRemote(
+        interceptor.options('/filters').respond({
+          status: 200,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+        }),
+        interceptor,
+      );
+
+      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+      expect(interceptor.isRunning()).toBe(true);
+      await interceptor.stop();
+      expect(interceptor.isRunning()).toBe(false);
+
+      let optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      await expectFetchErrorOrPreflightResponse(optionsPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+      await interceptor.start();
+      expect(interceptor.isRunning()).toBe(true);
+
+      optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      await expectFetchErrorOrPreflightResponse(optionsPromise, {
+        shouldBePreflight: overridesPreflightResponse,
+      });
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+    });
+  });
+
+  it('should ignore all trackers after restarted when intercepting OPTIONS requests', async () => {
+    await usingHttpInterceptor<{
+      '/filters': {
+        OPTIONS: {
+          response: {
+            200: { headers: AccessControlHeaders };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const optionsTracker = await promiseIfRemote(
+        interceptor.options('/filters').respond({
+          status: 200,
+          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+        }),
+        interceptor,
+      );
+
+      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(0);
+
+      const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      expect(optionsResponse.status).toBe(200);
+
+      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+      await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(otherInterceptor.isRunning()).toBe(true);
+
+        const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
+          shouldBePreflight: overridesPreflightResponse,
+        });
+
+        optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+        expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+      });
+    });
+  });
+
+  it('should throw an error when trying to create a OPTIONS request tracker if not running', async () => {
+    const interceptor = createInternalHttpInterceptor(interceptorOptions);
+    expect(interceptor.isRunning()).toBe(false);
+
+    await expect(async () => {
+      await interceptor.options('/');
+    }).rejects.toThrowError(new NotStartedHttpInterceptorError());
   });
 
   it('should support creating new trackers after cleared', async () => {
