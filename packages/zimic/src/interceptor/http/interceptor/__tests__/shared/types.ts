@@ -1,21 +1,18 @@
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import { PossiblePromise } from '@/types/utils';
-import { AccessResources } from '@tests/utils/workers';
+import { ExtendedURL } from '@/utils/fetch';
 
 import { HttpInterceptorPlatform, HttpInterceptorType, HttpInterceptorOptions } from '../../types/options';
 
 export interface SharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
-  getAccessResources: (type: HttpInterceptorType) => Promise<AccessResources>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
   stopServer?: () => PossiblePromise<void>;
 }
 
-export interface RuntimeSharedHttpInterceptorTestsOptions extends SharedHttpInterceptorTestsOptions {
+export interface RuntimeSharedHttpInterceptorTestsOptions
+  extends Omit<SharedHttpInterceptorTestsOptions, 'getBaseURL'> {
   type: HttpInterceptorType;
-  getWorker: () => LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
-  getBaseURL: () => string;
-  getPathPrefix: () => string;
+  getBaseURL: () => ExtendedURL;
   getInterceptorOptions: () => HttpInterceptorOptions;
 }

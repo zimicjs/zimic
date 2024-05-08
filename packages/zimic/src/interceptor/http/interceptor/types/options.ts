@@ -9,15 +9,13 @@ export interface BaseHttpInterceptorOptions {
 }
 
 export interface LocalHttpInterceptorOptions extends BaseHttpInterceptorOptions {
-  type: Extract<HttpInterceptorType, 'local'>;
+  type: 'local';
 }
 
 export interface RemoteHttpInterceptorOptions extends BaseHttpInterceptorOptions {
-  type: Extract<HttpInterceptorType, 'remote'>;
+  type: 'remote';
   rcpTimeout?: number;
 }
 
 /** Options to create an HTTP interceptor. */
-export type HttpInterceptorOptions =
-  | LocalHttpInterceptorOptions
-  | RemoteHttpInterceptorOptions; /** The type of a worker. */
+export type HttpInterceptorOptions = LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions;

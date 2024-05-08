@@ -4,17 +4,17 @@ export interface ExtendedURL extends URL {
   raw: string;
 }
 
-export function validatedURL(
+export function createExtendedURL(
   rawURL: string,
   options: {
-    protocols: string[];
-  },
+    protocols?: string[];
+  } = {},
 ) {
   const url = new URL(rawURL) as ExtendedURL;
 
   const protocol = url.protocol.replace(/:$/, '');
 
-  if (!options.protocols.includes(protocol)) {
+  if (options.protocols && !options.protocols.includes(protocol)) {
     throw new TypeError(`Expected URL with protocol (${options.protocols.join('|')}), but got '${protocol}'`);
   }
 

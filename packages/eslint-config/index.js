@@ -234,7 +234,12 @@ module.exports = {
       { selector: 'parameter', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
       { selector: 'parameterProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
       { selector: 'classProperty', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
-      { selector: 'classProperty', modifiers: ['static'], format: ['camelCase', 'UPPER_CASE'] },
+      {
+        selector: 'classProperty',
+        modifiers: ['static'],
+        format: ['camelCase', 'UPPER_CASE'],
+        leadingUnderscore: 'allow',
+      },
       { selector: 'classMethod', format: ['camelCase'] },
       { selector: 'enumMember', format: ['UPPER_CASE'] },
       { selector: 'typeLike', format: ['PascalCase'] },

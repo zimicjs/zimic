@@ -1,6 +1,6 @@
 import ClientSocket from 'isomorphic-ws';
 
-import { validatedURL } from '@/utils/fetch';
+import { createExtendedURL } from '@/utils/fetch';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
@@ -24,7 +24,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       messageTimeout: options.messageTimeout,
     });
 
-    this.url = validatedURL(options.url, {
+    this.url = createExtendedURL(options.url, {
       protocols: SUPPORTED_WEB_SOCKET_PROTOCOLS,
     });
   }

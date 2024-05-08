@@ -15,10 +15,11 @@ import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInt
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { LocalHttpInterceptorWorkerOptions } from './types/options';
 import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
-  readonly type = 'local';
+  readonly type: 'local';
 
   private _internalWorker?: HttpWorker;
 
@@ -26,6 +27,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
   }[] = [];
+
+  constructor(options: LocalHttpInterceptorWorkerOptions) {
+    super();
+    this.type = options.type;
+  }
 
   internalWorkerOrThrow() {
     if (!this._internalWorker) {
@@ -108,8 +114,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     } else {
       this.stopInNode(internalWorker);
     }
-
     this.clearHandlers();
+
+    this._internalWorker = undefined;
     super.setIsRunning(false);
   }
 

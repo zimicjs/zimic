@@ -1,24 +1,24 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { validatedURL } from '@/utils/fetch';
+import { createExtendedURL } from '@/utils/fetch';
 
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
-import RemoteHttpInterceptorStore from './RemoteHttpInterceptorStore';
+import HttpInterceptorStore from './RemoteHttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
   readonly type = 'remote';
-  private store = new RemoteHttpInterceptorStore();
+  private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    const baseURL = validatedURL(options.baseURL, {
+    const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
 
-    const serverURL = validatedURL(baseURL.origin, {
+    const serverURL = createExtendedURL(baseURL.origin, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
 
@@ -26,6 +26,7 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
 
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
       worker,
+      store: this.store,
       Tracker: RemoteHttpRequestTracker,
       baseURL,
     });

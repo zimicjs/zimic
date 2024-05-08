@@ -5,14 +5,9 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
+import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
-import {
-  LocalHttpInterceptorWorkerOptions,
-  RemoteHttpInterceptorWorkerOptions,
-} from '@/interceptor/http/interceptorWorker/types/options';
-import { createInternalHttpInterceptorWorker, createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '../../RemoteHttpRequestTracker';
@@ -20,49 +15,35 @@ import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequ
 
 export function declareRestrictionHttpRequestTrackerTests(
   options: SharedHttpRequestTrackerTestOptions & {
+    type: HttpInterceptorType;
     Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
-    workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
   },
 ) {
-  const { platform, startServer, getAccessResources, stopServer, Tracker, workerOptions } = options;
+  const { platform, startServer, getBaseURL, stopServer, type, Tracker } = options;
 
-  let serverURL: string;
   let baseURL: string;
-  let pathPrefix: string;
 
-  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
 
   beforeAll(async () => {
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
 
-    ({
-      serverURL,
-      clientBaseURL: baseURL,
-      clientPathPrefix: pathPrefix,
-    } = await getAccessResources(workerOptions.type));
+    baseURL = (await getBaseURL(type)).raw;
 
-    worker = createInternalHttpInterceptorWorker(
-      workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
-    );
-
-    interceptor = createInternalHttpInterceptor<Schema>(
-      worker instanceof LocalHttpInterceptorWorker ? { worker, baseURL } : { worker, pathPrefix },
-    );
-
+    interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
 
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
+    await interceptor.start();
+    expect(interceptor.platform()).toBe(platform);
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await interceptor.stop();
 
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });

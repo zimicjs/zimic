@@ -12,6 +12,7 @@ import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import { DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT } from './constants';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
+import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
 
 interface HttpHandler {
@@ -23,7 +24,7 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  readonly type = 'remote';
+  readonly type: 'remote';
 
   private _crypto?: IsomorphicCrypto;
 
@@ -33,8 +34,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
-  constructor(options: { serverURL: ExtendedURL; rpcTimeout?: number }) {
+  constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
+    this.type = options.type;
 
     this._serverURL = options.serverURL;
     const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);

@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { validatedURL } from '@/utils/fetch';
+import { createExtendedURL } from '@/utils/fetch';
 
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -14,7 +14,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   private _client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
-    const baseURL = validatedURL(options.baseURL, {
+    const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
 
@@ -22,6 +22,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
 
     this._client = new HttpInterceptorClient<Schema>({
       worker,
+      store: this.store,
       Tracker: LocalHttpRequestTracker,
       baseURL,
     });

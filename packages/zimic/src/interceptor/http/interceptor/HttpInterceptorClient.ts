@@ -18,6 +18,8 @@ import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker
 import { HttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
+import LocalHttpInterceptorStore from './LocalHttpInterceptorStore';
+import HttpInterceptorStore from './RemoteHttpInterceptorStore';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
@@ -27,6 +29,7 @@ class HttpInterceptorClient<
   TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
 > {
   private worker: HttpInterceptorWorker;
+  private store: LocalHttpInterceptorStore | HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
 
@@ -44,8 +47,14 @@ class HttpInterceptorClient<
     OPTIONS: new Map(),
   };
 
-  constructor(options: { worker: HttpInterceptorWorker; baseURL: ExtendedURL; Tracker: TrackerConstructor }) {
+  constructor(options: {
+    worker: HttpInterceptorWorker;
+    store: LocalHttpInterceptorStore | HttpInterceptorStore;
+    baseURL: ExtendedURL;
+    Tracker: TrackerConstructor;
+  }) {
     this.worker = options.worker;
+    this.store = options.store;
     this._baseURL = options.baseURL;
     this.Tracker = options.Tracker;
   }
@@ -70,13 +79,23 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    await this.worker.start();
+    const isFirstStarted = this.store.numberOfRunningInterceptors(this._baseURL) === 0;
+    if (isFirstStarted) {
+      await this.worker.start();
+    }
+
     this._isRunning = true;
+    this.store.markInterceptorAsRunning(this, true, this._baseURL);
   }
 
   async stop() {
-    await this.worker.stop();
+    this.store.markInterceptorAsRunning(this, false, this._baseURL);
     this._isRunning = false;
+
+    const wasLastRunning = this.store.numberOfRunningInterceptors(this._baseURL) === 0;
+    if (wasLastRunning) {
+      await this.worker.stop();
+    }
   }
 
   get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {

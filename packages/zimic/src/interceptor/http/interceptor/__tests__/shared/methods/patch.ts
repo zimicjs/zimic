@@ -4,8 +4,6 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
@@ -17,7 +15,7 @@ import { HttpInterceptorOptions } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 
 export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { getBaseURL, getWorker, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await getCrypto();
 
@@ -38,17 +36,15 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
   ];
 
   let baseURL: string;
-  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   let interceptorOptions: HttpInterceptorOptions;
 
   let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
   beforeEach(() => {
-    baseURL = getBaseURL();
-    worker = getWorker();
+    baseURL = getBaseURL().raw;
     interceptorOptions = getInterceptorOptions();
 
-    Tracker = worker instanceof LocalHttpInterceptorWorker ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+    Tracker = options.type === 'local' ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
   });
 
   it('should support intercepting PATCH requests with a static response body', async () => {
@@ -66,11 +62,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -79,7 +75,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[0]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -117,11 +113,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             body: updatedUser,
           };
         }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const userName = 'User (other)';
@@ -135,7 +131,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual<User>({ ...users[0], name: userName });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -191,11 +187,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             body: users[0],
           };
         }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
@@ -206,7 +202,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -249,11 +245,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             body: users[0],
           };
         }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
@@ -265,7 +261,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -316,11 +312,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
               body: users[0],
             };
           }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserUpdateHeaders>({
@@ -330,21 +326,21 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
       let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
@@ -352,7 +348,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
       updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH', headers });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
     });
   });
@@ -389,11 +385,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
               body: users[0],
             };
           }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
@@ -404,7 +400,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         method: 'PATCH',
       });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       searchParams.delete('tag');
@@ -413,7 +409,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         method: 'PATCH',
       });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
@@ -447,11 +443,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
               body: users[0],
             };
           }),
-        worker,
+        interceptor,
       );
       expect(updateTracker).toBeInstanceOf(Tracker);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
@@ -462,7 +458,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         } satisfies UserUpdateBody),
       });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       const updateResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
@@ -473,7 +469,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         } satisfies UserUpdateBody),
       });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
@@ -493,11 +489,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
       expect(genericUpdateTracker).toBeInstanceOf(Tracker);
 
-      let genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), worker);
+      let genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), interceptor);
       expect(genericUpdateRequests).toHaveLength(0);
 
       const genericUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -506,7 +502,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
       expect(genericUpdatedUser).toEqual(users[0]);
 
-      genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), worker);
+      genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), interceptor);
       expect(genericUpdateRequests).toHaveLength(1);
       const [genericUpdateRequest] = genericUpdateRequests;
       expect(genericUpdateRequest).toBeInstanceOf(Request);
@@ -520,18 +516,18 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expectTypeOf(genericUpdateRequest.response.body).toEqualTypeOf<User>();
       expect(genericUpdateRequest.response.body).toEqual(users[0]);
 
-      await promiseIfRemote(genericUpdateTracker.bypass(), worker);
+      await promiseIfRemote(genericUpdateTracker.bypass(), interceptor);
 
       const specificUpdateTracker = await promiseIfRemote(
         interceptor.patch(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
       expect(specificUpdateTracker).toBeInstanceOf(Tracker);
 
-      let specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), worker);
+      let specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), interceptor);
       expect(specificUpdateRequests).toHaveLength(0);
 
       const specificUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -540,7 +536,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
       expect(specificUpdatedUser).toEqual(users[0]);
 
-      specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), worker);
+      specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), interceptor);
       expect(specificUpdateRequests).toHaveLength(1);
       const [specificUpdateRequest] = specificUpdateRequests;
       expect(specificUpdateRequest).toBeInstanceOf(Request);
@@ -578,10 +574,13 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       });
       await expectFetchError(updatePromise);
 
-      const updateTrackerWithoutResponse = await promiseIfRemote(interceptor.patch(`/users/${users[0].id}`), worker);
+      const updateTrackerWithoutResponse = await promiseIfRemote(
+        interceptor.patch(`/users/${users[0].id}`),
+        interceptor,
+      );
       expect(updateTrackerWithoutResponse).toBeInstanceOf(Tracker);
 
-      let updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), worker);
+      let updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), interceptor);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       let [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
@@ -594,7 +593,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       });
       await expectFetchError(updatePromise);
 
-      updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), worker);
+      updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), interceptor);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
@@ -616,7 +615,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expect(updatedUsers).toEqual(users[0]);
 
       expect(updateRequestsWithoutResponse).toHaveLength(0);
-      const updateRequestsWithResponse = await promiseIfRemote(updateTrackerWithResponse.requests(), worker);
+      const updateRequestsWithResponse = await promiseIfRemote(updateTrackerWithResponse.requests(), interceptor);
       expect(updateRequestsWithResponse).toHaveLength(1);
 
       const [updateRequest] = updateRequestsWithResponse;
@@ -659,10 +658,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             status: 200,
             body: users[1],
           }),
-        worker,
+        interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -671,7 +670,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -690,10 +689,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 500,
           body: { message: 'Internal server error' },
         }),
-        worker,
+        interceptor,
       );
 
-      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), worker);
+      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(0);
 
       const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -702,10 +701,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), worker);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
@@ -744,10 +743,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             body: users[0],
           })
           .bypass(),
-        worker,
+        interceptor,
       );
 
-      let initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -758,12 +757,12 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[1],
         }),
-        worker,
+        interceptor,
       );
 
-      initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(initialUpdateRequests).toHaveLength(0);
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       let updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -772,7 +771,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       let createdUsers = (await updateResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       let [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -791,10 +790,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 500,
           body: { message: 'Internal server error' },
         }),
-        worker,
+        interceptor,
       );
 
-      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), worker);
+      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(0);
 
       const otherUpdateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -803,10 +802,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), worker);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
@@ -820,7 +819,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       expectTypeOf(errorUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      await promiseIfRemote(errorUpdateTracker.bypass(), worker);
+      await promiseIfRemote(errorUpdateTracker.bypass(), interceptor);
 
       updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
       expect(updateResponse.status).toBe(200);
@@ -828,10 +827,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       createdUsers = (await updateResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), worker);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
       [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -862,12 +861,12 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), worker);
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
-      const initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      const initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -890,20 +889,20 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), worker);
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
       updateTracker = await promiseIfRemote(
         interceptor.patch(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[1],
         }),
-        worker,
+        interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -912,7 +911,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -943,20 +942,20 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
           status: 200,
           body: users[0],
         }),
-        worker,
+        interceptor,
       );
 
-      await promiseIfRemote(interceptor.clear(), worker);
+      await promiseIfRemote(interceptor.clear(), interceptor);
 
       await promiseIfRemote(
         updateTracker.respond({
           status: 200,
           body: users[1],
         }),
-        worker,
+        interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'PATCH' });
@@ -965,7 +964,7 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), worker);
+      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);

@@ -1,12 +1,12 @@
 import { HttpSchema } from '@/http/types/schema';
 import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { PossiblePromise } from '@/types/utils';
-import { AccessResources } from '@tests/utils/workers';
+import { ExtendedURL } from '@/utils/fetch';
 
 export interface SharedHttpRequestTrackerTestOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
-  getAccessResources: (type: HttpInterceptorType) => Promise<AccessResources>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
   stopServer?: () => PossiblePromise<void>;
 }
 

@@ -1,37 +1,30 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
 import { joinURL } from '@/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
-import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { getBaseURL, getPathPrefix, getWorker, getInterceptorOptions } = options;
+  const { getBaseURL, getInterceptorOptions } = options;
 
-  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   let defaultBaseURL: string;
-  let defaultPathPrefix: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   beforeEach(() => {
-    worker = getWorker();
-    defaultBaseURL = getBaseURL();
-    defaultPathPrefix = getPathPrefix();
+    defaultBaseURL = getBaseURL().raw;
     interceptorOptions = getInterceptorOptions();
   });
 
   it('should handle base URLs and paths correctly', async () => {
-    for (const { baseURL, pathPrefix, path } of [
-      { baseURL: `${defaultBaseURL}`, pathPrefix: `${defaultPathPrefix}`, path: 'path' },
-      { baseURL: `${defaultBaseURL}/`, pathPrefix: `${defaultPathPrefix}/`, path: 'path' },
-      { baseURL: `${defaultBaseURL}`, pathPrefix: `${defaultPathPrefix}`, path: '/path' },
-      { baseURL: `${defaultBaseURL}/`, pathPrefix: `${defaultPathPrefix}/`, path: '/path' },
+    for (const { baseURL, path } of [
+      { baseURL: `${defaultBaseURL}`, path: 'path' },
+      { baseURL: `${defaultBaseURL}/`, path: 'path' },
+      { baseURL: `${defaultBaseURL}`, path: '/path' },
+      { baseURL: `${defaultBaseURL}/`, path: '/path' },
     ]) {
       await usingHttpInterceptor<{
         ':any': {
@@ -41,20 +34,14 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
             };
           };
         };
-      }>({ ...interceptorOptions, baseURL, pathPrefix }, async (interceptor) => {
+      }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
         expect(interceptor.baseURL()).toBe(baseURL);
-
-        if (interceptor instanceof RemoteHttpInterceptor) {
-          expect(interceptor.pathPrefix()).toBe(pathPrefix);
-        } else {
-          expect(interceptor).not.toHaveProperty('pathPrefix' satisfies keyof RemoteHttpInterceptor<{}>);
-        }
 
         const tracker = await promiseIfRemote(
           interceptor.get(path).respond({
             status: 200,
           }),
-          worker,
+          interceptor,
         );
 
         let requests = await tracker.requests();

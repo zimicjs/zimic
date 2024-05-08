@@ -1,14 +1,13 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
-import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
 import { PossiblePromise } from '@/types/utils';
-import { createInternalHttpInterceptorWorker } from '@tests/utils/interceptors';
+import { ExtendedURL } from '@/utils/fetch';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import UnknownHttpInterceptorWorkerError from '../../errors/UnknownHttpInterceptorWorkerError';
-import { createHttpInterceptor } from '../../factory';
+import LocalHttpInterceptorStore from '../../LocalHttpInterceptorStore';
+import HttpInterceptorStore from '../../RemoteHttpInterceptorStore';
+import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
@@ -21,82 +20,63 @@ import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOpt
 import { declareTypeHttpInterceptorTests } from './typescript';
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
-  const { platform, startServer, getAccessResources, stopServer } = options;
+  const { platform, startServer, getBaseURL, stopServer } = options;
 
-  describe('Default', () => {
-    it('should throw an error if the worker is not known', () => {
-      const unknownWorker = new (class UnknownWorker {})();
+  const interceptorTypes: HttpInterceptorType[] = ['local', 'remote'];
 
-      expect(() => {
-        // @ts-expect-error Forcing an invalid worker
-        createHttpInterceptor({ worker: unknownWorker });
-      }).toThrowError(new UnknownHttpInterceptorWorkerError(unknownWorker));
-    });
-  });
-
-  describe('Types', () => {
-    declareTypeHttpInterceptorTests(options);
-  });
-
-  const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
-    { type: 'local' },
-    { type: 'remote', serverURL: '<temporary>' },
-  ];
-
-  describe.each(workerOptionsArray)('type $type', (workerOptions) => {
-    let serverURL: string;
-    let baseURL: string;
-    let pathPrefix: string;
-
-    let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
+  describe.each(interceptorTypes)("Type '%s'", (type) => {
+    let baseURL: ExtendedURL;
 
     beforeAll(async () => {
-      if (workerOptions.type === 'remote') {
+      if (type === 'remote') {
         await startServer?.();
       }
 
-      ({
-        serverURL,
-        clientBaseURL: baseURL,
-        clientPathPrefix: pathPrefix,
-      } = await getAccessResources(workerOptions.type));
-
-      worker = createInternalHttpInterceptorWorker(
-        workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
-      );
-
-      await worker.start();
-      expect(worker.platform()).toBe(platform);
+      baseURL = await getBaseURL(type);
     });
 
     afterEach(() => {
-      expect(worker.interceptorsWithHandlers()).toHaveLength(0);
+      const worker = type === 'local' ? LocalHttpInterceptorStore.worker() : HttpInterceptorStore.worker(baseURL);
+      if (worker) {
+        expect(worker.interceptorsWithHandlers()).toHaveLength(0);
+      }
     });
 
     afterAll(async () => {
-      await worker.stop();
+      const worker = type === 'local' ? LocalHttpInterceptorStore.worker() : HttpInterceptorStore.worker(baseURL);
+      if (worker) {
+        expect(worker.isRunning()).toBe(false);
+      }
 
-      if (workerOptions.type === 'remote') {
+      if (type === 'remote') {
         await stopServer?.();
       }
     });
 
     const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
       ...options,
-      type: workerOptions.type,
-      getWorker() {
-        return worker;
-      },
+      type,
       getBaseURL() {
         return baseURL;
       },
-      getPathPrefix() {
-        return pathPrefix;
-      },
       getInterceptorOptions() {
-        return worker instanceof LocalHttpInterceptorWorker ? { worker, baseURL } : { worker, pathPrefix };
+        return { type, baseURL: baseURL.raw };
       },
     };
+
+    describe('Default', () => {
+      it('should initialize with the correct platform', async () => {
+        const interceptorOptions = runtimeOptions.getInterceptorOptions();
+
+        await usingHttpInterceptor<{}>(interceptorOptions, (interceptor) => {
+          expect(interceptor.platform()).toBe(platform);
+        });
+      });
+    });
+
+    describe('Types', () => {
+      declareTypeHttpInterceptorTests(runtimeOptions);
+    });
 
     describe('Base URLs', () => {
       declareBaseURLHttpInterceptorTests(runtimeOptions);
