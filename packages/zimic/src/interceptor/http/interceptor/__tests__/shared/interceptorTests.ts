@@ -7,8 +7,7 @@ import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/util
 
 import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
-import LocalHttpInterceptorStore from '../../LocalHttpInterceptorStore';
-import RemoteHttpInterceptorStore from '../../RemoteHttpInterceptorStore';
+import HttpInterceptorStore from '../../HttpInterceptorStore';
 import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
@@ -21,15 +20,18 @@ import { declarePutHttpInterceptorTests } from './methods/put';
 import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOptions } from './types';
 import { declareTypeHttpInterceptorTests } from './typescript';
 
-function getWorkerSingletonByType(type: HttpInterceptorType, serverURL: ExtendedURL) {
-  if (type === 'local') {
-    return LocalHttpInterceptorStore.worker();
-  }
-  return RemoteHttpInterceptorStore.worker(serverURL);
+function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: ExtendedURL) {
+  return type === 'local' ? store.localWorker() : store.remoteWorker(serverURL);
 }
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { platform, startServer, getBaseURL, stopServer } = options;
+
+  const store = new HttpInterceptorStore();
+
+  beforeAll(() => {
+    store.clear();
+  });
 
   it('should throw an error if created with an unknown type', () => {
     // @ts-expect-error Forcing an unknown type.
@@ -54,14 +56,19 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
       baseURL = await getBaseURL(type);
       serverURL = createExtendedURL(baseURL.origin);
+
+      expect(store.numberOfRunningLocalInterceptors()).toBe(0);
+      expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
     });
 
     afterEach(() => {
-      const worker = getWorkerSingletonByType(type, serverURL);
-      if (worker) {
-        expect(worker.isRunning()).toBe(false);
-        expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-      }
+      const worker = getSingletonWorkerByType(store, type, serverURL);
+      expect(worker).toBeDefined();
+      expect(worker!.isRunning()).toBe(false);
+      expect(worker!.interceptorsWithHandlers()).toHaveLength(0);
+
+      expect(store.numberOfRunningLocalInterceptors()).toBe(0);
+      expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
     });
 
     afterAll(async () => {
@@ -86,9 +93,54 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
         await usingHttpInterceptor<{}>({ type, baseURL }, (interceptor) => {
           expect(interceptor.platform()).toBe(platform);
 
-          const worker = getWorkerSingletonByType(type, serverURL);
+          const worker = getSingletonWorkerByType(store, type, serverURL);
           expect(worker!.platform()).toBe(platform);
         });
+      });
+
+      it('should now throw an error if started multiple times', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+        } finally {
+          await interceptor.stop();
+        }
+      });
+
+      it('should not throw an error if stopped multiple times', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+          await interceptor.stop();
+        } finally {
+          await interceptor.stop();
+        }
       });
 
       it('should support starting interceptors concurrently', async () => {
@@ -104,7 +156,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          const worker = getWorkerSingletonByType(type, serverURL);
+          const worker = getSingletonWorkerByType(store, type, serverURL);
           expect(worker).toBeDefined();
           expect(worker!.isRunning()).toBe(true);
         } finally {

@@ -3,14 +3,14 @@ import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
-import LocalHttpInterceptorStore from './LocalHttpInterceptorStore';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
 import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
   readonly type: 'local';
-  private store = new LocalHttpInterceptorStore();
+  private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
@@ -21,9 +21,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     });
     excludeDynamicParams(baseURL);
 
-    const worker = this.store.getOrCreateWorker({
-      workerOptions: {},
-    });
+    const worker = this.store.getOrCreateLocalWorker({});
 
     this._client = new HttpInterceptorClient<Schema>({
       worker,

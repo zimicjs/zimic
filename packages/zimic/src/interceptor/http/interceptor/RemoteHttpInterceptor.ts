@@ -3,7 +3,7 @@ import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
-import HttpInterceptorStore from './RemoteHttpInterceptorStore';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
@@ -26,10 +26,7 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     });
     excludeDynamicParams(serverURL);
 
-    const worker = this.store.getOrCreateWorker({
-      serverURL,
-      workerOptions: {},
-    });
+    const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
       worker,

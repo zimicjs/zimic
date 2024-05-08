@@ -10,6 +10,7 @@ import { Default, PossiblePromise } from '@/types/utils';
 import { ExtendedURL, joinURL } from '@/utils/fetch';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
 import HttpRequestTrackerClient, { AnyHttpRequestTrackerClient } from '../requestTracker/HttpRequestTrackerClient';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
@@ -17,8 +18,7 @@ import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker
 import { HttpRequestTracker } from '../requestTracker/types/public';
 import { HttpInterceptorRequest } from '../requestTracker/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
-import LocalHttpInterceptorStore from './LocalHttpInterceptorStore';
-import HttpInterceptorStore from './RemoteHttpInterceptorStore';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
@@ -28,7 +28,7 @@ class HttpInterceptorClient<
   TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
 > {
   private worker: HttpInterceptorWorker;
-  private store: LocalHttpInterceptorStore | HttpInterceptorStore;
+  private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
 
@@ -48,7 +48,7 @@ class HttpInterceptorClient<
 
   constructor(options: {
     worker: HttpInterceptorWorker;
-    store: LocalHttpInterceptorStore | HttpInterceptorStore;
+    store: HttpInterceptorStore;
     baseURL: ExtendedURL;
     Tracker: TrackerConstructor;
   }) {
@@ -71,22 +71,37 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    this.store.markInterceptorAsRunning(this, true, { baseURL: this._baseURL });
-    this._isRunning = true;
+    this.markAsRunning(true);
 
-    const isFirstStarted = this.store.numberOfRunningInterceptors({ baseURL: this._baseURL }) === 1;
-    if (isFirstStarted) {
+    const isFirstRunning = this.numberOfRunningInterceptors() === 1;
+    if (isFirstRunning) {
       await this.worker.start();
     }
   }
 
   async stop() {
-    this.store.markInterceptorAsRunning(this, false, { baseURL: this._baseURL });
-    this._isRunning = false;
+    this.markAsRunning(false);
 
-    const wasLastRunning = this.store.numberOfRunningInterceptors({ baseURL: this._baseURL }) === 0;
-    if (wasLastRunning) {
+    const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
+    if (wasLastRunningInterceptor) {
       await this.worker.stop();
+    }
+  }
+
+  private markAsRunning(isRunning: boolean) {
+    if (this.worker instanceof LocalHttpInterceptorWorker) {
+      this.store.markLocalInterceptorAsRunning(this, isRunning);
+    } else {
+      this.store.markRemoteInterceptorAsRunning(this, isRunning, this._baseURL);
+    }
+    this._isRunning = isRunning;
+  }
+
+  private numberOfRunningInterceptors() {
+    if (this.worker instanceof LocalHttpInterceptorWorker) {
+      return this.store.numberOfRunningLocalInterceptors();
+    } else {
+      return this.store.numberOfRunningRemoteInterceptors(this._baseURL);
     }
   }
 
