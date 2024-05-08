@@ -27,7 +27,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _crypto?: IsomorphicCrypto;
 
-  private _serverURL: ExtendedURL;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
@@ -36,9 +35,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     super();
     this.type = options.type;
 
-    this._serverURL = options.serverURL;
     const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
-
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
     });
@@ -55,10 +52,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       this._crypto = await getCrypto();
     }
     return this._crypto;
-  }
-
-  serverURL() {
-    return this._serverURL.raw;
   }
 
   async start() {
