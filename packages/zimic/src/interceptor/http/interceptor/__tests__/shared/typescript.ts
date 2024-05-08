@@ -21,10 +21,10 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
-  let baseURL: string;
+  let baseURL: URL;
 
   beforeEach(() => {
-    baseURL = getBaseURL().raw;
+    baseURL = getBaseURL();
   });
 
   it('should correctly type requests', async () => {
@@ -264,39 +264,90 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
   it('should not allow declaring response bodies for methods that do not support them', () => {
     // @ts-expect-error HEAD methods do not support request bodies
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { HEAD: { response: { 200: {} } } } }>({ type, baseURL });
 
     createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: User } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { GET: { response: { 200: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { POST: { response: { 200: {} } } } }>({ type, baseURL });
 
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: User } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { PATCH: { response: { 200: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { DELETE: { response: { 200: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({
+      type,
+      baseURL,
+    });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({
+      type,
+      baseURL,
+    });
     createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: {} } } } }>({ type, baseURL });
   });
 

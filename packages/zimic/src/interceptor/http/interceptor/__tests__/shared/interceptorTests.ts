@@ -60,7 +60,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
         return baseURL;
       },
       getInterceptorOptions() {
-        return { type, baseURL: baseURL.raw };
+        return { type, baseURL };
       },
     };
 

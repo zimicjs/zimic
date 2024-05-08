@@ -8,6 +8,7 @@ import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/option
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import { joinURL } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -30,7 +31,7 @@ export function declareDefaultHttpRequestTrackerTests(
 ) {
   const { platform, startServer, getBaseURL, stopServer, type, Tracker } = options;
 
-  let baseURL: string;
+  let baseURL: URL;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
@@ -40,7 +41,7 @@ export function declareDefaultHttpRequestTrackerTests(
       await startServer?.();
     }
 
-    baseURL = (await getBaseURL(type)).raw;
+    baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
@@ -233,7 +234,7 @@ export function declareDefaultHttpRequestTrackerTests(
     expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
-    const secondRequest = new Request(`${baseURL}/path`);
+    const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
     const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
 

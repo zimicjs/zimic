@@ -5,7 +5,7 @@ export interface BaseHttpInterceptorOptions {
   type: HttpInterceptorType;
 
   /** The base URL used by the interceptor. This URL will be prepended to any paths used by the interceptor. */
-  baseURL: string;
+  baseURL: string | URL;
 }
 
 export interface LocalHttpInterceptorOptions extends BaseHttpInterceptorOptions {

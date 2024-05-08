@@ -128,7 +128,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    rawURL: string,
+    rawURL: string | URL,
     createResponse: HttpResponseFactory,
   ) {
     if (!super.isRunning()) {

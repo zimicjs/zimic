@@ -4,7 +4,7 @@ import { AnyHttpInterceptorClient } from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 
 class LocalHttpInterceptorStore extends HttpInterceptorStore {
-  private static _worker?: LocalHttpInterceptorWorker = createHttpInterceptorWorker({ type: 'local' });
+  private static _worker?: LocalHttpInterceptorWorker;
   private static runningInterceptors = new Set<AnyHttpInterceptorClient>();
 
   static worker() {
@@ -15,26 +15,29 @@ class LocalHttpInterceptorStore extends HttpInterceptorStore {
     return this._worker ? 1 : 0;
   }
 
+  private class = LocalHttpInterceptorStore;
+
   numberOfRunningInterceptors() {
-    return LocalHttpInterceptorStore.runningInterceptors.size;
+    return this.class.runningInterceptors.size;
   }
 
   markInterceptorAsRunning(interceptor: AnyHttpInterceptorClient, isRunning: boolean) {
     if (isRunning) {
-      LocalHttpInterceptorStore.runningInterceptors.add(interceptor);
+      this.class.runningInterceptors.add(interceptor);
     } else {
-      LocalHttpInterceptorStore.runningInterceptors.delete(interceptor);
+      this.class.runningInterceptors.delete(interceptor);
     }
   }
 
   getOrCreateWorker() {
-    const existingWorker = LocalHttpInterceptorStore._worker;
+    const existingWorker = this.class._worker;
     if (existingWorker) {
       return existingWorker;
     }
 
     const createdWorker = createHttpInterceptorWorker({ type: 'local' });
-    LocalHttpInterceptorStore._worker = createdWorker;
+    this.class._worker = createdWorker;
+
     return createdWorker;
   }
 }

@@ -84,8 +84,8 @@ class HttpInterceptorClient<
       await this.worker.start();
     }
 
-    this._isRunning = true;
     this.store.markInterceptorAsRunning(this, true, this._baseURL);
+    this._isRunning = true;
   }
 
   async stop() {

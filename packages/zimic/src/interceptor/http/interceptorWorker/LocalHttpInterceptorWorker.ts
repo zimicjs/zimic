@@ -143,7 +143,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    rawURL: string,
+    rawURL: string | URL,
     createResponse: HttpResponseFactory,
   ) {
     const internalWorker = this.internalWorkerOrThrow();

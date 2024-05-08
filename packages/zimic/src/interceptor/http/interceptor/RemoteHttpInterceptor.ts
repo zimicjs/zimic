@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL } from '@/utils/fetch';
+import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -9,18 +9,22 @@ import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
-  readonly type = 'remote';
+  readonly type: 'remote';
   private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>;
 
   constructor(options: RemoteHttpInterceptorOptions) {
+    this.type = options.type;
+
     const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
+    excludeDynamicParams(baseURL);
 
     const serverURL = createExtendedURL(baseURL.origin, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
+    excludeDynamicParams(serverURL);
 
     const worker = this.store.getOrCreateWorker(serverURL);
 

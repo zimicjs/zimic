@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL } from '@/utils/fetch';
+import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -9,14 +9,17 @@ import { LocalHttpInterceptorOptions } from './types/options';
 import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
-  readonly type = 'local';
+  readonly type: 'local';
   private store = new LocalHttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
+    this.type = options.type;
+
     const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
+    excludeDynamicParams(baseURL);
 
     const worker = this.store.getOrCreateWorker();
 

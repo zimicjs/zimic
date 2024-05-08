@@ -5,7 +5,7 @@ export interface ExtendedURL extends URL {
 }
 
 export function createExtendedURL(
-  rawURL: string,
+  rawURL: string | URL,
   options: {
     protocols?: string[];
   } = {},
@@ -56,13 +56,14 @@ export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestI
   }
 }
 
-export function joinURL(...paths: string[]) {
-  return paths
-    .map((path, index) => {
-      const isLastPath = index === paths.length - 1;
-      return isLastPath ? path.replace(/^[/ ]+/, '') : path.replace(/^[/ ]+|[/ ]+$/, '');
+export function joinURL(...parts: (string | URL)[]) {
+  return parts
+    .map((part, index) => {
+      const partAsString = part.toString();
+      const isLastPath = index === parts.length - 1;
+      return isLastPath ? partAsString.replace(/^[/ ]+/, '') : partAsString.replace(/^[/ ]+|[/ ]+$/, '');
     })
-    .filter((path) => path.length > 0)
+    .filter((part) => part.length > 0)
     .join('/');
 }
 

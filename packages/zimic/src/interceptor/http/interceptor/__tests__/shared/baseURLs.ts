@@ -1,7 +1,7 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { joinURL } from '@/utils/fetch';
+import { ExtendedURL, joinURL } from '@/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -11,20 +11,20 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
 
-  let defaultBaseURL: string;
+  let defaultBaseURL: ExtendedURL;
   let interceptorOptions: HttpInterceptorOptions;
 
   beforeEach(() => {
-    defaultBaseURL = getBaseURL().raw;
+    defaultBaseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
   });
 
   it('should handle base URLs and paths correctly', async () => {
     for (const { baseURL, path } of [
-      { baseURL: `${defaultBaseURL}`, path: 'path' },
-      { baseURL: `${defaultBaseURL}/`, path: 'path' },
-      { baseURL: `${defaultBaseURL}`, path: '/path' },
-      { baseURL: `${defaultBaseURL}/`, path: '/path' },
+      { baseURL: `${defaultBaseURL.raw}`, path: 'path' },
+      { baseURL: `${defaultBaseURL.raw}/`, path: 'path' },
+      { baseURL: `${defaultBaseURL.raw}`, path: '/path' },
+      { baseURL: `${defaultBaseURL.raw}/`, path: '/path' },
     ]) {
       await usingHttpInterceptor<{
         ':any': {

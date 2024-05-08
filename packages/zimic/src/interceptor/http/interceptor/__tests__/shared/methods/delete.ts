@@ -8,6 +8,7 @@ import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttp
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
+import { joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -35,13 +36,13 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     },
   ];
 
-  let baseURL: string;
+  let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
   let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
 
   beforeEach(() => {
-    baseURL = getBaseURL().raw;
+    baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
 
     Tracker = options.type === 'local' ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
@@ -69,7 +70,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       const deletedUsers = (await deletionResponse.json()) as User;
@@ -119,7 +120,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       const userName = 'User (other)';
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
@@ -192,7 +193,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         headers: {
           accept: 'application/json',
@@ -254,7 +255,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         tag: 'admin',
       });
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
         method: 'DELETE',
       });
       expect(deletionResponse.status).toBe(200);
@@ -322,21 +323,21 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         accept: 'application/json',
       });
 
-      let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
+      let deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE', headers });
       expect(deletionResponse.status).toBe(200);
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
-      deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
+      deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE', headers });
       expect(deletionResponse.status).toBe(200);
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(2);
 
       headers.delete('accept');
 
-      let deletionResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE', headers });
+      let deletionResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE', headers });
       await expectFetchError(deletionResponsePromise);
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(2);
@@ -344,7 +345,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       headers.set('accept', 'application/json');
       headers.set('content-type', 'text/plain');
 
-      deletionResponsePromise = fetch(`${baseURL}/users`, { method: 'DELETE', headers });
+      deletionResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'DELETE', headers });
       await expectFetchError(deletionResponsePromise);
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(2);
@@ -370,7 +371,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     }>(interceptorOptions, async (interceptor) => {
       const deletionTracker = await promiseIfRemote(
         interceptor
-          .delete(`/users/:id`)
+          .delete('/users/:id')
           .with({
             searchParams: { tag: 'admin' },
           })
@@ -394,7 +395,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         tag: 'admin',
       });
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
         method: 'DELETE',
       });
       expect(deletionResponse.status).toBe(200);
@@ -403,7 +404,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       searchParams.delete('tag');
 
-      const listResponsePromise = fetch(`${baseURL}/users/${users[0].id}?${searchParams.toString()}`, {
+      const listResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
         method: 'DELETE',
       });
       await expectFetchError(listResponsePromise);
@@ -456,7 +457,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+      let deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({
           tags: ['admin'],
@@ -467,7 +468,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(1);
 
-      deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+      deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({
           tags: ['admin'],
@@ -478,7 +479,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(2);
 
-      let deletionResponsePromise = fetch(`${baseURL}/users/${users[0].id}`, {
+      let deletionResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({
           tags: ['admin'],
@@ -488,7 +489,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(2);
 
-      deletionResponsePromise = fetch(`${baseURL}/users`, {
+      deletionResponsePromise = fetch(joinURL(baseURL, '/users'), {
         method: 'DELETE',
         body: JSON.stringify({
           tags: [],
@@ -522,7 +523,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let genericDeletionRequests = await promiseIfRemote(genericDeletionTracker.requests(), interceptor);
       expect(genericDeletionRequests).toHaveLength(0);
 
-      const genericDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const genericDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(genericDeletionResponse.status).toBe(200);
 
       const genericDeletedUser = (await genericDeletionResponse.json()) as User;
@@ -556,7 +557,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let specificDeletionRequests = await promiseIfRemote(specificDeletionTracker.requests(), interceptor);
       expect(specificDeletionRequests).toHaveLength(0);
 
-      const specificDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const specificDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(specificDeletionResponse.status).toBe(200);
 
       const specificDeletedUser = (await specificDeletionResponse.json()) as User;
@@ -576,7 +577,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       expectTypeOf(specificDeletionRequest.response.body).toEqualTypeOf<User>();
       expect(specificDeletionRequest.response.body).toEqual(users[0]);
 
-      const unmatchedDeletionPromise = fetch(`${baseURL}/users/${2}`, { method: 'DELETE' });
+      const unmatchedDeletionPromise = fetch(joinURL(baseURL, `/users/${2}`), { method: 'DELETE' });
       await expectFetchError(unmatchedDeletionPromise);
     });
   });
@@ -594,7 +595,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     }>(interceptorOptions, async (interceptor) => {
       const userName = 'User (other)';
 
-      let deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, {
+      let deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
@@ -613,7 +614,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       expectTypeOf<typeof deletionRequestWithoutResponse.body>().toEqualTypeOf<Partial<User>>();
       expectTypeOf<typeof deletionRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
-      deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, {
+      deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
@@ -631,7 +632,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         body: users[0],
       });
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, {
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
@@ -690,7 +691,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       const deletionUsers = (await deletionResponse.json()) as User;
@@ -721,7 +722,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), interceptor);
       expect(errorDeletionRequests).toHaveLength(0);
 
-      const otherDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const otherDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(otherDeletionResponse.status).toBe(500);
 
       const serverError = (await otherDeletionResponse.json()) as ServerErrorResponseBody;
@@ -775,7 +776,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let initialDeletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(initialDeletionRequests).toHaveLength(0);
 
-      const deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       await expectFetchError(deletionPromise);
 
       await promiseIfRemote(
@@ -791,7 +792,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      let deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      let deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       let createdUsers = (await deletionResponse.json()) as User;
@@ -822,7 +823,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let errorDeletionRequests = await promiseIfRemote(errorDeletionTracker.requests(), interceptor);
       expect(errorDeletionRequests).toHaveLength(0);
 
-      const otherDeletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const otherDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(otherDeletionResponse.status).toBe(500);
 
       const serverError = (await otherDeletionResponse.json()) as ServerErrorResponseBody;
@@ -847,7 +848,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       await promiseIfRemote(errorDeletionTracker.bypass(), interceptor);
 
-      deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       createdUsers = (await deletionResponse.json()) as User;
@@ -895,7 +896,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       const initialDeletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(initialDeletionRequests).toHaveLength(0);
 
-      const deletionPromise = fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       await expectFetchError(deletionPromise);
     });
   });
@@ -931,7 +932,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       const createdUsers = (await deletionResponse.json()) as User;
@@ -984,7 +985,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       let deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(0);
 
-      const deletionResponse = await fetch(`${baseURL}/users/${users[0].id}`, { method: 'DELETE' });
+      const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
       expect(deletionResponse.status).toBe(200);
 
       const createdUsers = (await deletionResponse.json()) as User;
