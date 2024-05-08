@@ -11,10 +11,6 @@ class LocalHttpInterceptorStore extends HttpInterceptorStore {
     return this._worker;
   }
 
-  static numberOfWorkers() {
-    return this._worker ? 1 : 0;
-  }
-
   private class = LocalHttpInterceptorStore;
 
   numberOfRunningInterceptors() {

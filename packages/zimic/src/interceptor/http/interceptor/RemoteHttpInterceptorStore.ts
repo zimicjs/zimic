@@ -13,10 +13,6 @@ class RemoteHttpInterceptorStore extends HttpInterceptorStore {
     return this.workersByBaseURL.get(baseURL.toString());
   }
 
-  static numberOfWorkers() {
-    return this.workersByBaseURL.size;
-  }
-
   private class = RemoteHttpInterceptorStore;
 
   numberOfRunningInterceptors(baseURL: ExtendedURL) {

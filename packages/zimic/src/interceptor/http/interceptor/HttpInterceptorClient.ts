@@ -79,13 +79,13 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    const isFirstStarted = this.store.numberOfRunningInterceptors(this._baseURL) === 0;
+    this.store.markInterceptorAsRunning(this, true, this._baseURL);
+    this._isRunning = true;
+
+    const isFirstStarted = this.store.numberOfRunningInterceptors(this._baseURL) === 1;
     if (isFirstStarted) {
       await this.worker.start();
     }
-
-    this.store.markInterceptorAsRunning(this, true, this._baseURL);
-    this._isRunning = true;
   }
 
   async stop() {
