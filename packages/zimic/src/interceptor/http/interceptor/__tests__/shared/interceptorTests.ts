@@ -5,6 +5,8 @@ import { PossiblePromise } from '@/types/utils';
 import { ExtendedURL, createExtendedURL } from '@/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
+import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptorStore from '../../LocalHttpInterceptorStore';
 import RemoteHttpInterceptorStore from '../../RemoteHttpInterceptorStore';
 import { HttpInterceptorType } from '../../types/options';
@@ -29,6 +31,16 @@ function getWorkerSingletonByType(type: HttpInterceptorType, serverURL: Extended
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { platform, startServer, getBaseURL, stopServer } = options;
 
+  it('should throw an error if created with an unknown type', () => {
+    // @ts-expect-error Forcing an unknown type.
+    const unknownType: HttpInterceptorType = 'unknown';
+
+    expect(() => {
+      // @ts-expect-error
+      createInternalHttpInterceptor({ type: unknownType });
+    }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
+  });
+
   const interceptorTypes: HttpInterceptorType[] = ['local', 'remote'];
 
   describe.each(interceptorTypes)("Type '%s'", (type) => {
@@ -42,13 +54,6 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
       baseURL = await getBaseURL(type);
       serverURL = createExtendedURL(baseURL.origin);
-
-      const worker = getWorkerSingletonByType(type, serverURL);
-      if (worker) {
-        expect(worker.platform()).toBe(platform);
-        expect(worker.isRunning()).toBe(false);
-        expect(worker.interceptorsWithHandlers()).toHaveLength(0);
-      }
     });
 
     afterEach(() => {
@@ -78,10 +83,11 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     describe('Default', () => {
       it('should initialize with the correct platform', async () => {
-        const interceptorOptions = runtimeOptions.getInterceptorOptions();
-
-        await usingHttpInterceptor<{}>(interceptorOptions, (interceptor) => {
+        await usingHttpInterceptor<{}>({ type, baseURL }, (interceptor) => {
           expect(interceptor.platform()).toBe(platform);
+
+          const worker = getWorkerSingletonByType(type, serverURL);
+          expect(worker!.platform()).toBe(platform);
         });
       });
 
@@ -129,6 +135,24 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
           await interceptor.stop();
           await otherInterceptor.stop();
         }
+      });
+
+      it('should throw an error if trying to create a request tracker if not running', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        await expect(async () => {
+          await interceptor.get('/');
+        }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      });
+
+      it('should throw an error if trying to be cleared if not running', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        await expect(async () => {
+          await interceptor.clear();
+        }).rejects.toThrowError(new NotStartedHttpInterceptorError());
       });
     });
 

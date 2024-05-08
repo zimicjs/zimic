@@ -19,7 +19,7 @@ export function createExtendedURL(
   }
 
   Object.defineProperty(url, 'raw', {
-    value: rawURL,
+    value: rawURL.toString(),
     writable: false,
     enumerable: true,
     configurable: false,

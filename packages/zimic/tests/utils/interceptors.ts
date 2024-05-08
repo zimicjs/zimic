@@ -42,6 +42,15 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Server) 
 }
 
 export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+  options: LocalHttpInterceptorOptions,
+): LocalHttpInterceptor<Schema>;
+export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+  options: RemoteHttpInterceptorOptions,
+): RemoteHttpInterceptor<Schema>;
+export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+  options: LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions,
+): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
+export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions,
 ) {
   return createHttpInterceptor<Schema>(options) satisfies HttpInterceptor<Schema> as
@@ -59,9 +68,6 @@ export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
     await interceptor.start();
     await callback(interceptor);
   } finally {
-    if (interceptor.isRunning()) {
-      await interceptor.clear();
-    }
     await interceptor.stop();
   }
 }
