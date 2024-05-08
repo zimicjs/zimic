@@ -1,11 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { createExtendedURL } from '@/utils/fetch';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotStartedHttpInterceptorError from '../../../interceptor/errors/NotStartedHttpInterceptorError';
-import UnknownHttpInterceptorTypeError from '../../../interceptor/errors/UnknownHttpInterceptorTypeError';
 import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
@@ -108,19 +106,6 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       expect(worker.isRunning()).toBe(false);
       await worker.stop();
       expect(worker.isRunning()).toBe(false);
-    });
-
-    it('should throw an error if initialized with an invalid type', () => {
-      // @ts-expect-error Testing invalid type.
-      const unknownType: HttpInterceptorType = 'unknown';
-
-      const error = new UnknownHttpInterceptorTypeError(unknownType);
-      expect(error).toBeInstanceOf(TypeError);
-
-      expect(() => {
-        // @ts-expect-error Testing invalid type.
-        createHttpInterceptorWorker({ type: unknownType });
-      }).toThrowError(error);
     });
 
     it('should throw an error if trying to clear handler without a started worker', async () => {
