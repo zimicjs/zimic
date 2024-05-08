@@ -21,7 +21,9 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     });
     excludeDynamicParams(baseURL);
 
-    const worker = this.store.getOrCreateWorker();
+    const worker = this.store.getOrCreateWorker({
+      workerOptions: {},
+    });
 
     this._client = new HttpInterceptorClient<Schema>({
       worker,

@@ -14,7 +14,6 @@ export interface LocalHttpInterceptorOptions extends BaseHttpInterceptorOptions 
 
 export interface RemoteHttpInterceptorOptions extends BaseHttpInterceptorOptions {
   type: 'remote';
-  rcpTimeout?: number;
 }
 
 /** Options to create an HTTP interceptor. */

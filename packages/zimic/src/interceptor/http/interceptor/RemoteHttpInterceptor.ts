@@ -26,7 +26,10 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     });
     excludeDynamicParams(serverURL);
 
-    const worker = this.store.getOrCreateWorker(serverURL);
+    const worker = this.store.getOrCreateWorker({
+      serverURL,
+      workerOptions: {},
+    });
 
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
       worker,
@@ -50,10 +53,6 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
 
   isRunning() {
     return this._client.isRunning();
-  }
-
-  rcpTimeout() {
-    return this._client.rpcTimeout();
   }
 
   async start() {

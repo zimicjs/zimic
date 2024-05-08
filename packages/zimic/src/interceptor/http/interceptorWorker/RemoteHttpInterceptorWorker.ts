@@ -10,7 +10,6 @@ import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttp
 import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
-import { DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT } from './constants';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
@@ -30,7 +29,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _serverURL: ExtendedURL;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
-  private _rpcTimeout: number;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
@@ -40,12 +38,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this._serverURL = options.serverURL;
     const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
-    this._rpcTimeout = options.rpcTimeout ?? DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT;
 
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
-      socketTimeout: this._rpcTimeout,
-      messageTimeout: this._rpcTimeout,
     });
   }
 
@@ -64,10 +59,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   serverURL() {
     return this._serverURL.raw;
-  }
-
-  rpcTimeout() {
-    return this._rpcTimeout;
   }
 
   async start() {

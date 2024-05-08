@@ -154,8 +154,6 @@ export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends 
 export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends HttpInterceptor<Schema> {
   readonly type: 'remote';
 
-  rcpTimeout: () => number | undefined;
-
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
   post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
   patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;

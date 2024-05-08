@@ -7,7 +7,6 @@ export interface LocalHttpInterceptorWorkerOptions {
 export interface RemoteHttpInterceptorWorkerOptions {
   type: 'remote';
   serverURL: ExtendedURL;
-  rpcTimeout?: number;
 }
 
 export type HttpInterceptorWorkerOptions = LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;

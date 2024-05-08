@@ -1,5 +1,6 @@
 import { createHttpInterceptorWorker } from '../interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
+import { LocalHttpInterceptorWorkerOptions } from '../interceptorWorker/types/options';
 import { AnyHttpInterceptorClient } from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 
@@ -25,13 +26,13 @@ class LocalHttpInterceptorStore extends HttpInterceptorStore {
     }
   }
 
-  getOrCreateWorker() {
+  getOrCreateWorker(options: { workerOptions: Omit<LocalHttpInterceptorWorkerOptions, 'type'> }) {
     const existingWorker = this.class._worker;
     if (existingWorker) {
       return existingWorker;
     }
 
-    const createdWorker = createHttpInterceptorWorker({ type: 'local' });
+    const createdWorker = createHttpInterceptorWorker({ ...options.workerOptions, type: 'local' });
     this.class._worker = createdWorker;
 
     return createdWorker;

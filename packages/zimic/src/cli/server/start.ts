@@ -7,8 +7,6 @@ interface ServerStartOptions {
   hostname: string;
   port?: number;
   ephemeral: boolean;
-  lifeCycleTimeout?: number;
-  rpcTimeout?: number;
   onReady?: {
     command: string;
     arguments: string[];
@@ -17,13 +15,8 @@ interface ServerStartOptions {
 
 export let singletonServer: Server | undefined;
 
-async function startServer({ hostname, port, ephemeral, lifeCycleTimeout, rpcTimeout, onReady }: ServerStartOptions) {
-  const server = new Server({
-    hostname,
-    port,
-    lifeCycleTimeout,
-    rpcTimeout,
-  });
+async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
+  const server = new Server({ hostname, port });
 
   singletonServer = server;
 
