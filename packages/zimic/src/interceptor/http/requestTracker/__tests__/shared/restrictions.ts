@@ -20,7 +20,7 @@ export function declareRestrictionHttpRequestTrackerTests(
     Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
   },
 ) {
-  const { platform, startServer, getBaseURL, stopServer, type, Tracker } = options;
+  const { platform, type, startServer, getBaseURL, stopServer, Tracker } = options;
 
   let baseURL: URL;
 
