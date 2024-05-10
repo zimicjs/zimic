@@ -15,7 +15,7 @@
     },
 
     "test:turbo": {
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts"]
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
     "lint:turbo": {
