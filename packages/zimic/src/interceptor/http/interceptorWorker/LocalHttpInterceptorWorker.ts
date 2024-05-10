@@ -65,22 +65,20 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async start() {
-    if (super.isRunning()) {
-      return;
-    }
+    await super.sharedStart(async () => {
+      const internalWorker = await this.internalWorkerOrLoad();
+      const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
 
-    const internalWorker = await this.internalWorkerOrLoad();
-    const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
+      if (this.isInternalBrowserWorker(internalWorker)) {
+        super.setPlatform('browser');
+        await this.startInBrowser(internalWorker, sharedOptions);
+      } else {
+        super.setPlatform('node');
+        this.startInNode(internalWorker, sharedOptions);
+      }
 
-    if (this.isInternalBrowserWorker(internalWorker)) {
-      super.setPlatform('browser');
-      await this.startInBrowser(internalWorker, sharedOptions);
-    } else {
-      super.setPlatform('node');
-      this.startInNode(internalWorker, sharedOptions);
-    }
-
-    super.setIsRunning(true);
+      super.setIsRunning(true);
+    });
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -103,21 +101,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async stop() {
-    if (!super.isRunning()) {
-      return;
-    }
+    await super.sharedStop(async () => {
+      const internalWorker = await this.internalWorkerOrLoad();
 
-    const internalWorker = await this.internalWorkerOrLoad();
+      if (this.isInternalBrowserWorker(internalWorker)) {
+        this.stopInBrowser(internalWorker);
+      } else {
+        this.stopInNode(internalWorker);
+      }
+      this.clearHandlers();
 
-    if (this.isInternalBrowserWorker(internalWorker)) {
-      this.stopInBrowser(internalWorker);
-    } else {
-      this.stopInNode(internalWorker);
-    }
-    this.clearHandlers();
-
-    this._internalWorker = undefined;
-    super.setIsRunning(false);
+      this._internalWorker = undefined;
+      super.setIsRunning(false);
+    });
   }
 
   private stopInBrowser(internalWorker: BrowserHttpWorker) {

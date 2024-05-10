@@ -55,15 +55,14 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async start() {
-    if (super.isRunning()) {
-      return;
-    }
+    await super.sharedStart(async () => {
+      await this.webSocketClient.start();
+      this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
 
-    await this.webSocketClient.start();
-    this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
-
-    super.setPlatform(await this.readPlatform());
-    super.setIsRunning(true);
+      const platform = await this.readPlatform();
+      super.setPlatform(platform);
+      super.setIsRunning(true);
+    });
   }
 
   private createResponse = async (
@@ -98,15 +97,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async stop() {
-    if (!super.isRunning()) {
-      return;
-    }
+    await super.sharedStop(async () => {
+      await this.clearHandlers();
+      this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
+      await this.webSocketClient.stop();
 
-    await this.clearHandlers();
-    this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
-    await this.webSocketClient.stop();
-
-    super.setIsRunning(false);
+      super.setIsRunning(false);
+    });
   }
 
   async use<Schema extends HttpServiceSchema>(

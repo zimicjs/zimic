@@ -1,5 +1,5 @@
-import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
-import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
+import { AnyLocalHttpInterceptor } from '@/interceptor/http/interceptor/LocalHttpInterceptor';
+import { AnyRemoteHttpInterceptor } from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { expectPossiblePromise } from '@tests/utils/promises';
 
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
@@ -10,8 +10,8 @@ export function promiseIfRemote<FulfilledResult>(
   comparisonEntity:
     | LocalHttpInterceptorWorker
     | RemoteHttpInterceptorWorker
-    | LocalHttpInterceptor<any> // eslint-disable-line @typescript-eslint/no-explicit-any
-    | RemoteHttpInterceptor<any>, // eslint-disable-line @typescript-eslint/no-explicit-any,
+    | AnyLocalHttpInterceptor
+    | AnyRemoteHttpInterceptor,
 ): FulfilledResult {
   return expectPossiblePromise(value, {
     shouldBePromise: comparisonEntity.type === 'remote',

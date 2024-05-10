@@ -25,6 +25,8 @@ import { HttpResponseFactory } from './types/requests';
 abstract class HttpInterceptorWorker {
   private _platform: HttpInterceptorPlatform | null = null;
   private _isRunning = false;
+  private startingPromise?: Promise<void>;
+  private stoppingPromise?: Promise<void>;
 
   platform() {
     return this._platform;
@@ -44,7 +46,35 @@ abstract class HttpInterceptorWorker {
 
   abstract start(): Promise<void>;
 
+  protected async sharedStart(internalStart: () => Promise<void>) {
+    if (this.isRunning()) {
+      return;
+    }
+    if (this.startingPromise) {
+      return this.startingPromise;
+    }
+
+    this.startingPromise = internalStart();
+    await this.startingPromise;
+
+    this.startingPromise = undefined;
+  }
+
   abstract stop(): Promise<void>;
+
+  protected async sharedStop(internalStop: () => Promise<void>) {
+    if (!this.isRunning()) {
+      return;
+    }
+    if (this.stoppingPromise) {
+      return this.stoppingPromise;
+    }
+
+    this.stoppingPromise = internalStop();
+    await this.stoppingPromise;
+
+    this.stoppingPromise = undefined;
+  }
 
   abstract use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,

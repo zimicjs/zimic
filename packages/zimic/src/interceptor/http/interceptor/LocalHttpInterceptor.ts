@@ -91,4 +91,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLocalHttpInterceptor = LocalHttpInterceptor<any>;
+
 export default LocalHttpInterceptor;

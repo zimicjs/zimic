@@ -52,12 +52,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   const notificationBaseURL = notificationInterceptor.baseURL();
 
   beforeAll(async () => {
-    await Promise.all(interceptors.map((interceptor) => interceptor.start()));
-
-    for (const interceptor of interceptors) {
-      expect(interceptor.isRunning()).toBe(true);
-      expect(interceptor.platform()).toBe(platform);
-    }
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(interceptor.platform()).toBe(platform);
+      }),
+    );
   });
 
   beforeEach(async () => {
@@ -71,14 +72,10 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   afterAll(async () => {
     await Promise.all(
       interceptors.map(async (interceptor) => {
-        await interceptor.clear();
         await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
       }),
     );
-
-    for (const interceptor of interceptors) {
-      expect(interceptor.isRunning()).toBe(false);
-    }
   });
 
   function serializeUser(user: User): JSONSerialized<User> {

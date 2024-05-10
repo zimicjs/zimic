@@ -94,11 +94,14 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   async clear() {
     await new Promise<void>((resolve, reject) => {
       this._client.clear({
-        onCommit: resolve,
+        onCommitSuccess: resolve,
         onCommitError: reject,
       });
     });
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyRemoteHttpInterceptor = RemoteHttpInterceptor<any>;
 
 export default RemoteHttpInterceptor;

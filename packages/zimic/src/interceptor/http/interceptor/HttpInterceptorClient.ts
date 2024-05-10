@@ -71,15 +71,19 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    this.markAsRunning(true);
-
-    const isFirstRunning = this.numberOfRunningInterceptors() === 1;
-    if (isFirstRunning) {
-      await this.worker.start();
+    if (this.isRunning()) {
+      return;
     }
+
+    await this.worker.start();
+    this.markAsRunning(true);
   }
 
   async stop() {
+    if (!this.isRunning()) {
+      return;
+    }
+
     this.markAsRunning(false);
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
@@ -221,7 +225,7 @@ class HttpInterceptorClient<
     return matchedTracker;
   }
 
-  clear(options: { onCommit?: () => void; onCommitError?: () => void } = {}) {
+  clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
     if (!this.isRunning()) {
       throw new NotStartedHttpInterceptorError();
     }
@@ -236,8 +240,8 @@ class HttpInterceptorClient<
     const clearResult = this.worker.clearInterceptorHandlers(this);
     clearResults.push(clearResult);
 
-    if (options.onCommit) {
-      void Promise.all(clearResults).then(options.onCommit, options.onCommitError);
+    if (options.onCommitSuccess) {
+      void Promise.all(clearResults).then(options.onCommitSuccess, options.onCommitError);
     }
   }
 

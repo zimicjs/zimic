@@ -78,10 +78,7 @@ class HttpInterceptorStore {
       return existingWorker;
     }
 
-    const createdWorker = createHttpInterceptorWorker({
-      ...workerOptions,
-      type: 'remote',
-    });
+    const createdWorker = createHttpInterceptorWorker({ ...workerOptions, type: 'remote' });
     this.class.remoteWorkers.set(workerOptions.serverURL.origin, createdWorker);
 
     return createdWorker;

@@ -143,6 +143,66 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
         }
       });
 
+      it('should start the shared worker when the first interceptor is started', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        const otherInterceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(otherInterceptor.isRunning()).toBe(false);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          const worker = getSingletonWorkerByType(store, type, serverURL);
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning()).toBe(true);
+
+          await otherInterceptor.start();
+          expect(otherInterceptor.isRunning()).toBe(true);
+
+          expect(worker!.isRunning()).toBe(true);
+        } finally {
+          await interceptor.stop();
+          await otherInterceptor.stop();
+        }
+      });
+
+      it('should stop the shared worker when the last interceptor is stopped', async () => {
+        const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(interceptor.isRunning()).toBe(false);
+
+        const otherInterceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
+        expect(otherInterceptor.isRunning()).toBe(false);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          const worker = getSingletonWorkerByType(store, type, serverURL);
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning()).toBe(true);
+
+          await otherInterceptor.start();
+          expect(otherInterceptor.isRunning()).toBe(true);
+
+          expect(worker!.isRunning()).toBe(true);
+
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+
+          expect(worker!.isRunning()).toBe(true);
+
+          await otherInterceptor.stop();
+          expect(otherInterceptor.isRunning()).toBe(false);
+
+          expect(worker!.isRunning()).toBe(false);
+        } finally {
+          await interceptor.stop();
+          await otherInterceptor.stop();
+        }
+      });
+
       it('should support starting interceptors concurrently', async () => {
         const interceptor = createInternalHttpInterceptor(runtimeOptions.getInterceptorOptions());
         expect(interceptor.isRunning()).toBe(false);
@@ -151,7 +211,12 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
         expect(otherInterceptor.isRunning()).toBe(false);
 
         try {
-          await Promise.all([interceptor.start(), otherInterceptor.start()]);
+          await Promise.all(
+            [interceptor, otherInterceptor].map(async (interceptor) => {
+              await interceptor.start();
+              expect(interceptor.isRunning()).toBe(true);
+            }),
+          );
 
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
@@ -176,13 +241,26 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
 
+          const worker = getSingletonWorkerByType(store, type, serverURL);
+          expect(worker).toBeDefined();
+          expect(worker!.isRunning()).toBe(true);
+
           await otherInterceptor.start();
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          await Promise.all([interceptor.stop(), otherInterceptor.stop()]);
+          expect(worker!.isRunning()).toBe(true);
+
+          await Promise.all(
+            [interceptor, otherInterceptor].map(async (interceptor) => {
+              await interceptor.stop();
+              expect(interceptor.isRunning()).toBe(false);
+            }),
+          );
 
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(false);
+
+          expect(worker!.isRunning()).toBe(false);
         } finally {
           await interceptor.stop();
           await otherInterceptor.stop();
