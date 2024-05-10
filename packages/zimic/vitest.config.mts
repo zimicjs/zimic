@@ -9,6 +9,7 @@ export const defaultConfig: UserConfig = {
     globals: false,
     allowOnly: process.env.CI !== 'true',
     testTimeout: 5000,
+    retry: process.env.CI === 'true' ? 1 : 0,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
