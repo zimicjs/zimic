@@ -43,13 +43,13 @@ import {
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
   type TrackedHttpInterceptorRequest,
-  type HttpRequestTracker,
-  type LocalHttpRequestTracker,
-  type RemoteHttpRequestTracker,
-  type SyncedRemoteHttpRequestTracker,
-  type PendingRemoteHttpRequestTracker,
-  type HttpRequestTrackerResponseDeclaration,
-  type HttpRequestTrackerResponseDeclarationFactory,
+  type HttpRequestHandler,
+  type LocalHttpRequestHandler,
+  type RemoteHttpRequestHandler,
+  type SyncedRemoteHttpRequestHandler,
+  type PendingRemoteHttpRequestHandler,
+  type HttpRequestHandlerResponseDeclaration,
+  type HttpRequestHandlerResponseDeclarationFactory,
   UnknownHttpInterceptorPlatform,
   NotStartedHttpInterceptorError,
   UnregisteredServiceWorkerError,
@@ -117,13 +117,13 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
 
-    expectTypeOf<HttpRequestTracker<never, never, never>>().not.toBeAny();
-    expectTypeOf<LocalHttpRequestTracker<never, never, never>>().not.toBeAny();
-    expectTypeOf<RemoteHttpRequestTracker<never, never, never>>().not.toBeAny();
-    expectTypeOf<SyncedRemoteHttpRequestTracker<never, never, never>>().not.toBeAny();
-    expectTypeOf<PendingRemoteHttpRequestTracker<never, never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTrackerResponseDeclaration<never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestTrackerResponseDeclarationFactory<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<LocalHttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<RemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never>>().not.toBeAny();
 
     expectTypeOf<UnknownHttpInterceptorPlatform>().not.toBeAny();
     expect(typeof UnknownHttpInterceptorPlatform).toBe('function');
