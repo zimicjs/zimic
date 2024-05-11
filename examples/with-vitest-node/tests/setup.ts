@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 
-import githubInterceptor from './interceptors/githubInterceptor';
-import interceptorWorker from './interceptors/worker';
+import githubInterceptor from './interceptors/github';
 
 beforeAll(async () => {
-  await interceptorWorker.start();
+  await githubInterceptor.start();
 });
 
 beforeEach(() => {
@@ -12,5 +11,5 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-  await interceptorWorker.stop();
+  await githubInterceptor.stop();
 });

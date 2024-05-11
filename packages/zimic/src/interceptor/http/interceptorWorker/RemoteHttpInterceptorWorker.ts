@@ -2,20 +2,17 @@ import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
-import { createURLIgnoringNonPathComponents, deserializeRequest, serializeResponse, validatedURL } from '@/utils/fetch';
+import { excludeDynamicParams, deserializeRequest, serializeResponse, ExtendedURL } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
+import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
+import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT } from './constants';
-import NotStartedHttpInterceptorWorkerError from './errors/NotStartedHttpInterceptorWorkerError';
-import UnknownHttpInterceptorWorkerPlatform from './errors/UnknownHttpInterceptorWorkerPlatform';
+import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
-import { HttpInterceptorWorkerPlatform, RemoteHttpInterceptorWorkerOptions } from './types/options';
-import { PublicRemoteHttpInterceptorWorker } from './types/public';
+import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
-
-export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
 
 interface HttpHandler {
   id: string;
@@ -25,32 +22,29 @@ interface HttpHandler {
   createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
 }
 
-class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements PublicRemoteHttpInterceptorWorker {
-  readonly type = 'remote';
+class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
+  readonly type: 'remote';
 
   private _crypto?: IsomorphicCrypto;
 
-  private _serverURL: string;
   private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
-  private _rpcTimeout: number;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
+    this.type = options.type;
 
-    this._serverURL = validatedURL(options.serverURL, { protocols: SUPPORTED_BASE_URL_PROTOCOLS });
-
-    const webSocketServerURL = new URL(this._serverURL);
-    webSocketServerURL.protocol = 'ws:';
-
-    this._rpcTimeout = options.rpcTimeout ?? DEFAULT_HTTP_INTERCEPTOR_WORKER_RPC_TIMEOUT;
-
+    const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
-      socketTimeout: this._rpcTimeout,
-      messageTimeout: this._rpcTimeout,
     });
+  }
+
+  private deriveWebSocketServerURL(serverURL: ExtendedURL) {
+    const webSocketServerURL = new URL(serverURL);
+    webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
+    return webSocketServerURL;
   }
 
   private async crypto() {
@@ -60,27 +54,15 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     return this._crypto;
   }
 
-  serverURL() {
-    return this._serverURL.toString();
-  }
-
-  rpcTimeout() {
-    return this._rpcTimeout;
-  }
-
   async start() {
-    if (super.isRunning()) {
-      return;
-    }
+    await super.sharedStart(async () => {
+      await this.webSocketClient.start();
+      this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
 
-    super.ensureEmptyRunningInstance();
-
-    await this.webSocketClient.start();
-    this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
-
-    super.setPlatform(await this.readPlatform());
-    super.markAsRunningInstance();
-    super.setIsRunning(true);
+      const platform = await this.readPlatform();
+      super.setPlatform(platform);
+      super.setIsRunning(true);
+    });
   }
 
   private createResponse = async (
@@ -97,7 +79,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
     return { response: serializedResponse };
   };
 
-  private async readPlatform(): Promise<HttpInterceptorWorkerPlatform> {
+  private async readPlatform(): Promise<HttpInterceptorPlatform> {
     const { setupServer } = await import('msw/node');
     if (typeof setupServer !== 'undefined') {
       return 'node';
@@ -111,38 +93,35 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
-    throw new UnknownHttpInterceptorWorkerPlatform();
+    throw new UnknownHttpInterceptorPlatform();
   }
 
   async stop() {
-    if (!super.isRunning()) {
-      return;
-    }
+    await super.sharedStop(async () => {
+      await this.clearHandlers();
+      this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
+      await this.webSocketClient.stop();
 
-    await this.clearHandlers();
-    this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
-    await this.webSocketClient.stop();
-
-    super.setIsRunning(false);
-    super.clearRunningInstance();
+      super.setIsRunning(false);
+    });
   }
 
   async use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
-    url: string,
+    rawURL: string | URL,
     createResponse: HttpResponseFactory,
   ) {
     if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
+      throw new NotStartedHttpInterceptorError();
     }
 
     const crypto = await this.crypto();
-    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
+    const url = excludeDynamicParams(new URL(rawURL)).toString();
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      url: normalizedURL,
+      url,
       method,
       interceptor,
       async createResponse(context) {
@@ -155,14 +134,14 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
     await this.webSocketClient.request('interceptors/workers/use/commit', {
       id: handler.id,
-      url: normalizedURL,
+      url,
       method,
     });
   }
 
   async clearHandlers() {
     if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
+      throw new NotStartedHttpInterceptorError();
     }
 
     this.httpHandlers.clear();
@@ -172,7 +151,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker implements Publi
 
   async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
     if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorWorkerError();
+      throw new NotStartedHttpInterceptorError();
     }
 
     for (const handler of this.httpHandlers.values()) {

@@ -1,9 +1,11 @@
 import ClientSocket from 'isomorphic-ws';
 
-import { validatedURL } from '@/utils/fetch';
+import { createExtendedURL } from '@/utils/fetch';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
+
+const SUPPORTED_WEB_SOCKET_PROTOCOLS = ['ws', 'wss'];
 
 interface WebSocketClientOptions {
   url: string;
@@ -12,7 +14,7 @@ interface WebSocketClientOptions {
 }
 
 class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
-  private url: string;
+  private url: URL;
 
   private socket?: ClientSocket;
 
@@ -22,8 +24,8 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       messageTimeout: options.messageTimeout,
     });
 
-    this.url = validatedURL(options.url, {
-      protocols: ['ws'],
+    this.url = createExtendedURL(options.url, {
+      protocols: SUPPORTED_WEB_SOCKET_PROTOCOLS,
     });
   }
 

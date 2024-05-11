@@ -1,4 +1,4 @@
-export type HttpInterceptorWorkerPlatform = 'node' | 'browser';
+import { ExtendedURL } from '@/utils/fetch';
 
 export interface LocalHttpInterceptorWorkerOptions {
   type: 'local';
@@ -6,19 +6,9 @@ export interface LocalHttpInterceptorWorkerOptions {
 
 export interface RemoteHttpInterceptorWorkerOptions {
   type: 'remote';
-  serverURL: string;
-  rpcTimeout?: number;
+  serverURL: ExtendedURL;
 }
 
-/**
- * Options to create an HTTP interceptor worker.
- *
- * When running in a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal
- * before starting the worker. This initializes the mock service worker in your public directory.
- *
- * @see {@link https://github.com/diego-aquino/zimic#zimic-browser-init-publicdirectory}
- */
 export type HttpInterceptorWorkerOptions = LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
-/** The type of a worker. */
 export type HttpInterceptorWorkerType = HttpInterceptorWorkerOptions['type'];

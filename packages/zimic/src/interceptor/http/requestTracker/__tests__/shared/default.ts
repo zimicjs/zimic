@@ -4,16 +4,13 @@ import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
+import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
-import {
-  LocalHttpInterceptorWorkerOptions,
-  RemoteHttpInterceptorWorkerOptions,
-} from '@/interceptor/http/interceptorWorker/types/options';
+import { joinURL } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
-import { createInternalHttpInterceptorWorker, createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
 import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
@@ -28,49 +25,35 @@ import { SharedHttpRequestTrackerTestOptions, Schema, MethodSchema } from './typ
 
 export function declareDefaultHttpRequestTrackerTests(
   options: SharedHttpRequestTrackerTestOptions & {
+    type: HttpInterceptorType;
     Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
-    workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
   },
 ) {
-  const { platform, startServer, getAccessResources, stopServer, Tracker, workerOptions } = options;
+  const { platform, type, startServer, getBaseURL, stopServer, Tracker } = options;
 
-  let serverURL: string;
-  let baseURL: string;
-  let pathPrefix: string;
+  let baseURL: URL;
 
-  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
 
   beforeAll(async () => {
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
 
-    ({
-      serverURL,
-      clientBaseURL: baseURL,
-      clientPathPrefix: pathPrefix,
-    } = await getAccessResources(workerOptions.type));
+    baseURL = await getBaseURL(type);
 
-    worker = createInternalHttpInterceptorWorker(
-      workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
-    );
-
-    interceptor = createInternalHttpInterceptor<Schema>(
-      worker instanceof LocalHttpInterceptorWorker ? { worker, baseURL } : { worker, pathPrefix },
-    );
-
+    interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
 
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
+    await interceptor.start();
+    expect(interceptor.platform()).toBe(platform);
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await interceptor.stop();
 
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -103,7 +86,7 @@ export function declareDefaultHttpRequestTrackerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.with({}), worker);
+    await promiseIfRemote(tracker.with({}), interceptor);
 
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
   });
@@ -115,7 +98,7 @@ export function declareDefaultHttpRequestTrackerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), worker);
+    await promiseIfRemote(tracker.bypass(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -123,11 +106,11 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.bypass(), worker);
+    await promiseIfRemote(tracker.bypass(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -135,7 +118,7 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
   });
@@ -147,7 +130,7 @@ export function declareDefaultHttpRequestTrackerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), worker);
+    await promiseIfRemote(tracker.clear(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -155,11 +138,11 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.clear(), worker);
+    await promiseIfRemote(tracker.clear(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -167,7 +150,7 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
   });
@@ -202,7 +185,7 @@ export function declareDefaultHttpRequestTrackerTests(
     }));
 
     const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
-    await promiseIfRemote(tracker.respond(responseFactory), worker);
+    await promiseIfRemote(tracker.respond(responseFactory), interceptor);
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -220,9 +203,12 @@ export function declareDefaultHttpRequestTrackerTests(
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
+    const error = new NoResponseDefinitionError();
+    expect(error).toBeInstanceOf(TypeError);
+
     await expect(async () => {
       await tracker.applyResponseDeclaration(parsedRequest);
-    }).rejects.toThrowError(new NoResponseDefinitionError());
+    }).rejects.toThrowError(error);
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
@@ -243,7 +229,7 @@ export function declareDefaultHttpRequestTrackerTests(
 
     tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    let interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -251,7 +237,7 @@ export function declareDefaultHttpRequestTrackerTests(
     expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
-    const secondRequest = new Request(`${baseURL}/path`);
+    const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
     const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
 
@@ -263,7 +249,7 @@ export function declareDefaultHttpRequestTrackerTests(
     tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
     expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(2);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -295,7 +281,7 @@ export function declareDefaultHttpRequestTrackerTests(
 
     tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    let interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -303,10 +289,10 @@ export function declareDefaultHttpRequestTrackerTests(
     expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
-    await promiseIfRemote(tracker.clear(), worker);
+    await promiseIfRemote(tracker.clear(), interceptor);
 
     expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(0);
   });
 
@@ -328,7 +314,7 @@ export function declareDefaultHttpRequestTrackerTests(
 
     tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    const interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0]).toEqual(parsedRequest);
@@ -368,7 +354,7 @@ export function declareDefaultHttpRequestTrackerTests(
 
     tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(tracker.requests(), worker);
+    const interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0]).toEqual(parsedRequest);
@@ -395,7 +381,7 @@ export function declareDefaultHttpRequestTrackerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), worker);
+    await promiseIfRemote(tracker.clear(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -405,11 +391,11 @@ export function declareDefaultHttpRequestTrackerTests(
           status: 200,
           body: { success: true },
         }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), worker);
+    await promiseIfRemote(tracker.clear(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -417,7 +403,7 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(true);
   });
@@ -429,7 +415,7 @@ export function declareDefaultHttpRequestTrackerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), worker);
+    await promiseIfRemote(tracker.bypass(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -439,11 +425,11 @@ export function declareDefaultHttpRequestTrackerTests(
           status: 200,
           body: { success: true },
         }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), worker);
+    await promiseIfRemote(tracker.bypass(), interceptor);
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
@@ -451,7 +437,7 @@ export function declareDefaultHttpRequestTrackerTests(
         status: 200,
         body: { success: true },
       }),
-      worker,
+      interceptor,
     );
     expect(tracker.matchesRequest(parsedRequest)).toBe(false);
   });

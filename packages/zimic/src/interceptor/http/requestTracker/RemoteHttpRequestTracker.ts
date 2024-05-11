@@ -10,8 +10,8 @@ import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestTrackerClient from './HttpRequestTrackerClient';
 import {
   HttpRequestTrackerRestriction,
-  PublicRemoteHttpRequestTracker,
-  PublicSyncedRemoteHttpRequestTracker,
+  RemoteHttpRequestTracker as PublicRemoteHttpRequestTracker,
+  SyncedRemoteHttpRequestTracker as PublicSyncedRemoteHttpRequestTracker,
 } from './types/public';
 import {
   HttpInterceptorRequest,

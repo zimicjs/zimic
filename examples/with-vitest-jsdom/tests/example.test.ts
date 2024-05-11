@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import renderApp, { GitHubRepository } from '../src/app';
-import githubInterceptor from './interceptors/githubInterceptor';
+import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {
   beforeEach(() => {

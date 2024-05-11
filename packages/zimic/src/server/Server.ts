@@ -3,31 +3,19 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import {
-  createRegexFromURL,
-  createURLIgnoringNonPathComponents,
-  deserializeResponse,
-  serializeRequest,
-} from '@/utils/fetch';
+import { createRegexFromURL, excludeDynamicParams, deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
-import {
-  DEFAULT_ACCESS_CONTROL_HEADERS,
-  DEFAULT_PREFLIGHT_STATUS_CODE,
-  DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT,
-  DEFAULT_SERVER_RPC_TIMEOUT,
-} from './constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 import NotStartedServerError from './errors/NotStartedServerError';
-import { PublicServer } from './types/public';
+import { Server as PublicServer } from './types/public';
 import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
 
 export interface ServerOptions {
   hostname?: string;
   port?: number;
-  lifeCycleTimeout?: number;
-  rpcTimeout?: number;
 }
 
 interface HttpHandler {
@@ -42,9 +30,6 @@ class Server implements PublicServer {
 
   private _hostname: string;
   private _port?: number;
-
-  private _lifeCycleTimeout?: number;
-  private _rpcTimeout?: number;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -63,8 +48,6 @@ class Server implements PublicServer {
   constructor(options: ServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
-    this._lifeCycleTimeout = options.lifeCycleTimeout ?? DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT;
-    this._rpcTimeout = options.rpcTimeout ?? DEFAULT_SERVER_RPC_TIMEOUT;
   }
 
   hostname() {
@@ -80,14 +63,6 @@ class Server implements PublicServer {
       return undefined;
     }
     return `http://${this._hostname}:${this._port}`;
-  }
-
-  lifeCycleTimeout() {
-    return this._lifeCycleTimeout;
-  }
-
-  rpcTimeout() {
-    return this._rpcTimeout;
   }
 
   isRunning() {
@@ -125,8 +100,6 @@ class Server implements PublicServer {
 
     this._webSocketServer = new WebSocketServer({
       httpServer: this._httpServer,
-      socketTimeout: this._lifeCycleTimeout,
-      messageTimeout: this._rpcTimeout,
     });
     this.startWebSocketServer();
   }
@@ -137,7 +110,6 @@ class Server implements PublicServer {
     await startHttpServer(httpServer, {
       hostname: this._hostname,
       port: this._port,
-      timeout: this._lifeCycleTimeout,
     });
     this._port = getHttpServerPort(httpServer);
 
@@ -178,14 +150,14 @@ class Server implements PublicServer {
     return {};
   };
 
-  private registerHttpHandlerGroup({ id, url, method }: HttpHandlerCommit, socket: Socket) {
+  private registerHttpHandlerGroup({ id, url: rawURL, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const normalizedURL = createURLIgnoringNonPathComponents(url).toString();
+    const url = excludeDynamicParams(new URL(rawURL)).toString();
 
     handlerGroups.push({
       id,
-      url: { regex: createRegexFromURL(normalizedURL) },
+      url: { regex: createRegexFromURL(url) },
       socket,
     });
   }
@@ -221,9 +193,7 @@ class Server implements PublicServer {
   private async stopHttpServer() {
     const httpServer = this.httpServer();
 
-    await stopHttpServer(httpServer, {
-      timeout: this._lifeCycleTimeout,
-    });
+    await stopHttpServer(httpServer);
     httpServer.removeAllListeners();
 
     this._httpServer = undefined;
@@ -264,13 +234,13 @@ class Server implements PublicServer {
     const webSocketServer = this.webSocketServer();
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const normalizedURL = createURLIgnoringNonPathComponents(request.url).toString();
+    const url = excludeDynamicParams(new URL(request.url)).toString();
     const serializedRequest = await serializeRequest(request);
 
     for (let index = handlerGroup.length - 1; index >= 0; index--) {
       const handler = handlerGroup[index];
 
-      const matchesHandlerURL = handler.url.regex.test(normalizedURL);
+      const matchesHandlerURL = handler.url.regex.test(url);
       if (!matchesHandlerURL) {
         continue;
       }

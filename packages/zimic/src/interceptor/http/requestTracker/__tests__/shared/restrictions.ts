@@ -5,14 +5,10 @@ import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
+import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
-import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
-import {
-  LocalHttpInterceptorWorkerOptions,
-  RemoteHttpInterceptorWorkerOptions,
-} from '@/interceptor/http/interceptorWorker/types/options';
-import { createInternalHttpInterceptorWorker, createInternalHttpInterceptor } from '@tests/utils/interceptors';
+import { joinURL } from '@/utils/fetch';
+import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '../../RemoteHttpRequestTracker';
@@ -20,49 +16,35 @@ import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequ
 
 export function declareRestrictionHttpRequestTrackerTests(
   options: SharedHttpRequestTrackerTestOptions & {
+    type: HttpInterceptorType;
     Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
-    workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
   },
 ) {
-  const { platform, startServer, getAccessResources, stopServer, Tracker, workerOptions } = options;
+  const { platform, type, startServer, getBaseURL, stopServer, Tracker } = options;
 
-  let serverURL: string;
-  let baseURL: string;
-  let pathPrefix: string;
+  let baseURL: URL;
 
-  let worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker;
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
 
   beforeAll(async () => {
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await startServer?.();
     }
 
-    ({
-      serverURL,
-      clientBaseURL: baseURL,
-      clientPathPrefix: pathPrefix,
-    } = await getAccessResources(workerOptions.type));
+    baseURL = await getBaseURL(type);
 
-    worker = createInternalHttpInterceptorWorker(
-      workerOptions.type === 'local' ? workerOptions : { ...workerOptions, serverURL },
-    );
-
-    interceptor = createInternalHttpInterceptor<Schema>(
-      worker instanceof LocalHttpInterceptorWorker ? { worker, baseURL } : { worker, pathPrefix },
-    );
-
+    interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
 
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
+    await interceptor.start();
+    expect(interceptor.platform()).toBe(platform);
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await interceptor.stop();
 
-    if (workerOptions.type === 'remote') {
+    if (type === 'remote') {
       await stopServer?.();
     }
   });
@@ -84,7 +66,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           });
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
-          const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+          const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
           expect(tracker.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -94,7 +76,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
           expect(tracker.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -120,7 +102,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           new HttpSearchParams<SearchParamsSchema>({ name }),
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
-          const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+          const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
           expect(tracker.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -129,7 +111,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
           expect(tracker.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -157,7 +139,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
-        const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`);
+        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
         expect(tracker.matchesRequest(parsedRequest)).toBe(true);
       }
@@ -166,7 +148,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
         new HttpSearchParams<SearchParamsSchema>({}),
       ]) {
-        const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`);
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
         expect(tracker.matchesRequest(parsedRequest)).toBe(false);
       }
@@ -451,7 +433,7 @@ export function declareRestrictionHttpRequestTrackerTests(
 
     for (const matchingHeaders of matchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`, {
+        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
@@ -459,7 +441,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`, {
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -469,7 +451,7 @@ export function declareRestrictionHttpRequestTrackerTests(
 
     for (const mismatchingHeaders of mismatchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const matchingRequest = new Request(`${baseURL}?${matchingSearchParams.toString()}`, {
+        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
@@ -477,7 +459,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(`${baseURL}?${mismatchingSearchParams.toString()}`, {
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);

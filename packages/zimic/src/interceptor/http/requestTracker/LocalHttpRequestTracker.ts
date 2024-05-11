@@ -8,7 +8,10 @@ import { Default } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestTrackerClient from './HttpRequestTrackerClient';
-import { HttpRequestTrackerRestriction, PublicLocalHttpRequestTracker } from './types/public';
+import {
+  HttpRequestTrackerRestriction,
+  LocalHttpRequestTracker as PublicLocalHttpRequestTracker,
+} from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,

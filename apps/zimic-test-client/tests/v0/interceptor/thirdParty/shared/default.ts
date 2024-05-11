@@ -1,247 +1,81 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONValue, JSONSerialized } from 'zimic0';
-import {
-  HttpInterceptorWorkerOptions,
-  LocalHttpInterceptorWorkerOptions,
-  RemoteHttpInterceptorWorkerOptions,
-  createHttpInterceptor,
-  createHttpInterceptorWorker,
-} from 'zimic0/interceptor';
+import { HttpRequest, HttpResponse, HttpSearchParams, JSONSerialized } from 'zimic0';
+import { HttpInterceptorType, createHttpInterceptor } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
-import { ClientTestOptionsByWorkerType } from '.';
+import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
+import {
+  AuthServiceSchema,
+  NotificationServiceSchema,
+  User,
+  UserCreationPayload,
+  ValidationError,
+  ConflictError,
+  UserListSearchParams,
+  NotFoundError,
+  Notification,
+} from './schema';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  birthDate: Date;
-}
-
-interface UserWithPassword extends User {
-  password: string;
-}
-
-type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
-
-type LoginResult = JSONValue<{
-  accessToken: string;
-  refreshToken: string;
-}>;
-
-type RequestError = JSONValue<{
-  code: string;
-  message: string;
-}>;
-
-type ValidationError = JSONValue<
-  RequestError & {
-    code: 'validation_error';
-  }
->;
-
-type UnauthorizedError = JSONValue<
-  RequestError & {
-    code: 'unauthorized';
-  }
->;
-
-type NotFoundError = JSONValue<
-  RequestError & {
-    code: 'not_found';
-  }
->;
-
-type ConflictError = JSONValue<
-  RequestError & {
-    code: 'conflict';
-  }
->;
-
-type UserListSearchParams = HttpSchema.SearchParams<{
-  name?: string;
-  orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
-
-type UserPaths = HttpSchema.Paths<{
-  '/users': {
-    POST: {
-      request: {
-        headers: { 'content-type'?: string };
-        body: UserCreationPayload;
-      };
-      response: {
-        201: {
-          headers: { 'x-user-id': User['id'] };
-          body: JSONSerialized<User>;
-        };
-        400: { body: ValidationError };
-        409: { body: ConflictError };
-      };
-    };
-    GET: {
-      request: {
-        searchParams: UserListSearchParams;
-      };
-      response: {
-        200: { body: JSONSerialized<User>[] };
-      };
-    };
-  };
-}>;
-
-type UserByIdPaths = HttpSchema.Paths<{
-  '/users/:id': {
-    GET: {
-      response: {
-        200: { body: JSONSerialized<User> };
-        404: { body: NotFoundError };
-      };
-    };
-    PATCH: {
-      request: {
-        body: Partial<JSONSerialized<User>>;
-      };
-      response: {
-        200: { body: JSONSerialized<User> };
-        404: { body: NotFoundError };
-      };
-    };
-    DELETE: {
-      response: {
-        204: {};
-        404: { body: NotFoundError };
-      };
-    };
-  };
-}>;
-
-type SessionPaths = HttpSchema.Paths<{
-  '/session/login': {
-    POST: {
-      request: {
-        body: {
-          email: string;
-          password: string;
-        };
-      };
-      response: {
-        201: { body: LoginResult };
-        400: { body: ValidationError };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-
-  '/session/refresh': {
-    POST: {
-      request: {
-        body: { refreshToken: string };
-      };
-      response: {
-        201: { body: LoginResult };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-
-  '/session/logout': {
-    POST: {
-      response: {
-        204: { body: undefined };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-}>;
-
-type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
-
-type Notification = JSONValue<{
-  id: string;
-  userId: string;
-  content: string;
-}>;
-
-type NotificationServiceSchema = HttpSchema.Paths<{
-  '/notifications/:userId': {
-    GET: {
-      response: {
-        200: { body: Notification[] };
-      };
-    };
-  };
-}>;
-
-function prepareLocalWorkerAndInterceptors(workerOptions: LocalHttpInterceptorWorkerOptions) {
-  const worker = createHttpInterceptorWorker(workerOptions);
-
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3000',
-  });
-
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3001',
-  });
-
-  return {
-    worker,
-    authInterceptor,
-    notificationInterceptor,
-  };
-}
-
-async function prepareRemoteWorkerAndInterceptors(workerOptions: RemoteHttpInterceptorWorkerOptions) {
+async function getAuthBaseURL(type: HttpInterceptorType) {
   const crypto = await getCrypto();
 
-  const worker = createHttpInterceptorWorker(workerOptions);
-
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
-    worker,
-    pathPrefix: `/auth-${crypto.randomUUID()}`,
-  });
-
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
-    worker,
-    pathPrefix: `/notifications-${crypto.randomUUID()}`,
-  });
-
-  return {
-    worker,
-    authInterceptor,
-    notificationInterceptor,
-  };
+  return type === 'local'
+    ? 'http://localhost:3000'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-function prepareWorkerAndInterceptors(workerOptions: HttpInterceptorWorkerOptions) {
-  return workerOptions.type === 'local'
-    ? prepareLocalWorkerAndInterceptors(workerOptions)
-    : prepareRemoteWorkerAndInterceptors(workerOptions);
+async function getNotificationsBaseURL(type: HttpInterceptorType) {
+  const crypto = await getCrypto();
+
+  return type === 'local'
+    ? 'http://localhost:3001'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
 }
 
 async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
-  const { platform, fetch, workerOptions } = options;
+  const { platform, type, fetch } = options;
 
-  const { worker, authInterceptor, notificationInterceptor } = await prepareWorkerAndInterceptors(workerOptions);
+  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+    type,
+    baseURL: await getAuthBaseURL(type),
+  });
+
+  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+    type,
+    baseURL: await getNotificationsBaseURL(type),
+  });
+
+  const interceptors = [authInterceptor, notificationInterceptor];
 
   const authBaseURL = authInterceptor.baseURL();
   const notificationBaseURL = notificationInterceptor.baseURL();
 
   beforeAll(async () => {
-    await worker.start();
-    expect(worker.platform()).toBe(platform);
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(interceptor.platform()).toBe(platform);
+      }),
+    );
   });
 
   beforeEach(async () => {
-    await authInterceptor.clear();
-    await notificationInterceptor.clear();
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.clear();
+      }),
+    );
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+      }),
+    );
   });
 
   function serializeUser(user: User): JSONSerialized<User> {

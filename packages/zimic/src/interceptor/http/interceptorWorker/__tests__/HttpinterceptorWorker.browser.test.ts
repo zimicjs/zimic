@@ -1,6 +1,6 @@
 import { describe } from 'vitest';
 
-import { getBrowserAccessResources } from '@tests/utils/workers';
+import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
@@ -8,8 +8,8 @@ describe('HttpInterceptorWorker (browser)', () => {
   declareSharedHttpInterceptorWorkerTests({
     platform: 'browser',
 
-    getAccessResources(type) {
-      return getBrowserAccessResources(type);
+    getBaseURL(type) {
+      return getBrowserBaseURL(type);
     },
   });
 });

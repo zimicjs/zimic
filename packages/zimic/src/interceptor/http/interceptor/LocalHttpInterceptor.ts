@@ -1,23 +1,33 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
+import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
-import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
-import { PublicLocalHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
-import HttpInterceptorClient from './HttpInterceptorClient';
+import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
-import { PublicLocalHttpInterceptor } from './types/public';
+import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
-  readonly type = 'local';
-
+  readonly type: 'local';
+  private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
+    this.type = options.type;
+
+    const baseURL = createExtendedURL(options.baseURL, {
+      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+    });
+    excludeDynamicParams(baseURL);
+
+    const worker = this.store.getOrCreateLocalWorker({});
+
     this._client = new HttpInterceptorClient<Schema>({
-      worker: options.worker satisfies PublicLocalHttpInterceptorWorker as LocalHttpInterceptorWorker,
+      worker,
+      store: this.store,
       Tracker: LocalHttpRequestTracker,
-      baseURL: options.baseURL,
+      baseURL,
     });
   }
 
@@ -27,6 +37,25 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
 
   baseURL() {
     return this._client.baseURL();
+  }
+
+  platform() {
+    return this._client.platform();
+  }
+
+  isRunning() {
+    return this._client.isRunning();
+  }
+
+  async start() {
+    await this._client.start();
+  }
+
+  async stop() {
+    if (this.isRunning()) {
+      this.clear();
+    }
+    await this._client.stop();
   }
 
   get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
@@ -61,5 +90,8 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     this._client.clear();
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLocalHttpInterceptor = LocalHttpInterceptor<any>;
 
 export default LocalHttpInterceptor;

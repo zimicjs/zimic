@@ -3,8 +3,6 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT, DEFAULT_SERVER_RPC_TIMEOUT } from '@/server/constants';
-
 import initializeBrowserServiceWorker from './browser/init';
 import startServer from './server/start';
 
@@ -61,18 +59,6 @@ async function runCLI() {
                 'starting.',
               alias: 'e',
               default: false,
-            })
-            .option('life-cycle-timeout', {
-              type: 'number',
-              description:
-                'The maximum time in milliseconds to wait for the server to start or stop before timing out.',
-              default: DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT,
-            })
-            .option('rpc-timeout', {
-              type: 'number',
-              description:
-                'The maximum time in milliseconds to wait for interceptor remote procedure calls before timing out.',
-              default: DEFAULT_SERVER_RPC_TIMEOUT,
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();
@@ -82,8 +68,6 @@ async function runCLI() {
             hostname: cliArguments.hostname,
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
-            lifeCycleTimeout: cliArguments.lifeCycleTimeout,
-            rpcTimeout: cliArguments.rpcTimeout,
             onReady: onReadyCommand
               ? {
                   command: onReadyCommand.toString(),

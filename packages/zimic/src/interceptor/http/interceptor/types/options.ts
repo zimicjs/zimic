@@ -1,31 +1,19 @@
-import {
-  PublicLocalHttpInterceptorWorker,
-  PublicRemoteHttpInterceptorWorker,
-} from '../../interceptorWorker/types/public';
+export type HttpInterceptorType = 'local' | 'remote';
+export type HttpInterceptorPlatform = 'node' | 'browser';
 
-export interface LocalHttpInterceptorOptions {
-  /**
-   * The {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker} instance for the
-   * interceptor. The worker must be running for this interceptor to intercept requests.
-   */
-  worker: PublicLocalHttpInterceptorWorker;
+export interface BaseHttpInterceptorOptions {
+  type: HttpInterceptorType;
 
   /** The base URL used by the interceptor. This URL will be prepended to any paths used by the interceptor. */
-  baseURL: string;
+  baseURL: string | URL;
 }
 
-export interface RemoteHttpInterceptorOptions {
-  /**
-   * The {@link https://github.com/diego-aquino/zimic#httpinterceptorworker HttpInterceptorWorker} instance for the
-   * interceptor. The worker must be running for this interceptor to intercept requests.
-   */
-  worker: PublicRemoteHttpInterceptorWorker;
+export interface LocalHttpInterceptorOptions extends BaseHttpInterceptorOptions {
+  type: 'local';
+}
 
-  /**
-   * The path prefix used by the interceptor. This prefix will be append to the mock server URL and prepended to any
-   * paths used by the interceptor.
-   */
-  pathPrefix: string;
+export interface RemoteHttpInterceptorOptions extends BaseHttpInterceptorOptions {
+  type: 'remote';
 }
 
 /** Options to create an HTTP interceptor. */

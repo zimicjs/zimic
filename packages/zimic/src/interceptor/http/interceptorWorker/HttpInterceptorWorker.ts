@@ -13,27 +13,26 @@ import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
+import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestTracker/types/requests';
-import OtherHttpInterceptorWorkerRunningError from './errors/OtherHttpInterceptorWorkerRunningError';
-import { HttpInterceptorWorkerPlatform } from './types/options';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
-  private static runningInstance?: HttpInterceptorWorker;
-
-  private _platform: HttpInterceptorWorkerPlatform | null = null;
+  private _platform: HttpInterceptorPlatform | null = null;
   private _isRunning = false;
+  private startingPromise?: Promise<void>;
+  private stoppingPromise?: Promise<void>;
 
   platform() {
     return this._platform;
   }
 
-  protected setPlatform(platform: HttpInterceptorWorkerPlatform) {
+  protected setPlatform(platform: HttpInterceptorPlatform) {
     this._platform = platform;
   }
 
@@ -47,21 +46,35 @@ abstract class HttpInterceptorWorker {
 
   abstract start(): Promise<void>;
 
-  protected ensureEmptyRunningInstance() {
-    if (HttpInterceptorWorker.runningInstance && HttpInterceptorWorker.runningInstance !== this) {
-      throw new OtherHttpInterceptorWorkerRunningError();
+  protected async sharedStart(internalStart: () => Promise<void>) {
+    if (this.isRunning()) {
+      return;
     }
-  }
+    if (this.startingPromise) {
+      return this.startingPromise;
+    }
 
-  protected markAsRunningInstance() {
-    HttpInterceptorWorker.runningInstance = this;
-  }
+    this.startingPromise = internalStart();
+    await this.startingPromise;
 
-  protected clearRunningInstance() {
-    HttpInterceptorWorker.runningInstance = undefined;
+    this.startingPromise = undefined;
   }
 
   abstract stop(): Promise<void>;
+
+  protected async sharedStop(internalStop: () => Promise<void>) {
+    if (!this.isRunning()) {
+      return;
+    }
+    if (this.stoppingPromise) {
+      return this.stoppingPromise;
+    }
+
+    this.stoppingPromise = internalStop();
+    await this.stoppingPromise;
+
+    this.stoppingPromise = undefined;
+  }
 
   abstract use<Schema extends HttpServiceSchema>(
     interceptor: HttpInterceptorClient<Schema>,

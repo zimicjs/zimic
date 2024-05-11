@@ -1,31 +1,39 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { joinURL, validatedURL } from '@/utils/fetch';
+import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
-import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
-import { PublicRemoteHttpInterceptorWorker } from '../interceptorWorker/types/public';
 import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
-import { PublicRemoteHttpInterceptor } from './types/public';
+import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
-  readonly type = 'remote';
-
+  readonly type: 'remote';
+  private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>;
-  private _pathPrefix: string;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    const joinedBaseURL = joinURL(options.worker.serverURL(), options.pathPrefix);
-    const baseURL = validatedURL(joinedBaseURL, { protocols: SUPPORTED_BASE_URL_PROTOCOLS });
+    this.type = options.type;
+
+    const baseURL = createExtendedURL(options.baseURL, {
+      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+    });
+    excludeDynamicParams(baseURL);
+
+    const serverURL = createExtendedURL(baseURL.origin, {
+      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+    });
+    excludeDynamicParams(serverURL);
+
+    const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>({
-      worker: options.worker satisfies PublicRemoteHttpInterceptorWorker as RemoteHttpInterceptorWorker,
+      worker,
+      store: this.store,
       Tracker: RemoteHttpRequestTracker,
       baseURL,
     });
-
-    this._pathPrefix = options.pathPrefix;
   }
 
   client() {
@@ -36,8 +44,23 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     return this._client.baseURL();
   }
 
-  pathPrefix() {
-    return this._pathPrefix;
+  platform() {
+    return this._client.platform();
+  }
+
+  isRunning() {
+    return this._client.isRunning();
+  }
+
+  async start() {
+    await this._client.start();
+  }
+
+  async stop() {
+    if (this.isRunning()) {
+      await this.clear();
+    }
+    await this._client.stop();
   }
 
   get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
@@ -69,10 +92,16 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   async clear() {
-    await new Promise<void>((resolve) => {
-      this._client.clear({ onCommit: resolve });
+    await new Promise<void>((resolve, reject) => {
+      this._client.clear({
+        onCommitSuccess: resolve,
+        onCommitError: reject,
+      });
     });
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyRemoteHttpInterceptor = RemoteHttpInterceptor<any>;
 
 export default RemoteHttpInterceptor;

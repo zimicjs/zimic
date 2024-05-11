@@ -3,7 +3,7 @@ import { screen } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 
 import renderApp, { GitHubRepository } from '../src/app';
-import githubInterceptor from './interceptors/githubInterceptor';
+import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {
   beforeEach(() => {

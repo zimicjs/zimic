@@ -1,7 +1,7 @@
 import { describe } from 'vitest';
 
 import Server from '@/server/Server';
-import { getNodeAccessResources } from '@tests/utils/workers';
+import { getNodeBaseURL } from '@tests/utils/interceptors';
 
 import { declareSharedHttpRequestTrackerTests } from './shared/requestTrackerTests';
 
@@ -15,8 +15,8 @@ describe('HttpRequestTracker (Node.js)', () => {
       await server.start();
     },
 
-    getAccessResources(type) {
-      return getNodeAccessResources(type, server);
+    getBaseURL(type) {
+      return getNodeBaseURL(type, server);
     },
 
     async stopServer() {
