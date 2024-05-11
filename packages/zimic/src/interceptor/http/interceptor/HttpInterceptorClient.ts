@@ -196,15 +196,16 @@ class HttpInterceptorClient<
 
     if (matchedHandler) {
       const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
-      const responseToParse = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
+      const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
+      const responseToReturn = response.clone();
+
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
-      >(responseToParse);
+      >(response);
 
       matchedHandler.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-      const responseToReturn = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       return { response: responseToReturn };
     } else {
       return { bypass: true };

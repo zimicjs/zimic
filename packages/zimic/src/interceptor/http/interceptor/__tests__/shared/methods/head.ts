@@ -29,7 +29,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  it('should support intercepting HEAD requests with a static response body', async () => {
+  it('should support intercepting HEAD requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         HEAD: {
@@ -69,7 +69,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should support intercepting HEAD requests with a computed response body', async () => {
+  it('should support intercepting HEAD requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         HEAD: {
@@ -108,6 +108,51 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expect(headRequest.response.status).toEqual(200);
 
       expectTypeOf(headRequest.response.body).toEqualTypeOf<null>();
+      expect(headRequest.response.body).toBe(null);
+    });
+  });
+
+  it('should ignore response bodies in HEAD requests', async () => {
+    // @ts-expect-error Forcing a HEAD response to incorrectly have a body.
+    await usingHttpInterceptor<{
+      '/users': {
+        HEAD: {
+          response: {
+            200: { body: string };
+          };
+        };
+      };
+    }>(interceptorOptions, async (interceptor) => {
+      const headHandler = await promiseIfRemote(
+        interceptor.head('/users').respond(() => ({
+          status: 200,
+          body: 'HEAD responses should not have a body.',
+        })),
+        interceptor,
+      );
+      expect(headHandler).toBeInstanceOf(Handler);
+
+      let headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
+      expect(headRequests).toHaveLength(0);
+
+      const headResponse = await fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
+      expect(headResponse.status).toBe(200);
+
+      headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
+      expect(headRequests).toHaveLength(1);
+      const [headRequest] = headRequests;
+      expect(headRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(headRequest.body).toEqualTypeOf<null>();
+      expect(headRequest.body).toBe(null);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
+      expect(headRequest.response.status).toEqual(200);
+
+      expectTypeOf(headRequest.response.status).toEqualTypeOf<200>();
+      expect(headRequest.response.status).toEqual(200);
+
+      expectTypeOf(headRequest.response.body).toEqualTypeOf<string>();
       expect(headRequest.response.body).toBe(null);
     });
   });

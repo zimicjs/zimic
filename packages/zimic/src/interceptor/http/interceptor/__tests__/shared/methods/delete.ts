@@ -49,7 +49,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  it('should support intercepting DELETE requests with a static response body', async () => {
+  it('should support intercepting DELETE requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {
@@ -93,7 +93,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
     });
   });
 
-  it('should support intercepting DELETE requests with a computed response body, based on the request body', async () => {
+  it('should support intercepting DELETE requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         DELETE: {

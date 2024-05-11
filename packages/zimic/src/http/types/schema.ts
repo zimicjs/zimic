@@ -20,15 +20,24 @@ export interface HttpServiceResponseSchema {
   body?: HttpBody;
 }
 
-/** A schema representing the structures of HTTP responses by status code. */
-export interface HttpServiceResponseSchemaByStatusCode {
-  [statusCode: number]: HttpServiceResponseSchema;
+export namespace HttpServiceResponseSchema {
+  export interface NoBody extends Omit<HttpServiceResponseSchema, 'body'> {
+    body?: null;
+  }
 }
 
+/** A schema representing the structures of HTTP responses by status code. */
+export type HttpServiceResponseSchemaByStatusCode = {
+  [statusCode: number]: HttpServiceResponseSchema;
+} & {
+  204?: HttpServiceResponseSchema.NoBody;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export namespace HttpServiceResponseSchemaByStatusCode {
-  export interface NoBody {
-    [statusCode: number]: Omit<HttpServiceResponseSchema, 'body'> & { body?: null };
-  }
+  export type NoBody = HttpServiceResponseSchemaByStatusCode & {
+    [statusCode: number]: HttpServiceResponseSchema.NoBody;
+  };
 }
 
 /** Extracts the status codes used in response schema by status code. */

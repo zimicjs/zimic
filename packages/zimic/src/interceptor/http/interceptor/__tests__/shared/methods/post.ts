@@ -51,7 +51,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  it('should support intercepting POST requests with a static response body', async () => {
+  it('should support intercepting POST requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         POST: {
@@ -95,7 +95,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
     });
   });
 
-  it('should support intercepting POST requests with a computed response body, based on the request body', async () => {
+  it('should support intercepting POST requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         POST: {

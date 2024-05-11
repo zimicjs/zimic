@@ -98,11 +98,15 @@ abstract class HttpInterceptorWorker {
       body?: HttpBody;
     },
     HeadersSchema extends HttpHeadersSchema,
-  >(responseDeclaration: Declaration) {
-    const response = MSWHttpResponse.json(responseDeclaration.body, {
-      headers: new HttpHeaders(responseDeclaration.headers),
-      status: responseDeclaration.status,
-    });
+  >(request: HttpRequest, responseDeclaration: Declaration) {
+    const headers = new HttpHeaders(responseDeclaration.headers);
+    const status = responseDeclaration.status;
+
+    const canHaveBody = request.method !== 'HEAD' && status !== 204;
+
+    const response = canHaveBody
+      ? MSWHttpResponse.json(responseDeclaration.body, { headers, status })
+      : new Response(null, { headers, status });
 
     return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }

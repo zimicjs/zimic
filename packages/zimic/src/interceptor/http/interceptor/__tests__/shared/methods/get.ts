@@ -49,7 +49,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  it('should support intercepting GET requests with a static response body', async () => {
+  it('should support intercepting GET requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         GET: {
@@ -93,7 +93,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should support intercepting GET requests with a computed response body', async () => {
+  it('should support intercepting GET requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/users': {
         GET: {

@@ -49,7 +49,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  it('should support intercepting PUT requests with a static response body', async () => {
+  it('should support intercepting PUT requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -93,7 +93,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should support intercepting PUT requests with a computed response body, based on the request body', async () => {
+  it('should support intercepting PUT requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
