@@ -84,18 +84,18 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
     - [`interceptor.<method>(path)`](#interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
     - [`interceptor.clear()`](#interceptorclear)
-  - [`HttpRequestTracker`](#httprequesttracker)
-    - [`tracker.method()`](#trackermethod)
-    - [`tracker.path()`](#trackerpath)
-    - [`tracker.with(restriction)`](#trackerwithrestriction)
+  - [`HttpRequestHandler`](#httprequesthandler)
+    - [`handler.method()`](#handlermethod)
+    - [`handler.path()`](#handlerpath)
+    - [`handler.with(restriction)`](#handlerwithrestriction)
       - [Static restrictions](#static-restrictions)
       - [Computed restrictions](#computed-restrictions)
-    - [`tracker.respond(declaration)`](#trackerresponddeclaration)
+    - [`handler.respond(declaration)`](#handlerresponddeclaration)
       - [Static responses](#static-responses)
       - [Computed responses](#computed-responses)
-    - [`tracker.bypass()`](#trackerbypass)
-    - [`tracker.clear()`](#trackerclear)
-    - [`tracker.requests()`](#trackerrequests)
+    - [`handler.bypass()`](#handlerbypass)
+    - [`handler.clear()`](#handlerclear)
+    - [`handler.requests()`](#handlerrequests)
 - [CLI](#cli)
   - [`zimic --version`](#zimic---version)
   - [`zimic --help`](#zimic---help)
@@ -210,7 +210,7 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
 4. Now, you can start intercepting requests and returning mock responses!
 
    ```ts
-   const listTracker = interceptor.get('/users').respond({
+   const listHandler = interceptor.get('/users').respond({
      status: 200,
      body: [{ username: 'diego-aquino' }],
    });
@@ -993,7 +993,7 @@ const baseURL = interceptor.baseURL();
 
 #### `interceptor.<method>(path)`
 
-Creates an [`HttpRequestTracker`](#httprequesttracker) for the given method and path. The path and method must be
+Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and path. The path and method must be
 declared in the interceptor schema.
 
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
@@ -1015,7 +1015,7 @@ const interceptor = createHttpInterceptor<{
 });
 
 // Intercept any GET requests to http://localhost:3000/users and return this response
-const listTracker = interceptor.get('/users').respond({
+const listHandler = interceptor.get('/users').respond({
   status: 200
   body: [{ username: 'diego-aquino' }],
 });
@@ -1053,7 +1053,7 @@ interceptor.get<'/users/:id'>(`/users/${1}`); // Only matches id 1 (notice the o
 
 #### `interceptor.clear()`
 
-Clears all of the [`HttpRequestTracker`](#httprequesttracker) instances created by this interceptor, including their
+Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
 registered responses and intercepted requests. After calling this method, the interceptor will no longer intercept any
 requests until new mock responses are registered.
 
@@ -1063,46 +1063,46 @@ This method is useful to reset the interceptor mocks between tests.
 interceptor.clear();
 ```
 
-### `HttpRequestTracker`
+### `HttpRequestHandler`
 
-HTTP request trackers allow declaring responses to return for matched intercepted requests. They also keep track of the
+HTTP request handlers allow declaring responses to return for matched intercepted requests. They also keep track of the
 intercepted requests and their responses, allowing checks about how many requests your application made and with which
 parameters.
 
-When multiple trackers match the same method and path, the _last_ created with
+When multiple handlers match the same method and path, the _last_ created with
 [`interceptor.<method>(path)`](#interceptormethodpath) will be used.
 
-#### `tracker.method()`
+#### `handler.method()`
 
-Returns the method that matches this tracker.
+Returns the method that matches this handler.
 
 ```ts
-const tracker = interceptor.post('/users');
-const method = tracker.method();
+const handler = interceptor.post('/users');
+const method = handler.method();
 console.log(method); // 'POST'
 ```
 
-#### `tracker.path()`
+#### `handler.path()`
 
-Returns the path that matches this tracker. The base URL of the interceptor is not included, but it is used when
+Returns the path that matches this handler. The base URL of the interceptor is not included, but it is used when
 matching requests.
 
 ```ts
-const tracker = interceptor.get('/users');
-const path = tracker.path();
+const handler = interceptor.get('/users');
+const path = handler.path();
 console.log(path); // '/users'
 ```
 
-#### `tracker.with(restriction)`
+#### `handler.with(restriction)`
 
 Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
-which requests will match the tracker and receive the mock response. If multiple restrictions are declared, either in a
+which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
 single object or with multiple calls to `.with()`, all of them must be met, essentially creating an AND condition.
 
 ##### Static restrictions
 
 ```ts
-const creationTracker = interceptor
+const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
@@ -1115,13 +1115,13 @@ const creationTracker = interceptor
 ```
 
 By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
-match the tracker, regardless of having more properties or values. In the example above, requests with more headers than
-`content-type: application/json` will still match the tracker. The same applies to search params and body restrictions.
+match the handler, regardless of having more properties or values. In the example above, requests with more headers than
+`content-type: application/json` will still match the handler. The same applies to search params and body restrictions.
 
 If you want to match only requests with the exact values declared, you can use `exact: true`:
 
 ```ts
-const creationTracker = interceptor
+const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
@@ -1139,7 +1139,7 @@ const creationTracker = interceptor
 A function is also supported to declare restrictions, in case they are dynamic.
 
 ```ts
-const creationTracker = interceptor
+const creationHandler = interceptor
   .post('/users')
   .with((request) => {
     const accept = request.headers.get('accept');
@@ -1153,20 +1153,20 @@ const creationTracker = interceptor
 
 The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
 and `.searchParams`, which are typed based on the interceptor schema. The function should return a boolean: `true` if
-the request matches the tracker and should receive the mock response; `false` otherwise and the request should bypass
-the tracker.
+the request matches the handler and should receive the mock response; `false` otherwise and the request should bypass
+the handler.
 
-#### `tracker.respond(declaration)`
+#### `handler.respond(declaration)`
 
 Declares a response to return for matched intercepted requests.
 
-When the tracker matches a request, it will respond with the given declaration. The response type is statically
+When the handler matches a request, it will respond with the given declaration. The response type is statically
 validated against the schema of the interceptor.
 
 ##### Static responses
 
 ```ts
-const listTracker = interceptor.get('/users').respond({
+const listHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
@@ -1177,7 +1177,7 @@ const listTracker = interceptor.get('/users').respond({
 A function is also supported to declare a response, in case it is dynamic:
 
 ```ts
-const listTracker = interceptor.get('/users').respond((request) => {
+const listHandler = interceptor.get('/users').respond((request) => {
   const username = request.searchParams.get('username');
   return {
     status: 200,
@@ -1189,70 +1189,70 @@ const listTracker = interceptor.get('/users').respond((request) => {
 The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
 and `.searchParams`, which are typed based on the interceptor schema.
 
-#### `tracker.bypass()`
+#### `handler.bypass()`
 
-Clears any response declared with [`.respond(declaration)`](#trackerresponddeclaration), making the tracker stop
-matching requests. The next tracker, created before this one, that matches the same method and path will be used if
+Clears any response declared with [`.respond(declaration)`](#handlerresponddeclaration), making the handler stop
+matching requests. The next handler, created before this one, that matches the same method and path will be used if
 present. If not, the requests of the method and path will not be intercepted.
 
-To make the tracker match requests again, register a new response with `tracker.respond()`.
+To make the handler match requests again, register a new response with `handler.respond()`.
 
-This method is useful to skip a tracker. It is more gentle than [`tracker.clear()`](#trackerclear), as it only removed
+This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#handlerclear), as it only removed
 the response, keeping restrictions and intercepted requests.
 
 ```ts
-const listTracker1 = interceptor.get('/users').respond({
+const listHandler1 = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const listTracker2 = interceptor.get('/users').respond({
+const listHandler2 = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-listTracker2.bypass();
-// Now, GET requests to /users will match listTracker1 and return an empty array
+listHandler2.bypass();
+// Now, GET requests to /users will match listHandler1 and return an empty array
 
-listTracker2.requests(); // Still contains the intercepted requests up to the bypass
+listHandler2.requests(); // Still contains the intercepted requests up to the bypass
 ```
 
-#### `tracker.clear()`
+#### `handler.clear()`
 
-Clears any response declared with [`.respond(declaration)`](#trackerresponddeclaration), restrictions declared with
-[`.with(restriction)`](#trackerwithrestriction), and intercepted requests, making the tracker stop matching requests.
-The next tracker, created before this one, that matches the same method and path will be used if present. If not, the
+Clears any response declared with [`.respond(declaration)`](#handlerresponddeclaration), restrictions declared with
+[`.with(restriction)`](#handlerwithrestriction), and intercepted requests, making the handler stop matching requests.
+The next handler, created before this one, that matches the same method and path will be used if present. If not, the
 requests of the method and path will not be intercepted.
 
-To make the tracker match requests again, register a new response with `tracker.respond()`.
+To make the handler match requests again, register a new response with `handler.respond()`.
 
-This method is useful to reset trackers to a clean state between tests. It is more aggressive than
-[`tracker.bypass()`](#trackerbypass), as it also clears restrictions and intercepted requests.
+This method is useful to reset handlers to a clean state between tests. It is more aggressive than
+[`handler.bypass()`](#handlerbypass), as it also clears restrictions and intercepted requests.
 
 ```ts
-const listTracker1 = interceptor.get('/users').respond({
+const listHandler1 = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const listTracker2 = interceptor.get('/users').respond({
+const listHandler2 = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-listTracker2.clear();
-// Now, GET requests to /users will match listTracker1 and return an empty array
+listHandler2.clear();
+// Now, GET requests to /users will match listHandler1 and return an empty array
 
-listTracker2.requests(); // Now empty
+listHandler2.requests(); // Now empty
 ```
 
-#### `tracker.requests()`
+#### `handler.requests()`
 
-Returns the intercepted requests that matched this tracker, along with the responses returned to each of them. This is
+Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application.
 
 ```ts
-const updateTracker = interceptor.put('/users/:id').respond((request) => {
+const updateHandler = interceptor.put('/users/:id').respond((request) => {
   const newUsername = request.body.username;
   return {
     status: 200,
@@ -1265,7 +1265,7 @@ await fetch(`http://localhost:3000/users/${1}`, {
   body: JSON.stringify({ username: 'new' }),
 });
 
-const updateRequests = updateTracker.requests();
+const updateRequests = updateHandler.requests();
 expect(updateRequests).toHaveLength(1);
 expect(updateRequests[0].url).toEqual('http://localhost:3000/users/1');
 expect(updateRequests[0].body).toEqual({ username: 'new' });
@@ -1279,7 +1279,7 @@ The return by `requests` are simplified objects based on the
 If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
 
 ```ts
-const listRequests = listTracker.requests();
+const listRequests = listHandler.requests();
 console.log(listRequests[0].raw); // Request{}
 console.log(listRequests[0].response.raw); // Response{}
 ```
