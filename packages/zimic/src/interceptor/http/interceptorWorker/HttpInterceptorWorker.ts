@@ -19,7 +19,7 @@ import {
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-} from '../requestTracker/types/requests';
+} from '../requestHandler/types/requests';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {

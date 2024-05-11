@@ -4,8 +4,8 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
+import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { fetchWithTimeout, joinURL } from '@/utils/fetch';
@@ -40,13 +40,13 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
 
-    Tracker = options.type === 'local' ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+    Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   it('should support intercepting PUT requests with a static response body', async () => {
@@ -59,16 +59,16 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
         }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -77,7 +77,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[0]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -104,7 +104,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<User>();
 
@@ -117,9 +117,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const userName = 'User (other)';
@@ -133,7 +133,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual<User>({ ...users[0], name: userName });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -172,7 +172,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond((request) => {
           expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateRequestHeaders>>();
           expect(request.headers).toBeInstanceOf(HttpHeaders);
@@ -191,9 +191,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -204,7 +204,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -237,7 +237,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond((request) => {
           expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserUpdateSearchParams>>();
           expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
@@ -249,9 +249,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
@@ -263,7 +263,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -293,7 +293,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor
           .put(`/users/${users[0].id}`)
           .with({
@@ -316,9 +316,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
           }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<UserUpdateHeaders>({
@@ -328,21 +328,21 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       let updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT', headers });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT', headers });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
 
       headers.delete('accept');
 
       let updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT', headers });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
@@ -350,7 +350,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT', headers });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
     });
   });
@@ -372,7 +372,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor
           .put(`/users/${users[0].id}`)
           .with({
@@ -389,9 +389,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
           }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<UserUpdateSearchParams>({
@@ -402,7 +402,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         method: 'PUT',
       });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       searchParams.delete('tag');
@@ -411,7 +411,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         method: 'PUT',
       });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
@@ -431,7 +431,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor
           .put(`/users/${users[0].id}`)
           .with({
@@ -447,9 +447,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
           }),
         interceptor,
       );
-      expect(updateTracker).toBeInstanceOf(Tracker);
+      expect(updateHandler).toBeInstanceOf(Handler);
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -460,7 +460,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         } satisfies UserUpdateBody),
       });
       expect(updateResponse.status).toBe(200);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       const updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -471,7 +471,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         } satisfies UserUpdateBody),
       });
       await expectFetchError(updateResponsePromise);
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
@@ -486,16 +486,16 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const genericUpdateTracker = await promiseIfRemote(
+      const genericUpdateHandler = await promiseIfRemote(
         interceptor.put('/users/:id').respond({
           status: 200,
           body: users[0],
         }),
         interceptor,
       );
-      expect(genericUpdateTracker).toBeInstanceOf(Tracker);
+      expect(genericUpdateHandler).toBeInstanceOf(Handler);
 
-      let genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), interceptor);
+      let genericUpdateRequests = await promiseIfRemote(genericUpdateHandler.requests(), interceptor);
       expect(genericUpdateRequests).toHaveLength(0);
 
       const genericUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -504,7 +504,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
       expect(genericUpdatedUser).toEqual(users[0]);
 
-      genericUpdateRequests = await promiseIfRemote(genericUpdateTracker.requests(), interceptor);
+      genericUpdateRequests = await promiseIfRemote(genericUpdateHandler.requests(), interceptor);
       expect(genericUpdateRequests).toHaveLength(1);
       const [genericUpdateRequest] = genericUpdateRequests;
       expect(genericUpdateRequest).toBeInstanceOf(Request);
@@ -518,18 +518,18 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expectTypeOf(genericUpdateRequest.response.body).toEqualTypeOf<User>();
       expect(genericUpdateRequest.response.body).toEqual(users[0]);
 
-      await promiseIfRemote(genericUpdateTracker.bypass(), interceptor);
+      await promiseIfRemote(genericUpdateHandler.bypass(), interceptor);
 
-      const specificUpdateTracker = await promiseIfRemote(
+      const specificUpdateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
         }),
         interceptor,
       );
-      expect(specificUpdateTracker).toBeInstanceOf(Tracker);
+      expect(specificUpdateHandler).toBeInstanceOf(Handler);
 
-      let specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), interceptor);
+      let specificUpdateRequests = await promiseIfRemote(specificUpdateHandler.requests(), interceptor);
       expect(specificUpdateRequests).toHaveLength(0);
 
       const specificUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -538,7 +538,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
       expect(specificUpdatedUser).toEqual(users[0]);
 
-      specificUpdateRequests = await promiseIfRemote(specificUpdateTracker.requests(), interceptor);
+      specificUpdateRequests = await promiseIfRemote(specificUpdateHandler.requests(), interceptor);
       expect(specificUpdateRequests).toHaveLength(1);
       const [specificUpdateRequest] = specificUpdateRequests;
       expect(specificUpdateRequest).toBeInstanceOf(Request);
@@ -576,10 +576,10 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       });
       await expectFetchError(updatePromise);
 
-      const updateTrackerWithoutResponse = await promiseIfRemote(interceptor.put(`/users/${users[0].id}`), interceptor);
-      expect(updateTrackerWithoutResponse).toBeInstanceOf(Tracker);
+      const updateHandlerWithoutResponse = await promiseIfRemote(interceptor.put(`/users/${users[0].id}`), interceptor);
+      expect(updateHandlerWithoutResponse).toBeInstanceOf(Handler);
 
-      let updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), interceptor);
+      let updateRequestsWithoutResponse = await promiseIfRemote(updateHandlerWithoutResponse.requests(), interceptor);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       let [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
@@ -592,14 +592,14 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       });
       await expectFetchError(updatePromise);
 
-      updateRequestsWithoutResponse = await promiseIfRemote(updateTrackerWithoutResponse.requests(), interceptor);
+      updateRequestsWithoutResponse = await promiseIfRemote(updateHandlerWithoutResponse.requests(), interceptor);
       expect(updateRequestsWithoutResponse).toHaveLength(0);
 
       [updateRequestWithoutResponse] = updateRequestsWithoutResponse;
       expectTypeOf<typeof updateRequestWithoutResponse.body>().toEqualTypeOf<User>();
       expectTypeOf<typeof updateRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
-      const updateTrackerWithResponse = updateTrackerWithoutResponse.respond({
+      const updateHandlerWithResponse = updateHandlerWithoutResponse.respond({
         status: 200,
         body: users[0],
       });
@@ -614,7 +614,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(updatedUsers).toEqual(users[0]);
 
       expect(updateRequestsWithoutResponse).toHaveLength(0);
-      const updateRequestsWithResponse = await promiseIfRemote(updateTrackerWithResponse.requests(), interceptor);
+      const updateRequestsWithResponse = await promiseIfRemote(updateHandlerWithResponse.requests(), interceptor);
       expect(updateRequestsWithResponse).toHaveLength(1);
 
       const [updateRequest] = updateRequestsWithResponse;
@@ -646,7 +646,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor
           .put(`/users/${users[0].id}`)
           .respond({
@@ -660,7 +660,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -669,7 +669,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -683,7 +683,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = await promiseIfRemote(
+      const errorUpdateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 500,
           body: { message: 'Internal server error' },
@@ -691,7 +691,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
+      let errorUpdateRequests = await promiseIfRemote(errorUpdateHandler.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(0);
 
       const otherUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -700,10 +700,10 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateHandler.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
@@ -719,7 +719,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should ignore trackers with bypassed responses when intercepting PUT requests', async () => {
+  it('should ignore handlers with bypassed responses when intercepting PUT requests', async () => {
     type ServerErrorResponseBody = JSONValue<{
       message: string;
     }>;
@@ -734,7 +734,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor
           .put(`/users/${users[0].id}`)
           .respond({
@@ -745,23 +745,23 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let initialUpdateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(initialUpdateRequests).toHaveLength(0);
 
       const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       await expectFetchError(updatePromise);
 
       await promiseIfRemote(
-        updateTracker.respond({
+        updateHandler.respond({
           status: 200,
           body: users[1],
         }),
         interceptor,
       );
 
-      initialUpdateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      initialUpdateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(initialUpdateRequests).toHaveLength(0);
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       let updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -770,7 +770,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       let createdUsers = (await updateResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       let [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -784,7 +784,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expectTypeOf(updateRequest.response.body).toEqualTypeOf<User>();
       expect(updateRequest.response.body).toEqual(users[1]);
 
-      const errorUpdateTracker = await promiseIfRemote(
+      const errorUpdateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 500,
           body: { message: 'Internal server error' },
@@ -792,7 +792,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
+      let errorUpdateRequests = await promiseIfRemote(errorUpdateHandler.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(0);
 
       const otherUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -801,10 +801,10 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const serverError = (await otherUpdateResponse.json()) as ServerErrorResponseBody;
       expect(serverError).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateHandler.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
       const [errorUpdateRequest] = errorUpdateRequests;
       expect(errorUpdateRequest).toBeInstanceOf(Request);
@@ -818,7 +818,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expectTypeOf(errorUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
 
-      await promiseIfRemote(errorUpdateTracker.bypass(), interceptor);
+      await promiseIfRemote(errorUpdateHandler.bypass(), interceptor);
 
       updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
@@ -826,10 +826,10 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       createdUsers = (await updateResponse.json()) as User;
       expect(createdUsers).toEqual(users[1]);
 
-      errorUpdateRequests = await promiseIfRemote(errorUpdateTracker.requests(), interceptor);
+      errorUpdateRequests = await promiseIfRemote(errorUpdateHandler.requests(), interceptor);
       expect(errorUpdateRequests).toHaveLength(1);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(2);
       [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -845,7 +845,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should ignore all trackers after cleared when intercepting PUT requests', async () => {
+  it('should ignore all handlers after cleared when intercepting PUT requests', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -855,7 +855,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
@@ -863,13 +863,13 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       await promiseIfRemote(interceptor.clear(), interceptor);
@@ -877,12 +877,12 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       await expectFetchError(updatePromise);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
 
-  it('should ignore all trackers after restarted when intercepting PUT requests', async () => {
+  it('should ignore all handlers after restarted when intercepting PUT requests', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -892,7 +892,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
@@ -900,13 +900,13 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       expect(interceptor.isRunning()).toBe(true);
@@ -919,7 +919,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       });
       await expectFetchError(updatePromise, { canBeAborted: true });
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       await interceptor.start();
@@ -928,12 +928,12 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       await expectFetchError(updatePromise);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
     });
   });
 
-  it('should ignore all trackers after restarted when intercepting PUT requests, even if another interceptor is still running', async () => {
+  it('should ignore all handlers after restarted when intercepting PUT requests, even if another interceptor is still running', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -943,7 +943,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
@@ -951,13 +951,13 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
       expect(updateResponse.status).toBe(200);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
 
       await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
@@ -974,7 +974,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         });
         await expectFetchError(updatePromise, { canBeAborted: true });
 
-        updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
 
         await interceptor.start();
@@ -984,13 +984,13 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
         await expectFetchError(updatePromise);
 
-        updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
       });
     });
   });
 
-  it('should throw an error when trying to create a PUT request tracker if not running', async () => {
+  it('should throw an error when trying to create a PUT request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
     expect(interceptor.isRunning()).toBe(false);
 
@@ -999,7 +999,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     }).rejects.toThrowError(new NotStartedHttpInterceptorError());
   });
 
-  it('should support creating new trackers after cleared', async () => {
+  it('should support creating new handlers after cleared', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -1009,7 +1009,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      let updateTracker = await promiseIfRemote(
+      let updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
@@ -1019,7 +1019,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       await promiseIfRemote(interceptor.clear(), interceptor);
 
-      updateTracker = await promiseIfRemote(
+      updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[1],
@@ -1027,7 +1027,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -1036,7 +1036,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);
@@ -1052,7 +1052,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
     });
   });
 
-  it('should support reusing current trackers after cleared', async () => {
+  it('should support reusing current handlers after cleared', async () => {
     await usingHttpInterceptor<{
       '/users/:id': {
         PUT: {
@@ -1062,7 +1062,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const updateTracker = await promiseIfRemote(
+      const updateHandler = await promiseIfRemote(
         interceptor.put(`/users/${users[0].id}`).respond({
           status: 200,
           body: users[0],
@@ -1073,14 +1073,14 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       await promiseIfRemote(interceptor.clear(), interceptor);
 
       await promiseIfRemote(
-        updateTracker.respond({
+        updateHandler.respond({
           status: 200,
           body: users[1],
         }),
         interceptor,
       );
 
-      let updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(0);
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
@@ -1089,7 +1089,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const updatedUsers = (await updateResponse.json()) as User;
       expect(updatedUsers).toEqual(users[1]);
 
-      updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
+      updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
       const [updateRequest] = updateRequests;
       expect(updateRequest).toBeInstanceOf(Request);

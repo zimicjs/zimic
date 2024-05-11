@@ -37,14 +37,14 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
         expect(interceptor.baseURL()).toBe(baseURL);
 
-        const tracker = await promiseIfRemote(
+        const handler = await promiseIfRemote(
           interceptor.get(path).respond({
             status: 200,
           }),
           interceptor,
         );
 
-        let requests = await tracker.requests();
+        let requests = await handler.requests();
         expect(requests).toHaveLength(0);
 
         const url = joinURL(baseURL, path);
@@ -52,7 +52,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         const response = await fetch(url, { method: 'GET' });
         expect(response.status).toBe(200);
 
-        requests = await tracker.requests();
+        requests = await handler.requests();
         expect(requests).toHaveLength(1);
         const [request] = requests;
         expect(request).toBeInstanceOf(Request);

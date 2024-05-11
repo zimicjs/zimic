@@ -11,31 +11,31 @@ import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import LocalHttpRequestTracker from './LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from './RemoteHttpRequestTracker';
+import LocalHttpRequestHandler from './LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from './RemoteHttpRequestHandler';
 import {
-  HttpRequestTrackerRestriction,
-  HttpRequestTrackerComputedRestriction,
-  HttpRequestTrackerStaticRestriction,
+  HttpRequestHandlerRestriction,
+  HttpRequestHandlerComputedRestriction,
+  HttpRequestHandlerStaticRestriction,
 } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationFactory,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
-class HttpRequestTrackerClient<
+class HttpRequestHandlerClient<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > {
-  private restrictions: HttpRequestTrackerRestriction<Schema, Method, Path>[] = [];
+  private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
 
-  private createResponseDeclaration?: HttpRequestTrackerResponseDeclarationFactory<
+  private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
     Default<Schema[Path][Method]>,
     StatusCode
   >;
@@ -44,9 +44,9 @@ class HttpRequestTrackerClient<
     private interceptor: HttpInterceptorClient<Schema>,
     private _method: Method,
     private _path: Path,
-    private tracker:
-      | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
-      | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+    private handler:
+      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
   ) {}
 
   method() {
@@ -58,8 +58,8 @@ class HttpRequestTrackerClient<
   }
 
   with(
-    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
+    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
+  ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
     this.restrictions.push(restriction);
     return this;
   }
@@ -68,17 +68,17 @@ class HttpRequestTrackerClient<
     NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
-      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
-  ): HttpRequestTrackerClient<Schema, Method, Path, NewStatusCode> {
-    const newThis = this as unknown as HttpRequestTrackerClient<Schema, Method, Path, NewStatusCode>;
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+  ): HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode> {
+    const newThis = this as unknown as HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode>;
 
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
       ? declaration
       : () => declaration;
     newThis.interceptedRequests = [];
 
-    this.interceptor.registerRequestTracker(this.tracker);
+    this.interceptor.registerRequestHandler(this.handler);
 
     return newThis;
   }
@@ -87,18 +87,18 @@ class HttpRequestTrackerClient<
     StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
-      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ): declaration is HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode> {
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+  ): declaration is HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode> {
     return typeof declaration === 'function';
   }
 
-  bypass(): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
+  bypass(): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
     this.createResponseDeclaration = undefined;
     return this;
   }
 
-  clear(): HttpRequestTrackerClient<Schema, Method, Path, StatusCode> {
+  clear(): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
     this.restrictions = [];
     this.interceptedRequests = [];
     return this.bypass();
@@ -124,7 +124,7 @@ class HttpRequestTrackerClient<
 
   private matchesRequestHeadersRestrictions(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.headers === undefined) {
       return true;
@@ -136,7 +136,7 @@ class HttpRequestTrackerClient<
 
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.searchParams === undefined) {
       return true;
@@ -150,7 +150,7 @@ class HttpRequestTrackerClient<
 
   private matchesRequestBodyRestrictions(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-    restriction: HttpRequestTrackerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.body === undefined) {
       return true;
@@ -162,14 +162,14 @@ class HttpRequestTrackerClient<
   }
 
   private isComputedRequestRestriction(
-    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ): restriction is HttpRequestTrackerComputedRestriction<Schema, Method, Path> {
+    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
+  ): restriction is HttpRequestHandlerComputedRestriction<Schema, Method, Path> {
     return typeof restriction === 'function';
   }
 
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-  ): Promise<HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
+  ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
     }
@@ -207,6 +207,6 @@ class HttpRequestTrackerClient<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyHttpRequestTrackerClient = HttpRequestTrackerClient<any, any, any, any>;
+export type AnyHttpRequestHandlerClient = HttpRequestHandlerClient<any, any, any, any>;
 
-export default HttpRequestTrackerClient;
+export default HttpRequestHandlerClient;

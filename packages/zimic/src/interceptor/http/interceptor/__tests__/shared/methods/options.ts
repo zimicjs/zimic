@@ -4,8 +4,8 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
+import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
 import { JSONValue } from '@/types/json';
 import { fetchWithTimeout, joinURL } from '@/utils/fetch';
@@ -22,7 +22,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
   let overridesPreflightResponse: boolean;
   let numberOfRequestsIncludingPrefetch: number;
@@ -35,7 +35,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
 
-    Tracker = options.type === 'local' ? LocalHttpRequestTracker : RemoteHttpRequestTracker;
+    Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
     overridesPreflightResponse = options.type === 'remote';
     numberOfRequestsIncludingPrefetch = platform === 'browser' && options.type === 'remote' ? 2 : 1;
@@ -51,22 +51,22 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -92,7 +92,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
@@ -103,16 +103,16 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
 
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -150,7 +150,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond((request) => {
           expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FilterOptionsRequestHeaders>>();
           expect(request.headers).toBeInstanceOf(HttpHeaders);
@@ -165,9 +165,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), {
@@ -178,7 +178,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -212,7 +212,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond((request) => {
           expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<FiltersOptionsSearchParams>>();
           expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
@@ -224,9 +224,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<FiltersOptionsSearchParams>({
@@ -238,7 +238,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -268,7 +268,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor
           .options('/filters')
           .with({
@@ -292,9 +292,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const headers = new HttpHeaders<FiltersOptionsHeaders>({
@@ -304,14 +304,14 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       let optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
       expect(optionsResponse.status).toBe(200);
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(1);
 
       headers.append('accept', 'application/xml');
 
       optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
       expect(optionsResponse.status).toBe(200);
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(2);
 
       headers.delete('accept');
@@ -320,7 +320,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
         shouldBePreflight: overridesPreflightResponse,
       });
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(2);
 
       headers.delete('content-type');
@@ -329,7 +329,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
         shouldBePreflight: overridesPreflightResponse,
       });
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(2);
 
       headers.set('accept', 'application/json');
@@ -339,7 +339,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
         shouldBePreflight: overridesPreflightResponse,
       });
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(2);
     });
   });
@@ -363,7 +363,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor
           .options('/filters')
           .with({
@@ -380,9 +380,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           }),
         interceptor,
       );
-      expect(optionsTracker).toBeInstanceOf(Tracker);
+      expect(optionsHandler).toBeInstanceOf(Handler);
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const searchParams = new HttpSearchParams<FiltersOptionsSearchParams>({
@@ -393,7 +393,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         method: 'OPTIONS',
       });
       expect(optionsResponse.status).toBe(200);
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       searchParams.delete('tag');
@@ -404,7 +404,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
         shouldBePreflight: overridesPreflightResponse,
       });
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
     });
   });
@@ -419,22 +419,22 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const genericOptionsTracker = await promiseIfRemote(
+      const genericOptionsHandler = await promiseIfRemote(
         interceptor.options('/filters/:id').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         interceptor,
       );
-      expect(genericOptionsTracker).toBeInstanceOf(Tracker);
+      expect(genericOptionsHandler).toBeInstanceOf(Handler);
 
-      let genericOptionsRequests = await promiseIfRemote(genericOptionsTracker.requests(), interceptor);
+      let genericOptionsRequests = await promiseIfRemote(genericOptionsHandler.requests(), interceptor);
       expect(genericOptionsRequests).toHaveLength(0);
 
       const genericOptionsResponse = await fetch(joinURL(baseURL, `/filters/${1}`), { method: 'OPTIONS' });
       expect(genericOptionsResponse.status).toBe(200);
 
-      genericOptionsRequests = await promiseIfRemote(genericOptionsTracker.requests(), interceptor);
+      genericOptionsRequests = await promiseIfRemote(genericOptionsHandler.requests(), interceptor);
       expect(genericOptionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const genericOptionsRequest = genericOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(genericOptionsRequest).toBeInstanceOf(Request);
@@ -448,24 +448,24 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(genericOptionsRequest.response.body).toEqualTypeOf<null>();
       expect(genericOptionsRequest.response.body).toBe(null);
 
-      await promiseIfRemote(genericOptionsTracker.bypass(), interceptor);
+      await promiseIfRemote(genericOptionsHandler.bypass(), interceptor);
 
-      const specificOptionsTracker = await promiseIfRemote(
+      const specificOptionsHandler = await promiseIfRemote(
         interceptor.options(`/filters/${1}`).respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         interceptor,
       );
-      expect(specificOptionsTracker).toBeInstanceOf(Tracker);
+      expect(specificOptionsHandler).toBeInstanceOf(Handler);
 
-      let specificOptionsRequests = await promiseIfRemote(specificOptionsTracker.requests(), interceptor);
+      let specificOptionsRequests = await promiseIfRemote(specificOptionsHandler.requests(), interceptor);
       expect(specificOptionsRequests).toHaveLength(0);
 
       const specificOptionsResponse = await fetch(joinURL(baseURL, `/filters/${1}`), { method: 'OPTIONS' });
       expect(specificOptionsResponse.status).toBe(200);
 
-      specificOptionsRequests = await promiseIfRemote(specificOptionsTracker.requests(), interceptor);
+      specificOptionsRequests = await promiseIfRemote(specificOptionsHandler.requests(), interceptor);
       expect(specificOptionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const specificOptionsRequest = specificOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(specificOptionsRequest).toBeInstanceOf(Request);
@@ -496,7 +496,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: {},
@@ -504,7 +504,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      const initialOptionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      const initialOptionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -533,10 +533,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         shouldBePreflight: overridesPreflightResponse,
       });
 
-      const optionsTrackerWithoutResponse = await promiseIfRemote(interceptor.options('/filters'), interceptor);
-      expect(optionsTrackerWithoutResponse).toBeInstanceOf(Tracker);
+      const optionsHandlerWithoutResponse = await promiseIfRemote(interceptor.options('/filters'), interceptor);
+      expect(optionsHandlerWithoutResponse).toBeInstanceOf(Handler);
 
-      let optionsRequestsWithoutResponse = await promiseIfRemote(optionsTrackerWithoutResponse.requests(), interceptor);
+      let optionsRequestsWithoutResponse = await promiseIfRemote(optionsHandlerWithoutResponse.requests(), interceptor);
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
 
       let optionsRequestWithoutResponse = optionsRequestsWithoutResponse[numberOfRequestsIncludingPrefetch - 1];
@@ -548,14 +548,14 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         shouldBePreflight: overridesPreflightResponse,
       });
 
-      optionsRequestsWithoutResponse = await promiseIfRemote(optionsTrackerWithoutResponse.requests(), interceptor);
+      optionsRequestsWithoutResponse = await promiseIfRemote(optionsHandlerWithoutResponse.requests(), interceptor);
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
 
       optionsRequestWithoutResponse = optionsRequestsWithoutResponse[numberOfRequestsIncludingPrefetch];
       expectTypeOf<typeof optionsRequestWithoutResponse.body>().toEqualTypeOf<null>();
       expectTypeOf<typeof optionsRequestWithoutResponse.response>().toEqualTypeOf<never>();
 
-      const optionsTrackerWithResponse = optionsTrackerWithoutResponse.respond({
+      const optionsHandlerWithResponse = optionsHandlerWithoutResponse.respond({
         status: 200,
         headers: DEFAULT_ACCESS_CONTROL_HEADERS,
       });
@@ -564,7 +564,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(optionsResponse.status).toBe(200);
 
       expect(optionsRequestsWithoutResponse).toHaveLength(0);
-      const optionsRequestsWithResponse = await promiseIfRemote(optionsTrackerWithResponse.requests(), interceptor);
+      const optionsRequestsWithResponse = await promiseIfRemote(optionsHandlerWithResponse.requests(), interceptor);
       expect(optionsRequestsWithResponse).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       const optionsRequestWithResponse = optionsRequestsWithResponse[numberOfRequestsIncludingPrefetch - 1];
@@ -595,7 +595,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -604,7 +604,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -613,7 +613,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const optionsResponseBody = (await optionsResponse.json()) as MessageResponseBody;
       expect(optionsResponseBody).toEqual<MessageResponseBody>({});
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -627,7 +627,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<MessageResponseBody>();
       expect(optionsRequest.response.body).toEqual<MessageResponseBody>({});
 
-      const optionsWithMessageTracker = await promiseIfRemote(
+      const optionsWithMessageHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -636,7 +636,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsWithMessageRequests = await promiseIfRemote(optionsWithMessageTracker.requests(), interceptor);
+      let optionsWithMessageRequests = await promiseIfRemote(optionsWithMessageHandler.requests(), interceptor);
       expect(optionsWithMessageRequests).toHaveLength(0);
 
       const otherOptionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -645,10 +645,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const otherOptionsResponseBody = (await otherOptionsResponse.json()) as MessageResponseBody;
       expect(otherOptionsResponseBody).toEqual<MessageResponseBody>({ message: 'ok' });
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
-      optionsWithMessageRequests = await promiseIfRemote(optionsWithMessageTracker.requests(), interceptor);
+      optionsWithMessageRequests = await promiseIfRemote(optionsWithMessageHandler.requests(), interceptor);
       expect(optionsWithMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsWithMessageRequest = optionsWithMessageRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsWithMessageRequest).toBeInstanceOf(Request);
@@ -664,7 +664,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should ignore trackers with bypassed responses when intercepting OPTIONS requests', async () => {
+  it('should ignore handlers with bypassed responses when intercepting OPTIONS requests', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -677,7 +677,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor
           .options('/filters')
           .respond({
@@ -689,7 +689,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let initialOptionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let initialOptionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(initialOptionsRequests).toHaveLength(0);
 
       const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -697,8 +697,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         shouldBePreflight: overridesPreflightResponse,
       });
 
-      const otherOptionsTracker = await promiseIfRemote(
-        optionsTracker.respond({
+      const otherOptionsHandler = await promiseIfRemote(
+        optionsHandler.respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
           body: { message: 'ok' },
@@ -706,9 +706,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      initialOptionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      initialOptionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(initialOptionsRequests).toHaveLength(0);
-      let optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       let optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -717,7 +717,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       let optionsResponseBody = (await optionsResponse.json()) as MessageResponseBody;
       expect(optionsResponseBody).toEqual<MessageResponseBody>({ message: 'ok' });
 
-      optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       let optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -731,7 +731,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsRequest.response.body).toEqualTypeOf<MessageResponseBody>();
       expect(optionsRequest.response.body).toEqual<MessageResponseBody>({ message: 'ok' });
 
-      const optionsTrackerWithMessage = await promiseIfRemote(
+      const optionsHandlerWithMessage = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -740,7 +740,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsWithMessageRequests = await promiseIfRemote(optionsTrackerWithMessage.requests(), interceptor);
+      let optionsWithMessageRequests = await promiseIfRemote(optionsHandlerWithMessage.requests(), interceptor);
       expect(optionsWithMessageRequests).toHaveLength(0);
 
       const otherOptionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
@@ -749,10 +749,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       optionsResponseBody = (await otherOptionsResponse.json()) as MessageResponseBody;
       expect(optionsResponseBody).toEqual<MessageResponseBody>({ message: 'other-ok' });
 
-      optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
-      optionsWithMessageRequests = await promiseIfRemote(optionsTrackerWithMessage.requests(), interceptor);
+      optionsWithMessageRequests = await promiseIfRemote(optionsHandlerWithMessage.requests(), interceptor);
       expect(optionsWithMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsWithMessageRequest = optionsWithMessageRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsWithMessageRequest).toBeInstanceOf(Request);
@@ -766,7 +766,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsWithMessageRequest.response.body).toEqualTypeOf<MessageResponseBody>();
       expect(optionsWithMessageRequest.response.body).toEqual<MessageResponseBody>({ message: 'other-ok' });
 
-      await promiseIfRemote(optionsTrackerWithMessage.bypass(), interceptor);
+      await promiseIfRemote(optionsHandlerWithMessage.bypass(), interceptor);
 
       optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
@@ -774,10 +774,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       optionsResponseBody = (await optionsResponse.json()) as MessageResponseBody;
       expect(optionsResponseBody).toEqual<MessageResponseBody>({ message: 'ok' });
 
-      optionsWithMessageRequests = await promiseIfRemote(optionsTrackerWithMessage.requests(), interceptor);
+      optionsWithMessageRequests = await promiseIfRemote(optionsHandlerWithMessage.requests(), interceptor);
       expect(optionsWithMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
-      optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch * 2);
       optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -793,7 +793,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should ignore all trackers after cleared when intercepting OPTIONS requests', async () => {
+  it('should ignore all handlers after cleared when intercepting OPTIONS requests', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -803,7 +803,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -811,13 +811,13 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       await promiseIfRemote(interceptor.clear(), interceptor);
@@ -827,12 +827,12 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         shouldBePreflight: overridesPreflightResponse,
       });
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
     });
   });
 
-  it('should ignore all trackers after restarted when intercepting OPTIONS requests', async () => {
+  it('should ignore all handlers after restarted when intercepting OPTIONS requests', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -842,7 +842,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -850,13 +850,13 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       expect(interceptor.isRunning()).toBe(true);
@@ -872,7 +872,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         canBeAborted: true,
       });
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       await interceptor.start();
@@ -883,12 +883,12 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         shouldBePreflight: overridesPreflightResponse,
       });
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
     });
   });
 
-  it('should ignore all trackers after restarted when intercepting OPTIONS requests, even if another interceptor is still running', async () => {
+  it('should ignore all handlers after restarted when intercepting OPTIONS requests, even if another interceptor is still running', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -898,7 +898,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -906,13 +906,13 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
       await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
@@ -932,7 +932,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           canBeAborted: true,
         });
 
-        optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+        optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
         expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
 
         await interceptor.start();
@@ -944,13 +944,13 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           shouldBePreflight: overridesPreflightResponse,
         });
 
-        optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+        optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
         expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       });
     });
   });
 
-  it('should throw an error when trying to create a OPTIONS request tracker if not running', async () => {
+  it('should throw an error when trying to create a OPTIONS request handler if not running', async () => {
     const interceptor = createInternalHttpInterceptor(interceptorOptions);
     expect(interceptor.isRunning()).toBe(false);
 
@@ -959,7 +959,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     }).rejects.toThrowError(new NotStartedHttpInterceptorError());
   });
 
-  it('should support creating new trackers after cleared', async () => {
+  it('should support creating new handlers after cleared', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -979,7 +979,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       await promiseIfRemote(interceptor.clear(), interceptor);
 
-      const optionsTracker = await promiseIfRemote(
+      const optionsHandler = await promiseIfRemote(
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -987,13 +987,13 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(optionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);
@@ -1009,7 +1009,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
   });
 
-  it('should support reusing previous trackers after cleared', async () => {
+  it('should support reusing previous handlers after cleared', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
@@ -1019,10 +1019,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         };
       };
     }>(interceptorOptions, async (interceptor) => {
-      const optionsTracker = await promiseIfRemote(interceptor.options('/filters'), interceptor);
+      const optionsHandler = await promiseIfRemote(interceptor.options('/filters'), interceptor);
 
       await promiseIfRemote(
-        optionsTracker.respond({
+        optionsHandler.respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
@@ -1031,21 +1031,21 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       await promiseIfRemote(interceptor.clear(), interceptor);
 
-      const otherOptionsTracker = await promiseIfRemote(
-        optionsTracker.respond({
+      const otherOptionsHandler = await promiseIfRemote(
+        optionsHandler.respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
         }),
         interceptor,
       );
 
-      let optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      let optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(0);
 
       const optionsResponse = await fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
       expect(optionsResponse.status).toBe(200);
 
-      optionsRequests = await promiseIfRemote(otherOptionsTracker.requests(), interceptor);
+      optionsRequests = await promiseIfRemote(otherOptionsHandler.requests(), interceptor);
       expect(optionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const optionsRequest = optionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(optionsRequest).toBeInstanceOf(Request);

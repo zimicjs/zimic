@@ -7,32 +7,32 @@ import {
 import { Default } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import HttpRequestTrackerClient from './HttpRequestTrackerClient';
+import HttpRequestHandlerClient from './HttpRequestHandlerClient';
 import {
-  HttpRequestTrackerRestriction,
-  LocalHttpRequestTracker as PublicLocalHttpRequestTracker,
+  HttpRequestHandlerRestriction,
+  LocalHttpRequestHandler as PublicLocalHttpRequestHandler,
 } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationFactory,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
-class LocalHttpRequestTracker<
+class LocalHttpRequestHandler<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicLocalHttpRequestTracker<Schema, Method, Path, StatusCode>
+> implements PublicLocalHttpRequestHandler<Schema, Method, Path, StatusCode>
 {
   readonly type = 'local';
 
-  private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
+  private _client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 
   constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    this._client = new HttpRequestTrackerClient(interceptor, method, path, this);
+    this._client = new HttpRequestHandlerClient(interceptor, method, path, this);
   }
 
   client() {
@@ -48,8 +48,8 @@ class LocalHttpRequestTracker<
   }
 
   with(
-    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ): LocalHttpRequestTracker<Schema, Method, Path, StatusCode> {
+    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
+  ): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.with(restriction);
     return this;
   }
@@ -58,21 +58,21 @@ class LocalHttpRequestTracker<
     NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
-      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
-  ): LocalHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+  ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     this._client.respond(declaration);
 
-    const newThis = this as unknown as LocalHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+    const newThis = this as unknown as LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     return newThis;
   }
 
-  bypass(): LocalHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  bypass(): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.bypass();
     return this;
   }
 
-  clear(): LocalHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  clear(): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.clear();
     return this;
   }
@@ -87,7 +87,7 @@ class LocalHttpRequestTracker<
 
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-  ): Promise<HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
+  ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     return this._client.applyResponseDeclaration(request);
   }
 
@@ -99,4 +99,4 @@ class LocalHttpRequestTracker<
   }
 }
 
-export default LocalHttpRequestTracker;
+export default LocalHttpRequestHandler;
