@@ -222,7 +222,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should not allow declaring response bodies for methods that do not support them', () => {
+  it('should not allow declaring request bodies for methods that do not support them', () => {
     // @ts-expect-error GET methods do not support request bodies
     createHttpInterceptor<{ '/users': { GET: { request: { body: User } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { GET: { request: { body: null } } } }>({ type, baseURL });
@@ -262,93 +262,77 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     createHttpInterceptor<{ '/users': { DELETE: { request: {} } } }>({ type, baseURL });
   });
 
-  it('should not allow declaring response bodies for methods that do not support them', () => {
+  it('should not allow declaring response bodies for methods or statuses that do not support them', () => {
     // @ts-expect-error HEAD methods do not support request bodies
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { HEAD: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { HEAD: { response: { 204: {} } } } }>({ type, baseURL });
 
     createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: User } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { GET: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { GET: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { GET: { response: { 204: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { POST: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { POST: { response: { 204: {} } } } }>({ type, baseURL });
 
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: User } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: null } } } } }>({ type, baseURL });
-    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { PUT: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PUT: { response: { 204: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { PATCH: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { PATCH: { response: { 204: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { DELETE: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { DELETE: { response: { 204: {} } } } }>({ type, baseURL });
 
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({
-      type,
-      baseURL,
-    });
-    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({
-      type,
-      baseURL,
-    });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { OPTIONS: { response: { 200: {} } } } }>({ type, baseURL });
+    // @ts-expect-error 204 responses do not support request bodies
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: User } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: null } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
+    createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: {} } } } }>({ type, baseURL });
   });
 
   describe('Dynamic paths', () => {
