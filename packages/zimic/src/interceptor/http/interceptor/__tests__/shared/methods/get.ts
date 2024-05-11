@@ -8,7 +8,7 @@ import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttp
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { joinURL } from '@/utils/fetch';
+import { fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -862,8 +862,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       await interceptor.stop();
       expect(interceptor.isRunning()).toBe(false);
 
-      let listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-      await expectFetchError(listPromise);
+      let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        method: 'GET',
+        timeout: 200,
+      });
+      await expectFetchError(listPromise, { canBeAborted: true });
 
       listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
       expect(listRequests).toHaveLength(1);
@@ -914,8 +917,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         expect(interceptor.isRunning()).toBe(false);
         expect(otherInterceptor.isRunning()).toBe(true);
 
-        let listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await expectFetchError(listPromise);
+        let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+          method: 'GET',
+          timeout: 200,
+        });
+        await expectFetchError(listPromise, { canBeAborted: true });
 
         listRequests = await promiseIfRemote(listTracker.requests(), interceptor);
         expect(listRequests).toHaveLength(1);

@@ -8,7 +8,7 @@ import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttp
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { joinURL } from '@/utils/fetch';
+import { fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -942,8 +942,11 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       await interceptor.stop();
       expect(interceptor.isRunning()).toBe(false);
 
-      let deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-      await expectFetchError(deletionPromise);
+      let deletionPromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
+        method: 'DELETE',
+        timeout: 200,
+      });
+      await expectFetchError(deletionPromise, { canBeAborted: true });
 
       deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
       expect(deletionRequests).toHaveLength(1);
@@ -994,8 +997,11 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         expect(interceptor.isRunning()).toBe(false);
         expect(otherInterceptor.isRunning()).toBe(true);
 
-        let deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        await expectFetchError(deletionPromise);
+        let deletionPromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
+          method: 'DELETE',
+          timeout: 200,
+        });
+        await expectFetchError(deletionPromise, { canBeAborted: true });
 
         deletionRequests = await promiseIfRemote(deletionTracker.requests(), interceptor);
         expect(deletionRequests).toHaveLength(1);

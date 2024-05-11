@@ -8,7 +8,7 @@ import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttp
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { joinURL } from '@/utils/fetch';
+import { fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -916,8 +916,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
       await interceptor.stop();
       expect(interceptor.isRunning()).toBe(false);
 
-      let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
-      await expectFetchError(updatePromise);
+      let updatePromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
+        method: 'PATCH',
+        timeout: 200,
+      });
+      await expectFetchError(updatePromise, { canBeAborted: true });
 
       updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
       expect(updateRequests).toHaveLength(1);
@@ -968,8 +971,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         expect(interceptor.isRunning()).toBe(false);
         expect(otherInterceptor.isRunning()).toBe(true);
 
-        let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
-        await expectFetchError(updatePromise);
+        let updatePromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
+          method: 'PATCH',
+          timeout: 200,
+        });
+        await expectFetchError(updatePromise, { canBeAborted: true });
 
         updateRequests = await promiseIfRemote(updateTracker.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);

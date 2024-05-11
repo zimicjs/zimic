@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestTracker from '@/interceptor/http/requestTracker/LocalHttpRequestTracker';
 import RemoteHttpRequestTracker from '@/interceptor/http/requestTracker/RemoteHttpRequestTracker';
-import { joinURL } from '@/utils/fetch';
+import { fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { expectFetchError } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -757,8 +757,11 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       await interceptor.stop();
       expect(interceptor.isRunning()).toBe(false);
 
-      let headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-      await expectFetchError(headPromise);
+      let headPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        method: 'HEAD',
+        timeout: 200,
+      });
+      await expectFetchError(headPromise, { canBeAborted: true });
 
       headRequests = await promiseIfRemote(headTracker.requests(), interceptor);
       expect(headRequests).toHaveLength(1);
@@ -809,8 +812,11 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         expect(interceptor.isRunning()).toBe(false);
         expect(otherInterceptor.isRunning()).toBe(true);
 
-        let headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-        await expectFetchError(headPromise);
+        let headPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+          method: 'HEAD',
+          timeout: 200,
+        });
+        await expectFetchError(headPromise, { canBeAborted: true });
 
         headRequests = await promiseIfRemote(headTracker.requests(), interceptor);
         expect(headRequests).toHaveLength(1);
