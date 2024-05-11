@@ -41,12 +41,15 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     numberOfRequestsIncludingPrefetch = platform === 'browser' && options.type === 'remote' ? 2 : 1;
   });
 
-  it('should support intercepting OPTIONS requests with a static response body', async () => {
+  it('should support intercepting OPTIONS requests with a static response', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
-            200: { headers: AccessControlHeaders };
+            200: {
+              headers: AccessControlHeaders;
+              body: string;
+            };
           };
         };
       };
@@ -55,6 +58,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor.options('/filters').respond({
           status: 200,
           headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          body: 'ok',
         }),
         interceptor,
       );
@@ -77,17 +81,20 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
       expect(optionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
-      expect(optionsRequest.response.body).toBe(null);
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<string>();
+      expect(optionsRequest.response.body).toBe('ok');
     });
   });
 
-  it('should support intercepting OPTIONS requests with a computed response body', async () => {
+  it('should support intercepting OPTIONS requests with a computed response', async () => {
     await usingHttpInterceptor<{
       '/filters': {
         OPTIONS: {
           response: {
-            200: { headers: AccessControlHeaders };
+            200: {
+              headers: AccessControlHeaders;
+              body: string;
+            };
           };
         };
       };
@@ -99,6 +106,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           return {
             status: 200,
             headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+            body: 'ok',
           };
         }),
         interceptor,
@@ -126,8 +134,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expectTypeOf(optionsRequest.response.status).toEqualTypeOf<200>();
       expect(optionsRequest.response.status).toEqual(200);
 
-      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<null>();
-      expect(optionsRequest.response.body).toBe(null);
+      expectTypeOf(optionsRequest.response.body).toEqualTypeOf<string>();
+      expect(optionsRequest.response.body).toBe('ok');
     });
   });
 
