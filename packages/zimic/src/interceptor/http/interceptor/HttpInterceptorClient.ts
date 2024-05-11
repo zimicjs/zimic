@@ -12,11 +12,11 @@ import { ExtendedURL, joinURL } from '@/utils/fetch';
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
-import HttpRequestTrackerClient, { AnyHttpRequestTrackerClient } from '../requestTracker/HttpRequestTrackerClient';
-import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from '../requestTracker/RemoteHttpRequestTracker';
-import { HttpRequestTracker } from '../requestTracker/types/public';
-import { HttpInterceptorRequest } from '../requestTracker/types/requests';
+import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
+import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
+import { HttpRequestHandler } from '../requestHandler/types/public';
+import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { HttpInterceptorRequestContext } from './types/requests';
@@ -25,17 +25,17 @@ export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
 
 class HttpInterceptorClient<
   Schema extends HttpServiceSchema,
-  TrackerConstructor extends HttpRequestTrackerConstructor = HttpRequestTrackerConstructor,
+  HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
   private worker: HttpInterceptorWorker;
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
 
-  private Tracker: TrackerConstructor;
+  private Handler: HandlerConstructor;
 
-  private trackerClientsByMethod: {
-    [Method in HttpMethod]: Map<string, AnyHttpRequestTrackerClient[]>;
+  private handlerClientsByMethod: {
+    [Method in HttpMethod]: Map<string, AnyHttpRequestHandlerClient[]>;
   } = {
     GET: new Map(),
     POST: new Map(),
@@ -50,12 +50,12 @@ class HttpInterceptorClient<
     worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
     baseURL: ExtendedURL;
-    Tracker: TrackerConstructor;
+    Handler: HandlerConstructor;
   }) {
     this.worker = options.worker;
     this.store = options.store;
     this._baseURL = options.baseURL;
-    this.Tracker = options.Tracker;
+    this.Handler = options.Handler;
   }
 
   baseURL() {
@@ -110,79 +110,79 @@ class HttpInterceptorClient<
   }
 
   get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('GET' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('GET' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   post(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('POST' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('POST' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   patch(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('PATCH' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('PATCH' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   put(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('PUT' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('PUT' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   delete(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('DELETE' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('DELETE' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   head(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('HEAD' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('HEAD' as HttpServiceSchemaMethod<Schema>, path);
   }
 
   options(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestTracker('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
+    return this.createHttpRequestHandler('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
   }
 
-  private createHttpRequestTracker<
+  private createHttpRequestHandler<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
-  >(method: Method, path: Path): HttpRequestTracker<Schema, Method, Path> {
+  >(method: Method, path: Path): HttpRequestHandler<Schema, Method, Path> {
     if (!this.isRunning()) {
       throw new NotStartedHttpInterceptorError();
     }
 
-    const tracker = new this.Tracker<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
-    this.registerRequestTracker(tracker);
-    return tracker;
+    const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
+    this.registerRequestHandler(handler);
+    return handler;
   }
 
-  registerRequestTracker<
+  registerRequestHandler<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
     StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
   >(
-    tracker:
-      | LocalHttpRequestTracker<Schema, Method, Path, StatusCode>
-      | RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+    handler:
+      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
   ) {
-    const trackerClients = this.trackerClientsByMethod[tracker.method()].get(tracker.path()) ?? [];
-    if (!trackerClients.includes(tracker.client())) {
-      trackerClients.push(tracker.client());
+    const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
+    if (!handlerClients.includes(handler.client())) {
+      handlerClients.push(handler.client());
     }
 
-    const isFirstTrackerForMethodPath = trackerClients.length === 1;
-    if (!isFirstTrackerForMethodPath) {
+    const isFirstHandlerForMethodPath = handlerClients.length === 1;
+    if (!isFirstHandlerForMethodPath) {
       return;
     }
 
-    this.trackerClientsByMethod[tracker.method()].set(tracker.path(), trackerClients);
-    const pathWithBaseURL = joinURL(this.baseURL(), tracker.path());
+    this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
+    const pathWithBaseURL = joinURL(this.baseURL(), handler.path());
 
-    const registrationResult = this.worker.use(this, tracker.method(), pathWithBaseURL, async (context) => {
+    const registrationResult = this.worker.use(this, handler.method(), pathWithBaseURL, async (context) => {
       const response = await this.handleInterceptedRequest(
-        tracker.method(),
-        tracker.path(),
+        handler.method(),
+        handler.path(),
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
       );
       return response;
     });
 
-    if (tracker instanceof RemoteHttpRequestTracker && registrationResult instanceof Promise) {
-      tracker.registerSyncPromise(registrationResult);
+    if (handler instanceof RemoteHttpRequestHandler && registrationResult instanceof Promise) {
+      handler.registerSyncPromise(registrationResult);
     }
   }
 
@@ -192,17 +192,17 @@ class HttpInterceptorClient<
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
-    const matchedTracker = this.findMatchedTracker(method, path, parsedRequest);
+    const matchedHandler = this.findMatchedHandler(method, path, parsedRequest);
 
-    if (matchedTracker) {
-      const responseDeclaration = await matchedTracker.applyResponseDeclaration(parsedRequest);
+    if (matchedHandler) {
+      const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
       const responseToParse = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
       >(responseToParse);
 
-      matchedTracker.registerInterceptedRequest(parsedRequest, parsedResponse);
+      matchedHandler.registerInterceptedRequest(parsedRequest, parsedResponse);
 
       const responseToReturn = HttpInterceptorWorker.createResponseFromDeclaration(responseDeclaration);
       return { response: responseToReturn };
@@ -211,7 +211,7 @@ class HttpInterceptorClient<
     }
   }
 
-  private findMatchedTracker<
+  private findMatchedHandler<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
   >(
@@ -219,10 +219,10 @@ class HttpInterceptorClient<
     path: Path,
     parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  HttpRequestTrackerClient<Schema, Method, Path, any> | undefined {
-    const methodPathTrackers = this.trackerClientsByMethod[method].get(path);
-    const matchedTracker = methodPathTrackers?.findLast((tracker) => tracker.matchesRequest(parsedRequest));
-    return matchedTracker;
+  HttpRequestHandlerClient<Schema, Method, Path, any> | undefined {
+    const methodPathHandlers = this.handlerClientsByMethod[method].get(path);
+    const matchedHandler = methodPathHandlers?.findLast((handler) => handler.matchesRequest(parsedRequest));
+    return matchedHandler;
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
@@ -230,11 +230,11 @@ class HttpInterceptorClient<
       throw new NotStartedHttpInterceptorError();
     }
 
-    const clearResults: PossiblePromise<AnyHttpRequestTrackerClient | void>[] = [];
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {
-      clearResults.push(...this.bypassMethodTrackers(method));
-      this.trackerClientsByMethod[method].clear();
+      clearResults.push(...this.bypassMethodHandlers(method));
+      this.handlerClientsByMethod[method].clear();
     }
 
     const clearResult = this.worker.clearInterceptorHandlers(this);
@@ -245,12 +245,12 @@ class HttpInterceptorClient<
     }
   }
 
-  private bypassMethodTrackers(method: HttpMethod) {
-    const bypassResults: PossiblePromise<AnyHttpRequestTrackerClient>[] = [];
+  private bypassMethodHandlers(method: HttpMethod) {
+    const bypassResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
 
-    for (const trackers of this.trackerClientsByMethod[method].values()) {
-      for (const tracker of trackers) {
-        bypassResults.push(tracker.bypass());
+    for (const handlers of this.handlerClientsByMethod[method].values()) {
+      for (const handler of handlers) {
+        bypassResults.push(handler.bypass());
       }
     }
 
@@ -259,14 +259,14 @@ class HttpInterceptorClient<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyHttpInterceptorClient = HttpInterceptorClient<any, any>;
+export type AnyHttpInterceptorClient = HttpInterceptorClient<any>;
 
-export type HttpRequestTrackerConstructor = typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
 export type SharedHttpInterceptorClient<Schema extends HttpServiceSchema> = HttpInterceptorClient<
   Schema,
-  typeof LocalHttpRequestTracker
+  typeof LocalHttpRequestHandler
 > &
-  HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>;
+  HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
 export default HttpInterceptorClient;

@@ -7,54 +7,54 @@ import {
 import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import HttpRequestTrackerClient from './HttpRequestTrackerClient';
+import HttpRequestHandlerClient from './HttpRequestHandlerClient';
 import {
-  HttpRequestTrackerRestriction,
-  RemoteHttpRequestTracker as PublicRemoteHttpRequestTracker,
-  SyncedRemoteHttpRequestTracker as PublicSyncedRemoteHttpRequestTracker,
+  HttpRequestHandlerRestriction,
+  RemoteHttpRequestHandler as PublicRemoteHttpRequestHandler,
+  SyncedRemoteHttpRequestHandler as PublicSyncedRemoteHttpRequestHandler,
 } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationFactory,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
 const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 
-class RemoteHttpRequestTracker<
+class RemoteHttpRequestHandler<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>
+> implements PublicRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>
 {
   readonly type = 'remote';
 
-  private _client: HttpRequestTrackerClient<Schema, Method, Path, StatusCode>;
+  private _client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 
   private syncPromises: Promise<unknown>[] = [];
 
   private unsynced: this;
   private synced: this;
 
-  constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestTracker>, method: Method, path: Path) {
-    this._client = new HttpRequestTrackerClient(interceptor, method, path, this);
+  constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>, method: Method, path: Path) {
+    this._client = new HttpRequestHandlerClient(interceptor, method, path, this);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
 
   private createSyncedProxy() {
     return new Proxy(this, {
-      has: (target, property: keyof RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>) => {
+      has: (target, property: keyof RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) => {
         if (this.isHiddenPropertyWhenSynced(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
-      get: (target, property: keyof RemoteHttpRequestTracker<Schema, Method, Path, StatusCode>) => {
+      get: (target, property: keyof RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) => {
         if (this.isHiddenPropertyWhenSynced(property)) {
           return undefined;
         }
@@ -80,8 +80,8 @@ class RemoteHttpRequestTracker<
   }
 
   with(
-    restriction: HttpRequestTrackerRestriction<Schema, Method, Path>,
-  ): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
+    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
+  ): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.with(restriction);
     return this.unsynced;
   }
@@ -90,20 +90,20 @@ class RemoteHttpRequestTracker<
     NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
-      | HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestTrackerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
-  ): RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode> {
-    const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestTracker<Schema, Method, Path, NewStatusCode>;
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+  ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
+    const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     newUnsyncedThis._client.respond(declaration);
     return newUnsyncedThis;
   }
 
-  bypass(): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  bypass(): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.bypass();
     return this.unsynced;
   }
 
-  clear(): RemoteHttpRequestTracker<Schema, Method, Path, StatusCode> {
+  clear(): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
     this._client.clear();
     return this.unsynced;
   }
@@ -118,7 +118,7 @@ class RemoteHttpRequestTracker<
 
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
-  ): Promise<HttpRequestTrackerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
+  ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     return this._client.applyResponseDeclaration(request);
   }
 
@@ -138,12 +138,12 @@ class RemoteHttpRequestTracker<
   }
 
   then<
-    FulfilledResult = PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+    FulfilledResult = PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
     RejectedResult = never,
   >(
     onFulfilled?:
       | ((
-          tracker: PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>,
+          handler: PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,15 +164,15 @@ class RemoteHttpRequestTracker<
   catch<RejectedResult = never>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
-  ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode> | RejectedResult> {
+  ): Promise<PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> | RejectedResult> {
     return this.then().catch(onRejected);
   }
 
   finally(
     onFinally?: (() => void) | null,
-  ): Promise<PublicSyncedRemoteHttpRequestTracker<Schema, Method, Path, StatusCode>> {
+  ): Promise<PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>> {
     return this.then().finally(onFinally);
   }
 }
 
-export default RemoteHttpRequestTracker;
+export default RemoteHttpRequestHandler;

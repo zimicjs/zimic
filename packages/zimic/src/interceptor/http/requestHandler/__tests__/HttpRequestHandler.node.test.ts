@@ -3,12 +3,12 @@ import { describe } from 'vitest';
 import Server from '@/server/Server';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpRequestTrackerTests } from './shared/requestTrackerTests';
+import { declareSharedHttpRequestHandlerTests } from './shared/requestHandlerTests';
 
-describe('HttpRequestTracker (Node.js)', () => {
+describe('HttpRequestHandler (Node.js)', () => {
   const server = new Server();
 
-  declareSharedHttpRequestTrackerTests({
+  declareSharedHttpRequestHandlerTests({
     platform: 'node',
 
     async startServer() {

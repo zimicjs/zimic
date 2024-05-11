@@ -13,23 +13,23 @@ import { waitForDelay } from '@/utils/time';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
-import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from '../../RemoteHttpRequestTracker';
+import LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
   HttpInterceptorRequest,
-  HttpRequestTrackerResponseDeclaration,
+  HttpRequestHandlerResponseDeclaration,
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
 } from '../../types/requests';
-import { SharedHttpRequestTrackerTestOptions, Schema, MethodSchema } from './types';
+import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema } from './types';
 
-export function declareDefaultHttpRequestTrackerTests(
-  options: SharedHttpRequestTrackerTestOptions & {
+export function declareDefaultHttpRequestHandlerTests(
+  options: SharedHttpRequestHandlerTestOptions & {
     type: HttpInterceptorType;
-    Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+    Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
   },
 ) {
-  const { platform, type, startServer, getBaseURL, stopServer, Tracker } = options;
+  const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
 
   let baseURL: URL;
 
@@ -59,114 +59,114 @@ export function declareDefaultHttpRequestTrackerTests(
   });
 
   it('should provide access to the method and path', () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
-    expectTypeOf<typeof tracker.method>().toEqualTypeOf<() => 'POST'>();
-    expect(tracker.method()).toBe('POST');
+    expectTypeOf<typeof handler.method>().toEqualTypeOf<() => 'POST'>();
+    expect(handler.method()).toBe('POST');
 
-    expectTypeOf<typeof tracker.path>().toEqualTypeOf<() => '/users'>();
-    expect(tracker.path()).toBe('/users');
+    expectTypeOf<typeof handler.path>().toEqualTypeOf<() => '/users'>();
+    expect(handler.path()).toBe('/users');
   });
 
   it('should not match any request if contains no declared response', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
   });
 
   it('should match any request if contains a declared response and no restrictions', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.with({}), interceptor);
+    await promiseIfRemote(handler.with({}), interceptor);
 
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not match any request if bypassed', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.bypass(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.bypass(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.bypass(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not match any request if cleared', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.clear(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
 
-    await promiseIfRemote(tracker.clear(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.clear(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should create response with declared status and body', async () => {
     const responseStatus = 200;
     const responseBody = { success: true } as const;
 
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: responseStatus,
       body: responseBody,
     });
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    const response = await tracker.applyResponseDeclaration(parsedRequest);
+    const response = await handler.applyResponseDeclaration(parsedRequest);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -178,18 +178,18 @@ export function declareDefaultHttpRequestTrackerTests(
 
     const responseFactory = vi.fn<
       [HttpInterceptorRequest<MethodSchema>],
-      HttpRequestTrackerResponseDeclaration<MethodSchema, 200>
+      HttpRequestHandlerResponseDeclaration<MethodSchema, 200>
     >(() => ({
       status: responseStatus,
       body: responseBody,
     }));
 
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
-    await promiseIfRemote(tracker.respond(responseFactory), interceptor);
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    await promiseIfRemote(handler.respond(responseFactory), interceptor);
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    const response = await tracker.applyResponseDeclaration(parsedRequest);
+    const response = await handler.applyResponseDeclaration(parsedRequest);
 
     expect(response.status).toBe(responseStatus);
     expect(response.body).toEqual(responseBody);
@@ -198,7 +198,7 @@ export function declareDefaultHttpRequestTrackerTests(
   });
 
   it('should throw an error if trying to create a response without a declared response', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
@@ -207,12 +207,12 @@ export function declareDefaultHttpRequestTrackerTests(
     expect(error).toBeInstanceOf(TypeError);
 
     await expect(async () => {
-      await tracker.applyResponseDeclaration(parsedRequest);
+      await handler.applyResponseDeclaration(parsedRequest);
     }).rejects.toThrowError(error);
   });
 
   it('should keep track of the intercepted requests and responses', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -220,16 +220,16 @@ export function declareDefaultHttpRequestTrackerTests(
     const firstRequest = new Request(baseURL);
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
 
-    const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
+    const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
-    tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
+    handler.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -239,17 +239,17 @@ export function declareDefaultHttpRequestTrackerTests(
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(secondRequest);
-    const secondResponseDeclaration = await tracker.applyResponseDeclaration(parsedSecondRequest);
+    const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
 
     const secondResponse = Response.json(secondResponseDeclaration.body, {
       status: secondResponseDeclaration.status,
     });
     const parsedSecondResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
-    tracker.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
+    handler.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
     expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(2);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -264,7 +264,7 @@ export function declareDefaultHttpRequestTrackerTests(
   });
 
   it('should clear the intercepted requests and responses after cleared', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -272,16 +272,16 @@ export function declareDefaultHttpRequestTrackerTests(
     const firstRequest = new Request(baseURL);
     const parsedFirstRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(firstRequest);
 
-    const firstResponseDeclaration = await tracker.applyResponseDeclaration(parsedFirstRequest);
+    const firstResponseDeclaration = await handler.applyResponseDeclaration(parsedFirstRequest);
     const firstResponse = Response.json(firstResponseDeclaration.body, {
       status: firstResponseDeclaration.status,
     });
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
-    tracker.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
+    handler.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
@@ -289,15 +289,15 @@ export function declareDefaultHttpRequestTrackerTests(
     expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
-    await promiseIfRemote(tracker.clear(), interceptor);
+    await promiseIfRemote(handler.clear(), interceptor);
 
     expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(0);
   });
 
   it('should provide access to the raw intercepted requests and responses', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -308,13 +308,13 @@ export function declareDefaultHttpRequestTrackerTests(
     });
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
-    const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
-    tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
+    handler.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0]).toEqual(parsedRequest);
@@ -340,7 +340,7 @@ export function declareDefaultHttpRequestTrackerTests(
   });
 
   it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
       status: 200,
       body: { success: true },
     });
@@ -348,13 +348,13 @@ export function declareDefaultHttpRequestTrackerTests(
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
 
-    const responseDeclaration = await tracker.applyResponseDeclaration(parsedRequest);
+    const responseDeclaration = await handler.applyResponseDeclaration(parsedRequest);
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
-    tracker.registerInterceptedRequest(parsedRequest, parsedResponse);
+    handler.registerInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(tracker.requests(), interceptor);
+    const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
 
     expect(interceptedRequests[0]).toEqual(parsedRequest);
@@ -375,17 +375,17 @@ export function declareDefaultHttpRequestTrackerTests(
   });
 
   it('should clear restrictions after cleared', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.clear(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker
+      handler
         .with((_request) => false)
         .respond({
           status: 200,
@@ -393,33 +393,33 @@ export function declareDefaultHttpRequestTrackerTests(
         }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.clear(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.clear(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+    expect(handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not clear restrictions after bypassed', async () => {
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.bypass(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker
+      handler
         .with((_request) => false)
         .respond({
           status: 200,
@@ -427,145 +427,145 @@ export function declareDefaultHttpRequestTrackerTests(
         }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
-    await promiseIfRemote(tracker.bypass(), interceptor);
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    await promiseIfRemote(handler.bypass(), interceptor);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
-      tracker.respond({
+      handler.respond({
         status: 200,
         body: { success: true },
       }),
       interceptor,
     );
-    expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+    expect(handler.matchesRequest(parsedRequest)).toBe(false);
   });
 
-  if (Tracker === RemoteHttpRequestTracker) {
+  if (Handler === RemoteHttpRequestHandler) {
     describe('Promise-like', () => {
       it('should be then-able', async () => {
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
 
-        expect(tracker).toHaveProperty('then', expect.any(Function));
-        expect(tracker).toHaveProperty('catch', expect.any(Function));
-        expect(tracker).toHaveProperty('finally', expect.any(Function));
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        const fulfillmentListener = vi.fn((syncedTracker) => {
-          expect(syncedTracker).toEqual(tracker);
-          expect(tracker.isSynced()).toBe(true);
+        const fulfillmentListener = vi.fn((syncedHandler) => {
+          expect(syncedHandler).toEqual(handler);
+          expect(handler.isSynced()).toBe(true);
 
-          expect(syncedTracker).not.toHaveProperty('then');
-          expect(syncedTracker).toHaveProperty('catch', expect.any(Function));
-          expect(syncedTracker).toHaveProperty('finally', expect.any(Function));
+          expect(syncedHandler).not.toHaveProperty('then');
+          expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
+          expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
         });
 
-        expect(tracker.isSynced()).toBe(true);
+        expect(handler.isSynced()).toBe(true);
 
-        const pendingTracker = tracker.with({});
-        expect(pendingTracker).toEqual(tracker);
+        const pendingHandler = handler.with({});
+        expect(pendingHandler).toEqual(handler);
 
-        expect(tracker.isSynced()).toBe(true);
-        tracker.registerSyncPromise(waitForDelay(100));
-        expect(tracker.isSynced()).toBe(false);
+        expect(handler.isSynced()).toBe(true);
+        handler.registerSyncPromise(waitForDelay(100));
+        expect(handler.isSynced()).toBe(false);
 
-        await pendingTracker.then(fulfillmentListener);
+        await pendingHandler.then(fulfillmentListener);
 
-        expect(tracker.isSynced()).toBe(true);
-        expect(pendingTracker.isSynced()).toBe(true);
+        expect(handler.isSynced()).toBe(true);
+        expect(pendingHandler.isSynced()).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
 
       it('should wait until synced before resolving, even if new sync promises were added while waiting', async () => {
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
 
-        expect(tracker).toHaveProperty('then', expect.any(Function));
-        expect(tracker).toHaveProperty('catch', expect.any(Function));
-        expect(tracker).toHaveProperty('finally', expect.any(Function));
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
 
-        const fulfillmentListener = vi.fn((syncedTracker) => {
-          expect(tracker).toEqual(syncedTracker);
-          expect(tracker.isSynced()).toBe(true);
+        const fulfillmentListener = vi.fn((syncedHandler) => {
+          expect(handler).toEqual(syncedHandler);
+          expect(handler.isSynced()).toBe(true);
 
-          expect(syncedTracker).not.toHaveProperty('then');
-          expect(syncedTracker).toHaveProperty('catch', expect.any(Function));
-          expect(syncedTracker).toHaveProperty('finally', expect.any(Function));
+          expect(syncedHandler).not.toHaveProperty('then');
+          expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
+          expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
         });
 
         const delayedSyncPromises = [waitForDelay(200), waitForDelay(100), waitForDelay(300)];
 
-        expect(tracker.isSynced()).toBe(true);
-        tracker.registerSyncPromise(delayedSyncPromises[0]);
-        expect(tracker.isSynced()).toBe(false);
+        expect(handler.isSynced()).toBe(true);
+        handler.registerSyncPromise(delayedSyncPromises[0]);
+        expect(handler.isSynced()).toBe(false);
 
-        const thenPromise = tracker.with({}).then(fulfillmentListener);
+        const thenPromise = handler.with({}).then(fulfillmentListener);
 
-        tracker.registerSyncPromise(delayedSyncPromises[1]);
-        tracker.registerSyncPromise(delayedSyncPromises[2]);
-        expect(tracker.isSynced()).toBe(false);
+        handler.registerSyncPromise(delayedSyncPromises[1]);
+        handler.registerSyncPromise(delayedSyncPromises[2]);
+        expect(handler.isSynced()).toBe(false);
 
         await thenPromise;
 
-        expect(tracker.isSynced()).toBe(true);
+        expect(handler.isSynced()).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
 
       it('should be catch-able', async () => {
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
 
-        expect(tracker).toHaveProperty('then', expect.any(Function));
-        expect(tracker).toHaveProperty('catch', expect.any(Function));
-        expect(tracker).toHaveProperty('finally', expect.any(Function));
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
 
         // @ts-expect-error Forcing an exception in an internal method
-        tracker.syncPromises = 'not-an-array';
+        handler.syncPromises = 'not-an-array';
 
         const rejectionListener = vi.fn((error: Error) => {
           expect(error).toBeInstanceOf(Error);
           expect(error.message).toBe('this.syncPromises.filter is not a function');
         });
 
-        await tracker.with({}).catch(rejectionListener);
+        await handler.with({}).catch(rejectionListener);
 
         expect(rejectionListener).toHaveBeenCalledTimes(1);
       });
 
       it('should be finally-able', async () => {
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').respond({
           status: 200,
           body: { success: true },
         });
 
-        expect(tracker).toHaveProperty('then', expect.any(Function));
-        expect(tracker).toHaveProperty('catch', expect.any(Function));
-        expect(tracker).toHaveProperty('finally', expect.any(Function));
+        expect(handler).toHaveProperty('then', expect.any(Function));
+        expect(handler).toHaveProperty('catch', expect.any(Function));
+        expect(handler).toHaveProperty('finally', expect.any(Function));
 
         const finallyListener = vi.fn();
 
-        expect(tracker.isSynced()).toBe(true);
+        expect(handler.isSynced()).toBe(true);
 
-        const pendingTracker = tracker.with({});
-        expect(pendingTracker).toEqual(tracker);
+        const pendingHandler = handler.with({});
+        expect(pendingHandler).toEqual(handler);
 
-        expect(tracker.isSynced()).toBe(true);
-        tracker.registerSyncPromise(waitForDelay(100));
-        expect(tracker.isSynced()).toBe(false);
+        expect(handler.isSynced()).toBe(true);
+        handler.registerSyncPromise(waitForDelay(100));
+        expect(handler.isSynced()).toBe(false);
 
-        await pendingTracker.finally(finallyListener);
+        await pendingHandler.finally(finallyListener);
 
-        expect(tracker.isSynced()).toBe(true);
-        expect(pendingTracker.isSynced()).toBe(true);
+        expect(handler.isSynced()).toBe(true);
+        expect(pendingHandler.isSynced()).toBe(true);
 
         expect(finallyListener).toHaveBeenCalledTimes(1);
       });

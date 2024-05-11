@@ -5,20 +5,20 @@ import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/Unre
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
 export type {
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationFactory,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   TrackedHttpInterceptorRequest,
-} from './http/requestTracker/types/requests';
+} from './http/requestHandler/types/requests';
 
 export type {
-  LocalHttpRequestTracker,
-  RemoteHttpRequestTracker,
-  SyncedRemoteHttpRequestTracker,
-  PendingRemoteHttpRequestTracker,
-  HttpRequestTracker,
-} from './http/requestTracker/types/public';
+  LocalHttpRequestHandler,
+  RemoteHttpRequestHandler,
+  SyncedRemoteHttpRequestHandler,
+  PendingRemoteHttpRequestHandler,
+  HttpRequestHandler,
+} from './http/requestHandler/types/public';
 
 export type {
   HttpInterceptorType,

@@ -3,7 +3,7 @@ import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http
 import { PossiblePromise } from '@/types/utils';
 import { ExtendedURL } from '@/utils/fetch';
 
-export interface SharedHttpRequestTrackerTestOptions {
+export interface SharedHttpRequestHandlerTestOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
   getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;

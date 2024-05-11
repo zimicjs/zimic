@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
-import { HttpRequestTrackerPath } from '@/interceptor/http/requestTracker/types/utils';
+import { HttpRequestHandlerPath } from '@/interceptor/http/requestHandler/types/utils';
 import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -38,7 +38,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const creationTracker = interceptor.post('/users').respond((request) => {
+      const creationHandler = interceptor.post('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         return {
@@ -47,7 +47,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const creationRequests = await creationTracker.requests();
+      const creationRequests = await creationHandler.requests();
       type RequestBody = (typeof creationRequests)[number]['body'];
       expectTypeOf<RequestBody>().toEqualTypeOf<User>();
     });
@@ -72,7 +72,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
+      const listHandler = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
 
         return {
@@ -81,7 +81,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type RequestSearchParams = (typeof listRequests)[number]['searchParams'];
       expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
     });
@@ -97,7 +97,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
+      const listHandler = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams>();
 
         return {
@@ -106,7 +106,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type RequestSearchParams = (typeof listRequests)[number]['searchParams'];
       expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams>();
     });
@@ -130,7 +130,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
+      const listHandler = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
 
         return {
@@ -139,7 +139,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type RequestHeaders = (typeof listRequests)[number]['headers'];
       expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
     });
@@ -155,7 +155,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond((request) => {
+      const listHandler = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<never>>();
 
         return {
@@ -164,7 +164,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type RequestHeaders = (typeof listRequests)[number]['headers'];
       expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<never>>();
     });
@@ -187,7 +187,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond({
+      const listHandler = interceptor.get('/users').respond({
         status: 200,
         headers: {
           accept: '*/*',
@@ -195,7 +195,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         body: users[0],
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof listRequests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
     });
@@ -211,12 +211,12 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const listTracker = interceptor.get('/users').respond({
+      const listHandler = interceptor.get('/users').respond({
         status: 200,
         body: users[0],
       });
 
-      const listRequests = await listTracker.requests();
+      const listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof listRequests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
     });
@@ -399,7 +399,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with static paths that conflict with a dynamic path, preferring the former', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const getTracker = interceptor.get('/groups/users').respond((request) => {
+        const getHandler = interceptor.get('/groups/users').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -408,15 +408,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof getTracker>>().toEqualTypeOf<'/groups/users'>();
+        expectTypeOf<HttpRequestHandlerPath<typeof getHandler>>().toEqualTypeOf<'/groups/users'>();
 
-        const getRequests = await getTracker.requests();
+        const getRequests = await getHandler.requests();
         type GetRequestBody = (typeof getRequests)[number]['body'];
         expectTypeOf<GetRequestBody>().toEqualTypeOf<null>();
         type GetResponseBody = (typeof getRequests)[number]['response']['body'];
         expectTypeOf<GetResponseBody>().toEqualTypeOf<'path /groups/users'>();
 
-        const otherTracker = interceptor.get(`/groups/${1}/users/other`).respond((request) => {
+        const otherHandler = interceptor.get(`/groups/${1}/users/other`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -425,9 +425,9 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof otherTracker>>().toEqualTypeOf<'/groups/:groupId/users/other'>();
+        expectTypeOf<HttpRequestHandlerPath<typeof otherHandler>>().toEqualTypeOf<'/groups/:groupId/users/other'>();
 
-        const otherGetRequests = await otherTracker.requests();
+        const otherGetRequests = await otherHandler.requests();
         type OtherGetRequestBody = (typeof otherGetRequests)[number]['body'];
         expectTypeOf<OtherGetRequestBody>().toEqualTypeOf<null>();
         type OtherGetResponseBody = (typeof otherGetRequests)[number]['response']['body'];
@@ -437,7 +437,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing one parameter at the start of the path', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor.get('/:any').respond((request) => {
+        const genericGetHandler = interceptor.get('/:any').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -446,15 +446,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/:any'>();
+        expectTypeOf<HttpRequestHandlerPath<typeof genericGetHandler>>().toEqualTypeOf<'/:any'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /:any'>();
 
-        const specificGetTracker = interceptor.get(`/${1}`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/${1}`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -463,11 +463,11 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+        expectTypeOf<HttpRequestHandlerPath<typeof specificGetHandler>>().toEqualTypeOf<
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -477,7 +477,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing one parameter in the middle of the path', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor.get('/groups/:groupId/users').respond((request) => {
+        const genericGetHandler = interceptor.get('/groups/:groupId/users').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -486,15 +486,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/groups/:groupId/users'>();
+        expectTypeOf<HttpRequestHandlerPath<typeof genericGetHandler>>().toEqualTypeOf<'/groups/:groupId/users'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users'>();
 
-        const specificGetTracker = interceptor.get(`/groups/${1}/users`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/groups/${1}/users`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -503,11 +503,11 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+        expectTypeOf<HttpRequestHandlerPath<typeof specificGetHandler>>().toEqualTypeOf<
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -517,7 +517,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing one parameter at the end of the path', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor.get('/groups/:groupId').respond((request) => {
+        const genericGetHandler = interceptor.get('/groups/:groupId').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -526,15 +526,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof genericGetTracker>>().toEqualTypeOf<'/groups/:groupId'>();
+        expectTypeOf<HttpRequestHandlerPath<typeof genericGetHandler>>().toEqualTypeOf<'/groups/:groupId'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId'>();
 
-        const specificGetTracker = interceptor.get(`/groups/${1}`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/groups/${1}`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -543,11 +543,11 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+        expectTypeOf<HttpRequestHandlerPath<typeof specificGetHandler>>().toEqualTypeOf<
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -557,7 +557,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing multiple, non-consecutive parameters', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor.get('/groups/:groupId/users/:userId').respond((request) => {
+        const genericGetHandler = interceptor.get('/groups/:groupId/users/:userId').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -567,16 +567,16 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         });
 
         expectTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >().toEqualTypeOf<'/groups/:groupId/users/:userId'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId'>();
 
-        const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/groups/${1}/users/${2}`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -585,11 +585,11 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+        expectTypeOf<HttpRequestHandlerPath<typeof specificGetHandler>>().toEqualTypeOf<
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -599,7 +599,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing multiple, consecutive parameters', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor.get('/groups/:groupId/users/:userId/:otherId').respond((request) => {
+        const genericGetHandler = interceptor.get('/groups/:groupId/users/:userId/:otherId').respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -609,16 +609,16 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         });
 
         expectTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId/:otherId'>();
 
-        const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}/${3}`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/groups/${1}/users/${2}/${3}`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -627,11 +627,11 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           };
         });
 
-        expectTypeOf<HttpRequestTrackerPath<typeof specificGetTracker>>().toEqualTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+        expectTypeOf<HttpRequestHandlerPath<typeof specificGetHandler>>().toEqualTypeOf<
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -641,7 +641,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     it('should correctly type requests with dynamic paths containing multiple, consecutive parameters ending with static path', async () => {
       await usingHttpInterceptor<SchemaWithDynamicPaths>({ type, baseURL }, async (interceptor) => {
-        const genericGetTracker = interceptor
+        const genericGetHandler = interceptor
           .get('/groups/:groupId/users/:userId/:otherId/suffix')
           .respond((request) => {
             expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -653,16 +653,16 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           });
 
         expectTypeOf<
-          HttpRequestTrackerPath<typeof genericGetTracker>
+          HttpRequestHandlerPath<typeof genericGetHandler>
         >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId/suffix'>();
 
-        const genericGetRequests = await genericGetTracker.requests();
+        const genericGetRequests = await genericGetHandler.requests();
         type GenericRequestBody = (typeof genericGetRequests)[number]['body'];
         expectTypeOf<GenericRequestBody>().toEqualTypeOf<null>();
         type GenericResponseBody = (typeof genericGetRequests)[number]['response']['body'];
         expectTypeOf<GenericResponseBody>().toEqualTypeOf<'path /groups/:groupId/users/:userId/:otherId/suffix'>();
 
-        const specificGetTracker = interceptor.get(`/groups/${1}/users/${2}/${3}/suffix`).respond((request) => {
+        const specificGetHandler = interceptor.get(`/groups/${1}/users/${2}/${3}/suffix`).respond((request) => {
           expectTypeOf(request.body).toEqualTypeOf<null>();
 
           return {
@@ -672,10 +672,10 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         });
 
         expectTypeOf<
-          HttpRequestTrackerPath<typeof specificGetTracker>
+          HttpRequestHandlerPath<typeof specificGetHandler>
         >().toEqualTypeOf<'/groups/:groupId/users/:userId/:otherId/suffix'>();
 
-        const specificGetRequests = await specificGetTracker.requests();
+        const specificGetRequests = await specificGetHandler.requests();
         type SpecificRequestBody = (typeof specificGetRequests)[number]['body'];
         expectTypeOf<SpecificRequestBody>().toEqualTypeOf<null>();
         type SpecificResponseBody = (typeof specificGetRequests)[number]['response']['body'];
@@ -695,21 +695,21 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const successfulUserListTracker = interceptor.get('/users').respond({
+      const successfulUserListHandler = interceptor.get('/users').respond({
         status: 200,
         body: users,
       });
 
-      const successfulUserListRequests = await successfulUserListTracker.requests();
+      const successfulUserListRequests = await successfulUserListHandler.requests();
       type SuccessfulResponseBody = (typeof successfulUserListRequests)[number]['response']['body'];
       expectTypeOf<SuccessfulResponseBody>().toEqualTypeOf<User[]>();
 
-      const failedUserListTracker = interceptor.get('/users').respond({
+      const failedUserListHandler = interceptor.get('/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const failedUserListRequests = await failedUserListTracker.requests();
+      const failedUserListRequests = await failedUserListHandler.requests();
       type FailedResponseBody = (typeof failedUserListRequests)[number]['response']['body'];
       expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
     });
@@ -726,47 +726,47 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
-      const successfulGenericUserListTracker = interceptor.get('/groups/:groupId/users').respond({
+      const successfulGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
         status: 200,
         body: users,
       });
 
-      const successfulGenericUserListRequests = await successfulGenericUserListTracker.requests();
+      const successfulGenericUserListRequests = await successfulGenericUserListHandler.requests();
       type SuccessfulGenericResponseBody = (typeof successfulGenericUserListRequests)[number]['response']['body'];
       expectTypeOf<SuccessfulGenericResponseBody>().toEqualTypeOf<User[]>();
 
-      const failedGenericUserListTracker = interceptor.get('/groups/:groupId/users').respond({
+      const failedGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
-      const failedGenericUserListRequests = await failedGenericUserListTracker.requests();
+      const failedGenericUserListRequests = await failedGenericUserListHandler.requests();
       type FailedGenericResponseBody = (typeof failedGenericUserListRequests)[number]['response']['body'];
       expectTypeOf<FailedGenericResponseBody>().toEqualTypeOf<{ message: string }>();
 
-      const successfulSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+      const successfulSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
         status: 200,
         body: users,
       });
 
       expectTypeOf<
-        HttpRequestTrackerPath<typeof successfulSpecificUserListTracker>
+        HttpRequestHandlerPath<typeof successfulSpecificUserListHandler>
       >().toEqualTypeOf<'/groups/:groupId/users'>();
 
-      const successfulSpecificUserListRequests = await successfulSpecificUserListTracker.requests();
+      const successfulSpecificUserListRequests = await successfulSpecificUserListHandler.requests();
       type SuccessfulSpecificResponseBody = (typeof successfulSpecificUserListRequests)[number]['response']['body'];
       expectTypeOf<SuccessfulSpecificResponseBody>().toEqualTypeOf<User[]>();
 
-      const failedSpecificUserListTracker = interceptor.get(`/groups/${1}/users`).respond({
+      const failedSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
         status: 500,
         body: { message: 'Internal server error' },
       });
 
       expectTypeOf<
-        HttpRequestTrackerPath<typeof failedSpecificUserListTracker>
+        HttpRequestHandlerPath<typeof failedSpecificUserListHandler>
       >().toEqualTypeOf<'/groups/:groupId/users'>();
 
-      const failedSpecificUserListRequests = await failedSpecificUserListTracker.requests();
+      const failedSpecificUserListRequests = await failedSpecificUserListHandler.requests();
       type FailedSpecificResponseBody = (typeof failedSpecificUserListRequests)[number]['response']['body'];
       expectTypeOf<FailedSpecificResponseBody>().toEqualTypeOf<{ message: string }>();
     });
@@ -938,7 +938,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     }>;
 
     await usingHttpInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const userCreationTracker = interceptor.post('/users').respond((request) => {
+      const userCreationHandler = interceptor.post('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<User>();
 
         return {
@@ -947,7 +947,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const userCreationRequests = await userCreationTracker.requests();
+      const userCreationRequests = await userCreationHandler.requests();
 
       type UserCreationRequestBody = (typeof userCreationRequests)[number]['body'];
       expectTypeOf<UserCreationRequestBody>().toEqualTypeOf<User>();
@@ -955,7 +955,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       type UserCreationResponseBody = (typeof userCreationRequests)[number]['response']['body'];
       expectTypeOf<UserCreationResponseBody>().toEqualTypeOf<User>();
 
-      const userListTracker = interceptor.get('/users').respond((request) => {
+      const userListHandler = interceptor.get('/users').respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
         expect(request.body).toBe(null);
 
@@ -965,7 +965,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      const userListRequests = await userListTracker.requests();
+      const userListRequests = await userListHandler.requests();
 
       type UserListRequestBody = (typeof userListRequests)[number]['body'];
       expectTypeOf<UserListRequestBody>().toEqualTypeOf<null>();
@@ -973,7 +973,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
       expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
 
-      const groupGetTracker = interceptor.get(`/groups/${1}`).respond((request) => {
+      const groupGetHandler = interceptor.get(`/groups/${1}`).respond((request) => {
         expectTypeOf(request.body).toEqualTypeOf<null>();
         expect(request.body).toBe(null);
 
@@ -983,9 +983,9 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       });
 
-      expectTypeOf<HttpRequestTrackerPath<typeof groupGetTracker>>().toEqualTypeOf<'/groups/:groupId'>();
+      expectTypeOf<HttpRequestHandlerPath<typeof groupGetHandler>>().toEqualTypeOf<'/groups/:groupId'>();
 
-      const groupGetRequests = await groupGetTracker.requests();
+      const groupGetRequests = await groupGetHandler.requests();
 
       type GroupGetRequestBody = (typeof groupGetRequests)[number]['body'];
       expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<null>();

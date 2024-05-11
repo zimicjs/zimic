@@ -116,7 +116,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should support creating users', async () => {
-        const creationTracker = await authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -150,7 +150,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           birthDate: creationPayload.birthDate,
         });
 
-        const creationRequests = await creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -184,7 +184,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationTracker = authInterceptor
+        const creationHandler = authInterceptor
           .post('/users')
           .with({
             body: invalidPayload,
@@ -197,7 +197,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const response = await createUser(invalidPayload);
         expect(response.status).toBe(400);
 
-        const creationRequests = await creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -227,7 +227,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationTracker = authInterceptor
+        const creationHandler = authInterceptor
           .post('/users')
           .with({
             body: conflictingPayload,
@@ -240,7 +240,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const response = await createUser(conflictingPayload);
         expect(response.status).toBe(409);
 
-        const creationRequests = await creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -302,7 +302,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should list users', async () => {
-        const listTracker = await authInterceptor.get('/users').respond({
+        const listHandler = await authInterceptor.get('/users').respond({
           status: 200,
           body: users.map(serializeUser),
         });
@@ -313,7 +313,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
-        const listRequests = await listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -340,7 +340,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
           .with({
             searchParams: { name: user.name },
@@ -356,7 +356,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
-        const listRequests = await listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -386,7 +386,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
           .with({
             searchParams: { orderBy: ['email.desc'] },
@@ -404,7 +404,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(orderedUsers.map(serializeUser));
 
-        const listRequests = await listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -437,7 +437,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should support getting users by id', async () => {
-        const getTracker = await authInterceptor.get(`/users/${user.id}`).respond({
+        const getHandler = await authInterceptor.get(`/users/${user.id}`).respond({
           status: 200,
           body: serializeUser(user),
         });
@@ -448,7 +448,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(serializeUser(user));
 
-        const getRequests = await getTracker.requests();
+        const getRequests = await getHandler.requests();
         expect(getRequests).toHaveLength(1);
         expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
@@ -477,7 +477,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = await authInterceptor.get('/users/:id').respond({
+        const getHandler = await authInterceptor.get('/users/:id').respond({
           status: 404,
           body: notFoundError,
         });
@@ -485,7 +485,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const response = await getUserById(user.id);
         expect(response.status).toBe(404);
 
-        const getRequests = await getTracker.requests();
+        const getRequests = await getHandler.requests();
         expect(getRequests).toHaveLength(1);
         expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
@@ -517,14 +517,14 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should support deleting users by id', async () => {
-        const deleteTracker = await authInterceptor.delete(`/users/${user.id}`).respond({
+        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 204,
         });
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(204);
 
-        const deleteRequests = await deleteTracker.requests();
+        const deleteRequests = await deleteHandler.requests();
         expect(deleteRequests).toHaveLength(1);
         expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
@@ -553,7 +553,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = await authInterceptor.delete(`/users/${user.id}`).respond({
+        const getHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 404,
           body: notFoundError,
         });
@@ -561,7 +561,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(404);
 
-        const deleteRequests = await getTracker.requests();
+        const deleteRequests = await getHandler.requests();
         expect(deleteRequests).toHaveLength(1);
         expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
@@ -612,7 +612,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should list notifications', async () => {
-        const listTracker = await notificationInterceptor.get('/notifications/:userId').respond({
+        const listHandler = await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [notification],
         });
@@ -623,7 +623,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         let returnedNotifications = (await response.json()) as Notification[];
         expect(returnedNotifications).toEqual([notification]);
 
-        const listRequests = await listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -645,7 +645,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([notification]);
 
-        await listTracker.bypass();
+        await listHandler.bypass();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -654,9 +654,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(await listTracker.requests()).toHaveLength(1);
+        expect(await listHandler.requests()).toHaveLength(1);
 
-        await listTracker.clear();
+        await listHandler.clear();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -665,7 +665,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(await listTracker.requests()).toHaveLength(0);
+        expect(await listHandler.requests()).toHaveLength(0);
       });
     });
   });

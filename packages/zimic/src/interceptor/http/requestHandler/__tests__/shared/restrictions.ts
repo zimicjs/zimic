@@ -10,17 +10,17 @@ import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInte
 import { joinURL } from '@/utils/fetch';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
-import LocalHttpRequestTracker from '../../LocalHttpRequestTracker';
-import RemoteHttpRequestTracker from '../../RemoteHttpRequestTracker';
-import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequestTrackerTestOptions } from './types';
+import LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
+import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequestHandlerTestOptions } from './types';
 
-export function declareRestrictionHttpRequestTrackerTests(
-  options: SharedHttpRequestTrackerTestOptions & {
+export function declareRestrictionHttpRequestHandlerTests(
+  options: SharedHttpRequestHandlerTestOptions & {
     type: HttpInterceptorType;
-    Tracker: typeof LocalHttpRequestTracker | typeof RemoteHttpRequestTracker;
+    Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
   },
 ) {
-  const { platform, type, startServer, getBaseURL, stopServer, Tracker } = options;
+  const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
 
   let baseURL: URL;
 
@@ -55,7 +55,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             searchParams: { name },
             exact,
@@ -68,7 +68,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingSearchParams of [
@@ -78,7 +78,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -88,7 +88,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             searchParams: { name },
             exact,
@@ -104,7 +104,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingSearchParams of [
@@ -113,7 +113,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -121,7 +121,7 @@ export function declareRestrictionHttpRequestTrackerTests(
     it('should match only specific requests if contains a declared response and a computed search params restriction', async () => {
       const name = 'User';
 
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<SearchParamsSchema>>();
           expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
@@ -141,7 +141,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       ]) {
         const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingSearchParams of [
@@ -150,7 +150,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       ]) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
@@ -161,7 +161,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const contentType = 'application/json';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             headers: { 'content-type': contentType },
             exact,
@@ -174,7 +174,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-type': contentType })]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingHeaders of [
@@ -184,7 +184,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -194,7 +194,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const contentType = 'application/json';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             headers: { 'content-type': contentType },
             exact,
@@ -210,7 +210,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingHeaders of [
@@ -219,7 +219,7 @@ export function declareRestrictionHttpRequestTrackerTests(
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -227,7 +227,7 @@ export function declareRestrictionHttpRequestTrackerTests(
     it('should match only specific requests if contains a declared response and a computed header restriction', async () => {
       const contentType = 'application/json';
 
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HeadersSchema>>();
           expect(request.headers).toBeInstanceOf(HttpHeaders);
@@ -247,7 +247,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       ]) {
         const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingHeaders of [
@@ -256,7 +256,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       ]) {
         const request = new Request(baseURL, { headers: mismatchingHeaders });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
@@ -267,7 +267,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             body: { name },
             exact,
@@ -283,7 +283,7 @@ export function declareRestrictionHttpRequestTrackerTests(
             body: JSON.stringify(matchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingBody of [
@@ -296,7 +296,7 @@ export function declareRestrictionHttpRequestTrackerTests(
             body: JSON.stringify(mismatchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -306,7 +306,7 @@ export function declareRestrictionHttpRequestTrackerTests(
       async ({ exact }) => {
         const name = 'User';
 
-        const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
             body: { name },
             exact,
@@ -326,7 +326,7 @@ export function declareRestrictionHttpRequestTrackerTests(
             body: JSON.stringify(matchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+          expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingBody of [{}] satisfies MethodSchema['request']['body'][]) {
@@ -335,7 +335,7 @@ export function declareRestrictionHttpRequestTrackerTests(
             body: JSON.stringify(mismatchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-          expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+          expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -343,7 +343,7 @@ export function declareRestrictionHttpRequestTrackerTests(
     it('should match only specific requests if contains a declared response and a computed body restriction', async () => {
       const name = 'User';
 
-      const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.body).toEqualTypeOf<MethodSchema['request']['body']>();
 
@@ -364,7 +364,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           body: JSON.stringify(matchingBody),
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingBody of [{ name: `Other ${name}` }, {}] satisfies MethodSchema['request']['body'][]) {
@@ -373,7 +373,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           body: JSON.stringify(mismatchingBody),
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
@@ -382,7 +382,7 @@ export function declareRestrictionHttpRequestTrackerTests(
     const name = 'User';
     const contentType = 'application/json';
 
-    const tracker = new Tracker<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
       .with({
         headers: { 'content-type': contentType },
         searchParams: { name },
@@ -437,7 +437,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(true);
+        expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
@@ -445,7 +445,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }
 
@@ -455,7 +455,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
@@ -463,7 +463,7 @@ export function declareRestrictionHttpRequestTrackerTests(
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
-        expect(tracker.matchesRequest(parsedRequest)).toBe(false);
+        expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }
   });

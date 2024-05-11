@@ -2,10 +2,10 @@ import { describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpRequestTrackerTests } from './shared/requestTrackerTests';
+import { declareSharedHttpRequestHandlerTests } from './shared/requestHandlerTests';
 
-describe('HttpRequestTracker (browser)', () => {
-  declareSharedHttpRequestTrackerTests({
+describe('HttpRequestHandler (browser)', () => {
+  declareSharedHttpRequestHandlerTests({
     platform: 'browser',
 
     getBaseURL(type) {

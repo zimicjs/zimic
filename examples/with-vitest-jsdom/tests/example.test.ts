@@ -17,7 +17,7 @@ describe('Example tests', () => {
       html_url: 'https://github.com/diego-aquino/zimic',
     };
 
-    const getRepositoryTracker = githubInterceptor.get('/repos/:owner/:name').respond({
+    const getRepositoryHandler = githubInterceptor.get('/repos/:owner/:name').respond({
       status: 200,
       body: zimicRepository,
     });
@@ -39,12 +39,12 @@ describe('Example tests', () => {
     const repositoryURL = await screen.findByRole('link', { name: zimicRepository.html_url });
     expect(repositoryURL).toBeInTheDocument();
 
-    const getRequests = getRepositoryTracker.requests();
+    const getRequests = getRepositoryHandler.requests();
     expect(getRequests).toHaveLength(1);
   });
 
   it('should return a 404 status code, if the GitHub repository is not found', async () => {
-    const getRepositoryTracker = githubInterceptor.get('/repos/:owner/:name').respond({
+    const getRepositoryHandler = githubInterceptor.get('/repos/:owner/:name').respond({
       status: 404,
       body: { message: 'Not Found' },
     });
@@ -66,7 +66,7 @@ describe('Example tests', () => {
     const repositoryURLPromise = screen.findByRole('link', {}, { timeout: 200 });
     await expect(repositoryURLPromise).rejects.toThrowError();
 
-    const getRequests = getRepositoryTracker.requests();
+    const getRequests = getRepositoryHandler.requests();
     expect(getRequests).toHaveLength(1);
   });
 });

@@ -48,7 +48,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A GET {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
+   * @returns A GET {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the provided
    *   path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -58,7 +58,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A POST {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
+   * @returns A POST {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the provided
    *   path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -68,7 +68,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A PATCH {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
+   * @returns A PATCH {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the
    *   provided path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -78,7 +78,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A PUT {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
+   * @returns A PUT {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the provided
    *   path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -88,7 +88,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A DELETE {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
+   * @returns A DELETE {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the
    *   provided path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -98,7 +98,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns A HEAD {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the provided
+   * @returns A HEAD {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the provided
    *   path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -108,7 +108,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
-   * @returns An OPTIONS {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} for the
+   * @returns An OPTIONS {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} for the
    *   provided path. The path and method must be declared in the interceptor schema.
    * @throws {NotStartedHttpInterceptorWorkerError} If the worker is not running.
    * @see {@link https://github.com/diego-aquino/zimic#interceptormethodpath}
@@ -116,7 +116,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
   options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   /**
-   * Clears all of the {@link https://github.com/diego-aquino/zimic#httprequesttracker HttpRequestTracker} instances
+   * Clears all of the {@link https://github.com/diego-aquino/zimic#httprequesthandler HttpRequestHandler} instances
    * created by this interceptor. After calling this method, the interceptor will no longer intercept any requests until
    * new mock responses are registered.
    *

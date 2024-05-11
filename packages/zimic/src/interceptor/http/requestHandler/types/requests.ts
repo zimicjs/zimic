@@ -9,35 +9,35 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 
-export type HttpRequestTrackerResponseBodyAttribute<ResponseSchema extends HttpServiceResponseSchema> =
+export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpServiceResponseSchema> =
   undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
 
-export type HttpRequestTrackerResponseHeadersAttribute<ResponseSchema extends HttpServiceResponseSchema> =
+export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends HttpServiceResponseSchema> =
   undefined extends ResponseSchema['headers']
     ? { headers?: undefined }
     : { headers: HttpHeadersInit<Default<ResponseSchema['headers']>> };
 
 /** A declaration of an HTTP response for an intercepted request. */
-export type HttpRequestTrackerResponseDeclaration<
+export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = {
   status: StatusCode;
-} & HttpRequestTrackerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
-  HttpRequestTrackerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
+} & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
+  HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
 
 /**
- * A factory function for creating {@link HttpRequestTrackerResponseDeclaration} objects.
+ * A factory function for creating {@link HttpRequestHandlerResponseDeclaration} objects.
  *
  * @param request The intercepted request.
  * @returns The response declaration.
  */
-export type HttpRequestTrackerResponseDeclarationFactory<
+export type HttpRequestHandlerResponseDeclarationFactory<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
   request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
-) => PossiblePromise<HttpRequestTrackerResponseDeclaration<MethodSchema, StatusCode>>;
+) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
 export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
   Default<MethodSchema['request'], { headers: never }>['headers']

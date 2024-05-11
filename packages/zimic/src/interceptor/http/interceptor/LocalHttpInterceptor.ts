@@ -1,7 +1,7 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
 import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
 
-import LocalHttpRequestTracker from '../requestTracker/LocalHttpRequestTracker';
+import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
@@ -26,7 +26,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     this._client = new HttpInterceptorClient<Schema>({
       worker,
       store: this.store,
-      Tracker: LocalHttpRequestTracker,
+      Handler: LocalHttpRequestHandler,
       baseURL,
     });
   }
