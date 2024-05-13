@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { JSONValue } from 'zimic';
+import type { JSONValue } from 'zimic';
 
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
