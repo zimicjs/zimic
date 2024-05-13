@@ -1,4 +1,4 @@
-import { fetchGitHubRepository } from '../services/github';
+import { fetchGitHubRepository } from '../../services/github';
 
 interface Props {
   ownerName: string;

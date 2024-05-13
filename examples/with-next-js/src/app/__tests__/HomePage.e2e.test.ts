@@ -1,18 +1,18 @@
 import test, { expect } from '@playwright/test';
 
 import githubInterceptor from '../../../tests/interceptors/github';
-import { GitHubRepository } from '../services/github';
+import { GitHubRepository } from '../../services/github';
 
-import '@tests/setup';
+import '../../../tests/setup';
 
 test.describe('Home page', () => {
-  const ownerName = 'diego-aquino';
-  const repositoryName = 'zimic';
+  const ownerName = 'owner';
+  const repositoryName = 'example';
 
   const repository: GitHubRepository = {
     id: 1,
-    full_name: 'diego-aquino/zimic',
-    html_url: 'https://github.com/diego-aquino/zimic',
+    full_name: `${ownerName}/${repositoryName}`,
+    html_url: `https://github.com/${ownerName}/${repositoryName}`,
   };
 
   test.beforeAll(async () => {

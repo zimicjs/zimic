@@ -2,9 +2,9 @@
 
 import { FormEvent, useRef } from 'react';
 
+import Button from '../../components/Button';
+import Input from '../../components/Input';
 import useHomePageSearchParams from '../hooks/useHomePageSearchParams';
-import Button from './Button';
-import Input from './Input';
 
 function GitHubRepositoryForm() {
   const searchParams = useHomePageSearchParams();
