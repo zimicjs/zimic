@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { createHttpInterceptor } from 'zimic/interceptor';
 
 import { GitHubRepository } from '../../src/app/services/github';
@@ -15,7 +14,7 @@ const githubInterceptor = createHttpInterceptor<{
   };
 }>({
   type: 'remote',
-  baseURL: `${process.env.ZIMIC_SERVER_URL}/github-${crypto.randomUUID()}`,
+  baseURL: process.env.GITHUB_API_BASE_URL ?? '',
 });
 
 export default githubInterceptor;

@@ -1,30 +1,21 @@
-import '@testing-library/jest-dom/vitest';
+import test from '@playwright/test';
 
-import { beforeAll, beforeEach, afterAll, vi } from 'vitest';
+import { interceptors } from './interceptors';
 
-import githubInterceptor from './interceptors/github';
-
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn().mockImplementation(() => ({})),
-  useSearchParams: vi.fn().mockImplementation(() => new URLSearchParams()),
-}));
-
-vi.mock('next/font/google', () => ({
-  Inter: () => ({
-    className: 'font-inter',
-  }),
-}));
-
-beforeAll(async () => {
-  await githubInterceptor.start();
-
-  process.env.GITHUB_API_BASE_URL = 'https://api.github.com';
+test.beforeAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.start();
+  }
 });
 
-beforeEach(async () => {
-  await githubInterceptor.clear();
+test.beforeEach(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.clear();
+  }
 });
 
-afterAll(async () => {
-  await githubInterceptor.stop();
+test.afterAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.stop();
+  }
 });
