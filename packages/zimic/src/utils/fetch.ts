@@ -37,7 +37,7 @@ export function excludeDynamicParams(url: URL) {
 }
 
 export function createRegexFromURL(url: string) {
-  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/, '/(?<$1>[^/]+)').replace(/(\/+)$/, '(?:$1)?');
+  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/g, '/(?<$1>[^/]+)').replace(/(\/+)$/, '(?:$1)?');
   return new RegExp(`^${urlWithReplacedPathParams}$`);
 }
 

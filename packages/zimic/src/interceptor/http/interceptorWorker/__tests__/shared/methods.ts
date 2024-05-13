@@ -4,7 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import { createExtendedURL, fetchWithTimeout } from '@/utils/fetch';
+import { createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
@@ -118,60 +118,159 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         });
       });
 
-      it(`should intercept ${method} requests after started, considering dynamic paths with a generic match`, async () => {
-        await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-          const interceptor = createDefaultHttpInterceptor();
-          await promiseIfRemote(
-            worker.use(interceptor.client(), method, `${baseURL}/:id`, spiedRequestHandler),
-            worker,
-          );
+      const param1 = 'abc';
+      const param2 = 2;
+      const param3 = 3;
 
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
+      it.each([
+        { use: '/:param', succeed: `/${param1}` },
+        { use: '/:param', succeed: `/${param2}` },
+        { use: '/:param', fail: `/${param1}/other` },
+        { use: '/:param', fail: `/other/${param1}` },
 
-          const response = await fetch(`${baseURL}/${1}`, { method });
+        { use: '/other/path/:param', succeed: `/other/path/${param1}` },
+        { use: '/other/path/:param', succeed: `/other/path/${param2}` },
+        { use: '/other/path/:param', fail: `/other/path/${param1}/another` },
+        { use: '/other/path/:param', fail: `/other/${param1}/path` },
 
-          expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
+        { use: '/other/:param/path', succeed: `/other/${param1}/path` },
+        { use: '/other/:param/path', succeed: `/other/${param2}/path` },
+        { use: '/other/:param/path', fail: `/other/${param1}/path/another` },
+        { use: '/other/:param/path', fail: `/other/path/${param1}` },
 
-          const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
-          expect(handlerContext.request).toBeInstanceOf(Request);
-          expect(handlerContext.request.method).toBe(method);
+        { use: '/other/:param/path/:other', succeed: `/other/${param1}/path/${param2}` },
+        { use: '/other/:param/path/:other', succeed: `/other/${param2}/path/${param1}` },
+        { use: '/other/:param/path/:other', fail: `/other/${param1}/path/${param2}/another` },
+        { use: '/other/:param/path/:other', fail: `/other/${param1}/path` },
 
-          expect(response.status).toBe(200);
-          await expectMatchedBodyIfNotHead(response);
-        });
-      });
+        { use: '/:param/:other', succeed: `/${param1}/${param2}` },
+        { use: '/:param/:other', succeed: `/${param2}/${param1}` },
+        { use: '/:param/:other', fail: `/${param1}` },
+        { use: '/:param/:other', fail: `/other/${param1}/${param2}/another` },
 
-      it(`should intercept ${method} requests after started, considering dynamic paths with a specific match`, async () => {
-        await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-          const interceptor = createDefaultHttpInterceptor();
-          await promiseIfRemote(
-            worker.use(interceptor.client(), method, `${baseURL}/${1}`, spiedRequestHandler),
-            worker,
-          );
+        { use: '/:param/:other/:another', succeed: `/${param1}/${param2}/${param3}` },
+        { use: '/:param/:other/:another', succeed: `/${param2}/${param3}/${param1}` },
+        { use: '/:param/:other/:another', fail: `/${param1}/${param2}` },
+        { use: '/:param/:other/:another', fail: `/${param1}/${param3}/other/another` },
 
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
+        { use: '/:param/path/:other/:another/path', succeed: `/${param1}/path/${param2}/${param3}/path` },
+        { use: '/:param/path/:other/:another/path', succeed: `/${param3}/path/${param2}/${param1}/path` },
+        { use: '/:param/path/:other/:another/path', fail: `/${param1}/path/${param2}/path` },
+        { use: '/:param/path/:other/:another/path', fail: '/path' },
+      ])(
+        `should intercept ${method} requests supporting dynamic paths with a generic match (use $use; succeed $succeed; fail $fail)`,
+        async (paths) => {
+          const useURL = joinURL(baseURL, paths.use);
 
-          const matchedResponse = await fetch(`${baseURL}/${1}`, { method });
-          expect(matchedResponse.status).toBe(200);
+          await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+            const interceptor = createDefaultHttpInterceptor();
+            await promiseIfRemote(worker.use(interceptor.client(), method, useURL, spiedRequestHandler), worker);
 
-          await expectMatchedBodyIfNotHead(matchedResponse);
+            expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-          expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
+            if (paths.succeed !== undefined) {
+              const urlExpectedToSucceed = joinURL(baseURL, paths.succeed);
+              const response = await fetch(urlExpectedToSucceed, { method });
 
-          const [matchedCallContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
-          expect(matchedCallContext.request).toBeInstanceOf(Request);
-          expect(matchedCallContext.request.method).toBe(method);
+              expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
 
-          spiedRequestHandler.mockClear();
+              const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
+              expect(handlerContext.request).toBeInstanceOf(Request);
+              expect(handlerContext.request.method).toBe(method);
 
-          const unmatchedResponsePromise = fetch(`${baseURL}/${2}`, { method });
-          await expectFetchErrorOrPreflightResponse(unmatchedResponsePromise, {
-            shouldBePreflight: overridesPreflightResponse,
+              expect(response.status).toBe(200);
+              await expectMatchedBodyIfNotHead(response);
+            }
+
+            if (paths.fail !== undefined) {
+              const urlExpectedToFail = joinURL(baseURL, paths.fail);
+
+              const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
+              await expectFetchErrorOrPreflightResponse(fetchPromise, {
+                shouldBePreflight: overridesPreflightResponse,
+                canBeAborted: true,
+              });
+
+              expect(spiedRequestHandler).not.toHaveBeenCalled();
+            }
           });
+        },
+      );
 
-          expect(spiedRequestHandler).not.toHaveBeenCalled();
-        });
-      });
+      it.each([
+        { use: `/${param1}`, succeed: `/${param1}` },
+        { use: `/${param1}`, fail: `/${param2}` },
+        { use: `/${param1}`, fail: `/${param1}/other` },
+        { use: `/${param1}`, fail: `/other/${param1}` },
+
+        { use: `/other/path/${param1}`, succeed: `/other/path/${param1}` },
+        { use: `/other/path/${param1}`, fail: `/other/path/${param2}` },
+        { use: `/other/path/${param1}`, fail: `/other/path/${param1}/another` },
+        { use: `/other/path/${param1}`, fail: `/other/${param1}/path` },
+
+        { use: `/other/${param1}/path`, succeed: `/other/${param1}/path` },
+        { use: `/other/${param1}/path`, fail: `/other/${param2}/path` },
+        { use: `/other/${param1}/path`, fail: `/other/${param1}/path/another` },
+        { use: `/other/${param1}/path`, fail: `/other/path/${param1}` },
+
+        { use: `/other/${param1}/path/${param2}`, succeed: `/other/${param1}/path/${param2}` },
+        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param2}/path/${param1}` },
+        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param1}/path/${param2}/another` },
+        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param1}/path` },
+
+        { use: `/${param1}/${param2}`, succeed: `/${param1}/${param2}` },
+        { use: `/${param1}/${param2}`, fail: `/${param2}/${param1}` },
+        { use: `/${param1}/${param2}`, fail: `/${param1}` },
+        { use: `/${param1}/${param2}`, fail: `/other/${param1}/${param2}/another` },
+
+        { use: `/${param1}/${param2}/${param3}`, succeed: `/${param1}/${param2}/${param3}` },
+        { use: `/${param1}/${param2}/${param3}`, fail: `/${param3}/${param2}/${param1}` },
+        { use: `/${param1}/${param2}/${param3}`, fail: `/${param1}/${param2}` },
+        { use: `/${param1}/${param2}/${param3}`, fail: `/${param1}/${param3}/other/another` },
+
+        { use: `/${param1}/path/${param2}/${param3}/path`, succeed: `/${param1}/path/${param2}/${param3}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fail: `/${param3}/path/${param1}/${param2}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fail: `/${param1}/path/${param2}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fail: '/path' },
+      ])(
+        `should intercept ${method} requests supporting dynamic paths with a specific match (use $use; succeed $succeed; fail $fail)`,
+        async (paths) => {
+          const useURL = joinURL(baseURL, paths.use);
+
+          await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+            const interceptor = createDefaultHttpInterceptor();
+            await promiseIfRemote(worker.use(interceptor.client(), method, useURL, spiedRequestHandler), worker);
+
+            expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+            if (paths.succeed !== undefined) {
+              const urlExpectedToSucceed = joinURL(baseURL, paths.succeed);
+              const response = await fetch(urlExpectedToSucceed, { method });
+
+              expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
+
+              const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
+              expect(handlerContext.request).toBeInstanceOf(Request);
+              expect(handlerContext.request.method).toBe(method);
+
+              expect(response.status).toBe(200);
+              await expectMatchedBodyIfNotHead(response);
+            }
+
+            if (paths.fail !== undefined) {
+              const urlExpectedToFail = joinURL(baseURL, paths.fail);
+
+              const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
+              await expectFetchErrorOrPreflightResponse(fetchPromise, {
+                shouldBePreflight: overridesPreflightResponse,
+                canBeAborted: true,
+              });
+
+              expect(spiedRequestHandler).not.toHaveBeenCalled();
+            }
+          });
+        },
+      );
 
       it(`should not intercept bypassed ${method} requests`, async () => {
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
