@@ -1,28 +1,4 @@
-import type { JSONValue } from 'zimic';
-
-export const GITHUB_API_BASE_URL = 'https://api.github.com';
-
-export type GitHubRepository = JSONValue<{
-  id: number;
-  full_name: string;
-  html_url: string;
-}>;
-
-async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
-  const repositoryURL = `${GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
-  const repositoryResponse = await fetch(repositoryURL);
-
-  if (repositoryResponse.status === 404) {
-    return null;
-  }
-
-  if (repositoryResponse.status !== 200) {
-    throw new Error(`Failed to fetch repository: ${repositoryResponse.status} ${await repositoryResponse.text()}`);
-  }
-
-  const repository = (await repositoryResponse.json()) as GitHubRepository;
-  return repository;
-}
+import { fetchGitHubRepository } from '../services/github';
 
 interface Props {
   ownerName: string;
