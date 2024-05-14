@@ -7,7 +7,7 @@ import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterc
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import { joinURL } from '@/utils/fetch';
+import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import LocalHttpRequestHandler from '../../LocalHttpRequestHandler';

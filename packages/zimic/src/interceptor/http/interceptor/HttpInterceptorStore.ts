@@ -1,4 +1,4 @@
-import { ExtendedURL } from '@/utils/fetch';
+import { ExtendedURL } from '@/utils/urls';
 
 import { createHttpInterceptorWorker } from '../interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';

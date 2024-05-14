@@ -3,8 +3,9 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import { createRegexFromURL, excludeNonPathParams, deserializeResponse, serializeRequest } from '@/utils/fetch';
+import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
+import { createRegexFromURL, excludeNonPathParams } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 

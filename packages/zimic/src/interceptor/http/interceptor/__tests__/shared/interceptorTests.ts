@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
 import { PossiblePromise } from '@/types/utils';
-import { ExtendedURL } from '@/utils/fetch';
+import { ExtendedURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';

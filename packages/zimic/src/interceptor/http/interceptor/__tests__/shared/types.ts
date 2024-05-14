@@ -1,5 +1,5 @@
 import { PossiblePromise } from '@/types/utils';
-import { ExtendedURL } from '@/utils/fetch';
+import { ExtendedURL } from '@/utils/urls';
 
 import { HttpInterceptorPlatform, HttpInterceptorType, HttpInterceptorOptions } from '../../types/options';
 

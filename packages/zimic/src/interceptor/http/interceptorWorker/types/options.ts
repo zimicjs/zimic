@@ -1,4 +1,4 @@
-import { ExtendedURL } from '@/utils/fetch';
+import { ExtendedURL } from '@/utils/urls';
 
 export interface LocalHttpInterceptorWorkerOptions {
   type: 'local';
