@@ -8,7 +8,7 @@ import {
 
 import { HttpBody } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { excludeDynamicParams } from '@/utils/fetch';
+import { ensureUniqueDynamicPathParams, excludeDynamicParams } from '@/utils/fetch';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
@@ -146,6 +146,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
     const url = excludeDynamicParams(new URL(rawURL)).toString();
+    ensureUniqueDynamicPathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {
       const result = await createResponse({

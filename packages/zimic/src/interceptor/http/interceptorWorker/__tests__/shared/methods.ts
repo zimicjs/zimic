@@ -4,7 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import { createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
+import { DuplicatePathParameterError, createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
@@ -123,42 +123,100 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       const param3 = 3;
 
       it.each([
-        { use: '/:param', succeed: `/${param1}` },
-        { use: '/:param', succeed: `/${param2}` },
-        { use: '/:param', fail: `/${param1}/other` },
-        { use: '/:param', fail: `/other/${param1}` },
+        { use: '/:param', fetch: `/${param1}` },
+        { use: '/:param', fetch: `/${param2}` },
+        { use: `/${param1}`, fetch: `/${param1}` },
 
-        { use: '/other/path/:param', succeed: `/other/path/${param1}` },
-        { use: '/other/path/:param', succeed: `/other/path/${param2}` },
-        { use: '/other/path/:param', fail: `/other/path/${param1}/another` },
-        { use: '/other/path/:param', fail: `/other/${param1}/path` },
+        { use: '/other/path/:param', fetch: `/other/path/${param1}` },
+        { use: '/other/path/:param', fetch: `/other/path/${param2}` },
+        { use: `/other/path/${param1}`, fetch: `/other/path/${param1}` },
 
-        { use: '/other/:param/path', succeed: `/other/${param1}/path` },
-        { use: '/other/:param/path', succeed: `/other/${param2}/path` },
-        { use: '/other/:param/path', fail: `/other/${param1}/path/another` },
-        { use: '/other/:param/path', fail: `/other/path/${param1}` },
+        { use: '/other/:param/path', fetch: `/other/${param1}/path` },
+        { use: '/other/:param/path', fetch: `/other/${param2}/path` },
+        { use: `/other/${param1}/path`, fetch: `/other/${param1}/path` },
 
-        { use: '/other/:param/path/:other', succeed: `/other/${param1}/path/${param2}` },
-        { use: '/other/:param/path/:other', succeed: `/other/${param2}/path/${param1}` },
-        { use: '/other/:param/path/:other', fail: `/other/${param1}/path/${param2}/another` },
-        { use: '/other/:param/path/:other', fail: `/other/${param1}/path` },
+        { use: '/other/:param/path/:other', fetch: `/other/${param1}/path/${param2}` },
+        { use: '/other/:param/path/:other', fetch: `/other/${param2}/path/${param1}` },
+        { use: `/other/${param1}/path/${param2}`, fetch: `/other/${param1}/path/${param2}` },
 
-        { use: '/:param/:other', succeed: `/${param1}/${param2}` },
-        { use: '/:param/:other', succeed: `/${param2}/${param1}` },
-        { use: '/:param/:other', fail: `/${param1}` },
-        { use: '/:param/:other', fail: `/other/${param1}/${param2}/another` },
+        { use: '/:param/:other', fetch: `/${param1}/${param2}` },
+        { use: '/:param/:other', fetch: `/${param2}/${param1}` },
+        { use: `/${param1}/${param2}`, fetch: `/${param1}/${param2}` },
 
-        { use: '/:param/:other/:another', succeed: `/${param1}/${param2}/${param3}` },
-        { use: '/:param/:other/:another', succeed: `/${param2}/${param3}/${param1}` },
-        { use: '/:param/:other/:another', fail: `/${param1}/${param2}` },
-        { use: '/:param/:other/:another', fail: `/${param1}/${param3}/other/another` },
+        { use: '/:param/:other/:another', fetch: `/${param1}/${param2}/${param3}` },
+        { use: '/:param/:other/:another', fetch: `/${param2}/${param3}/${param1}` },
+        { use: `/${param1}/${param2}/${param3}`, fetch: `/${param1}/${param2}/${param3}` },
 
-        { use: '/:param/path/:other/:another/path', succeed: `/${param1}/path/${param2}/${param3}/path` },
-        { use: '/:param/path/:other/:another/path', succeed: `/${param3}/path/${param2}/${param1}/path` },
-        { use: '/:param/path/:other/:another/path', fail: `/${param1}/path/${param2}/path` },
-        { use: '/:param/path/:other/:another/path', fail: '/path' },
+        { use: '/:param/path/:other/:another/path', fetch: `/${param1}/path/${param2}/${param3}/path` },
+        { use: '/:param/path/:other/:another/path', fetch: `/${param3}/path/${param2}/${param1}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fetch: `/${param1}/path/${param2}/${param3}/path` },
+      ])(`should intercept ${method} requests with matching dynamic paths (use $use; fetch $fetch)`, async (paths) => {
+        const useURL = joinURL(baseURL, paths.use);
+
+        await usingHttpInterceptorWorker(workerOptions, async (worker) => {
+          const interceptor = createDefaultHttpInterceptor();
+          await promiseIfRemote(worker.use(interceptor.client(), method, useURL, spiedRequestHandler), worker);
+
+          expect(spiedRequestHandler).not.toHaveBeenCalled();
+
+          const urlExpectedToSucceed = joinURL(baseURL, paths.fetch);
+          const response = await fetch(urlExpectedToSucceed, { method });
+
+          expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
+
+          const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
+          expect(handlerContext.request).toBeInstanceOf(Request);
+          expect(handlerContext.request.method).toBe(method);
+
+          expect(response.status).toBe(200);
+          await expectMatchedBodyIfNotHead(response);
+        });
+      });
+
+      it.each([
+        { use: '/:param', fetch: `/${param1}/other` },
+        { use: '/:param', fetch: `/other/${param1}` },
+        { use: `/${param1}`, fetch: `/${param2}` },
+        { use: `/${param1}`, fetch: `/${param1}/other` },
+        { use: `/${param1}`, fetch: `/other/${param1}` },
+
+        { use: '/other/path/:param', fetch: `/other/path/${param1}/another` },
+        { use: '/other/path/:param', fetch: `/other/${param1}/path` },
+        { use: `/other/path/${param1}`, fetch: `/other/path/${param2}` },
+        { use: `/other/path/${param1}`, fetch: `/other/path/${param1}/another` },
+        { use: `/other/path/${param1}`, fetch: `/other/${param1}/path` },
+
+        { use: '/other/:param/path', fetch: `/other/${param1}/path/another` },
+        { use: '/other/:param/path', fetch: `/other/path/${param1}` },
+        { use: `/other/${param1}/path`, fetch: `/other/${param2}/path` },
+        { use: `/other/${param1}/path`, fetch: `/other/${param1}/path/another` },
+        { use: `/other/${param1}/path`, fetch: `/other/path/${param1}` },
+
+        { use: '/other/:param/path/:other', fetch: `/other/${param1}/path/${param2}/another` },
+        { use: '/other/:param/path/:other', fetch: `/other/${param1}/path` },
+        { use: `/other/${param1}/path/${param2}`, fetch: `/other/${param2}/path/${param1}` },
+        { use: `/other/${param1}/path/${param2}`, fetch: `/other/${param1}/path/${param2}/another` },
+        { use: `/other/${param1}/path/${param2}`, fetch: `/other/${param1}/path` },
+
+        { use: '/:param/:other', fetch: `/${param1}` },
+        { use: '/:param/:other', fetch: `/other/${param1}/${param2}/another` },
+        { use: `/${param1}/${param2}`, fetch: `/${param2}/${param1}` },
+        { use: `/${param1}/${param2}`, fetch: `/${param1}` },
+        { use: `/${param1}/${param2}`, fetch: `/other/${param1}/${param2}/another` },
+
+        { use: '/:param/:other/:another', fetch: `/${param1}/${param2}` },
+        { use: '/:param/:other/:another', fetch: `/${param1}/${param3}/other/another` },
+        { use: `/${param1}/${param2}/${param3}`, fetch: `/${param3}/${param2}/${param1}` },
+        { use: `/${param1}/${param2}/${param3}`, fetch: `/${param1}/${param2}` },
+        { use: `/${param1}/${param2}/${param3}`, fetch: `/${param1}/${param3}/other/another` },
+
+        { use: '/:param/path/:other/:another/path', fetch: `/${param1}/path/${param2}/path` },
+        { use: '/:param/path/:other/:another/path', fetch: '/path' },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fetch: `/${param3}/path/${param1}/${param2}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fetch: `/${param1}/path/${param2}/path` },
+        { use: `/${param1}/path/${param2}/${param3}/path`, fetch: '/path' },
       ])(
-        `should intercept ${method} requests supporting dynamic paths with a generic match (use $use; succeed $succeed; fail $fail)`,
+        `should not intercept ${method} requests with non-matching dynamic paths (use $use; fetch $fetch)`,
         async (paths) => {
           const useURL = joinURL(baseURL, paths.use);
 
@@ -168,106 +226,39 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
             expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-            if (paths.succeed !== undefined) {
-              const urlExpectedToSucceed = joinURL(baseURL, paths.succeed);
-              const response = await fetch(urlExpectedToSucceed, { method });
+            const urlExpectedToFail = joinURL(baseURL, paths.fetch);
 
-              expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
+            const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
+            await expectFetchErrorOrPreflightResponse(fetchPromise, {
+              shouldBePreflight: overridesPreflightResponse,
+              canBeAborted: true,
+            });
 
-              const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
-              expect(handlerContext.request).toBeInstanceOf(Request);
-              expect(handlerContext.request.method).toBe(method);
-
-              expect(response.status).toBe(200);
-              await expectMatchedBodyIfNotHead(response);
-            }
-
-            if (paths.fail !== undefined) {
-              const urlExpectedToFail = joinURL(baseURL, paths.fail);
-
-              const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
-              await expectFetchErrorOrPreflightResponse(fetchPromise, {
-                shouldBePreflight: overridesPreflightResponse,
-                canBeAborted: true,
-              });
-
-              expect(spiedRequestHandler).not.toHaveBeenCalled();
-            }
+            expect(spiedRequestHandler).not.toHaveBeenCalled();
           });
         },
       );
 
       it.each([
-        { use: `/${param1}`, succeed: `/${param1}` },
-        { use: `/${param1}`, fail: `/${param2}` },
-        { use: `/${param1}`, fail: `/${param1}/other` },
-        { use: `/${param1}`, fail: `/other/${param1}` },
-
-        { use: `/other/path/${param1}`, succeed: `/other/path/${param1}` },
-        { use: `/other/path/${param1}`, fail: `/other/path/${param2}` },
-        { use: `/other/path/${param1}`, fail: `/other/path/${param1}/another` },
-        { use: `/other/path/${param1}`, fail: `/other/${param1}/path` },
-
-        { use: `/other/${param1}/path`, succeed: `/other/${param1}/path` },
-        { use: `/other/${param1}/path`, fail: `/other/${param2}/path` },
-        { use: `/other/${param1}/path`, fail: `/other/${param1}/path/another` },
-        { use: `/other/${param1}/path`, fail: `/other/path/${param1}` },
-
-        { use: `/other/${param1}/path/${param2}`, succeed: `/other/${param1}/path/${param2}` },
-        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param2}/path/${param1}` },
-        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param1}/path/${param2}/another` },
-        { use: `/other/${param1}/path/${param2}`, fail: `/other/${param1}/path` },
-
-        { use: `/${param1}/${param2}`, succeed: `/${param1}/${param2}` },
-        { use: `/${param1}/${param2}`, fail: `/${param2}/${param1}` },
-        { use: `/${param1}/${param2}`, fail: `/${param1}` },
-        { use: `/${param1}/${param2}`, fail: `/other/${param1}/${param2}/another` },
-
-        { use: `/${param1}/${param2}/${param3}`, succeed: `/${param1}/${param2}/${param3}` },
-        { use: `/${param1}/${param2}/${param3}`, fail: `/${param3}/${param2}/${param1}` },
-        { use: `/${param1}/${param2}/${param3}`, fail: `/${param1}/${param2}` },
-        { use: `/${param1}/${param2}/${param3}`, fail: `/${param1}/${param3}/other/another` },
-
-        { use: `/${param1}/path/${param2}/${param3}/path`, succeed: `/${param1}/path/${param2}/${param3}/path` },
-        { use: `/${param1}/path/${param2}/${param3}/path`, fail: `/${param3}/path/${param1}/${param2}/path` },
-        { use: `/${param1}/path/${param2}/${param3}/path`, fail: `/${param1}/path/${param2}/path` },
-        { use: `/${param1}/path/${param2}/${param3}/path`, fail: '/path' },
+        { use: '/:param/:param', duplicatedParameter: 'param' },
+        { use: '/:param/:param/:param', duplicatedParameter: 'param' },
+        { use: '/:param/:other/:param', duplicatedParameter: 'param' },
+        { use: '/:param/:other/:param/:other', duplicatedParameter: 'param' },
+        { use: '/some/:other/path/:other', duplicatedParameter: 'other' },
+        { use: '/some/path/:other/:other', duplicatedParameter: 'other' },
       ])(
-        `should intercept ${method} requests supporting dynamic paths with a specific match (use $use; succeed $succeed; fail $fail)`,
+        `should throw an error if trying to use a ${method} url with duplicate dynamic path params (use $use; fetch $fetch)`,
         async (paths) => {
           const useURL = joinURL(baseURL, paths.use);
 
           await usingHttpInterceptorWorker(workerOptions, async (worker) => {
             const interceptor = createDefaultHttpInterceptor();
-            await promiseIfRemote(worker.use(interceptor.client(), method, useURL, spiedRequestHandler), worker);
+
+            await expect(async () => {
+              await worker.use(interceptor.client(), method, useURL, spiedRequestHandler);
+            }).rejects.toThrowError(new DuplicatePathParameterError(useURL, paths.duplicatedParameter));
 
             expect(spiedRequestHandler).not.toHaveBeenCalled();
-
-            if (paths.succeed !== undefined) {
-              const urlExpectedToSucceed = joinURL(baseURL, paths.succeed);
-              const response = await fetch(urlExpectedToSucceed, { method });
-
-              expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPrefetch);
-
-              const [handlerContext] = spiedRequestHandler.mock.calls[numberOfRequestsIncludingPrefetch - 1];
-              expect(handlerContext.request).toBeInstanceOf(Request);
-              expect(handlerContext.request.method).toBe(method);
-
-              expect(response.status).toBe(200);
-              await expectMatchedBodyIfNotHead(response);
-            }
-
-            if (paths.fail !== undefined) {
-              const urlExpectedToFail = joinURL(baseURL, paths.fail);
-
-              const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
-              await expectFetchErrorOrPreflightResponse(fetchPromise, {
-                shouldBePreflight: overridesPreflightResponse,
-                canBeAborted: true,
-              });
-
-              expect(spiedRequestHandler).not.toHaveBeenCalled();
-            }
           });
         },
       );

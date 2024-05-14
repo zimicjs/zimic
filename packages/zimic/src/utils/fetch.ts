@@ -36,8 +36,36 @@ export function excludeDynamicParams(url: URL) {
   return url;
 }
 
+export class DuplicatePathParameterError extends Error {
+  constructor(url: string, paramName: string) {
+    super(
+      `The path parameter '${paramName}' appears more than once in the URL '${url}'. This is not supported. Please` +
+        ' make sure that each parameter is unique.',
+    );
+    this.name = 'DuplicatePathParameterError';
+  }
+}
+
+const URL_DYNAMIC_PATH_PARAM_REGEX = /\/:([^/]+)/g;
+
+export function ensureUniqueDynamicPathParams(url: string) {
+  const matches = url.matchAll(URL_DYNAMIC_PATH_PARAM_REGEX);
+
+  const uniqueParamNames = new Set<string>();
+
+  for (const match of matches) {
+    const paramName = match[1];
+    if (uniqueParamNames.has(paramName)) {
+      throw new DuplicatePathParameterError(url, paramName);
+    }
+    uniqueParamNames.add(paramName);
+  }
+}
+
 export function createRegexFromURL(url: string) {
-  const urlWithReplacedPathParams = url.replace(/\/:([^/]+)/g, '/(?<$1>[^/]+)').replace(/(\/+)$/, '(?:$1)?');
+  const urlWithReplacedPathParams = url
+    .replace(URL_DYNAMIC_PATH_PARAM_REGEX, '/(?<$1>[^/]+)')
+    .replace(/(\/+)$/, '(?:$1)?');
   return new RegExp(`^${urlWithReplacedPathParams}$`);
 }
 
