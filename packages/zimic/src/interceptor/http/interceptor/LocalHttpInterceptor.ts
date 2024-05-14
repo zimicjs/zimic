@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
+import { createExtendedURL, excludeNonPathParams } from '@/utils/fetch';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -19,7 +19,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
-    excludeDynamicParams(baseURL);
+    excludeNonPathParams(baseURL);
 
     const worker = this.store.getOrCreateLocalWorker({});
 
