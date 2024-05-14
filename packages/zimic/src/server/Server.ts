@@ -3,7 +3,7 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import { createRegexFromURL, excludeDynamicParams, deserializeResponse, serializeRequest } from '@/utils/fetch';
+import { createRegexFromURL, excludeNonPathParams, deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
@@ -153,7 +153,7 @@ class Server implements PublicServer {
   private registerHttpHandlerGroup({ id, url: rawURL, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const url = excludeDynamicParams(new URL(rawURL)).toString();
+    const url = excludeNonPathParams(new URL(rawURL)).toString();
 
     handlerGroups.push({
       id,
@@ -234,7 +234,7 @@ class Server implements PublicServer {
     const webSocketServer = this.webSocketServer();
     const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const url = excludeDynamicParams(new URL(request.url)).toString();
+    const url = excludeNonPathParams(new URL(request.url)).toString();
     const serializedRequest = await serializeRequest(request);
 
     for (let index = handlerGroup.length - 1; index >= 0; index--) {

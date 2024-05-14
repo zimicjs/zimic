@@ -3,11 +3,11 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import {
-  excludeDynamicParams,
+  excludeNonPathParams,
   deserializeRequest,
   serializeResponse,
   ExtendedURL,
-  ensureUniqueDynamicPathParams,
+  ensureUniquePathParams,
 } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -123,8 +123,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     const crypto = await this.crypto();
-    const url = excludeDynamicParams(new URL(rawURL)).toString();
-    ensureUniqueDynamicPathParams(url);
+    const url = excludeNonPathParams(new URL(rawURL)).toString();
+    ensureUniquePathParams(url);
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),

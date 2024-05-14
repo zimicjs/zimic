@@ -4,7 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import { DuplicatePathParameterError, createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
+import { DuplicatedPathParamError, createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
@@ -247,7 +247,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         { use: '/some/:other/path/:other', duplicatedParameter: 'other' },
         { use: '/some/path/:other/:other', duplicatedParameter: 'other' },
       ])(
-        `should throw an error if trying to use a ${method} url with duplicate dynamic path params (use $use; fetch $fetch)`,
+        `should throw an error if trying to use a ${method} url with duplicate dynamic path params (use $use)`,
         async (paths) => {
           const useURL = joinURL(baseURL, paths.use);
 
@@ -256,7 +256,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
             await expect(async () => {
               await worker.use(interceptor.client(), method, useURL, spiedRequestHandler);
-            }).rejects.toThrowError(new DuplicatePathParameterError(useURL, paths.duplicatedParameter));
+            }).rejects.toThrowError(new DuplicatedPathParamError(useURL, paths.duplicatedParameter));
 
             expect(spiedRequestHandler).not.toHaveBeenCalled();
           });

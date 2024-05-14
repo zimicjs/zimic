@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL, excludeDynamicParams } from '@/utils/fetch';
+import { createExtendedURL, excludeNonPathParams } from '@/utils/fetch';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -19,12 +19,12 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     const baseURL = createExtendedURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
-    excludeDynamicParams(baseURL);
+    excludeNonPathParams(baseURL);
 
     const serverURL = createExtendedURL(baseURL.origin, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
-    excludeDynamicParams(serverURL);
+    excludeNonPathParams(serverURL);
 
     const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 
