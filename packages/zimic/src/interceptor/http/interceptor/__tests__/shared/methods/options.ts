@@ -8,7 +8,8 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
 import { JSONValue } from '@/types/json';
-import { fetchWithTimeout, joinURL } from '@/utils/fetch';
+import { fetchWithTimeout } from '@/utils/fetch';
+import { joinURL } from '@/utils/urls';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
 

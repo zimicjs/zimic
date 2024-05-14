@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL, excludeNonPathParams } from '@/utils/fetch';
+import { createExtendedURL, excludeNonPathParams } from '@/utils/urls';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';

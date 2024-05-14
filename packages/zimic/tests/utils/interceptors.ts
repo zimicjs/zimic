@@ -21,7 +21,7 @@ import {
 import Server from '@/server/Server';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
-import { createExtendedURL, ExtendedURL, joinURL } from '@/utils/fetch';
+import { joinURL, createExtendedURL, ExtendedURL } from '@/utils/urls';
 import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/globalSetup/serverOnBrowser';
 
 export async function getBrowserBaseURL(workerType: HttpInterceptorType) {

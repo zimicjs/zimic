@@ -5,8 +5,9 @@ import { HTTP_METHODS } from '@/http/types/schema';
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import { DuplicatedPathParamError, createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
+import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
+import { joinURL, DuplicatedPathParamError, createExtendedURL } from '@/utils/urls';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 

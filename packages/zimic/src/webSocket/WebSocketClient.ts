@@ -1,6 +1,6 @@
 import ClientSocket from 'isomorphic-ws';
 
-import { createExtendedURL } from '@/utils/fetch';
+import { createExtendedURL } from '@/utils/urls';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';

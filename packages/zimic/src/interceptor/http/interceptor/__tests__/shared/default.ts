@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
-import { ExtendedURL, createExtendedURL } from '@/utils/fetch';
+import { ExtendedURL, createExtendedURL } from '@/utils/urls';
 import { getSingletonWorkerByType, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';

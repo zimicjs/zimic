@@ -1,6 +1,6 @@
 import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { PossiblePromise } from '@/types/utils';
-import { ExtendedURL } from '@/utils/fetch';
+import { ExtendedURL } from '@/utils/urls';
 
 export interface SharedHttpInterceptorWorkerTestOptions {
   platform: HttpInterceptorPlatform;

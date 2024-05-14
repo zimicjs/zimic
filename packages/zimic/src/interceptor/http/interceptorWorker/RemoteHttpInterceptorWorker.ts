@@ -2,13 +2,8 @@ import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
-import {
-  excludeNonPathParams,
-  deserializeRequest,
-  serializeResponse,
-  ExtendedURL,
-  ensureUniquePathParams,
-} from '@/utils/fetch';
+import { deserializeRequest, serializeResponse } from '@/utils/fetch';
+import { excludeNonPathParams, ExtendedURL, ensureUniquePathParams } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
