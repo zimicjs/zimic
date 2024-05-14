@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
+import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { DuplicatedPathParamError, createExtendedURL, fetchWithTimeout, joinURL } from '@/utils/fetch';
@@ -9,7 +10,6 @@ import { waitForDelay } from '@/utils/time';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../interceptor/errors/NotStartedHttpInterceptorError';
 import {
   HttpInterceptorWorkerOptions,
   LocalHttpInterceptorWorkerOptions,
@@ -38,7 +38,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       return createInternalHttpInterceptor<{}>({ type: defaultWorkerOptions.type, baseURL });
     }
 
-    beforeEach(async () => {
+    beforeAll(async () => {
       if (defaultWorkerOptions.type === 'remote') {
         await startServer?.();
       }
@@ -51,7 +51,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           : { ...defaultWorkerOptions, serverURL: createExtendedURL(baseURL.origin) };
     });
 
-    afterEach(async () => {
+    afterAll(async () => {
       if (defaultWorkerOptions.type === 'remote') {
         await stopServer?.();
       }
