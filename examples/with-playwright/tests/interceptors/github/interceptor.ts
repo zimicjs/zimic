@@ -14,7 +14,7 @@ const githubInterceptor = createHttpInterceptor<{
   };
 }>({
   type: 'remote',
-  baseURL: process.env.GITHUB_API_BASE_URL ?? '',
+  baseURL: process.env.NEXT_PUBLIC_GITHUB_API_BASE_URL ?? '',
 });
 
 export default githubInterceptor;

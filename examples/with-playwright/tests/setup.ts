@@ -1,17 +1,11 @@
 import test from '@playwright/test';
 
-import { interceptors } from './interceptors';
-import { applyGitHubFixtures } from './interceptors/github/fixtures';
+import { loadInterceptors, stopInterceptors } from './interceptors';
 
 test.beforeAll(async () => {
-  for (const interceptor of interceptors) {
-    await interceptor.start();
-  }
-  await applyGitHubFixtures();
+  await loadInterceptors();
 });
 
 test.afterAll(async () => {
-  for (const interceptor of interceptors) {
-    await interceptor.stop();
-  }
+  await stopInterceptors();
 });
