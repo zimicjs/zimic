@@ -1,7 +1,7 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { joinURL, ExtendedURL, InvalidURL } from '@/utils/urls';
+import { joinURL, ExtendedURL, InvalidURL, UnsupportedURLProtocolError } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -107,7 +107,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
         await expect(interceptorPromise).rejects.toThrowError(
-          new TypeError(`Expected URL with protocol (http|https), but got '${unsupportedProtocol}'`),
+          new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
         );
 
         expect(handler).not.toHaveBeenCalled();

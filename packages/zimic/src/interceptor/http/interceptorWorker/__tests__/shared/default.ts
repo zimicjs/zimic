@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
-import { createExtendedURL } from '@/utils/urls';
+import { createURL } from '@/utils/urls';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
@@ -19,7 +19,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
   const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
     { type: 'local' },
-    { type: 'remote', serverURL: createExtendedURL('http://localhost/temporary') },
+    { type: 'remote', serverURL: createURL('http://localhost/temporary') },
   ];
 
   describe.each(workerOptionsArray)('Shared (type $type)', (defaultWorkerOptions) => {
@@ -40,7 +40,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       workerOptions =
         defaultWorkerOptions.type === 'local'
           ? defaultWorkerOptions
-          : { ...defaultWorkerOptions, serverURL: createExtendedURL(baseURL.origin) };
+          : { ...defaultWorkerOptions, serverURL: createURL(baseURL.origin) };
     });
 
     afterAll(async () => {

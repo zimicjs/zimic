@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL, excludeNonPathParams } from '@/utils/urls';
+import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -16,12 +16,12 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   constructor(options: RemoteHttpInterceptorOptions) {
     this.type = options.type;
 
-    const baseURL = createExtendedURL(options.baseURL, {
+    const baseURL = createURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
     excludeNonPathParams(baseURL);
 
-    const serverURL = createExtendedURL(baseURL.origin, {
+    const serverURL = createURL(baseURL.origin, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
     excludeNonPathParams(serverURL);

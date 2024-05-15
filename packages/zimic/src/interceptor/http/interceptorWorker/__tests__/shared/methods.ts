@@ -7,7 +7,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/c
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
-import { joinURL, DuplicatedPathParamError, createExtendedURL } from '@/utils/urls';
+import { joinURL, DuplicatedPathParamError, createURL, InvalidURL } from '@/utils/urls';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -25,7 +25,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
   const workerOptionsArray: HttpInterceptorWorkerOptions[] = [
     { type: 'local' },
-    { type: 'remote', serverURL: createExtendedURL('http://localhost/temporary') },
+    { type: 'remote', serverURL: createURL('http://localhost/temporary') },
   ];
 
   const responseStatus = 200;
@@ -49,7 +49,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       workerOptions =
         defaultWorkerOptions.type === 'local'
           ? defaultWorkerOptions
-          : { ...defaultWorkerOptions, serverURL: createExtendedURL(baseURL.origin) };
+          : { ...defaultWorkerOptions, serverURL: createURL(baseURL.origin) };
     });
 
     afterAll(async () => {
@@ -489,6 +489,20 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           await expect(async () => {
             await worker.use(interceptor.client(), method, baseURL, spiedRequestHandler);
           }).rejects.toThrowError(NotStartedHttpInterceptorError);
+        });
+      });
+
+      it(`should throw an error if trying to use ${method} with an invalid url`, () => {
+        const invalidURL = 'invalid';
+
+        return usingHttpInterceptorWorker(workerOptions, async (worker) => {
+          const interceptor = createDefaultHttpInterceptor();
+
+          await expect(async () => {
+            await worker.use(interceptor.client(), method, invalidURL, spiedRequestHandler);
+          }).rejects.toThrowError(new InvalidURL(invalidURL));
+
+          expect(spiedRequestHandler).not.toHaveBeenCalled();
         });
       });
     });

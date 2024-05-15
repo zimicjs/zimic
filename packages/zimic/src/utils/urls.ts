@@ -1,7 +1,17 @@
 export class InvalidURL extends TypeError {
-  constructor(url: string) {
+  constructor(url: unknown) {
     super(`Invalid URL: '${url}'`);
     this.name = 'InvalidURL';
+  }
+}
+
+export class UnsupportedURLProtocolError extends TypeError {
+  constructor(protocol: string, availableProtocols: string[]) {
+    super(
+      `Unsupported URL protocol: '${protocol}'. ` +
+        `The available options are ${availableProtocols.map((protocol) => `'${protocol}'`).join(', ')}`,
+    );
+    this.name = 'UnsupportedURLProtocolError';
   }
 }
 
@@ -9,30 +19,31 @@ export interface ExtendedURL extends URL {
   raw: string;
 }
 
-export function createExtendedURL(
-  rawURL: string | URL,
-  options: {
-    protocols?: string[];
-  } = {},
-) {
-  if (typeof rawURL === 'string' && !URL.canParse(rawURL)) {
+function createURLOrThrow(rawURL: string | URL) {
+  try {
+    const url = new URL(rawURL) as ExtendedURL;
+
+    Object.defineProperty(url, 'raw', {
+      value: rawURL.toString(),
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
+
+    return url;
+  } catch {
     throw new InvalidURL(rawURL);
   }
+}
 
-  const url = new URL(rawURL) as ExtendedURL;
+export function createURL(rawURL: string | URL, options: { protocols?: string[] } = {}): ExtendedURL {
+  const url = createURLOrThrow(rawURL);
 
   const protocol = url.protocol.replace(/:$/, '');
 
   if (options.protocols && !options.protocols.includes(protocol)) {
-    throw new TypeError(`Expected URL with protocol (${options.protocols.join('|')}), but got '${protocol}'`);
+    throw new UnsupportedURLProtocolError(protocol, options.protocols);
   }
-
-  Object.defineProperty(url, 'raw', {
-    value: rawURL.toString(),
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
 
   return url;
 }

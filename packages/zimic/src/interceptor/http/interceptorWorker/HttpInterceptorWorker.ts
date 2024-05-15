@@ -10,6 +10,7 @@ import {
   HttpServiceSchema,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
+import { createURL } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -123,7 +124,7 @@ abstract class HttpInterceptorWorker {
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
-    const parsedURL = new URL(rawRequest.url);
+    const parsedURL = createURL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
     const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 

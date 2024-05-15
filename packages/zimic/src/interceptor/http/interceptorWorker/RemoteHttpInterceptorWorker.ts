@@ -3,7 +3,7 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { excludeNonPathParams, ExtendedURL, ensureUniquePathParams } from '@/utils/urls';
+import { excludeNonPathParams, ExtendedURL, ensureUniquePathParams, createURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
@@ -43,7 +43,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private deriveWebSocketServerURL(serverURL: ExtendedURL) {
-    const webSocketServerURL = new URL(serverURL);
+    const webSocketServerURL = createURL(serverURL);
     webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
     return webSocketServerURL;
   }
@@ -118,7 +118,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     const crypto = await this.crypto();
-    const url = excludeNonPathParams(new URL(rawURL)).toString();
+    const url = excludeNonPathParams(createURL(rawURL)).toString();
     ensureUniquePathParams(url);
 
     const handler: HttpHandler = {

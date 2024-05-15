@@ -30,5 +30,3 @@ export type {
 } from './http/types/schema';
 
 export { HttpSearchParams, HttpHeaders };
-
-export { InvalidURL } from './utils/urls';

@@ -28,7 +28,6 @@ import {
   type HttpServiceSchemaPath,
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
-  InvalidURL,
 } from 'zimic0';
 import {
   createHttpInterceptor,
@@ -102,9 +101,6 @@ describe('Exports', () => {
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
-
-    expectTypeOf<InvalidURL>().not.toBeAny();
-    expect(typeof InvalidURL).toBe('function');
 
     expectTypeOf(createHttpInterceptor).not.toBeAny();
     expect(typeof createHttpInterceptor).toBe('function');
