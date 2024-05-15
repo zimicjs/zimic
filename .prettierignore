@@ -8,6 +8,7 @@ apps/*/build
 apps/*/public/mockServiceWorker.js
 packages/*/dist
 packages/*/build
+examples/*/.next
 **/public/mockServiceWorker.js
 
 # Tests
