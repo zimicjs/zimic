@@ -1,3 +1,10 @@
+export class InvalidURL extends TypeError {
+  constructor(url: string) {
+    super(`Invalid URL: '${url}'`);
+    this.name = 'InvalidURL';
+  }
+}
+
 export interface ExtendedURL extends URL {
   raw: string;
 }
@@ -8,6 +15,10 @@ export function createExtendedURL(
     protocols?: string[];
   } = {},
 ) {
+  if (typeof rawURL === 'string' && !URL.canParse(rawURL)) {
+    throw new InvalidURL(rawURL);
+  }
+
   const url = new URL(rawURL) as ExtendedURL;
 
   const protocol = url.protocol.replace(/:$/, '');
