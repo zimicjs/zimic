@@ -102,10 +102,6 @@ importers:
         version: link:../packages/tsconfig
 
   examples/with-jest-jsdom:
-    dependencies:
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0
@@ -134,15 +130,15 @@ importers:
       typescript:
         specifier: ^5.4.3
         version: 5.4.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-jest-node:
     dependencies:
       fastify:
         specifier: 4.23.2
         version: 4.23.2
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -168,8 +164,11 @@ importers:
       typescript:
         specifier: ^5.4.3
         version: 5.4.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
-  examples/with-next-js:
+  examples/with-playwright:
     dependencies:
       clsx:
         specifier: ^2.1.1
@@ -213,10 +212,6 @@ importers:
         version: link:../../packages/zimic
 
   examples/with-vitest-browser:
-    dependencies:
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.3.4
@@ -239,12 +234,11 @@ importers:
       vitest:
         specifier: 1.2.2
         version: 1.2.2(@types/node@20.11.30)(@vitest/browser@1.2.2)(jsdom@20.0.3(bufferutil@4.0.8))
-
-  examples/with-vitest-jsdom:
-    dependencies:
       zimic:
         specifier: latest
         version: link:../../packages/zimic
+
+  examples/with-vitest-jsdom:
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.3.4
@@ -261,15 +255,15 @@ importers:
       vitest:
         specifier: 1.2.2
         version: 1.2.2(@types/node@20.11.30)(@vitest/browser@1.2.2)(jsdom@20.0.3(bufferutil@4.0.8))
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-vitest-node:
     dependencies:
       fastify:
         specifier: 4.23.2
         version: 4.23.2
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
       zod:
         specifier: ^3.22.4
         version: 3.22.4
@@ -286,6 +280,9 @@ importers:
       vitest:
         specifier: 1.2.2
         version: 1.2.2(@types/node@20.11.30)(@vitest/browser@1.2.2)(jsdom@20.0.3(bufferutil@4.0.8))
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   packages/eslint-config:
     dependencies:
