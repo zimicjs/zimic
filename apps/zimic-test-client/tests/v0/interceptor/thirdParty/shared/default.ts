@@ -489,6 +489,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(getRequests).toHaveLength(1);
         expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
+        expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
+        expect(getRequests[0].pathParams).toEqual({ id: user.id });
+
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
@@ -528,6 +531,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(deleteRequests).toHaveLength(1);
         expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
+        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
+        expect(deleteRequests[0].pathParams).toEqual({});
+
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
@@ -553,7 +559,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
+        const getHandler = await authInterceptor.delete('/users/:id').respond({
           status: 404,
           body: notFoundError,
         });
@@ -564,6 +570,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const deleteRequests = await getHandler.requests();
         expect(deleteRequests).toHaveLength(1);
         expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+
+        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
+        expect(deleteRequests[0].pathParams).toEqual({ id: user.id });
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
@@ -625,6 +634,10 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
+        expect(listRequests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.userId}`);
+
+        expectTypeOf(listRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(listRequests[0].pathParams).toEqual({ userId: notification.userId });
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(listRequests[0].searchParams.size).toBe(0);
