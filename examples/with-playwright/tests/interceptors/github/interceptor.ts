@@ -1,6 +1,6 @@
 import { createHttpInterceptor } from 'zimic/interceptor';
 
-import { GitHubRepository } from '../../src/services/github';
+import { GitHubRepository } from '../../../src/services/github';
 
 const githubInterceptor = createHttpInterceptor<{
   '/repos/:owner/:name': {

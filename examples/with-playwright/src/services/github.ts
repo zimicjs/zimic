@@ -4,8 +4,10 @@ const GITHUB_API_BASE_URL = process.env.GITHUB_API_BASE_URL ?? '';
 
 export type GitHubRepository = JSONValue<{
   id: number;
+  name: string;
   full_name: string;
   html_url: string;
+  owner: { login: string };
 }>;
 
 export async function fetchGitHubRepository(ownerName: string, repositoryName: string) {

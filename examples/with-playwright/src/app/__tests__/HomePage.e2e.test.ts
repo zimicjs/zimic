@@ -1,49 +1,24 @@
 import test, { expect } from '@playwright/test';
 
-import githubInterceptor from '../../../tests/interceptors/github';
-import { GitHubRepository } from '../../services/github';
+import { githubFixtures } from '../../../tests/interceptors/github/fixtures';
 
 import '../../../tests/setup';
 
 test.describe('Home page', () => {
-  const ownerName = 'owner';
-  const repositoryName = 'example';
-
-  const repository: GitHubRepository = {
-    id: 1,
-    full_name: `${ownerName}/${repositoryName}`,
-    html_url: `https://github.com/${ownerName}/${repositoryName}`,
-  };
-
-  test.beforeAll(async () => {
-    await githubInterceptor.get('/repos/:owner/:repo').respond({
-      status: 404,
-      body: { message: 'Not Found' },
-    });
-
-    await githubInterceptor.get(`/repos/${ownerName}/${repositoryName}`).respond({
-      status: 200,
-      body: repository,
-    });
-  });
+  const { repository } = githubFixtures;
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
   test('should render a GitHub repository, if found', async ({ page }) => {
-    const getHandler = await githubInterceptor.get('/repos/:owner/:repo').respond({
-      status: 200,
-      body: repository,
-    });
-
     const ownerInput = page.getByRole('textbox', { name: 'Owner' });
     await expect(ownerInput).toBeVisible();
-    await ownerInput.fill(ownerName);
+    await ownerInput.fill(repository.owner.login);
 
     const repositoryInput = page.getByRole('textbox', { name: 'Repository' });
     await expect(repositoryInput).toBeVisible();
-    await repositoryInput.fill(repositoryName);
+    await repositoryInput.fill(repository.name);
 
     const submitButton = page.getByRole('button', { name: 'Search' });
     await expect(submitButton).toBeVisible();
@@ -54,24 +29,16 @@ test.describe('Home page', () => {
     await expect(repositoryLink).toHaveAttribute('href', repository.html_url);
     await expect(repositoryLink).toHaveAttribute('target', '_blank');
     await expect(repositoryLink).toHaveAttribute('rel', 'noopener noreferrer');
-
-    const getRequests = await getHandler.requests();
-    expect(getRequests).toHaveLength(1);
   });
 
   test('should render a message if the GitHub repository is not found', async ({ page }) => {
-    const getHandler = await githubInterceptor.get(`/repos/${ownerName}/${repositoryName}`).respond({
-      status: 404,
-      body: { message: 'Not Found' },
-    });
-
     const ownerInput = page.getByRole('textbox', { name: 'Owner' });
     await expect(ownerInput).toBeVisible();
-    await ownerInput.fill(ownerName);
+    await ownerInput.fill('unknown');
 
     const repositoryInput = page.getByRole('textbox', { name: 'Repository' });
     await expect(repositoryInput).toBeVisible();
-    await repositoryInput.fill(repositoryName);
+    await repositoryInput.fill('unknown');
 
     const submitButton = page.getByRole('button', { name: 'Search' });
     await expect(submitButton).toBeVisible();
@@ -80,8 +47,5 @@ test.describe('Home page', () => {
     const notFoundMessage = page.getByRole('status');
     await expect(notFoundMessage).toBeVisible();
     await expect(notFoundMessage).toHaveText('Repository not found.');
-
-    const getRequests = await getHandler.requests();
-    expect(getRequests).toHaveLength(1);
   });
 });

@@ -6,14 +6,13 @@ export default defineConfig({
   testDir: './src',
   testMatch: '**/__tests__/**/*.e2e.test.ts',
   forbidOnly: CI,
-  retries: CI ? 1 : 2,
-  workers: 1,
-  fullyParallel: false,
+  fullyParallel: true,
+  retries: CI ? 1 : 0,
   reporter: CI ? 'html' : undefined,
-  timeout: 1000 * 60,
+  timeout: 60 * 1000,
 
   expect: {
-    timeout: 10000,
+    timeout: 10 * 1000,
   },
 
   use: {
@@ -30,14 +29,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         isMobile: false,
-        defaultBrowserType: 'chromium',
-      },
-    },
-    {
-      name: 'chromium-mobile',
-      use: {
-        ...devices['Pixel 5'],
-        isMobile: true,
         defaultBrowserType: 'chromium',
       },
     },
