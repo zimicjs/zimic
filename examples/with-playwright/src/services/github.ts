@@ -1,10 +1,10 @@
 import { cache } from 'react';
 import type { JSONValue } from 'zimic';
 
+import { waitForLoadedInterceptors } from '../../tests/interceptors';
 import environment from '../config/environment';
-import { waitForLoadedInterceptors } from '../providers/interceptors/utils';
 
-const CACHE_STRATEGY = process.env.NODE_ENV === 'development' ? 'no-store' : 'default';
+const CACHE_STRATEGY = process.env.NODE_ENV === 'production' ? 'default' : 'no-store';
 
 export type GitHubRepository = JSONValue<{
   id: number;

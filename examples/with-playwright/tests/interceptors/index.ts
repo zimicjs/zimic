@@ -3,15 +3,33 @@ import githubInterceptor from './github/interceptor';
 
 export const interceptors = [githubInterceptor];
 
-export async function loadInterceptors() {
-  for (const interceptor of interceptors) {
-    await interceptor.start();
+export let markInterceptorsAsLoaded: (() => void) | undefined;
+
+const loadInterceptorsPromise = new Promise<void>((resolve) => {
+  markInterceptorsAsLoaded = resolve;
+});
+
+export async function waitForLoadedInterceptors() {
+  if (process.env.NODE_ENV !== 'production') {
+    await loadInterceptorsPromise;
   }
-  await applyGitHubFixtures();
+}
+
+export async function loadInterceptors() {
+  if (process.env.NODE_ENV !== 'production') {
+    for (const interceptor of interceptors) {
+      await interceptor.start();
+    }
+    await applyGitHubFixtures();
+
+    markInterceptorsAsLoaded?.();
+  }
 }
 
 export async function stopInterceptors() {
-  for (const interceptor of interceptors) {
-    await interceptor.stop();
+  if (process.env.NODE_ENV !== 'production') {
+    for (const interceptor of interceptors) {
+      await interceptor.stop();
+    }
   }
 }
