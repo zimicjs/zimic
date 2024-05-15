@@ -1,6 +1,7 @@
 import { createHttpInterceptor } from 'zimic/interceptor';
 
-import { GITHUB_API_BASE_URL, GitHubRepository } from '../../../src/services/github';
+import environment from '../../../src/config/environment';
+import { GitHubRepository } from '../../../src/services/github';
 
 const githubInterceptor = createHttpInterceptor<{
   '/repos/:owner/:name': {
@@ -14,7 +15,7 @@ const githubInterceptor = createHttpInterceptor<{
   };
 }>({
   type: 'remote',
-  baseURL: GITHUB_API_BASE_URL,
+  baseURL: environment.GITHUB_API_BASE_URL,
 });
 
 export default githubInterceptor;

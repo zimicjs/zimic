@@ -35,7 +35,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm run dev',
+    command: 'pnpm run dev:test',
     url: 'http://localhost:3000',
     stdout: 'pipe',
     stderr: 'pipe',

@@ -1,9 +1,10 @@
 import { cache } from 'react';
 import type { JSONValue } from 'zimic';
 
+import environment from '../config/environment';
 import { waitForLoadedInterceptors } from '../providers/interceptors/utils';
 
-export const GITHUB_API_BASE_URL = process.env.NEXT_PUBLIC_GITHUB_API_BASE_URL ?? '';
+const CACHE_STRATEGY = process.env.NODE_ENV === 'development' ? 'no-store' : 'default';
 
 export type GitHubRepository = JSONValue<{
   id: number;
@@ -17,16 +18,14 @@ export const fetchGitHubRepository = cache(async (ownerName: string, repositoryN
   await waitForLoadedInterceptors();
 
   try {
-    const repositoryURL = `${GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
-    const repositoryResponse = await fetch(repositoryURL, {
-      cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'default',
-    });
+    const url = `${environment.GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
+    const response = await fetch(url, { cache: CACHE_STRATEGY });
 
-    if (repositoryResponse.status !== 200) {
+    if (response.status !== 200) {
       return null;
     }
 
-    const repository = (await repositoryResponse.json()) as GitHubRepository;
+    const repository = (await response.json()) as GitHubRepository;
     return repository;
   } catch (error) {
     console.error(error);
