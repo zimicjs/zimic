@@ -5,7 +5,8 @@ import { PropsWithChildren } from 'react';
 
 import '../styles/global.css';
 import { loadInterceptors } from '../../tests/interceptors';
-import InterceptorProvider from '../providers/InterceptorProvider';
+import InterceptorProvider from '../providers/interceptors/InterceptorProvider';
+import { markInterceptorsAsLoaded } from '../providers/interceptors/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 async function RootLayout({ children }: PropsWithChildren) {
   if (process.env.NODE_ENV === 'development') {
     await loadInterceptors();
+    markInterceptorsAsLoaded();
   }
 
   return (
