@@ -67,7 +67,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -77,7 +77,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -103,7 +103,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -112,7 +112,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -140,7 +140,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
         const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
         expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -149,7 +149,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({}),
       ]) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
@@ -173,7 +173,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-type': contentType })]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -183,7 +183,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -209,7 +209,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
         ]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -218,7 +218,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -246,7 +246,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpHeaders<HeadersSchema>({ 'content-type': `${contentType}/other` }),
       ]) {
         const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
         expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -255,7 +255,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpHeaders<HeadersSchema>({}),
       ]) {
         const request = new Request(baseURL, { headers: mismatchingHeaders });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
@@ -282,7 +282,7 @@ export function declareRestrictionHttpRequestHandlerTests(
             method: 'POST',
             body: JSON.stringify(matchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -295,7 +295,7 @@ export function declareRestrictionHttpRequestHandlerTests(
             method: 'POST',
             body: JSON.stringify(mismatchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -325,7 +325,7 @@ export function declareRestrictionHttpRequestHandlerTests(
             method: 'POST',
             body: JSON.stringify(matchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
           expect(handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -334,7 +334,7 @@ export function declareRestrictionHttpRequestHandlerTests(
             method: 'POST',
             body: JSON.stringify(mismatchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
@@ -363,7 +363,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           method: 'POST',
           body: JSON.stringify(matchingBody),
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
         expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -372,7 +372,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           method: 'POST',
           body: JSON.stringify(mismatchingBody),
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
@@ -436,7 +436,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
         expect(handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -444,7 +444,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }
@@ -454,7 +454,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
 
@@ -462,7 +462,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<MethodSchema>(request);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }

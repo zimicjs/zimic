@@ -489,9 +489,14 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       };
     }>(interceptorOptions, async (interceptor) => {
       const genericCreationHandler = await promiseIfRemote(
-        interceptor.post('/users/:id').respond({
-          status: 201,
-          body: users[0],
+        interceptor.post('/users/:id').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({ id: '1' });
+
+          return {
+            status: 201,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -511,6 +516,9 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       const [genericCreationRequest] = genericCreationRequests;
       expect(genericCreationRequest).toBeInstanceOf(Request);
 
+      expectTypeOf(genericCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(genericCreationRequest.pathParams).toEqual({ id: '1' });
+
       expectTypeOf(genericCreationRequest.body).toEqualTypeOf<null>();
       expect(genericCreationRequest.body).toBe(null);
 
@@ -523,9 +531,14 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       await promiseIfRemote(genericCreationHandler.bypass(), interceptor);
 
       const specificCreationHandler = await promiseIfRemote(
-        interceptor.post(`/users/${1}`).respond({
-          status: 201,
-          body: users[0],
+        interceptor.post(`/users/${1}`).respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({});
+
+          return {
+            status: 201,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -544,6 +557,9 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       expect(specificCreationRequests).toHaveLength(1);
       const [specificCreationRequest] = specificCreationRequests;
       expect(specificCreationRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(specificCreationRequest.pathParams).toEqual({});
 
       expectTypeOf(specificCreationRequest.body).toEqualTypeOf<null>();
       expect(specificCreationRequest.body).toBe(null);

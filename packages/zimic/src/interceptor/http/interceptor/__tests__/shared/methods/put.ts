@@ -488,9 +488,14 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       };
     }>(interceptorOptions, async (interceptor) => {
       const genericUpdateHandler = await promiseIfRemote(
-        interceptor.put('/users/:id').respond({
-          status: 200,
-          body: users[0],
+        interceptor.put('/users/:id').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({ id: users[0].id });
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -510,6 +515,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       const [genericUpdateRequest] = genericUpdateRequests;
       expect(genericUpdateRequest).toBeInstanceOf(Request);
 
+      expectTypeOf(genericUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(genericUpdateRequest.pathParams).toEqual({ id: users[0].id });
+
       expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<null>();
       expect(genericUpdateRequest.body).toBe(null);
 
@@ -522,9 +530,14 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       await promiseIfRemote(genericUpdateHandler.bypass(), interceptor);
 
       const specificUpdateHandler = await promiseIfRemote(
-        interceptor.put(`/users/${users[0].id}`).respond({
-          status: 200,
-          body: users[0],
+        interceptor.put(`/users/${users[0].id}`).respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({});
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -543,6 +556,9 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(specificUpdateRequests).toHaveLength(1);
       const [specificUpdateRequest] = specificUpdateRequests;
       expect(specificUpdateRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(specificUpdateRequest.pathParams).toEqual({});
 
       expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<null>();
       expect(specificUpdateRequest.body).toBe(null);

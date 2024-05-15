@@ -7,7 +7,7 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { joinURL, ExtendedURL } from '@/utils/urls';
+import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -170,10 +170,13 @@ class HttpInterceptorClient<
     }
 
     this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
-    const pathWithBaseURL = joinURL(this.baseURL(), handler.path());
 
-    const registrationResult = this.worker.use(this, handler.method(), pathWithBaseURL, async (context) => {
+    const url = joinURL(this.baseURL(), handler.path());
+    const urlRegex = createRegexFromURL(url);
+
+    const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {
       const response = await this.handleInterceptedRequest(
+        urlRegex,
         handler.method(),
         handler.path(),
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
@@ -190,8 +193,10 @@ class HttpInterceptorClient<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
+      urlRegex: matchedURLRegex,
+    });
     const matchedHandler = this.findMatchedHandler(method, path, parsedRequest);
 
     if (matchedHandler) {
@@ -218,7 +223,7 @@ class HttpInterceptorClient<
   >(
     method: Method,
     path: Path,
-    parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    parsedRequest: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   HttpRequestHandlerClient<Schema, Method, Path, any> | undefined {
     const methodPathHandlers = this.handlerClientsByMethod[method].get(path);

@@ -448,9 +448,14 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       };
     }>(interceptorOptions, async (interceptor) => {
       const genericGetHandler = await promiseIfRemote(
-        interceptor.get('/users/:id').respond({
-          status: 200,
-          body: users[0],
+        interceptor.get('/users/:id').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({ id: '1' });
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -470,6 +475,9 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       const [genericGetRequest] = genericGetRequests;
       expect(genericGetRequest).toBeInstanceOf(Request);
 
+      expectTypeOf(genericGetRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(genericGetRequest.pathParams).toEqual({ id: '1' });
+
       expectTypeOf(genericGetRequest.body).toEqualTypeOf<null>();
       expect(genericGetRequest.body).toBe(null);
 
@@ -482,9 +490,14 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       await promiseIfRemote(genericGetHandler.bypass(), interceptor);
 
       const specificGetHandler = await promiseIfRemote(
-        interceptor.get(`/users/${1}`).respond({
-          status: 200,
-          body: users[0],
+        interceptor.get(`/users/${1}`).respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({});
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -503,6 +516,9 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       expect(specificGetRequests).toHaveLength(1);
       const [specificGetRequest] = specificGetRequests;
       expect(specificGetRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificGetRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(specificGetRequest.pathParams).toEqual({});
 
       expectTypeOf(specificGetRequest.body).toEqualTypeOf<null>();
       expect(specificGetRequest.body).toBe(null);

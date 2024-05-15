@@ -429,9 +429,14 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       };
     }>(interceptorOptions, async (interceptor) => {
       const genericOptionsHandler = await promiseIfRemote(
-        interceptor.options('/filters/:id').respond({
-          status: 200,
-          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+        interceptor.options('/filters/:id').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({ id: '1' });
+
+          return {
+            status: 200,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          };
         }),
         interceptor,
       );
@@ -448,6 +453,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const genericOptionsRequest = genericOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(genericOptionsRequest).toBeInstanceOf(Request);
 
+      expectTypeOf(genericOptionsRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(genericOptionsRequest.pathParams).toEqual({ id: '1' });
+
       expectTypeOf(genericOptionsRequest.body).toEqualTypeOf<null>();
       expect(genericOptionsRequest.body).toBe(null);
 
@@ -460,9 +468,14 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       await promiseIfRemote(genericOptionsHandler.bypass(), interceptor);
 
       const specificOptionsHandler = await promiseIfRemote(
-        interceptor.options(`/filters/${1}`).respond({
-          status: 200,
-          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+        interceptor.options(`/filters/${1}`).respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({});
+
+          return {
+            status: 200,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          };
         }),
         interceptor,
       );
@@ -478,6 +491,9 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       expect(specificOptionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
       const specificOptionsRequest = specificOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
       expect(specificOptionsRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificOptionsRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(specificOptionsRequest.pathParams).toEqual({});
 
       expectTypeOf(specificOptionsRequest.body).toEqualTypeOf<null>();
       expect(specificOptionsRequest.body).toBe(null);

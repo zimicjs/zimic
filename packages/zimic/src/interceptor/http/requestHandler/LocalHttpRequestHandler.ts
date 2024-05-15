@@ -59,7 +59,7 @@ class LocalHttpRequestHandler<
   >(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     this._client.respond(declaration);
 
@@ -77,22 +77,22 @@ class LocalHttpRequestHandler<
     return this;
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
+  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
     return this._client.requests();
   }
 
-  matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): boolean {
     return this._client.matchesRequest(request);
   }
 
   async applyResponseDeclaration(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     return this._client.applyResponseDeclaration(request);
   }
 
   registerInterceptedRequest(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     this._client.registerInterceptedRequest(request, response);

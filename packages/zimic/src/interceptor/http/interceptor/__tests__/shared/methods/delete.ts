@@ -514,9 +514,14 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       };
     }>(interceptorOptions, async (interceptor) => {
       const genericDeletionHandler = await promiseIfRemote(
-        interceptor.delete(`/users/${users[0].id}`).respond({
-          status: 200,
-          body: users[0],
+        interceptor.delete('/users/:id').respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({ id: users[0].id });
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -536,6 +541,9 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       const [genericDeletionRequest] = genericDeletionRequests;
       expect(genericDeletionRequest).toBeInstanceOf(Request);
 
+      expectTypeOf(genericDeletionRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(genericDeletionRequest.pathParams).toEqual({ id: users[0].id });
+
       expectTypeOf(genericDeletionRequest.body).toEqualTypeOf<null>();
       expect(genericDeletionRequest.body).toBe(null);
 
@@ -548,9 +556,14 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       await promiseIfRemote(genericDeletionHandler.bypass(), interceptor);
 
       const specificDeletionHandler = await promiseIfRemote(
-        interceptor.delete(`/users/${users[0].id}`).respond({
-          status: 200,
-          body: users[0],
+        interceptor.delete(`/users/${users[0].id}`).respond((request) => {
+          expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+          expect(request.pathParams).toEqual({});
+
+          return {
+            status: 200,
+            body: users[0],
+          };
         }),
         interceptor,
       );
@@ -569,6 +582,9 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       expect(specificDeletionRequests).toHaveLength(1);
       const [specificDeletionRequest] = specificDeletionRequests;
       expect(specificDeletionRequest).toBeInstanceOf(Request);
+
+      expectTypeOf(specificDeletionRequest.pathParams).toEqualTypeOf<{ id: string }>();
+      expect(specificDeletionRequest.pathParams).toEqual({});
 
       expectTypeOf(specificDeletionRequest.body).toEqualTypeOf<null>();
       expect(specificDeletionRequest.body).toBe(null);

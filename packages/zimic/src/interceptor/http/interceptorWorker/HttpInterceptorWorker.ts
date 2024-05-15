@@ -8,6 +8,7 @@ import {
   HttpServiceMethodSchema,
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
+  PathParamsSchemaFromPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 
@@ -111,9 +112,10 @@ abstract class HttpInterceptorWorker {
     return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }
 
-  static async parseRawRequest<MethodSchema extends HttpServiceMethodSchema>(
+  static async parseRawRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>(
     originalRawRequest: HttpRequest,
-  ): Promise<HttpInterceptorRequest<MethodSchema>> {
+    options: { urlRegex?: RegExp } = {},
+  ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
 
@@ -123,32 +125,37 @@ abstract class HttpInterceptorWorker {
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
+    const pathParams = options.urlRegex ? this.parseRawPathParams<Path>(options.urlRegex, rawRequest) : {};
+
     const parsedURL = new URL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
     const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 
-    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
-      has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<Path, MethodSchema>, {
+      has(target, property: keyof HttpInterceptorRequest<Path, MethodSchema>) {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
-      get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+      get(target, property: keyof HttpInterceptorRequest<Path, MethodSchema>) {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('body' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return parsedBody;
         }
-        if (property === ('headers' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('headers' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return headers;
         }
-        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('pathParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
+          return pathParams;
+        }
+        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return searchParams;
         }
-        if (property === ('raw' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('raw' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return rawRequestClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -205,6 +212,15 @@ abstract class HttpInterceptorWorker {
 
   private static isHiddenResponseProperty(property: string) {
     return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
+  }
+
+  static parseRawPathParams<Path extends string>(
+    matchedURLRegex: RegExp,
+    request: HttpRequest,
+  ): PathParamsSchemaFromPath<Path> {
+    const match = request.url.match(matchedURLRegex);
+    const pathParams = { ...match?.groups };
+    return pathParams as PathParamsSchemaFromPath<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {

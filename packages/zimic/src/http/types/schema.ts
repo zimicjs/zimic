@@ -1,4 +1,4 @@
-import { IfAny, Prettify, UnionToIntersection, UnionHasMoreThanOneType } from '@/types/utils';
+import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';

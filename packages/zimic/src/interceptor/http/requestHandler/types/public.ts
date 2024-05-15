@@ -55,7 +55,7 @@ export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-> = (request: HttpInterceptorRequest<Default<Schema[Path][Method]>>) => boolean;
+> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => boolean;
 
 export type HttpRequestHandlerRestriction<
   Schema extends HttpServiceSchema,
@@ -119,7 +119,7 @@ export interface HttpRequestHandler<
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
   ) => HttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /**
@@ -163,8 +163,8 @@ export interface HttpRequestHandler<
    * @see {@link https://github.com/diego-aquino/zimic#handlerrequests}
    */
   requests:
-    | (() => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[])
-    | (() => Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]>);
+    | (() => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[])
+    | (() => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>);
 }
 
 /**
@@ -192,14 +192,14 @@ export interface LocalHttpRequestHandler<
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   bypass: () => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   clear: () => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
-  requests: () => readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[];
+  requests: () => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 export interface SyncedRemoteHttpRequestHandler<
@@ -215,14 +215,14 @@ export interface SyncedRemoteHttpRequestHandler<
   respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   bypass: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   clear: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
-  requests: () => Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]>;
+  requests: () => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>;
 }
 
 export interface PendingRemoteHttpRequestHandler<
