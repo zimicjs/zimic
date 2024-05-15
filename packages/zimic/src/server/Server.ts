@@ -187,8 +187,8 @@ class Server implements PublicServer {
       return;
     }
 
-    await this.stopHttpServer();
     await this.stopWebSocketServer();
+    await this.stopHttpServer();
   }
 
   private async stopHttpServer() {

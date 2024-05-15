@@ -8,6 +8,7 @@ import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import WebSocketClient from '@/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../cli';
@@ -406,6 +407,55 @@ describe('CLI (server)', async () => {
         }
 
         expect(server!.isRunning()).toBe(false);
+      });
+    });
+
+    it('should stop the server even if a client is connected', async () => {
+      const exitEvent = PROCESS_EXIT_EVENTS[0];
+
+      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+
+      const exitEventListeners: (() => PossiblePromise<void>)[] = [];
+
+      vi.spyOn(process, 'on').mockImplementation((event, listener) => {
+        if (event === exitEvent) {
+          exitEventListeners.push(listener);
+        }
+        return process;
+      });
+
+      await usingIgnoredConsole(['log'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBeGreaterThan(0);
+
+        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.log).toHaveBeenCalledWith(
+          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+        );
+
+        expect(exitEventListeners).toHaveLength(1);
+
+        const webSocketClient = new WebSocketClient({
+          url: `ws://localhost:${server!.port()}`,
+        });
+
+        try {
+          await webSocketClient.start();
+          expect(webSocketClient.isRunning()).toBe(true);
+
+          for (const listener of exitEventListeners) {
+            await listener();
+          }
+
+          expect(server!.isRunning()).toBe(false);
+          expect(webSocketClient.isRunning()).toBe(false);
+        } finally {
+          await webSocketClient.stop();
+        }
       });
     });
   });
