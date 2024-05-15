@@ -14,6 +14,9 @@ examples/*/.next
 # Tests
 /apps/*/tests/coverage
 /packages/*/tests/coverage
+/examples/*/tests/coverage
+/examples/*/tests/outputs
+/examples/*/tests/reports
 
 # Configuration
 .husky

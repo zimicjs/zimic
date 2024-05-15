@@ -8,7 +8,8 @@ export default defineConfig({
   forbidOnly: CI,
   fullyParallel: true,
   retries: CI ? 1 : 0,
-  reporter: CI ? 'html' : undefined,
+  reporter: CI ? [['html', { outputDir: './tests/reports' }]] : undefined,
+  outputDir: './tests/outputs',
   timeout: 60 * 1000,
 
   expect: {
