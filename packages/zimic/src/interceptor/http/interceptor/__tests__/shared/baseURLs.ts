@@ -1,7 +1,7 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { joinURL, ExtendedURL } from '@/utils/urls';
+import { joinURL, ExtendedURL, InvalidURL, UnsupportedURLProtocolError } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -9,7 +9,7 @@ import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
-  const { getBaseURL, getInterceptorOptions } = options;
+  const { type, getBaseURL, getInterceptorOptions } = options;
 
   let defaultBaseURL: ExtendedURL;
   let interceptorOptions: HttpInterceptorOptions;
@@ -69,19 +69,19 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     }
   });
 
-  if (options.type === 'local') {
-    it('should throw an error if provided an invalid base URL', async () => {
-      const handler = vi.fn();
+  it('should throw an error if provided an invalid base URL', async () => {
+    const handler = vi.fn();
 
-      const invalidURL = 'invalid';
+    const invalidURL = 'invalid';
 
-      await expect(async () => {
-        await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
-      }).rejects.toThrowError('Invalid URL');
+    await expect(async () => {
+      await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
+    }).rejects.toThrowError(new InvalidURL(invalidURL));
 
-      expect(handler).not.toHaveBeenCalled();
-    });
+    expect(handler).not.toHaveBeenCalled();
+  });
 
+  if (type === 'local') {
     it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
       'should not throw an error if provided a supported base URL protocol: %s',
       async (supportedProtocol) => {
@@ -107,7 +107,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         const interceptorPromise = usingHttpInterceptor({ ...interceptorOptions, baseURL: url }, handler);
         await expect(interceptorPromise).rejects.toThrowError(
-          new TypeError(`Expected URL with protocol (http|https), but got '${unsupportedProtocol}'`),
+          new UnsupportedURLProtocolError(unsupportedProtocol, SUPPORTED_BASE_URL_PROTOCOLS),
         );
 
         expect(handler).not.toHaveBeenCalled();

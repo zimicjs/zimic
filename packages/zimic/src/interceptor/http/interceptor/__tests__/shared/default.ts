@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
-import { ExtendedURL, createExtendedURL } from '@/utils/urls';
+import { ExtendedURL, createURL } from '@/utils/urls';
 import { getSingletonWorkerByType, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
@@ -19,7 +19,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     store.clear();
 
     baseURL = getBaseURL();
-    serverURL = createExtendedURL(baseURL.origin);
+    serverURL = createURL(baseURL.origin);
 
     expect(store.numberOfRunningLocalInterceptors()).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
