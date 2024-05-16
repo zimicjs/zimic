@@ -1,11 +1,6 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../tsconfig.react.json",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "preserve",
-    "incremental": true,
-    "allowJs": true,
-    "noEmit": true,
     "plugins": [{ "name": "next" }],
     "strictNullChecks": true
   },
