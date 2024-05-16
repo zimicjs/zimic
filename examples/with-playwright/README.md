@@ -1,5 +1,5 @@
 <h1>
-  Zimic + Next.js
+  Zimic + Playwright
 </h2>
 
 This example uses ...

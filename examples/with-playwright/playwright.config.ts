@@ -22,6 +22,8 @@ export default defineConfig({
     locale: 'en-US',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    actionTimeout: 10 * 1000,
+    navigationTimeout: 30 * 1000,
   },
 
   projects: [

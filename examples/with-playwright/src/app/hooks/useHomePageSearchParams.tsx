@@ -15,6 +15,7 @@ function useHomePageSearchParams() {
 
   const setSearchParams = useCallback((params: Partial<HomePageSearchParams>) => {
     const newSearchParams = new URLSearchParams(searchParams);
+
     for (const [key, value] of Object.entries(params)) {
       if (value) {
         newSearchParams.set(key, value);
@@ -22,6 +23,7 @@ function useHomePageSearchParams() {
         newSearchParams.delete(key);
       }
     }
+
     router.replace(`?${newSearchParams.toString()}`);
   }, []);
 
