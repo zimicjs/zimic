@@ -38,8 +38,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm run dev:test',
-    url: 'http://localhost:3000',
+    command: 'pnpm run dev',
+    port: 3000,
     stdout: 'pipe',
     stderr: 'pipe',
     reuseExistingServer: true,

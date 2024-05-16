@@ -170,6 +170,9 @@ importers:
 
   examples/with-next-js:
     dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.36.2
+        version: 5.36.2(react@18.3.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1552,6 +1555,14 @@ packages:
 
   '@swc/types@0.1.6':
     resolution: {integrity: sha512-/JLo/l2JsT/LRd80C3HfbmVpxOAJ11FO2RCEslFrgzLltoP9j8XIbsyDcfCt2WWyX+CM96rBoNM+IToAkFOugg==}
+
+  '@tanstack/query-core@5.36.1':
+    resolution: {integrity: sha512-BteWYEPUcucEu3NBcDAgKuI4U25R9aPrHSP6YSf2NvaD2pSlIQTdqOfLRsxH9WdRYg7k0Uom35Uacb6nvbIMJg==}
+
+  '@tanstack/react-query@5.36.2':
+    resolution: {integrity: sha512-bHNa+5dead+j6SA8WVlEOPxcGfteVFgdyFTCFcxBgjnPf0fFpHUc7aNZBCnvmPXqy/BeQa9zTuU9ectb7i8ZXA==}
+    peerDependencies:
+      react: ^18.0.0
 
   '@testing-library/dom@9.3.4':
     resolution: {integrity: sha512-FlS4ZWlp97iiNWig0Muq8p+3rVDjRiYE+YKGbAqXOu9nwJFFOdL00kFpz42M+4huzYi86vAK1sOOfyOG45muIQ==}
@@ -6016,6 +6027,13 @@ snapshots:
   '@swc/types@0.1.6':
     dependencies:
       '@swc/counter': 0.1.3
+
+  '@tanstack/query-core@5.36.1': {}
+
+  '@tanstack/react-query@5.36.2(react@18.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.36.1
+      react: 18.3.1
 
   '@testing-library/dom@9.3.4':
     dependencies:

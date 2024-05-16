@@ -10,11 +10,11 @@ function useHomePageSearchParams() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const ownerName = searchParams.get('owner' satisfies keyof HomePageSearchParams) ?? '';
-  const repositoryName = searchParams.get('repo' satisfies keyof HomePageSearchParams) ?? '';
+  const ownerName = searchParams?.get('owner' satisfies keyof HomePageSearchParams) ?? '';
+  const repositoryName = searchParams?.get('repo' satisfies keyof HomePageSearchParams) ?? '';
 
   const setSearchParams = useCallback((params: Partial<HomePageSearchParams>) => {
-    const newSearchParams = new URLSearchParams(searchParams);
+    const newSearchParams = new URLSearchParams(searchParams ?? {});
 
     for (const [key, value] of Object.entries(params)) {
       if (value) {

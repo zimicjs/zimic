@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 
-import GitHubRepositoryForm from './components/GitHubRepositoryForm';
-import GitHubRepositoryShowcase from './components/GitHubRepositoryShowcase';
-import { HomePageSearchParams } from './hooks/useHomePageSearchParams';
+import GitHubRepositoryForm from '../components/GitHubRepositoryForm';
+import GitHubRepositoryShowcase from '../components/GitHubRepositoryShowcase';
+import { HomePageSearchParams } from '../hooks/useHomePageSearchParams';
 
 interface Props {
   searchParams: HomePageSearchParams;
@@ -14,12 +14,15 @@ function HomePage({ searchParams }: Props) {
 
   return (
     <main className="bg-white rounded-xl mx-auto flex flex-col items-center w-full max-w-[24rem] p-8 shadow-lg space-y-6">
-      <h1 className="font-bold text-2xl">Search a GitHub Repo!</h1>
+      <div className="text-center">
+        <h1 className="font-bold text-2xl">Search a GitHub Repo!</h1>
+        <h2 className="text-slate-700">App Router</h2>
+      </div>
 
       <GitHubRepositoryForm />
 
       {shouldFetchRepository && (
-        <Suspense key={`${ownerName}-${repositoryName}`} fallback={<p>Loading...</p>}>
+        <Suspense key={`${ownerName}-${repositoryName}`} fallback={<p role="status">Loading...</p>}>
           <GitHubRepositoryShowcase ownerName={ownerName} repositoryName={repositoryName} />
         </Suspense>
       )}

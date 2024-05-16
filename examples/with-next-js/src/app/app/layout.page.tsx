@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { PropsWithChildren } from 'react';
 
-import '../styles/global.css';
-import { loadInterceptors } from '../../tests/interceptors';
-import InterceptorProvider from '../providers/interceptors/InterceptorProvider';
+import { loadInterceptors } from '../../../tests/interceptors';
+import InterceptorProvider from '../../providers/interceptors/InterceptorProvider';
+
+import '../../styles/global.css';
 
 const inter = Inter({ subsets: ['latin'] });
 

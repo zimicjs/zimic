@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import type { JSONValue } from 'zimic';
 
 import { waitForLoadedInterceptors } from '../../tests/interceptors';
@@ -14,7 +13,7 @@ export type GitHubRepository = JSONValue<{
   owner: { login: string };
 }>;
 
-export const fetchGitHubRepository = cache(async (ownerName: string, repositoryName: string) => {
+export async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
   await waitForLoadedInterceptors();
 
   try {
@@ -31,4 +30,4 @@ export const fetchGitHubRepository = cache(async (ownerName: string, repositoryN
     console.error(error);
     return null;
   }
-});
+}
