@@ -168,6 +168,49 @@ importers:
         specifier: latest
         version: link:../../packages/zimic
 
+  examples/with-next-js:
+    dependencies:
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      dotenv-cli:
+        specifier: ^7.3.0
+        version: 7.3.0
+      next:
+        specifier: 14.2.3
+        version: 14.2.3(@playwright/test@1.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.44.0
+        version: 1.44.0
+      '@types/node':
+        specifier: ^20.11.30
+        version: 20.11.30
+      '@types/react':
+        specifier: ^18.3.2
+        version: 18.3.2
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.0
+      postcss:
+        specifier: ^8.4.38
+        version: 8.4.38
+      tailwindcss:
+        specifier: ^3.4.1
+        version: 3.4.3
+      typescript:
+        specifier: ^5.4.3
+        version: 5.4.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
+
   examples/with-playwright:
     dependencies:
       clsx:

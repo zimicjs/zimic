@@ -26,7 +26,8 @@
         "examples-vitest-jsdom",
         "examples-jest-node",
         "examples-jest-jsdom",
-        "examples-playwright"
+        "examples-playwright",
+        "examples-next-js"
       ]
     ],
     "scope-empty": [2, "never"]
