@@ -1,9 +1,6 @@
 # Dependencies
 /node_modules
 
-# Testing
-/public/mockServiceWorker.js
-
 # Misc
 .DS_Store
 *.pem
