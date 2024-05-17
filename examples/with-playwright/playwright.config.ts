@@ -14,7 +14,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3002',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -35,7 +35,7 @@ export default defineConfig({
 
   webServer: {
     command: 'pnpm run dev:test',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3002',
     stdout: 'pipe',
     stderr: 'pipe',
     reuseExistingServer: true,
