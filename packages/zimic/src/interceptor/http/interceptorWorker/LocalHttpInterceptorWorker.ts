@@ -8,7 +8,7 @@ import {
 
 import { HttpBody } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { excludeNonPathParams, ensureUniquePathParams } from '@/utils/urls';
+import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
@@ -145,7 +145,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const url = excludeNonPathParams(new URL(rawURL)).toString();
+    const url = excludeNonPathParams(createURL(rawURL)).toString();
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {

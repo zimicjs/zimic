@@ -3,16 +3,20 @@ node_modules
 pnpm-lock.yaml
 
 # Build
-apps/*/dist
-apps/*/build
-apps/*/public/mockServiceWorker.js
-packages/*/dist
-packages/*/build
+/apps/*/dist
+/apps/*/build
+/apps/*/public/mockServiceWorker.js
+/packages/*/dist
+/packages/*/build
+/examples/*/.next
 **/public/mockServiceWorker.js
 
 # Tests
 /apps/*/tests/coverage
 /packages/*/tests/coverage
+/examples/*/tests/coverage
+/examples/*/tests/outputs
+/examples/*/tests/reports
 
 # Configuration
 .husky

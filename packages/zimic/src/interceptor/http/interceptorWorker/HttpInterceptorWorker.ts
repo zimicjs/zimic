@@ -11,6 +11,7 @@ import {
   PathParamsSchemaFromPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
+import { createURL } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -127,7 +128,7 @@ abstract class HttpInterceptorWorker {
 
     const pathParams = options.urlRegex ? this.parseRawPathParams<Path>(options.urlRegex, rawRequest) : {};
 
-    const parsedURL = new URL(rawRequest.url);
+    const parsedURL = createURL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
     const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 

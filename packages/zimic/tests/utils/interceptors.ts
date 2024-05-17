@@ -21,23 +21,23 @@ import {
 import Server from '@/server/Server';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
-import { joinURL, createExtendedURL, ExtendedURL } from '@/utils/urls';
+import { joinURL, createURL, ExtendedURL } from '@/utils/urls';
 import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/globalSetup/serverOnBrowser';
 
 export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
   if (workerType === 'local') {
-    return createExtendedURL('http://localhost:3000');
+    return createURL('http://localhost:3000');
   }
 
   const crypto = await getCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${GLOBAL_SETUP_SERVER_HOSTNAME}:${GLOBAL_SETUP_SERVER_PORT}`, pathPrefix);
-  return createExtendedURL(baseURL);
+  return createURL(baseURL);
 }
 
 export async function getNodeBaseURL(type: HttpInterceptorType, server: Server) {
   if (type === 'local') {
-    return createExtendedURL('http://localhost:3000');
+    return createURL('http://localhost:3000');
   }
 
   const hostname = server.hostname();
@@ -47,7 +47,7 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Server) 
   const crypto = await getCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
-  return createExtendedURL(baseURL);
+  return createURL(baseURL);
 }
 
 export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(

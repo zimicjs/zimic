@@ -1,5 +1,5 @@
 import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
-import { createExtendedURL, excludeNonPathParams } from '@/utils/urls';
+import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -16,7 +16,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   constructor(options: LocalHttpInterceptorOptions) {
     this.type = options.type;
 
-    const baseURL = createExtendedURL(options.baseURL, {
+    const baseURL = createURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
     });
     excludeNonPathParams(baseURL);
