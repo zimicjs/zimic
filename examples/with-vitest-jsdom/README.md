@@ -19,14 +19,10 @@ where the repository is found and another where it is not.
 
 ### Zimic
 
-- Zimic worker: [`tests/interceptors/worker.ts`](./tests/interceptors/worker.ts)
-- Zimic GitHub interceptor: [`tests/interceptors/githubInterceptor.ts`](./tests/interceptors/githubInterceptor.ts)
+- GitHub interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
-
-#### Configuration
-
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)

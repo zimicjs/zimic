@@ -20,17 +20,16 @@ where the repository is found and another where it is not.
 
 ### Zimic
 
-- Zimic worker: [`tests/interceptors/worker.ts`](./tests/interceptors/worker.ts)
-- Zimic GitHub interceptor: [`tests/interceptors/githubInterceptor.ts`](./tests/interceptors/githubInterceptor.ts)
+- GitHub interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 
-#### Configuration
-
 - Jest configuration: [`jest.config.js`](./jest.config.js)
 
-  > The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
-  > required by Jest because Zimic uses dynamic imports internally.
+> [!IMPORTANT]
+>
+> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
+> required by Jest because Zimic uses dynamic imports internally.
