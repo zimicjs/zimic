@@ -3,6 +3,7 @@ import type { JSONValue } from 'zimic';
 
 import environment from '../config/environment';
 
+const BASE_URL = environment.GITHUB_API_BASE_URL;
 const CACHE_STRATEGY = process.env.NODE_ENV === 'production' ? 'default' : 'no-store';
 
 export type GitHubRepository = JSONValue<{
@@ -15,8 +16,12 @@ export type GitHubRepository = JSONValue<{
 
 export const fetchGitHubRepository = cache(async (ownerName: string, repositoryName: string) => {
   try {
-    const url = `${environment.GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
-    const response = await fetch(url, { cache: CACHE_STRATEGY });
+    const sanitizedOwnerName = encodeURIComponent(ownerName);
+    const sanitizedRepositoryName = encodeURIComponent(repositoryName);
+
+    const response = await fetch(`${BASE_URL}/repos/${sanitizedOwnerName}/${sanitizedRepositoryName}`, {
+      cache: CACHE_STRATEGY,
+    });
 
     if (response.status !== 200) {
       return null;
