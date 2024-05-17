@@ -39,8 +39,8 @@ describe('Example tests', () => {
     const repositoryHeading = await screen.findByRole('heading', { name: repository.full_name });
     expect(repositoryHeading).toBeInTheDocument();
 
-    const repositoryURL = await screen.findByRole('link', { name: repository.html_url });
-    expect(repositoryURL).toBeInTheDocument();
+    const repositoryLink = await screen.findByRole('link', { name: repository.html_url });
+    expect(repositoryLink).toBeInTheDocument();
 
     const getRequests = getRepositoryHandler.requests();
     expect(getRequests).toHaveLength(1);
@@ -55,10 +55,10 @@ describe('Example tests', () => {
     renderApp();
 
     const ownerInput = screen.getByRole('textbox', { name: 'Owner' });
-    await userEvent.type(ownerInput, 'diego-aquino');
+    await userEvent.type(ownerInput, ownerName);
 
     const repositoryInput = screen.getByRole('textbox', { name: 'Repository' });
-    await userEvent.type(repositoryInput, 'zimic');
+    await userEvent.type(repositoryInput, repositoryName);
 
     const searchButton = screen.getByRole('button', { name: 'Search' });
     await userEvent.click(searchButton);
@@ -66,8 +66,8 @@ describe('Example tests', () => {
     const repositoryHeading = await screen.findByRole('heading', { name: 'Repository not found' });
     expect(repositoryHeading).toBeInTheDocument();
 
-    const repositoryURLPromise = screen.findByRole('link', {}, { timeout: 200 });
-    await expect(repositoryURLPromise).rejects.toThrowError();
+    const repositoryLinkPromise = screen.findByRole('link', {}, { timeout: 200 });
+    await expect(repositoryLinkPromise).rejects.toThrowError();
 
     const getRequests = getRepositoryHandler.requests();
     expect(getRequests).toHaveLength(1);
