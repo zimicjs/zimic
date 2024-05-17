@@ -15,9 +15,12 @@ function GitHubRepositoryForm() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const ownerName = ownerInputRef.current?.value.trim();
+    const repositoryName = repositoryInputRef.current?.value.trim();
+
     searchParams.set({
-      owner: ownerInputRef.current?.value ?? '',
-      repo: repositoryInputRef.current?.value ?? '',
+      owner: ownerName ?? '',
+      repo: repositoryName ?? '',
     });
   }
 

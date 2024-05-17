@@ -9,7 +9,7 @@ async function GitHubRepositoryShowcase({ ownerName, repositoryName }: Props) {
   const repository = await fetchGitHubRepository(ownerName, repositoryName);
 
   return (
-    <section className="w-full">
+    <div className="w-full">
       {repository ? (
         <>
           <h1 className="font-medium">Repository:</h1>
@@ -25,7 +25,7 @@ async function GitHubRepositoryShowcase({ ownerName, repositoryName }: Props) {
       ) : (
         <p role="status">Repository not found.</p>
       )}
-    </section>
+    </div>
   );
 }
 

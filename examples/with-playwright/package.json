@@ -5,8 +5,6 @@
   "scripts": {
     "dev": "dotenv -c development -- next dev",
     "dev:test": "dotenv -c test -- dotenv -c development -- next dev",
-    "build": "dotenv -c development -- next build",
-    "start": "dotenv -c development -- next start",
     "test": "dotenv -c test -- dotenv -c development -- zimic server start --port 3001 --ephemeral -- playwright test",
     "test:turbo": "pnpm run test",
     "types:check": "tsc --noEmit",

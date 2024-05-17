@@ -1,14 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const CI = process.env.CI === 'true';
-
 export default defineConfig({
   testDir: './src',
   testMatch: '**/__tests__/**/*.e2e.test.ts',
-  forbidOnly: CI,
   fullyParallel: true,
-  retries: CI ? 1 : 0,
-  reporter: CI ? [['html', { outputDir: './tests/reports' }]] : undefined,
+  retries: 1,
+  reporter: [['html', { outputFolder: './tests/reports' }]],
   outputDir: './tests/outputs',
   timeout: 60 * 1000,
 
@@ -19,7 +16,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
-    locale: 'en-US',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
     actionTimeout: 10 * 1000,
