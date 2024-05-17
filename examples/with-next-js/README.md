@@ -35,3 +35,38 @@ GitHub API and simulate a test case where the repository is found and another wh
 
 - Test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-next-js
+   git pull origin main
+   cd examples/with-next-js
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   1. Start the application:
+
+      ```bash
+      npm run dev
+      ```
+
+   2. In another terminal, run the tests:
+
+      ```bash
+      npm run test --ui
+      ```

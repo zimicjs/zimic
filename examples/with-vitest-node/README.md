@@ -27,3 +27,30 @@ where the repository is found and another where it is not.
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-vitest-node
+   git pull origin main
+   cd examples/with-vitest-node
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   ```bash
+   npm run test
+   ```

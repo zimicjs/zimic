@@ -33,3 +33,30 @@ where the repository is found and another where it is not.
 >
 > The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
 > required by Jest because Zimic uses dynamic imports internally.
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-jest-node
+   git pull origin main
+   cd examples/with-jest-node
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   ```bash
+   npm run test
+   ```

@@ -39,3 +39,30 @@ where the repository is found and another where it is not.
 > [`tests/setup.ts`](./tests/setup.ts) is not shared between them.
 
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-vitest-browser
+   git pull origin main
+   cd examples/with-vitest-browser
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   ```bash
+   npm run test
+   ```

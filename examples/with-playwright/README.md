@@ -38,3 +38,38 @@ GitHub API and simulate a test case where the repository is found and another wh
 > The setup file must be imported in each test file to apply the global `test.beforeAll` and `test.afterAll`.
 
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-playwright
+   git pull origin main
+   cd examples/with-playwright
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   1. Start the application:
+
+      ```bash
+      npm run dev:test
+      ```
+
+   2. In another terminal, run the tests:
+
+      ```bash
+      npm run test --ui
+      ```

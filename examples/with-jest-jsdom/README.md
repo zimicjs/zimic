@@ -46,3 +46,30 @@ where the repository is found and another where it is not.
 >
 > JSDOM runs on Node.js, but uses browser imports when present. Therefore, this resolver is necessary to remove the
 > [browser condition of MSW-related imports](https://github.com/mswjs/msw/issues/1786) to prevent test runtime errors."
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-jest-jsdom
+   git pull origin main
+   cd examples/with-jest-jsdom
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the tests:
+
+   ```bash
+   npm run test
+   ```
