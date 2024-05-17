@@ -2,16 +2,18 @@
   Zimic + Next.js
 </h2>
 
-This example uses Zimic with [Next.js](https://nextjs.org). The application is verified in end-to-end tests using
+This example uses Zimic with [Next.js](https://nextjs.org). The application is verified with end-to-end tests using
 [Playwright](https://playwright.dev).
 
 ## Application
 
-A simple [Next.js](https://nextjs.org) application, using both the [App Router](https://nextjs.org/docs/app) and the
-[Pages Router](https://nextjs.org/docs/pages). It fetches repositories from the
-[GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) application, using both the
+[App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages). It fetches repositories
+from the [GitHub API](https://docs.github.com/en/rest).
 
-- Application: [`src/app/page.tsx`](./src/app/page.tsx)
+- Application:
+  - App Router version: [`src/app/app/page.page.tsx`](./src/app/app/page.page.tsx)
+  - Pages Router version: [`src/pages/pages.page.tsx`](./src/pages/pages.page.tsx)
 - Interceptor provider:
   [`src/providers/interceptors/InterceptorProvider.tsx`](./src/providers/interceptors/InterceptorProvider.tsx)
   - This provider is used to apply Zimic mocks when the application is started in development.
@@ -19,7 +21,7 @@ A simple [Next.js](https://nextjs.org) application, using both the [App Router](
   - Before fetching resources, it is necessary to wait for the interceptors and fixtures to be loaded. This is done via
     `await waitForLoadedInterceptors();`.
 
-A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers.
+A `postinstall` in [`package.json`](./package.json#L11) script is used to install Playwright's browsers.
 
 ## Testing
 
@@ -64,6 +66,9 @@ GitHub API and simulate a test case where the repository is found and another wh
       ```bash
       npm run dev
       ```
+
+      After started, the App Router version will be available at [http://localhost:3000/app](http://localhost:3000/app)
+      and the Pages Router version at [http://localhost:3000/pages](http://localhost:3000/pages).
 
    2. In another terminal, run the tests:
 

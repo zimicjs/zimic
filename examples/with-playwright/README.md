@@ -2,18 +2,17 @@
   Zimic + Playwright
 </h2>
 
-This example uses Zimic with [Playwright](https://playwright.dev) for end-to-end tests. The tested application was build
-using [Next.js](https://nextjs.org).
+This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end tests.
 
 ## Application
 
-A simple [Next.js](https://nextjs.org) application, using both the [App Router](https://nextjs.org/docs/app) and
-fetching repositories from the [GitHub API](https://docs.github.com/en/rest).
+The tested application is a simple [Next.js](https://nextjs.org) application, fetching repositories from the
+[GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
 
-A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers.
+A `postinstall` in [`package.json`](./package.json#L12) script is used to install Playwright's browsers.
 
 ## Testing
 
@@ -28,16 +27,14 @@ GitHub API and simulate a test case where the repository is found and another wh
 ### Test
 
 - Test suite: [`src/app/__tests__/HomePage.e2e.test.ts`](./src/app/__tests__/HomePage.e2e.test.ts)
-
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
   - This file is responsible for starting the Zimic interceptors before each test. It also applies default mock
     responses based on the [fixtures](./tests/interceptors/github/interceptor.ts).
+- Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
 > [!IMPORTANT]
 >
-> The setup file must be imported in each test file to apply the global `test.beforeAll` and `test.afterAll`.
-
-- Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
+> The setup file must be imported from each test file to apply the global `test.beforeAll` and `test.afterAll`.
 
 ### Running
 
@@ -67,6 +64,8 @@ GitHub API and simulate a test case where the repository is found and another wh
       ```bash
       npm run dev:test
       ```
+
+      After started, it will be available at [http://localhost:3000](http://localhost:3000).
 
    2. In another terminal, run the tests:
 

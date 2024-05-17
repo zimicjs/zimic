@@ -7,7 +7,7 @@ This example uses Zimic with [Vitest](https://vitest.dev), [JSDOM](https://githu
 
 ## Application
 
-A simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
+The application is a simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app.ts`](./src/app.ts)

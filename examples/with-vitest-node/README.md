@@ -7,7 +7,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
 
 ## Application
 
-A simple [Fastify](https://fastify.dev) server, fetching repositories from the
+The application is a simple [Fastify](https://fastify.dev) server, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest). Any other Node.js framework could be used as well, such as
 [express](https://expressjs.com) and [Nest.js](https://nestjs.com).
 

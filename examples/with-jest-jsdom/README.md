@@ -7,7 +7,7 @@ This example uses Zimic with [Jest](https://jestjs.io), [JSDOM](https://github.c
 
 ## Application
 
-A simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
+The application is a simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app.ts`](./src/app.ts)
@@ -25,22 +25,19 @@ where the repository is found and another where it is not.
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
-
 - Jest configuration: [`jest.config.js`](./jest.config.js)
+- Test environment: [`tests/environment.ts`](./tests/environment.ts)
+- Test resolver: [`tests/resolver.js`](./tests/resolver.js)
 
 > [!IMPORTANT]
 >
 > The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
 > required by Jest because Zimic uses dynamic imports internally.
 
-- Test environment: [`tests/environment.ts`](./tests/environment.ts)
-
 > [!IMPORTANT]
 >
 > This custom environment is necessary to expose the Global Fetch API resources, such as `fetch`, to the test context.
 > [JSDOM currently does not expose them](https://github.com/jsdom/jsdom/issues/1724).
-
-- Test resolver: [`tests/resolver.js`](./tests/resolver.js)
 
 > [!IMPORTANT]
 >

@@ -8,7 +8,7 @@ It uses [Playwright](https://playwright.dev) as the browser provider for Vitest 
 
 ## Application
 
-A simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
+The application is a simple HTML layout rendered by vanilla JavaScript, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app.ts`](./src/app.ts)
@@ -29,16 +29,14 @@ where the repository is found and another where it is not.
 ### Test
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
-
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
+- Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
 > [!IMPORTANT]
 >
-> As a workaround, the setup file must be imported in each test file. Currently, Browser Mode is experimental and Vitest
-> runs the setup file in a different process than the test files, so the worker started on
+> As a workaround, the setup file must be imported from each test file. Currently, Browser Mode is experimental and
+> Vitest runs the setup file in a different process than the test files, so the worker started on
 > [`tests/setup.ts`](./tests/setup.ts) is not shared between them.
-
-- Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
 ### Running
 

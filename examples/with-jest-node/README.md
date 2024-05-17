@@ -7,7 +7,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
 
 ## Application
 
-A simple [Fastify](https://fastify.dev) server, fetching repositories from the
+The application is a simple [Fastify](https://fastify.dev) server, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest). Any other Node.js framework could be used as well, such as
 [express](https://expressjs.com) and [Nest.js](https://nestjs.com).
 
@@ -26,7 +26,6 @@ where the repository is found and another where it is not.
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
-
 - Jest configuration: [`jest.config.js`](./jest.config.js)
 
 > [!IMPORTANT]
