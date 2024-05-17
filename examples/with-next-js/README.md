@@ -56,7 +56,7 @@ GitHub API and simulate a test case where the repository is found and another wh
 2. Install the dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Run the tests:
@@ -64,7 +64,7 @@ GitHub API and simulate a test case where the repository is found and another wh
    1. Start the application:
 
       ```bash
-      npm run dev
+      pnpm run dev
       ```
 
       After started, the App Router version will be available at [http://localhost:3000/app](http://localhost:3000/app)
@@ -73,5 +73,5 @@ GitHub API and simulate a test case where the repository is found and another wh
    2. In another terminal, run the tests:
 
       ```bash
-      npm run test --ui
+      pnpm run test --ui
       ```

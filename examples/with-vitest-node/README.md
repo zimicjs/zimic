@@ -46,11 +46,11 @@ where the repository is found and another where it is not.
 2. Install the dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Run the tests:
 
    ```bash
-   npm run test
+   pnpm run test
    ```
