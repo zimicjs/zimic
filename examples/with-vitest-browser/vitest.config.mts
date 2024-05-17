@@ -5,8 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   publicDir: 'public',
   test: {
-    include: ['./tests/*.test.ts'],
-    globals: false,
+    include: ['./tests/**/*.test.ts'],
     browser: {
       name: 'chromium',
       provider: 'playwright',
