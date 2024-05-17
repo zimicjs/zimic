@@ -1,5 +1,16 @@
 {
-  "extends": "../tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["esnext", "webworker"],
+    "target": "esnext",
+    "module": "esnext",
+    "incremental": false,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "pretty": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true
+  },
   "include": ["**/*.ts", "**/*.mts"],
   "exclude": ["node_modules"]
 }

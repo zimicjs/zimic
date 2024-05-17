@@ -1,8 +1,0 @@
-{
-  "extends": "@zimic/tsconfig/tsconfig.node.json",
-  "compilerOptions": {
-    "target": "es6"
-  },
-  "include": ["**/*.ts", "**/*.mts", "**/*.tsx", "*/tests/resolver.js"],
-  "exclude": ["node_modules", "**/dist", "**/build", "with-{playwright,next-js}"]
-}
