@@ -1,6 +1,6 @@
 class NotStartedWebSocketHandlerError extends Error {
   constructor() {
-    super('The web socket handler is not running.');
+    super('[zimic] Web socket handler is not running.');
     this.name = 'NotStartedWebSocketHandlerError';
   }
 }
