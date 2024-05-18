@@ -1,7 +1,10 @@
 import { ExtendedURL } from '@/utils/urls';
 
+import { LocalHttpInterceptorOptions } from '../../interceptor/types/options';
+
 export interface LocalHttpInterceptorWorkerOptions {
   type: 'local';
+  onUnhandledRequest?: LocalHttpInterceptorOptions['onUnhandledRequest'];
 }
 
 export interface RemoteHttpInterceptorWorkerOptions {

@@ -1,4 +1,4 @@
-import { logWithPrefix } from '@/cli/utils/console';
+import { logWithPrefix } from '@/utils/console';
 import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
 import InterceptorServer from '../../interceptor/server/InterceptorServer';

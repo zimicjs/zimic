@@ -1,7 +1,8 @@
 import filesystem from 'fs/promises';
 import path from 'path';
 
-import { getChalk, logWithPrefix } from '../utils/console';
+import { getChalk, logWithPrefix } from '@/utils/console';
+
 import { SERVICE_WORKER_FILE_NAME } from './shared/constants';
 
 const MSW_ROOT_PATH = path.join(require.resolve('msw'), '..', '..', '..');

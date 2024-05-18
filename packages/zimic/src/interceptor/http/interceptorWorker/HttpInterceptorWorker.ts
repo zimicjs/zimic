@@ -10,11 +10,12 @@ import {
   HttpServiceSchema,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
+import { formatObjectToLog, getChalk, logWithPrefix } from '@/utils/console';
 import { createURL } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
@@ -217,6 +218,30 @@ abstract class HttpInterceptorWorker {
     } catch {
       return bodyAsText || null;
     }
+  }
+
+  static async warnUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
+    const request = await this.parseRawRequest(rawRequest);
+
+    const chalk = await getChalk();
+
+    await logWithPrefix(
+      [
+        `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
+          `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}:\n\n `,
+        request.method,
+        request.url,
+        '\n    Headers:',
+        formatObjectToLog(Object.fromEntries(request.headers)),
+        '\n    Search params:',
+        formatObjectToLog(Object.fromEntries(request.searchParams)),
+        '\n    Body:',
+        formatObjectToLog(request.body),
+        '\n\nTo handle this request, use an interceptor to create a handler for it.',
+        '\nIf you are using restrictions, make sure that they match the content of the request.',
+      ],
+      { method: action === 'bypass' ? 'warn' : 'error' },
+    );
   }
 }
 

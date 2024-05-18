@@ -11,7 +11,10 @@ export const PROCESS_EXIT_EVENTS = [
 
 export class CommandError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
-    super(`The command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);
+    super(
+      `[zimic] Command '${command}' exited ` +
+        `${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`,
+    );
     this.name = 'CommandError';
   }
 }

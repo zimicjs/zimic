@@ -13,6 +13,8 @@ import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import { UnhandledRequestStrategy } from '../interceptor/types/options';
+import UnhandledRequestError from './errors/UnhandledRequestError';
 import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
@@ -22,15 +24,26 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'local';
 
   private _internalWorker?: HttpWorker;
+  private onUnhandledRequest:
+    | UnhandledRequestStrategy.LocalDeclaration
+    | UnhandledRequestStrategy.LocalDeclarationHandler;
 
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
   }[] = [];
 
-  constructor(options: LocalHttpInterceptorWorkerOptions) {
+  constructor({ type, onUnhandledRequest }: LocalHttpInterceptorWorkerOptions) {
     super();
-    this.type = options.type;
+    this.type = type;
+
+    this.onUnhandledRequest =
+      typeof onUnhandledRequest === 'function'
+        ? onUnhandledRequest
+        : {
+            action: onUnhandledRequest?.action ?? 'bypass',
+            log: onUnhandledRequest?.log ?? true,
+          };
   }
 
   internalWorkerOrThrow() {
@@ -67,7 +80,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       const internalWorker = await this.internalWorkerOrLoad();
-      const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
+      const sharedOptions: MSWWorkerSharedOptions = {
+        onUnhandledRequest: this.handleUnhandledRequest,
+      };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
         super.setPlatform('browser');
@@ -80,6 +95,18 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       super.setIsRunning(true);
     });
   }
+
+  private handleUnhandledRequest = async (request: Request) => {
+    const strategy =
+      typeof this.onUnhandledRequest === 'function' ? await this.onUnhandledRequest(request) : this.onUnhandledRequest;
+
+    if (strategy.log) {
+      await HttpInterceptorWorker.warnUnhandledRequest(request, strategy.action);
+    }
+    if (strategy.action === 'reject') {
+      throw new UnhandledRequestError();
+    }
+  };
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
     try {
