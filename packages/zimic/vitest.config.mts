@@ -35,6 +35,7 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY': "'false'",
   },
   resolve: {
     alias: {

@@ -25,12 +25,14 @@ import {
 import UnhandledRequestError from './errors/UnhandledRequestError';
 import { HttpResponseFactory } from './types/requests';
 
+const DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY = process.env.DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY === 'true';
+
 export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: {
   local: Required<UnhandledRequestStrategy.LocalDeclaration>;
   remote: Required<UnhandledRequestStrategy.RemoteDeclaration>;
 } = {
-  local: { action: 'bypass', log: true },
-  remote: { action: 'reject', log: true },
+  local: { action: 'bypass', log: DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY },
+  remote: { action: 'reject', log: DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY },
 };
 
 abstract class HttpInterceptorWorker {
