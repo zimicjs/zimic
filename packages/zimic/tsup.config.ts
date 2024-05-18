@@ -7,7 +7,6 @@ const sharedConfig: Options = {
   format: ['cjs', 'esm'],
   dts: true,
   bundle: true,
-  splitting: false,
   sourcemap: true,
   treeshake: isProductionBuild,
   minify: false,
