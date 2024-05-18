@@ -76,15 +76,21 @@ describe('CLI (server)', async () => {
       '                                                                        [string]',
       '',
       'Options:',
-      '      --help       Show help                                           [boolean]',
-      '      --version    Show version number                                 [boolean]',
-      '  -h, --hostname   The hostname to start the server on.',
+      '      --help                    Show help                              [boolean]',
+      '      --version                 Show version number                    [boolean]',
+      '  -h, --hostname                The hostname to start the server on.',
       '                                                 [string] [default: "localhost"]',
-      '  -p, --port       The port to start the server on.                     [number]',
-      '  -e, --ephemeral  Whether the server should stop automatically after the on-rea',
-      '                   dy command finishes. If no on-ready command is provided and e',
-      '                   phemeral is true, the server will stop immediately after star',
-      '                   ting.                              [boolean] [default: false]',
+      '  -p, --port                    The port to start the server on.        [number]',
+      '  -e, --ephemeral               Whether the server should stop automatically aft',
+      '                                er the on-ready command finishes. If no on-ready',
+      '                                 command is provided and ephemeral is true, the',
+      '                                server will stop immediately after starting.',
+      '                                                      [boolean] [default: false]',
+      '  -l, --log-unhandled-requests  Whether to log a warning when no interceptors we',
+      '                                re found for the base URL of a request. If an in',
+      '                                terceptor was matched, the logging behavior for',
+      '                                that base URL is configured in the interceptor i',
+      '                                tself.                [boolean] [default: false]',
     ].join('\n');
 
     beforeEach(async () => {
@@ -120,7 +126,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:3000'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://localhost:3000'.`,
         );
       });
     });
@@ -137,7 +144,10 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(`${chalk.cyan('[zimic]')} Server is running on 'http://0.0.0.0:3000'.`);
+        expect(spies.log).toHaveBeenCalledWith(
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://0.0.0.0:3000'.`,
+        );
       });
     });
 
@@ -154,7 +164,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://localhost:${server!.port()}'.`,
         );
       });
     });
@@ -247,7 +258,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Ephemeral server is running on 'http://localhost:${server!.port()}'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Ephemeral server is running on 'http://localhost:${server!.port()}'.`,
         );
 
         const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
@@ -281,7 +293,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://localhost:${server!.port()}'.`,
         );
 
         const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
@@ -345,10 +358,12 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        await expect(runCLI()).rejects.toThrowError(`The command 'node' exited with code ${exitCode}.`);
+        const error = new CommandError('node', exitCode, null);
+        await expect(runCLI()).rejects.toThrowError(error);
+        expect(error.message).toBe(`[zimic] Command 'node' exited with code ${exitCode}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(new CommandError('node', exitCode, null));
+        expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
@@ -368,10 +383,12 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        await expect(runCLI()).rejects.toThrowError(`The command 'node' exited after signal ${signal}.`);
+        const error = new CommandError('node', null, signal);
+        await expect(runCLI()).rejects.toThrowError(error);
+        expect(error.message).toBe(`[zimic] Command 'node' exited after signal ${signal}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(new CommandError('node', null, signal));
+        expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
@@ -397,7 +414,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://localhost:${server!.port()}'.`,
         );
 
         expect(exitEventListeners).toHaveLength(1);
@@ -434,7 +452,8 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')} Server is running on 'http://localhost:${server!.port()}'.`,
+          `${chalk.cyan('[zimic]')}`,
+          `Server is running on 'http://localhost:${server!.port()}'.`,
         );
 
         expect(exitEventListeners).toHaveLength(1);
