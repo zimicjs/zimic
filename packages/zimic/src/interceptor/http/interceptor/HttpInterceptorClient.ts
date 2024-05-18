@@ -19,6 +19,7 @@ import { HttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
+import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
@@ -31,6 +32,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
+  private onUnhandledRequest?: UnhandledRequestStrategy.Any;
 
   private Handler: HandlerConstructor;
 
@@ -51,15 +53,17 @@ class HttpInterceptorClient<
     store: HttpInterceptorStore;
     baseURL: ExtendedURL;
     Handler: HandlerConstructor;
+    onUnhandledRequest?: UnhandledRequestStrategy.Any;
   }) {
     this.worker = options.worker;
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
+    this.onUnhandledRequest = options.onUnhandledRequest;
   }
 
   baseURL() {
-    return this._baseURL.raw;
+    return this._baseURL;
   }
 
   platform() {
@@ -71,8 +75,8 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    if (this.isRunning()) {
-      return;
+    if (this.onUnhandledRequest) {
+      this.worker.onUnhandledRequest(this.baseURL().toString(), this.onUnhandledRequest);
     }
 
     await this.worker.start();
@@ -80,11 +84,8 @@ class HttpInterceptorClient<
   }
 
   async stop() {
-    if (!this.isRunning()) {
-      return;
-    }
-
     this.markAsRunning(false);
+    this.worker.offUnhandledRequest(this.baseURL().toString());
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
     if (wasLastRunningInterceptor) {

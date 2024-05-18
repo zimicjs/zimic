@@ -1,11 +1,9 @@
 import { logWithPrefix } from '@/utils/console';
 import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
-import InterceptorServer from '../../interceptor/server/InterceptorServer';
+import InterceptorServer, { InterceptorServerOptions } from '../../interceptor/server/InterceptorServer';
 
-interface ServerStartOptions {
-  hostname: string;
-  port?: number;
+interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;
   onReady?: {
     command: string;
@@ -15,8 +13,18 @@ interface ServerStartOptions {
 
 export let singletonServer: InterceptorServer | undefined;
 
-async function startInterceptorServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
-  const server = new InterceptorServer({ hostname, port });
+async function startInterceptorServer({
+  hostname,
+  port,
+  ephemeral,
+  onUnhandledRequest,
+  onReady,
+}: InterceptorServerStartOptions) {
+  const server = new InterceptorServer({
+    hostname,
+    port,
+    onUnhandledRequest,
+  });
 
   singletonServer = server;
 

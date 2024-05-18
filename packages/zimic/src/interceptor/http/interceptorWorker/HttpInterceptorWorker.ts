@@ -11,7 +11,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, getChalk, logWithPrefix } from '@/utils/console';
-import { createURL } from '@/utils/urls';
+import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -22,13 +22,29 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
+import UnhandledRequestError from './errors/UnhandledRequestError';
 import { HttpResponseFactory } from './types/requests';
 
+export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: {
+  local: Required<UnhandledRequestStrategy.LocalDeclaration>;
+  remote: Required<UnhandledRequestStrategy.RemoteDeclaration>;
+} = {
+  local: { action: 'bypass', log: true },
+  remote: { action: 'reject', log: true },
+};
+
 abstract class HttpInterceptorWorker {
+  abstract readonly type: 'local' | 'remote';
+
   private _platform: HttpInterceptorPlatform | null = null;
   private _isRunning = false;
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
+
+  private unhandledRequestStrategies: {
+    baseURL: string;
+    declarationOrFactory: UnhandledRequestStrategy.Any;
+  }[] = [];
 
   platform() {
     return this._platform;
@@ -84,6 +100,49 @@ abstract class HttpInterceptorWorker {
     url: string,
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
+
+  protected async handleUnhandledRequest(request: Request, options: { throwOnRejected: boolean }) {
+    const strategy = await this.getUnhandledRequestStrategy(request);
+
+    if (strategy.log) {
+      await HttpInterceptorWorker.warnUnhandledRequest(request, strategy.action);
+    }
+    if (strategy.action === 'reject' && options.throwOnRejected) {
+      throw new UnhandledRequestError();
+    }
+  }
+
+  onUnhandledRequest(baseURL: string, strategyOrFactory: UnhandledRequestStrategy.Any) {
+    this.unhandledRequestStrategies.push({
+      baseURL,
+      declarationOrFactory: strategyOrFactory,
+    });
+  }
+
+  offUnhandledRequest(baseURL: string) {
+    this.unhandledRequestStrategies = this.unhandledRequestStrategies.filter(
+      (strategy) => strategy.baseURL !== baseURL,
+    );
+  }
+
+  private async getUnhandledRequestStrategy(
+    request: HttpRequest,
+  ): Promise<UnhandledRequestStrategy.LocalDeclaration | UnhandledRequestStrategy.RemoteDeclaration> {
+    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
+
+    const { declarationOrFactory } =
+      this.unhandledRequestStrategies.findLast((strategy) => requestURL.startsWith(strategy.baseURL)) ?? {};
+
+    const strategy =
+      typeof declarationOrFactory === 'function' ? await declarationOrFactory(request) : declarationOrFactory;
+
+    const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[this.type];
+
+    return {
+      action: strategy?.action ?? defaultStrategy.action,
+      log: strategy?.log ?? defaultStrategy.log,
+    };
+  }
 
   abstract clearHandlers(): PossiblePromise<void>;
 

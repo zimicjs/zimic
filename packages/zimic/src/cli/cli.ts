@@ -3,6 +3,8 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
+import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 
@@ -59,6 +61,15 @@ async function runCLI() {
                 'starting.',
               alias: 'e',
               default: false,
+            })
+            .option('log-unhandled-requests', {
+              type: 'boolean',
+              description:
+                'Whether to log a warning when no interceptors were found for the base URL of a request. ' +
+                'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
+                'interceptor itself.',
+              alias: 'l',
+              default: DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote.log,
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();
@@ -68,6 +79,9 @@ async function runCLI() {
             hostname: cliArguments.hostname,
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
+            onUnhandledRequest: {
+              log: cliArguments.logUnhandledRequests,
+            },
             onReady: onReadyCommand
               ? {
                   command: onReadyCommand.toString(),

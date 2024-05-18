@@ -17,24 +17,27 @@ export namespace UnhandledRequestStrategy {
     action: Action;
     log: boolean;
   }
-  export type LocalDeclarationHandler = (request: HttpRequest) => PossiblePromise<Required<LocalDeclaration>>;
+  export type LocalDeclarationFactory = (request: HttpRequest) => PossiblePromise<Required<LocalDeclaration>>;
+  export type Local = Partial<LocalDeclaration> | LocalDeclarationFactory;
 
   export interface RemoteDeclaration {
     action: Extract<Action, 'reject'>;
     log: boolean;
   }
-  export type RemoteDeclarationHandler = (request: HttpRequest) => PossiblePromise<Required<RemoteDeclaration>>;
+  export type RemoteDeclarationFactory = (request: HttpRequest) => PossiblePromise<Required<RemoteDeclaration>>;
+  export type Remote = Partial<RemoteDeclaration> | RemoteDeclarationFactory;
+
+  export type Any = Local | Remote;
 }
 
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
-  onUnhandledRequest?:
-    | Partial<UnhandledRequestStrategy.LocalDeclaration>
-    | UnhandledRequestStrategy.LocalDeclarationHandler;
+  onUnhandledRequest?: UnhandledRequestStrategy.Local;
 }
 
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
+  onUnhandledRequest?: UnhandledRequestStrategy.Remote;
 }
 
 /** Options to create an HTTP interceptor. */
