@@ -39,13 +39,11 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   const authInterceptor = http.createInterceptor<AuthServiceSchema>({
     type,
     baseURL: await getAuthBaseURL(type),
-    onUnhandledRequest: { log: true },
   });
 
   const notificationInterceptor = http.createInterceptor<NotificationServiceSchema>({
     type,
     baseURL: await getNotificationsBaseURL(type),
-    onUnhandledRequest: (_request, context) => context.log(),
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
