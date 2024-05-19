@@ -30,7 +30,8 @@ import {
   type NonLiteralHttpServiceSchemaPath,
 } from 'zimic0';
 import {
-  createHttpInterceptor,
+  http,
+  type HttpNamespace,
   type HttpInterceptor,
   type LocalHttpInterceptor,
   type RemoteHttpInterceptor,
@@ -102,8 +103,9 @@ describe('Exports', () => {
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
 
-    expectTypeOf(createHttpInterceptor).not.toBeAny();
-    expect(typeof createHttpInterceptor).toBe('function');
+    expectTypeOf(http.createInterceptor).not.toBeAny();
+    expect(typeof http.createInterceptor).toBe('function');
+    expectTypeOf<HttpNamespace>().not.toBeAny();
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();

@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
 import { HttpServiceSchema } from '@/http/types/schema';
-import { createHttpInterceptor, HttpInterceptor } from '@/interceptor';
+import { http } from '@/interceptor';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
@@ -11,6 +11,7 @@ import {
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
 } from '@/interceptor/http/interceptor/types/options';
+import { HttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
@@ -60,7 +61,7 @@ export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
 ): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(options: HttpInterceptorOptions) {
-  return createHttpInterceptor<Schema>(options) satisfies HttpInterceptor<Schema> as
+  return http.createInterceptor<Schema>(options) satisfies HttpInterceptor<Schema> as
     | LocalHttpInterceptor<Schema>
     | RemoteHttpInterceptor<Schema>;
 }
