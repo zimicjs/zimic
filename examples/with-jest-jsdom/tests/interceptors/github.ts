@@ -1,8 +1,8 @@
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 import { GITHUB_API_BASE_URL, GitHubRepository } from '../../src/app';
 
-const githubInterceptor = createHttpInterceptor<{
+const githubInterceptor = http.createInterceptor<{
   '/repos/:owner/:name': {
     GET: {
       response: {

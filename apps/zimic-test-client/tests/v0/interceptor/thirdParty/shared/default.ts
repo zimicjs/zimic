@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
 import { HttpRequest, HttpResponse, HttpSearchParams, JSONSerialized } from 'zimic0';
-import { HttpInterceptorType, createHttpInterceptor } from 'zimic0/interceptor';
+import { http, HttpInterceptorType } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
@@ -36,12 +36,12 @@ async function getNotificationsBaseURL(type: HttpInterceptorType) {
 async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   const { platform, type, fetch } = options;
 
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
+  const authInterceptor = http.createInterceptor<AuthServiceSchema>({
     type,
     baseURL: await getAuthBaseURL(type),
   });
 
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
+  const notificationInterceptor = http.createInterceptor<NotificationServiceSchema>({
     type,
     baseURL: await getNotificationsBaseURL(type),
   });
