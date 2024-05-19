@@ -106,6 +106,8 @@ describe('Exports', () => {
     expectTypeOf(http.createInterceptor).not.toBeAny();
     expect(typeof http.createInterceptor).toBe('function');
     expectTypeOf<HttpNamespace>().not.toBeAny();
+    expectTypeOf(http.default.onUnhandledRequest).not.toBeAny();
+    expect(typeof http.default.onUnhandledRequest).toBe('function');
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();

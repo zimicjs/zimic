@@ -2,6 +2,9 @@ import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStarted
 import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
 import { createHttpInterceptor } from './http/interceptor/factory';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+import HttpInterceptorWorkerStore, {
+  DefaultUnhandledRequestStrategy,
+} from './http/interceptorWorker/HttpInterceptorWorkerStore';
 
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
@@ -34,6 +37,13 @@ export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } fro
 
 export const http = {
   createInterceptor: createHttpInterceptor,
+
+  default: {
+    onUnhandledRequest(strategy: DefaultUnhandledRequestStrategy) {
+      const store = new HttpInterceptorWorkerStore();
+      store.setDefaultUnhandledRequestStrategy(strategy);
+    },
+  },
 };
 
 export type HttpNamespace = typeof http;

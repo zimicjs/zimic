@@ -3,9 +3,9 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import HttpInterceptorWorker, {
-  DEFAULT_UNHANDLED_REQUEST_STRATEGY,
-} from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { UnhandledRequestStrategy } from '@/interceptor/http/interceptor/types/options';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -37,9 +37,8 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private _hostname: string;
   private _port?: number;
-  private onUnhandledRequest: {
-    log: boolean;
-  };
+  private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
+  private workerStore = new HttpInterceptorWorkerStore();
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -58,9 +57,7 @@ class InterceptorServer implements PublicInterceptorServer {
   constructor(options: InterceptorServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
-    this.onUnhandledRequest = {
-      log: options.onUnhandledRequest?.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
-    };
+    this.onUnhandledRequest = options.onUnhandledRequest;
   }
 
   hostname() {
@@ -240,11 +237,21 @@ class InterceptorServer implements PublicInterceptorServer {
       await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
     }
 
-    const shouldWarnUnhandledRequest =
-      !isUnhandledPreflightResponse && !matchedAnyInterceptor && this.onUnhandledRequest.log;
+    const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
 
     if (shouldWarnUnhandledRequest) {
-      await HttpInterceptorWorker.logUnhandledRequest(request, 'reject');
+      const action: UnhandledRequestStrategy.Action = 'reject';
+
+      const declaration = this.onUnhandledRequest;
+      const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
+
+      if (declaration?.log !== undefined) {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declaration.log }, action);
+      } else if (typeof defaultDeclarationOrHandler === 'function') {
+        await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
+      } else {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+      }
     }
 
     nodeResponse.destroy();
