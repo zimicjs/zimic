@@ -40,6 +40,7 @@ import {
   type HttpInterceptorOptions,
   type LocalHttpInterceptorOptions,
   type RemoteHttpInterceptorOptions,
+  type UnhandledRequestStrategy,
   type ExtractHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
@@ -51,6 +52,12 @@ import {
   type PendingRemoteHttpRequestHandler,
   type HttpRequestHandlerResponseDeclaration,
   type HttpRequestHandlerResponseDeclarationFactory,
+  type HttpRequestHandlerRestriction,
+  type HttpRequestHandlerComputedRestriction,
+  type HttpRequestHandlerHeadersStaticRestriction,
+  type HttpRequestHandlerSearchParamsStaticRestriction,
+  type HttpRequestHandlerStaticRestriction,
+  type HttpRequestHandlerBodyStaticRestriction,
   UnknownHttpInterceptorPlatform,
   NotStartedHttpInterceptorError,
   UnregisteredServiceWorkerError,
@@ -106,8 +113,15 @@ describe('Exports', () => {
     expectTypeOf(http.createInterceptor).not.toBeAny();
     expect(typeof http.createInterceptor).toBe('function');
     expectTypeOf<HttpNamespace>().not.toBeAny();
+
     expectTypeOf(http.default.onUnhandledRequest).not.toBeAny();
     expect(typeof http.default.onUnhandledRequest).toBe('function');
+    expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Handler>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.HandlerContext>().not.toBeAny();
+
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptor<never>>().not.toBeAny();
@@ -128,6 +142,13 @@ describe('Exports', () => {
     expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never>>().not.toBeAny();
+
+    expectTypeOf<HttpRequestHandlerRestriction<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerComputedRestriction<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerHeadersStaticRestriction<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerSearchParamsStaticRestriction<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerStaticRestriction<never, never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerBodyStaticRestriction<never, never, never>>().not.toBeAny();
 
     expectTypeOf<UnknownHttpInterceptorPlatform>().not.toBeAny();
     expect(typeof UnknownHttpInterceptorPlatform).toBe('function');

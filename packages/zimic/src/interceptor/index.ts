@@ -21,6 +21,12 @@ export type {
   SyncedRemoteHttpRequestHandler,
   PendingRemoteHttpRequestHandler,
   HttpRequestHandler,
+  HttpRequestHandlerRestriction,
+  HttpRequestHandlerComputedRestriction,
+  HttpRequestHandlerHeadersStaticRestriction,
+  HttpRequestHandlerSearchParamsStaticRestriction,
+  HttpRequestHandlerStaticRestriction,
+  HttpRequestHandlerBodyStaticRestriction,
 } from './http/requestHandler/types/public';
 
 export type {
@@ -29,6 +35,7 @@ export type {
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
   HttpInterceptorOptions,
+  UnhandledRequestStrategy,
 } from './http/interceptor/types/options';
 export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
@@ -38,7 +45,7 @@ export const http = Object.freeze({
   createInterceptor: createHttpInterceptor,
 
   default: {
-    onUnhandledRequest(strategy: UnhandledRequestStrategy) {
+    onUnhandledRequest: (strategy: UnhandledRequestStrategy) => {
       const store = new HttpInterceptorWorkerStore();
       store.setDefaultUnhandledRequestStrategy(strategy);
     },
