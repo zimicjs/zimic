@@ -69,7 +69,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const internalWorker = await this.internalWorkerOrLoad();
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: async (request) => {
-          await super.handleUnhandledRequest(request, { throwOnRejected: true });
+          await super.handleUnhandledRequest(request);
         },
       };
 
@@ -158,21 +158,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       const result = await createResponse({ ...context, request });
 
-      if (!result.bypass) {
-        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
-        return response;
-      }
-
-      const unhandledStrategy = await super.getUnhandledRequestStrategy(requestClone);
-
-      if (unhandledStrategy.log) {
-        await HttpInterceptorWorker.warnUnhandledRequest(requestClone, unhandledStrategy.action);
-      }
-      if (unhandledStrategy.action === 'bypass') {
+      if (result.bypass) {
+        await super.handleUnhandledRequest(requestClone);
         return passthrough();
-      } else {
-        return undefined;
       }
+
+      const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
+      return response;
     });
 
     internalWorker.use(httpHandler);

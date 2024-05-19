@@ -8,7 +8,7 @@ import { HttpInterceptorPlatform } from '../../types/options';
 export function verifyUnhandledRequestMessage(
   message: string,
   options: {
-    type: 'warning' | 'error';
+    type: 'warn' | 'error';
     platform: HttpInterceptorPlatform;
     request: HttpRequest;
   },
@@ -16,8 +16,8 @@ export function verifyUnhandledRequestMessage(
   const { type, platform, request } = options;
 
   expect(message).toMatch(/.*\[zimic\].* /);
-  expect(message).toContain(type === 'warning' ? 'Warning:' : 'Error:');
-  expect(message).toContain(type === 'warning' ? 'bypassed' : 'rejected');
+  expect(message).toContain(type === 'warn' ? 'Warning:' : 'Error:');
+  expect(message).toContain(type === 'warn' ? 'bypassed' : 'rejected');
   expect(message).toContain(`${request.method} ${request.url}`);
 
   expect(message).toContain(platform === 'node' ? 'Headers: ' : 'Headers: [object Object]');

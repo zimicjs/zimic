@@ -69,7 +69,7 @@ async function runCLI() {
                 'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
                 'interceptor itself.',
               alias: 'l',
-              default: DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote.log,
+              default: DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();

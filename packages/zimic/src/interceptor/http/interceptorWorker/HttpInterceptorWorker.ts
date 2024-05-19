@@ -23,17 +23,12 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
-import UnhandledRequestError from './errors/UnhandledRequestError';
 import { HttpResponseFactory } from './types/requests';
 
 const DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY = process.env.DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY === 'true';
 
-export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: {
-  local: Required<UnhandledRequestStrategy.LocalDeclaration>;
-  remote: Required<UnhandledRequestStrategy.RemoteDeclaration>;
-} = {
-  local: { action: 'bypass', log: DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY },
-  remote: { action: 'reject', log: DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY },
+export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: Required<UnhandledRequestStrategy.Declaration> = {
+  log: DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY,
 };
 
 abstract class HttpInterceptorWorker {
@@ -46,7 +41,7 @@ abstract class HttpInterceptorWorker {
 
   private unhandledRequestStrategies: {
     baseURL: string;
-    declarationOrFactory: UnhandledRequestStrategy;
+    declarationOrHandler: UnhandledRequestStrategy;
   }[] = [];
 
   platform() {
@@ -104,21 +99,42 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
-  protected async handleUnhandledRequest(request: Request, options: { throwOnRejected: boolean }) {
-    const strategy = await this.getUnhandledRequestStrategy(request);
+  protected async handleUnhandledRequest(request: Request) {
+    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
 
-    if (strategy.log) {
-      await HttpInterceptorWorker.warnUnhandledRequest(request, strategy.action);
-    }
-    if (strategy.action === 'reject' && options.throwOnRejected) {
-      throw new UnhandledRequestError();
+    const { declarationOrHandler } =
+      this.unhandledRequestStrategies.findLast((strategy) => {
+        return requestURL.startsWith(strategy.baseURL);
+      }) ?? {};
+
+    const action: UnhandledRequestStrategy.Action = this.type === 'local' ? 'bypass' : 'reject';
+
+    if (typeof declarationOrHandler === 'function') {
+      const handler = declarationOrHandler;
+      const requestClone = request.clone();
+
+      try {
+        await handler(request, {
+          async log() {
+            await HttpInterceptorWorker.logUnhandledRequest(requestClone, action);
+          },
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      const declaration = declarationOrHandler;
+      const shouldLog = declaration?.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log;
+      if (shouldLog) {
+        await HttpInterceptorWorker.logUnhandledRequest(request, action);
+      }
     }
   }
 
   onUnhandledRequest(baseURL: string, strategyOrFactory: UnhandledRequestStrategy) {
     this.unhandledRequestStrategies.push({
       baseURL,
-      declarationOrFactory: strategyOrFactory,
+      declarationOrHandler: strategyOrFactory,
     });
   }
 
@@ -126,25 +142,6 @@ abstract class HttpInterceptorWorker {
     this.unhandledRequestStrategies = this.unhandledRequestStrategies.filter(
       (strategy) => strategy.baseURL !== baseURL,
     );
-  }
-
-  async getUnhandledRequestStrategy(
-    request: HttpRequest,
-  ): Promise<UnhandledRequestStrategy.LocalDeclaration | UnhandledRequestStrategy.RemoteDeclaration> {
-    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-
-    const { declarationOrFactory } =
-      this.unhandledRequestStrategies.findLast((strategy) => requestURL.startsWith(strategy.baseURL)) ?? {};
-
-    const strategy =
-      typeof declarationOrFactory === 'function' ? await declarationOrFactory(request) : declarationOrFactory;
-
-    const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[this.type];
-
-    return {
-      action: strategy?.action ?? defaultStrategy.action,
-      log: strategy?.log ?? defaultStrategy.log,
-    };
   }
 
   abstract clearHandlers(): PossiblePromise<void>;
@@ -282,7 +279,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  static async warnUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
+  static async logUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
     const request = await this.parseRawRequest(rawRequest);
 
     logWithPrefix(

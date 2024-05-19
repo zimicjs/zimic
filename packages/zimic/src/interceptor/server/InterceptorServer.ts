@@ -59,7 +59,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
     this.onUnhandledRequest = {
-      log: options.onUnhandledRequest?.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote.log,
+      log: options.onUnhandledRequest?.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
     };
   }
 
@@ -244,8 +244,7 @@ class InterceptorServer implements PublicInterceptorServer {
       !isUnhandledPreflightResponse && !matchedAnyInterceptor && this.onUnhandledRequest.log;
 
     if (shouldWarnUnhandledRequest) {
-      const { action } = DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote;
-      await HttpInterceptorWorker.warnUnhandledRequest(request, action);
+      await HttpInterceptorWorker.logUnhandledRequest(request, 'reject');
     }
 
     nodeResponse.destroy();
