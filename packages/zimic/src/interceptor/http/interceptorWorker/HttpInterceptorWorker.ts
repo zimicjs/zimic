@@ -46,7 +46,7 @@ abstract class HttpInterceptorWorker {
 
   private unhandledRequestStrategies: {
     baseURL: string;
-    declarationOrFactory: UnhandledRequestStrategy.Any;
+    declarationOrFactory: UnhandledRequestStrategy;
   }[] = [];
 
   platform() {
@@ -115,7 +115,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  onUnhandledRequest(baseURL: string, strategyOrFactory: UnhandledRequestStrategy.Any) {
+  onUnhandledRequest(baseURL: string, strategyOrFactory: UnhandledRequestStrategy) {
     this.unhandledRequestStrategies.push({
       baseURL,
       declarationOrFactory: strategyOrFactory,
@@ -289,16 +289,15 @@ abstract class HttpInterceptorWorker {
       [
         `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
           `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}:\n\n `,
-        request.method,
-        request.url,
-        '\n    Headers:',
-        formatObjectToLog(Object.fromEntries(request.headers)),
-        '\n    Search params:',
-        formatObjectToLog(Object.fromEntries(request.searchParams)),
-        '\n    Body:',
-        formatObjectToLog(request.body),
-        '\n\nTo handle this request, use an interceptor to create a handler for it.',
-        '\nIf you are using restrictions, make sure that they match the content of the request.',
+        `${request.method} ${request.url}\n`,
+        '   Headers:',
+        `${formatObjectToLog(Object.fromEntries(request.headers))}\n`,
+        '   Search params:',
+        `${formatObjectToLog(Object.fromEntries(request.searchParams))}\n`,
+        '   Body:',
+        `${formatObjectToLog(request.body)}\n\n`,
+        'To handle this request, use an interceptor to create a handler for it.\n',
+        'If you are using restrictions, make sure that they match the content of the request.',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },
     );

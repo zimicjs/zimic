@@ -17,18 +17,21 @@ export namespace UnhandledRequestStrategy {
     action: Action;
     log: boolean;
   }
-  export type LocalDeclarationFactory = (request: HttpRequest) => PossiblePromise<Required<LocalDeclaration>>;
+  export type LocalDeclarationFactory = (request: HttpRequest) => PossiblePromise<Partial<LocalDeclaration>>;
   export type Local = Partial<LocalDeclaration> | LocalDeclarationFactory;
 
   export interface RemoteDeclaration {
     action: Extract<Action, 'reject'>;
     log: boolean;
   }
-  export type RemoteDeclarationFactory = (request: HttpRequest) => PossiblePromise<Required<RemoteDeclaration>>;
+  export type RemoteDeclarationFactory = (request: HttpRequest) => PossiblePromise<Partial<RemoteDeclaration>>;
   export type Remote = Partial<RemoteDeclaration> | RemoteDeclarationFactory;
 
-  export type Any = Local | Remote;
+  export type Declaration = LocalDeclaration | RemoteDeclaration;
+  export type DeclarationFactory = LocalDeclarationFactory | RemoteDeclarationFactory;
 }
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;
 
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';

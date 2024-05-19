@@ -32,7 +32,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
-  private onUnhandledRequest?: UnhandledRequestStrategy.Any;
+  private onUnhandledRequest?: UnhandledRequestStrategy;
 
   private Handler: HandlerConstructor;
 
@@ -53,7 +53,7 @@ class HttpInterceptorClient<
     store: HttpInterceptorStore;
     baseURL: ExtendedURL;
     Handler: HandlerConstructor;
-    onUnhandledRequest?: UnhandledRequestStrategy.Any;
+    onUnhandledRequest?: UnhandledRequestStrategy;
   }) {
     this.worker = options.worker;
     this.store = options.store;

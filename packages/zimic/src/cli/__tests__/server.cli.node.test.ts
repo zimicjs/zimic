@@ -3,6 +3,7 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__tests__/shared/utils';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
@@ -10,10 +11,24 @@ import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils
 import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { expectFetchError } from '@tests/utils/fetch';
 
 import runCLI from '../cli';
 import { singletonServer as server } from '../server/start';
 import { delayHttpServerCloseIndefinitely, delayHttpServerListenIndefinitely } from './utils';
+
+function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
+  const exitEventListeners: (() => PossiblePromise<void>)[] = [];
+
+  vi.spyOn(process, 'on').mockImplementation((event, listener) => {
+    if (event === exitEvent) {
+      exitEventListeners.push(listener);
+    }
+    return process;
+  });
+
+  return exitEventListeners;
+}
 
 describe('CLI (server)', async () => {
   const crypto = await getCrypto();
@@ -393,16 +408,8 @@ describe('CLI (server)', async () => {
     });
 
     it.each(PROCESS_EXIT_EVENTS)('should stop the sever after a process exit event: %s', async (exitEvent) => {
+      const exitEventListeners = watchExitEventListeners(exitEvent);
       processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
-
-      const exitEventListeners: (() => PossiblePromise<void>)[] = [];
-
-      vi.spyOn(process, 'on').mockImplementation((event, listener) => {
-        if (event === exitEvent) {
-          exitEventListeners.push(listener);
-        }
-        return process;
-      });
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -429,18 +436,8 @@ describe('CLI (server)', async () => {
     });
 
     it('should stop the server even if a client is connected', async () => {
-      const exitEvent = PROCESS_EXIT_EVENTS[0];
-
+      const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
       processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
-
-      const exitEventListeners: (() => PossiblePromise<void>)[] = [];
-
-      vi.spyOn(process, 'on').mockImplementation((event, listener) => {
-        if (event === exitEvent) {
-          exitEventListeners.push(listener);
-        }
-        return process;
-      });
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -476,6 +473,77 @@ describe('CLI (server)', async () => {
           await webSocketClient.stop();
         }
       });
+    });
+  });
+
+  it('should show an error if logging is enabled when a request is received and does not match any interceptors', async () => {
+    const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
+    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--log-unhandled-requests']);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning()).toBe(true);
+      expect(server!.hostname()).toBe('localhost');
+      expect(server!.port()).toBeGreaterThan(0);
+
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.warn).toHaveBeenCalledTimes(0);
+      expect(spies.error).toHaveBeenCalledTimes(0);
+
+      expect(spies.log).toHaveBeenCalledWith(
+        `${chalk.cyan('[zimic]')}`,
+        `Server is running on 'http://localhost:${server!.port()}'.`,
+      );
+
+      expect(exitEventListeners).toHaveLength(1);
+
+      const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+
+      const response = fetch(request);
+      await expectFetchError(response);
+
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.warn).toHaveBeenCalledTimes(0);
+      expect(spies.error).toHaveBeenCalledTimes(1);
+
+      const errorMessage = spies.error.mock.calls[0].join(' ');
+      verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform: 'node', request });
+    });
+  });
+
+  it('should not show an error if logging is disabled when a request is received and does not match any interceptors', async () => {
+    const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
+    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--log-unhandled-requests', 'false']);
+
+    await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+      await runCLI();
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning()).toBe(true);
+      expect(server!.hostname()).toBe('localhost');
+      expect(server!.port()).toBeGreaterThan(0);
+
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.warn).toHaveBeenCalledTimes(0);
+      expect(spies.error).toHaveBeenCalledTimes(0);
+
+      expect(spies.log).toHaveBeenCalledWith(
+        `${chalk.cyan('[zimic]')}`,
+        `Server is running on 'http://localhost:${server!.port()}'.`,
+      );
+
+      expect(exitEventListeners).toHaveLength(1);
+
+      const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+
+      const response = fetch(request);
+      await expectFetchError(response);
+
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.warn).toHaveBeenCalledTimes(0);
+      expect(spies.error).toHaveBeenCalledTimes(0);
     });
   });
 });
