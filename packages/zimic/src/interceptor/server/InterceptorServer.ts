@@ -238,9 +238,7 @@ class InterceptorServer implements PublicInterceptorServer {
       const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
       this.setDefaultAccessControlHeaders(defaultPreflightResponse);
       await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
-    }
-
-    if (!matchedAnyInterceptor && this.onUnhandledRequest.log) {
+    } else if (!matchedAnyInterceptor && this.onUnhandledRequest.log) {
       const { action } = DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote;
       await HttpInterceptorWorker.warnUnhandledRequest(request, action);
     }
