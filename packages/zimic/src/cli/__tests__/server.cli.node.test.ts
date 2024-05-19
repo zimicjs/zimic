@@ -509,7 +509,11 @@ describe('CLI (server)', async () => {
       expect(spies.error).toHaveBeenCalledTimes(1);
 
       const errorMessage = spies.error.mock.calls[0].join(' ');
-      verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform: 'node', request });
+      await verifyUnhandledRequestMessage(errorMessage, {
+        type: 'error',
+        platform: 'node',
+        request,
+      });
     });
   });
 

@@ -75,12 +75,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     const rawResponse = (await handler?.createResponse({ request })) ?? null;
     const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-    if (!response) {
+    if (response) {
+      return { response: await serializeResponse(response) };
+    } else {
       await super.handleUnhandledRequest(request);
+      return { response: null };
     }
-
-    const serializedResponse = response ? await serializeResponse(response) : null;
-    return { response: serializedResponse };
   };
 
   private async readPlatform(): Promise<HttpInterceptorPlatform> {

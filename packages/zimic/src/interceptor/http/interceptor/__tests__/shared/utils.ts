@@ -1,11 +1,12 @@
 import { expect } from 'vitest';
 
 import { HttpRequest } from '@/http/types/requests';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { formatObjectToLog } from '@/utils/console';
 
 import { HttpInterceptorPlatform } from '../../types/options';
 
-export function verifyUnhandledRequestMessage(
+export async function verifyUnhandledRequestMessage(
   message: string,
   options: {
     type: 'warn' | 'error';
@@ -13,7 +14,9 @@ export function verifyUnhandledRequestMessage(
     request: HttpRequest;
   },
 ) {
-  const { type, platform, request } = options;
+  const { type, platform, request: rawRequest } = options;
+
+  const request = await HttpInterceptorWorker.parseRawRequest(rawRequest);
 
   expect(message).toMatch(/.*\[zimic\].* /);
   expect(message).toContain(type === 'warn' ? 'Warning:' : 'Error:');
@@ -28,17 +31,23 @@ export function verifyUnhandledRequestMessage(
 
     const formattedHeaders = formatObjectToLog(Object.fromEntries(request.headers)) as string;
     const formattedHeadersIgnoringWrapperBrackets = formattedHeaders.slice(1, -1);
-    expect(headersLine.groups!.headers).toContain(formattedHeadersIgnoringWrapperBrackets);
+
+    for (const headerKeyValuePair of formattedHeadersIgnoringWrapperBrackets.split(', ')) {
+      expect(headersLine.groups!.headers).toContain(headerKeyValuePair.trim());
+    }
   }
 
   expect(message).toContain(
     platform === 'node'
-      ? `Search params: ${formatObjectToLog(Object.fromEntries(new URL(request.url).searchParams))}\n`
+      ? `Search params: ${formatObjectToLog(Object.fromEntries(request.searchParams))}\n`
       : 'Search params: [object Object]',
   );
+
+  const body: unknown = request.body;
+
   expect(message).toContain(
-    platform === 'node' || typeof request.body !== 'object' || request.body === null
-      ? `Body: ${formatObjectToLog(request.body)}\n`
+    platform === 'node' || typeof body !== 'object' || body === null
+      ? `Body: ${formatObjectToLog(body)}\n`
       : 'Body: [object Object]',
   );
 }

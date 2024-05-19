@@ -14,6 +14,7 @@ export function formatObjectToLog(value: unknown) {
     maxArrayLength: Infinity,
     maxStringLength: Infinity,
     breakLength: Infinity,
+    sorted: true,
   });
 }
 
