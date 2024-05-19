@@ -4,7 +4,7 @@ export type DefaultUnhandledRequestStrategy =
   | Required<UnhandledRequestStrategy.Declaration>
   | UnhandledRequestStrategy.Handler;
 
-export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: Required<UnhandledRequestStrategy.Declaration> = Object.freeze({
+const DEFAULT_UNHANDLED_REQUEST_STRATEGY: Required<UnhandledRequestStrategy.Declaration> = Object.freeze({
   log: true,
 });
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
+import { http } from '@/interceptor';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
@@ -1135,8 +1136,183 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
   });
 
   describe('Unhandled requests', () => {
-    if (type === 'local') {
-      it('should show a warning when logging is enabled and a POST request is unhandled and bypassed', async () => {
+    describe.each([
+      { overrideDefault: false as const },
+      { overrideDefault: 'static' as const },
+      { overrideDefault: 'static-empty' as const },
+      { overrideDefault: 'function' as const },
+    ])('Logging enabled or disabled: override default $overrideDefault', ({ overrideDefault }) => {
+      beforeEach(() => {
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: true });
+        } else if (overrideDefault === 'static-empty') {
+          http.default.onUnhandledRequest({});
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(async (_request, context) => {
+            await context.log();
+          });
+        }
+      });
+
+      if (type === 'local') {
+        it('should show a warning when logging is enabled and a POST request is unhandled and bypassed', async () => {
+          await usingHttpInterceptor<{
+            '/users': {
+              POST: {
+                request: {
+                  headers: { 'x-value': string };
+                  body: UserCreationBody;
+                };
+                response: {
+                  201: { body: User };
+                };
+              };
+            };
+          }>(
+            {
+              ...interceptorOptions,
+              onUnhandledRequest: overrideDefault === false ? { log: true } : {},
+            },
+            async (interceptor) => {
+              const creationHandler = await promiseIfRemote(
+                interceptor
+                  .post('/users')
+                  .with({ headers: { 'x-value': '1' } })
+                  .respond({
+                    status: 201,
+                    body: users[0],
+                  }),
+                interceptor,
+              );
+
+              let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+              expect(creationRequests).toHaveLength(0);
+
+              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+                const creationResponse = await fetch(joinURL(baseURL, '/users'), {
+                  method: 'POST',
+                  headers: { 'x-value': '1' },
+                  body: JSON.stringify(users[0] satisfies UserCreationBody),
+                });
+                expect(creationResponse.status).toBe(201);
+
+                creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+                expect(creationRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const creationRequest = new Request(joinURL(baseURL, '/users'), {
+                  method: 'POST',
+                  body: JSON.stringify(users[0] satisfies UserCreationBody),
+                });
+                const creationRequestClone = creationRequest.clone();
+                const creationPromise = fetch(creationRequest);
+                await expectFetchError(creationPromise);
+
+                creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+                expect(creationRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(1);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                await verifyUnhandledRequestMessage(warnMessage, {
+                  type: 'warn',
+                  platform,
+                  request: creationRequestClone,
+                });
+              });
+            },
+          );
+        });
+      }
+
+      if (type === 'remote') {
+        it('should show an error when logging is enabled and a POST request is unhandled and rejected', async () => {
+          await usingHttpInterceptor<{
+            '/users': {
+              POST: {
+                request: {
+                  headers: { 'x-value': string };
+                  body: UserCreationBody;
+                };
+                response: {
+                  201: { body: User };
+                };
+              };
+            };
+          }>(
+            {
+              ...interceptorOptions,
+              onUnhandledRequest: overrideDefault === false ? { log: true } : {},
+            },
+            async (interceptor) => {
+              const creationHandler = await promiseIfRemote(
+                interceptor
+                  .post('/users')
+                  .with({ headers: { 'x-value': '1' } })
+                  .respond({
+                    status: 201,
+                    body: users[0],
+                  }),
+                interceptor,
+              );
+
+              let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+              expect(creationRequests).toHaveLength(0);
+
+              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+                const creationResponse = await fetch(joinURL(baseURL, '/users'), {
+                  method: 'POST',
+                  headers: { 'x-value': '1' },
+                  body: JSON.stringify(users[0] satisfies UserCreationBody),
+                });
+                expect(creationResponse.status).toBe(201);
+
+                creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+                expect(creationRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const creationRequest = new Request(joinURL(baseURL, '/users'), {
+                  method: 'POST',
+                  headers: { 'x-value': '2' },
+                  body: JSON.stringify(users[0] satisfies UserCreationBody),
+                });
+                const creationRequestClone = creationRequest.clone();
+                const creationPromise = fetch(creationRequest);
+                await expectFetchError(creationPromise);
+
+                creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+                expect(creationRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(1);
+
+                const errorMessage = spies.error.mock.calls[0].join(' ');
+                await verifyUnhandledRequestMessage(errorMessage, {
+                  type: 'error',
+                  platform,
+                  request: creationRequestClone,
+                });
+              });
+            },
+          );
+        });
+      }
+    });
+
+    it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
+      'should not show a warning or error when logging is disabled and a POST request is unhandled: override default $overrideDefault',
+      async ({ overrideDefault }) => {
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: false });
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(vi.fn());
+        }
+
         await usingHttpInterceptor<{
           '/users': {
             POST: {
@@ -1149,128 +1325,58 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
               };
             };
           };
-        }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
-          const creationHandler = await promiseIfRemote(
-            interceptor
-              .post('/users')
-              .with({ headers: { 'x-value': '1' } })
-              .respond({
-                status: 201,
-                body: users[0],
-              }),
-            interceptor,
-          );
+        }>(
+          {
+            ...interceptorOptions,
+            onUnhandledRequest: overrideDefault === false ? { log: false } : {},
+          },
+          async (interceptor) => {
+            const creationHandler = await promiseIfRemote(
+              interceptor
+                .post('/users')
+                .with({ headers: { 'x-value': '1' } })
+                .respond({
+                  status: 201,
+                  body: users[0],
+                }),
+              interceptor,
+            );
 
-          let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(0);
+            let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+            expect(creationRequests).toHaveLength(0);
 
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const creationResponse = await fetch(joinURL(baseURL, '/users'), {
-              method: 'POST',
-              headers: { 'x-value': '1' },
-              body: JSON.stringify(users[0] satisfies UserCreationBody),
+            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              const creationResponse = await fetch(joinURL(baseURL, '/users'), {
+                method: 'POST',
+                headers: { 'x-value': '1' },
+                body: JSON.stringify(users[0] satisfies UserCreationBody),
+              });
+              expect(creationResponse.status).toBe(201);
+
+              creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+              expect(creationRequests).toHaveLength(1);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
+
+              const creationRequest = new Request(joinURL(baseURL, '/users'), {
+                method: 'POST',
+                headers: { 'x-value': '2' },
+                body: JSON.stringify(users[0] satisfies UserCreationBody),
+              });
+              const creationPromise = fetch(creationRequest);
+              await expectFetchError(creationPromise);
+
+              creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
+              expect(creationRequests).toHaveLength(1);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
             });
-            expect(creationResponse.status).toBe(201);
-
-            creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-            expect(creationRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const creationRequest = new Request(joinURL(baseURL, '/users'), {
-              method: 'POST',
-              body: JSON.stringify(users[0] satisfies UserCreationBody),
-            });
-            const creationRequestClone = creationRequest.clone();
-            const creationPromise = fetch(creationRequest);
-            await expectFetchError(creationPromise);
-
-            creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-            expect(creationRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, {
-              type: 'warn',
-              platform,
-              request: creationRequestClone,
-            });
-          });
-        });
-      });
-    }
-
-    if (type === 'remote') {
-      it('should show an error when logging is enabled and a POST request is unhandled and rejected', async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            POST: {
-              request: {
-                headers: { 'x-value': string };
-                body: UserCreationBody;
-              };
-              response: {
-                201: { body: User };
-              };
-            };
-          };
-        }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
-          const creationHandler = await promiseIfRemote(
-            interceptor
-              .post('/users')
-              .with({ headers: { 'x-value': '1' } })
-              .respond({
-                status: 201,
-                body: users[0],
-              }),
-            interceptor,
-          );
-
-          let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(0);
-
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const creationResponse = await fetch(joinURL(baseURL, '/users'), {
-              method: 'POST',
-              headers: { 'x-value': '1' },
-              body: JSON.stringify(users[0] satisfies UserCreationBody),
-            });
-            expect(creationResponse.status).toBe(201);
-
-            creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-            expect(creationRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const creationRequest = new Request(joinURL(baseURL, '/users'), {
-              method: 'POST',
-              headers: { 'x-value': '2' },
-              body: JSON.stringify(users[0] satisfies UserCreationBody),
-            });
-            const creationRequestClone = creationRequest.clone();
-            const creationPromise = fetch(creationRequest);
-            await expectFetchError(creationPromise);
-
-            creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-            expect(creationRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(1);
-
-            const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform,
-              request: creationRequestClone,
-            });
-          });
-        });
-      });
-    }
+          },
+        );
+      },
+    );
 
     it('should support a custom unhandled POST request handler', async () => {
       const onUnhandledRequest = vi.fn(async (request: Request, context: UnhandledRequestStrategy.HandlerContext) => {
@@ -1455,65 +1561,6 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           expect(spies.error).toHaveBeenCalledTimes(1);
 
           expect(spies.error).toHaveBeenCalledWith(error);
-        });
-      });
-    });
-
-    it('should not show a warning or error when logging is disabled and a POST request is unhandled', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          POST: {
-            request: {
-              headers: { 'x-value': string };
-              body: UserCreationBody;
-            };
-            response: {
-              201: { body: User };
-            };
-          };
-        };
-      }>({ ...interceptorOptions, onUnhandledRequest: { log: false } }, async (interceptor) => {
-        const creationHandler = await promiseIfRemote(
-          interceptor
-            .post('/users')
-            .with({ headers: { 'x-value': '1' } })
-            .respond({
-              status: 201,
-              body: users[0],
-            }),
-          interceptor,
-        );
-
-        let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const creationResponse = await fetch(joinURL(baseURL, '/users'), {
-            method: 'POST',
-            headers: { 'x-value': '1' },
-            body: JSON.stringify(users[0] satisfies UserCreationBody),
-          });
-          expect(creationResponse.status).toBe(201);
-
-          creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(1);
-
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const creationRequest = new Request(joinURL(baseURL, '/users'), {
-            method: 'POST',
-            headers: { 'x-value': '2' },
-            body: JSON.stringify(users[0] satisfies UserCreationBody),
-          });
-          const creationPromise = fetch(creationRequest);
-          await expectFetchError(creationPromise);
-
-          creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(1);
-
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
         });
       });
     });

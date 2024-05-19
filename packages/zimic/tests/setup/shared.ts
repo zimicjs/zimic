@@ -1,9 +1,7 @@
-import { beforeAll } from 'vitest';
+import { beforeEach } from 'vitest';
 
-import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
+import { http } from '@/interceptor';
 
-const workerStore = new HttpInterceptorWorkerStore();
-
-beforeAll(() => {
-  workerStore.setDefaultUnhandledRequestStrategy({ log: false });
+beforeEach(() => {
+  http.default.onUnhandledRequest({ log: false });
 });

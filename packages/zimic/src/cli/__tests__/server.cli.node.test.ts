@@ -3,6 +3,7 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { http } from '@/interceptor';
 import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__tests__/shared/utils';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
@@ -105,7 +106,7 @@ describe('CLI (server)', async () => {
       '                                re found for the base URL of a request. If an in',
       '                                terceptor was matched, the logging behavior for',
       '                                that base URL is configured in the interceptor i',
-      '                                tself.                 [boolean] [default: true]',
+      '                                tself.                                 [boolean]',
     ].join('\n');
 
     beforeEach(async () => {
@@ -474,80 +475,119 @@ describe('CLI (server)', async () => {
         }
       });
     });
-  });
 
-  it('should show an error if logging is enabled when a request is received and does not match any interceptors', async () => {
-    const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--log-unhandled-requests']);
+    it.each([
+      { overrideDefault: false as const },
+      { overrideDefault: 'static' as const },
+      { overrideDefault: 'static-empty' as const },
+      { overrideDefault: 'function' as const },
+    ])(
+      'should show an error if logging is enabled when a request is received and does not match any interceptors: override default $overrideDefault',
+      async ({ overrideDefault }) => {
+        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'server',
+          'start',
+          ...(overrideDefault === false ? ['--log-unhandled-requests'] : []),
+        ]);
 
-    await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-      await runCLI();
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: true });
+        } else if (overrideDefault === 'static-empty') {
+          http.default.onUnhandledRequest({});
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(async (_request, context) => {
+            await context.log();
+          });
+        }
 
-      expect(server).toBeDefined();
-      expect(server!.isRunning()).toBe(true);
-      expect(server!.hostname()).toBe('localhost');
-      expect(server!.port()).toBeGreaterThan(0);
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.warn).toHaveBeenCalledTimes(0);
-      expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-      expect(spies.log).toHaveBeenCalledWith(
-        `${chalk.cyan('[zimic]')}`,
-        `Server is running on 'http://localhost:${server!.port()}'.`,
-      );
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-      expect(exitEventListeners).toHaveLength(1);
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on 'http://localhost:${server!.port()}'.`,
+          );
 
-      const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          expect(exitEventListeners).toHaveLength(1);
 
-      const response = fetch(request);
-      await expectFetchError(response);
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.warn).toHaveBeenCalledTimes(0);
-      expect(spies.error).toHaveBeenCalledTimes(1);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-      const errorMessage = spies.error.mock.calls[0].join(' ');
-      await verifyUnhandledRequestMessage(errorMessage, {
-        type: 'error',
-        platform: 'node',
-        request,
-      });
-    });
-  });
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
 
-  it('should not show an error if logging is disabled when a request is received and does not match any interceptors', async () => {
-    const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--log-unhandled-requests', 'false']);
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            type: 'error',
+            platform: 'node',
+            request,
+          });
+        });
+      },
+    );
 
-    await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-      await runCLI();
+    it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
+      'should not show an error if logging is disabled when a request is received and does not match any interceptors: override default $overrideDefault',
+      async ({ overrideDefault }) => {
+        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'server',
+          'start',
+          ...(overrideDefault === false ? ['--log-unhandled-requests', 'false'] : []),
+        ]);
 
-      expect(server).toBeDefined();
-      expect(server!.isRunning()).toBe(true);
-      expect(server!.hostname()).toBe('localhost');
-      expect(server!.port()).toBeGreaterThan(0);
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: false });
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(vi.fn());
+        }
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.warn).toHaveBeenCalledTimes(0);
-      expect(spies.error).toHaveBeenCalledTimes(0);
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-      expect(spies.log).toHaveBeenCalledWith(
-        `${chalk.cyan('[zimic]')}`,
-        `Server is running on 'http://localhost:${server!.port()}'.`,
-      );
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-      expect(exitEventListeners).toHaveLength(1);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-      const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on 'http://localhost:${server!.port()}'.`,
+          );
 
-      const response = fetch(request);
-      await expectFetchError(response);
+          expect(exitEventListeners).toHaveLength(1);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.warn).toHaveBeenCalledTimes(0);
-      expect(spies.error).toHaveBeenCalledTimes(0);
-    });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+
+          const response = fetch(request);
+          await expectFetchError(response);
+
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
   });
 });

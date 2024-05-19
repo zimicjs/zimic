@@ -101,16 +101,15 @@ abstract class HttpInterceptorWorker {
 
     const defaultDeclarationOrHandler = this.store.defaultUnhandledRequestStrategy();
 
-    const declarationOrHandler =
-      this.unhandledRequestStrategies.findLast((strategy) => {
-        return requestURL.startsWith(strategy.baseURL);
-      })?.declarationOrHandler ?? defaultDeclarationOrHandler;
+    const declarationOrHandler = this.unhandledRequestStrategies.findLast((strategy) => {
+      return requestURL.startsWith(strategy.baseURL);
+    })?.declarationOrHandler;
 
     const action: UnhandledRequestStrategy.Action = this.type === 'local' ? 'bypass' : 'reject';
 
     if (typeof declarationOrHandler === 'function') {
       await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, declarationOrHandler, action);
-    } else if (declarationOrHandler.log !== undefined) {
+    } else if (declarationOrHandler?.log !== undefined) {
       await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declarationOrHandler.log }, action);
     } else if (typeof defaultDeclarationOrHandler === 'function') {
       await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);

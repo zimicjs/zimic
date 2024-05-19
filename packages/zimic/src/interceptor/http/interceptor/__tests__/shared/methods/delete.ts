@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema } from '@/http/types/schema';
+import { http } from '@/interceptor';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
@@ -1150,8 +1151,169 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
   });
 
   describe('Unhandled requests', () => {
-    if (type === 'local') {
-      it('should show a warning when logging is enabled and a DELETE request is unhandled and bypassed', async () => {
+    describe.each([
+      { overrideDefault: false as const },
+      { overrideDefault: 'static' as const },
+      { overrideDefault: 'static-empty' as const },
+      { overrideDefault: 'function' as const },
+    ])('Logging enabled or disabled: override default $overrideDefault', ({ overrideDefault }) => {
+      beforeEach(() => {
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: true });
+        } else if (overrideDefault === 'static-empty') {
+          http.default.onUnhandledRequest({});
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(async (_request, context) => {
+            await context.log();
+          });
+        }
+      });
+
+      if (type === 'local') {
+        it('should show a warning when logging is enabled and a DELETE request is unhandled and bypassed', async () => {
+          await usingHttpInterceptor<{
+            '/users/:id': {
+              DELETE: {
+                request: { headers: { 'x-value': string } };
+                response: {
+                  200: { body: User };
+                };
+              };
+            };
+          }>(
+            {
+              ...interceptorOptions,
+              onUnhandledRequest: overrideDefault === false ? { log: true } : {},
+            },
+            async (interceptor) => {
+              const deletionHandler = await promiseIfRemote(
+                interceptor
+                  .delete(`/users/${users[0].id}`)
+                  .with({ headers: { 'x-value': '1' } })
+                  .respond({
+                    status: 200,
+                    body: users[0],
+                  }),
+                interceptor,
+              );
+
+              let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+              expect(deletionRequests).toHaveLength(0);
+
+              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+                const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+                  method: 'DELETE',
+                  headers: { 'x-value': '1' },
+                });
+                expect(deletionResponse.status).toBe(200);
+
+                deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+                expect(deletionRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
+                const deletionResponsePromise = fetch(deletionRequest);
+                await expectFetchError(deletionResponsePromise);
+
+                deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+                expect(deletionRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(1);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const warnMessage = spies.warn.mock.calls[0].join(' ');
+                await verifyUnhandledRequestMessage(warnMessage, {
+                  type: 'warn',
+                  platform,
+                  request: deletionRequest,
+                });
+              });
+            },
+          );
+        });
+      }
+
+      if (type === 'remote') {
+        it('should show an error when logging is enabled and a DELETE request is unhandled and rejected', async () => {
+          await usingHttpInterceptor<{
+            '/users/:id': {
+              DELETE: {
+                request: { headers: { 'x-value': string } };
+                response: {
+                  200: { body: User };
+                };
+              };
+            };
+          }>(
+            {
+              ...interceptorOptions,
+              onUnhandledRequest: overrideDefault === false ? { log: true } : {},
+            },
+            async (interceptor) => {
+              const deletionHandler = await promiseIfRemote(
+                interceptor
+                  .delete(`/users/${users[0].id}`)
+                  .with({ headers: { 'x-value': '1' } })
+                  .respond({
+                    status: 200,
+                    body: users[0],
+                  }),
+                interceptor,
+              );
+
+              let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+              expect(deletionRequests).toHaveLength(0);
+
+              await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+                const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+                  method: 'DELETE',
+                  headers: { 'x-value': '1' },
+                });
+                expect(deletionResponse.status).toBe(200);
+
+                deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+                expect(deletionRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(0);
+
+                const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), {
+                  method: 'DELETE',
+                  headers: { 'x-value': '2' },
+                });
+                const deletionResponsePromise = fetch(deletionRequest);
+                await expectFetchError(deletionResponsePromise);
+
+                deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+                expect(deletionRequests).toHaveLength(1);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(1);
+
+                const errorMessage = spies.error.mock.calls[0].join(' ');
+                await verifyUnhandledRequestMessage(errorMessage, {
+                  type: 'error',
+                  platform,
+                  request: deletionRequest,
+                });
+              });
+            },
+          );
+        });
+      }
+    });
+
+    it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
+      'should not show a warning or error when logging is disabled and a DELETE request is unhandled: override default $overrideDefault',
+      async ({ overrideDefault }) => {
+        if (overrideDefault === 'static') {
+          http.default.onUnhandledRequest({ log: false });
+        } else if (overrideDefault === 'function') {
+          http.default.onUnhandledRequest(vi.fn());
+        }
+
         await usingHttpInterceptor<{
           '/users/:id': {
             DELETE: {
@@ -1161,117 +1323,56 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
               };
             };
           };
-        }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
-          const deletionHandler = await promiseIfRemote(
-            interceptor
-              .delete(`/users/${users[0].id}`)
-              .with({ headers: { 'x-value': '1' } })
-              .respond({
-                status: 200,
-                body: users[0],
-              }),
-            interceptor,
-          );
+        }>(
+          {
+            ...interceptorOptions,
+            onUnhandledRequest: overrideDefault === false ? { log: false } : {},
+          },
+          async (interceptor) => {
+            const deletionHandler = await promiseIfRemote(
+              interceptor
+                .delete(`/users/${users[0].id}`)
+                .with({ headers: { 'x-value': '1' } })
+                .respond({
+                  status: 200,
+                  body: users[0],
+                }),
+              interceptor,
+            );
 
-          let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(0);
+            let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+            expect(deletionRequests).toHaveLength(0);
 
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-              method: 'DELETE',
-              headers: { 'x-value': '1' },
+            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+                method: 'DELETE',
+                headers: { 'x-value': '1' },
+              });
+              expect(deletionResponse.status).toBe(200);
+
+              deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+              expect(deletionRequests).toHaveLength(1);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
+
+              const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), {
+                method: 'DELETE',
+                headers: { 'x-value': '2' },
+              });
+              const deletionResponsePromise = fetch(deletionRequest);
+              await expectFetchError(deletionResponsePromise);
+
+              deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
+              expect(deletionRequests).toHaveLength(1);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
             });
-            expect(deletionResponse.status).toBe(200);
-
-            deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-            expect(deletionRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-            const deletionResponsePromise = fetch(deletionRequest);
-            await expectFetchError(deletionResponsePromise);
-
-            deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-            expect(deletionRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, {
-              type: 'warn',
-              platform,
-              request: deletionRequest,
-            });
-          });
-        });
-      });
-    }
-
-    if (type === 'remote') {
-      it('should show an error when logging is enabled and a DELETE request is unhandled and rejected', async () => {
-        await usingHttpInterceptor<{
-          '/users/:id': {
-            DELETE: {
-              request: { headers: { 'x-value': string } };
-              response: {
-                200: { body: User };
-              };
-            };
-          };
-        }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
-          const deletionHandler = await promiseIfRemote(
-            interceptor
-              .delete(`/users/${users[0].id}`)
-              .with({ headers: { 'x-value': '1' } })
-              .respond({
-                status: 200,
-                body: users[0],
-              }),
-            interceptor,
-          );
-
-          let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(0);
-
-          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-              method: 'DELETE',
-              headers: { 'x-value': '1' },
-            });
-            expect(deletionResponse.status).toBe(200);
-
-            deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-            expect(deletionRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-
-            const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), {
-              method: 'DELETE',
-              headers: { 'x-value': '2' },
-            });
-            const deletionResponsePromise = fetch(deletionRequest);
-            await expectFetchError(deletionResponsePromise);
-
-            deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-            expect(deletionRequests).toHaveLength(1);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(1);
-
-            const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform,
-              request: deletionRequest,
-            });
-          });
-        });
-      });
-    }
+          },
+        );
+      },
+    );
 
     it('should support a custom unhandled DELETE request handler', async () => {
       const onUnhandledRequest = vi.fn(async (request: Request, context: UnhandledRequestStrategy.HandlerContext) => {
@@ -1447,60 +1548,6 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           expect(spies.error).toHaveBeenCalledTimes(1);
 
           expect(spies.error).toHaveBeenCalledWith(error);
-        });
-      });
-    });
-
-    it('should not show a warning or error when logging is disabled and a DELETE request is unhandled', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          DELETE: {
-            request: { headers: { 'x-value': string } };
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>({ ...interceptorOptions, onUnhandledRequest: { log: false } }, async (interceptor) => {
-        const deletionHandler = await promiseIfRemote(
-          interceptor
-            .delete(`/users/${users[0].id}`)
-            .with({ headers: { 'x-value': '1' } })
-            .respond({
-              status: 200,
-              body: users[0],
-            }),
-          interceptor,
-        );
-
-        let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-            method: 'DELETE',
-            headers: { 'x-value': '1' },
-          });
-          expect(deletionResponse.status).toBe(200);
-
-          deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(1);
-
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const deletionRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), {
-            method: 'DELETE',
-            headers: { 'x-value': '2' },
-          });
-          const deletionResponsePromise = fetch(deletionRequest);
-          await expectFetchError(deletionResponsePromise);
-
-          deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(1);
-
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
         });
       });
     });

@@ -3,8 +3,6 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
-
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 
@@ -69,7 +67,6 @@ async function runCLI() {
                 'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
                 'interceptor itself.',
               alias: 'l',
-              default: DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();

@@ -1,10 +1,9 @@
 import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
 import { createHttpInterceptor } from './http/interceptor/factory';
+import { UnhandledRequestStrategy } from './http/interceptor/types/options';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
-import HttpInterceptorWorkerStore, {
-  DefaultUnhandledRequestStrategy,
-} from './http/interceptorWorker/HttpInterceptorWorkerStore';
+import HttpInterceptorWorkerStore from './http/interceptorWorker/HttpInterceptorWorkerStore';
 
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
@@ -39,7 +38,7 @@ export const http = Object.freeze({
   createInterceptor: createHttpInterceptor,
 
   default: {
-    onUnhandledRequest(strategy: DefaultUnhandledRequestStrategy) {
+    onUnhandledRequest(strategy: UnhandledRequestStrategy) {
       const store = new HttpInterceptorWorkerStore();
       store.setDefaultUnhandledRequestStrategy(strategy);
     },
