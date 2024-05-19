@@ -147,7 +147,6 @@ class HttpInterceptorClient<
     }
 
     const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
-    this.registerRequestHandler(handler);
     return handler;
   }
 

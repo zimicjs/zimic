@@ -153,17 +153,26 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const result = await createResponse({
-        ...context,
-        request: context.request as MSWStrictRequest<HttpBody>,
-      });
+      const request = context.request as MSWStrictRequest<HttpBody>;
+      const requestClone = request.clone();
 
-      if (result.bypass) {
-        return passthrough();
+      const result = await createResponse({ ...context, request });
+
+      if (!result.bypass) {
+        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
+        return response;
       }
 
-      const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
-      return response;
+      const unhandledStrategy = await super.getUnhandledRequestStrategy(requestClone);
+
+      if (unhandledStrategy.log) {
+        await HttpInterceptorWorker.warnUnhandledRequest(requestClone, unhandledStrategy.action);
+      }
+      if (unhandledStrategy.action === 'bypass') {
+        return passthrough();
+      } else {
+        return undefined;
+      }
     });
 
     internalWorker.use(httpHandler);

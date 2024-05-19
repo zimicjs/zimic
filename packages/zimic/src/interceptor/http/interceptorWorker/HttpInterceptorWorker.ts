@@ -128,7 +128,7 @@ abstract class HttpInterceptorWorker {
     );
   }
 
-  private async getUnhandledRequestStrategy(
+  async getUnhandledRequestStrategy(
     request: HttpRequest,
   ): Promise<UnhandledRequestStrategy.LocalDeclaration | UnhandledRequestStrategy.RemoteDeclaration> {
     const requestURL = excludeNonPathParams(createURL(request.url)).toString();
