@@ -1,5 +1,6 @@
 import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
+import { createHttpInterceptor } from './http/interceptor/factory';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
 
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
@@ -31,4 +32,8 @@ export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/sche
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-export { createHttpInterceptor } from './http/interceptor/factory';
+export const http = {
+  createInterceptor: createHttpInterceptor,
+};
+
+export type HttpNamespace = typeof http;
