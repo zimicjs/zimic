@@ -11,6 +11,7 @@ export async function setup() {
   server = new Server({
     hostname: GLOBAL_SETUP_SERVER_HOSTNAME,
     port: GLOBAL_SETUP_SERVER_PORT,
+    onUnhandledRequest: { log: false },
   });
 
   await server.start();

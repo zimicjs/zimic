@@ -10,6 +10,7 @@ export const defaultConfig: UserConfig = {
     allowOnly: process.env.CI !== 'true',
     testTimeout: 5000,
     hookTimeout: 5000,
+    setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -23,7 +24,7 @@ export const defaultConfig: UserConfig = {
       exclude: [
         '**/local/**',
         '**/public/**',
-        '**/tests/globalSetup/**',
+        '**/tests/setup/global/**',
         '**/types/**',
         '**/types.ts',
         '**/typescript.ts',
@@ -35,7 +36,6 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY': "'false'",
   },
   resolve: {
     alias: {

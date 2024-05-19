@@ -105,7 +105,7 @@ describe('CLI (server)', async () => {
       '                                re found for the base URL of a request. If an in',
       '                                terceptor was matched, the logging behavior for',
       '                                that base URL is configured in the interceptor i',
-      '                                tself.                [boolean] [default: false]',
+      '                                tself.                 [boolean] [default: true]',
     ].join('\n');
 
     beforeEach(async () => {

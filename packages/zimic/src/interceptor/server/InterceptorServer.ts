@@ -37,6 +37,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private _hostname: string;
   private _port?: number;
+
   private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
   private workerStore = new HttpInterceptorWorkerStore();
 

@@ -6,7 +6,7 @@ export class InvalidURL extends TypeError {
 }
 
 export class UnsupportedURLProtocolError extends TypeError {
-  constructor(protocol: string, availableProtocols: string[]) {
+  constructor(protocol: string, availableProtocols: string[] | readonly string[]) {
     super(
       `[zimic] Unsupported URL protocol: '${protocol}'. ` +
         `The available options are ${availableProtocols.map((protocol) => `'${protocol}'`).join(', ')}`,
@@ -36,7 +36,10 @@ function createURLOrThrow(rawURL: string | URL) {
   }
 }
 
-export function createURL(rawURL: string | URL, options: { protocols?: string[] } = {}): ExtendedURL {
+export function createURL(
+  rawURL: string | URL,
+  options: { protocols?: string[] | readonly string[] } = {},
+): ExtendedURL {
   const url = createURLOrThrow(rawURL);
 
   const protocol = url.protocol.replace(/:$/, '');

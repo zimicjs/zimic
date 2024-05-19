@@ -13,7 +13,6 @@ const sharedConfig: Options = {
   clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
-    DEFAULT_UNHANDLED_REQUEST_LOGGING_STRATEGY: 'true',
   },
 };
 
