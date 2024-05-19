@@ -67,8 +67,8 @@ GitHub API and simulate a test case where the repository is found and another wh
       pnpm run dev
       ```
 
-      After started, the App Router version will be available at [http://localhost:3000/app](http://localhost:3000/app)
-      and the Pages Router version at [http://localhost:3000/pages](http://localhost:3000/pages).
+      After started, the App Router version will be available at [http://localhost:3004/app](http://localhost:3004/app)
+      and the Pages Router version at [http://localhost:3004/pages](http://localhost:3004/pages).
 
    2. In another terminal, run the tests:
 
