@@ -22,7 +22,7 @@ import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestContext } from './types/requests';
 
-export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
+export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
 class HttpInterceptorClient<
   Schema extends HttpServiceSchema,

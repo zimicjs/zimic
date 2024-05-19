@@ -1,13 +1,13 @@
 import { spawn } from 'cross-spawn';
 
-export const PROCESS_EXIT_EVENTS = [
+export const PROCESS_EXIT_EVENTS = Object.freeze([
   'beforeExit',
   'uncaughtExceptionMonitor',
   'SIGINT',
   'SIGTERM',
   'SIGHUP',
   'SIGBREAK',
-] as const;
+] as const);
 
 export class CommandError extends Error {
   constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {

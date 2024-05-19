@@ -82,17 +82,15 @@ export interface HttpInterceptorResponse<
   raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }
 
-export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = new Set<string>([
-  'bodyUsed',
-  'arrayBuffer',
-  'blob',
-  'formData',
-  'json',
-  'text',
-] satisfies Exclude<keyof Body, keyof HttpInterceptorRequest<never>>[]);
+export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = Object.freeze(
+  new Set<string>(['bodyUsed', 'arrayBuffer', 'blob', 'formData', 'json', 'text'] satisfies Exclude<
+    keyof Body,
+    keyof HttpInterceptorRequest<never>
+  >[]),
+);
 
-export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = new Set(
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
+export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
+  new Set(HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES),
 );
 
 /** A strict representation of a tracked, intercepted HTTP request, along with its response. */

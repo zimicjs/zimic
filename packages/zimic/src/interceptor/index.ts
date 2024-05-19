@@ -35,7 +35,7 @@ export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/sche
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-export const http = {
+export const http = Object.freeze({
   createInterceptor: createHttpInterceptor,
 
   default: {
@@ -44,6 +44,6 @@ export const http = {
       store.setDefaultUnhandledRequestStrategy(strategy);
     },
   },
-};
+});
 
 export type HttpNamespace = typeof http;
