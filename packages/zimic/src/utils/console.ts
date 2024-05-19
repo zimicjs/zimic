@@ -1,11 +1,7 @@
+import chalk from 'chalk';
 import util from 'util';
 
 import { isClientSide } from './environment';
-
-export async function getChalk() {
-  const { default: chalk } = await import('chalk');
-  return chalk;
-}
 
 export function formatObjectToLog(value: unknown) {
   if (isClientSide()) {
@@ -21,7 +17,7 @@ export function formatObjectToLog(value: unknown) {
   });
 }
 
-export async function logWithPrefix(
+export function logWithPrefix(
   messageOrMessages: unknown,
   options: {
     method?: 'log' | 'warn' | 'error';
@@ -30,7 +26,5 @@ export async function logWithPrefix(
   const { method = 'log' } = options;
 
   const messages = Array.isArray(messageOrMessages) ? messageOrMessages : [messageOrMessages];
-
-  const chalk = await getChalk();
   console[method](chalk.cyan('[zimic]'), ...messages);
 }

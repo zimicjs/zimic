@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { HttpResponse as MSWHttpResponse } from 'msw';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
@@ -10,7 +11,7 @@ import {
   HttpServiceSchema,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { formatObjectToLog, getChalk, logWithPrefix } from '@/utils/console';
+import { formatObjectToLog, logWithPrefix } from '@/utils/console';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
@@ -284,9 +285,7 @@ abstract class HttpInterceptorWorker {
   static async warnUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
     const request = await this.parseRawRequest(rawRequest);
 
-    const chalk = await getChalk();
-
-    await logWithPrefix(
+    logWithPrefix(
       [
         `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
           `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}:\n\n `,
