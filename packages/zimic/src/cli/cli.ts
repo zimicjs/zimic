@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
-import startServer from './server/start';
+import startInterceptorServer from './server/start';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -29,10 +29,10 @@ async function runCLI() {
       ),
     )
 
-    .command('server', 'Server', (yargs) =>
+    .command('server', 'Interceptor server', (yargs) =>
       yargs.demandCommand().command(
         'start [-- onReady]',
-        'Start a mock server.',
+        'Start an interceptor server.',
         (yargs) =>
           yargs
             .positional('onReady', {
@@ -59,15 +59,26 @@ async function runCLI() {
                 'starting.',
               alias: 'e',
               default: false,
+            })
+            .option('log-unhandled-requests', {
+              type: 'boolean',
+              description:
+                'Whether to log a warning when no interceptors were found for the base URL of a request. ' +
+                'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
+                'interceptor itself.',
+              alias: 'l',
             }),
         async (cliArguments) => {
           const onReadyCommand = cliArguments._.at(2)?.toString();
           const onReadyCommandArguments = cliArguments._.slice(3).map((argument) => argument.toString());
 
-          await startServer({
+          await startInterceptorServer({
             hostname: cliArguments.hostname,
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
+            onUnhandledRequest: {
+              log: cliArguments.logUnhandledRequests,
+            },
             onReady: onReadyCommand
               ? {
                   command: onReadyCommand.toString(),

@@ -26,8 +26,9 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     this._client = new HttpInterceptorClient<Schema>({
       worker,
       store: this.store,
-      Handler: LocalHttpRequestHandler,
       baseURL,
+      Handler: LocalHttpRequestHandler,
+      onUnhandledRequest: options.onUnhandledRequest,
     });
   }
 
@@ -36,7 +37,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   }
 
   baseURL() {
-    return this._client.baseURL();
+    return this._client.baseURL().raw;
   }
 
   platform() {
@@ -48,13 +49,19 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
   }
 
   async start() {
+    if (this.isRunning()) {
+      return;
+    }
+
     await this._client.start();
   }
 
   async stop() {
-    if (this.isRunning()) {
-      this.clear();
+    if (!this.isRunning()) {
+      return;
     }
+
+    this.clear();
     await this._client.stop();
   }
 

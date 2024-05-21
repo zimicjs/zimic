@@ -1,11 +1,9 @@
-import { logWithPrefix } from '@/cli/utils/console';
+import { logWithPrefix } from '@/utils/console';
 import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
-import Server from '../../server/Server';
+import InterceptorServer, { InterceptorServerOptions } from '../../interceptor/server/InterceptorServer';
 
-interface ServerStartOptions {
-  hostname: string;
-  port?: number;
+interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;
   onReady?: {
     command: string;
@@ -13,10 +11,20 @@ interface ServerStartOptions {
   };
 }
 
-export let singletonServer: Server | undefined;
+export let singletonServer: InterceptorServer | undefined;
 
-async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
-  const server = new Server({ hostname, port });
+async function startInterceptorServer({
+  hostname,
+  port,
+  ephemeral,
+  onUnhandledRequest,
+  onReady,
+}: InterceptorServerStartOptions) {
+  const server = new InterceptorServer({
+    hostname,
+    port,
+    onUnhandledRequest,
+  });
 
   singletonServer = server;
 
@@ -28,7 +36,7 @@ async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOp
 
   await server.start();
 
-  await logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on '${server.httpURL()}'.`);
+  logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on '${server.httpURL()}'.`);
 
   if (onReady) {
     await runCommand(onReady.command, onReady.arguments);
@@ -37,6 +45,10 @@ async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOp
   if (ephemeral) {
     await server.stop();
   }
+
+  for (const exitEvent of PROCESS_EXIT_EVENTS) {
+    process.removeAllListeners(exitEvent);
+  }
 }
 
-export default startServer;
+export default startInterceptorServer;

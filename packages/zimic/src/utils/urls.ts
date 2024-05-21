@@ -1,14 +1,14 @@
 export class InvalidURL extends TypeError {
   constructor(url: unknown) {
-    super(`Invalid URL: '${url}'`);
+    super(`[zimic] Invalid URL: '${url}'`);
     this.name = 'InvalidURL';
   }
 }
 
 export class UnsupportedURLProtocolError extends TypeError {
-  constructor(protocol: string, availableProtocols: string[]) {
+  constructor(protocol: string, availableProtocols: string[] | readonly string[]) {
     super(
-      `Unsupported URL protocol: '${protocol}'. ` +
+      `[zimic] Unsupported URL protocol: '${protocol}'. ` +
         `The available options are ${availableProtocols.map((protocol) => `'${protocol}'`).join(', ')}`,
     );
     this.name = 'UnsupportedURLProtocolError';
@@ -36,7 +36,10 @@ function createURLOrThrow(rawURL: string | URL) {
   }
 }
 
-export function createURL(rawURL: string | URL, options: { protocols?: string[] } = {}): ExtendedURL {
+export function createURL(
+  rawURL: string | URL,
+  options: { protocols?: string[] | readonly string[] } = {},
+): ExtendedURL {
   const url = createURLOrThrow(rawURL);
 
   const protocol = url.protocol.replace(/:$/, '');
@@ -59,8 +62,8 @@ export function excludeNonPathParams(url: URL) {
 export class DuplicatedPathParamError extends Error {
   constructor(url: string, paramName: string) {
     super(
-      `The path parameter '${paramName}' appears more than once in the URL '${url}'. This is not supported. Please` +
-        ' make sure that each parameter is unique.',
+      `[zimic] The path parameter '${paramName}' appears more than once in the URL '${url}'. This is not supported. ` +
+        'Please make sure that each parameter is unique.',
     );
     this.name = 'DuplicatedPathParamError';
   }

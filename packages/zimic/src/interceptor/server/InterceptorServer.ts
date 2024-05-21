@@ -3,6 +3,9 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
+import { UnhandledRequestStrategy } from '@/interceptor/http/interceptor/types/options';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -10,13 +13,16 @@ import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
-import NotStartedServerError from './errors/NotStartedServerError';
-import { Server as PublicServer } from './types/public';
-import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
+import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
+import { InterceptorServer as PublicInterceptorServer } from './types/public';
+import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
 
-export interface ServerOptions {
+export interface InterceptorServerOptions {
   hostname?: string;
   port?: number;
+  onUnhandledRequest?: {
+    log?: boolean;
+  };
 }
 
 interface HttpHandler {
@@ -25,12 +31,15 @@ interface HttpHandler {
   socket: Socket;
 }
 
-class Server implements PublicServer {
+class InterceptorServer implements PublicInterceptorServer {
   private _httpServer?: HttpServer;
-  private _webSocketServer?: WebSocketServer<ServerWebSocketSchema>;
+  private _webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
 
   private _hostname: string;
   private _port?: number;
+
+  private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
+  private workerStore = new HttpInterceptorWorkerStore();
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -46,9 +55,10 @@ class Server implements PublicServer {
 
   private knownWorkerSockets = new Set<Socket>();
 
-  constructor(options: ServerOptions = {}) {
+  constructor(options: InterceptorServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
+    this.onUnhandledRequest = options.onUnhandledRequest;
   }
 
   hostname() {
@@ -74,7 +84,7 @@ class Server implements PublicServer {
     /* istanbul ignore if -- @preserve
      * The HTTP server is initialized before using this method in normal conditions. */
     if (!this._httpServer) {
-      throw new NotStartedServerError();
+      throw new NotStartedInterceptorServerError();
     }
     return this._httpServer;
   }
@@ -83,7 +93,7 @@ class Server implements PublicServer {
     /* istanbul ignore if -- @preserve
      * The web socket server is initialized before using this method in normal conditions. */
     if (!this._webSocketServer) {
-      throw new NotStartedServerError();
+      throw new NotStartedInterceptorServerError();
     }
     return this._webSocketServer;
   }
@@ -126,7 +136,7 @@ class Server implements PublicServer {
   }
 
   private commitWorker = (
-    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/commit'>,
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/commit'>,
     socket: Socket,
   ) => {
     const commit = message.data;
@@ -136,7 +146,7 @@ class Server implements PublicServer {
   };
 
   private resetWorker = (
-    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/reset'>,
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/reset'>,
     socket: Socket,
   ) => {
     this.removeWorkerSocket(socket);
@@ -212,7 +222,7 @@ class Server implements PublicServer {
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
     const request = normalizeNodeRequest(nodeRequest, Request);
-    const response = await this.createResponseForRequest(request);
+    const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
 
     if (response) {
       this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
@@ -228,6 +238,23 @@ class Server implements PublicServer {
       await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
     }
 
+    const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
+
+    if (shouldWarnUnhandledRequest) {
+      const action: UnhandledRequestStrategy.Action = 'reject';
+
+      const declaration = this.onUnhandledRequest;
+      const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
+
+      if (declaration?.log !== undefined) {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declaration.log }, action);
+      } else if (typeof defaultDeclarationOrHandler === 'function') {
+        await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
+      } else {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+      }
+    }
+
     nodeResponse.destroy();
   };
 
@@ -238,6 +265,8 @@ class Server implements PublicServer {
     const url = excludeNonPathParams(createURL(request.url)).toString();
     const serializedRequest = await serializeRequest(request);
 
+    let matchedAnyInterceptor = false;
+
     for (let index = handlerGroup.length - 1; index >= 0; index--) {
       const handler = handlerGroup[index];
 
@@ -246,22 +275,21 @@ class Server implements PublicServer {
         continue;
       }
 
+      matchedAnyInterceptor = true;
+
       const { response: serializedResponse } = await webSocketServer.request(
         'interceptors/responses/create',
-        {
-          handlerId: handler.id,
-          request: serializedRequest,
-        },
+        { handlerId: handler.id, request: serializedRequest },
         { sockets: [handler.socket] },
       );
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
-        return response;
+        return { response, matchedAnyInterceptor };
       }
     }
 
-    return null;
+    return { response: null, matchedAnyInterceptor };
   }
 
   private setDefaultAccessControlHeaders(
@@ -283,4 +311,4 @@ class Server implements PublicServer {
   }
 }
 
-export default Server;
+export default InterceptorServer;

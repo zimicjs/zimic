@@ -19,11 +19,11 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '@/interceptor/http/interceptorWorker/types/options';
-import Server from '@/server/Server';
+import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL, createURL, ExtendedURL } from '@/utils/urls';
-import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/globalSetup/serverOnBrowser';
+import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/setup/global/browser';
 
 export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
   if (workerType === 'local') {
@@ -36,7 +36,7 @@ export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
   return createURL(baseURL);
 }
 
-export async function getNodeBaseURL(type: HttpInterceptorType, server: Server) {
+export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
     return createURL('http://localhost:3000');
   }

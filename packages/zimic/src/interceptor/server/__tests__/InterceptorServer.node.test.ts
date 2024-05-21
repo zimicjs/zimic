@@ -1,19 +1,19 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import Server from '../Server';
+import InterceptorServer from '../InterceptorServer';
 
 // These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
 // interceptor tests are covered here. The main aspects of this class should be tested in the CLI and the remote
 // interceptor tests.
-describe('Server', () => {
-  let server: Server | undefined;
+describe('Interceptor server', () => {
+  let server: InterceptorServer | undefined;
 
   afterEach(async () => {
     await server?.stop();
   });
 
   it('should start correctly with a defined port', async () => {
-    server = new Server({ hostname: 'localhost', port: 8080 });
+    server = new InterceptorServer({ hostname: 'localhost', port: 8080 });
 
     expect(server.isRunning()).toBe(false);
     expect(server.hostname()).toBe('localhost');
@@ -29,7 +29,7 @@ describe('Server', () => {
   });
 
   it('should start correctly with an undefined port', async () => {
-    server = new Server({ hostname: 'localhost' });
+    server = new InterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
     expect(server.hostname()).toBe('localhost');
@@ -45,7 +45,7 @@ describe('Server', () => {
   });
 
   it('should not throw an error is started multiple times', async () => {
-    server = new Server({ hostname: 'localhost' });
+    server = new InterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
 
@@ -60,7 +60,7 @@ describe('Server', () => {
   });
 
   it('should not throw an error if stopped multiple times', async () => {
-    server = new Server({ hostname: 'localhost' });
+    server = new InterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
 

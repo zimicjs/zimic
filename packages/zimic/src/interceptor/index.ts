@@ -1,7 +1,9 @@
 import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
 import { createHttpInterceptor } from './http/interceptor/factory';
+import { UnhandledRequestStrategy } from './http/interceptor/types/options';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+import HttpInterceptorWorkerStore from './http/interceptorWorker/HttpInterceptorWorkerStore';
 
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
@@ -19,6 +21,12 @@ export type {
   SyncedRemoteHttpRequestHandler,
   PendingRemoteHttpRequestHandler,
   HttpRequestHandler,
+  HttpRequestHandlerRestriction,
+  HttpRequestHandlerComputedRestriction,
+  HttpRequestHandlerHeadersStaticRestriction,
+  HttpRequestHandlerSearchParamsStaticRestriction,
+  HttpRequestHandlerStaticRestriction,
+  HttpRequestHandlerBodyStaticRestriction,
 } from './http/requestHandler/types/public';
 
 export type {
@@ -27,13 +35,21 @@ export type {
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
   HttpInterceptorOptions,
+  UnhandledRequestStrategy,
 } from './http/interceptor/types/options';
 export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-export const http = {
+export const http = Object.freeze({
   createInterceptor: createHttpInterceptor,
-};
+
+  default: {
+    onUnhandledRequest: (strategy: UnhandledRequestStrategy) => {
+      const store = new HttpInterceptorWorkerStore();
+      store.setDefaultUnhandledRequestStrategy(strategy);
+    },
+  },
+});
 
 export type HttpNamespace = typeof http;

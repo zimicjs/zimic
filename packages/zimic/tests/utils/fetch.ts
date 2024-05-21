@@ -1,15 +1,12 @@
 import { expect } from 'vitest';
 
-import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/interceptor/server/constants';
 
 interface ExpectFetchErrorOptions {
   canBeAborted?: boolean;
 }
 
-export async function expectFetchError(
-  value: Promise<unknown> | (() => Promise<unknown>),
-  options: ExpectFetchErrorOptions = {},
-) {
+export async function expectFetchError(fetchPromise: Promise<Response>, options: ExpectFetchErrorOptions = {}) {
   const { canBeAborted = false } = options;
 
   const errorMessageOptions = [
@@ -20,7 +17,7 @@ export async function expectFetchError(
   ].filter((option): option is string => typeof option === 'string');
 
   const errorMessageExpression = new RegExp(`^${errorMessageOptions.join('|')}$`);
-  await expect(value).rejects.toThrowError(errorMessageExpression);
+  await expect(fetchPromise).rejects.toThrowError(errorMessageExpression);
 }
 
 export async function expectFetchErrorOrPreflightResponse(

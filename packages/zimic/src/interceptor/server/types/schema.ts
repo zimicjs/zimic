@@ -9,7 +9,7 @@ export type HttpHandlerCommit = JSONValue<{
   method: HttpMethod;
 }>;
 
-export type ServerWebSocketSchema = WebSocket.ServiceSchema<{
+export type InterceptorServerWebSocketSchema = WebSocket.ServiceSchema<{
   'interceptors/workers/use/commit': {
     event: HttpHandlerCommit;
     reply: {};
