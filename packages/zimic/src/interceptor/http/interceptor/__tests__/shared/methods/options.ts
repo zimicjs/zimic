@@ -6,7 +6,7 @@ import { HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/server/constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, AccessControlHeaders } from '@/interceptor/server/constants';
 import { JSONValue } from '@/types/json';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';

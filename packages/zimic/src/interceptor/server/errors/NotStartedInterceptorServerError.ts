@@ -2,11 +2,11 @@
  * This error is a fallback to prevent doing operations without a started server. It should not happen in normal
  * conditions.
  */
-class NotStartedServerError extends Error {
+class NotStartedInterceptorServerError extends Error {
   constructor() {
     super('The server is not running.');
-    this.name = 'NotStartedServerError';
+    this.name = 'NotStartedInterceptorServerError';
   }
 }
 
-export default NotStartedServerError;
+export default NotStartedInterceptorServerError;

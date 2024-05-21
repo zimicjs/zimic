@@ -1,6 +1,6 @@
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { HttpHandlerCommit, ServerWebSocketSchema } from '@/server/types/schema';
+import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { excludeNonPathParams, ExtendedURL, ensureUniquePathParams, createURL } from '@/utils/urls';
@@ -28,7 +28,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _crypto?: IsomorphicCrypto;
 
-  private webSocketClient: WebSocketClient<ServerWebSocketSchema>;
+  private webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
@@ -67,7 +67,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createResponse = async (
-    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/responses/create'>,
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
   ) => {
     const { handlerId, request: serializedRequest } = message.data;
 

@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
-import startServer from './server/start';
+import startInterceptorServer from './server/start';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -29,10 +29,10 @@ async function runCLI() {
       ),
     )
 
-    .command('server', 'Server', (yargs) =>
+    .command('server', 'Interceptor server', (yargs) =>
       yargs.demandCommand().command(
         'start [-- onReady]',
-        'Start a mock server.',
+        'Start an interceptor server.',
         (yargs) =>
           yargs
             .positional('onReady', {
@@ -64,7 +64,7 @@ async function runCLI() {
           const onReadyCommand = cliArguments._.at(2)?.toString();
           const onReadyCommandArguments = cliArguments._.slice(3).map((argument) => argument.toString());
 
-          await startServer({
+          await startInterceptorServer({
             hostname: cliArguments.hostname,
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
