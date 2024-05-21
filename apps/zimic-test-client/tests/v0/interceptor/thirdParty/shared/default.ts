@@ -184,7 +184,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationHandler = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             body: invalidPayload,
@@ -227,7 +227,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationHandler = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             body: conflictingPayload,

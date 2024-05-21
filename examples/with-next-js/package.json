@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- zimic server start --port 3001 --ephemeral -- next dev --port 3000",
+    "dev": "dotenv -c development -- zimic server start --port 3005 --ephemeral -- next dev --port 3004",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "pnpm run test",
     "types:check": "tsc --noEmit",

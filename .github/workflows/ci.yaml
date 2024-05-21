@@ -106,7 +106,7 @@ jobs:
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 1 \
+            --concurrency 100% \
             ${{ steps.zimic-setup.outputs.install-filters }}
 
   ci-typescript:
