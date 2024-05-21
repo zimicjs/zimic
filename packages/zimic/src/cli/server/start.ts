@@ -37,6 +37,10 @@ async function startInterceptorServer({ hostname, port, ephemeral, onReady }: Se
   if (ephemeral) {
     await server.stop();
   }
+
+  for (const exitEvent of PROCESS_EXIT_EVENTS) {
+    process.removeAllListeners(exitEvent);
+  }
 }
 
 export default startInterceptorServer;
