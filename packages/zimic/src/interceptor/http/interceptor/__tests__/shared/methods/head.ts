@@ -574,8 +574,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
         headers.delete('accept');
 
-        let headResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
-        await expectFetchError(headResponsePromise);
+        let headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
+        await expectFetchError(headPromise);
 
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(2);
@@ -583,8 +583,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        headResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
-        await expectFetchError(headResponsePromise);
+        headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
+        await expectFetchError(headPromise);
 
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(2);
@@ -637,8 +637,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
         searchParams.delete('tag');
 
-        const headResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'HEAD' });
-        await expectFetchError(headResponsePromise);
+        const headPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'HEAD' });
+        await expectFetchError(headPromise);
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(1);
       });

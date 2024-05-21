@@ -283,12 +283,12 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
       const initialOptionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
       expect(initialOptionsRequests).toHaveLength(0);
 
-      const optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+      const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
 
       if (options.type === 'remote' && platform === 'browser') {
-        await expectFetchError(optionsResponsePromise);
+        await expectFetchError(optionsPromise);
       } else {
-        const optionsResponse = await optionsResponsePromise;
+        const optionsResponse = await optionsPromise;
         expect(optionsResponse.status).toBe(200);
       }
     });
@@ -602,8 +602,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         headers.delete('accept');
 
-        let optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        let optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
         optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
@@ -611,8 +611,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         headers.delete('content-type');
 
-        optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
         optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
@@ -621,8 +621,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        optionsResponsePromise = fetch(joinURL(baseURL, `/users`), { method: 'OPTIONS', headers });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        optionsPromise = fetch(joinURL(baseURL, `/users`), { method: 'OPTIONS', headers });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
         optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
@@ -684,10 +684,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         searchParams.delete('tag');
 
-        const optionsResponsePromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
+        const optionsPromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
           method: 'OPTIONS',
         });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
         optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
@@ -725,8 +725,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         let initialOptionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
         expect(initialOptionsRequests).toHaveLength(0);
 
-        const optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
 
@@ -857,8 +857,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         await promiseIfRemote(interceptor.clear(), interceptor);
 
-        const optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
 
@@ -1002,11 +1002,11 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let optionsResponsePromise = fetchWithTimeout(joinURL(baseURL, '/filters'), {
+        let optionsPromise = fetchWithTimeout(joinURL(baseURL, '/filters'), {
           method: 'OPTIONS',
           timeout: 200,
         });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
           canBeAborted: true,
         });
@@ -1017,8 +1017,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
 
-        optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
-        await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+        optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+        await expectFetchErrorOrPreflightResponse(optionsPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
 
@@ -1062,11 +1062,11 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let optionsResponsePromise = fetchWithTimeout(joinURL(baseURL, '/filters'), {
+          let optionsPromise = fetchWithTimeout(joinURL(baseURL, '/filters'), {
             method: 'OPTIONS',
             timeout: 200,
           });
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
             canBeAborted: true,
           });
@@ -1078,8 +1078,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          optionsResponsePromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
           });
 
@@ -1163,8 +1163,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
                 const optionsRequest = new Request(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
-                const optionsResponsePromise = fetch(optionsRequest);
-                await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+                const optionsPromise = fetch(optionsRequest);
+                await expectFetchErrorOrPreflightResponse(optionsPromise, {
                   shouldBePreflight: overridesPreflightResponse,
                 });
 
@@ -1234,8 +1234,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
                 const optionsRequest = new Request(joinURL(baseURL, '/filters'), {
                   method: 'OPTIONS',
                 });
-                const optionsResponsePromise = fetch(optionsRequest);
-                await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+                const optionsPromise = fetch(optionsRequest);
+                await expectFetchErrorOrPreflightResponse(optionsPromise, {
                   shouldBePreflight: overridesPreflightResponse,
                 });
 
@@ -1313,8 +1313,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
               const optionsRequest = new Request(joinURL(baseURL, '/filters'), {
                 method: 'OPTIONS',
               });
-              const optionsResponsePromise = fetch(optionsRequest);
-              await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+              const optionsPromise = fetch(optionsRequest);
+              await expectFetchErrorOrPreflightResponse(optionsPromise, {
                 shouldBePreflight: overridesPreflightResponse,
               });
 
@@ -1385,10 +1385,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           searchParams.set('x-value', '2');
           searchParams.set('name', 'User 1');
 
-          let optionsResponsePromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
+          let optionsPromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
             method: 'OPTIONS',
           });
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
           });
 
@@ -1402,8 +1402,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           const optionsRequest = new Request(joinURL(baseURL, '/filters'), {
             method: 'OPTIONS',
           });
-          optionsResponsePromise = fetch(optionsRequest);
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          optionsPromise = fetch(optionsRequest);
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
           });
 
@@ -1483,10 +1483,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           searchParams.set('x-value', '2');
           searchParams.set('name', 'User 1');
 
-          let optionsResponsePromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
+          let optionsPromise = fetch(joinURL(baseURL, `/filters?${searchParams.toString()}`), {
             method: 'OPTIONS',
           });
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
           });
 
@@ -1500,8 +1500,8 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           const optionsRequest = new Request(joinURL(baseURL, '/filters'), {
             method: 'OPTIONS',
           });
-          optionsResponsePromise = fetch(optionsRequest);
-          await expectFetchErrorOrPreflightResponse(optionsResponsePromise, {
+          optionsPromise = fetch(optionsRequest);
+          await expectFetchErrorOrPreflightResponse(optionsPromise, {
             shouldBePreflight: overridesPreflightResponse,
           });
 

@@ -597,16 +597,16 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
         headers.delete('accept');
 
-        let listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
-        await expectFetchError(listResponsePromise);
+        let listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
+        await expectFetchError(listPromise);
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
-        await expectFetchError(listResponsePromise);
+        listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
+        await expectFetchError(listPromise);
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(2);
       });
@@ -674,8 +674,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
         searchParams.delete('orderBy');
 
-        let listResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
-        await expectFetchError(listResponsePromise);
+        let listPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        await expectFetchError(listPromise);
 
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
@@ -683,8 +683,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         searchParams.append('orderBy', 'name');
         searchParams.set('name', 'User 2');
 
-        listResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
-        await expectFetchError(listResponsePromise);
+        listPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'GET' });
+        await expectFetchError(listPromise);
 
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
@@ -722,8 +722,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         let initialListRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(initialListRequests).toHaveLength(0);
 
-        const listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await expectFetchError(listResponsePromise);
+        const listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(listPromise);
 
         await promiseIfRemote(
           listHandler.respond({
@@ -850,8 +850,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
         await promiseIfRemote(interceptor.clear(), interceptor);
 
-        const listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await expectFetchError(listResponsePromise);
+        const listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(listPromise);
 
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
@@ -997,11 +997,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let listResponsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method: 'GET',
           timeout: 200,
         });
-        await expectFetchError(listResponsePromise, { canBeAborted: true });
+        await expectFetchError(listPromise, { canBeAborted: true });
 
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
@@ -1009,8 +1009,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
 
-        listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await expectFetchError(listResponsePromise);
+        listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+        await expectFetchError(listPromise);
 
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
@@ -1052,11 +1052,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let listResponsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+          let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
             method: 'GET',
             timeout: 200,
           });
-          await expectFetchError(listResponsePromise, { canBeAborted: true });
+          await expectFetchError(listPromise, { canBeAborted: true });
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
@@ -1065,8 +1065,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          listResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          await expectFetchError(listResponsePromise);
+          listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          await expectFetchError(listPromise);
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
@@ -1148,8 +1148,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
                 const listRequest = new Request(joinURL(baseURL, '/users'), { method: 'GET' });
-                const listResponsePromise = fetch(listRequest);
-                await expectFetchError(listResponsePromise);
+                const listPromise = fetch(listRequest);
+                await expectFetchError(listPromise);
 
                 listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
                 expect(listRequests).toHaveLength(1);
@@ -1217,8 +1217,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
                   method: 'GET',
                   headers: { 'x-value': '2' },
                 });
-                const listResponsePromise = fetch(listRequest);
-                await expectFetchError(listResponsePromise);
+                const listPromise = fetch(listRequest);
+                await expectFetchError(listPromise);
 
                 listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
                 expect(listRequests).toHaveLength(1);
@@ -1294,8 +1294,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
                 method: 'GET',
                 headers: { 'x-value': '2' },
               });
-              const listResponsePromise = fetch(listRequest);
-              await expectFetchError(listResponsePromise);
+              const listPromise = fetch(listRequest);
+              await expectFetchError(listPromise);
 
               listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
               expect(listRequests).toHaveLength(1);
@@ -1360,11 +1360,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
           const searchParams = new HttpSearchParams({ name: 'User 1' });
 
-          let listResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          let listPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
             method: 'GET',
             headers: { 'x-value': '2' },
           });
-          await expectFetchError(listResponsePromise);
+          await expectFetchError(listPromise);
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
@@ -1377,8 +1377,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
             method: 'GET',
             headers: { 'x-value': '2' },
           });
-          listResponsePromise = fetch(listRequest);
-          await expectFetchError(listResponsePromise);
+          listPromise = fetch(listRequest);
+          await expectFetchError(listPromise);
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
@@ -1453,11 +1453,11 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
           const searchParams = new HttpSearchParams({ name: 'User 1' });
 
-          let listResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+          let listPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
             method: 'GET',
             headers: { 'x-value': '2' },
           });
-          await expectFetchError(listResponsePromise);
+          await expectFetchError(listPromise);
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
@@ -1470,8 +1470,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
             method: 'GET',
             headers: { 'x-value': '2' },
           });
-          listResponsePromise = fetch(listRequest);
-          await expectFetchError(listResponsePromise);
+          listPromise = fetch(listRequest);
+          await expectFetchError(listPromise);
 
           listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
           expect(listRequests).toHaveLength(1);
