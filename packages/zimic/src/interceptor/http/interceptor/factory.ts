@@ -17,14 +17,6 @@ function matchRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): opt
   return options.type === 'remote';
 }
 
-/**
- * Creates an HTTP interceptor.
- *
- * @param options The options for the interceptor.
- * @returns The created HTTP interceptor.
- * @throws {InvalidHttpInterceptorWorkerPlatform} When the worker platform is invalid.
- * @see {@link https://github.com/diego-aquino/zimic#createhttpinterceptor}
- */
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema>;
