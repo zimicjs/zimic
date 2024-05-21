@@ -7,7 +7,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/intercep
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
-import { joinURL, DuplicatedPathParamError, createURL, InvalidURL } from '@/utils/urls';
+import { joinURL, DuplicatedPathParamError, createURL, InvalidURLError } from '@/utils/urls';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -500,7 +500,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           await expect(async () => {
             await worker.use(interceptor.client(), method, invalidURL, spiedRequestHandler);
-          }).rejects.toThrowError(new InvalidURL(invalidURL));
+          }).rejects.toThrowError(new InvalidURLError(invalidURL));
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
         });
