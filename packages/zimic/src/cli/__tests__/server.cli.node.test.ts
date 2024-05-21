@@ -3,7 +3,7 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
+import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
@@ -31,10 +31,10 @@ describe('CLI (server)', async () => {
   const serverHelpOutput = [
     'zimic server',
     '',
-    'Server',
+    'Interceptor server',
     '',
     'Commands:',
-    '  zimic server start [-- onReady]  Start a mock server.',
+    '  zimic server start [-- onReady]  Start an interceptor server.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -69,7 +69,7 @@ describe('CLI (server)', async () => {
     const serverStartHelpOutput = [
       'zimic server start [-- onReady]',
       '',
-      'Start a mock server.',
+      'Start an interceptor server.',
       '',
       'Positionals:',
       '  onReady  A command to run when the server is ready to accept connections.',

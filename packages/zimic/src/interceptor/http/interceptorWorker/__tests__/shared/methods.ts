@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
-import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
+import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';

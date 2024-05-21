@@ -1,4 +1,4 @@
-export interface Server {
+export interface InterceptorServer {
   hostname: () => string;
   port: () => number | undefined;
   httpURL: () => string | undefined;

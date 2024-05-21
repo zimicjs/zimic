@@ -1,12 +1,12 @@
 import { describe } from 'vitest';
 
-import Server from '@/server/Server';
+import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 
 import { declareSharedHttpInterceptorTests } from './shared/interceptorTests';
 
 describe('HttpInterceptor (Node.js)', () => {
-  const server = new Server();
+  const server = new InterceptorServer();
 
   declareSharedHttpInterceptorTests({
     platform: 'node',

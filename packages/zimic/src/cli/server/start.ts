@@ -1,7 +1,7 @@
 import { logWithPrefix } from '@/cli/utils/console';
 import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 
-import Server from '../../server/Server';
+import InterceptorServer from '../../interceptor/server/InterceptorServer';
 
 interface ServerStartOptions {
   hostname: string;
@@ -13,10 +13,10 @@ interface ServerStartOptions {
   };
 }
 
-export let singletonServer: Server | undefined;
+export let singletonServer: InterceptorServer | undefined;
 
-async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
-  const server = new Server({ hostname, port });
+async function startInterceptorServer({ hostname, port, ephemeral, onReady }: ServerStartOptions) {
+  const server = new InterceptorServer({ hostname, port });
 
   singletonServer = server;
 
@@ -39,4 +39,4 @@ async function startServer({ hostname, port, ephemeral, onReady }: ServerStartOp
   }
 }
 
-export default startServer;
+export default startInterceptorServer;

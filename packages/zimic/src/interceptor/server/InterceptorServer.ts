@@ -10,11 +10,11 @@ import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
-import NotStartedServerError from './errors/NotStartedServerError';
-import { Server as PublicServer } from './types/public';
-import { HttpHandlerCommit, ServerWebSocketSchema } from './types/schema';
+import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
+import { InterceptorServer as PublicInterceptorServer } from './types/public';
+import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
 
-export interface ServerOptions {
+export interface InterceptorServerOptions {
   hostname?: string;
   port?: number;
 }
@@ -25,9 +25,9 @@ interface HttpHandler {
   socket: Socket;
 }
 
-class Server implements PublicServer {
+class InterceptorServer implements PublicInterceptorServer {
   private _httpServer?: HttpServer;
-  private _webSocketServer?: WebSocketServer<ServerWebSocketSchema>;
+  private _webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
 
   private _hostname: string;
   private _port?: number;
@@ -46,7 +46,7 @@ class Server implements PublicServer {
 
   private knownWorkerSockets = new Set<Socket>();
 
-  constructor(options: ServerOptions = {}) {
+  constructor(options: InterceptorServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
   }
@@ -74,7 +74,7 @@ class Server implements PublicServer {
     /* istanbul ignore if -- @preserve
      * The HTTP server is initialized before using this method in normal conditions. */
     if (!this._httpServer) {
-      throw new NotStartedServerError();
+      throw new NotStartedInterceptorServerError();
     }
     return this._httpServer;
   }
@@ -83,7 +83,7 @@ class Server implements PublicServer {
     /* istanbul ignore if -- @preserve
      * The web socket server is initialized before using this method in normal conditions. */
     if (!this._webSocketServer) {
-      throw new NotStartedServerError();
+      throw new NotStartedInterceptorServerError();
     }
     return this._webSocketServer;
   }
@@ -126,7 +126,7 @@ class Server implements PublicServer {
   }
 
   private commitWorker = (
-    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/commit'>,
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/commit'>,
     socket: Socket,
   ) => {
     const commit = message.data;
@@ -136,7 +136,7 @@ class Server implements PublicServer {
   };
 
   private resetWorker = (
-    message: WebSocket.ServiceEventMessage<ServerWebSocketSchema, 'interceptors/workers/use/reset'>,
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/reset'>,
     socket: Socket,
   ) => {
     this.removeWorkerSocket(socket);
@@ -283,4 +283,4 @@ class Server implements PublicServer {
   }
 }
 
-export default Server;
+export default InterceptorServer;

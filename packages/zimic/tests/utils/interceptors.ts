@@ -19,7 +19,7 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '@/interceptor/http/interceptorWorker/types/options';
-import Server from '@/server/Server';
+import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL, createURL, ExtendedURL } from '@/utils/urls';
@@ -36,7 +36,7 @@ export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
   return createURL(baseURL);
 }
 
-export async function getNodeBaseURL(type: HttpInterceptorType, server: Server) {
+export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
     return createURL('http://localhost:3000');
   }

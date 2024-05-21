@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/server/constants';
+import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from '@/interceptor/server/constants';
 
 interface ExpectFetchErrorOptions {
   canBeAborted?: boolean;

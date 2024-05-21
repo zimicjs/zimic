@@ -1,12 +1,12 @@
-import type Server from '@/server/Server';
+import type InterceptorServer from '@/interceptor/server/InterceptorServer';
 
-let server: Server | undefined;
+let server: InterceptorServer | undefined;
 
 export const GLOBAL_SETUP_SERVER_HOSTNAME = 'localhost';
 export const GLOBAL_SETUP_SERVER_PORT = 3001;
 
 export async function setup() {
-  const Server = (await import('@/server/Server')).default;
+  const Server = (await import('@/interceptor/server/InterceptorServer')).default;
 
   server = new Server({
     hostname: GLOBAL_SETUP_SERVER_HOSTNAME,
