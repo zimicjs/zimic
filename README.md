@@ -1,9 +1,13 @@
+<p align="center">
+  <img src="./docs/zimic.svg" align="center">
+</p>
+
 <h1 align="center">
   Zimic
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP request mocking
+  Next-gen, TypeScript-first HTTP request mocking
 </p>
 
 <div align="center">
