@@ -19,7 +19,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/users/diego-aquino/projects/5">Roadmap</a>
+  <a href="https://github.com/users/diego-aquino/projects/5/views/5">Roadmap</a>
 </div>
 
 ---
@@ -78,13 +78,13 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
     - [`worker.stop()`](#workerstop)
     - [`worker.isRunning()`](#workerisrunning)
   - [`HttpInterceptor`](#httpinterceptor)
-    - [`createHttpInterceptor`](#createhttpinterceptor)
+    - [`http.createInterceptor`](#httpcreateinterceptor)
     - [Declaring service schemas](#declaring-service-schemas)
       - [Declaring paths](#declaring-paths)
       - [Declaring methods](#declaring-methods)
       - [Declaring requests](#declaring-requests)
       - [Declaring responses](#declaring-responses)
-    - [`interceptor.baseURL()`](#interceptorbaseurl)
+    - [HTTP `interceptor.baseURL()`](#http-interceptorbaseurl)
     - [`interceptor.<method>(path)`](#interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
     - [`interceptor.clear()`](#interceptorclear)
@@ -520,7 +520,7 @@ interceptor needs a running [`HttpInterceptorWorker`](#httpinterceptorworker).
 
 Each interceptor represents a service and can be used to mock its paths and methods.
 
-#### `createHttpInterceptor`
+#### `http.createInterceptor`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
 [Declaring service schemas](#declaring-service-schemas).
@@ -987,7 +987,7 @@ const interceptor = createHttpInterceptor<{
 
 </details>
 
-#### `interceptor.baseURL()`
+#### HTTP `interceptor.baseURL()`
 
 Returns the base URL of the interceptor.
 
