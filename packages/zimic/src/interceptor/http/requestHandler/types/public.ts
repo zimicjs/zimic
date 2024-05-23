@@ -273,7 +273,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
+   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
    */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
@@ -281,7 +281,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
+   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
    */
   finally: (
     onFinally?: (() => void) | null,

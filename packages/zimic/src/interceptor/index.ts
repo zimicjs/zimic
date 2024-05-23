@@ -32,29 +32,22 @@ export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/sche
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-/**
- * An HTTP namespace containing the runtime resources related to HTTP, such as functions and default settings.
- *
- * @see {@link https://github.com/diego-aquino/zimic#http `http` API reference}
- */
+/** @see {@link https://github.com/diego-aquino/zimic#http `http` API reference} */
 export interface HttpNamespace {
   /**
    * Creates an HTTP interceptor.
    *
    * @param options The options for the interceptor.
    * @returns The created HTTP interceptor.
-   * @throws {InvalidURLError} If the URL is invalid.
-   * @throws {UnsupportedURLProtocolError} If the URL protocol is not either `http` or `https`.
+   * @throws {InvalidURLError} If the base URL is invalid.
+   * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
    * @see {@link https://github.com/diego-aquino/zimic#httpcreateinterceptor `http.createInterceptor` API reference}
+   * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring service schemas}
    */
   createInterceptor: typeof createHttpInterceptor;
 }
 
-/**
- * An HTTP namespace containing the runtime resources related to HTTP, such as functions and default settings.
- *
- * @see {@link https://github.com/diego-aquino/zimic#http `http` API reference}
- */
+/** @see {@link https://github.com/diego-aquino/zimic#http `http` API reference} */
 export const http: HttpNamespace = {
   createInterceptor: createHttpInterceptor,
 };

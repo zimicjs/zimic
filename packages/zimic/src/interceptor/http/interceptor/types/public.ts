@@ -8,7 +8,7 @@ import {
 import { HttpInterceptorPlatform } from './options';
 
 /**
- * An interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters and
+ * An interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters, and
  * responses are statically-typed based on the provided service schema.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor `HttpInterceptor` API reference}
@@ -135,7 +135,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
 }
 
 /**
- * A local interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters
+ * A local interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
  * and responses are statically-typed based on the provided service schema.
  *
  * To intercept HTTP requests, the interceptor must have been started with
@@ -158,7 +158,7 @@ export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends 
 }
 
 /**
- * A remote interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters
+ * A remote interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
  * and responses are statically-typed based on the provided service schema.
  *
  * To intercept HTTP requests, the interceptor must have been started with

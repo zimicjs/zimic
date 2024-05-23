@@ -58,8 +58,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   - [1. Requirements](#1-requirements)
   - [2. Install from `npm`](#2-install-from-npm)
   - [3. Choose your method to intercept requests](#3-choose-your-method-to-intercept-requests)
-    - [Local interceptors](#local-interceptors)
-    - [Remote interceptors](#remote-interceptors)
+    - [Local HTTP interceptors](#local-http-interceptors)
+    - [Remote HTTP interceptors](#remote-http-interceptors)
   - [4. Post-install](#4-post-install)
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
@@ -75,6 +75,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 - [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`http.createInterceptor`](#httpcreateinterceptor)
+      - [Creating a local interceptor](#creating-a-local-interceptor)
+      - [Creating a remote interceptor](#creating-a-remote-interceptor)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -112,7 +114,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 ### 1. Requirements
 
-- [TypeScript](https://www.typescriptlang.org) >=4.7
+- [TypeScript](https://www.typescriptlang.org) >= 4.7
 
 - `strict` mode enabled in your `tsconfig.json`:
   ```jsonc
@@ -145,19 +147,18 @@ The latest (possible unstable) code is available in canary releases, under the t
 
 ### 3. Choose your method to intercept requests
 
-Zimic interceptors support two types of execution: `local` and `remote`. Both types use the same APIs, but they require
-different mental models and configurations.
+Zimic interceptors support two types of execution: `local` and `remote`.
 
-#### Local interceptors
+#### Local HTTP interceptors
 
-When the type of an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) internally to intercepts
-requests _in the same process_ as your application. This is the simplest way to start mocking requests, as it does not
-require any server setup.
+When the type of an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests created
+_in the same process_ as your application. This is the simplest way to start mocking requests and does not require any
+server setup.
 
 When to use `local`:
 
-- **Testing**: If you run your application in the same worker as your tests. This is common when using Jest, Vitest and
-  other test runners for unit and integration tests.
+- **Testing**: If you run your application in the _same_ process as your tests. This is common when using Jest, Vitest
+  and other test runners for unit and integration tests.
 - **Development**: If you want to mock requests in your development environment without setting up a server. This might
   be useful when you're working on a feature that requires a backend that is not yet ready.
 
@@ -165,43 +166,42 @@ Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) 
 
 > [!IMPORTANT]
 >
-> When using a local interceptor, all of the mocking operations are _synchronous_, due to no network communication being
-> required. There's no need to `await` the interceptor operations before making requests.
+> All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
 
-#### Remote interceptors
+#### Remote HTTP interceptors
 
 When the type of an interceptor is `remote`, Zimic uses a dedicated [interceptor server](#zimic-server) to handle
 requests. This opens up more possibilities for mocking, such as intercepting requests from multiple applications and
-running the interceptor server in a different machine. It is also more robust because it uses a regular HTTP server and
+running the interceptor server on a different machine. It is also more robust because it uses a regular HTTP server and
 does not depend on local interception algorithms.
 
 When to use `remote`:
 
-- **Testing**: When you _do not_ run your application in the same worker as your tests. When using Cypress, Playwright,
-  or other end-to-end testing tools, this is generally the case, as the test runner and the application run in separate
-  processes. This might also happen in more complex setups with Jest, Vitest and other test runners, such as testing a
-  backend server running in another terminal or machine.
-- **Development**: When you want your mocked requests to be accessible from outside the process that created them. This
-  is useful when creating a mock server, along with you can run a script to apply the mocks. After that, the server can
-  be accessed from any other application (e.g. browser) using its hostname and port.
+- **Testing**: If you _do not_ run your application in the same process as your tests. When using Cypress, Playwright,
+  or other end-to-end testing tools, this is generally the case because the test runner and the application run in
+  separate processes. This might also happen in more complex setups with Jest, Vitest and other test runners, such as
+  testing a backend server running in another process, terminal, or machine.
+- **Development**: If you want your mocked responses to be accessible from outside the process that created them. A
+  common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
+  accessed from any other application (e.g. browser) and return mock responses.
 
 Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
 interceptors.
 
 > [!IMPORTANT]
 >
-> When using a remote interceptor, all of the mocking operations are _asynchronous_, since they require network
-> communication with the [interceptor server](#zimic-server). Make sure to `await` the interceptor operations before
-> making requests.
+> All mocking operations in remote interceptors are _asynchronous_, because they require network communication with an
+> [interceptor server](#zimic-server). Make sure to `await` the [handlers](#httprequesthandler) before making requests.
 >
-> If you are using [`typescript-eslint`](https://typescript-eslint.io), a useful rule is
-> [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It shows a
-> warning when a promise is not being `awaited`, avoiding mistakes by forgetting to `await` remote operations.
+> If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
+> [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
+> promises that are not being handled, avoiding mistakes by forgetting to `await` remote interceptor operations.
 
 > [!TIP]
 >
 > The type is an individual interceptor configuration. It is perfectly possible to have multiple interceptors with
-> different types in the same application.
+> different types in the same application! However, keep in mind that local interceptors have preference over remote
+> interceptors.
 
 ### 4. Post-install
 
@@ -211,16 +211,8 @@ No additional configuration is necessary for Node.js. Check out the [usage guide
 
 #### Browser post-install
 
-If you plan to use [local interceptors](#local-interceptors) and run Zimic in a browser, you must first initialize the
-mock service worker in your public directory:
-
-```bash
-npx zimic browser init <publicDirectory>
-```
-
-This will create a `mockServiceWorker.js` file in the provided public directory, which is necessary to intercept local
-requests and mock responses in browsers. We recommend not deploying this file to production. It might even be a good
-idea to add it to your `.gitignore` file.
+If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
+[initialize the mock service worker](#zimic-browser-init) in your public directory.
 
 ## Examples
 
@@ -254,9 +246,8 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    });
    ```
 
-   In this example, we're creating a [local interceptor](#local-interceptors) for a service with a single path,
-   `/users`, that supports a `GET` method. The response for a successful request is an array of `User` objects, which is
-   checked to be a valid JSON using `JSONValue`. Learn more at
+   In this example, we're creating a [local interceptor](#local-http-interceptors) for a service supporting `GET`
+   requests to `/users`. A successful response contains an array of `User` objects. Learn more at
    [Declaring HTTP service schemas](#declaring-http-service-schemas).
 
 2. Then, start the interceptor:
@@ -265,7 +256,7 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    await interceptor.start();
    ```
 
-3. Now, you can intercept requests and returning mock responses!
+3. Now, you can intercept requests and return mock responses!
 
    ```ts
    const listHandler = interceptor.get('/users').respond({
@@ -289,27 +280,31 @@ test setup file. An example using a Jest/Vitest API:
 `tests/setup.ts`
 
 ```ts
-// Your interceptors:
 import userInterceptor from './interceptors/userInterceptor';
 import analyticsInterceptor from './interceptors/analyticsInterceptor';
 
+// Your interceptors:
+const interceptors = [userInterceptor, analyticsInterceptor];
+
+// Start intercepting requests.
 beforeAll(async () => {
-  // Start intercepting requests.
-  await userInterceptor.start();
-  await analyticsInterceptor.start();
+  for (const interceptor of interceptors) {
+    await interceptor.start();
+  }
 });
 
+// Clear all interceptors to make sure no tests affect each other.
 beforeEach(async () => {
-  // Clear all interceptors to make sure no tests affect each other.
-  // For local interceptors, the operation are synchronous and may dismiss the `await`.
-  await userInterceptor.clear();
-  await analyticsInterceptor.clear();
+  for (const interceptor of interceptors) {
+    await interceptor.clear();
+  }
 });
 
+// Stop intercepting requests.
 afterAll(async () => {
-  // Stop intercepting requests.
-  await userInterceptor.stop();
-  await analyticsInterceptor.stop();
+  for (const interceptor of interceptors) {
+    await interceptor.stop();
+  }
 });
 ```
 
@@ -493,16 +488,15 @@ Each interceptor represents a service and can be used to mock its paths and meth
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
 [Declaring HTTP service schemas](#declaring-http-service-schemas).
 
-<details>
-  <summary>Creating a local interceptor:</summary>
+##### Creating a local interceptor
 
-A local interceptor is configured with `type: 'local'`. The `baseURL` represents which URLs should be matched by this
+A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
 interceptor. Any request starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler)
 exists.
 
 ```ts
 import { JSONValue } from 'zimic';
-import { http.createInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type User = JSONValue<{
   username: string;
@@ -522,10 +516,7 @@ const interceptor = http.createInterceptor<{
 });
 ```
 
-</details>
-
-<details>
-  <summary>Creating a remote interceptor:</summary>
+##### Creating a remote interceptor
 
 A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
 [interceptor server](#zimic-server). Any request starting with the `baseURL` will be intercepted if a matching
@@ -533,7 +524,7 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 
 ```ts
 import { JSONValue } from 'zimic';
-import { http.createInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type User = JSONValue<{
   username: string;
@@ -549,30 +540,28 @@ const interceptor = http.createInterceptor<{
   };
 }>({
   type: 'remote',
-  // The interceptor server is running at http://localhost:4000.
-  // `/my-service` is the base path for the service this interceptor represents.
+  // The interceptor server is at http://localhost:4000.
+  // `/my-service` is a base path to differentiate between multiple interceptors using the same server.
   baseURL: 'http://localhost:4000/my-service',
 });
 ```
 
-A single [interceptor server](#zimic-server) is perfectly capable of handling multiple service requests. Thus,
-additional paths are supported and might be necessary to differentiate between conflicting mocks. If you may have
+A single [interceptor server](#zimic-server) is perfectly capable of handling multiple interceptors and requests. Thus,
+additional paths are supported and might be necessary to differentiate between conflicting interceptors. If you may have
 multiple threads or processes applying mocks concurrently to the same [interceptor server](#zimic-server), it's
-important to keep their base URLs unique. Also, make sure that your application is considering the correct URL when
-making requests.
+important to keep the interceptor base URLs unique. Also, make sure that your application is considering the correct URL
+when making requests.
 
 ```ts
 const interceptor = http.createInterceptor<{}>({
   type: 'remote',
-  // Base URL with a unique identifier to prevent conflicts.
+  // Declaring a base URL with a unique identifier to prevent conflicts.
   baseURL: `http://localhost:4000/my-service-${crypto.randomUUID()}`,
 });
 
-// Your application should use this base URL when making requests to have access to the mocked responses.
+// Your application should use this base URL when making requests.
 const baseURL = interceptor.baseURL();
 ```
-
-</details>
 
 #### Declaring HTTP service schemas
 
@@ -1400,7 +1389,7 @@ being used after upgrading Zimic.
 ### `zimic server`
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
-in combination with [remote interceptors](#remote-interceptors) to simulate real services.
+in combination with [remote interceptors](#remote-http-interceptors) to simulate real services.
 
 #### `zimic server start`
 
@@ -1435,8 +1424,8 @@ Or as a prefix of another command:
 zimic server start --port 4000 --ephemeral -- npm run test
 ```
 
-The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server will
-automatically stop after the command finishes.
+The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
+should automatically stop after the command finishes.
 
 ---
 
