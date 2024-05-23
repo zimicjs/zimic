@@ -136,7 +136,8 @@ export interface HttpRequestHandler<
    * stop matching requests. The next handler, created before this one, that matches the same method and path will be
    * used if present. If not, the requests of the method and path will not be intercepted.
    *
-   * To make the handler match requests again, register a new response with `handler.respond()`.
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/diego-aquino/zimic#http-handlerrespond `handler.respond()`}.
    *
    * This method is useful to skip a handler. It is more gentle than
    * [`handler.clear()`](https://github.com/diego-aquino/zimic#http-handlerclear), as it only removed the response,
@@ -155,7 +156,8 @@ export interface HttpRequestHandler<
    * matches the same method and path will be used if present. If not, the requests of the method and path will not be
    * intercepted.
    *
-   * To make the handler match requests again, register a new response with `handler.respond()`.
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/diego-aquino/zimic#http-handlerrespond `handler.respond()`}.
    *
    * This method is useful to reset handlers to a clean state between tests. It is more aggressive than
    * [`handler.bypass()`](https://github.com/diego-aquino/zimic#http-handlerbypass), as it also clears restrictions and
