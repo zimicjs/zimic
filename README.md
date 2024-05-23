@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/zimic.svg" align="center">
+  <img src="./docs/zimic.png" align="center" width="100px" height="100px">
 </p>
 
 <h1 align="center">
