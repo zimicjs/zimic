@@ -215,7 +215,7 @@ export interface LocalHttpRequestHandler<
 /**
  * A synced remote HTTP request handler. When a remote handler is synced, it is guaranteed that all of the mocking
  * operations were committed to the connected
- * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}.
+ * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httprequesthandler `HttpRequestHandler` API reference}
  */
@@ -245,7 +245,7 @@ export interface SyncedRemoteHttpRequestHandler<
 /**
  * A pending remote HTTP request handler. When a remote handler is pending, it is not guaranteed that all of the mocking
  * operations were committed to the connected
- * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}.
+ * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
  *
  * To commit a remote interceptor, you can `await` it or use the methods {@link then handler.then()},
  * {@link catch handler.catch()}, and {@link finally handler.finally()}.
@@ -260,7 +260,7 @@ export interface PendingRemoteHttpRequestHandler<
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}.
+   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
    */
   then: <FulfilledResult = SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>, RejectedResult = never>(
     onFulfilled?:
@@ -273,7 +273,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}
+   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
    */
   catch: <RejectedResult = never>(
     onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
@@ -281,7 +281,7 @@ export interface PendingRemoteHttpRequestHandler<
 
   /**
    * Waits for the remote handler to be synced with the connected
-   * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}
+   * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
    */
   finally: (
     onFinally?: (() => void) | null,
@@ -291,7 +291,7 @@ export interface PendingRemoteHttpRequestHandler<
 /**
  * A remote HTTP request handler to declare responses for intercepted requests. In a remote handler, the mocking
  * operations are asynchronous and include remote calls to the connected
- * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server}.
+ * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}.
  *
  * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
  * {@link https://github.com/diego-aquino/zimic#http-interceptormethodpath `interceptor.<method>(path)`} will be used.

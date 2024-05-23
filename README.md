@@ -101,9 +101,11 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [HTTP `handler.clear()`](#http-handlerclear)
     - [HTTP `handler.requests()`](#http-handlerrequests)
 - [CLI](#cli)
-  - [`zimic --version`](#zimic---version)
-  - [`zimic --help`](#zimic---help)
-  - [`zimic browser init <publicDirectory>`](#zimic-browser-init-publicdirectory)
+  - [`zimic`](#zimic)
+  - [`zimic browser`](#zimic-browser)
+    - [`zimic browser init`](#zimic-browser-init)
+  - [`zimic server`](#zimic-server)
+    - [`zimic server start`](#zimic-server-start)
 - [Changelog](#changelog)
 
 ## Getting started
@@ -159,6 +161,8 @@ When to use `local`:
 - **Development**: If you want to mock requests in your development environment without setting up a server. This might
   be useful when you're working on a feature that requires a backend that is not yet ready.
 
+Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
+
 > [!IMPORTANT]
 >
 > When using a local interceptor, all of the mocking operations are _synchronous_, due to no network communication being
@@ -166,10 +170,10 @@ When to use `local`:
 
 #### Remote interceptors
 
-When the type of an interceptor is `remote`, Zimic uses a dedicated interceptor server to handle requests. This opens up
-more possibilities for mocking, such as intercepting requests from multiple applications and running the interceptor
-server in a different machine. It is also more robust because it uses a regular HTTP server and does not depend on local
-interception algorithms.
+When the type of an interceptor is `remote`, Zimic uses a dedicated [interceptor server](#zimic-server) to handle
+requests. This opens up more possibilities for mocking, such as intercepting requests from multiple applications and
+running the interceptor server in a different machine. It is also more robust because it uses a regular HTTP server and
+does not depend on local interception algorithms.
 
 When to use `remote`:
 
@@ -181,10 +185,14 @@ When to use `remote`:
   is useful when creating a mock server, along with you can run a script to apply the mocks. After that, the server can
   be accessed from any other application (e.g. browser) using its hostname and port.
 
+Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
+interceptors.
+
 > [!IMPORTANT]
 >
 > When using a remote interceptor, all of the mocking operations are _asynchronous_, since they require network
-> communication with the interceptor server. Make sure to `await` the interceptor operations before making requests.
+> communication with the [interceptor server](#zimic-server). Make sure to `await` the interceptor operations before
+> making requests.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a useful rule is
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It shows a
@@ -519,8 +527,9 @@ const interceptor = http.createInterceptor<{
 <details>
   <summary>Creating a remote interceptor:</summary>
 
-A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an interceptor server. Any request
-starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler) exists.
+A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
+[interceptor server](#zimic-server). Any request starting with the `baseURL` will be intercepted if a matching
+[handler](#httprequesthandler) exists.
 
 ```ts
 import { JSONValue } from 'zimic';
@@ -546,10 +555,11 @@ const interceptor = http.createInterceptor<{
 });
 ```
 
-A single interceptor server is perfectly capable of handling multiple service requests. Thus, additional paths are
-supported and might be necessary to differentiate between conflicting mocks. If you may have multiple threads or
-processes applying mocks concurrently to the same interceptor server, it's important to keep their base URLs unique.
-Also, make sure that your application is considering the correct URL when making requests.
+A single [interceptor server](#zimic-server) is perfectly capable of handling multiple service requests. Thus,
+additional paths are supported and might be necessary to differentiate between conflicting mocks. If you may have
+multiple threads or processes applying mocks concurrently to the same [interceptor server](#zimic-server), it's
+important to keep their base URLs unique. Also, make sure that your application is considering the correct URL when
+making requests.
 
 ```ts
 const interceptor = http.createInterceptor<{}>({
@@ -1352,24 +1362,81 @@ console.log(listRequests[0].response.raw); // Response{}
 
 ## CLI
 
-### `zimic --version`
+### `zimic`
 
-Displays the current version of Zimic.
+```
+zimic <command>
 
-### `zimic --help`
+Commands:
+  zimic browser  Browser
+  zimic server   Interceptor server
 
-Displays the available commands and options.
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+```
 
-### `zimic browser init <publicDirectory>`
+### `zimic browser`
 
-Initializes the mock service worker in a public directory.
+#### `zimic browser init`
 
-This command is necessary when using Zimic in a browser environment. It creates a `mockServiceWorker.js` file in the
+Initialize the browser service worker configuration.
+
+```
+zimic browser init <publicDirectory>
+
+Positionals:
+  publicDirectory  The path to the public directory of your application.
+                                                             [string] [required]
+```
+
+This command is necessary to use Zimic in a browser environment. It creates a `mockServiceWorker.js` file in the
 provided public directory, which is used to intercept requests and mock responses.
 
 If you are using Zimic mainly in tests, we recommend adding the `mockServiceWorker.js` to your `.gitignore` and adding
 this command to a `postinstall` scripts in your `package.json`. This ensures that the latest service worker script is
 being used after upgrading Zimic.
+
+### `zimic server`
+
+An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
+in combination with [remote interceptors](#remote-interceptors) to simulate real services.
+
+#### `zimic server start`
+
+Start an interceptor server.
+
+```
+zimic server start [-- onReady]
+
+Positionals:
+  onReady  A command to run when the server is ready to accept connections.
+                                                                        [string]
+
+Options:
+  -h, --hostname   The hostname to start the server on.
+                                                 [string] [default: "localhost"]
+  -p, --port       The port to start the server on.                     [number]
+  -e, --ephemeral  Whether the server should stop automatically after the
+                   on-ready command finishes. If no on-ready command is provided
+                   and ephemeral is true, the server will stop immediately after
+                   starting.                          [boolean] [default: false]
+```
+
+You can use this command to start an independent server:
+
+```bash
+zimic server start --port 4000
+```
+
+Or as a prefix of another command:
+
+```bash
+zimic server start --port 4000 --ephemeral -- npm run test
+```
+
+The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server will
+automatically stop after the command finishes.
 
 ---
 

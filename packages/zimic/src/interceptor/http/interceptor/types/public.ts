@@ -163,7 +163,7 @@ export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends 
  *
  * To intercept HTTP requests, the interceptor must have been started with
  * {@link https://github.com/diego-aquino/zimic#http-interceptorstart `interceptor.start()`} and an
- * {@link https://github.com/diego-aquino/zimic#http-interceptorserver interceptor server} should be running.
+ * {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server} should be running.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor `HttpInterceptor` API reference}
  */
