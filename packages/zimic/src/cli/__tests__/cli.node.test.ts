@@ -40,6 +40,19 @@ describe('CLI', () => {
     });
   });
 
+  it('should throw an error if an unknown command is provided', async () => {
+    const unknownCommand = 'unknown';
+
+    processArgvSpy.mockReturnValue(['node', 'cli.js', unknownCommand]);
+
+    await usingIgnoredConsole(['error'], async (spies) => {
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+
+      expect(spies.error).toHaveBeenCalledTimes(1);
+      expect(spies.error).toHaveBeenCalledWith(`Unknown argument: ${unknownCommand}`);
+    });
+  });
+
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
