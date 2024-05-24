@@ -15,7 +15,9 @@ export type HttpInterceptorType = 'local' | 'remote';
  */
 export type HttpInterceptorPlatform = 'node' | 'browser';
 
+/** The strategy to handle unhandled requests. */
 export namespace UnhandledRequestStrategy {
+  /** A static declaration of the strategy to handle unhandled requests. */
   export type Declaration = Partial<{
     log: boolean;
   }>;
@@ -23,8 +25,10 @@ export namespace UnhandledRequestStrategy {
   export interface HandlerContext {
     log: () => Promise<void>;
   }
+  /** A dynamic handler to unhandled requests. */
   export type Handler = (request: HttpRequest, context: HandlerContext) => PossiblePromise<void>;
 
+  /** The action to take when an unhandled request is intercepted. */
   export type Action = 'bypass' | 'reject';
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -43,6 +47,12 @@ export interface SharedHttpInterceptorOptions {
    * paths to differentiate between conflicting mocks.
    */
   baseURL: string | URL;
+
+  /**
+   * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   */
   onUnhandledRequest?: UnhandledRequestStrategy;
 }
 

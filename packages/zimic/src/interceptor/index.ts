@@ -58,7 +58,10 @@ export interface HttpNamespace {
   /** Default HTTP settings. */
   default: {
     /**
-     * Sets the default strategy for unhandled requests.
+     * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
+     * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled
+     * request. Defining a custom strategy when creating an interceptor will override this default for that
+     * interceptor.
      *
      * @param strategy The default strategy to be set.
      */
