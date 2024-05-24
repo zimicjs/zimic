@@ -1,9 +1,13 @@
+<p align="center">
+  <img src="./docs/zimic.png" align="center" width="100px" height="100px">
+</p>
+
 <h1 align="center">
   Zimic
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP request mocking
+  Next-gen, TypeScript-first HTTP request mocking
 </p>
 
 <div align="center">
@@ -15,7 +19,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/users/diego-aquino/projects/5">Roadmap</a>
+  <a href="https://github.com/users/diego-aquino/projects/5/views/5">Roadmap</a>
 </div>
 
 ---
@@ -32,18 +36,17 @@ Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired 
 
 ## Features
 
-Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
+Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 - :zap: **Statically-typed mocks**. Declare your HTTP endpoints and get full type inference and validation when applying
   mocks.
 - :link: **Network-level intercepts**. Internally, Zimic uses [MSW](https://github.com/mswjs/msw), which intercepts HTTP
   requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped. From you
   application's point of view, the mocked requests are indistinguishable from the real ones.
-- :wrench: **Flexibility**. You can simulate real application workflows by mocking each necessary endpoints. This is
-  specially useful in testing, making sure the real path your application takes is covered and the sent requests are
-  correct.
-- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity, simplicity and standardization in your
-  mocks. Check our [Getting started](#getting-started) guide and starting mocking!
+- :wrench: **Flexibility**. You can simulate real application workflows by mocking the necessary endpoints. This is
+  specially useful in testing, making sure that the real path your application takes is covered.
+- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity and simplicity in your mocks. Check our
+  [Getting started](#getting-started) guide and starting mocking!
 
 ---
 
@@ -54,60 +57,64 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
 - [Getting started](#getting-started)
   - [1. Requirements](#1-requirements)
   - [2. Install from `npm`](#2-install-from-npm)
-  - [3. Post-install](#3-post-install)
+  - [3. Choose your method to intercept requests](#3-choose-your-method-to-intercept-requests)
+    - [Local HTTP interceptors](#local-http-interceptors)
+    - [Remote HTTP interceptors](#remote-http-interceptors)
+  - [4. Post-install](#4-post-install)
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
+- [Examples](#examples)
 - [Usage](#usage)
-  - [Examples](#examples)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
-- [`zimic` API](#zimic-api)
+- [`zimic` API reference](#zimic-api-reference)
   - [`HttpHeaders`](#httpheaders)
     - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpSearchParams`](#httpsearchparams)
     - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
-- [`zimic/interceptor` API](#zimicinterceptor-api)
-  - [`HttpInterceptorWorker`](#httpinterceptorworker)
-    - [`createHttpInterceptorWorker`](#createhttpinterceptorworker)
-    - [`worker.platform()`](#workerplatform)
-    - [`worker.start()`](#workerstart)
-    - [`worker.stop()`](#workerstop)
-    - [`worker.isRunning()`](#workerisrunning)
+- [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
-    - [`createHttpInterceptor`](#createhttpinterceptor)
-    - [Declaring service schemas](#declaring-service-schemas)
-      - [Declaring paths](#declaring-paths)
-      - [Declaring methods](#declaring-methods)
-      - [Declaring requests](#declaring-requests)
-      - [Declaring responses](#declaring-responses)
-    - [`interceptor.baseURL()`](#interceptorbaseurl)
-    - [`interceptor.<method>(path)`](#interceptormethodpath)
+    - [`http.createInterceptor`](#httpcreateinterceptor)
+      - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
+      - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
+    - [Declaring HTTP service schemas](#declaring-http-service-schemas)
+      - [Declaring HTTP paths](#declaring-http-paths)
+      - [Declaring HTTP methods](#declaring-http-methods)
+      - [Declaring HTTP requests](#declaring-http-requests)
+      - [Declaring HTTP responses](#declaring-http-responses)
+    - [HTTP `interceptor.start()`](#http-interceptorstart)
+    - [HTTP `interceptor.stop()`](#http-interceptorstop)
+    - [HTTP `interceptor.isRunning()`](#http-interceptorisrunning)
+    - [HTTP `interceptor.baseURL()`](#http-interceptorbaseurl)
+    - [HTTP `interceptor.platform()`](#http-interceptorplatform)
+    - [HTTP `interceptor.<method>(path)`](#http-interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
-    - [`interceptor.clear()`](#interceptorclear)
+    - [HTTP `interceptor.clear()`](#http-interceptorclear)
   - [`HttpRequestHandler`](#httprequesthandler)
-    - [`handler.method()`](#handlermethod)
-    - [`handler.path()`](#handlerpath)
-    - [`handler.with(restriction)`](#handlerwithrestriction)
+    - [HTTP `handler.method()`](#http-handlermethod)
+    - [HTTP `handler.path()`](#http-handlerpath)
+    - [HTTP `handler.with(restriction)`](#http-handlerwithrestriction)
       - [Static restrictions](#static-restrictions)
       - [Computed restrictions](#computed-restrictions)
-    - [`handler.respond(declaration)`](#handlerresponddeclaration)
+    - [HTTP `handler.respond(declaration)`](#http-handlerresponddeclaration)
       - [Static responses](#static-responses)
       - [Computed responses](#computed-responses)
-    - [`handler.bypass()`](#handlerbypass)
-    - [`handler.clear()`](#handlerclear)
-    - [`handler.requests()`](#handlerrequests)
+    - [HTTP `handler.bypass()`](#http-handlerbypass)
+    - [HTTP `handler.clear()`](#http-handlerclear)
+    - [HTTP `handler.requests()`](#http-handlerrequests)
 - [CLI](#cli)
-  - [`zimic --version`](#zimic---version)
-  - [`zimic --help`](#zimic---help)
-  - [`zimic browser init <publicDirectory>`](#zimic-browser-init-publicdirectory)
+  - [`zimic`](#zimic)
+  - [`zimic browser`](#zimic-browser)
+    - [`zimic browser init`](#zimic-browser-init)
+  - [`zimic server`](#zimic-server)
+    - [`zimic server start`](#zimic-server-start)
 - [Changelog](#changelog)
-- [Development](#development)
 
 ## Getting started
 
 ### 1. Requirements
 
-- TypeScript >=4.7
+- [TypeScript](https://www.typescriptlang.org) >= 4.7
 
 - `strict` mode enabled in your `tsconfig.json`:
   ```jsonc
@@ -125,65 +132,107 @@ Zimic provides a simple, flexible and type-safe way to mock HTTP requests.
 | Manager | Command                        |
 | :-----: | ------------------------------ |
 |   npm   | `npm install zimic --save-dev` |
-|  yarn   | `yarn add zimic --dev`         |
 |  pnpm   | `pnpm add zimic --dev`         |
+|  yarn   | `yarn add zimic --dev`         |
 |   bun   | `bun add zimic --dev`          |
 
-Canary versions are released under the `canary` tag:
+The latest (possibly unstable) code is available in canary releases, under the tag `canary`:
 
 | Manager | Command                               |
 | :-----: | ------------------------------------- |
 |   npm   | `npm install zimic@canary --save-dev` |
-|  yarn   | `yarn add zimic@canary --dev`         |
 |  pnpm   | `pnpm add zimic@canary --dev`         |
+|  yarn   | `yarn add zimic@canary --dev`         |
 |   bun   | `bun add zimic@canary --dev`          |
 
-### 3. Post-install
+### 3. Choose your method to intercept requests
+
+Zimic interceptors support two types of execution: `local` and `remote`.
+
+#### Local HTTP interceptors
+
+When the type of an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests created
+_in the same process_ as your application. This is the simplest way to start mocking requests and does not require any
+server setup.
+
+When to use `local`:
+
+- **Testing**: If you run your application in the _same_ process as your tests. This is common when using Jest, Vitest
+  and other test runners for unit and integration tests.
+- **Development**: If you want to mock requests in your development environment without setting up a server. This might
+  be useful when you're working on a feature that requires a backend that is not yet ready.
+
+Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
+
+> [!IMPORTANT]
+>
+> All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
+
+#### Remote HTTP interceptors
+
+When the type of an interceptor is `remote`, Zimic uses a dedicated [interceptor server](#zimic-server) to handle
+requests. This opens up more possibilities for mocking, such as intercepting requests from multiple applications and
+running the interceptor server on a different machine. It is also more robust because it uses a regular HTTP server and
+does not depend on local interception algorithms.
+
+When to use `remote`:
+
+- **Testing**: If you _do not_ run your application in the same process as your tests. When using Cypress, Playwright,
+  or other end-to-end testing tools, this is generally the case because the test runner and the application run in
+  separate processes. This might also happen in more complex setups with Jest, Vitest and other test runners, such as
+  testing a backend server running in another process, terminal, or machine.
+- **Development**: If you want your mocked responses to be accessible from outside the process that created them. A
+  common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
+  accessed from any other application (e.g. browser) and return mock responses.
+
+Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
+interceptors.
+
+> [!IMPORTANT]
+>
+> All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
+>
+> If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
+> [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
+> unhandled promises, avoiding forgetting to `await` remote interceptor operations.
+
+> [!TIP]
+>
+> The type is an individual interceptor configuration. It is perfectly possible to have multiple interceptors with
+> different types in the same application! However, keep in mind that local interceptors have preference over remote
+> interceptors.
+
+### 4. Post-install
 
 #### Node.js post-install
 
-No additional configuration is necessary for Node.js. Check out the [usage](#usage) guide and start mocking!
+No additional configuration is necessary for Node.js. Check out the [usage guide](#usage) and start mocking!
 
 #### Browser post-install
 
-To use Zimic on a browser, you should first initialize the mock service worker in your public directory:
+If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
+[initialize a mock service worker](#zimic-browser-init) in your public directory. After that, you are ready to
+[start mocking](#usage)!
 
-```bash
-npx zimic browser init <publicDirectory>
-```
-
-This will create a `mockServiceWorker.js` file in the provided public directory, which is necessary to intercept
-requests and mock responses. We recommend not deploying this file to production.
-
-## Usage
-
-### Examples
+## Examples
 
 Visit our [examples](./examples) to see how to use Zimic with popular frameworks and libraries!
 
+## Usage
+
 ### Basic usage
 
-1. To start using Zimic, create a [worker](#httpinterceptorworker) targeting your platform.
-
-   ```ts
-   import { createHttpInterceptorWorker } from 'zimic/interceptor';
-
-   const worker = createHttpInterceptorWorker({
-     platform: 'node', // Or 'browser'
-   });
-   ```
-
-2. Then, create your first [interceptor](#httpinterceptor):
+1. To start using Zimic, create your first [HTTP interceptor](#httpinterceptor):
 
    ```ts
    import { JSONValue } from 'zimic';
-   import { createHttpInterceptor } from 'zimic/interceptor';
+   import { http } from 'zimic/interceptor';
 
    type User = JSONValue<{
      username: string;
    }>;
 
-   const interceptor = createHttpInterceptor<{
+   const interceptor = http.createInterceptor<{
      '/users': {
        GET: {
          response: {
@@ -192,22 +241,25 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
        };
      };
    }>({
-     worker,
+     type: 'local',
      baseURL: 'http://localhost:3000',
    });
    ```
 
-   In this example, we're creating an interceptor for a service with a single path, `/users`, that supports a `GET`
-   method. The response for a successful request is an array of `User` objects, which is checked to be a valid JSON
-   using `JSONValue`. Learn more at [Declaring service schemas](#declaring-service-schemas).
+   In this example, we're creating a [local interceptor](#local-http-interceptors) for a service supporting `GET`
+   requests to `/users`. A successful response contains an array of `User` objects.
 
-3. Finally, start the worker to intercept requests:
+   Learn more at [Creating a local HTTP interceptor](#creating-a-local-http-interceptor),
+   [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor), and
+   [Declaring HTTP service schemas](#declaring-http-service-schemas).
+
+2. Then, start the interceptor:
 
    ```ts
-   await worker.start();
+   await interceptor.start();
    ```
 
-4. Now, you can start intercepting requests and returning mock responses!
+3. Now, you can intercept requests and return mock responses!
 
    ```ts
    const listHandler = interceptor.get('/users').respond({
@@ -220,102 +272,65 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
-More usage examples and recommendations are available at [`zimic/interceptor` API](#zimicinterceptor-api) and
-[Examples](#examples).
+More usage examples and recommendations are available in our [examples](#examples) and the
+[`zimic/interceptor` API reference](#zimicinterceptor-api-reference).
 
 ### Testing
 
-We recommend managing the lifecycle of your workers and interceptors using `beforeAll` and `afterAll` hooks in your test
-setup file. An example using Jest/Vitest structure:
+We recommend managing the lifecycle of your interceptors using `beforeAll` and `afterAll`, or equivalent hooks, in your
+test setup file. An example using a Jest/Vitest API:
 
-1. Create a worker:
+`tests/setup.ts`
 
-   `tests/interceptors/worker.ts`
+```ts
+import userInterceptor from './interceptors/userInterceptor';
+import analyticsInterceptor from './interceptors/analyticsInterceptor';
 
-   ```ts
-   import { createHttpInterceptorWorker } from 'zimic/interceptor';
+// Your interceptors
+const interceptors = [userInterceptor, analyticsInterceptor];
 
-   const worker = createHttpInterceptorWorker({
-     platform: 'node', // Or 'browser'
-   });
+// Start intercepting requests
+beforeAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.start();
+  }
+});
 
-   export default worker;
-   ```
+// Clear all interceptors to make sure no tests affect each other
+beforeEach(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.clear();
+  }
+});
 
-2. Create interceptors for your services:
-
-   `tests/interceptors/userInterceptor.ts`
-
-   ```ts
-   import { createHttpInterceptor } from 'zimic/interceptor';
-   import worker from './worker';
-
-   const userInterceptor = createHttpInterceptor<{
-     // User service schema
-   }>({
-     worker,
-     baseURL: 'http://localhost:3000',
-   });
-
-   export default userInterceptor;
-   ```
-
-   `tests/interceptors/analyticsInterceptor.ts`
-
-   ```ts
-   import { createHttpInterceptor } from 'zimic/interceptor';
-   import worker from './worker';
-
-   const analyticsInterceptor = createHttpInterceptor<{
-     // Analytics service schema
-   }>({
-     worker,
-     baseURL: 'http://localhost:3001',
-   });
-
-   export default analyticsInterceptor;
-   ```
-
-3. Create a setup file to manage lifecycle of the worker and the interceptors:
-
-   `tests/setup.ts`
-
-   ```ts
-   import userInterceptor from './interceptors/userInterceptor';
-   import analyticsInterceptor from './interceptors/analyticsInterceptor';
-
-   beforeAll(async () => {
-     // Start intercepting requests
-     await worker.start();
-   });
-
-   beforeEach(async () => {
-     // Clear all interceptors to make sure no tests affect each other
-     userInterceptor.clear();
-     analyticsInterceptor.clear();
-   });
-
-   afterAll(async () => {
-     // Stop intercepting requests
-     await worker.stop();
-   });
-   ```
+// Stop intercepting requests
+afterAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.stop();
+  }
+});
+```
 
 ---
 
-## `zimic` API
+## `zimic` API reference
 
 This module provides general resources, such as HTTP classes and types.
 
 > [!TIP]
 >
-> All APIs are documented using [JSDoc](https://jsdoc.app), so you can view detailed descriptions directly in your IDE.
+> All APIs are documented using [JSDoc](https://jsdoc.app) and visible directly in your IDE.
 
 ### `HttpHeaders`
 
 A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class, with a strictly-typed
-schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to provide type safety when applying
-mocks.
+schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to provide type safety when managing
+headers.
+
+</details>
+
+<details>
+  <summary><code>HttpHeaders</code> example:</summary>
 
 ```ts
 import { HttpHeaders } from 'zimic';
@@ -332,9 +347,16 @@ const contentType = headers.get('content-type');
 console.log(contentType); // 'application/json'
 ```
 
+</details>
+
 #### Comparing `HttpHeaders`
 
 `HttpHeaders` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other headers:
+
+</details>
+
+<details>
+  <summary>Comparing <code>HttpHeaders</code> example:</summary>
 
 ```ts
 import { HttpSchema, HttpHeaders } from 'zimic';
@@ -372,11 +394,18 @@ console.log(headers1.contains(headers3)); // false
 console.log(headers3.contains(headers1)); // true
 ```
 
+</details>
+
 ### `HttpSearchParams`
 
 A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
 strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic to provide
 type safety when applying mocks.
+
+</details>
+
+<details>
+  <summary><code>HttpSearchParams</code> example:</summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic';
@@ -396,10 +425,17 @@ const page = searchParams.get('page');
 console.log(page); // '1'
 ```
 
+</details>
+
 #### Comparing `HttpSearchParams`
 
 `HttpSearchParams` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other search
 params:
+
+</details>
+
+<details>
+  <summary>Comparing <code>HttpSearchParams</code> example:</summary>
 
 ```ts
 import { HttpSchema, HttpSearchParams } from 'zimic';
@@ -437,101 +473,39 @@ console.log(searchParams1.contains(searchParams3)); // false
 console.log(searchParams3.contains(searchParams1)); // true
 ```
 
-## `zimic/interceptor` API
+</details>
 
-This module provides a set of resources to create HTTP interceptors for both Node.js and browser environments.
+## `zimic/interceptor` API reference
 
-> [!TIP]
->
-> All APIs are documented using [JSDoc](https://jsdoc.app), so you can view detailed descriptions directly in your IDE.
-
-### `HttpInterceptorWorker`
-
-Workers are used by [`HttpInterceptor`](#httpinterceptor)'s to intercept HTTP requests and return mock responses. To
-start intercepting requests, the worker must be started.
-
-In a project, all interceptors can share the same worker.
-
-#### `createHttpInterceptorWorker`
-
-Creates an HTTP interceptor worker. A platform is required to specify the environment where the worker will be running:
-
-- Node.js:
-
-  ```ts
-  import { createHttpInterceptorWorker } from 'zimic/interceptor';
-
-  const worker = createHttpInterceptorWorker({ platform: 'node' });
-  ```
-
-- Browser:
-
-  ```ts
-  import { createHttpInterceptorWorker } from 'zimic/interceptor';
-
-  const worker = createHttpInterceptorWorker({ platform: 'browser' });
-  ```
-
-#### `worker.platform()`
-
-Returns the platform used by the worker (`browser` or `node`).
-
-```ts
-const platform = worker.platform();
-```
-
-#### `worker.start()`
-
-Starts the worker, allowing it to be used by interceptors.
-
-```ts
-await worker.start();
-```
-
-When targeting a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal
-before starting the worker. This initializes the mock service worker in your public directory. Learn more at
-[`zimic browser init <publicDirectory`](#zimic-browser-init-publicdirectory).
-
-#### `worker.stop()`
-
-Stops the worker, preventing it from being used by interceptors.
-
-```ts
-await worker.stop();
-```
-
-#### `worker.isRunning()`
-
-Returns whether the worker is currently running and ready to use.
-
-```ts
-const isRunning = worker.isRunning();
-```
+This module provides resources to create HTTP interceptors for both Node.js and browser environments.
 
 ### `HttpInterceptor`
 
 HTTP interceptors provide the main API to handle HTTP requests and return mock responses. The methods, paths, status
-codes, parameters, and responses are statically-typed based on the service schema. To intercept HTTP requests, an
-interceptor needs a running [`HttpInterceptorWorker`](#httpinterceptorworker).
+codes, parameters, and responses are statically-typed based on the service schema.
 
 Each interceptor represents a service and can be used to mock its paths and methods.
 
-#### `createHttpInterceptor`
+#### `http.createInterceptor`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
-[Declaring service schemas](#declaring-service-schemas).
+[Declaring HTTP service schemas](#declaring-http-service-schemas).
+
+##### Creating a local HTTP interceptor
+
+A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
+interceptor. Any request starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler)
+exists.
 
 ```ts
 import { JSONValue } from 'zimic';
-import { createHttpInterceptorWorker, createHttpInterceptor } from 'zimic/interceptor';
-
-const worker = createHttpInterceptorWorker({ platform: 'node' });
+import { http } from 'zimic/interceptor';
 
 type User = JSONValue<{
   username: string;
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -540,12 +514,59 @@ const interceptor = createHttpInterceptor<{
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
-#### Declaring service schemas
+##### Creating a remote HTTP interceptor
+
+A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
+[interceptor server](#zimic-server). Any request starting with the `baseURL` will be intercepted if a matching
+[handler](#httprequesthandler) exists.
+
+```ts
+import { JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type User = JSONValue<{
+  username: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/users/:id': {
+    GET: {
+      response: {
+        200: { body: User };
+      };
+    };
+  };
+}>({
+  // The interceptor server is at http://localhost:4000
+  // `/my-service` is a path to differentiate from other interceptors using the same server
+  type: 'remote',
+  baseURL: 'http://localhost:4000/my-service',
+});
+```
+
+A single [interceptor server](#zimic-server) is perfectly capable of handling multiple interceptors and requests. Thus,
+additional paths are supported and might be necessary to differentiate between conflicting interceptors. If you may have
+multiple threads or processes applying mocks concurrently to the same [interceptor server](#zimic-server), it's
+important to keep the interceptor base URLs unique. Also, make sure that your application is considering the correct URL
+when making requests.
+
+```ts
+const interceptor = http.createInterceptor<{}>({
+  type: 'remote',
+  // Declaring a base URL with a unique identifier to prevent conflicts
+  baseURL: `http://localhost:4000/my-service-${crypto.randomUUID()}`,
+});
+
+// Your application should use this base URL when making requests
+const baseURL = interceptor.baseURL();
+```
+
+#### Declaring HTTP service schemas
 
 HTTP service schemas define the structure of the real services being used. This includes paths, methods, request and
 response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying mocks.
@@ -555,7 +576,7 @@ response bodies, and status codes. Based on the schema, interceptors will provid
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 // Declaring base types
 type User = JSONValue<{
@@ -576,7 +597,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 }>;
 
 // Creating the interceptor
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     POST: {
       request: {
@@ -610,7 +631,7 @@ const interceptor = createHttpInterceptor<{
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
@@ -622,7 +643,7 @@ const interceptor = createHttpInterceptor<{
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 // Declaring the base types
 type User = JSONValue<{
@@ -668,7 +689,7 @@ type UserMethods = HttpSchema.Methods<{
   };
 }>;
 
-type UserGetByIdMethods = HttpSchema.Methods<{
+type UserByIdMethods = HttpSchema.Methods<{
   GET: {
     response: {
       200: { body: User };
@@ -683,29 +704,29 @@ type UserPaths = HttpSchema.Paths<{
 }>;
 
 type UserByIdPaths = HttpSchema.Paths<{
-  '/users/:id': UserGetByIdMethods;
+  '/users/:id': UserByIdMethods;
 }>;
 
 // Declaring interceptor schema
 type ServiceSchema = UserPaths & UserByIdPaths;
 
 // Creating the interceptor
-const interceptor = createHttpInterceptor<ServiceSchema>({
-  worker,
+const interceptor = http.createInterceptor<ServiceSchema>({
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 </details>
 
-##### Declaring paths
+##### Declaring HTTP paths
 
 At the root level, each key represents a path or route of the service:
 
 ```ts
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     // Path schema
   };
@@ -716,7 +737,7 @@ const interceptor = createHttpInterceptor<{
     // Path schema
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
@@ -728,7 +749,7 @@ const interceptor = createHttpInterceptor<{
 
 ```ts
 import { HttpSchema } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type UserPaths = HttpSchema.Paths<{
   '/users': {
@@ -745,23 +766,23 @@ type PostPaths = HttpSchema.Paths<{
   };
 }>;
 
-const interceptor = createHttpInterceptor<UserPaths & PostPaths>({
-  worker,
+const interceptor = http.createInterceptor<UserPaths & PostPaths>({
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 </details>
 
-##### Declaring methods
+##### Declaring HTTP methods
 
 Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, and `OPTIONS`). The method
 names are case-sensitive.
 
 ```ts
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     GET: {
       // Method schema
@@ -772,20 +793,20 @@ const interceptor = createHttpInterceptor<{
   };
   // Other paths
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 <details>
   <summary>
-    Similarly to <a href="#declaring-paths">paths</a>, you can also compose methods using the utility type
+    Similarly to <a href="#declaring-http-paths">paths</a>, you can also compose methods using the utility type
     <code>HttpSchema.Methods</code>:
   </summary>
 
 ```ts
 import { HttpSchema } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type UserMethods = HttpSchema.Methods<{
   GET: {
@@ -796,24 +817,24 @@ type UserMethods = HttpSchema.Methods<{
   };
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': UserMethods;
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 </details>
 
-##### Declaring requests
+##### Declaring HTTP requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type UserCreationBody = JSONValue<{
   username: string;
@@ -823,7 +844,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     POST: {
       request: {
@@ -842,7 +863,7 @@ const interceptor = createHttpInterceptor<{
   };
   // Other paths
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
@@ -861,12 +882,12 @@ const interceptor = createHttpInterceptor<{
 <details>
   <summary>
     You can also compose requests using the utility type <code>HttpSchema.Request</code>, similarly to
-    <a href="#declaring-methods">methods</a>:
+    <a href="#declaring-http-methods">methods</a>:
   </summary>
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type UserCreationBody = JSONValue<{
   username: string;
@@ -876,28 +897,28 @@ type UserCreationRequest = HttpSchema.Request<{
   body: UserCreationBody;
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     POST: {
       request: UserCreationRequest;
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 </details>
 
-##### Declaring responses
+##### Declaring HTTP responses
 
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
 ```ts
 import { JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type User = JSONValue<{
   username: string;
@@ -907,7 +928,7 @@ type NotFoundError = JSONValue<{
   message: string;
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users/:id': {
     GET: {
       // ...
@@ -920,20 +941,20 @@ const interceptor = createHttpInterceptor<{
   };
   // Other paths
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 > [!TIP]
 >
-> Similarly to [Declaring requests](#declaring-requests), you only need to include in the schema the properties you want
-> to use in your mocks. Headers, search params, or body fields that are not used do not need to be declared, keeping
-> your type definitions clean and concise.
+> Similarly to [Declaring HTTP requests](#declaring-http-requests), you only need to include in the schema the
+> properties you want to use in your mocks. Headers, search params, or body fields that are not used do not need to be
+> declared, keeping your type definitions clean and concise.
 
 > [!IMPORTANT]
 >
-> Also similarly to [Declaring requests](#declaring-requests), body types cannot be declared using the keyword
+> Also similarly to [Declaring HTTP requests](#declaring-http-requests), body types cannot be declared using the keyword
 > `interface`, because interfaces do not have implicit index signatures as types do. Part of Zimic's JSON validation
 > relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
 > type is a valid JSON, you can use the utility type `JSONValue`.
@@ -941,12 +962,12 @@ const interceptor = createHttpInterceptor<{
 <details>
   <summary>
     You can also compose responses using the utility types <code>HttpSchema.ResponseByStatusCode</code> and
-    <code>HttpSchema.Response</code>, similarly to <a href="#declaring-requests">requests</a>:
+    <code>HttpSchema.Response</code>, similarly to <a href="#declaring-http-requests">requests</a>:
   </summary>
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
 type User = JSONValue<{
   username: string;
@@ -969,21 +990,48 @@ type UserGetResponses = HttpSchema.ResponseByStatusCode<{
   404: NotFoundUserGetResponse;
 }>;
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users/:id': {
     GET: {
       response: UserGetResponses;
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
 </details>
 
-#### `interceptor.baseURL()`
+#### HTTP `interceptor.start()`
+
+Starts the interceptor. Only interceptors that are running will intercept requests.
+
+```ts
+await interceptor.start();
+```
+
+When targeting a browser environment with a local interceptor, make sure to follow the
+[Browser post-install](#browser-post-install) guide before starting your interceptors.
+
+#### HTTP `interceptor.stop()`
+
+Stops the interceptor. Stopping an interceptor will also clear its registered handlers and responses.
+
+```ts
+await interceptor.stop();
+```
+
+#### HTTP `interceptor.isRunning()`
+
+Returns whether the interceptor is currently running and ready to use.
+
+```ts
+const isRunning = interceptor.isRunning();
+```
+
+#### HTTP `interceptor.baseURL()`
 
 Returns the base URL of the interceptor.
 
@@ -991,7 +1039,15 @@ Returns the base URL of the interceptor.
 const baseURL = interceptor.baseURL();
 ```
 
-#### `interceptor.<method>(path)`
+#### HTTP `interceptor.platform()`
+
+Returns the platform used by the interceptor (`browser` or `node`).
+
+```ts
+const platform = interceptor.platform();
+```
+
+#### HTTP `interceptor.<method>(path)`
 
 Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and path. The path and method must be
 declared in the interceptor schema.
@@ -999,9 +1055,9 @@ declared in the interceptor schema.
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
 
 ```ts
-import { createHttpInterceptor } from 'zimic/interceptor';
+import { http } from 'zimic/interceptor';
 
-const interceptor = createHttpInterceptor<{
+const interceptor = http.createInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -1010,7 +1066,7 @@ const interceptor = createHttpInterceptor<{
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 
@@ -1021,15 +1077,26 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-##### Dynamic path parameters
-
-Paths with dynamic path parameters, such as `/users/:id`, are supported, but you need to specify the original path as a
-type parameter to get type validation.
+When using a remote interceptor, creating a handler is an asynchronous operation, so you need to `await` it:
 
 ```ts
-import { createHttpInterceptor } from 'zimic/interceptor';
+const listHandler = await interceptor.get('/users').respond({
+  status: 200
+  body: [{ username: 'diego-aquino' }],
+});
+```
 
-const interceptor = createHttpInterceptor<{
+You can also chain any number of operations and await the handler to apply them.
+
+##### Dynamic path parameters
+
+Paths with dynamic path parameters are supported, such as `/users/:id`. Even when using a computed path (e.g.
+`/users/1`), the original path is automatically inferred, guaranteeing type safety.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
   '/users/:id': {
     PUT: {
       request: {
@@ -1043,15 +1110,15 @@ const interceptor = createHttpInterceptor<{
     };
   };
 }>({
-  worker,
+  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 
 interceptor.get('/users/:id'); // Matches any id
-interceptor.get<'/users/:id'>(`/users/${1}`); // Only matches id 1 (notice the original path as a type parameter)
+interceptor.get(`/users/${1}`); // Only matches id 1
 ```
 
-#### `interceptor.clear()`
+#### HTTP `interceptor.clear()`
 
 Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
 registered responses and intercepted requests. After calling this method, the interceptor will no longer intercept any
@@ -1065,16 +1132,16 @@ interceptor.clear();
 
 ### `HttpRequestHandler`
 
-HTTP request handlers allow declaring responses to return for matched intercepted requests. They also keep track of the
-intercepted requests and their responses, allowing checks about how many requests your application made and with which
-parameters.
+HTTP request handlers allow declaring HTTP responses to return for intercepted requests. They also keep track of the
+intercepted requests and their responses, which can be used to check if the requests your application has made are
+correct.
 
 When multiple handlers match the same method and path, the _last_ created with
-[`interceptor.<method>(path)`](#interceptormethodpath) will be used.
+[`interceptor.<method>(path)`](#http-interceptormethodpath) will be used.
 
-#### `handler.method()`
+#### HTTP `handler.method()`
 
-Returns the method that matches this handler.
+Returns the method that matches a handler.
 
 ```ts
 const handler = interceptor.post('/users');
@@ -1082,10 +1149,10 @@ const method = handler.method();
 console.log(method); // 'POST'
 ```
 
-#### `handler.path()`
+#### HTTP `handler.path()`
 
-Returns the path that matches this handler. The base URL of the interceptor is not included, but it is used when
-matching requests.
+Returns the path that matches a handler. The base URL of the interceptor is not included, but it is used when matching
+requests.
 
 ```ts
 const handler = interceptor.get('/users');
@@ -1093,7 +1160,7 @@ const path = handler.path();
 console.log(path); // '/users'
 ```
 
-#### `handler.with(restriction)`
+#### HTTP `handler.with(restriction)`
 
 Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
 which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
@@ -1156,7 +1223,7 @@ and `.searchParams`, which are typed based on the interceptor schema. The functi
 the request matches the handler and should receive the mock response; `false` otherwise and the request should bypass
 the handler.
 
-#### `handler.respond(declaration)`
+#### HTTP `handler.respond(declaration)`
 
 Declares a response to return for matched intercepted requests.
 
@@ -1189,16 +1256,17 @@ const listHandler = interceptor.get('/users').respond((request) => {
 The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
 and `.searchParams`, which are typed based on the interceptor schema.
 
-#### `handler.bypass()`
+#### HTTP `handler.bypass()`
 
-Clears any response declared with [`.respond(declaration)`](#handlerresponddeclaration), making the handler stop
+Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), making the handler stop
 matching requests. The next handler, created before this one, that matches the same method and path will be used if
 present. If not, the requests of the method and path will not be intercepted.
 
-To make the handler match requests again, register a new response with `handler.respond()`.
+To make the handler match requests again, register a new response with
+[`handler.respond(declaration)`](#http-handlerresponddeclaration).
 
-This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#handlerclear), as it only removed
-the response, keeping restrictions and intercepted requests.
+This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
+removed the response, keeping restrictions and intercepted requests.
 
 ```ts
 const listHandler1 = interceptor.get('/users').respond({
@@ -1217,17 +1285,17 @@ listHandler2.bypass();
 listHandler2.requests(); // Still contains the intercepted requests up to the bypass
 ```
 
-#### `handler.clear()`
+#### HTTP `handler.clear()`
 
-Clears any response declared with [`.respond(declaration)`](#handlerresponddeclaration), restrictions declared with
-[`.with(restriction)`](#handlerwithrestriction), and intercepted requests, making the handler stop matching requests.
-The next handler, created before this one, that matches the same method and path will be used if present. If not, the
-requests of the method and path will not be intercepted.
+Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), restrictions declared with
+[`.with(restriction)`](#http-handlerwithrestriction), and intercepted requests, making the handler stop matching
+requests. The next handler, created before this one, that matches the same method and path will be used if present. If
+not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with `handler.respond()`.
 
 This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-[`handler.bypass()`](#handlerbypass), as it also clears restrictions and intercepted requests.
+[`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
 ```ts
 const listHandler1 = interceptor.get('/users').respond({
@@ -1246,7 +1314,7 @@ listHandler2.clear();
 listHandler2.requests(); // Now empty
 ```
 
-#### `handler.requests()`
+#### HTTP `handler.requests()`
 
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application.
@@ -1286,31 +1354,84 @@ console.log(listRequests[0].response.raw); // Response{}
 
 ## CLI
 
-### `zimic --version`
+### `zimic`
 
-Displays the current version of Zimic.
+```
+zimic <command>
 
-### `zimic --help`
+Commands:
+  zimic browser  Browser
+  zimic server   Interceptor server
 
-Displays the available commands and options.
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+```
 
-### `zimic browser init <publicDirectory>`
+### `zimic browser`
 
-Initializes the mock service worker in a public directory.
+#### `zimic browser init`
 
-This command is necessary when using Zimic in a browser environment. It creates a `mockServiceWorker.js` file in the
+Initialize the browser service worker configuration.
+
+```
+zimic browser init <publicDirectory>
+
+Positionals:
+  publicDirectory  The path to the public directory of your application.
+                                                             [string] [required]
+```
+
+This command is necessary to use Zimic in a browser environment. It creates a `mockServiceWorker.js` file in the
 provided public directory, which is used to intercept requests and mock responses.
 
 If you are using Zimic mainly in tests, we recommend adding the `mockServiceWorker.js` to your `.gitignore` and adding
 this command to a `postinstall` scripts in your `package.json`. This ensures that the latest service worker script is
 being used after upgrading Zimic.
 
+### `zimic server`
+
+An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
+in combination with [remote interceptors](#remote-http-interceptors) to simulate real services.
+
+#### `zimic server start`
+
+Start an interceptor server.
+
+```
+zimic server start [-- onReady]
+
+Positionals:
+  onReady  A command to run when the server is ready to accept connections.
+                                                                        [string]
+
+Options:
+  -h, --hostname   The hostname to start the server on.
+                                                 [string] [default: "localhost"]
+  -p, --port       The port to start the server on.                     [number]
+  -e, --ephemeral  Whether the server should stop automatically after the
+                   on-ready command finishes. If no on-ready command is provided
+                   and ephemeral is true, the server will stop immediately after
+                   starting.                          [boolean] [default: false]
+```
+
+You can use this command to start an independent server:
+
+```bash
+zimic server start --port 4000
+```
+
+Or as a prefix of another command:
+
+```bash
+zimic server start --port 4000 --ephemeral -- npm run test
+```
+
+The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
+should automatically stop after the command finishes.
+
 ---
 
 ## Changelog
 
 The changelog is available on our [GitHub Releases](https://github.com/diego-aquino/zimic/releases) page.
-
-## Development
-
-Interested in contributing to Zimic? View our [contributing guide](./CONTRIBUTING.md).

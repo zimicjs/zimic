@@ -5,6 +5,10 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
+/**
+ * A type representing the currently supported
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
+ */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 /** A schema representing the structure of an HTTP request. */
@@ -26,7 +30,7 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
-/** A schema representing the structures of HTTP responses by status code. */
+/** A schema representing the structure of HTTP responses by status code. */
 export type HttpServiceResponseSchemaByStatusCode = {
   [statusCode: number]: HttpServiceResponseSchema;
 } & {
@@ -40,12 +44,12 @@ export namespace HttpServiceResponseSchemaByStatusCode {
   };
 }
 
-/** Extracts the status codes used in response schema by status code. */
+/** Extracts the status codes used in a response schema by status code. */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
 > = Extract<keyof ResponseSchemaByStatusCode, number>;
 
-/** A schema representing the structures of an HTTP request and response for a given method. */
+/** A schema representing the structure of an HTTP request and response for a given method. */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
   response?: HttpServiceResponseSchemaByStatusCode;
@@ -61,7 +65,7 @@ export namespace HttpServiceMethodSchema {
   }
 }
 
-/** A schema representing the structures of HTTP request and response by method. */
+/** A schema representing the structure of HTTP request and response by method. */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
   POST?: HttpServiceMethodSchema;
@@ -72,7 +76,7 @@ export interface HttpServiceMethodsSchema {
   OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
 }
 
-/** A schema representing the structures of paths, methods, requests, and responses for an HTTP service. */
+/** A schema representing the structure of paths, methods, requests, and responses for an HTTP service. */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
 }

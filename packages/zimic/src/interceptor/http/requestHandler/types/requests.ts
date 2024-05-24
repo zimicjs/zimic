@@ -27,7 +27,7 @@ export type HttpRequestHandlerResponseDeclaration<
   HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
 
 /**
- * A factory function for creating {@link HttpRequestHandlerResponseDeclaration} objects.
+ * A factory to create {@link HttpRequestHandlerResponseDeclaration} objects.
  *
  * @param request The intercepted request.
  * @returns The response declaration.
@@ -52,7 +52,7 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
   null
 >;
 
-/** A strict representation of an intercepted HTTP request. The body is already parsed by default. */
+/** A strict representation of an intercepted HTTP request. The body and search params are already parsed by default. */
 export interface HttpInterceptorRequest<MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
@@ -71,7 +71,7 @@ export type HttpResponseBodySchema<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
 
-/** A strict representation of an intercepted HTTP response. The body is already parsed by default. */
+/** A strict representation of an intercepted HTTP response. The body and search params are already parsed by default. */
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
@@ -93,7 +93,10 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
   new Set(HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES),
 );
 
-/** A strict representation of a tracked, intercepted HTTP request, along with its response. */
+/**
+ * A strict representation of a tracked, intercepted HTTP request, along with its response. The body and search params
+ * are already parsed by default.
+ */
 export interface TrackedHttpInterceptorRequest<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,

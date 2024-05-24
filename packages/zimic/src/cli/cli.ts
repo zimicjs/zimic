@@ -12,6 +12,7 @@ async function runCLI() {
     .version(version)
     .showHelpOnFail(false)
     .demandCommand()
+    .strict()
 
     .command('browser', 'Browser', (yargs) =>
       yargs.demandCommand().command(
