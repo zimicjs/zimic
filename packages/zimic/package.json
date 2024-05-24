@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.4.0-canary.10",
+  "version": "0.4.0-canary.11",
   "repository": {
     "type": "git",
     "url": "https://github.com/diego-aquino/zimic.git",
@@ -72,7 +72,7 @@
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\"",
-    "prepublish:adapt-relative-paths": "sed -E -i 's/\\]\\(\\.\\/(.+)\\)/](..\\/..\\/\\1)/g'",
+    "prepublish:adapt-relative-paths": "sed -E -i 's/\\]\\(\\.\\/([^\\)]+)\\)/](..\\/..\\/\\1)/g;s/\"\\.\\/([^\"]+)\"/\"..\\/..\\/\\1\"/g'",
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:adapt-relative-paths README.md"
   },
   "dependencies": {
