@@ -2,8 +2,6 @@
   Zimic Examples
 </h1>
 
-This directory contains examples of how to use Zimic with popular frameworks, libraries, and configurations.
-
 ## Vitest
 
 - [With Vitest + Node.js](./with-vitest-node)

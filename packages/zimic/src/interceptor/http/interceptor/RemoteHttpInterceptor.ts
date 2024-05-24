@@ -10,6 +10,7 @@ import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/pu
 
 class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
   readonly type: 'remote';
+
   private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
