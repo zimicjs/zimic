@@ -75,8 +75,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 - [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`http.createInterceptor`](#httpcreateinterceptor)
-      - [Creating a local interceptor](#creating-a-local-interceptor)
-      - [Creating a remote interceptor](#creating-a-remote-interceptor)
+      - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
+      - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -136,7 +136,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 |  yarn   | `yarn add zimic --dev`         |
 |   bun   | `bun add zimic --dev`          |
 
-The latest (possible unstable) code is available in canary releases, under the tag `canary`:
+The latest (possibly unstable) code is available in canary releases, under the tag `canary`:
 
 | Manager | Command                               |
 | :-----: | ------------------------------------- |
@@ -190,12 +190,11 @@ interceptors.
 
 > [!IMPORTANT]
 >
-> All mocking operations in remote interceptors are _asynchronous_, because they require network communication with an
-> [interceptor server](#zimic-server). Make sure to `await` the [handlers](#httprequesthandler) before making requests.
+> All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
-> promises that are not being handled, avoiding mistakes by forgetting to `await` remote interceptor operations.
+> unhandled promises, avoiding forgetting to `await` remote interceptor operations.
 
 > [!TIP]
 >
@@ -212,7 +211,8 @@ No additional configuration is necessary for Node.js. Check out the [usage guide
 #### Browser post-install
 
 If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
-[initialize the mock service worker](#zimic-browser-init) in your public directory.
+[initialize a mock service worker](#zimic-browser-init) in your public directory. After that, you are ready to
+[start mocking](#usage)!
 
 ## Examples
 
@@ -247,7 +247,10 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    ```
 
    In this example, we're creating a [local interceptor](#local-http-interceptors) for a service supporting `GET`
-   requests to `/users`. A successful response contains an array of `User` objects. Learn more at
+   requests to `/users`. A successful response contains an array of `User` objects.
+
+   Learn more at [Creating a local HTTP interceptor](#creating-a-local-http-interceptor),
+   [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor), and
    [Declaring HTTP service schemas](#declaring-http-service-schemas).
 
 2. Then, start the interceptor:
@@ -283,24 +286,24 @@ test setup file. An example using a Jest/Vitest API:
 import userInterceptor from './interceptors/userInterceptor';
 import analyticsInterceptor from './interceptors/analyticsInterceptor';
 
-// Your interceptors:
+// Your interceptors
 const interceptors = [userInterceptor, analyticsInterceptor];
 
-// Start intercepting requests.
+// Start intercepting requests
 beforeAll(async () => {
   for (const interceptor of interceptors) {
     await interceptor.start();
   }
 });
 
-// Clear all interceptors to make sure no tests affect each other.
+// Clear all interceptors to make sure no tests affect each other
 beforeEach(async () => {
   for (const interceptor of interceptors) {
     await interceptor.clear();
   }
 });
 
-// Stop intercepting requests.
+// Stop intercepting requests
 afterAll(async () => {
   for (const interceptor of interceptors) {
     await interceptor.stop();
@@ -488,7 +491,7 @@ Each interceptor represents a service and can be used to mock its paths and meth
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
 [Declaring HTTP service schemas](#declaring-http-service-schemas).
 
-##### Creating a local interceptor
+##### Creating a local HTTP interceptor
 
 A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
 interceptor. Any request starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler)
@@ -516,7 +519,7 @@ const interceptor = http.createInterceptor<{
 });
 ```
 
-##### Creating a remote interceptor
+##### Creating a remote HTTP interceptor
 
 A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
 [interceptor server](#zimic-server). Any request starting with the `baseURL` will be intercepted if a matching
@@ -539,9 +542,9 @@ const interceptor = http.createInterceptor<{
     };
   };
 }>({
+  // The interceptor server is at http://localhost:4000
+  // `/my-service` is a path to differentiate from other interceptors using the same server
   type: 'remote',
-  // The interceptor server is at http://localhost:4000.
-  // `/my-service` is a base path to differentiate between multiple interceptors using the same server.
   baseURL: 'http://localhost:4000/my-service',
 });
 ```
@@ -555,11 +558,11 @@ when making requests.
 ```ts
 const interceptor = http.createInterceptor<{}>({
   type: 'remote',
-  // Declaring a base URL with a unique identifier to prevent conflicts.
+  // Declaring a base URL with a unique identifier to prevent conflicts
   baseURL: `http://localhost:4000/my-service-${crypto.randomUUID()}`,
 });
 
-// Your application should use this base URL when making requests.
+// Your application should use this base URL when making requests
 const baseURL = interceptor.baseURL();
 ```
 
@@ -686,7 +689,7 @@ type UserMethods = HttpSchema.Methods<{
   };
 }>;
 
-type UserGetByIdMethods = HttpSchema.Methods<{
+type UserByIdMethods = HttpSchema.Methods<{
   GET: {
     response: {
       200: { body: User };
@@ -701,7 +704,7 @@ type UserPaths = HttpSchema.Paths<{
 }>;
 
 type UserByIdPaths = HttpSchema.Paths<{
-  '/users/:id': UserGetByIdMethods;
+  '/users/:id': UserByIdMethods;
 }>;
 
 // Declaring interceptor schema
