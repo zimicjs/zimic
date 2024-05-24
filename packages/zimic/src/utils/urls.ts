@@ -1,4 +1,4 @@
-export class InvalidURL extends TypeError {
+export class InvalidURLError extends TypeError {
   constructor(url: unknown) {
     super(`Invalid URL: '${url}'`);
     this.name = 'InvalidURL';
@@ -32,7 +32,7 @@ function createURLOrThrow(rawURL: string | URL) {
 
     return url;
   } catch {
-    throw new InvalidURL(rawURL);
+    throw new InvalidURLError(rawURL);
   }
 }
 

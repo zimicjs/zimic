@@ -5,18 +5,18 @@ import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
-/** The default body type (JSON) for HTTP requests and responses. */
+/** The default body type for HTTP requests and responses. */
 export type HttpBody = JSONValue;
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
- * {@link https://developer.mozilla.org/docs/Web/API/Headers Headers} class.
+ * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
  */
 export type StrictHeaders<Schema extends HttpHeadersSchema> = Pick<HttpHeaders<Schema>, keyof Headers>;
 
 /**
  * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
- * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams} class.
+ * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
  */
 export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema> = Pick<
   HttpSearchParams<Schema>,
@@ -25,7 +25,7 @@ export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema> = Pick<
 
 /**
  * An HTTP request with a strictly-typed JSON body. Fully compatible with the built-in
- * {@link https://developer.mozilla.org/docs/Web/API/Request Request} class.
+ * {@link https://developer.mozilla.org/docs/Web/API/Request `Request`} class.
  */
 export interface HttpRequest<
   StrictBody extends HttpBody = HttpBody,
@@ -37,7 +37,7 @@ export interface HttpRequest<
 
 /**
  * An HTTP response with a strictly-typed JSON body and status code. Fully compatible with the built-in
- * {@link https://developer.mozilla.org/docs/Web/API/Response Response} class.
+ * {@link https://developer.mozilla.org/docs/Web/API/Response `Response`} class.
  */
 export interface HttpResponse<
   StrictBody extends HttpBody = HttpBody,

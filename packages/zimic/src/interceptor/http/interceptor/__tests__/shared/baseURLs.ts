@@ -1,7 +1,7 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { joinURL, ExtendedURL, InvalidURL, UnsupportedURLProtocolError } from '@/utils/urls';
+import { joinURL, ExtendedURL, InvalidURLError, UnsupportedURLProtocolError } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -76,7 +76,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     await expect(async () => {
       await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
-    }).rejects.toThrowError(new InvalidURL(invalidURL));
+    }).rejects.toThrowError(new InvalidURLError(invalidURL));
 
     expect(handler).not.toHaveBeenCalled();
   });

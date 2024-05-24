@@ -10,6 +10,7 @@ import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/publ
 
 class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
   readonly type: 'local';
+
   private store = new HttpInterceptorStore();
   private _client: HttpInterceptorClient<Schema>;
 
