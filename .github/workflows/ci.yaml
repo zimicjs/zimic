@@ -14,6 +14,7 @@ concurrency:
 
 env:
   CI: true
+  LTS_NODE_VERSION: 20
   IS_PULL_REQUEST_TO_MAIN:
     ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && 'true' || 'false' }}
   TURBO_LOG_ORDER: stream
@@ -35,20 +36,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    env:
-      NODE_VERSION: 20
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Setup Zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ env.LTS_NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
@@ -59,7 +57,7 @@ jobs:
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ env.LTS_NODE_VERSION }}
 
       - name: Lint code and check types
         run: |
@@ -80,6 +78,7 @@ jobs:
         node-version:
           - 18
           - 20
+          - 22
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
@@ -90,7 +89,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Setup Zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
@@ -107,7 +106,7 @@ jobs:
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 100% \
+            --concurrency 1 \
             ${{ steps.zimic-setup.outputs.install-filters }}
 
   ci-typescript:
@@ -129,7 +128,6 @@ jobs:
           - '5.4'
 
     env:
-      NODE_VERSION: 20
       TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
 
     steps:
@@ -138,11 +136,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Setup Zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ env.LTS_NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
@@ -167,4 +165,6 @@ jobs:
             --concurrency 100% \
             ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
-            --filter !@zimic/*
+            --filter !@zimic/* \
+            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && \
+              echo '--filter !zimic-example-with-playwright --filter !zimic-example-with-next-js')

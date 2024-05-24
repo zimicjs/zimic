@@ -1,32 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe } from 'vitest';
 
-import MismatchedHttpInterceptorWorkerPlatform from '../errors/MismatchedHttpInterceptorWorkerPlatform';
-import { createHttpInterceptorWorker } from '../factory';
-import { HttpInterceptorWorkerPlatform } from '../types/options';
+import { getBrowserBaseURL } from '@tests/utils/interceptors';
+
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
 describe('HttpInterceptorWorker (browser)', () => {
-  const platform: HttpInterceptorWorkerPlatform = 'browser';
-
   declareSharedHttpInterceptorWorkerTests({
-    platform,
-  });
+    platform: 'browser',
 
-  it(
-    'should throw an error if trying to use a mismatched platform',
-    async () => {
-      const mismatchedPlatform: HttpInterceptorWorkerPlatform = 'node';
-      expect(mismatchedPlatform).not.toBe(platform);
-
-      const interceptorWorker = createHttpInterceptorWorker({
-        platform: mismatchedPlatform,
-      });
-      expect(interceptorWorker.platform()).toBe(mismatchedPlatform);
-
-      await expect(async () => {
-        await interceptorWorker.start();
-      }).rejects.toThrowError(new MismatchedHttpInterceptorWorkerPlatform(mismatchedPlatform));
+    getBaseURL(type) {
+      return getBrowserBaseURL(type);
     },
-    { timeout: 10000 },
-  );
+  });
 });

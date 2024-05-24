@@ -9,13 +9,13 @@
   },
   "dependencies": {
     "fastify": "4.23.2",
-    "zimic": "latest",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.2",
     "supertest": "^6.3.4",
     "typescript": "^5.4.3",
-    "vitest": "1.2.2"
+    "vitest": "1.6.0",
+    "zimic": "latest"
   }
 }

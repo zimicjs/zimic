@@ -1,35 +1,53 @@
-import InvalidHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/InvalidHttpInterceptorWorkerPlatform';
-import MismatchedHttpInterceptorWorkerPlatform from './http/interceptorWorker/errors/MismatchedHttpInterceptorWorkerPlatform';
-import NotStartedHttpInterceptorWorkerError from './http/interceptorWorker/errors/NotStartedHttpInterceptorWorkerError';
-import OtherHttpInterceptorWorkerRunningError from './http/interceptorWorker/errors/OtherHttpInterceptorWorkerRunningError';
+import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
+import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
+import { createHttpInterceptor } from './http/interceptor/factory';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
 
-export type { HttpInterceptorWorker } from './http/interceptorWorker/types/public';
-export type { HttpInterceptorWorkerOptions } from './http/interceptorWorker/types/options';
-export { HttpInterceptorWorkerPlatform } from './http/interceptorWorker/types/options';
-
-export { createHttpInterceptorWorker } from './http/interceptorWorker/factory';
-export {
-  InvalidHttpInterceptorWorkerPlatform,
-  MismatchedHttpInterceptorWorkerPlatform,
-  NotStartedHttpInterceptorWorkerError,
-  OtherHttpInterceptorWorkerRunningError,
-  UnregisteredServiceWorkerError,
-};
+export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
 export type {
-  HttpRequestTrackerResponseDeclaration,
-  HttpRequestTrackerResponseDeclarationFactory,
+  HttpRequestHandlerResponseDeclaration,
+  HttpRequestHandlerResponseDeclarationFactory,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   TrackedHttpInterceptorRequest,
-} from './http/requestTracker/types/requests';
+} from './http/requestHandler/types/requests';
 
-export type { HttpRequestTracker } from './http/requestTracker/types/public';
+export type {
+  LocalHttpRequestHandler,
+  RemoteHttpRequestHandler,
+  SyncedRemoteHttpRequestHandler,
+  PendingRemoteHttpRequestHandler,
+  HttpRequestHandler,
+} from './http/requestHandler/types/public';
 
-export type { HttpInterceptorOptions } from './http/interceptor/types/options';
+export type {
+  HttpInterceptorType,
+  HttpInterceptorPlatform,
+  LocalHttpInterceptorOptions,
+  RemoteHttpInterceptorOptions,
+  HttpInterceptorOptions,
+} from './http/interceptor/types/options';
 export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
-export type { HttpInterceptor } from './http/interceptor/types/public';
+export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-export { createHttpInterceptor } from './http/interceptor/factory';
+/** @see {@link https://github.com/diego-aquino/zimic#http `http` API reference} */
+export interface HttpNamespace {
+  /**
+   * Creates an HTTP interceptor.
+   *
+   * @param options The options for the interceptor.
+   * @returns The created HTTP interceptor.
+   * @throws {InvalidURLError} If the base URL is invalid.
+   * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
+   * @see {@link https://github.com/diego-aquino/zimic#httpcreateinterceptor `http.createInterceptor` API reference}
+   * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring service schemas}
+   */
+  createInterceptor: typeof createHttpInterceptor;
+}
+
+/** @see {@link https://github.com/diego-aquino/zimic#http `http` API reference} */
+export const http: HttpNamespace = {
+  createInterceptor: createHttpInterceptor,
+};

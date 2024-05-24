@@ -7,9 +7,11 @@ import { SERVICE_WORKER_FILE_NAME } from './shared/constants';
 const MSW_ROOT_PATH = path.join(require.resolve('msw'), '..', '..', '..');
 export const MOCK_SERVICE_WORKER_PATH = path.join(MSW_ROOT_PATH, 'lib', SERVICE_WORKER_FILE_NAME);
 
-async function initializeBrowserServiceWorker(cliArguments: { publicDirectory: string }) {
-  const { publicDirectory } = cliArguments;
+interface BrowserServiceWorkerInitOptions {
+  publicDirectory: string;
+}
 
+async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
   const absolutePublicDirectory = path.resolve(publicDirectory);
 
   const chalk = await getChalk();

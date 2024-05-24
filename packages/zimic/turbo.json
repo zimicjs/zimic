@@ -3,7 +3,14 @@
   "extends": ["//"],
   "pipeline": {
     "build": {
-      "inputs": ["src/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts", ".swcrc"],
+      "inputs": [
+        "src/**/*.{ts,json}",
+        "{package,tsconfig}.json",
+        "tsup.config.ts",
+        "!**/tests/**/*",
+        "!**/__tests__/**/*",
+        "!**/*.test.ts"
+      ],
       "outputs": ["dist/**"]
     },
 
@@ -14,7 +21,7 @@
 
     "test:turbo": {
       "dependsOn": ["^build", "deps:init-msw"],
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "tsup.config.ts"]
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
     "lint:turbo": {

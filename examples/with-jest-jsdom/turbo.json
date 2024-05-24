@@ -4,7 +4,7 @@
   "pipeline": {
     "test:turbo": {
       "dependsOn": ["^build"],
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "jest.config.js"]
     }
   }
 }

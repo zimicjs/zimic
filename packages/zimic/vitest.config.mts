@@ -8,6 +8,8 @@ export const defaultConfig: UserConfig = {
   test: {
     globals: false,
     allowOnly: process.env.CI !== 'true',
+    testTimeout: 5000,
+    hookTimeout: 5000,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -19,14 +21,20 @@ export const defaultConfig: UserConfig = {
         branches: 100,
       },
       exclude: [
+        '**/local/**',
         '**/public/**',
-        '**/.eslintrc.js',
-        '**/.lintstagedrc.js',
+        '**/tests/globalSetup/**',
         '**/types/**',
         '**/types.ts',
         '**/typescript.ts',
+        '.eslintrc.js',
+        '.lintstagedrc.js',
+        'vitest.*.mts',
       ],
     },
+  },
+  define: {
+    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
   },
   resolve: {
     alias: {

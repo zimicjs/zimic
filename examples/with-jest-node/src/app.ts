@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import { JSONValue } from 'zimic';
+import type { JSONValue } from 'zimic';
 import { z } from 'zod';
 
 export const GITHUB_API_BASE_URL = 'https://api.github.com';

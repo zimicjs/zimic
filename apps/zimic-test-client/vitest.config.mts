@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     globals: false,
     allowOnly: process.env.CI !== 'true',
+    testTimeout: 5000,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],

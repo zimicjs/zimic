@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["esnext", "dom", "dom.iterable"],
     "target": "esnext",
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

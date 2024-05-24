@@ -1,28 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe } from 'vitest';
 
-import MismatchedHttpInterceptorWorkerPlatform from '../errors/MismatchedHttpInterceptorWorkerPlatform';
-import { createHttpInterceptorWorker } from '../factory';
-import { HttpInterceptorWorkerPlatform } from '../types/options';
+import InterceptorServer from '@/interceptor/server/InterceptorServer';
+import { getNodeBaseURL } from '@tests/utils/interceptors';
+
 import { declareSharedHttpInterceptorWorkerTests } from './shared/workerTests';
 
 describe('HttpInterceptorWorker (Node.js)', () => {
-  const platform: HttpInterceptorWorkerPlatform = 'node';
+  const server = new InterceptorServer();
 
   declareSharedHttpInterceptorWorkerTests({
-    platform,
-  });
+    platform: 'node',
 
-  it('should throw an error if trying to use a mismatched platform', async () => {
-    const mismatchedPlatform: HttpInterceptorWorkerPlatform = 'browser';
-    expect(mismatchedPlatform).not.toBe(platform);
+    async startServer() {
+      await server.start();
+    },
 
-    const interceptorWorker = createHttpInterceptorWorker({
-      platform: mismatchedPlatform,
-    });
-    expect(interceptorWorker.platform()).toBe(mismatchedPlatform);
+    getBaseURL(type) {
+      return getNodeBaseURL(type, server);
+    },
 
-    await expect(async () => {
-      await interceptorWorker.start();
-    }).rejects.toThrowError(new MismatchedHttpInterceptorWorkerPlatform(mismatchedPlatform));
+    async stopServer() {
+      await server.stop();
+    },
   });
 });

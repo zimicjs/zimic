@@ -7,7 +7,7 @@ used in this example, but other runtimes should be similar, such as [Deno](https
 
 ## Application
 
-A simple [Fastify](https://fastify.dev) server, fetching repositories from the
+The application is a simple [Fastify](https://fastify.dev) server, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest). Any other Node.js framework could be used as well, such as
 [express](https://expressjs.com) and [Nest.js](https://nestjs.com).
 
@@ -20,17 +20,42 @@ where the repository is found and another where it is not.
 
 ### Zimic
 
-- Zimic worker: [`tests/interceptors/worker.ts`](./tests/interceptors/worker.ts)
-- Zimic GitHub interceptor: [`tests/interceptors/githubInterceptor.ts`](./tests/interceptors/githubInterceptor.ts)
+- GitHub interceptor: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
 - Test suite: [`tests/example.test.ts`](./tests/example.test.ts)
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
-
-#### Configuration
-
 - Jest configuration: [`jest.config.js`](./jest.config.js)
 
-  > The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
-  > required by Jest because Zimic uses dynamic imports internally.
+> [!IMPORTANT]
+>
+> The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
+> required by Jest because Zimic uses dynamic imports internally.
+
+### Running
+
+1. Clone this example:
+
+   ```bash
+   mkdir zimic
+   cd zimic
+   git init
+   git remote add origin git@github.com:diego-aquino/zimic.git
+   git sparse-checkout init
+   git sparse-checkout set examples/with-jest-node
+   git pull origin main
+   cd examples/with-jest-node
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+3. Run the tests:
+
+   ```bash
+   pnpm run test
+   ```

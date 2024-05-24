@@ -1,15 +1,15 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/diego-aquino/zimic.git"
   },
   "private": false,
-  "packageManager": "pnpm@8.15.5",
+  "packageManager": "pnpm@9.0.6",
   "engines": {
-    "node": ">=18.0.0 <21.0.0"
+    "node": ">=18.0.0"
   },
   "license": "MIT",
   "scripts": {
@@ -22,8 +22,8 @@
     "test": "turbo test:turbo",
     "types:check": "turbo types:check",
     "pre:commit": "lint-staged",
-    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 75% --continue && turbo test:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue",
-    "prepare": "husky install || echo 'Could not install git hooks with husky.'"
+    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue && turbo test:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 20% --continue",
+    "prepare": "husky || echo 'Could not install git hooks with husky.'"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.2.1",

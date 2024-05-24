@@ -12,6 +12,9 @@ const sharedConfig: Options = {
   treeshake: isProductionBuild,
   minify: false,
   clean: true,
+  env: {
+    SERVER_ACCESS_CONTROL_MAX_AGE: '',
+  },
 };
 
 export default defineConfig([

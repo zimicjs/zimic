@@ -1,21 +1,21 @@
-import filesystem from 'fs/promises';
-import path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { version } from '@@/package.json';
 
-import { MOCK_SERVICE_WORKER_PATH } from '../browser/init';
-import { SERVICE_WORKER_FILE_NAME } from '../browser/shared/constants';
+import { usingIgnoredConsole } from '@tests/utils/console';
+
 import runCLI from '../cli';
 
 describe('CLI', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
+  const processOnSpy = vi.spyOn(process, 'on');
 
   const rootHelpOutput = [
-    'cli.js <command>',
+    'zimic <command>',
     '',
     'Commands:',
-    '  cli.js browser  Browser',
+    '  zimic browser  Browser',
+    '  zimic server   Interceptor server',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -23,113 +23,54 @@ describe('CLI', () => {
   ].join('\n');
 
   beforeEach(() => {
+    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
+
+    processOnSpy.mockClear();
   });
 
   it('should throw an error if no command is provided', async () => {
     processArgvSpy.mockReturnValue(['node', 'cli.js']);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
-
-    await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(rootHelpOutput);
-    consoleErrorSpy.mockRestore();
-  });
-
-  describe('Version', () => {
-    it('should show the CLI version', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
-
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(version);
-      consoleLogSpy.mockRestore();
-    });
-  });
-
-  describe('Help', () => {
-    it('should show a help message', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
-
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(rootHelpOutput);
-      consoleLogSpy.mockRestore();
-    });
-  });
-
-  describe('Browser', () => {
-    const browserHelpOutput = [
-      'cli.js browser',
-      '',
-      'Browser',
-      '',
-      'Commands:',
-      '  cli.js browser init <publicDirectory>  Initialize the browser service worker',
-      '',
-      'Options:',
-      '  --help     Show help                                                 [boolean]',
-      '  --version  Show version number                                       [boolean]',
-    ].join('\n');
-
-    it('should throw an error if no command is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser']);
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
-
+    await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(browserHelpOutput);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+      expect(spies.error).toHaveBeenCalledTimes(1);
+      expect(spies.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
     });
+  });
 
-    describe('Init', () => {
-      const browserInitHelpOutput = [
-        'cli.js browser init <publicDirectory>',
-        '',
-        'Initialize the browser service worker',
-        '',
-        'Positionals:',
-        '  publicDirectory  The path to the public directory of your application',
-        '                                                             [string] [required]',
-        '',
-        'Options:',
-        '  --help     Show help                                                 [boolean]',
-        '  --version  Show version number                                       [boolean]',
-      ].join('\n');
+  it('should throw an error if an unknown command is provided', async () => {
+    const unknownCommand = 'unknown';
 
-      it('should copy the service worker file to the provided public directory', async () => {
-        const makeDirectorySpy = vi.spyOn(filesystem, 'mkdir').mockImplementation(vi.fn());
-        const copyFileSpy = vi.spyOn(filesystem, 'copyFile').mockImplementation(vi.fn());
+    processArgvSpy.mockReturnValue(['node', 'cli.js', unknownCommand]);
 
-        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+    await usingIgnoredConsole(['error'], async (spies) => {
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-        const publicDirectory = './public';
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init', publicDirectory]);
+      expect(spies.error).toHaveBeenCalledTimes(1);
+      expect(spies.error).toHaveBeenCalledWith(`Unknown argument: ${unknownCommand}`);
+    });
+  });
 
-        await runCLI();
+  it('should show a help message', async () => {
+    processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
+    await usingIgnoredConsole(['log'], async (spies) => {
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-        const absolutePublicDirectory = path.resolve(publicDirectory);
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.log).toHaveBeenCalledWith(rootHelpOutput);
+    });
+  });
 
-        expect(makeDirectorySpy).toHaveBeenCalledWith(absolutePublicDirectory, { recursive: true });
-        const serviceWorkerDestinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
-        expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
+  it('should show the CLI version', async () => {
+    processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
 
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining(absolutePublicDirectory));
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining(serviceWorkerDestinationPath));
-      });
+    await usingIgnoredConsole(['log'], async (spies) => {
+      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      it('should throw an error if no public directory is provided', async () => {
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init']);
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
-
-        await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
-
-        expect(consoleErrorSpy).toHaveBeenCalledWith(browserInitHelpOutput);
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
-      });
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      expect(spies.log).toHaveBeenCalledWith(version);
     });
   });
 });

@@ -1,9 +1,14 @@
-import { describe } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { HttpMethod } from '@/http/types/schema';
-import { HttpInterceptorWorkerPlatform } from '@/interceptor/http/interceptorWorker/types/options';
+import { PossiblePromise } from '@/types/utils';
+import { ExtendedURL } from '@/utils/urls';
+import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
+import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
+import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
+import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -11,36 +16,80 @@ import { declareOptionsHttpInterceptorTests } from './methods/options';
 import { declarePatchHttpInterceptorTests } from './methods/patch';
 import { declarePostHttpInterceptorTests } from './methods/post';
 import { declarePutHttpInterceptorTests } from './methods/put';
+import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOptions } from './types';
 import { declareTypeHttpInterceptorTests } from './typescript';
 
-export interface SharedHttpInterceptorTestsOptions {
-  platform: HttpInterceptorWorkerPlatform;
-}
-
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
-  describe('Types', () => {
-    declareTypeHttpInterceptorTests(options);
+  const { startServer, getBaseURL, stopServer } = options;
+
+  it('should throw an error if created with an unknown type', () => {
+    // @ts-expect-error Forcing an unknown type.
+    const unknownType: HttpInterceptorType = 'unknown';
+
+    expect(() => {
+      // @ts-expect-error
+      createInternalHttpInterceptor({ type: unknownType });
+    }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
   });
 
-  describe('Base URLs', () => {
-    declareBaseURLHttpInterceptorTests(options);
-  });
+  const interceptorTypes: HttpInterceptorType[] = ['local', 'remote'];
 
-  describe('Methods', () => {
-    const methodTestFactories: Record<HttpMethod, () => Promise<void> | void> = {
-      GET: declareGetHttpInterceptorTests.bind(null, options),
-      POST: declarePostHttpInterceptorTests.bind(null, options),
-      PUT: declarePutHttpInterceptorTests.bind(null, options),
-      PATCH: declarePatchHttpInterceptorTests.bind(null, options),
-      DELETE: declareDeleteHttpInterceptorTests.bind(null, options),
-      HEAD: declareHeadHttpInterceptorTests.bind(null, options),
-      OPTIONS: declareOptionsHttpInterceptorTests.bind(null, options),
+  describe.each(interceptorTypes)("Type '%s'", (type) => {
+    let baseURL: ExtendedURL;
+
+    beforeAll(async () => {
+      if (type === 'remote') {
+        await startServer?.();
+      }
+
+      baseURL = await getBaseURL(type);
+    });
+
+    afterAll(async () => {
+      if (type === 'remote') {
+        await stopServer?.();
+      }
+    });
+
+    const runtimeOptions: RuntimeSharedHttpInterceptorTestsOptions = {
+      ...options,
+      type,
+      getBaseURL() {
+        return baseURL;
+      },
+      getInterceptorOptions() {
+        return { type, baseURL };
+      },
     };
 
-    for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
-      describe(method, async () => {
-        await methodTestFactory();
-      });
-    }
+    describe('Default', () => {
+      declareDeclareHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Types', () => {
+      declareTypeHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Base URLs', () => {
+      declareBaseURLHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Methods', () => {
+      const methodTestFactories: Record<HttpMethod, () => PossiblePromise<void>> = {
+        GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
+        POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
+        PUT: declarePutHttpInterceptorTests.bind(null, runtimeOptions),
+        PATCH: declarePatchHttpInterceptorTests.bind(null, runtimeOptions),
+        DELETE: declareDeleteHttpInterceptorTests.bind(null, runtimeOptions),
+        HEAD: declareHeadHttpInterceptorTests.bind(null, runtimeOptions),
+        OPTIONS: declareOptionsHttpInterceptorTests.bind(null, runtimeOptions),
+      };
+
+      for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
+        describe(method, async () => {
+          await methodTestFactory();
+        });
+      }
+    });
   });
 }

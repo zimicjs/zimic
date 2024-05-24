@@ -1,4 +1,4 @@
-# Dependency
+# Dependencies
 node_modules
 
 # Build
@@ -9,10 +9,16 @@ node_modules
 /apps/*/out
 /packages/*/dist
 /packages/*/build
+/examples/*/build
+/examples/*/.next
+/examples/*/out
 
-# Test coverage
+# Tests
 /apps/*/tests/coverage
 /packages/*/tests/coverage
+/examples/*/tests/outputs
+/examples/*/tests/reports
+/examples/*/next-env.d.ts
 
 # Environment variables
 .env*.local
@@ -30,4 +36,5 @@ tsconfig.tsbuildinfo
 
 .vscode
 .DS_Store
+*.pem
 local/

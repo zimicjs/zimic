@@ -1,3 +1,3 @@
-export function waitForDelay(delay: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, delay));
+export function waitForDelay(delayDuration: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, delayDuration));
 }

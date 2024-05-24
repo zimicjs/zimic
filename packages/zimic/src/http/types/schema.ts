@@ -1,10 +1,14 @@
-import { IfAny, UnionToIntersection } from '@/types/utils';
+import { IfAny, Prettify, UnionToIntersection, UnionHasMoreThanOneType } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
 
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
+/**
+ * A type representing the currently supported
+ * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
+ */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 /** A schema representing the structure of an HTTP request. */
@@ -20,28 +24,59 @@ export interface HttpServiceResponseSchema {
   body?: HttpBody;
 }
 
-/** A schema representing the structures of HTTP responses by status code. */
-export interface HttpServiceResponseSchemaByStatusCode {
-  [statusCode: number]: HttpServiceResponseSchema;
+export namespace HttpServiceResponseSchema {
+  export interface NoBody extends Omit<HttpServiceResponseSchema, 'body'> {
+    body?: null;
+  }
 }
 
-/** Extracts the status codes used in response schema by status code. */
+/** A schema representing the structure of HTTP responses by status code. */
+export type HttpServiceResponseSchemaByStatusCode = {
+  [statusCode: number]: HttpServiceResponseSchema;
+} & {
+  204?: HttpServiceResponseSchema.NoBody;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export namespace HttpServiceResponseSchemaByStatusCode {
+  export type NoBody = HttpServiceResponseSchemaByStatusCode & {
+    [statusCode: number]: HttpServiceResponseSchema.NoBody;
+  };
+}
+
+/** Extracts the status codes used in a response schema by status code. */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
 > = Extract<keyof ResponseSchemaByStatusCode, number>;
 
-/** A schema representing the structures of an HTTP request and response for a given method. */
+/** A schema representing the structure of an HTTP request and response for a given method. */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
   response?: HttpServiceResponseSchemaByStatusCode;
 }
 
-/** A schema representing the structures of HTTP request and response by method. */
-export type HttpServiceMethodsSchema = {
-  [Method in HttpMethod]?: HttpServiceMethodSchema;
-};
+export namespace HttpServiceMethodSchema {
+  export interface NoRequestBody extends Omit<HttpServiceMethodSchema, 'request'> {
+    request?: Omit<HttpServiceRequestSchema, 'body'> & { body?: null };
+  }
 
-/** A schema representing the structures of paths, methods, requests, and responses for an HTTP service. */
+  export interface NoBody extends Omit<NoRequestBody, 'response'> {
+    response?: HttpServiceResponseSchemaByStatusCode.NoBody;
+  }
+}
+
+/** A schema representing the structure of HTTP request and response by method. */
+export interface HttpServiceMethodsSchema {
+  GET?: HttpServiceMethodSchema.NoRequestBody;
+  POST?: HttpServiceMethodSchema;
+  PUT?: HttpServiceMethodSchema;
+  PATCH?: HttpServiceMethodSchema;
+  DELETE?: HttpServiceMethodSchema;
+  HEAD?: HttpServiceMethodSchema.NoBody;
+  OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
+}
+
+/** A schema representing the structure of paths, methods, requests, and responses for an HTTP service. */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
 }
@@ -87,20 +122,61 @@ export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, 
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
-export type AllowAnyStringInPathParameters<Path extends string> =
-  Path extends `${infer Prefix}:${string}/${infer Suffix}`
-    ? `${Prefix}${string}/${AllowAnyStringInPathParameters<Suffix>}`
-    : Path extends `${infer Prefix}:${string}`
-      ? `${Prefix}${string}`
-      : Path;
+type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
+  ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
+  : Path extends `${infer Prefix}:${string}`
+    ? `${Prefix}${string}`
+    : Path;
 
 /** Extracts the non-literal paths from an HTTP service schema containing certain methods. */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = AllowAnyStringInPathParameters<LiteralHttpServiceSchemaPath<Schema, Method>>;
+> = AllowAnyStringInPathParams<LiteralHttpServiceSchemaPath<Schema, Method>>;
+
+type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
+  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
+  : Path;
+
+type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
+  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
+
+export type PreferMostStaticLiteralPath<Path extends string> =
+  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
+
+type RecursiveInferHttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method>,
+> =
+  NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
+    ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
+      ? never
+      : LiteralPath
+    : never;
+
+export type InferLiteralHttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method> = LiteralHttpServiceSchemaPath<Schema, Method>,
+> = PreferMostStaticLiteralPath<
+  LiteralPath extends LiteralPath
+    ? RecursiveInferHttpServiceSchemaPath<Schema, Method, NonLiteralPath, LiteralPath>
+    : never
+>;
 
 /** Extracts the paths from an HTTP service schema containing certain methods. */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
   | NonLiteralHttpServiceSchemaPath<Schema, Method>;
+
+type RecursivePathParamsSchemaFromPath<Path extends string> =
+  Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
+    ? { [Name in ParamName]: string } & RecursivePathParamsSchemaFromPath<Suffix>
+    : Path extends `${infer _Prefix}:${infer ParamName}`
+      ? { [Name in ParamName]: string }
+      : {};
+
+export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;

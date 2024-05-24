@@ -1,7 +1,15 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "lib": ["esnext", "dom", "dom.iterable"]
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "target": "esnext",
+    "module": "esnext",
+    "incremental": false,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "pretty": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["**/*.ts", "**/*.mts", "tests/resolver.js"],
   "exclude": ["node_modules"]

@@ -1,199 +1,81 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
-import { HttpRequest, HttpResponse, HttpSchema, HttpSearchParams, JSONValue, JSONSerialized } from 'zimic0';
-import { createHttpInterceptor, createHttpInterceptorWorker } from 'zimic0/interceptor';
+import { HttpRequest, HttpResponse, HttpSearchParams, JSONSerialized } from 'zimic0';
+import { http, HttpInterceptorType } from 'zimic0/interceptor';
 
 import { getCrypto } from '@tests/utils/crypto';
 
-import { ClientTestDeclarationOptions } from '.';
+import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
+import {
+  AuthServiceSchema,
+  NotificationServiceSchema,
+  User,
+  UserCreationPayload,
+  ValidationError,
+  ConflictError,
+  UserListSearchParams,
+  NotFoundError,
+  Notification,
+} from './schema';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  birthDate: Date;
+async function getAuthBaseURL(type: HttpInterceptorType) {
+  const crypto = await getCrypto();
+
+  return type === 'local'
+    ? 'http://localhost:3000'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-interface UserWithPassword extends User {
-  password: string;
+async function getNotificationsBaseURL(type: HttpInterceptorType) {
+  const crypto = await getCrypto();
+
+  return type === 'local'
+    ? 'http://localhost:3001'
+    : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
 }
 
-type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
+async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
+  const { platform, type, fetch } = options;
 
-type LoginResult = JSONValue<{
-  accessToken: string;
-  refreshToken: string;
-}>;
-
-type RequestError = JSONValue<{
-  code: string;
-  message: string;
-}>;
-
-type ValidationError = JSONValue<
-  RequestError & {
-    code: 'validation_error';
-  }
->;
-
-type UnauthorizedError = JSONValue<
-  RequestError & {
-    code: 'unauthorized';
-  }
->;
-
-type NotFoundError = JSONValue<
-  RequestError & {
-    code: 'not_found';
-  }
->;
-
-type ConflictError = JSONValue<
-  RequestError & {
-    code: 'conflict';
-  }
->;
-
-type UserListSearchParams = HttpSchema.SearchParams<{
-  name?: string;
-  orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
-
-type UserPaths = HttpSchema.Paths<{
-  '/users': {
-    POST: {
-      request: {
-        headers: { 'content-type'?: string };
-        body: UserCreationPayload;
-      };
-      response: {
-        201: {
-          headers: { 'x-user-id': User['id'] };
-          body: JSONSerialized<User>;
-        };
-        400: { body: ValidationError };
-        409: { body: ConflictError };
-      };
-    };
-    GET: {
-      request: {
-        searchParams: UserListSearchParams;
-      };
-      response: {
-        200: { body: JSONSerialized<User>[] };
-      };
-    };
-  };
-}>;
-
-type UserByIdPaths = HttpSchema.Paths<{
-  '/users/:id': {
-    GET: {
-      response: {
-        200: { body: JSONSerialized<User> };
-        404: { body: NotFoundError };
-      };
-    };
-    PATCH: {
-      request: {
-        body: Partial<JSONSerialized<User>>;
-      };
-      response: {
-        200: { body: JSONSerialized<User> };
-        404: { body: NotFoundError };
-      };
-    };
-    DELETE: {
-      response: {
-        204: {};
-        404: { body: NotFoundError };
-      };
-    };
-  };
-}>;
-
-type SessionPaths = HttpSchema.Paths<{
-  '/session/login': {
-    POST: {
-      request: {
-        body: {
-          email: string;
-          password: string;
-        };
-      };
-      response: {
-        201: { body: LoginResult };
-        400: { body: ValidationError };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-
-  '/session/refresh': {
-    POST: {
-      request: {
-        body: { refreshToken: string };
-      };
-      response: {
-        201: { body: LoginResult };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-
-  '/session/logout': {
-    POST: {
-      response: {
-        204: { body: undefined };
-        401: { body: UnauthorizedError };
-      };
-    };
-  };
-}>;
-
-type AuthServiceSchema = UserPaths & UserByIdPaths & SessionPaths;
-
-type Notification = JSONValue<{
-  id: string;
-  userId: string;
-  content: string;
-}>;
-
-type NotificationServiceSchema = HttpSchema.Paths<{
-  '/notifications/:userId': {
-    GET: {
-      response: {
-        200: { body: Notification[] };
-      };
-    };
-  };
-}>;
-
-function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
-  const { platform, fetch } = options;
-
-  const worker = createHttpInterceptorWorker({ platform });
-
-  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3000',
+  const authInterceptor = http.createInterceptor<AuthServiceSchema>({
+    type,
+    baseURL: await getAuthBaseURL(type),
   });
 
-  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
-    worker,
-    baseURL: 'http://localhost:3001',
+  const notificationInterceptor = http.createInterceptor<NotificationServiceSchema>({
+    type,
+    baseURL: await getNotificationsBaseURL(type),
   });
+
+  const interceptors = [authInterceptor, notificationInterceptor];
+
+  const authBaseURL = authInterceptor.baseURL();
+  const notificationBaseURL = notificationInterceptor.baseURL();
 
   beforeAll(async () => {
-    await worker.start();
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.start();
+        expect(interceptor.isRunning()).toBe(true);
+        expect(interceptor.platform()).toBe(platform);
+      }),
+    );
   });
 
-  beforeEach(() => {
-    authInterceptor.clear();
-    notificationInterceptor.clear();
+  beforeEach(async () => {
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.clear();
+      }),
+    );
   });
 
   afterAll(async () => {
-    await worker.stop();
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.stop();
+        expect(interceptor.isRunning()).toBe(false);
+      }),
+    );
   });
 
   function serializeUser(user: User): JSONSerialized<User> {
@@ -217,12 +99,12 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       const creationPayload: UserCreationPayload = {
         name: user.name,
         email: user.email,
-        password: 'password',
+        password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
 
       async function createUser(payload: UserCreationPayload) {
-        const request = new Request('http://localhost:3000/users', {
+        const request = new Request(`${authBaseURL}/users`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -234,7 +116,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       }
 
       it('should support creating users', async () => {
-        const creationTracker = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -268,13 +150,14 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           birthDate: creationPayload.birthDate,
         });
 
-        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
-
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(creationRequests[0].searchParams.size).toBe(0);
+
+        expect(response.headers.get('x-user-id')).toBe(createdUser.id);
+        expect(creationRequests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
         expect(creationRequests[0].body).toEqual(creationPayload);
@@ -301,7 +184,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationTracker = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             body: invalidPayload,
@@ -314,7 +197,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await createUser(invalidPayload);
         expect(response.status).toBe(400);
 
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -344,7 +227,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationTracker = authInterceptor
+        const creationHandler = await authInterceptor
           .post('/users')
           .with({
             body: conflictingPayload,
@@ -357,7 +240,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await createUser(conflictingPayload);
         expect(response.status).toBe(409);
 
-        const creationRequests = creationTracker.requests();
+        const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -403,8 +286,8 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         },
       ];
 
-      beforeEach(() => {
-        authInterceptor.get('/users').respond({
+      beforeEach(async () => {
+        await authInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
@@ -412,14 +295,14 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
       async function listUsers(filters: UserListSearchParams = {}) {
         const searchParams = new HttpSearchParams(filters);
-        const request = new Request(`http://localhost:3000/users?${searchParams.toString()}`, {
+        const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
         });
         return fetch(request);
       }
 
       it('should list users', async () => {
-        const listTracker = authInterceptor.get('/users').respond({
+        const listHandler = await authInterceptor.get('/users').respond({
           status: 200,
           body: users.map(serializeUser),
         });
@@ -430,7 +313,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -457,7 +340,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listTracker = authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
           .with({
             searchParams: { name: user.name },
@@ -473,7 +356,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -503,7 +386,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listTracker = authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
           .with({
             searchParams: { orderBy: ['email.desc'] },
@@ -521,7 +404,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(orderedUsers.map(serializeUser));
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
@@ -549,12 +432,12 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const request = new Request(`http://localhost:3000/users/${userId}`, { method: 'GET' });
+        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'GET' });
         return fetch(request);
       }
 
       it('should support getting users by id', async () => {
-        const getTracker = authInterceptor.get<'/users/:id'>(`/users/${user.id}`).respond({
+        const getHandler = await authInterceptor.get(`/users/${user.id}`).respond({
           status: 200,
           body: serializeUser(user),
         });
@@ -565,8 +448,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const returnedUsers = (await response.json()) as User[];
         expect(returnedUsers).toEqual(serializeUser(user));
 
-        const getRequests = getTracker.requests();
+        const getRequests = await getHandler.requests();
         expect(getRequests).toHaveLength(1);
+        expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(getRequests[0].searchParams.size).toBe(0);
@@ -593,7 +477,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = authInterceptor.get('/users/:id').respond({
+        const getHandler = await authInterceptor.get('/users/:id').respond({
           status: 404,
           body: notFoundError,
         });
@@ -601,8 +485,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await getUserById(user.id);
         expect(response.status).toBe(404);
 
-        const getRequests = getTracker.requests();
+        const getRequests = await getHandler.requests();
         expect(getRequests).toHaveLength(1);
+        expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(getRequests[0].searchParams.size).toBe(0);
@@ -627,20 +512,21 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new Request(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
+        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'DELETE' });
         return fetch(request);
       }
 
       it('should support deleting users by id', async () => {
-        const deleteTracker = authInterceptor.delete<'/users/:id'>(`/users/${user.id}`).respond({
+        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 204,
         });
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(204);
 
-        const deleteRequests = deleteTracker.requests();
+        const deleteRequests = await deleteHandler.requests();
         expect(deleteRequests).toHaveLength(1);
+        expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
@@ -667,7 +553,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
           code: 'not_found',
           message: 'User not found',
         };
-        const getTracker = authInterceptor.delete<'/users/:id'>(`/users/${user.id}`).respond({
+        const getHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
           status: 404,
           body: notFoundError,
         });
@@ -675,8 +561,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(404);
 
-        const deleteRequests = getTracker.requests();
+        const deleteRequests = await getHandler.requests();
         expect(deleteRequests).toHaveLength(1);
+        expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
@@ -710,22 +597,22 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
     };
 
     describe('Notification list', () => {
-      beforeEach(() => {
-        notificationInterceptor.get('/notifications/:userId').respond({
+      beforeEach(async () => {
+        await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listNotifications(userId: string) {
-        const request = new Request(`http://localhost:3001/notifications/${encodeURIComponent(userId)}`, {
+        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(userId)}`, {
           method: 'GET',
         });
         return fetch(request);
       }
 
       it('should list notifications', async () => {
-        const listTracker = notificationInterceptor.get('/notifications/:userId').respond({
+        const listHandler = await notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [notification],
         });
@@ -736,7 +623,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         let returnedNotifications = (await response.json()) as Notification[];
         expect(returnedNotifications).toEqual([notification]);
 
-        const listRequests = listTracker.requests();
+        const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams>();
@@ -758,7 +645,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([notification]);
 
-        listTracker.bypass();
+        await listHandler.bypass();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -767,9 +654,9 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(listTracker.requests()).toHaveLength(1);
+        expect(await listHandler.requests()).toHaveLength(1);
 
-        listTracker.clear();
+        await listHandler.clear();
 
         response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);
@@ -778,7 +665,7 @@ function declareDefaultClientTests(options: ClientTestDeclarationOptions) {
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(listTracker.requests()).toHaveLength(0);
+        expect(await listHandler.requests()).toHaveLength(0);
       });
     });
   });
