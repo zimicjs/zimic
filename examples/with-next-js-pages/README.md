@@ -19,7 +19,9 @@ from the [GitHub API](https://docs.github.com/en/rest).
   - Before fetching resources, it is necessary to wait for the interceptors and fixtures to be loaded. This is done via
     `await waitForLoadedInterceptors();`.
 
-A `postinstall` in [`package.json`](./package.json#L11) script is used to install Playwright's browsers.
+A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers and initialize
+Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
+ignored in the [`.gitignore`](./.gitignore) file.
 
 ## Testing
 
