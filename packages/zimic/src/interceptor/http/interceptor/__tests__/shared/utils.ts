@@ -39,15 +39,17 @@ export async function verifyUnhandledRequestMessage(
 
   expect(message).toContain(
     platform === 'node'
-      ? `Search params: ${formatObjectToLog(Object.fromEntries(request.searchParams))}\n`
+      ? `Search params: ${formatObjectToLog(Object.fromEntries(request.searchParams))}`
       : 'Search params: [object Object]',
   );
 
   const body: unknown = request.body;
 
-  expect(message).toContain(
-    platform === 'node' || typeof body !== 'object' || body === null
-      ? `Body: ${formatObjectToLog(body)}\n`
-      : 'Body: [object Object]',
-  );
+  if (body === null) {
+    expect(message).toContain(platform === 'node' ? `Body: ${formatObjectToLog(body)}` : 'Body: ');
+  } else {
+    expect(message).toContain(
+      platform === 'node' || typeof body !== 'object' ? `Body: ${formatObjectToLog(body)}` : 'Body: [object Object]',
+    );
+  }
 }
