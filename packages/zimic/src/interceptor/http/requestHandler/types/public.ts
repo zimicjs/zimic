@@ -18,6 +18,11 @@ import {
   HttpRequestBodySchema,
 } from './requests';
 
+/**
+ * A static headers restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -26,6 +31,11 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
   | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
+/**
+ * A static search params restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -34,12 +44,22 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
   | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
+/**
+ * A static body restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
 
+/**
+ * A static restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -51,12 +71,22 @@ export interface HttpRequestHandlerStaticRestriction<
   exact?: boolean;
 }
 
+/**
+ * A computed restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => boolean;
 
+/**
+ * A restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,

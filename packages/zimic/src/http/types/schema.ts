@@ -11,14 +11,22 @@ export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELET
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-/** A schema representing the structure of an HTTP request. */
+/**
+ * A schema representing the structure of an HTTP request.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
   searchParams?: HttpSearchParamsSchema;
   body?: HttpBody;
 }
 
-/** A schema representing the structure of an HTTP response. */
+/**
+ * A schema representing the structure of an HTTP response.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
   body?: HttpBody;
@@ -30,7 +38,11 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
-/** A schema representing the structure of HTTP responses by status code. */
+/**
+ * A schema representing the structure of HTTP responses by status code.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceResponseSchemaByStatusCode = {
   [statusCode: number]: HttpServiceResponseSchema;
 } & {
@@ -44,12 +56,20 @@ export namespace HttpServiceResponseSchemaByStatusCode {
   };
 }
 
-/** Extracts the status codes used in a response schema by status code. */
+/**
+ * Extracts the status codes used in a response schema by status code.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
 > = Extract<keyof ResponseSchemaByStatusCode, number>;
 
-/** A schema representing the structure of an HTTP request and response for a given method. */
+/**
+ * A schema representing the structure of an HTTP request and response for a given method.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
   response?: HttpServiceResponseSchemaByStatusCode;
@@ -65,7 +85,11 @@ export namespace HttpServiceMethodSchema {
   }
 }
 
-/** A schema representing the structure of HTTP request and response by method. */
+/**
+ * A schema representing the structure of HTTP request and response by method.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
   POST?: HttpServiceMethodSchema;
@@ -76,12 +100,20 @@ export interface HttpServiceMethodsSchema {
   OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
 }
 
-/** A schema representing the structure of paths, methods, requests, and responses for an HTTP service. */
+/**
+ * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
 }
 
-/** A namespace containing utility types for validating HTTP type schemas. */
+/**
+ * A namespace containing utility types for validating HTTP type schemas.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
   export type Paths<Schema extends HttpServiceSchema> = Schema;

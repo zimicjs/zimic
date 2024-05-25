@@ -77,6 +77,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`http.createInterceptor`](#httpcreateinterceptor)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
+      - [Unhandled requests](#unhandled-requests)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -556,7 +557,9 @@ important to keep the interceptor base URLs unique. Also, make sure that your ap
 when making requests.
 
 ```ts
-const interceptor = http.createInterceptor<{}>({
+const interceptor = http.createInterceptor<{
+  // ...
+}>({
   type: 'remote',
   // Declaring a base URL with a unique identifier to prevent conflicts
   baseURL: `http://localhost:4000/my-service-${crypto.randomUUID()}`,
@@ -564,6 +567,65 @@ const interceptor = http.createInterceptor<{}>({
 
 // Your application should use this base URL when making requests
 const baseURL = interceptor.baseURL();
+```
+
+##### Unhandled requests
+
+When a request is not matched by any interceptors, it is considered unhandled and will be logged to the console by
+default. In a [local interceptor](#local-http-interceptors), unhandled requests are always bypassed, meaning that they
+pass through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with
+an [interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
+
+You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor`.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  onUnhandledRequest: { log: false },
+});
+```
+
+`onUnhandledRequest` also accepts a function to dynamically choose when to ignore an unhandled request. Calling
+`await context.log()` logs the request to the console.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  onUnhandledRequest: async (request, context) => {
+    const url = new URL(request.url);
+
+    // Ignore only unhandled requests to /assets
+    if (!url.pathname.startsWith('/assets')) {
+      await context.log();
+    }
+  },
+});
+```
+
+If you want to override the default logging behavior for all interceptors, or requests that did not match any known base
+URL, you can use `http.default.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when creating an
+interceptor will take precedence over `http.default.onUnhandledRequest`.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+// Example 1: Ignore all unhandled requests
+http.default.onUnhandledRequest({ log: false });
+
+// Example 2: Ignore only unhandled requests to /assets
+http.default.onUnhandledRequest((request, context) => {
+  const url = new URL(request.url);
+
+  if (!url.pathname.startsWith('/assets')) {
+    await context.log();
+  }
+});
 ```
 
 #### Declaring HTTP service schemas
