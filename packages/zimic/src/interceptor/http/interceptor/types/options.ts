@@ -1,3 +1,6 @@
+import { HttpRequest } from '@/http/types/requests';
+import { PossiblePromise } from '@/types/utils';
+
 /**
  * An type of an HTTP interceptor.
  *
@@ -12,7 +15,26 @@ export type HttpInterceptorType = 'local' | 'remote';
  */
 export type HttpInterceptorPlatform = 'node' | 'browser';
 
-export interface BaseHttpInterceptorOptions {
+/** The strategy to handle unhandled requests. */
+export namespace UnhandledRequestStrategy {
+  /** A static declaration of the strategy to handle unhandled requests. */
+  export type Declaration = Partial<{
+    log: boolean;
+  }>;
+
+  export interface HandlerContext {
+    log: () => Promise<void>;
+  }
+  /** A dynamic handler to unhandled requests. */
+  export type Handler = (request: HttpRequest, context: HandlerContext) => PossiblePromise<void>;
+
+  /** The action to take when an unhandled request is intercepted. */
+  export type Action = 'bypass' | 'reject';
+}
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type UnhandledRequestStrategy = UnhandledRequestStrategy.Declaration | UnhandledRequestStrategy.Handler;
+
+export interface SharedHttpInterceptorOptions {
   /** The type of the HTTP interceptor. */
   type: HttpInterceptorType;
 
@@ -25,15 +47,22 @@ export interface BaseHttpInterceptorOptions {
    * paths to differentiate between conflicting mocks.
    */
   baseURL: string | URL;
+
+  /**
+   * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   */
+  onUnhandledRequest?: UnhandledRequestStrategy;
 }
 
 /** The options to create a local HTTP interceptor. */
-export interface LocalHttpInterceptorOptions extends BaseHttpInterceptorOptions {
+export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
 }
 
 /** The options to create a remote HTTP interceptor. */
-export interface RemoteHttpInterceptorOptions extends BaseHttpInterceptorOptions {
+export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
 }
 

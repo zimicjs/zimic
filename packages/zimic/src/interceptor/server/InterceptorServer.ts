@@ -3,6 +3,9 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
+import { UnhandledRequestStrategy } from '@/interceptor/http/interceptor/types/options';
+import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -17,6 +20,9 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/sch
 export interface InterceptorServerOptions {
   hostname?: string;
   port?: number;
+  onUnhandledRequest?: {
+    log?: boolean;
+  };
 }
 
 interface HttpHandler {
@@ -31,6 +37,9 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private _hostname: string;
   private _port?: number;
+
+  private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
+  private workerStore = new HttpInterceptorWorkerStore();
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -49,6 +58,7 @@ class InterceptorServer implements PublicInterceptorServer {
   constructor(options: InterceptorServerOptions = {}) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
+    this.onUnhandledRequest = options.onUnhandledRequest;
   }
 
   hostname() {
@@ -212,7 +222,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
     const request = normalizeNodeRequest(nodeRequest, Request);
-    const response = await this.createResponseForRequest(request);
+    const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
 
     if (response) {
       this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
@@ -228,6 +238,23 @@ class InterceptorServer implements PublicInterceptorServer {
       await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
     }
 
+    const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
+
+    if (shouldWarnUnhandledRequest) {
+      const action: UnhandledRequestStrategy.Action = 'reject';
+
+      const declaration = this.onUnhandledRequest;
+      const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
+
+      if (declaration?.log !== undefined) {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declaration.log }, action);
+      } else if (typeof defaultDeclarationOrHandler === 'function') {
+        await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
+      } else {
+        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+      }
+    }
+
     nodeResponse.destroy();
   };
 
@@ -238,6 +265,8 @@ class InterceptorServer implements PublicInterceptorServer {
     const url = excludeNonPathParams(createURL(request.url)).toString();
     const serializedRequest = await serializeRequest(request);
 
+    let matchedAnyInterceptor = false;
+
     for (let index = handlerGroup.length - 1; index >= 0; index--) {
       const handler = handlerGroup[index];
 
@@ -246,22 +275,21 @@ class InterceptorServer implements PublicInterceptorServer {
         continue;
       }
 
+      matchedAnyInterceptor = true;
+
       const { response: serializedResponse } = await webSocketServer.request(
         'interceptors/responses/create',
-        {
-          handlerId: handler.id,
-          request: serializedRequest,
-        },
+        { handlerId: handler.id, request: serializedRequest },
         { sockets: [handler.socket] },
       );
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
-        return response;
+        return { response, matchedAnyInterceptor };
       }
     }
 
-    return null;
+    return { response: null, matchedAnyInterceptor };
   }
 
   private setDefaultAccessControlHeaders(

@@ -1,7 +1,9 @@
 import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
 import { createHttpInterceptor } from './http/interceptor/factory';
+import { UnhandledRequestStrategy } from './http/interceptor/types/options';
 import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+import HttpInterceptorWorkerStore from './http/interceptorWorker/HttpInterceptorWorkerStore';
 
 export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
 
@@ -19,6 +21,12 @@ export type {
   SyncedRemoteHttpRequestHandler,
   PendingRemoteHttpRequestHandler,
   HttpRequestHandler,
+  HttpRequestHandlerRestriction,
+  HttpRequestHandlerComputedRestriction,
+  HttpRequestHandlerHeadersStaticRestriction,
+  HttpRequestHandlerSearchParamsStaticRestriction,
+  HttpRequestHandlerStaticRestriction,
+  HttpRequestHandlerBodyStaticRestriction,
 } from './http/requestHandler/types/public';
 
 export type {
@@ -27,6 +35,7 @@ export type {
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
   HttpInterceptorOptions,
+  UnhandledRequestStrategy,
 } from './http/interceptor/types/options';
 export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/schema';
 
@@ -45,9 +54,29 @@ export interface HttpNamespace {
    * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring service schemas}
    */
   createInterceptor: typeof createHttpInterceptor;
+
+  /** Default HTTP settings. */
+  default: {
+    /**
+     * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
+     * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled
+     * request. Defining a custom strategy when creating an interceptor will override this default for that
+     * interceptor.
+     *
+     * @param strategy The default strategy to be set.
+     */
+    onUnhandledRequest: (strategy: UnhandledRequestStrategy) => void;
+  };
 }
 
 /** @see {@link https://github.com/diego-aquino/zimic#http `http` API reference} */
-export const http: HttpNamespace = {
+export const http: HttpNamespace = Object.freeze({
   createInterceptor: createHttpInterceptor,
-};
+
+  default: Object.freeze({
+    onUnhandledRequest: (strategy: UnhandledRequestStrategy) => {
+      const store = new HttpInterceptorWorkerStore();
+      store.setDefaultUnhandledRequestStrategy(strategy);
+    },
+  }),
+});

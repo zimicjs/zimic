@@ -4,7 +4,7 @@ import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
 
-export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
+export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
  * A type representing the currently supported
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
