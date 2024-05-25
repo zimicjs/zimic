@@ -1,5 +1,5 @@
 <h1>
-  Zimic + Next.js
+  Zimic + Next.js App Router
 </h2>
 
 This example uses Zimic with [Next.js](https://nextjs.org). The application is verified with end-to-end tests using
@@ -7,9 +7,9 @@ This example uses Zimic with [Next.js](https://nextjs.org). The application is v
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) application, using both the
-[App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages). It fetches repositories
-from the [GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) application using the
+[App Router](https://nextjs.org/docs/app). It fetches repositories from the
+[GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/app/page.page.tsx`](./src/app/page.tsx)
 - Interceptor provider:

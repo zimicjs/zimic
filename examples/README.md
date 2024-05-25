@@ -19,4 +19,5 @@
 
 ## Next.js
 
-- [With Next.js](./with-next-js)
+- [With Next.js App Router](./with-next-js-app)
+- [With Next.js Pages Router](./with-next-js-pages)
