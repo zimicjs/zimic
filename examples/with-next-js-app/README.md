@@ -11,9 +11,7 @@ The application is a simple [Next.js](https://nextjs.org) application, using bot
 [App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages). It fetches repositories
 from the [GitHub API](https://docs.github.com/en/rest).
 
-- Application:
-  - App Router version: [`src/app/app/page.page.tsx`](./src/app/app/page.page.tsx)
-  - Pages Router version: [`src/pages/pages.page.tsx`](./src/pages/pages.page.tsx)
+- Application: [`src/app/app/page.page.tsx`](./src/app/page.tsx)
 - Interceptor provider:
   [`src/providers/interceptors/InterceptorProvider.tsx`](./src/providers/interceptors/InterceptorProvider.tsx)
   - This provider is used to apply Zimic mocks when the application is started in development.
@@ -67,8 +65,7 @@ GitHub API and simulate a test case where the repository is found and another wh
       pnpm run dev
       ```
 
-      After started, the App Router version will be available at [http://localhost:3004/app](http://localhost:3004/app)
-      and the Pages Router version at [http://localhost:3004/pages](http://localhost:3004/pages).
+      After started, the application will be available at [http://localhost:3004](http://localhost:3004).
 
    2. In another terminal, run the tests:
 

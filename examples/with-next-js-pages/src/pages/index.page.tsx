@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router';
 
-import { HomePageSearchParams } from '../app/hooks/useHomePageSearchParams';
 import GitHubRepositoryForm from './components/GitHubRepositoryForm';
 import GitHubRepositoryShowcase from './components/GitHubRepositoryShowcase';
+import { HomePageSearchParams } from './hooks/useHomePageSearchParams';
 
 export default function Home() {
   const router = useRouter();
