@@ -572,10 +572,18 @@ const baseURL = interceptor.baseURL();
 
 ##### Unhandled requests
 
-When a request is not matched by any interceptors, it is considered unhandled and will be logged to the console by
-default. In a [local interceptor](#local-http-interceptors), unhandled requests are always bypassed, meaning that they
-pass through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with
-an [interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
+When a request is not matched by any interceptor handlers, it is considered unhandled and will be logged to the console
+by default.
+
+> [!TIP]
+>
+> If you expected a request to be handled, but it was not, make sure that the interceptor
+> [base URL](#httpcreateinterceptor), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
+> [restrictions](#http-handlerwithrestriction) correctly match the request.
+
+In a [local interceptor](#local-http-interceptors), unhandled requests are always bypassed, meaning that they pass
+through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with an
+[interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
 
 You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor`.
 
