@@ -45,7 +45,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 - :wrench: **Flexibility**. You can simulate real application workflows by mocking the necessary endpoints. This is
   specially useful in testing, making sure that the real path your application takes is covered.
 - :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity and simplicity in your mocks. Check our
-  [Getting started](#getting-started) guide and starting mocking!
+  [getting started guide](#getting-started) and starting mocking!
 
 ---
 
@@ -246,18 +246,18 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    });
    ```
 
-   In this example, we're creating a [local interceptor](#local-http-interceptors) for a service supporting `GET`
-   requests to `/users`. A successful response contains an array of `User` objects.
-
-   Learn more at [Creating a local HTTP interceptor](#creating-a-local-http-interceptor),
-   [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor), and
-   [Declaring HTTP service schemas](#declaring-http-service-schemas).
+   In this example, we're [creating a local interceptor](#creating-a-local-http-interceptor) for a service supporting
+   `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more about
+   [declaring HTTP service schemas](#declaring-http-service-schemas).
 
 2. Then, start the interceptor:
 
    ```ts
    await interceptor.start();
    ```
+
+   If we were [creating a remote interceptor](#creating-a-remote-http-interceptor), we would need a
+   [running server](#zimic-server-start) before starting it.
 
 3. Now, you can intercept requests and return mock responses!
 
@@ -489,8 +489,8 @@ Each interceptor represents a service and can be used to mock its paths and meth
 
 #### `http.createInterceptor`
 
-Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more at
-[Declaring HTTP service schemas](#declaring-http-service-schemas).
+Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
+[declaring service schemas](#declaring-http-service-schemas).
 
 ##### Creating a local HTTP interceptor
 
@@ -584,7 +584,7 @@ In a [local interceptor](#local-http-interceptors), unhandled requests are alway
 through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with an
 [interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
 
-You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor`.
+You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor()`.
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1019,13 +1019,13 @@ const interceptor = http.createInterceptor<{
 
 > [!TIP]
 >
-> Similarly to [Declaring HTTP requests](#declaring-http-requests), you only need to include in the schema the
+> Similarly to [declaring HTTP requests](#declaring-http-requests), you only need to include in the schema the
 > properties you want to use in your mocks. Headers, search params, or body fields that are not used do not need to be
 > declared, keeping your type definitions clean and concise.
 
 > [!IMPORTANT]
 >
-> Also similarly to [Declaring HTTP requests](#declaring-http-requests), body types cannot be declared using the keyword
+> Also similarly to [declaring HTTP requests](#declaring-http-requests), body types cannot be declared using the keyword
 > `interface`, because interfaces do not have implicit index signatures as types do. Part of Zimic's JSON validation
 > relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
 > type is a valid JSON, you can use the utility type `JSONValue`.
@@ -1084,7 +1084,7 @@ await interceptor.start();
 ```
 
 When targeting a browser environment with a local interceptor, make sure to follow the
-[Browser post-install](#browser-post-install) guide before starting your interceptors.
+[browser post-install guide](#browser-post-install) before starting your interceptors.
 
 #### HTTP `interceptor.stop()`
 
