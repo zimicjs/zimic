@@ -17,6 +17,15 @@ function matchRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): opt
   return options.type === 'remote';
 }
 
+/**
+ * Creates an HTTP interceptor.
+ *
+ * @param options The options for the interceptor.
+ * @returns The created HTTP interceptor.
+ * @throws {InvalidURLError} If the base URL is invalid.
+ * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
+ * @see {@link https://github.com/zimicjs/zimic#httpcreateinterceptor `http.createInterceptor()` API reference}
+ */
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions,
 ): PublicLocalHttpInterceptor<Schema>;

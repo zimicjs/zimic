@@ -39,7 +39,8 @@ export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/sche
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
-export type { HttpInterceptorNamespace, HttpInterceptorNamespaceDefault } from './http/namespace/types';
+export type { HttpInterceptorNamespaceDefault } from './http/namespace/HttpInterceptorNamespace';
+export type { HttpInterceptorNamespace };
 
 /**
  * A set of interceptor resources for mocking HTTP requests.
