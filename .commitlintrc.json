@@ -27,7 +27,8 @@
         "examples-jest-node",
         "examples-jest-jsdom",
         "examples-playwright",
-        "examples-next-js"
+        "examples-next-js-app",
+        "examples-next-js-pages"
       ]
     ],
     "scope-empty": [2, "never"]

@@ -1,14 +1,14 @@
 {
-  "name": "zimic-example-with-next-js",
+  "name": "zimic-example-with-next-js-pages",
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- zimic server start --port 3005 --ephemeral -- next dev --port 3004",
+    "dev": "dotenv -c development -- next dev --turbo --port 3006",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "postinstall": "pnpm deps:install-playwright || echo 'Could not postinstall.'"
+    "postinstall": "pnpm deps:install-playwright && zimic browser init ./public || echo 'Could not postinstall.'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.36.2",

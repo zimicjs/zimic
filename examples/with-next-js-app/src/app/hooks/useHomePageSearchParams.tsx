@@ -8,7 +8,7 @@ export interface HomePageSearchParams {
 
 function useHomePageSearchParams() {
   const router = useRouter();
-  const searchParams = useSearchParams()!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+  const searchParams = useSearchParams();
 
   const ownerName = searchParams.get('owner' satisfies keyof HomePageSearchParams);
   const repositoryName = searchParams.get('repo' satisfies keyof HomePageSearchParams);

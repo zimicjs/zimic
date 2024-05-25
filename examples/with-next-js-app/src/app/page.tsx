@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 
-import GitHubRepositoryForm from '../components/GitHubRepositoryForm';
-import GitHubRepositoryShowcase from '../components/GitHubRepositoryShowcase';
-import { HomePageSearchParams } from '../hooks/useHomePageSearchParams';
+import GitHubRepositoryForm from './components/GitHubRepositoryForm';
+import GitHubRepositoryShowcase from './components/GitHubRepositoryShowcase';
+import { HomePageSearchParams } from './hooks/useHomePageSearchParams';
 
 interface Props {
   searchParams: HomePageSearchParams;

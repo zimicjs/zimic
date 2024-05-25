@@ -1,5 +1,5 @@
 <h1>
-  Zimic + Next.js
+  Zimic + Next.js Pages Router
 </h2>
 
 This example uses Zimic with [Next.js](https://nextjs.org). The application is verified with end-to-end tests using
@@ -7,13 +7,11 @@ This example uses Zimic with [Next.js](https://nextjs.org). The application is v
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) application, using both the
-[App Router](https://nextjs.org/docs/app) and the [Pages Router](https://nextjs.org/docs/pages). It fetches repositories
-from the [GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) application using the
+[Pages Router](https://nextjs.org/docs/pages). It fetches repositories from the
+[GitHub API](https://docs.github.com/en/rest).
 
-- Application:
-  - App Router version: [`src/app/app/page.page.tsx`](./src/app/app/page.page.tsx)
-  - Pages Router version: [`src/pages/pages.page.tsx`](./src/pages/pages.page.tsx)
+- Application: [`src/pages/index.page.tsx`](./src/pages/index.page.tsx)
 - Interceptor provider:
   [`src/providers/interceptors/InterceptorProvider.tsx`](./src/providers/interceptors/InterceptorProvider.tsx)
   - This provider is used to apply Zimic mocks when the application is started in development.
@@ -21,7 +19,9 @@ from the [GitHub API](https://docs.github.com/en/rest).
   - Before fetching resources, it is necessary to wait for the interceptors and fixtures to be loaded. This is done via
     `await waitForLoadedInterceptors();`.
 
-A `postinstall` in [`package.json`](./package.json#L11) script is used to install Playwright's browsers.
+A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers and initialize
+Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
+ignored in the [`.gitignore`](./.gitignore) file.
 
 ## Testing
 
@@ -48,9 +48,9 @@ GitHub API and simulate a test case where the repository is found and another wh
    git init
    git remote add origin git@github.com:diego-aquino/zimic.git
    git sparse-checkout init
-   git sparse-checkout set examples/with-next-js
+   git sparse-checkout set examples/with-next-js-pages
    git pull origin main
-   cd examples/with-next-js
+   cd examples/with-next-js-pages
    ```
 
 2. Install the dependencies:
@@ -67,8 +67,7 @@ GitHub API and simulate a test case where the repository is found and another wh
       pnpm run dev
       ```
 
-      After started, the App Router version will be available at [http://localhost:3004/app](http://localhost:3004/app)
-      and the Pages Router version at [http://localhost:3004/pages](http://localhost:3004/pages).
+      After started, the application will be available at [http://localhost:3006](http://localhost:3006).
 
    2. In another terminal, run the tests:
 
