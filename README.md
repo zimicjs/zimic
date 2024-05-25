@@ -17,9 +17,9 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="#examples">Examples</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/diego-aquino/zimic/issues/new">Issues</a>
+  <a href="https://github.com/zimicjs/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/users/diego-aquino/projects/5/views/5">Roadmap</a>
+  <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
 </div>
 
 ---
@@ -28,8 +28,7 @@
 >
 > 🚧 This project is still experimental and under active development!
 >
-> Check our [roadmap to v1](https://github.com/users/diego-aquino/projects/5/views/6). Contributors and ideas are
-> welcome!
+> Check our [roadmap to v1](https://github.com/orgs/zimicjs/projects/1/views/5). Contributors and ideas are welcome!
 
 Zimic is a lightweight, TypeScript-first HTTP request mocking library, inspired by
 [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
@@ -1525,4 +1524,4 @@ should automatically stop after the command finishes.
 
 ## Changelog
 
-The changelog is available on our [GitHub Releases](https://github.com/diego-aquino/zimic/releases) page.
+The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.

@@ -12,7 +12,7 @@ export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema> = {
   [Key in keyof Schema & string]: [Key, Defined<Schema[Key]>];
 }[keyof Schema & string];
 
-/** An initialization value for {@link https://github.com/diego-aquino/zimic#httpheaders `HttpHeaders`}. */
+/** An initialization value for {@link https://github.com/zimicjs/zimic#httpheaders `HttpHeaders`}. */
 export type HttpHeadersInit<Schema extends HttpHeadersSchema> =
   | Headers
   | Schema

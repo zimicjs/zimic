@@ -44,6 +44,6 @@ export type { HttpInterceptorNamespace, HttpInterceptorNamespaceDefault } from '
 /**
  * A set of interceptor resources for mocking HTTP requests.
  *
- * @see {@link https://github.com/diego-aquino/zimic#zimicinterceptor-api-reference `zimic/interceptor` API reference}
+ * @see {@link https://github.com/zimicjs/zimic#zimicinterceptor-api-reference `zimic/interceptor` API reference}
  */
 export const http = Object.freeze(new HttpInterceptorNamespace());

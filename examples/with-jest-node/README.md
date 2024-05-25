@@ -41,7 +41,7 @@ where the repository is found and another where it is not.
    mkdir zimic
    cd zimic
    git init
-   git remote add origin git@github.com:diego-aquino/zimic.git
+   git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
    git sparse-checkout set examples/with-jest-node
    git pull origin main

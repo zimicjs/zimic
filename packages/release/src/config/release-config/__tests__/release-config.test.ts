@@ -25,7 +25,7 @@ describe('Release config', () => {
     ],
     tagSuffix: '-suffix',
     github: {
-      repositoryOwner: 'diego-aquino',
+      repositoryOwner: 'zimicjs',
       repositoryName: 'zimic',
       productionBranch: 'main',
     },
