@@ -133,7 +133,11 @@ export namespace HttpSchema {
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
 }
 
-/** Extracts the methods from an HTTP service schema. */
+/**
+ * Extracts the methods from an HTTP service schema.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
   Schema,
   any, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -143,13 +147,19 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
 /**
  * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
  * schema are allowed.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
 > = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
 
-/** Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed. */
+/**
+ * Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpMethod> = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
@@ -160,7 +170,11 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
     ? `${Prefix}${string}`
     : Path;
 
-/** Extracts the non-literal paths from an HTTP service schema containing certain methods. */
+/**
+ * Extracts the non-literal paths from an HTTP service schema containing certain methods.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
@@ -199,7 +213,11 @@ export type InferLiteralHttpServiceSchemaPath<
     : never
 >;
 
-/** Extracts the paths from an HTTP service schema containing certain methods. */
+/**
+ * Extracts the paths from an HTTP service schema containing certain methods.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
   | NonLiteralHttpServiceSchemaPath<Schema, Method>;
@@ -211,4 +229,10 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
       ? { [Name in ParamName]: string }
       : {};
 
+/**
+ * Infers the path parameters schema from a path string.
+ *
+ * @example
+ *   '/users/:userId/notifications' -> { userId: string }
+ */
 export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;

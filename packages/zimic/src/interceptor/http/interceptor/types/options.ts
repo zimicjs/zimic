@@ -18,8 +18,8 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
 /**
  * The strategy to treat unhandled requests.
  *
- * When `log` is `true`, unhandled requests are logged to the terminal. If provided a handler, unhandled requests will
- * be logged if `await context.log()` is called.
+ * When `log` is `true`, unhandled requests are logged to the console. If provided a handler, unhandled requests will be
+ * logged if `await context.log()` is called.
  *
  * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
  */
@@ -35,7 +35,7 @@ export namespace UnhandledRequestStrategy {
 
   export interface HandlerContext {
     /**
-     * Logs the unhandled request to the terminal.
+     * Logs the unhandled request to the console.
      *
      * If the request was bypassed by a
      * {@link https://github.com/diego-aquino/zimic#local-http-interceptors local interceptor}, the log will be a

@@ -165,7 +165,7 @@ When to use `local`:
 
 Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
 
@@ -189,7 +189,7 @@ When to use `remote`:
 Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
 interceptors.
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
 >
@@ -352,7 +352,8 @@ console.log(contentType); // 'application/json'
 
 #### Comparing `HttpHeaders`
 
-`HttpHeaders` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other headers:
+`HttpHeaders` also provide the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
+other headers:
 
 </details>
 
@@ -430,8 +431,8 @@ console.log(page); // '1'
 
 #### Comparing `HttpSearchParams`
 
-`HttpSearchParams` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other search
-params:
+`HttpSearchParams` also provide the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
+comparisons with other search params:
 
 </details>
 
@@ -892,7 +893,8 @@ const interceptor = http.createInterceptor<{
 ##### Declaring HTTP requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
-`body` are supported to provide type safety when applying mocks.
+`body` are supported to provide type safety when applying mocks. [Path parameters](#dynamic-path-parameters) are
+automatically inferred from dynamic paths, such as `/users/:id`.
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
@@ -1180,6 +1182,23 @@ interceptor.get('/users/:id'); // Matches any id
 interceptor.get(`/users/${1}`); // Only matches id 1
 ```
 
+`request.pathParams` contains the parsed path parameters of a request and have their type automatically inferred from
+the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
+`{ userId: string }`.
+
+```ts
+const updateHandler = interceptor.put('/users/:id').respond((request) => {
+  console.log(request.pathParams); // { id: '1' }
+
+  return {
+    status: 200,
+    body: { username: 'diego-aquino' },
+  };
+});
+
+await fetch('http://localhost:3000/users/1', { method: 'PUT' });
+```
+
 #### HTTP `interceptor.clear()`
 
 Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
@@ -1226,7 +1245,8 @@ console.log(path); // '/users'
 
 Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
 which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
-single object or with multiple calls to `.with()`, all of them must be met, essentially creating an AND condition.
+single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
+condition.
 
 ##### Static restrictions
 
@@ -1280,10 +1300,10 @@ const creationHandler = interceptor
   });
 ```
 
-The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
-and `.searchParams`, which are typed based on the interceptor schema. The function should return a boolean: `true` if
-the request matches the handler and should receive the mock response; `false` otherwise and the request should bypass
-the handler.
+The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
+`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
+The function should return a boolean: `true` if the request matches the handler and should receive the mock response;
+`false` otherwise and the request should bypass the handler.
 
 #### HTTP `handler.respond(declaration)`
 
@@ -1315,13 +1335,13 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
-and `.searchParams`, which are typed based on the interceptor schema.
+The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
+`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 
 #### HTTP `handler.bypass()`
 
-Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), making the handler stop
-matching requests. The next handler, created before this one, that matches the same method and path will be used if
+Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), making the handler
+stop matching requests. The next handler, created before this one, that matches the same method and path will be used if
 present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with
@@ -1349,10 +1369,10 @@ listHandler2.requests(); // Still contains the intercepted requests up to the by
 
 #### HTTP `handler.clear()`
 
-Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), restrictions declared with
-[`.with(restriction)`](#http-handlerwithrestriction), and intercepted requests, making the handler stop matching
-requests. The next handler, created before this one, that matches the same method and path will be used if present. If
-not, the requests of the method and path will not be intercepted.
+Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), restrictions
+declared with [`handler.with(restriction)`](#http-handlerwithrestriction), and intercepted requests, making the handler
+stop matching requests. The next handler, created before this one, that matches the same method and path will be used if
+present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with `handler.respond()`.
 
@@ -1404,9 +1424,10 @@ expect(updateRequests[0].body).toEqual({ username: 'new' });
 The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing an already parsed body in
-`.body`, typed headers in `.headers` and typed search params in `.searchParams`.
+`request.body`, typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params
+in `request.searchParams`.
 
-If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
+If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
 ```ts
 const listRequests = listHandler.requests();

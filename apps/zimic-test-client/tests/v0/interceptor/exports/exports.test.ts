@@ -119,9 +119,7 @@ describe('Exports', () => {
     expectTypeOf(http.createInterceptor).toEqualTypeOf<HttpInterceptorNamespace['createInterceptor']>();
     expect(typeof http.createInterceptor).toBe('function');
 
-    expectTypeOf(http.default.onUnhandledRequest).toEqualTypeOf<
-      HttpInterceptorNamespace['default']['onUnhandledRequest']
-    >();
+    expectTypeOf(http.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
     expect(typeof http.default.onUnhandledRequest).toBe('function');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
