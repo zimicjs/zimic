@@ -316,16 +316,15 @@ abstract class HttpInterceptorWorker {
     logWithPrefix(
       [
         `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
-          `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}:\n\n `,
-        `${request.method} ${request.url}\n`,
-        '   Headers:',
-        `${formatObjectToLog(Object.fromEntries(request.headers))}\n`,
-        '   Search params:',
-        `${formatObjectToLog(Object.fromEntries(request.searchParams))}\n`,
-        '   Body:',
-        `${formatObjectToLog(request.body)}\n\n`,
-        'To handle this request, use an interceptor to create a handler for it.\n',
-        'If you are using restrictions, make sure that they match the content of the request.',
+          `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
+        `${request.method} ${request.url}`,
+        '\n    Headers:',
+        formatObjectToLog(Object.fromEntries(request.headers)),
+        '\n    Search params:',
+        formatObjectToLog(Object.fromEntries(request.searchParams)),
+        '\n    Body:',
+        formatObjectToLog(request.body),
+        '\n\nLearn more about unhandled requests: https://github.com/diego-aquino/zimic#unhandled-requests',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },
     );
