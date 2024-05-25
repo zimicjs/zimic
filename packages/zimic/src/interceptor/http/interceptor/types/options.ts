@@ -15,20 +15,57 @@ export type HttpInterceptorType = 'local' | 'remote';
  */
 export type HttpInterceptorPlatform = 'node' | 'browser';
 
-/** The strategy to handle unhandled requests. */
+/**
+ * The strategy to treat unhandled requests.
+ *
+ * When `log` is `true`, unhandled requests are logged to the console. If provided a handler, unhandled requests will be
+ * logged if `await context.log()` is called.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+ */
 export namespace UnhandledRequestStrategy {
-  /** A static declaration of the strategy to handle unhandled requests. */
+  /**
+   * A static declaration of the strategy to handle unhandled requests.
+   *
+   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   */
   export type Declaration = Partial<{
     log: boolean;
   }>;
 
   export interface HandlerContext {
+    /**
+     * Logs the unhandled request to the console.
+     *
+     * If the request was bypassed by a
+     * {@link https://github.com/diego-aquino/zimic#local-http-interceptors local interceptor}, the log will be a
+     * warning. If the request was rejected by a
+     * {@link https://github.com/diego-aquino/zimic#local-http-interceptors remote interceptor}, the log will be an
+     * error.
+     *
+     * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+     */
     log: () => Promise<void>;
   }
-  /** A dynamic handler to unhandled requests. */
+
+  /**
+   * A dynamic handler to unhandled requests.
+   *
+   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   */
   export type Handler = (request: HttpRequest, context: HandlerContext) => PossiblePromise<void>;
 
-  /** The action to take when an unhandled request is intercepted. */
+  /**
+   * The action to take when an unhandled request is intercepted.
+   *
+   * In a {@link https://github.com/diego-aquino/zimic#local-http-interceptors local interceptor}, the action is always
+   * `bypass`, meaning that unhandled requests pass through the interceptor and reach the real network.
+   * {@link https://github.com/diego-aquino/zimic#local-http-interceptors Remote interceptors} always use `reject`, since
+   * unhandled requests that react an {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
+   * cannot be bypassed.
+   *
+   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   */
   export type Action = 'bypass' | 'reject';
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -56,18 +93,21 @@ export interface SharedHttpInterceptorOptions {
   onUnhandledRequest?: UnhandledRequestStrategy;
 }
 
-/** The options to create a local HTTP interceptor. */
+/** The options to create a {@link https://github.com/diego-aquino/zimic#local-http-interceptors local HTTP interceptor}. */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
 }
 
-/** The options to create a remote HTTP interceptor. */
+/**
+ * The options to create a
+ * {@link https://github.com/diego-aquino/zimic#remote-http-interceptors remote HTTP interceptor}.
+ */
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
 }
 
 /**
- * The options to create an HTTP interceptor.
+ * The options to create an {@link https://github.com/diego-aquino/zimic#httpinterceptor HTTP interceptor}.
  *
  * @see {@link https://github.com/diego-aquino/zimic#httpcreateinterceptor `http.createInterceptor()` API reference}
  */

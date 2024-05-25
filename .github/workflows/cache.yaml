@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  TURBO_LOG_ORDER: stream
   TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
-  TURBO_LOG_ORDER: stream
 
 jobs:
   cache-canary:
@@ -26,6 +26,7 @@ jobs:
         node-version:
           - 18
           - 20
+          - 22
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}

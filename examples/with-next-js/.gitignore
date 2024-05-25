@@ -4,6 +4,7 @@
 # Testing
 /tests/outputs
 /tests/reports
+/public/mockServiceWorker.js
 
 # Next.js
 /.next

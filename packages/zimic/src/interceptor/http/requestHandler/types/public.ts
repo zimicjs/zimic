@@ -18,6 +18,11 @@ import {
   HttpRequestBodySchema,
 } from './requests';
 
+/**
+ * A static headers restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -26,6 +31,11 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
   | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
+/**
+ * A static search params restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -34,12 +44,22 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
   | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
+/**
+ * A static body restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
 
+/**
+ * A static restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
@@ -51,12 +71,22 @@ export interface HttpRequestHandlerStaticRestriction<
   exact?: boolean;
 }
 
+/**
+ * A computed restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => boolean;
 
+/**
+ * A restriction to match intercepted requests.
+ *
+ * @see {@link https://github.com/diego-aquino/zimic#http-handlerwithrestriction `handler.with()` API reference}
+ */
 export type HttpRequestHandlerRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
@@ -95,7 +125,7 @@ export interface HttpRequestHandler<
   /**
    * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
    * which requests will match the handler and receive the mock response. If multiple restrictions are declared, either
-   * in a single object or with multiple calls to `.with()`, all of them must be met, essentially creating an AND
+   * in a single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
    * condition.
    *
    * By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
@@ -132,9 +162,9 @@ export interface HttpRequestHandler<
 
   /**
    * Clears any response declared with
-   * [`.respond(declaration)`](https://github.com/diego-aquino/zimic#http-handlerresponddeclaration), making the handler
-   * stop matching requests. The next handler, created before this one, that matches the same method and path will be
-   * used if present. If not, the requests of the method and path will not be intercepted.
+   * [`handler.respond(declaration)`](https://github.com/diego-aquino/zimic#http-handlerresponddeclaration), making the
+   * handler stop matching requests. The next handler, created before this one, that matches the same method and path
+   * will be used if present. If not, the requests of the method and path will not be intercepted.
    *
    * To make the handler match requests again, register a new response with
    * {@link https://github.com/diego-aquino/zimic#http-handlerrespond `handler.respond()`}.
@@ -150,11 +180,11 @@ export interface HttpRequestHandler<
 
   /**
    * Clears any response declared with
-   * [`.respond(declaration)`](https://github.com/diego-aquino/zimic#http-handlerresponddeclaration), restrictions
-   * declared with [`.with(restriction)`](https://github.com/diego-aquino/zimic#http-handlerwithrestriction), and
-   * intercepted requests, making the handler stop matching requests. The next handler, created before this one, that
-   * matches the same method and path will be used if present. If not, the requests of the method and path will not be
-   * intercepted.
+   * [`handler.respond(declaration)`](https://github.com/diego-aquino/zimic#http-handlerresponddeclaration),
+   * restrictions declared with
+   * [`handler.with(restriction)`](https://github.com/diego-aquino/zimic#http-handlerwithrestriction), and intercepted
+   * requests, making the handler stop matching requests. The next handler, created before this one, that matches the
+   * same method and path will be used if present. If not, the requests of the method and path will not be intercepted.
    *
    * To make the handler match requests again, register a new response with
    * {@link https://github.com/diego-aquino/zimic#http-handlerrespond `handler.respond()`}.

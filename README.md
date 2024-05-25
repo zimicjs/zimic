@@ -77,6 +77,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`http.createInterceptor`](#httpcreateinterceptor)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
+      - [Unhandled requests](#unhandled-requests)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -164,7 +165,7 @@ When to use `local`:
 
 Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
 
@@ -188,7 +189,7 @@ When to use `remote`:
 Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
 interceptors.
 
-> [!IMPORTANT]
+> [!NOTE]
 >
 > All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
 >
@@ -351,7 +352,8 @@ console.log(contentType); // 'application/json'
 
 #### Comparing `HttpHeaders`
 
-`HttpHeaders` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other headers:
+`HttpHeaders` also provide the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
+other headers:
 
 </details>
 
@@ -429,8 +431,8 @@ console.log(page); // '1'
 
 #### Comparing `HttpSearchParams`
 
-`HttpSearchParams` also provide the utility methods `.equals` and `.contains`, useful in comparisons with other search
-params:
+`HttpSearchParams` also provide the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
+comparisons with other search params:
 
 </details>
 
@@ -556,7 +558,9 @@ important to keep the interceptor base URLs unique. Also, make sure that your ap
 when making requests.
 
 ```ts
-const interceptor = http.createInterceptor<{}>({
+const interceptor = http.createInterceptor<{
+  // ...
+}>({
   type: 'remote',
   // Declaring a base URL with a unique identifier to prevent conflicts
   baseURL: `http://localhost:4000/my-service-${crypto.randomUUID()}`,
@@ -564,6 +568,73 @@ const interceptor = http.createInterceptor<{}>({
 
 // Your application should use this base URL when making requests
 const baseURL = interceptor.baseURL();
+```
+
+##### Unhandled requests
+
+When a request is not matched by any interceptor handlers, it is considered unhandled and will be logged to the console
+by default.
+
+> [!TIP]
+>
+> If you expected a request to be handled, but it was not, make sure that the interceptor
+> [base URL](#httpcreateinterceptor), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
+> [restrictions](#http-handlerwithrestriction) correctly match the request.
+
+In a [local interceptor](#local-http-interceptors), unhandled requests are always bypassed, meaning that they pass
+through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with an
+[interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
+
+You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor`.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  onUnhandledRequest: { log: false },
+});
+```
+
+`onUnhandledRequest` also accepts a function to dynamically choose when to ignore an unhandled request. Calling
+`await context.log()` logs the request to the console.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  onUnhandledRequest: async (request, context) => {
+    const url = new URL(request.url);
+
+    // Ignore only unhandled requests to /assets
+    if (!url.pathname.startsWith('/assets')) {
+      await context.log();
+    }
+  },
+});
+```
+
+If you want to override the default logging behavior for all interceptors, or requests that did not match any known base
+URL, you can use `http.default.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when creating an
+interceptor will take precedence over `http.default.onUnhandledRequest`.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+// Example 1: Ignore all unhandled requests
+http.default.onUnhandledRequest({ log: false });
+
+// Example 2: Ignore only unhandled requests to /assets
+http.default.onUnhandledRequest((request, context) => {
+  const url = new URL(request.url);
+
+  if (!url.pathname.startsWith('/assets')) {
+    await context.log();
+  }
+});
 ```
 
 #### Declaring HTTP service schemas
@@ -830,7 +901,8 @@ const interceptor = http.createInterceptor<{
 ##### Declaring HTTP requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
-`body` are supported to provide type safety when applying mocks.
+`body` are supported to provide type safety when applying mocks. [Path parameters](#dynamic-path-parameters) are
+automatically inferred from dynamic paths, such as `/users/:id`.
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
@@ -1118,6 +1190,23 @@ interceptor.get('/users/:id'); // Matches any id
 interceptor.get(`/users/${1}`); // Only matches id 1
 ```
 
+`request.pathParams` contains the parsed path parameters of a request and have their type automatically inferred from
+the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
+`{ userId: string }`.
+
+```ts
+const updateHandler = interceptor.put('/users/:id').respond((request) => {
+  console.log(request.pathParams); // { id: '1' }
+
+  return {
+    status: 200,
+    body: { username: 'diego-aquino' },
+  };
+});
+
+await fetch('http://localhost:3000/users/1', { method: 'PUT' });
+```
+
 #### HTTP `interceptor.clear()`
 
 Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
@@ -1164,7 +1253,8 @@ console.log(path); // '/users'
 
 Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
 which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
-single object or with multiple calls to `.with()`, all of them must be met, essentially creating an AND condition.
+single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
+condition.
 
 ##### Static restrictions
 
@@ -1218,10 +1308,10 @@ const creationHandler = interceptor
   });
 ```
 
-The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
-and `.searchParams`, which are typed based on the interceptor schema. The function should return a boolean: `true` if
-the request matches the handler and should receive the mock response; `false` otherwise and the request should bypass
-the handler.
+The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
+`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
+The function should return a boolean: `true` if the request matches the handler and should receive the mock response;
+`false` otherwise and the request should bypass the handler.
 
 #### HTTP `handler.respond(declaration)`
 
@@ -1253,13 +1343,13 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-The `request` parameter represents the intercepted request, containing useful properties such as `.body`, `.headers`,
-and `.searchParams`, which are typed based on the interceptor schema.
+The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
+`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 
 #### HTTP `handler.bypass()`
 
-Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), making the handler stop
-matching requests. The next handler, created before this one, that matches the same method and path will be used if
+Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), making the handler
+stop matching requests. The next handler, created before this one, that matches the same method and path will be used if
 present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with
@@ -1287,10 +1377,10 @@ listHandler2.requests(); // Still contains the intercepted requests up to the by
 
 #### HTTP `handler.clear()`
 
-Clears any response declared with [`.respond(declaration)`](#http-handlerresponddeclaration), restrictions declared with
-[`.with(restriction)`](#http-handlerwithrestriction), and intercepted requests, making the handler stop matching
-requests. The next handler, created before this one, that matches the same method and path will be used if present. If
-not, the requests of the method and path will not be intercepted.
+Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), restrictions
+declared with [`handler.with(restriction)`](#http-handlerwithrestriction), and intercepted requests, making the handler
+stop matching requests. The next handler, created before this one, that matches the same method and path will be used if
+present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with `handler.respond()`.
 
@@ -1342,9 +1432,10 @@ expect(updateRequests[0].body).toEqual({ username: 'new' });
 The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing an already parsed body in
-`.body`, typed headers in `.headers` and typed search params in `.searchParams`.
+`request.body`, typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params
+in `request.searchParams`.
 
-If you need access to the original `Request` and `Response` objects, you can use the `.raw` property:
+If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
 ```ts
 const listRequests = listHandler.requests();
