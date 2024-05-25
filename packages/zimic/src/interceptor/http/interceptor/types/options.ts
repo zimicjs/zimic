@@ -4,14 +4,14 @@ import { PossiblePromise } from '@/types/utils';
 /**
  * An type of an HTTP interceptor.
  *
- * @see {@link https://github.com/diego-aquino/zimic#httpinterceptor `HttpInterceptor` API reference}
+ * @see {@link https://github.com/zimicjs/zimic#httpinterceptor `HttpInterceptor` API reference}
  */
 export type HttpInterceptorType = 'local' | 'remote';
 
 /**
  * The platform where an HTTP interceptor is running.
  *
- * @see {@link https://github.com/diego-aquino/zimic#http-interceptorplatform `interceptor.platform()` API reference}
+ * @see {@link https://github.com/zimicjs/zimic#http-interceptorplatform `interceptor.platform()` API reference}
  */
 export type HttpInterceptorPlatform = 'node' | 'browser';
 
@@ -21,13 +21,13 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
  * When `log` is `true`, unhandled requests are logged to the console. If provided a handler, unhandled requests will be
  * logged if `await context.log()` is called.
  *
- * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+ * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
  */
 export namespace UnhandledRequestStrategy {
   /**
    * A static declaration of the strategy to handle unhandled requests.
    *
-   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   export type Declaration = Partial<{
     log: boolean;
@@ -38,12 +38,11 @@ export namespace UnhandledRequestStrategy {
      * Logs the unhandled request to the console.
      *
      * If the request was bypassed by a
-     * {@link https://github.com/diego-aquino/zimic#local-http-interceptors local interceptor}, the log will be a
-     * warning. If the request was rejected by a
-     * {@link https://github.com/diego-aquino/zimic#local-http-interceptors remote interceptor}, the log will be an
-     * error.
+     * {@link https://github.com/zimicjs/zimic#local-http-interceptors local interceptor}, the log will be a warning. If
+     * the request was rejected by a {@link https://github.com/zimicjs/zimic#local-http-interceptors remote interceptor},
+     * the log will be an error.
      *
-     * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+     * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
      */
     log: () => Promise<void>;
   }
@@ -51,20 +50,20 @@ export namespace UnhandledRequestStrategy {
   /**
    * A dynamic handler to unhandled requests.
    *
-   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   export type Handler = (request: HttpRequest, context: HandlerContext) => PossiblePromise<void>;
 
   /**
    * The action to take when an unhandled request is intercepted.
    *
-   * In a {@link https://github.com/diego-aquino/zimic#local-http-interceptors local interceptor}, the action is always
+   * In a {@link https://github.com/zimicjs/zimic#local-http-interceptors local interceptor}, the action is always
    * `bypass`, meaning that unhandled requests pass through the interceptor and reach the real network.
-   * {@link https://github.com/diego-aquino/zimic#local-http-interceptors Remote interceptors} always use `reject`, since
-   * unhandled requests that react an {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}
-   * cannot be bypassed.
+   * {@link https://github.com/zimicjs/zimic#local-http-interceptors Remote interceptors} always use `reject`, since
+   * unhandled requests that react an {@link https://github.com/zimicjs/zimic#zimic-server interceptor server} cannot be
+   * bypassed.
    *
-   * @see {@link https://github.com/diego-aquino/zimic#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   export type Action = 'bypass' | 'reject';
 }
@@ -77,10 +76,10 @@ export interface SharedHttpInterceptorOptions {
 
   /**
    * Represents the URL that should be matched by the interceptor. Any request starting with this base URL will be
-   * intercepted if a matching {@link https://github.com/diego-aquino/zimic#httprequesthandler handler} exists.
+   * intercepted if a matching {@link https://github.com/zimicjs/zimic#httprequesthandler handler} exists.
    *
-   * For {@link https://github.com/diego-aquino/zimic#remote-http-interceptors remote interceptors}, this base URL should
-   * point to an {@link https://github.com/diego-aquino/zimic#zimic-server interceptor server}. It may include additional
+   * For {@link https://github.com/zimicjs/zimic#remote-http-interceptors remote interceptors}, this base URL should
+   * point to an {@link https://github.com/zimicjs/zimic#zimic-server interceptor server}. It may include additional
    * paths to differentiate between conflicting mocks.
    */
   baseURL: string | URL;
@@ -93,22 +92,19 @@ export interface SharedHttpInterceptorOptions {
   onUnhandledRequest?: UnhandledRequestStrategy;
 }
 
-/** The options to create a {@link https://github.com/diego-aquino/zimic#local-http-interceptors local HTTP interceptor}. */
+/** The options to create a {@link https://github.com/zimicjs/zimic#local-http-interceptors local HTTP interceptor}. */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
 }
 
-/**
- * The options to create a
- * {@link https://github.com/diego-aquino/zimic#remote-http-interceptors remote HTTP interceptor}.
- */
+/** The options to create a {@link https://github.com/zimicjs/zimic#remote-http-interceptors remote HTTP interceptor}. */
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
 }
 
 /**
- * The options to create an {@link https://github.com/diego-aquino/zimic#httpinterceptor HTTP interceptor}.
+ * The options to create an {@link https://github.com/zimicjs/zimic#httpinterceptor HTTP interceptor}.
  *
- * @see {@link https://github.com/diego-aquino/zimic#httpcreateinterceptor `http.createInterceptor()` API reference}
+ * @see {@link https://github.com/zimicjs/zimic#httpcreateinterceptor `http.createInterceptor()` API reference}
  */
 export type HttpInterceptorOptions = LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions;

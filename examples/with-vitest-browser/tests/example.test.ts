@@ -8,13 +8,13 @@ import githubInterceptor from './interceptors/github';
 import './setup';
 
 describe('Example tests', () => {
-  const ownerName = 'diego-aquino';
-  const repositoryName = 'zimic';
+  const ownerName = 'owner';
+  const repositoryName = 'example';
 
   const repository: GitHubRepository = {
     id: 1,
-    full_name: 'diego-aquino/zimic',
-    html_url: 'https://github.com/diego-aquino/zimic',
+    full_name: `${ownerName}/${repositoryName}`,
+    html_url: `https://github.com/${ownerName}/${repositoryName}`,
   };
 
   beforeEach(() => {

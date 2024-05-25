@@ -14,7 +14,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 /**
  * A schema representing the structure of an HTTP request.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
@@ -25,7 +25,7 @@ export interface HttpServiceRequestSchema {
 /**
  * A schema representing the structure of an HTTP response.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
@@ -41,7 +41,7 @@ export namespace HttpServiceResponseSchema {
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceResponseSchemaByStatusCode = {
   [statusCode: number]: HttpServiceResponseSchema;
@@ -59,7 +59,7 @@ export namespace HttpServiceResponseSchemaByStatusCode {
 /**
  * Extracts the status codes used in a response schema by status code.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
@@ -68,7 +68,7 @@ export type HttpServiceResponseSchemaStatusCode<
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
@@ -88,7 +88,7 @@ export namespace HttpServiceMethodSchema {
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
@@ -103,7 +103,7 @@ export interface HttpServiceMethodsSchema {
 /**
  * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
@@ -112,7 +112,7 @@ export interface HttpServiceSchema {
 /**
  * A namespace containing utility types for validating HTTP type schemas.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
@@ -136,7 +136,7 @@ export namespace HttpSchema {
 /**
  * Extracts the methods from an HTTP service schema.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
   Schema,
@@ -148,7 +148,7 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
  * schema are allowed.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -158,7 +158,7 @@ export type LiteralHttpServiceSchemaPath<
 /**
  * Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpMethod> = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
@@ -173,7 +173,7 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
 /**
  * Extracts the non-literal paths from an HTTP service schema containing certain methods.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -216,7 +216,7 @@ export type InferLiteralHttpServiceSchemaPath<
 /**
  * Extracts the paths from an HTTP service schema containing certain methods.
  *
- * @see {@link https://github.com/diego-aquino/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
