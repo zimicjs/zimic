@@ -46,9 +46,9 @@ GitHub API and simulate a test case where the repository is found and another wh
    git init
    git remote add origin git@github.com:diego-aquino/zimic.git
    git sparse-checkout init
-   git sparse-checkout set examples/with-next-js
+   git sparse-checkout set examples/with-next-js-app
    git pull origin main
-   cd examples/with-next-js
+   cd examples/with-next-js-app
    ```
 
 2. Install the dependencies:
