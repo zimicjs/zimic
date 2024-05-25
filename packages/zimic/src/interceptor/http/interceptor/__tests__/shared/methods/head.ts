@@ -432,8 +432,13 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         };
       }>(interceptorOptions, async (interceptor) => {
         const genericHeadHandler = await promiseIfRemote(
-          interceptor.head('/users/:id').respond({
-            status: 200,
+          interceptor.head('/users/:id').respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({ id: '1' });
+
+            return {
+              status: 200,
+            };
           }),
           interceptor,
         );
@@ -450,6 +455,9 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         const [genericHeadRequest] = genericHeadRequests;
         expect(genericHeadRequest).toBeInstanceOf(Request);
 
+        expectTypeOf(genericHeadRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(genericHeadRequest.pathParams).toEqual({ id: '1' });
+
         expectTypeOf(genericHeadRequest.body).toEqualTypeOf<null>();
         expect(genericHeadRequest.body).toBe(null);
 
@@ -462,8 +470,13 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         await promiseIfRemote(genericHeadHandler.bypass(), interceptor);
 
         const specificHeadHandler = await promiseIfRemote(
-          interceptor.head(`/users/${1}`).respond({
-            status: 200,
+          interceptor.head(`/users/${1}`).respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({});
+
+            return {
+              status: 200,
+            };
           }),
           interceptor,
         );
@@ -479,6 +492,9 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         expect(specificHeadRequests).toHaveLength(1);
         const [specificHeadRequest] = specificHeadRequests;
         expect(specificHeadRequest).toBeInstanceOf(Request);
+
+        expectTypeOf(specificHeadRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(specificHeadRequest.pathParams).toEqual({});
 
         expectTypeOf(specificHeadRequest.body).toEqualTypeOf<null>();
         expect(specificHeadRequest.body).toBe(null);
@@ -558,8 +574,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
         headers.delete('accept');
 
-        let headResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
-        await expectFetchError(headResponsePromise);
+        let headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
+        await expectFetchError(headPromise);
 
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(2);
@@ -567,8 +583,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        headResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
-        await expectFetchError(headResponsePromise);
+        headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
+        await expectFetchError(headPromise);
 
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(2);
@@ -621,8 +637,8 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
         searchParams.delete('tag');
 
-        const headResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'HEAD' });
-        await expectFetchError(headResponsePromise);
+        const headPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'HEAD' });
+        await expectFetchError(headPromise);
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(1);
       });

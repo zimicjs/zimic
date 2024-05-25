@@ -456,9 +456,14 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         };
       }>(interceptorOptions, async (interceptor) => {
         const genericUpdateHandler = await promiseIfRemote(
-          interceptor.patch('/users/:id').respond({
-            status: 200,
-            body: users[0],
+          interceptor.patch('/users/:id').respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({ id: users[0].id });
+
+            return {
+              status: 200,
+              body: users[0],
+            };
           }),
           interceptor,
         );
@@ -478,6 +483,9 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         const [genericUpdateRequest] = genericUpdateRequests;
         expect(genericUpdateRequest).toBeInstanceOf(Request);
 
+        expectTypeOf(genericUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(genericUpdateRequest.pathParams).toEqual({ id: users[0].id });
+
         expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<null>();
         expect(genericUpdateRequest.body).toBe(null);
 
@@ -490,9 +498,14 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         await promiseIfRemote(genericUpdateHandler.bypass(), interceptor);
 
         const specificUpdateHandler = await promiseIfRemote(
-          interceptor.patch(`/users/${users[0].id}`).respond({
-            status: 200,
-            body: users[0],
+          interceptor.patch(`/users/${users[0].id}`).respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({});
+
+            return {
+              status: 200,
+              body: users[0],
+            };
           }),
           interceptor,
         );
@@ -511,6 +524,9 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         expect(specificUpdateRequests).toHaveLength(1);
         const [specificUpdateRequest] = specificUpdateRequests;
         expect(specificUpdateRequest).toBeInstanceOf(Request);
+
+        expectTypeOf(specificUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(specificUpdateRequest.pathParams).toEqual({});
 
         expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<null>();
         expect(specificUpdateRequest.body).toBe(null);
@@ -593,16 +609,16 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
         headers.delete('accept');
 
-        let updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH', headers });
-        await expectFetchError(updateResponsePromise);
+        let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH', headers });
+        await expectFetchError(updatePromise);
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH', headers });
-        await expectFetchError(updateResponsePromise);
+        updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH', headers });
+        await expectFetchError(updatePromise);
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(2);
       });
@@ -660,10 +676,10 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
         searchParams.delete('tag');
 
-        const updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
+        const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
           method: 'PATCH',
         });
-        await expectFetchError(updateResponsePromise);
+        await expectFetchError(updatePromise);
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
       });
@@ -716,14 +732,14 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
 
-        const updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'PATCH',
           body: JSON.stringify({
             ...users[0],
             name: users[0].name,
           } satisfies UserUpdateBody),
         });
-        await expectFetchError(updateResponsePromise);
+        await expectFetchError(updatePromise);
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
       });
@@ -1186,8 +1202,8 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
                 const updateRequest = new Request(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PATCH' });
-                const updateResponsePromise = fetch(updateRequest);
-                await expectFetchError(updateResponsePromise);
+                const updatePromise = fetch(updateRequest);
+                await expectFetchError(updatePromise);
 
                 updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
                 expect(updateRequests).toHaveLength(1);
@@ -1255,8 +1271,8 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
                   method: 'PATCH',
                   headers: { 'x-value': '2' },
                 });
-                const updateResponsePromise = fetch(updateRequest);
-                await expectFetchError(updateResponsePromise);
+                const updatePromise = fetch(updateRequest);
+                await expectFetchError(updatePromise);
 
                 updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
                 expect(updateRequests).toHaveLength(1);
@@ -1332,8 +1348,8 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
                 method: 'PATCH',
                 headers: { 'x-value': '2' },
               });
-              const updateResponsePromise = fetch(updateRequest);
-              await expectFetchError(updateResponsePromise);
+              const updatePromise = fetch(updateRequest);
+              await expectFetchError(updatePromise);
 
               updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
               expect(updateRequests).toHaveLength(1);
@@ -1398,11 +1414,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
           const searchParams = new HttpSearchParams({ name: 'User 1' });
 
-          let updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
+          let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
             method: 'PATCH',
             headers: { 'x-value': '2' },
           });
-          await expectFetchError(updateResponsePromise);
+          await expectFetchError(updatePromise);
 
           updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
           expect(updateRequests).toHaveLength(1);
@@ -1415,8 +1431,8 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             method: 'PATCH',
             headers: { 'x-value': '2' },
           });
-          updateResponsePromise = fetch(updateRequest);
-          await expectFetchError(updateResponsePromise);
+          updatePromise = fetch(updateRequest);
+          await expectFetchError(updatePromise);
 
           updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
           expect(updateRequests).toHaveLength(1);
@@ -1491,11 +1507,11 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
 
           const searchParams = new HttpSearchParams({ name: 'User 1' });
 
-          let updateResponsePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
+          let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}?${searchParams.toString()}`), {
             method: 'PATCH',
             headers: { 'x-value': '2' },
           });
-          await expectFetchError(updateResponsePromise);
+          await expectFetchError(updatePromise);
 
           updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
           expect(updateRequests).toHaveLength(1);
@@ -1508,8 +1524,8 @@ export async function declarePatchHttpInterceptorTests(options: RuntimeSharedHtt
             method: 'PATCH',
             headers: { 'x-value': '2' },
           });
-          updateResponsePromise = fetch(updateRequest);
-          await expectFetchError(updateResponsePromise);
+          updatePromise = fetch(updateRequest);
+          await expectFetchError(updatePromise);
 
           updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
           expect(updateRequests).toHaveLength(1);

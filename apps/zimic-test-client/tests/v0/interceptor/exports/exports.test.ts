@@ -28,6 +28,7 @@ import {
   type HttpServiceSchemaPath,
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
+  type PathParamsSchemaFromPath,
 } from 'zimic0';
 import {
   http,
@@ -109,6 +110,7 @@ describe('Exports', () => {
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
 
     expectTypeOf(http.createInterceptor).not.toBeAny();
     expect(typeof http.createInterceptor).toBe('function');
@@ -131,9 +133,9 @@ describe('Exports', () => {
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpInterceptorRequest<never>>().not.toBeAny();
+    expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
-    expectTypeOf<TrackedHttpInterceptorRequest<never>>().not.toBeAny();
+    expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();
 
     expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<LocalHttpRequestHandler<never, never, never>>().not.toBeAny();
@@ -141,7 +143,7 @@ describe('Exports', () => {
     expectTypeOf<SyncedRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<PendingRemoteHttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerResponseDeclaration<never, never>>().not.toBeAny();
-    expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never>>().not.toBeAny();
+    expectTypeOf<HttpRequestHandlerResponseDeclarationFactory<never, never, never>>().not.toBeAny();
 
     expectTypeOf<HttpRequestHandlerRestriction<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerComputedRestriction<never, never, never>>().not.toBeAny();

@@ -91,7 +91,7 @@ class RemoteHttpRequestHandler<
   >(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     newUnsyncedThis._client.respond(declaration);
@@ -108,22 +108,22 @@ class RemoteHttpRequestHandler<
     return this.unsynced;
   }
 
-  requests(): Promise<readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[]> {
+  requests(): Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]> {
     return Promise.resolve(this._client.requests());
   }
 
-  matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): boolean {
     return this._client.matchesRequest(request);
   }
 
   async applyResponseDeclaration(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     return this._client.applyResponseDeclaration(request);
   }
 
   registerInterceptedRequest(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     this._client.registerInterceptedRequest(request, response);

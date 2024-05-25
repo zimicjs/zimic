@@ -475,9 +475,14 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         };
       }>(interceptorOptions, async (interceptor) => {
         const genericCreationHandler = await promiseIfRemote(
-          interceptor.post('/users/:id').respond({
-            status: 201,
-            body: users[0],
+          interceptor.post('/users/:id').respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({ id: '1' });
+
+            return {
+              status: 201,
+              body: users[0],
+            };
           }),
           interceptor,
         );
@@ -497,6 +502,9 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         const [genericCreationRequest] = genericCreationRequests;
         expect(genericCreationRequest).toBeInstanceOf(Request);
 
+        expectTypeOf(genericCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(genericCreationRequest.pathParams).toEqual({ id: '1' });
+
         expectTypeOf(genericCreationRequest.body).toEqualTypeOf<null>();
         expect(genericCreationRequest.body).toBe(null);
 
@@ -509,9 +517,14 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         await promiseIfRemote(genericCreationHandler.bypass(), interceptor);
 
         const specificCreationHandler = await promiseIfRemote(
-          interceptor.post(`/users/${1}`).respond({
-            status: 201,
-            body: users[0],
+          interceptor.post(`/users/${1}`).respond((request) => {
+            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
+            expect(request.pathParams).toEqual({});
+
+            return {
+              status: 201,
+              body: users[0],
+            };
           }),
           interceptor,
         );
@@ -530,6 +543,9 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         expect(specificCreationRequests).toHaveLength(1);
         const [specificCreationRequest] = specificCreationRequests;
         expect(specificCreationRequest).toBeInstanceOf(Request);
+
+        expectTypeOf(specificCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
+        expect(specificCreationRequest.pathParams).toEqual({});
 
         expectTypeOf(specificCreationRequest.body).toEqualTypeOf<null>();
         expect(specificCreationRequest.body).toBe(null);
@@ -612,16 +628,16 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
         headers.delete('accept');
 
-        let creationResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'POST', headers });
-        await expectFetchError(creationResponsePromise);
+        let creationPromise = fetch(joinURL(baseURL, '/users'), { method: 'POST', headers });
+        await expectFetchError(creationPromise);
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
         headers.set('content-type', 'text/plain');
 
-        creationResponsePromise = fetch(joinURL(baseURL, '/users'), { method: 'POST', headers });
-        await expectFetchError(creationResponsePromise);
+        creationPromise = fetch(joinURL(baseURL, '/users'), { method: 'POST', headers });
+        await expectFetchError(creationPromise);
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(2);
       });
@@ -677,10 +693,10 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
         searchParams.delete('tag');
 
-        const creationResponsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const creationPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method: 'POST',
         });
-        await expectFetchError(creationResponsePromise);
+        await expectFetchError(creationPromise);
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(1);
       });
@@ -729,11 +745,11 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(1);
 
-        const creationResponsePromise = fetch(joinURL(baseURL, '/users'), {
+        const creationPromise = fetch(joinURL(baseURL, '/users'), {
           method: 'POST',
           body: JSON.stringify(users[1] satisfies UserCreationBody),
         });
-        await expectFetchError(creationResponsePromise);
+        await expectFetchError(creationPromise);
 
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(1);
