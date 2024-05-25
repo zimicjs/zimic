@@ -32,7 +32,8 @@ import {
 } from 'zimic0';
 import {
   http,
-  type HttpNamespace,
+  type HttpInterceptorNamespace,
+  type HttpInterceptorNamespaceDefault,
   type HttpInterceptor,
   type LocalHttpInterceptor,
   type RemoteHttpInterceptor,
@@ -112,12 +113,17 @@ describe('Exports', () => {
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
 
-    expectTypeOf(http.createInterceptor).not.toBeAny();
-    expect(typeof http.createInterceptor).toBe('function');
-    expectTypeOf<HttpNamespace>().not.toBeAny();
+    expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
+    expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();
 
-    expectTypeOf(http.default.onUnhandledRequest).not.toBeAny();
+    expectTypeOf(http.createInterceptor).toEqualTypeOf<HttpInterceptorNamespace['createInterceptor']>();
+    expect(typeof http.createInterceptor).toBe('function');
+
+    expectTypeOf(http.default.onUnhandledRequest).toEqualTypeOf<
+      HttpInterceptorNamespace['default']['onUnhandledRequest']
+    >();
     expect(typeof http.default.onUnhandledRequest).toBe('function');
+
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
