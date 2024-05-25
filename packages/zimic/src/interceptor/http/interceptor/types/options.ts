@@ -92,12 +92,20 @@ export interface SharedHttpInterceptorOptions {
   onUnhandledRequest?: UnhandledRequestStrategy;
 }
 
-/** The options to create a {@link https://github.com/zimicjs/zimic#local-http-interceptors local HTTP interceptor}. */
+/**
+ * The options to create a {@link https://github.com/zimicjs/zimic#local-http-interceptors local HTTP interceptor}.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#creating-a-local-http-interceptor Creating a local HTTP interceptor}
+ */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
 }
 
-/** The options to create a {@link https://github.com/zimicjs/zimic#remote-http-interceptors remote HTTP interceptor}. */
+/**
+ * The options to create a {@link https://github.com/zimicjs/zimic#remote-http-interceptors remote HTTP interceptor}.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#creating-a-remote-http-interceptor Creating a remote HTTP interceptor}
+ */
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
 }
