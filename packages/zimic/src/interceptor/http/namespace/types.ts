@@ -1,6 +1,7 @@
 import { createHttpInterceptor } from '../interceptor/factory';
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
 
+/** Default HTTP interceptor settings. */
 export interface HttpInterceptorNamespaceDefault {
   /**
    * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
@@ -31,6 +32,6 @@ export interface HttpInterceptorNamespace {
    */
   createInterceptor: typeof createHttpInterceptor;
 
-  /** Default settings. */
+  /** Default HTTP interceptor settings. */
   default: HttpInterceptorNamespaceDefault;
 }
