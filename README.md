@@ -1843,25 +1843,24 @@ should automatically stop after the command finishes.
 #### Programmatic usage
 
 The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
-using the CLI, this module is also an option.
+using the CLI, this module is a valid alternative for more advanced use cases.
 
 ```ts
 import { createInterceptorServer, runCommand } from 'zimic/server';
 
 const server = createInterceptorServer({ hostname: 'localhost', port: 3000 });
-
 await server.start();
-console.log(server.isRunning()); // true
 
+// Run a command when the server is ready
 const [command, ...commandArguments] = process.argv.slice(3);
 await runCommand(command, commandArguments);
 
 await server.stop();
 ```
 
-The export `runCommand` is a helper function that runs a command with its arguments. The
+The helper function `runCommand` is useful to run a shell command in server scripts. The
 [Next.js App Router](./examples/README.md#nextjs) and the [Playwright](./examples/README.md#playwright) examples use
-this function to run the application after loading the interceptors and fixtures.
+this function to run the application after the interceptor server is ready and all mocks are set up.
 
 ---
 

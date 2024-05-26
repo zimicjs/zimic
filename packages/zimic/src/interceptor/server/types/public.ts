@@ -6,42 +6,41 @@
  */
 export interface InterceptorServer {
   /**
-   * The hostname of the server.
-   *
+   * @returns The hostname of the server.
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */
   hostname: () => string;
 
   /**
-   * The port of the server.
-   *
+   * @returns The port of the server.
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */
   port: () => number | undefined;
 
   /**
-   * The HTTP URL of the server.
-   *
+   * @returns The HTTP URL of the server.
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */
   httpURL: () => string | undefined;
 
   /**
-   * Whether the server is running.
-   *
+   * @returns Whether the server is running.
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */
   isRunning: () => boolean;
 
   /**
-   * Start the server.
+   * Starts the server.
+   *
+   * The server is automatically stopped if a process exit event is detected, such as SIGINT, SIGTERM, or an uncaught
+   * exception.
    *
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */
   start: () => Promise<void>;
 
   /**
-   * Stop the server.
+   * Stops the server.
    *
    * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
    */

@@ -10,6 +10,6 @@ import { InterceptorServer as PublicInterceptorServer } from './types/public';
  * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
  * @see {@link https://github.com/zimicjs/zimic#remote-http-interceptors Remote HTTP Interceptors} .
  */
-export function createInterceptorServer(options?: InterceptorServerOptions): PublicInterceptorServer {
+export function createInterceptorServer(options: InterceptorServerOptions = {}): PublicInterceptorServer {
   return new InterceptorServer(options);
 }
