@@ -62,7 +62,7 @@ GitHub API and simulate a test case where the repository is found and another wh
    1. Start the application:
 
       ```bash
-      pnpm run dev:test
+      pnpm run dev:mock
       ```
 
       After started, it will be available at [http://localhost:3002](http://localhost:3002).
