@@ -33,7 +33,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm run dev',
+    command: 'pnpm run dev:mock',
     port: 3004,
     stdout: 'pipe',
     stderr: 'pipe',
