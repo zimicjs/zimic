@@ -13,7 +13,7 @@ The application is a simple [Next.js](https://nextjs.org) project using the
 - Application: [`src/pages/index.page.tsx`](./src/pages/index.page.tsx)
 - GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
 
-The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and fixtures before the rest of the
+The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the
 application is rendered in development.
 
 ## Testing
@@ -23,7 +23,7 @@ GitHub API and simulate a test case where the repository is found and another wh
 
 ### Zimic
 
-- GitHub interceptor and fixtures: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+- GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
