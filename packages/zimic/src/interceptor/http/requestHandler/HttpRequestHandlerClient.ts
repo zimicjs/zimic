@@ -33,9 +33,10 @@ class HttpRequestHandlerClient<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > {
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
-  private interceptedRequests: TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] = [];
+  private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
+    Path,
     Default<Schema[Path][Method]>,
     StatusCode
   >;
@@ -69,7 +70,7 @@ class HttpRequestHandlerClient<
   >(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, NewStatusCode>,
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode>;
 
@@ -88,8 +89,8 @@ class HttpRequestHandlerClient<
   >(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode>,
-  ): declaration is HttpRequestHandlerResponseDeclarationFactory<Default<Schema[Path][Method]>, StatusCode> {
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
+  ): declaration is HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode> {
     return typeof declaration === 'function';
   }
 
@@ -104,12 +105,12 @@ class HttpRequestHandlerClient<
     return this.bypass();
   }
 
-  matchesRequest(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): boolean {
     const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
     return hasDeclaredResponse && this.matchesRequestRestrictions(request);
   }
 
-  private matchesRequestRestrictions(request: HttpInterceptorRequest<Default<Schema[Path][Method]>>): boolean {
+  private matchesRequestRestrictions(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): boolean {
     return this.restrictions.every((restriction) => {
       if (this.isComputedRequestRestriction(restriction)) {
         return restriction(request);
@@ -123,7 +124,7 @@ class HttpRequestHandlerClient<
   }
 
   private matchesRequestHeadersRestrictions(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.headers === undefined) {
@@ -135,7 +136,7 @@ class HttpRequestHandlerClient<
   }
 
   private matchesRequestSearchParamsRestrictions(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.searchParams === undefined) {
@@ -149,7 +150,7 @@ class HttpRequestHandlerClient<
   }
 
   private matchesRequestBodyRestrictions(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ) {
     if (restriction.body === undefined) {
@@ -168,7 +169,7 @@ class HttpRequestHandlerClient<
   }
 
   async applyResponseDeclaration(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
     if (!this.createResponseDeclaration) {
       throw new NoResponseDefinitionError();
@@ -178,7 +179,7 @@ class HttpRequestHandlerClient<
   }
 
   registerInterceptedRequest(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     const interceptedRequest = this.createInterceptedRequestProxy(request, response);
@@ -186,20 +187,23 @@ class HttpRequestHandlerClient<
   }
 
   private createInterceptedRequestProxy(
-    request: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    return new Proxy(request as unknown as TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>, {
-      get(target, property) {
-        if (property === 'response') {
-          return response satisfies HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>;
-        }
-        return Reflect.get(target, property, target) as unknown;
+    return new Proxy(
+      request as unknown as TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>,
+      {
+        get(target, property) {
+          if (property === 'response') {
+            return response satisfies HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>;
+          }
+          return Reflect.get(target, property, target) as unknown;
+        },
       },
-    });
+    );
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Default<Schema[Path][Method]>, StatusCode>[] {
+  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
     const interceptedRequestsCopy = [...this.interceptedRequests];
     Object.freeze(interceptedRequestsCopy);
     return interceptedRequestsCopy;

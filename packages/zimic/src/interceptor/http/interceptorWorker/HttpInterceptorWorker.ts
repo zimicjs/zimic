@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { HttpResponse as MSWHttpResponse } from 'msw';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
@@ -8,26 +9,38 @@ import {
   HttpServiceMethodSchema,
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
+  PathParamsSchemaFromPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { createURL } from '@/utils/urls';
+import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
+import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
+  abstract readonly type: 'local' | 'remote';
+
   private _platform: HttpInterceptorPlatform | null = null;
   private _isRunning = false;
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
+
+  private store = new HttpInterceptorWorkerStore();
+
+  private unhandledRequestStrategies: {
+    baseURL: string;
+    declarationOrHandler: UnhandledRequestStrategy;
+  }[] = [];
 
   platform() {
     return this._platform;
@@ -84,6 +97,69 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
+  protected async handleUnhandledRequest(request: Request) {
+    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
+
+    const defaultDeclarationOrHandler = this.store.defaultUnhandledRequestStrategy();
+
+    const declarationOrHandler = this.unhandledRequestStrategies.findLast((strategy) => {
+      return requestURL.startsWith(strategy.baseURL);
+    })?.declarationOrHandler;
+
+    const action: UnhandledRequestStrategy.Action = this.type === 'local' ? 'bypass' : 'reject';
+
+    if (typeof declarationOrHandler === 'function') {
+      await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, declarationOrHandler, action);
+    } else if (declarationOrHandler?.log !== undefined) {
+      await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declarationOrHandler.log }, action);
+    } else if (typeof defaultDeclarationOrHandler === 'function') {
+      await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
+    } else {
+      await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+    }
+  }
+
+  static async useUnhandledRequestStrategyHandler(
+    request: Request,
+    handler: UnhandledRequestStrategy.Handler,
+    action: UnhandledRequestStrategy.Action,
+  ) {
+    const requestClone = request.clone();
+
+    try {
+      await handler(request, {
+        async log() {
+          await HttpInterceptorWorker.logUnhandledRequest(requestClone, action);
+        },
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  static async useStaticUnhandledStrategy(
+    request: Request,
+    declaration: Required<UnhandledRequestStrategy.Declaration>,
+    action: UnhandledRequestStrategy.Action,
+  ) {
+    if (declaration.log) {
+      await HttpInterceptorWorker.logUnhandledRequest(request, action);
+    }
+  }
+
+  onUnhandledRequest(baseURL: string, strategyOrFactory: UnhandledRequestStrategy) {
+    this.unhandledRequestStrategies.push({
+      baseURL,
+      declarationOrHandler: strategyOrFactory,
+    });
+  }
+
+  offUnhandledRequest(baseURL: string) {
+    this.unhandledRequestStrategies = this.unhandledRequestStrategies.filter(
+      (strategy) => strategy.baseURL !== baseURL,
+    );
+  }
+
   abstract clearHandlers(): PossiblePromise<void>;
 
   abstract clearInterceptorHandlers<Schema extends HttpServiceSchema>(
@@ -112,9 +188,10 @@ abstract class HttpInterceptorWorker {
     return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
   }
 
-  static async parseRawRequest<MethodSchema extends HttpServiceMethodSchema>(
+  static async parseRawRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>(
     originalRawRequest: HttpRequest,
-  ): Promise<HttpInterceptorRequest<MethodSchema>> {
+    options: { urlRegex?: RegExp } = {},
+  ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
     const rawRequestClone = rawRequest.clone();
 
@@ -124,32 +201,37 @@ abstract class HttpInterceptorWorker {
     type HeadersSchema = Default<Default<MethodSchema['request']>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawRequest.headers);
 
+    const pathParams = options.urlRegex ? this.parseRawPathParams<Path>(options.urlRegex, rawRequest) : {};
+
     const parsedURL = createURL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
     const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 
-    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<MethodSchema>, {
-      has(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+    const parsedRequest = new Proxy(rawRequest as unknown as HttpInterceptorRequest<Path, MethodSchema>, {
+      has(target, property: keyof HttpInterceptorRequest<Path, MethodSchema>) {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
-      get(target, property: keyof HttpInterceptorRequest<MethodSchema>) {
+      get(target, property: keyof HttpInterceptorRequest<Path, MethodSchema>) {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === ('body' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('body' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return parsedBody;
         }
-        if (property === ('headers' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('headers' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return headers;
         }
-        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('pathParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
+          return pathParams;
+        }
+        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return searchParams;
         }
-        if (property === ('raw' satisfies keyof HttpInterceptorRequest<MethodSchema>)) {
+        if (property === ('raw' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
           return rawRequestClone;
         }
         return Reflect.get(target, property, target) as unknown;
@@ -208,6 +290,15 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
+  static parseRawPathParams<Path extends string>(
+    matchedURLRegex: RegExp,
+    request: HttpRequest,
+  ): PathParamsSchemaFromPath<Path> {
+    const match = request.url.match(matchedURLRegex);
+    const pathParams = { ...match?.groups };
+    return pathParams as PathParamsSchemaFromPath<Path>;
+  }
+
   static async parseRawBody<Body extends HttpBody>(requestOrResponse: HttpRequest | HttpResponse) {
     const bodyAsText = await requestOrResponse.text();
 
@@ -217,6 +308,26 @@ abstract class HttpInterceptorWorker {
     } catch {
       return bodyAsText || null;
     }
+  }
+
+  static async logUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
+    const request = await this.parseRawRequest(rawRequest);
+
+    logWithPrefix(
+      [
+        `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
+          `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
+        `${request.method} ${request.url}`,
+        '\n    Headers:',
+        formatObjectToLog(Object.fromEntries(request.headers)),
+        '\n    Search params:',
+        formatObjectToLog(Object.fromEntries(request.searchParams)),
+        '\n    Body:',
+        formatObjectToLog(request.body),
+        '\n\nLearn more about unhandled requests: https://github.com/zimicjs/zimic#unhandled-requests',
+      ],
+      { method: action === 'bypass' ? 'warn' : 'error' },
+    );
   }
 }
 

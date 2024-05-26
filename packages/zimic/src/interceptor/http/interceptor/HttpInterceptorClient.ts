@@ -7,7 +7,7 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { joinURL, ExtendedURL } from '@/utils/urls';
+import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -19,9 +19,10 @@ import { HttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
+import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestContext } from './types/requests';
 
-export const SUPPORTED_BASE_URL_PROTOCOLS = ['http', 'https'];
+export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
 class HttpInterceptorClient<
   Schema extends HttpServiceSchema,
@@ -31,6 +32,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
+  private onUnhandledRequest?: UnhandledRequestStrategy;
 
   private Handler: HandlerConstructor;
 
@@ -51,15 +53,17 @@ class HttpInterceptorClient<
     store: HttpInterceptorStore;
     baseURL: ExtendedURL;
     Handler: HandlerConstructor;
+    onUnhandledRequest?: UnhandledRequestStrategy;
   }) {
     this.worker = options.worker;
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
+    this.onUnhandledRequest = options.onUnhandledRequest;
   }
 
   baseURL() {
-    return this._baseURL.raw;
+    return this._baseURL;
   }
 
   platform() {
@@ -71,8 +75,8 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    if (this.isRunning()) {
-      return;
+    if (this.onUnhandledRequest) {
+      this.worker.onUnhandledRequest(this.baseURL().toString(), this.onUnhandledRequest);
     }
 
     await this.worker.start();
@@ -80,11 +84,8 @@ class HttpInterceptorClient<
   }
 
   async stop() {
-    if (!this.isRunning()) {
-      return;
-    }
-
     this.markAsRunning(false);
+    this.worker.offUnhandledRequest(this.baseURL().toString());
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
     if (wasLastRunningInterceptor) {
@@ -146,7 +147,6 @@ class HttpInterceptorClient<
     }
 
     const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
-    this.registerRequestHandler(handler);
     return handler;
   }
 
@@ -170,10 +170,13 @@ class HttpInterceptorClient<
     }
 
     this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
-    const pathWithBaseURL = joinURL(this.baseURL(), handler.path());
 
-    const registrationResult = this.worker.use(this, handler.method(), pathWithBaseURL, async (context) => {
+    const url = joinURL(this.baseURL(), handler.path());
+    const urlRegex = createRegexFromURL(url);
+
+    const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {
       const response = await this.handleInterceptedRequest(
+        urlRegex,
         handler.method(),
         handler.path(),
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
@@ -190,8 +193,10 @@ class HttpInterceptorClient<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Default<Schema[Path][Method]>>(request);
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
+    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
+      urlRegex: matchedURLRegex,
+    });
     const matchedHandler = this.findMatchedHandler(method, path, parsedRequest);
 
     if (matchedHandler) {
@@ -218,7 +223,7 @@ class HttpInterceptorClient<
   >(
     method: Method,
     path: Path,
-    parsedRequest: HttpInterceptorRequest<Default<Schema[Path][Method]>>,
+    parsedRequest: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
   HttpRequestHandlerClient<Schema, Method, Path, any> | undefined {
     const methodPathHandlers = this.handlerClientsByMethod[method].get(path);

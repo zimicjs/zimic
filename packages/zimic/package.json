@@ -10,10 +10,10 @@
     "mock",
     "static"
   ],
-  "version": "0.4.0",
+  "version": "0.5.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/diego-aquino/zimic.git",
+    "url": "https://github.com/zimicjs/zimic.git",
     "directory": "packages/zimic"
   },
   "private": false,
@@ -77,7 +77,7 @@
   },
   "dependencies": {
     "@whatwg-node/server": "^0.9.33",
-    "chalk": "^5.3.0",
+    "chalk": "^4.1.2",
     "cross-spawn": "^7.0.3",
     "isomorphic-ws": "^5.0.0",
     "msw": "^2.2.13",
@@ -104,7 +104,7 @@
     "bufferutil": "^4.0.8"
   },
   "peerDependencies": {
-    "typescript": ">=4.7.x <5.5"
+    "typescript": ">=4.7"
   },
   "peerDependenciesMeta": {
     "typescript": {

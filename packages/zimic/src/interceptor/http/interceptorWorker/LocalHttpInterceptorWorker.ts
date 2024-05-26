@@ -67,7 +67,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       const internalWorker = await this.internalWorkerOrLoad();
-      const sharedOptions: MSWWorkerSharedOptions = { onUnhandledRequest: 'bypass' };
+      const sharedOptions: MSWWorkerSharedOptions = {
+        onUnhandledRequest: async (request) => {
+          await super.handleUnhandledRequest(request);
+        },
+      };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
         super.setPlatform('browser');
@@ -149,12 +153,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const result = await createResponse({
-        ...context,
-        request: context.request as MSWStrictRequest<HttpBody>,
-      });
+      const request = context.request as MSWStrictRequest<HttpBody>;
+      const requestClone = request.clone();
+
+      const result = await createResponse({ ...context, request });
 
       if (result.bypass) {
+        await super.handleUnhandledRequest(requestClone);
         return passthrough();
       }
 

@@ -32,8 +32,9 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
       worker,
       store: this.store,
-      Handler: RemoteHttpRequestHandler,
       baseURL,
+      Handler: RemoteHttpRequestHandler,
+      onUnhandledRequest: options.onUnhandledRequest,
     });
   }
 
@@ -42,7 +43,7 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   }
 
   baseURL() {
-    return this._client.baseURL();
+    return this._client.baseURL().raw;
   }
 
   platform() {
@@ -54,13 +55,19 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
   }
 
   async start() {
+    if (this.isRunning()) {
+      return;
+    }
+
     await this._client.start();
   }
 
   async stop() {
-    if (this.isRunning()) {
-      await this.clear();
+    if (!this.isRunning()) {
+      return;
     }
+
+    await this.clear();
     await this._client.stop();
   }
 

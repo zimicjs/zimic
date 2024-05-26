@@ -6,6 +6,7 @@ import {
   HttpServiceMethodSchema,
   HttpServiceResponseSchema,
   HttpServiceResponseSchemaStatusCode,
+  PathParamsSchemaFromPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 
@@ -33,10 +34,11 @@ export type HttpRequestHandlerResponseDeclaration<
  * @returns The response declaration.
  */
 export type HttpRequestHandlerResponseDeclarationFactory<
+  Path extends string,
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
-  request: Omit<HttpInterceptorRequest<MethodSchema>, 'response'>,
+  request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
 export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
@@ -52,12 +54,21 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
   null
 >;
 
-/** A strict representation of an intercepted HTTP request. The body and search params are already parsed by default. */
-export interface HttpInterceptorRequest<MethodSchema extends HttpServiceMethodSchema>
+/**
+ * A strict representation of an intercepted HTTP request. The body, search params and path params are already parsed by
+ * default.
+ */
+export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
+  /** The headers of the request. */
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
+  /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
+  pathParams: PathParamsSchemaFromPath<Path>;
+  /** The search parameters of the request. */
   searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
+  /** The body of the request. It is already parsed by default. */
   body: HttpRequestBodySchema<MethodSchema>;
+  /** The raw request object. */
   raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
 }
 
@@ -71,37 +82,44 @@ export type HttpResponseBodySchema<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = Default<Default<MethodSchema['response']>[StatusCode]['body'], null>;
 
-/** A strict representation of an intercepted HTTP response. The body and search params are already parsed by default. */
+/**
+ * A strict representation of an intercepted HTTP response. The body, search params and path params are already parsed
+ * by default.
+ */
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<HttpResponse, keyof Body | 'headers'> {
+  /** The headers of the response. */
   headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
+  /** The status code of the response. */
   status: StatusCode;
+  /** The body of the response. It is already parsed by default. */
   body: HttpResponseBodySchema<MethodSchema, StatusCode>;
+  /** The raw response object. */
   raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }
 
-export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = new Set<string>([
-  'bodyUsed',
-  'arrayBuffer',
-  'blob',
-  'formData',
-  'json',
-  'text',
-] satisfies Exclude<keyof Body, keyof HttpInterceptorRequest<never>>[]);
+export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = Object.freeze(
+  new Set<string>(['bodyUsed', 'arrayBuffer', 'blob', 'formData', 'json', 'text'] satisfies Exclude<
+    keyof Body,
+    keyof HttpInterceptorRequest<string, never>
+  >[]),
+);
 
-export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = new Set(
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
+export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
+  new Set(HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES),
 );
 
 /**
- * A strict representation of a tracked, intercepted HTTP request, along with its response. The body and search params
- * are already parsed by default.
+ * A strict representation of a tracked, intercepted HTTP request, along with its response. The body, search params and
+ * path params are already parsed by default.
  */
 export interface TrackedHttpInterceptorRequest<
+  Path extends string,
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
-> extends HttpInterceptorRequest<MethodSchema> {
+> extends HttpInterceptorRequest<Path, MethodSchema> {
+  /** The response that was returned for the intercepted request. */
   response: StatusCode extends [never] ? never : HttpInterceptorResponse<MethodSchema, StatusCode>;
 }

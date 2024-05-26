@@ -29,7 +29,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   private _crypto?: IsomorphicCrypto;
 
   private webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
-
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
@@ -76,8 +75,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     const rawResponse = (await handler?.createResponse({ request })) ?? null;
     const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-    const serializedResponse = response ? await serializeResponse(response) : null;
-    return { response: serializedResponse };
+    if (response) {
+      return { response: await serializeResponse(response) };
+    } else {
+      await super.handleUnhandledRequest(request);
+      return { response: null };
+    }
   };
 
   private async readPlatform(): Promise<HttpInterceptorPlatform> {

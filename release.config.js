@@ -11,7 +11,7 @@ module.exports = {
     },
   ],
   github: {
-    repositoryOwner: 'diego-aquino',
+    repositoryOwner: 'zimicjs',
     repositoryName: 'zimic',
     productionBranch: 'main',
   },

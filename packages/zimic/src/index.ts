@@ -27,6 +27,7 @@ export type {
   LiteralHttpServiceSchemaPath,
   NonLiteralHttpServiceSchemaPath,
   HttpServiceSchemaPath,
+  PathParamsSchemaFromPath,
 } from './http/types/schema';
 
 export { HttpSearchParams, HttpHeaders };

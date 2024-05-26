@@ -10,6 +10,7 @@ export const defaultConfig: UserConfig = {
     allowOnly: process.env.CI !== 'true',
     testTimeout: 5000,
     hookTimeout: 5000,
+    setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -23,7 +24,7 @@ export const defaultConfig: UserConfig = {
       exclude: [
         '**/local/**',
         '**/public/**',
-        '**/tests/globalSetup/**',
+        '**/tests/setup/global/**',
         '**/types/**',
         '**/types.ts',
         '**/typescript.ts',

@@ -1,24 +1,32 @@
-import { IfAny, Prettify, UnionToIntersection, UnionHasMoreThanOneType } from '@/types/utils';
+import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify } from '@/types/utils';
 
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
 
-export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
+export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
  * A type representing the currently supported
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-/** A schema representing the structure of an HTTP request. */
+/**
+ * A schema representing the structure of an HTTP request.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
   searchParams?: HttpSearchParamsSchema;
   body?: HttpBody;
 }
 
-/** A schema representing the structure of an HTTP response. */
+/**
+ * A schema representing the structure of an HTTP response.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
   body?: HttpBody;
@@ -30,7 +38,11 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
-/** A schema representing the structure of HTTP responses by status code. */
+/**
+ * A schema representing the structure of HTTP responses by status code.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceResponseSchemaByStatusCode = {
   [statusCode: number]: HttpServiceResponseSchema;
 } & {
@@ -44,12 +56,20 @@ export namespace HttpServiceResponseSchemaByStatusCode {
   };
 }
 
-/** Extracts the status codes used in a response schema by status code. */
+/**
+ * Extracts the status codes used in a response schema by status code.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
 > = Extract<keyof ResponseSchemaByStatusCode, number>;
 
-/** A schema representing the structure of an HTTP request and response for a given method. */
+/**
+ * A schema representing the structure of an HTTP request and response for a given method.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
   response?: HttpServiceResponseSchemaByStatusCode;
@@ -65,7 +85,11 @@ export namespace HttpServiceMethodSchema {
   }
 }
 
-/** A schema representing the structure of HTTP request and response by method. */
+/**
+ * A schema representing the structure of HTTP request and response by method.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
   POST?: HttpServiceMethodSchema;
@@ -76,12 +100,20 @@ export interface HttpServiceMethodsSchema {
   OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
 }
 
-/** A schema representing the structure of paths, methods, requests, and responses for an HTTP service. */
+/**
+ * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
 }
 
-/** A namespace containing utility types for validating HTTP type schemas. */
+/**
+ * A namespace containing utility types for validating HTTP type schemas.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
   export type Paths<Schema extends HttpServiceSchema> = Schema;
@@ -101,7 +133,11 @@ export namespace HttpSchema {
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
 }
 
-/** Extracts the methods from an HTTP service schema. */
+/**
+ * Extracts the methods from an HTTP service schema.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
   Schema,
   any, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -111,13 +147,19 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
 /**
  * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
  * schema are allowed.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
 > = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
 
-/** Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed. */
+/**
+ * Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpMethod> = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
@@ -128,7 +170,11 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
     ? `${Prefix}${string}`
     : Path;
 
-/** Extracts the non-literal paths from an HTTP service schema containing certain methods. */
+/**
+ * Extracts the non-literal paths from an HTTP service schema containing certain methods.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
@@ -167,7 +213,11 @@ export type InferLiteralHttpServiceSchemaPath<
     : never
 >;
 
-/** Extracts the paths from an HTTP service schema containing certain methods. */
+/**
+ * Extracts the paths from an HTTP service schema containing certain methods.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
 export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
   | LiteralHttpServiceSchemaPath<Schema, Method>
   | NonLiteralHttpServiceSchemaPath<Schema, Method>;
@@ -179,4 +229,10 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
       ? { [Name in ParamName]: string }
       : {};
 
+/**
+ * Infers the path parameters schema from a path string.
+ *
+ * @example
+ *   '/users/:userId/notifications' -> { userId: string }
+ */
 export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
