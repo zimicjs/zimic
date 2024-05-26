@@ -1807,13 +1807,21 @@ Positionals:
                                                                         [string]
 
 Options:
-  -h, --hostname   The hostname to start the server on.
+      --help                    Show help                              [boolean]
+      --version                 Show version number                    [boolean]
+  -h, --hostname                The hostname to start the server on.
                                                  [string] [default: "localhost"]
-  -p, --port       The port to start the server on.                     [number]
-  -e, --ephemeral  Whether the server should stop automatically after the
-                   on-ready command finishes. If no on-ready command is provided
-                   and ephemeral is true, the server will stop immediately after
-                   starting.                          [boolean] [default: false]
+  -p, --port                    The port to start the server on.        [number]
+  -e, --ephemeral               Whether the server should stop automatically
+                                after the on-ready command finishes. If no
+                                on-ready command is provided and ephemeral is
+                                true, the server will stop immediately after
+                                starting.             [boolean] [default: false]
+  -l, --log-unhandled-requests  Whether to log a warning when no interceptors
+                                were found for the base URL of a request. If an
+                                interceptor was matched, the logging behavior
+                                for that base URL is configured in the
+                                interceptor itself.                    [boolean]
 ```
 
 You can use this command to start an independent server:
