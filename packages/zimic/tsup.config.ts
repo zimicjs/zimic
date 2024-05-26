@@ -10,7 +10,7 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: isProductionBuild,
   minify: false,
-  clean: true,
+  clean: false,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
   },
@@ -22,6 +22,13 @@ export default defineConfig([
     entry: {
       index: 'src/index.ts',
       interceptor: 'src/interceptor/index.ts',
+    },
+  },
+  {
+    ...sharedConfig,
+    platform: 'node',
+    entry: {
+      server: 'src/interceptor/server/index.ts',
     },
   },
   {

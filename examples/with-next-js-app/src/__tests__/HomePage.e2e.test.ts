@@ -1,6 +1,6 @@
 import test, { expect } from '@playwright/test';
 
-import { githubFixtures } from '../../tests/interceptors/github/fixtures';
+import { githubFixtures } from '../../tests/interceptors/github';
 
 test.describe('Home page', () => {
   const { repository } = githubFixtures;

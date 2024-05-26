@@ -4,14 +4,14 @@ class HttpServerTimeoutError extends Error {}
 
 export class HttpServerStartTimeoutError extends HttpServerTimeoutError {
   constructor(reachedTimeout: number) {
-    super(`[zimic] HTTP server start timed out after ${reachedTimeout}ms.`);
+    super(`HTTP server start timed out after ${reachedTimeout}ms.`);
     this.name = 'HttpServerStartTimeout';
   }
 }
 
 export class HttpServerStopTimeoutError extends HttpServerTimeoutError {
   constructor(reachedTimeout: number) {
-    super(`[zimic] HTTP server stop timed out after ${reachedTimeout}ms.`);
+    super(`HTTP server stop timed out after ${reachedTimeout}ms.`);
     this.name = 'HttpServerStopTimeout';
   }
 }

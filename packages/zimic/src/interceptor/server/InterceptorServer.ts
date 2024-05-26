@@ -8,22 +8,16 @@ import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInte
 import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
+import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
+import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
-
-export interface InterceptorServerOptions {
-  hostname?: string;
-  port?: number;
-  onUnhandledRequest?: {
-    log?: boolean;
-  };
-}
 
 interface HttpHandler {
   id: string;
@@ -55,7 +49,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private knownWorkerSockets = new Set<Socket>();
 
-  constructor(options: InterceptorServerOptions = {}) {
+  constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
     this.onUnhandledRequest = options.onUnhandledRequest;
@@ -101,6 +95,10 @@ class InterceptorServer implements PublicInterceptorServer {
   async start() {
     if (this.isRunning()) {
       return;
+    }
+
+    for (const exitEvent of PROCESS_EXIT_EVENTS) {
+      process.on(exitEvent, this.stop);
     }
 
     this._httpServer = createServer({
@@ -192,14 +190,18 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  async stop() {
+  stop = async () => {
     if (!this.isRunning()) {
       return;
     }
 
+    for (const exitEvent of PROCESS_EXIT_EVENTS) {
+      process.removeListener(exitEvent, this.stop);
+    }
+
     await this.stopWebSocketServer();
     await this.stopHttpServer();
-  }
+  };
 
   private async stopHttpServer() {
     const httpServer = this.httpServer();

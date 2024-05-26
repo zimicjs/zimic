@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
+
 import InterceptorServer from '../InterceptorServer';
 
 // These are integration tests for the server. Only features not easily reproducible by the CLI and the remote
@@ -13,7 +15,7 @@ describe('Interceptor server', () => {
   });
 
   it('should start correctly with a defined port', async () => {
-    server = new InterceptorServer({ hostname: 'localhost', port: 8080 });
+    server = createInternalInterceptorServer({ hostname: 'localhost', port: 8080 });
 
     expect(server.isRunning()).toBe(false);
     expect(server.hostname()).toBe('localhost');
@@ -29,7 +31,7 @@ describe('Interceptor server', () => {
   });
 
   it('should start correctly with an undefined port', async () => {
-    server = new InterceptorServer({ hostname: 'localhost' });
+    server = createInternalInterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
     expect(server.hostname()).toBe('localhost');
@@ -45,7 +47,7 @@ describe('Interceptor server', () => {
   });
 
   it('should not throw an error is started multiple times', async () => {
-    server = new InterceptorServer({ hostname: 'localhost' });
+    server = createInternalInterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
 
@@ -60,7 +62,7 @@ describe('Interceptor server', () => {
   });
 
   it('should not throw an error if stopped multiple times', async () => {
-    server = new InterceptorServer({ hostname: 'localhost' });
+    server = createInternalInterceptorServer({ hostname: 'localhost' });
 
     expect(server.isRunning()).toBe(false);
 

@@ -2,26 +2,19 @@
   Zimic + Next.js Pages Router
 </h2>
 
-This example uses Zimic with [Next.js](https://nextjs.org). The application is verified with end-to-end tests using
-[Playwright](https://playwright.dev).
+This example uses Zimic with [Next.js](https://nextjs.org).
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) application using the
+The application is a simple [Next.js](https://nextjs.org) project using the
 [Pages Router](https://nextjs.org/docs/pages). It fetches repositories from the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/pages/index.page.tsx`](./src/pages/index.page.tsx)
-- Interceptor provider:
-  [`src/providers/interceptors/InterceptorProvider.tsx`](./src/providers/interceptors/InterceptorProvider.tsx)
-  - This provider is used to apply Zimic mocks when the application is started in development.
 - GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
-  - Before fetching resources, it is necessary to wait for the interceptors and fixtures to be loaded. This is done via
-    `await waitForLoadedInterceptors();`.
 
-A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers and initialize
-Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
-ignored in the [`.gitignore`](./.gitignore) file.
+The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the
+application is rendered in development.
 
 ## Testing
 
@@ -30,8 +23,7 @@ GitHub API and simulate a test case where the repository is found and another wh
 
 ### Zimic
 
-- GitHub interceptor: [`tests/interceptors/github/interceptor.ts`](./tests/interceptors/github/interceptor.ts)
-  - Fixtures: [`tests/interceptors/github/fixtures.ts`](./tests/interceptors/github/fixtures.ts)
+- GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 

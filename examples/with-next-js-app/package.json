@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- zimic server start --port 3005 --ephemeral -- next dev --turbo --port 3004",
+    "dev": "dotenv -c development -- next dev --turbo --port 3004",
+    "dev:mock": "dotenv -c test -- zimic server start --port 3005 --ephemeral -- pnpm dev:load-interceptors -- pnpm dev",
+    "dev:load-interceptors": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "pnpm run test",
     "types:check": "tsc --noEmit",
@@ -25,6 +27,7 @@
     "@types/react-dom": "^18.3.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.7.0",
     "typescript": "^5.4.3",
     "zimic": "latest"
   }

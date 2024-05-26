@@ -1,7 +1,8 @@
+import { createInterceptorServer } from '@/interceptor/server';
+import { InterceptorServerOptions } from '@/interceptor/server/types/options';
+import { InterceptorServer } from '@/interceptor/server/types/public';
 import { logWithPrefix } from '@/utils/console';
-import { runCommand, PROCESS_EXIT_EVENTS } from '@/utils/processes';
-
-import InterceptorServer, { InterceptorServerOptions } from '../../interceptor/server/InterceptorServer';
+import { runCommand } from '@/utils/processes';
 
 interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;
@@ -20,19 +21,13 @@ async function startInterceptorServer({
   onUnhandledRequest,
   onReady,
 }: InterceptorServerStartOptions) {
-  const server = new InterceptorServer({
+  const server = createInterceptorServer({
     hostname,
     port,
     onUnhandledRequest,
   });
 
   singletonServer = server;
-
-  for (const exitEvent of PROCESS_EXIT_EVENTS) {
-    process.on(exitEvent, async () => {
-      await server.stop();
-    });
-  }
 
   await server.start();
 
@@ -44,10 +39,6 @@ async function startInterceptorServer({
 
   if (ephemeral) {
     await server.stop();
-  }
-
-  for (const exitEvent of PROCESS_EXIT_EVENTS) {
-    process.removeAllListeners(exitEvent);
   }
 }
 

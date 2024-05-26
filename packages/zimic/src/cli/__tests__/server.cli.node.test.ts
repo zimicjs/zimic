@@ -373,7 +373,7 @@ describe('CLI (server)', async () => {
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         const error = new CommandError('node', exitCode, null);
         await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`[zimic] Command 'node' exited with code ${exitCode}.`);
+        expect(error.message).toBe(`Command 'node' exited with code ${exitCode}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
@@ -398,7 +398,7 @@ describe('CLI (server)', async () => {
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         const error = new CommandError('node', null, signal);
         await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`[zimic] Command 'node' exited after signal ${signal}.`);
+        expect(error.message).toBe(`Command 'node' exited after signal ${signal}.`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);

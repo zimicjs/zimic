@@ -19,7 +19,7 @@ function HomePage({ searchParams }: Props) {
       <GitHubRepositoryForm />
 
       {shouldFetchRepository && (
-        <Suspense key={`${ownerName}-${repositoryName}`} fallback={<p role="status">Loading...</p>}>
+        <Suspense fallback={<p role="status">Loading...</p>}>
           <GitHubRepositoryShowcase ownerName={ownerName} repositoryName={repositoryName} />
         </Suspense>
       )}

@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.5.1",
+  "version": "0.5.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -32,8 +32,7 @@
     "dist",
     "index.d.ts",
     "interceptor.d.ts",
-    "interceptor/node.d.ts",
-    "interceptor/browser.d.ts"
+    "server.d.ts"
   ],
   "types": "index.d.ts",
   "bin": {
@@ -51,6 +50,12 @@
       "require": "./dist/interceptor.js",
       "default": "./dist/interceptor.js",
       "types": "./dist/interceptor.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js",
+      "default": "./dist/server.js",
+      "types": "./dist/server.d.ts"
     },
     "./package.json": "./package.json"
   },
