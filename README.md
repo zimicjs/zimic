@@ -162,7 +162,8 @@ When to use `local`:
 - **Development**: If you want to mock requests in your development environment without setting up a server. This might
   be useful when you're working on a feature that requires a backend that is not yet ready.
 
-Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
+Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), and
+[Next.js Pages Router](./examples/README.md#nextjs) examples use local interceptors.
 
 > [!NOTE]
 >
@@ -185,8 +186,8 @@ When to use `remote`:
   common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
   accessed from any other application (e.g. browser) and return mock responses.
 
-Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
-interceptors.
+Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
+remote interceptors.
 
 > [!NOTE]
 >
