@@ -39,7 +39,6 @@ async function runCLI() {
             .positional('onReady', {
               description: 'A command to run when the server is ready to accept connections.',
               type: 'string',
-              array: true,
             })
             .option('hostname', {
               type: 'string',

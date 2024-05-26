@@ -2,24 +2,21 @@
   Zimic + Next.js App Router
 </h2>
 
-This example uses Zimic with [Next.js](https://nextjs.org). The application is verified with end-to-end tests using
-[Playwright](https://playwright.dev).
+This example uses Zimic with [Next.js](https://nextjs.org).
 
 ## Application
 
-The application is a simple [Next.js](https://nextjs.org) application using the
-[App Router](https://nextjs.org/docs/app). It fetches repositories from the
-[GitHub API](https://docs.github.com/en/rest).
+The application is a simple [Next.js](https://nextjs.org) project using the [App Router](https://nextjs.org/docs/app).
+It fetches repositories from the [GitHub API](https://docs.github.com/en/rest).
 
-- Application: [`src/app/app/page.page.tsx`](./src/app/page.tsx)
-- Interceptor provider:
-  [`src/providers/interceptors/InterceptorProvider.tsx`](./src/providers/interceptors/InterceptorProvider.tsx)
-  - This provider is used to apply Zimic mocks when the application is started in development.
+- Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
-  - Before fetching resources, it is necessary to wait for the interceptors and fixtures to be loaded. This is done via
-    `await waitForLoadedInterceptors();`.
 
-A `postinstall` in [`package.json`](./package.json) script is used to install Playwright's browsers.
+A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
+
+The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and mocks
+before the application is started in development. It is used by the command `dev:mock` in
+[`package.json`](./package.json).
 
 ## Testing
 
@@ -28,8 +25,7 @@ GitHub API and simulate a test case where the repository is found and another wh
 
 ### Zimic
 
-- GitHub interceptor: [`tests/interceptors/github/interceptor.ts`](./tests/interceptors/github/interceptor.ts)
-  - Fixtures: [`tests/interceptors/github/fixtures.ts`](./tests/interceptors/github/fixtures.ts)
+- GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
@@ -62,7 +58,7 @@ GitHub API and simulate a test case where the repository is found and another wh
    1. Start the application:
 
       ```bash
-      pnpm run dev
+      pnpm run dev:mock
       ```
 
       After started, the application will be available at [http://localhost:3004](http://localhost:3004).

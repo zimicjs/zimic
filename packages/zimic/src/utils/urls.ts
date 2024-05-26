@@ -1,6 +1,6 @@
 export class InvalidURLError extends TypeError {
   constructor(url: unknown) {
-    super(`[zimic] Invalid URL: '${url}'`);
+    super(`Invalid URL: '${url}'`);
     this.name = 'InvalidURL';
   }
 }
@@ -8,7 +8,7 @@ export class InvalidURLError extends TypeError {
 export class UnsupportedURLProtocolError extends TypeError {
   constructor(protocol: string, availableProtocols: string[] | readonly string[]) {
     super(
-      `[zimic] Unsupported URL protocol: '${protocol}'. ` +
+      `Unsupported URL protocol: '${protocol}'. ` +
         `The available options are ${availableProtocols.map((protocol) => `'${protocol}'`).join(', ')}`,
     );
     this.name = 'UnsupportedURLProtocolError';
@@ -62,7 +62,7 @@ export function excludeNonPathParams(url: URL) {
 export class DuplicatedPathParamError extends Error {
   constructor(url: string, paramName: string) {
     super(
-      `[zimic] The path parameter '${paramName}' appears more than once in the URL '${url}'. This is not supported. ` +
+      `The path parameter '${paramName}' appears more than once in the URL '${url}'. This is not supported. ` +
         'Please make sure that each parameter is unique.',
     );
     this.name = 'DuplicatedPathParamError';

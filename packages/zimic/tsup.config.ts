@@ -22,6 +22,7 @@ export default defineConfig([
     entry: {
       index: 'src/index.ts',
       interceptor: 'src/interceptor/index.ts',
+      server: 'src/interceptor/server/index.ts',
     },
   },
   {

@@ -1,10 +1,8 @@
-/* istanbul ignore next -- @preserve
- * This error is a fallback to prevent doing operations without a started server. It should not happen in normal
- * conditions.
- */
+/* istanbul ignore next -- @preserve */
+/** An error thrown when the interceptor server is not running. */
 class NotStartedInterceptorServerError extends Error {
   constructor() {
-    super('[zimic] The interceptor server is not running.');
+    super('The interceptor server is not running.');
     this.name = 'NotStartedInterceptorServerError';
   }
 }
