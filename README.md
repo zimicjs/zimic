@@ -162,7 +162,8 @@ When to use `local`:
 - **Development**: If you want to mock requests in your development environment without setting up a server. This might
   be useful when you're working on a feature that requires a backend that is not yet ready.
 
-Our [Vitest](./examples/README.md#vitest) and [Jest](./examples/README.md#jest) examples use local interceptors.
+Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), and
+[Next.js Pages Router](./examples/README.md#nextjs) examples use local interceptors.
 
 > [!NOTE]
 >
@@ -185,12 +186,15 @@ When to use `remote`:
   common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
   accessed from any other application (e.g. browser) and return mock responses.
 
-Our [Playwright](./examples/README.md#playwright) and [Next.js](./examples/README.md#nextjs) examples use remote
-interceptors.
+Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
+remote interceptors.
 
 > [!NOTE]
 >
 > All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
+>
+> Some code snippets are displayed side by side with a local and a remote interceptor example. Generally, the remote
+> snippets differ only by adding `await` when necessary.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
@@ -224,6 +228,8 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
 
 1. To start using Zimic, create your first [HTTP interceptor](#httpinterceptor):
 
+   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
    ```ts
    import { JSONValue } from 'zimic';
    import { http } from 'zimic/interceptor';
@@ -246,20 +252,50 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    });
    ```
 
-   In this example, we're [creating a local interceptor](#creating-a-local-http-interceptor) for a service supporting
-   `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more about
-   [declaring HTTP service schemas](#declaring-http-service-schemas).
+   </details></td><td valign="top"><details open><summary><b>Remote</b></summary>
 
-2. Then, start the interceptor:
+   ```ts
+   import { JSONValue } from 'zimic';
+   import { http } from 'zimic/interceptor';
+
+   type User = JSONValue<{
+     username: string;
+   }>;
+
+   const interceptor = http.createInterceptor<{
+     '/users': {
+       GET: {
+         response: {
+           200: { body: User[] };
+         };
+       };
+     };
+   }>({
+     type: 'remote',
+     // The interceptor server is at http://localhost:4000
+     baseURL: 'http://localhost:4000/my-service',
+   });
+   ```
+
+   </details></td></tr></table>
+
+In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
+`/users`. A successful response contains an array of `User` objects. Learn more about
+[declaring HTTP service schemas](#declaring-http-service-schemas).
+
+1. Then, start the interceptor:
 
    ```ts
    await interceptor.start();
    ```
 
-   If we were [creating a remote interceptor](#creating-a-remote-http-interceptor), we would need a
-   [running server](#zimic-server-start) before starting it.
+   If you are [creating a remote interceptor](#creating-a-remote-http-interceptor), it's necessary to have a running
+   [interceptor server](#zimic-server-start) before starting it. The base URL of the remote interceptor should point to
+   the server, optionally including a path to differentiate from other interceptors.
 
-3. Now, you can intercept requests and return mock responses!
+2. Now, you can intercept requests and return mock responses!
+
+   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
    const listHandler = interceptor.get('/users').respond({
@@ -272,6 +308,21 @@ Visit our [examples](./examples) to see how to use Zimic with popular frameworks
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
+   </details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+   ```ts
+   const listHandler = await interceptor.get('/users').respond({
+     status: 200,
+     body: [{ username: 'diego-aquino' }],
+   });
+
+   const response = await fetch('http://localhost:3000/users');
+   const users = await response.json();
+   console.log(users); // [{ username: 'diego-aquino' }]
+   ```
+
+   </details></td></tr></table>
+
 More usage examples and recommendations are available in our [examples](#examples) and the
 [`zimic/interceptor` API reference](#zimicinterceptor-api-reference).
 
@@ -282,10 +333,9 @@ test setup file. An example using a Jest/Vitest API:
 
 `tests/setup.ts`
 
-```ts
-import userInterceptor from './interceptors/userInterceptor';
-import analyticsInterceptor from './interceptors/analyticsInterceptor';
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
+```ts
 // Your interceptors
 const interceptors = [userInterceptor, analyticsInterceptor];
 
@@ -296,7 +346,35 @@ beforeAll(async () => {
   }
 });
 
-// Clear all interceptors to make sure no tests affect each other
+// Clear all interceptors so that no tests affect each other
+beforeEach(() => {
+  for (const interceptor of interceptors) {
+    interceptor.clear();
+  }
+});
+
+// Stop intercepting requests
+afterAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.stop();
+  }
+});
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+// Your interceptors
+const interceptors = [userInterceptor, analyticsInterceptor];
+
+// Start intercepting requests
+beforeAll(async () => {
+  for (const interceptor of interceptors) {
+    await interceptor.start();
+  }
+});
+
+// Clear all interceptors so that no tests affect each other
 beforeEach(async () => {
   for (const interceptor of interceptors) {
     await interceptor.clear();
@@ -310,6 +388,8 @@ afterAll(async () => {
   }
 });
 ```
+
+</details></td></tr></table>
 
 ---
 
@@ -326,8 +406,6 @@ This module provides general resources, such as HTTP classes and types.
 A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers) class, with a strictly-typed
 schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to provide type safety when managing
 headers.
-
-</details>
 
 <details>
   <summary><code>HttpHeaders</code> example:</summary>
@@ -353,8 +431,6 @@ console.log(contentType); // 'application/json'
 
 `HttpHeaders` also provide the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
 other headers:
-
-</details>
 
 <details>
   <summary>Comparing <code>HttpHeaders</code> example:</summary>
@@ -403,8 +479,6 @@ A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/doc
 strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic to provide
 type safety when applying mocks.
 
-</details>
-
 <details>
   <summary><code>HttpSearchParams</code> example:</summary>
 
@@ -432,8 +506,6 @@ console.log(page); // '1'
 
 `HttpSearchParams` also provide the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
 comparisons with other search params:
-
-</details>
 
 <details>
   <summary>Comparing <code>HttpSearchParams</code> example:</summary>
@@ -1125,6 +1197,11 @@ declared in the interceptor schema.
 
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
 
+When using a [remote interceptor](#remote-http-interceptors), creating a handler is an asynchronous operation, so you
+need to `await` it. You can also chain any number of operations and apply them by awaiting the handler.
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 import { http } from 'zimic/interceptor';
 
@@ -1141,23 +1218,37 @@ const interceptor = http.createInterceptor<{
   baseURL: 'http://localhost:3000',
 });
 
-// Intercept any GET requests to http://localhost:3000/users and return this response
 const listHandler = interceptor.get('/users').respond({
   status: 200
   body: [{ username: 'diego-aquino' }],
 });
 ```
 
-When using a remote interceptor, creating a handler is an asynchronous operation, so you need to `await` it:
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
 
 ```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    GET: {
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>({
+  type: 'remote',
+  baseURL: 'http://localhost:4000/my-service',
+});
+
 const listHandler = await interceptor.get('/users').respond({
   status: 200
   body: [{ username: 'diego-aquino' }],
 });
 ```
 
-You can also chain any number of operations and await the handler to apply them.
+</details></td></tr></table>
 
 ##### Dynamic path parameters
 
@@ -1171,9 +1262,7 @@ const interceptor = http.createInterceptor<{
   '/users/:id': {
     PUT: {
       request: {
-        body: {
-          username: string;
-        };
+        body: { username: string };
       };
       response: {
         204: {};
@@ -1193,6 +1282,8 @@ interceptor.get(`/users/${1}`); // Only matches id 1
 the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
 `{ userId: string }`.
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
   console.log(request.pathParams); // { id: '1' }
@@ -1206,6 +1297,23 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const updateHandler = await interceptor.put('/users/:id').respond((request) => {
+  console.log(request.pathParams); // { id: '1' }
+
+  return {
+    status: 200,
+    body: { username: 'diego-aquino' },
+  };
+});
+
+await fetch('http://localhost:3000/users/1', { method: 'PUT' });
+```
+
+</details></td></tr></table>
+
 #### HTTP `interceptor.clear()`
 
 Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
@@ -1214,9 +1322,19 @@ requests until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 interceptor.clear();
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+await interceptor.clear();
+```
+
+</details></td></tr></table>
 
 ### `HttpRequestHandler`
 
@@ -1231,22 +1349,46 @@ When multiple handlers match the same method and path, the _last_ created with
 
 Returns the method that matches a handler.
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const handler = interceptor.post('/users');
 const method = handler.method();
 console.log(method); // 'POST'
 ```
 
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const handler = await interceptor.post('/users');
+const method = handler.method();
+console.log(method); // 'POST'
+```
+
+</details></td></tr></table>
+
 #### HTTP `handler.path()`
 
 Returns the path that matches a handler. The base URL of the interceptor is not included, but it is used when matching
 requests.
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const handler = interceptor.get('/users');
 const path = handler.path();
 console.log(path); // '/users'
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const handler = await interceptor.get('/users');
+const path = handler.path();
+console.log(path); // '/users'
+```
+
+</details></td></tr></table>
 
 #### HTTP `handler.with(restriction)`
 
@@ -1257,6 +1399,8 @@ condition.
 
 ##### Static restrictions
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const creationHandler = interceptor
   .post('/users')
@@ -1269,6 +1413,23 @@ const creationHandler = interceptor
     body: [{ username: 'diego-aquino' }],
   });
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
 
 By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
 match the handler, regardless of having more properties or values. In the example above, requests with more headers than
@@ -1276,13 +1437,16 @@ match the handler, regardless of having more properties or values. In the exampl
 
 If you want to match only requests with the exact values declared, you can use `exact: true`:
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
     body: creationPayload,
-    exact: true, // Only requests with these exact headers and body will match
+    // Only requests with these exact headers and body will match
+    exact: true,
   })
   .respond({
     status: 200,
@@ -1290,9 +1454,30 @@ const creationHandler = interceptor
   });
 ```
 
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: creationPayload,
+    // Only requests with these exact headers and body will match
+    exact: true,
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
+
 ##### Computed restrictions
 
 A function is also supported to declare restrictions, in case they are dynamic.
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1306,6 +1491,23 @@ const creationHandler = interceptor
     body: [{ username: 'diego-aquino' }],
   });
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with((request) => {
+    const accept = request.headers.get('accept');
+    return accept !== null && accept.startsWith('application');
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
 
 The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
 `request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
@@ -1321,6 +1523,8 @@ validated against the schema of the interceptor.
 
 ##### Static responses
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const listHandler = interceptor.get('/users').respond({
   status: 200,
@@ -1328,9 +1532,22 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+```
+
+</details></td></tr></table>
+
 ##### Computed responses
 
 A function is also supported to declare a response, in case it is dynamic:
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond((request) => {
@@ -1341,6 +1558,20 @@ const listHandler = interceptor.get('/users').respond((request) => {
   };
 });
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond((request) => {
+  const username = request.searchParams.get('username');
+  return {
+    status: 200,
+    body: [{ username }],
+  };
+});
+```
+
+</details></td></tr></table>
 
 The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
 `request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
@@ -1357,22 +1588,41 @@ To make the handler match requests again, register a new response with
 This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
 removed the response, keeping restrictions and intercepted requests.
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
-const listHandler1 = interceptor.get('/users').respond({
+const listHandler = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const listHandler2 = interceptor.get('/users').respond({
+const otherListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-listHandler2.bypass();
-// Now, GET requests to /users will match listHandler1 and return an empty array
-
-listHandler2.requests(); // Still contains the intercepted requests up to the bypass
+otherListHandler.bypass();
+// Now, requests GET /users will match `listHandler` and receive an empty array
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: [],
+});
+
+const otherListHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+
+await otherListHandler.bypass();
+// Now, requests GET /users will match `listHandler` and receive an empty array
+```
+
+</details></td></tr></table>
 
 #### HTTP `handler.clear()`
 
@@ -1386,27 +1636,52 @@ To make the handler match requests again, register a new response with `handler.
 This method is useful to reset handlers to a clean state between tests. It is more aggressive than
 [`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
-const listHandler1 = interceptor.get('/users').respond({
+const listHandler = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const listHandler2 = interceptor.get('/users').respond({
+const otherListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-listHandler2.clear();
-// Now, GET requests to /users will match listHandler1 and return an empty array
+otherListHandler.clear();
+// Now, requests GET /users will match `listHandler` and receive an empty array
 
-listHandler2.requests(); // Now empty
+otherListHandler.requests(); // Now empty
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: [],
+});
+
+const otherListHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+
+await otherListHandler.clear();
+// Now, requests GET /users will match `listHandler` and receive an empty array
+
+await otherListHandler.requests(); // Now empty
+```
+
+</details></td></tr></table>
 
 #### HTTP `handler.requests()`
 
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application.
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
@@ -1424,9 +1699,33 @@ await fetch(`http://localhost:3000/users/${1}`, {
 
 const updateRequests = updateHandler.requests();
 expect(updateRequests).toHaveLength(1);
-expect(updateRequests[0].url).toEqual('http://localhost:3000/users/1');
+expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const updateHandler = await interceptor.put('/users/:id').respond((request) => {
+  const newUsername = request.body.username;
+  return {
+    status: 200,
+    body: [{ username: newUsername }],
+  };
+});
+
+await fetch(`http://localhost:3000/users/${1}`, {
+  method: 'PUT',
+  body: JSON.stringify({ username: 'new' }),
+});
+
+const updateRequests = await updateHandler.requests();
+expect(updateRequests).toHaveLength(1);
+expect(updateRequests[0].pathParams).toEqual({ id: '1' });
+expect(updateRequests[0].body).toEqual({ username: 'new' });
+```
+
+</details></td></tr></table>
 
 The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
@@ -1436,11 +1735,23 @@ in `request.searchParams`.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
 ```ts
 const listRequests = listHandler.requests();
 console.log(listRequests[0].raw); // Request{}
 console.log(listRequests[0].response.raw); // Response{}
 ```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listRequests = await listHandler.requests();
+console.log(listRequests[0].raw); // Request{}
+console.log(listRequests[0].response.raw); // Response{}
+```
+
+</details></td></tr></table>
 
 ## CLI
 
