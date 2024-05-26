@@ -6,13 +6,17 @@ This example uses Zimic with [Playwright](https://playwright.dev) in end-to-end 
 
 ## Application
 
-The tested application is a simple [Next.js](https://nextjs.org) application, fetching repositories from the
+The tested application is a simple [Next.js](https://nextjs.org) project, fetching repositories from the
 [GitHub API](https://docs.github.com/en/rest).
 
 - Application: [`src/app/page.tsx`](./src/app/page.tsx)
 - GitHub fetch: [`src/services/github.ts`](./src/services/github.ts)
 
-A `postinstall` in [`package.json`](./package.json#L12) script is used to install Playwright's browsers.
+A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
+
+The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and
+fixtures before the application is started in development. It is included in the command `dev:mock` in
+[`package.json`](./package.json).
 
 ## Testing
 
@@ -21,20 +25,12 @@ GitHub API and simulate a test case where the repository is found and another wh
 
 ### Zimic
 
-- GitHub interceptor: [`tests/interceptors/github/interceptor.ts`](./tests/interceptors/github/interceptor.ts)
-  - Fixtures: [`tests/interceptors/github/fixtures.ts`](./tests/interceptors/github/fixtures.ts)
+- GitHub interceptor and fixtures: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
 
 ### Test
 
 - Test suite: [`src/app/__tests__/HomePage.e2e.test.ts`](./src/app/__tests__/HomePage.e2e.test.ts)
-- Test setup file: [`tests/setup.ts`](./tests/setup.ts)
-  - This file is responsible for starting the Zimic interceptors before each test. It also applies default mock
-    responses based on the [fixtures](./tests/interceptors/github/interceptor.ts).
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
-
-> [!IMPORTANT]
->
-> The setup file must be imported from each test file to apply the global `test.beforeAll` and `test.afterAll`.
 
 ### Running
 
