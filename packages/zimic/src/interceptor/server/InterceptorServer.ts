@@ -49,7 +49,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private knownWorkerSockets = new Set<Socket>();
 
-  constructor(options: InterceptorServerOptions = {}) {
+  constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
     this.onUnhandledRequest = options.onUnhandledRequest;
@@ -98,9 +98,7 @@ class InterceptorServer implements PublicInterceptorServer {
     }
 
     for (const exitEvent of PROCESS_EXIT_EVENTS) {
-      process.on(exitEvent, async () => {
-        await this.stop();
-      });
+      process.on(exitEvent, this.stop);
     }
 
     this._httpServer = createServer({
@@ -192,18 +190,18 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  async stop() {
+  stop = async () => {
     if (!this.isRunning()) {
       return;
     }
 
+    for (const exitEvent of PROCESS_EXIT_EVENTS) {
+      process.removeListener(exitEvent, this.stop);
+    }
+
     await this.stopWebSocketServer();
     await this.stopHttpServer();
-
-    for (const exitEvent of PROCESS_EXIT_EVENTS) {
-      process.removeAllListeners(exitEvent);
-    }
-  }
+  };
 
   private async stopHttpServer() {
     const httpServer = this.httpServer();
