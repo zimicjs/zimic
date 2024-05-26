@@ -64,6 +64,16 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredServiceWorkerError,
 } from 'zimic0/interceptor';
+import {
+  createInterceptorServer,
+  InterceptorServer,
+  InterceptorServerOptions,
+  NotStartedInterceptorServerError,
+  runCommand,
+  CommandError,
+  DEFAULT_ACCESS_CONTROL_HEADERS,
+  DEFAULT_PREFLIGHT_STATUS_CODE,
+} from 'zimic0/server';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
@@ -162,5 +172,17 @@ describe('Exports', () => {
     expect(typeof NotStartedHttpInterceptorError).toBe('function');
     expectTypeOf<UnregisteredServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredServiceWorkerError).toBe('function');
+
+    expect(typeof createInterceptorServer).toBe('function');
+    expectTypeOf<InterceptorServer>().not.toBeAny();
+    expectTypeOf<InterceptorServerOptions>().not.toBeAny();
+    expectTypeOf<NotStartedInterceptorServerError>().not.toBeAny();
+    expect(typeof NotStartedInterceptorServerError).toBe('function');
+    expect(typeof runCommand).toBe('function');
+    expectTypeOf<CommandError>().not.toBeAny();
+    expect(typeof CommandError).toBe('function');
+
+    expect(DEFAULT_ACCESS_CONTROL_HEADERS).toEqual(expect.any(Object));
+    expect(DEFAULT_PREFLIGHT_STATUS_CODE).toEqual(expect.any(Number));
   });
 });

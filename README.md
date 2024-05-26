@@ -108,6 +108,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`zimic browser init`](#zimic-browser-init)
   - [`zimic server`](#zimic-server)
     - [`zimic server start`](#zimic-server-start)
+    - [Programmatic usage](#programmatic-usage)
 - [Changelog](#changelog)
 
 ## Getting started
@@ -1838,6 +1839,29 @@ zimic server start --port 4000 --ephemeral -- npm run test
 
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
+
+#### Programmatic usage
+
+The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
+using the CLI, this module is also an option.
+
+```ts
+import { createInterceptorServer, runCommand } from 'zimic/server';
+
+const server = createInterceptorServer({ hostname: 'localhost', port: 3000 });
+
+await server.start();
+console.log(server.isRunning()); // true
+
+const [command, ...commandArguments] = process.argv.slice(3);
+await runCommand(command, commandArguments);
+
+await server.stop();
+```
+
+The export `runCommand` is a helper function that runs a command with its arguments. The
+[Next.js App Router](./examples/README.md#nextjs) and the [Playwright](./examples/README.md#playwright) examples use
+this function to run the application after loading the interceptors and fixtures.
 
 ---
 
