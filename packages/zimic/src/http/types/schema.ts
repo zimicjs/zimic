@@ -152,7 +152,7 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
 > = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
 
 /**
@@ -160,7 +160,10 @@ export type LiteralHttpServiceSchemaPath<
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
-export type LooseLiteralHttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpMethod> = {
+export type LooseLiteralHttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpMethod = HttpMethod,
+> = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
@@ -177,7 +180,7 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
 > = AllowAnyStringInPathParams<LiteralHttpServiceSchemaPath<Schema, Method>>;
 
 type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
@@ -202,7 +205,7 @@ type RecursiveInferHttpServiceSchemaPath<
       : LiteralPath
     : never;
 
-export type InferLiteralHttpServiceSchemaPath<
+export type LiteralHttpServiceSchemaPathFromNonLiteral<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   NonLiteralPath extends string,
@@ -218,9 +221,10 @@ export type InferLiteralHttpServiceSchemaPath<
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
-export type HttpServiceSchemaPath<Schema extends HttpServiceSchema, Method extends HttpServiceSchemaMethod<Schema>> =
-  | LiteralHttpServiceSchemaPath<Schema, Method>
-  | NonLiteralHttpServiceSchemaPath<Schema, Method>;
+export type HttpServiceSchemaPath<
+  Schema extends HttpServiceSchema,
+  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
+> = LiteralHttpServiceSchemaPath<Schema, Method> | NonLiteralHttpServiceSchemaPath<Schema, Method>;
 
 type RecursivePathParamsSchemaFromPath<Path extends string> =
   Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
