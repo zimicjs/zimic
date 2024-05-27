@@ -98,7 +98,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       };
     }>({ type, baseURL }, async (interceptor) => {
       const listHandler = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams>();
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<never>>();
 
         return {
           status: 200,
@@ -108,7 +108,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       const listRequests = await listHandler.requests();
       type RequestSearchParams = (typeof listRequests)[number]['searchParams'];
-      expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams>();
+      expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<never>>();
     });
   });
 

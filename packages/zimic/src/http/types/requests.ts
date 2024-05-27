@@ -12,13 +12,16 @@ export type HttpBody = JSONValue;
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
  */
-export type StrictHeaders<Schema extends HttpHeadersSchema> = Pick<HttpHeaders<Schema>, keyof Headers>;
+export type StrictHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> = Pick<
+  HttpHeaders<Schema>,
+  keyof Headers
+>;
 
 /**
  * An HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
  */
-export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema> = Pick<
+export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = Pick<
   HttpSearchParams<Schema>,
   keyof URLSearchParams
 >;

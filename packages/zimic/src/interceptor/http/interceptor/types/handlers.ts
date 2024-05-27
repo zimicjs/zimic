@@ -3,7 +3,7 @@ import {
   HttpServiceSchema,
   HttpServiceSchemaMethod,
   NonLiteralHttpServiceSchemaPath,
-  InferLiteralHttpServiceSchemaPath,
+  LiteralHttpServiceSchemaPathFromNonLiteral,
 } from '@/http/types/schema';
 
 import { LocalHttpRequestHandler, RemoteHttpRequestHandler } from '../../requestHandler/types/public';
@@ -12,7 +12,7 @@ export type SyncHttpInterceptorMethodHandler<Schema extends HttpServiceSchema, M
   Method extends HttpServiceSchemaMethod<Schema>
     ? <Path extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
         path: Path,
-      ) => LocalHttpRequestHandler<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, Path>>
+      ) => LocalHttpRequestHandler<Schema, Method, LiteralHttpServiceSchemaPathFromNonLiteral<Schema, Method, Path>>
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => LocalHttpRequestHandler<any, any, never>;
 
@@ -20,7 +20,7 @@ export type AsyncHttpInterceptorMethodHandler<Schema extends HttpServiceSchema, 
   Method extends HttpServiceSchemaMethod<Schema>
     ? <Path extends NonLiteralHttpServiceSchemaPath<Schema, Method>>(
         path: Path,
-      ) => RemoteHttpRequestHandler<Schema, Method, InferLiteralHttpServiceSchemaPath<Schema, Method, Path>>
+      ) => RemoteHttpRequestHandler<Schema, Method, LiteralHttpServiceSchemaPathFromNonLiteral<Schema, Method, Path>>
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => RemoteHttpRequestHandler<any, any, never>;
 
