@@ -88,9 +88,9 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
       }
     }
 
-    for (const otherKey of this.keys()) {
-      const hasKey = super.has.call(otherHeaders, otherKey);
-      if (!hasKey) {
+    for (const key of this.keys()) {
+      const otherHasKey = super.has.call(otherHeaders, key);
+      if (!otherHasKey) {
         return false;
       }
     }
