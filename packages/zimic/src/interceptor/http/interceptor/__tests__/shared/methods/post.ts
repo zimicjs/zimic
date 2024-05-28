@@ -133,6 +133,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       const creationResponse = await fetch(joinURL(baseURL, '/users'), {
         method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
@@ -164,7 +165,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
       accept?: string;
     }>;
     type UserCreationResponseHeaders = HttpSchema.Headers<{
-      'content-type'?: `application/${string}`;
+      'content-language'?: string;
       'cache-control'?: string;
     }>;
 
@@ -194,7 +195,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           return {
             status: 201,
             headers: {
-              'content-type': 'application/json',
+              'content-language': 'en',
               'cache-control': 'no-cache',
             },
             body: users[0],
@@ -229,7 +230,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       expectTypeOf(creationRequest.response.headers).toEqualTypeOf<HttpHeaders<UserCreationResponseHeaders>>();
       expect(creationRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(creationRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(creationRequest.response.headers.get('content-language')).toBe('en');
       expect(creationRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
@@ -305,6 +306,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       let creationPromise = fetch(joinURL(baseURL, '/users'), {
         method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectFetchError(creationPromise);
@@ -324,6 +326,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       creationPromise = fetch(joinURL(baseURL, '/users'), {
         method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       await expectFetchError(creationPromise);
@@ -342,6 +345,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       const creationResponse = await fetch(joinURL(baseURL, '/users'), {
         method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies UserCreationBody),
       });
       expect(creationResponse.status).toBe(201);
@@ -565,7 +569,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
   describe('Restrictions', () => {
     it('should support intercepting POST requests having headers restrictions', async () => {
       type UserCreationHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -585,7 +589,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
           interceptor
             .post('/users')
             .with({
-              headers: { 'content-type': 'application/json' },
+              headers: { 'content-language': 'en' },
             })
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserCreationHeaders>>();
@@ -610,7 +614,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         expect(creationRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<UserCreationHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -634,7 +638,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         expect(creationRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         creationPromise = fetch(joinURL(baseURL, '/users'), { method: 'POST', headers });
         await expectFetchError(creationPromise);
@@ -738,6 +742,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
         const creationResponse = await fetch(joinURL(baseURL, '/users'), {
           method: 'POST',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(users[0] satisfies UserCreationBody),
         });
         expect(creationResponse.status).toBe(200);
@@ -747,6 +752,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
         const creationPromise = fetch(joinURL(baseURL, '/users'), {
           method: 'POST',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(users[1] satisfies UserCreationBody),
         });
         await expectFetchError(creationPromise);
@@ -1207,7 +1213,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const creationResponse = await fetch(joinURL(baseURL, '/users'), {
                   method: 'POST',
-                  headers: { 'x-value': '1' },
+                  headers: { 'content-type': 'application/json', 'x-value': '1' },
                   body: JSON.stringify(users[0] satisfies UserCreationBody),
                 });
                 expect(creationResponse.status).toBe(201);
@@ -1220,6 +1226,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
                 const creationRequest = new Request(joinURL(baseURL, '/users'), {
                   method: 'POST',
+                  headers: { 'content-type': 'application/json' },
                   body: JSON.stringify(users[0] satisfies UserCreationBody),
                 });
                 const creationRequestClone = creationRequest.clone();
@@ -1281,7 +1288,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const creationResponse = await fetch(joinURL(baseURL, '/users'), {
                   method: 'POST',
-                  headers: { 'x-value': '1' },
+                  headers: { 'content-type': 'application/json', 'x-value': '1' },
                   body: JSON.stringify(users[0] satisfies UserCreationBody),
                 });
                 expect(creationResponse.status).toBe(201);
@@ -1294,7 +1301,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
                 const creationRequest = new Request(joinURL(baseURL, '/users'), {
                   method: 'POST',
-                  headers: { 'x-value': '2' },
+                  headers: { 'content-type': 'application/json', 'x-value': '2' },
                   body: JSON.stringify(users[0] satisfies UserCreationBody),
                 });
                 const creationRequestClone = creationRequest.clone();
@@ -1364,7 +1371,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const creationResponse = await fetch(joinURL(baseURL, '/users'), {
                 method: 'POST',
-                headers: { 'x-value': '1' },
+                headers: { 'content-type': 'application/json', 'x-value': '1' },
                 body: JSON.stringify(users[0] satisfies UserCreationBody),
               });
               expect(creationResponse.status).toBe(201);
@@ -1377,7 +1384,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
               const creationRequest = new Request(joinURL(baseURL, '/users'), {
                 method: 'POST',
-                headers: { 'x-value': '2' },
+                headers: { 'content-type': 'application/json', 'x-value': '2' },
                 body: JSON.stringify(users[0] satisfies UserCreationBody),
               });
               const creationPromise = fetch(creationRequest);
@@ -1434,7 +1441,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         await usingIgnoredConsole(['warn', 'error'], async (spies) => {
           const creationResponse = await fetch(joinURL(baseURL, '/users'), {
             method: 'POST',
-            headers: { 'x-value': '1' },
+            headers: { 'content-type': 'application/json', 'x-value': '1' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           expect(creationResponse.status).toBe(201);
@@ -1450,7 +1457,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
           let creationPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
             method: 'POST',
-            headers: { 'x-value': '2' },
+            headers: { 'content-type': 'application/json', 'x-value': '2' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           await expectFetchError(creationPromise);
@@ -1464,7 +1471,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
           const creationRequest = new Request(joinURL(baseURL, '/users'), {
             method: 'POST',
-            headers: { 'x-value': '2' },
+            headers: { 'content-type': 'application/json', 'x-value': '2' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           const creationRequestClone = creationRequest.clone();
@@ -1532,7 +1539,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         await usingIgnoredConsole(['warn', 'error'], async (spies) => {
           const creationResponse = await fetch(joinURL(baseURL, '/users'), {
             method: 'POST',
-            headers: { 'x-value': '1' },
+            headers: { 'content-type': 'application/json', 'x-value': '1' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           expect(creationResponse.status).toBe(201);
@@ -1548,7 +1555,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
           let creationPromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
             method: 'POST',
-            headers: { 'x-value': '2' },
+            headers: { 'content-type': 'application/json', 'x-value': '2' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           await expectFetchError(creationPromise);
@@ -1562,7 +1569,7 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
           const creationRequest = new Request(joinURL(baseURL, '/users'), {
             method: 'POST',
-            headers: { 'x-value': '2' },
+            headers: { 'content-type': 'application/json', 'x-value': '2' },
             body: JSON.stringify(users[0] satisfies UserCreationBody),
           });
           creationPromise = fetch(creationRequest);

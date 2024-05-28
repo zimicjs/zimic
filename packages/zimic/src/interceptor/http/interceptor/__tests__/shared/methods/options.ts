@@ -538,7 +538,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
   describe('Restrictions', () => {
     it('should support intercepting OPTIONS requests having headers restrictions', async () => {
       type FiltersOptionsHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -558,7 +558,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
           interceptor
             .options('/filters')
             .with({
-              headers: { 'content-type': 'application/json' },
+              headers: { 'content-language': 'en' },
             })
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<FiltersOptionsHeaders>>();
@@ -584,7 +584,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(optionsRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<FiltersOptionsHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -609,7 +609,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         optionsRequests = await promiseIfRemote(optionsHandler.requests(), interceptor);
         expect(optionsRequests).toHaveLength(2);
 
-        headers.delete('content-type');
+        headers.delete('content-language');
 
         optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS', headers });
         await expectFetchErrorOrPreflightResponse(optionsPromise, {
@@ -619,7 +619,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(optionsRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         optionsPromise = fetch(joinURL(baseURL, `/users`), { method: 'OPTIONS', headers });
         await expectFetchErrorOrPreflightResponse(optionsPromise, {

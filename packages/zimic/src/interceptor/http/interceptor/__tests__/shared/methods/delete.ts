@@ -127,6 +127,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       expect(deletionResponse.status).toBe(200);
@@ -155,7 +156,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
       accept?: string;
     }>;
     type UserDeletionResponseHeaders = HttpSchema.Headers<{
-      'content-type'?: `application/${string}`;
+      'content-language'?: string;
       'cache-control'?: string;
     }>;
 
@@ -185,7 +186,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           return {
             status: 200,
             headers: {
-              'content-type': 'application/json',
+              'content-language': 'en',
               'cache-control': 'no-cache',
             },
             body: users[0],
@@ -217,7 +218,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       expectTypeOf(deletionRequest.response.headers).toEqualTypeOf<HttpHeaders<UserDeletionResponseHeaders>>();
       expect(deletionRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(deletionRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(deletionRequest.response.headers.get('content-language')).toBe('en');
       expect(deletionRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
@@ -292,6 +293,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       let deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       await expectFetchError(deletionPromise);
@@ -311,6 +313,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       await expectFetchError(deletionPromise);
@@ -329,6 +332,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: userName } satisfies Partial<User>),
       });
       expect(deletionResponse.status).toBe(200);
@@ -544,7 +548,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
   describe('Restrictions', () => {
     it('should support intercepting DELETE requests having headers restrictions', async () => {
       type UserDeletionHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -564,7 +568,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
           interceptor
             .delete(`/users/:id`)
             .with({
-              headers: { 'content-type': 'application/json' },
+              headers: { 'content-language': 'en' },
             })
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserDeletionHeaders>>();
@@ -589,7 +593,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         expect(deletionRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<UserDeletionHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -613,7 +617,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         expect(deletionRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         deletionPromise = fetch(joinURL(baseURL, '/users'), { method: 'DELETE', headers });
         await expectFetchError(deletionPromise);
@@ -729,6 +733,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
         let deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'DELETE',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             tags: ['admin'],
             other: 'extra',
@@ -740,6 +745,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
         deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'DELETE',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             tags: ['admin'],
             other: 'extra-other',
@@ -751,6 +757,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
         let deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'DELETE',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             tags: ['admin'],
           } satisfies UserDeletionBody),
@@ -761,6 +768,7 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
         deletionPromise = fetch(joinURL(baseURL, '/users'), {
           method: 'DELETE',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             tags: [],
           } satisfies UserDeletionBody),

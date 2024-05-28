@@ -130,6 +130,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'PUT',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       expect(updateResponse.status).toBe(200);
@@ -158,7 +159,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
       accept?: string;
     }>;
     type UserUpdateResponseHeaders = HttpSchema.Headers<{
-      'content-type'?: `application/${string}`;
+      'content-language'?: string;
       'cache-control'?: string;
     }>;
 
@@ -188,7 +189,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
           return {
             status: 200,
             headers: {
-              'content-type': 'application/json',
+              'content-language': 'en',
               'cache-control': 'no-cache',
             },
             body: users[0],
@@ -220,7 +221,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       expectTypeOf(updateRequest.response.headers).toEqualTypeOf<HttpHeaders<UserUpdateResponseHeaders>>();
       expect(updateRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(updateRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(updateRequest.response.headers.get('content-language')).toBe('en');
       expect(updateRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
@@ -295,6 +296,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       let updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'PUT',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       await expectFetchError(updatePromise);
@@ -311,6 +313,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'PUT',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       await expectFetchError(updatePromise);
@@ -329,6 +332,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
         method: 'PUT',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ...users[0], name: userName } satisfies User),
       });
       expect(updateResponse.status).toBe(200);
@@ -544,7 +548,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
   describe('Restrictions', () => {
     it('should support intercepting PUT requests having headers restrictions', async () => {
       type UserUpdateHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -564,7 +568,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
           interceptor
             .put(`/users/${users[0].id}`)
             .with({
-              headers: { 'content-type': 'application/json' },
+              headers: { 'content-language': 'en' },
             })
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserUpdateHeaders>>();
@@ -589,7 +593,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         expect(updateRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<UserUpdateHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -613,7 +617,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         expect(updateRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT', headers });
         await expectFetchError(updatePromise);
@@ -721,6 +725,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
         const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'PUT',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             ...users[0],
             name: users[1].name,
@@ -732,6 +737,7 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
         const updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method: 'PUT',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             ...users[0],
             name: users[0].name,

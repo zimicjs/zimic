@@ -304,6 +304,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL, {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'User' } satisfies MethodSchema['request']['body']),
     });
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);

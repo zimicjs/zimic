@@ -1,12 +1,13 @@
 import { JSONValue } from '@/types/json';
 
+import HttpFormData from '../formData/HttpFormData';
 import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type for HTTP requests and responses. */
-export type HttpBody = JSONValue;
+export type HttpBody = JSONValue | HttpFormData | HttpSearchParams | Blob | BufferSource | ReadableStream;
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in

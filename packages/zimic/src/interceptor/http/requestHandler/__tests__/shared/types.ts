@@ -12,7 +12,7 @@ export interface SharedHttpRequestHandlerTestOptions {
 
 export type HeadersSchema = HttpSchema.Headers<{
   accept?: string;
-  'content-type'?: string;
+  'content-language'?: string;
 }>;
 
 export type SearchParamsSchema = HttpSchema.SearchParams<{

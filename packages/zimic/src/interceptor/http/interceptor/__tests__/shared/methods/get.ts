@@ -154,7 +154,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
       accept?: string;
     }>;
     type UserListResponseHeaders = HttpSchema.Headers<{
-      'content-type'?: `application/${string}`;
+      'content-language'?: string;
       'cache-control'?: string;
     }>;
 
@@ -184,7 +184,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           return {
             status: 200,
             headers: {
-              'content-type': 'application/json',
+              'content-language': 'en',
               'cache-control': 'no-cache',
             },
             body: users,
@@ -204,7 +204,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         } satisfies UserListRequestHeaders,
       });
       expect(listResponse.status).toBe(200);
-      expect(listResponse.headers.get('content-type')).toBe('application/json');
+      expect(listResponse.headers.get('content-language')).toBe('en');
 
       listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
       expect(listRequests).toHaveLength(1);
@@ -217,7 +217,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
       expectTypeOf(listRequest.response.headers).toEqualTypeOf<HttpHeaders<UserListResponseHeaders>>();
       expect(listRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(listRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(listRequest.response.headers.get('content-language')).toBe('en');
       expect(listRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
@@ -533,7 +533,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
   describe('Restrictions', () => {
     it('should support intercepting GET requests having headers restrictions', async () => {
       type UserListHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -553,7 +553,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
           interceptor
             .get('/users')
             .with({
-              headers: { 'content-type': 'application/json' },
+              headers: { 'content-language': 'en' },
             })
             .with((request) => {
               expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
@@ -578,7 +578,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         expect(listRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<UserListHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -603,7 +603,7 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         expect(listRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET', headers });
         await expectFetchError(listPromise);

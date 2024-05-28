@@ -166,7 +166,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
       accept?: string;
     }>;
     type UserHeadResponseHeaders = HttpSchema.Headers<{
-      'content-type'?: `application/${string}`;
+      'content-language'?: string;
       'cache-control'?: string;
     }>;
 
@@ -195,7 +195,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
           return {
             status: 200,
             headers: {
-              'content-type': 'application/json',
+              'content-language': 'en',
               'cache-control': 'no-cache',
             },
           };
@@ -226,7 +226,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       expectTypeOf(headRequest.response.headers).toEqualTypeOf<HttpHeaders<UserHeadResponseHeaders>>();
       expect(headRequest.response.headers).toBeInstanceOf(HttpHeaders);
-      expect(headRequest.response.headers.get('content-type')).toBe('application/json');
+      expect(headRequest.response.headers.get('content-language')).toBe('en');
       expect(headRequest.response.headers.get('cache-control')).toBe('no-cache');
     });
   });
@@ -514,7 +514,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
   describe('Restrictions', () => {
     it('should support intercepting HEAD requests having headers restrictions', async () => {
       type UserHeadHeaders = HttpSchema.Headers<{
-        'content-type'?: string;
+        'content-language'?: string;
         accept?: string;
       }>;
 
@@ -533,7 +533,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         const headHandler = interceptor
           .head('/users')
           .with({
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-language': 'en' },
           })
           .with((request) => {
             expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserHeadHeaders>>();
@@ -555,7 +555,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         expect(headRequests).toHaveLength(0);
 
         const headers = new HttpHeaders<UserHeadHeaders>({
-          'content-type': 'application/json',
+          'content-language': 'en',
           accept: 'application/json',
         });
 
@@ -581,7 +581,7 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         expect(headRequests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
-        headers.set('content-type', 'text/plain');
+        headers.set('content-language', 'pt');
 
         headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD', headers });
         await expectFetchError(headPromise);
