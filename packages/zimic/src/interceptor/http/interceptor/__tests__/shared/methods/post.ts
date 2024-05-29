@@ -33,14 +33,8 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
   type UserCreationBody = Omit<User, 'id'>;
 
   const users: User[] = [
-    {
-      id: crypto.randomUUID(),
-      name: 'User 1',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'User 2',
-    },
+    { id: crypto.randomUUID(), name: 'User 1' },
+    { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
   let baseURL: URL;
@@ -464,105 +458,6 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
 
       expectTypeOf(errorCreationRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorCreationRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
-    });
-  });
-
-  describe('Dynamic paths', () => {
-    it('should support intercepting POST requests with a dynamic path', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          POST: {
-            response: {
-              201: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const genericCreationHandler = await promiseIfRemote(
-          interceptor.post('/users/:id').respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({ id: '1' });
-
-            return {
-              status: 201,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(genericCreationHandler).toBeInstanceOf(Handler);
-
-        let genericCreationRequests = await promiseIfRemote(genericCreationHandler.requests(), interceptor);
-        expect(genericCreationRequests).toHaveLength(0);
-
-        const genericCreationResponse = await fetch(joinURL(baseURL, `/users/${1}`), { method: 'POST' });
-        expect(genericCreationResponse.status).toBe(201);
-
-        const genericCreatedUser = (await genericCreationResponse.json()) as User;
-        expect(genericCreatedUser).toEqual(users[0]);
-
-        genericCreationRequests = await promiseIfRemote(genericCreationHandler.requests(), interceptor);
-        expect(genericCreationRequests).toHaveLength(1);
-        const [genericCreationRequest] = genericCreationRequests;
-        expect(genericCreationRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(genericCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(genericCreationRequest.pathParams).toEqual({ id: '1' });
-
-        expectTypeOf(genericCreationRequest.body).toEqualTypeOf<null>();
-        expect(genericCreationRequest.body).toBe(null);
-
-        expectTypeOf(genericCreationRequest.response.status).toEqualTypeOf<201>();
-        expect(genericCreationRequest.response.status).toEqual(201);
-
-        expectTypeOf(genericCreationRequest.response.body).toEqualTypeOf<User>();
-        expect(genericCreationRequest.response.body).toEqual(users[0]);
-
-        await promiseIfRemote(genericCreationHandler.bypass(), interceptor);
-
-        const specificCreationHandler = await promiseIfRemote(
-          interceptor.post(`/users/${1}`).respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({});
-
-            return {
-              status: 201,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(specificCreationHandler).toBeInstanceOf(Handler);
-
-        let specificCreationRequests = await promiseIfRemote(specificCreationHandler.requests(), interceptor);
-        expect(specificCreationRequests).toHaveLength(0);
-
-        const specificCreationResponse = await fetch(joinURL(baseURL, `/users/${1}`), { method: 'POST' });
-        expect(specificCreationResponse.status).toBe(201);
-
-        const specificCreatedUser = (await specificCreationResponse.json()) as User;
-        expect(specificCreatedUser).toEqual(users[0]);
-
-        specificCreationRequests = await promiseIfRemote(specificCreationHandler.requests(), interceptor);
-        expect(specificCreationRequests).toHaveLength(1);
-        const [specificCreationRequest] = specificCreationRequests;
-        expect(specificCreationRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(specificCreationRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(specificCreationRequest.pathParams).toEqual({});
-
-        expectTypeOf(specificCreationRequest.body).toEqualTypeOf<null>();
-        expect(specificCreationRequest.body).toBe(null);
-
-        expectTypeOf(specificCreationRequest.response.status).toEqualTypeOf<201>();
-        expect(specificCreationRequest.response.status).toEqual(201);
-
-        expectTypeOf(specificCreationRequest.response.body).toEqualTypeOf<User>();
-        expect(specificCreationRequest.response.body).toEqual(users[0]);
-
-        const unmatchedCreationPromise = fetch(joinURL(baseURL, `/users/${2}`), { method: 'POST' });
-        await expectFetchError(unmatchedCreationPromise);
-      });
     });
   });
 

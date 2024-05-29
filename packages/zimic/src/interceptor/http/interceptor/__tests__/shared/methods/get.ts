@@ -31,14 +31,8 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
   }>;
 
   const users: User[] = [
-    {
-      id: crypto.randomUUID(),
-      name: 'User 1',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'User 2',
-    },
+    { id: crypto.randomUUID(), name: 'User 1' },
+    { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
   let baseURL: URL;
@@ -428,105 +422,6 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
 
       expectTypeOf(errorListRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorListRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
-    });
-  });
-
-  describe('Dynamic paths', () => {
-    it('should support intercepting GET requests with a dynamic path', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          GET: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const genericGetHandler = await promiseIfRemote(
-          interceptor.get('/users/:id').respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({ id: '1' });
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(genericGetHandler).toBeInstanceOf(Handler);
-
-        let genericGetRequests = await promiseIfRemote(genericGetHandler.requests(), interceptor);
-        expect(genericGetRequests).toHaveLength(0);
-
-        const genericGetResponse = await fetch(joinURL(baseURL, `/users/${1}`), { method: 'GET' });
-        expect(genericGetResponse.status).toBe(200);
-
-        const genericFetchedUser = (await genericGetResponse.json()) as User;
-        expect(genericFetchedUser).toEqual(users[0]);
-
-        genericGetRequests = await promiseIfRemote(genericGetHandler.requests(), interceptor);
-        expect(genericGetRequests).toHaveLength(1);
-        const [genericGetRequest] = genericGetRequests;
-        expect(genericGetRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(genericGetRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(genericGetRequest.pathParams).toEqual({ id: '1' });
-
-        expectTypeOf(genericGetRequest.body).toEqualTypeOf<null>();
-        expect(genericGetRequest.body).toBe(null);
-
-        expectTypeOf(genericGetRequest.response.status).toEqualTypeOf<200>();
-        expect(genericGetRequest.response.status).toEqual(200);
-
-        expectTypeOf(genericGetRequest.response.body).toEqualTypeOf<User>();
-        expect(genericGetRequest.response.body).toEqual(users[0]);
-
-        await promiseIfRemote(genericGetHandler.bypass(), interceptor);
-
-        const specificGetHandler = await promiseIfRemote(
-          interceptor.get(`/users/${1}`).respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({});
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(specificGetHandler).toBeInstanceOf(Handler);
-
-        let specificGetRequests = await promiseIfRemote(specificGetHandler.requests(), interceptor);
-        expect(specificGetRequests).toHaveLength(0);
-
-        const specificGetResponse = await fetch(joinURL(baseURL, `/users/${1}`), { method: 'GET' });
-        expect(specificGetResponse.status).toBe(200);
-
-        const specificFetchedUser = (await specificGetResponse.json()) as User;
-        expect(specificFetchedUser).toEqual(users[0]);
-
-        specificGetRequests = await promiseIfRemote(specificGetHandler.requests(), interceptor);
-        expect(specificGetRequests).toHaveLength(1);
-        const [specificGetRequest] = specificGetRequests;
-        expect(specificGetRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(specificGetRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(specificGetRequest.pathParams).toEqual({});
-
-        expectTypeOf(specificGetRequest.body).toEqualTypeOf<null>();
-        expect(specificGetRequest.body).toBe(null);
-
-        expectTypeOf(specificGetRequest.response.status).toEqualTypeOf<200>();
-        expect(specificGetRequest.response.status).toEqual(200);
-
-        expectTypeOf(specificGetRequest.response.body).toEqualTypeOf<User>();
-        expect(specificGetRequest.response.body).toEqual(users[0]);
-
-        const unmatchedGetPromise = fetch(joinURL(baseURL, `/users/${2}`), { method: 'GET' });
-        await expectFetchError(unmatchedGetPromise);
-      });
     });
   });
 

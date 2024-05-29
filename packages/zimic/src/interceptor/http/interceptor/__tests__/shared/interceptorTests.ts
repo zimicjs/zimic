@@ -8,8 +8,9 @@ import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
+import { declareBodyHttpInterceptorTests } from './bodies';
 import { declareDeclareHttpInterceptorTests } from './default';
-import { declareDefaultMethodHttpInterceptorTests } from './methods/default';
+import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -75,11 +76,15 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       declareBaseURLHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Methods', () => {
-      describe('Default', async () => {
-        await declareDefaultMethodHttpInterceptorTests(runtimeOptions);
-      });
+    describe('Bodies', async () => {
+      await declareBodyHttpInterceptorTests(runtimeOptions);
+    });
 
+    describe('Dynamic paths', async () => {
+      await declareDynamicPathsHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Methods', () => {
       const methodTestFactories: Record<HttpMethod, () => PossiblePromise<void>> = {
         GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
         POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),

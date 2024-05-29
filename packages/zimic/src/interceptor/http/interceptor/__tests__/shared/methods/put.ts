@@ -31,14 +31,8 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
   }>;
 
   const users: User[] = [
-    {
-      id: crypto.randomUUID(),
-      name: 'User 1',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'User 2',
-    },
+    { id: crypto.randomUUID(), name: 'User 1' },
+    { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
   let baseURL: URL;
@@ -443,105 +437,6 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
 
       expectTypeOf(errorUpdateRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorUpdateRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
-    });
-  });
-
-  describe('Dynamic paths', () => {
-    it('should support intercepting PUT requests with a dynamic path', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          PUT: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const genericUpdateHandler = await promiseIfRemote(
-          interceptor.put('/users/:id').respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({ id: users[0].id });
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(genericUpdateHandler).toBeInstanceOf(Handler);
-
-        let genericUpdateRequests = await promiseIfRemote(genericUpdateHandler.requests(), interceptor);
-        expect(genericUpdateRequests).toHaveLength(0);
-
-        const genericUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-        expect(genericUpdateResponse.status).toBe(200);
-
-        const genericUpdatedUser = (await genericUpdateResponse.json()) as User;
-        expect(genericUpdatedUser).toEqual(users[0]);
-
-        genericUpdateRequests = await promiseIfRemote(genericUpdateHandler.requests(), interceptor);
-        expect(genericUpdateRequests).toHaveLength(1);
-        const [genericUpdateRequest] = genericUpdateRequests;
-        expect(genericUpdateRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(genericUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(genericUpdateRequest.pathParams).toEqual({ id: users[0].id });
-
-        expectTypeOf(genericUpdateRequest.body).toEqualTypeOf<null>();
-        expect(genericUpdateRequest.body).toBe(null);
-
-        expectTypeOf(genericUpdateRequest.response.status).toEqualTypeOf<200>();
-        expect(genericUpdateRequest.response.status).toEqual(200);
-
-        expectTypeOf(genericUpdateRequest.response.body).toEqualTypeOf<User>();
-        expect(genericUpdateRequest.response.body).toEqual(users[0]);
-
-        await promiseIfRemote(genericUpdateHandler.bypass(), interceptor);
-
-        const specificUpdateHandler = await promiseIfRemote(
-          interceptor.put(`/users/${users[0].id}`).respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({});
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(specificUpdateHandler).toBeInstanceOf(Handler);
-
-        let specificUpdateRequests = await promiseIfRemote(specificUpdateHandler.requests(), interceptor);
-        expect(specificUpdateRequests).toHaveLength(0);
-
-        const specificUpdateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-        expect(specificUpdateResponse.status).toBe(200);
-
-        const specificUpdatedUser = (await specificUpdateResponse.json()) as User;
-        expect(specificUpdatedUser).toEqual(users[0]);
-
-        specificUpdateRequests = await promiseIfRemote(specificUpdateHandler.requests(), interceptor);
-        expect(specificUpdateRequests).toHaveLength(1);
-        const [specificUpdateRequest] = specificUpdateRequests;
-        expect(specificUpdateRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(specificUpdateRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(specificUpdateRequest.pathParams).toEqual({});
-
-        expectTypeOf(specificUpdateRequest.body).toEqualTypeOf<null>();
-        expect(specificUpdateRequest.body).toBe(null);
-
-        expectTypeOf(specificUpdateRequest.response.status).toEqualTypeOf<200>();
-        expect(specificUpdateRequest.response.status).toEqual(200);
-
-        expectTypeOf(specificUpdateRequest.response.body).toEqualTypeOf<User>();
-        expect(specificUpdateRequest.response.body).toEqual(users[0]);
-
-        const unmatchedUpdatePromise = fetch(joinURL(baseURL, `/users/${users[1].id}`), { method: 'PUT' });
-        await expectFetchError(unmatchedUpdatePromise);
-      });
     });
   });
 

@@ -31,14 +31,8 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
   }>;
 
   const users: User[] = [
-    {
-      id: crypto.randomUUID(),
-      name: 'User 1',
-    },
-    {
-      id: crypto.randomUUID(),
-      name: 'User 2',
-    },
+    { id: crypto.randomUUID(), name: 'User 1' },
+    { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
   let baseURL: URL;
@@ -443,105 +437,6 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
 
       expectTypeOf(errorDeletionRequest.response.body).toEqualTypeOf<ServerErrorResponseBody>();
       expect(errorDeletionRequest.response.body).toEqual<ServerErrorResponseBody>({ message: 'Internal server error' });
-    });
-  });
-
-  describe('Dynamic paths', () => {
-    it('should support intercepting DELETE requests with a dynamic path', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          DELETE: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const genericDeletionHandler = await promiseIfRemote(
-          interceptor.delete('/users/:id').respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({ id: users[0].id });
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(genericDeletionHandler).toBeInstanceOf(Handler);
-
-        let genericDeletionRequests = await promiseIfRemote(genericDeletionHandler.requests(), interceptor);
-        expect(genericDeletionRequests).toHaveLength(0);
-
-        const genericDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        expect(genericDeletionResponse.status).toBe(200);
-
-        const genericDeletedUser = (await genericDeletionResponse.json()) as User;
-        expect(genericDeletedUser).toEqual(users[0]);
-
-        genericDeletionRequests = await promiseIfRemote(genericDeletionHandler.requests(), interceptor);
-        expect(genericDeletionRequests).toHaveLength(1);
-        const [genericDeletionRequest] = genericDeletionRequests;
-        expect(genericDeletionRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(genericDeletionRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(genericDeletionRequest.pathParams).toEqual({ id: users[0].id });
-
-        expectTypeOf(genericDeletionRequest.body).toEqualTypeOf<null>();
-        expect(genericDeletionRequest.body).toBe(null);
-
-        expectTypeOf(genericDeletionRequest.response.status).toEqualTypeOf<200>();
-        expect(genericDeletionRequest.response.status).toEqual(200);
-
-        expectTypeOf(genericDeletionRequest.response.body).toEqualTypeOf<User>();
-        expect(genericDeletionRequest.response.body).toEqual(users[0]);
-
-        await promiseIfRemote(genericDeletionHandler.bypass(), interceptor);
-
-        const specificDeletionHandler = await promiseIfRemote(
-          interceptor.delete(`/users/${users[0].id}`).respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({});
-
-            return {
-              status: 200,
-              body: users[0],
-            };
-          }),
-          interceptor,
-        );
-        expect(specificDeletionHandler).toBeInstanceOf(Handler);
-
-        let specificDeletionRequests = await promiseIfRemote(specificDeletionHandler.requests(), interceptor);
-        expect(specificDeletionRequests).toHaveLength(0);
-
-        const specificDeletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        expect(specificDeletionResponse.status).toBe(200);
-
-        const specificDeletedUser = (await specificDeletionResponse.json()) as User;
-        expect(specificDeletedUser).toEqual(users[0]);
-
-        specificDeletionRequests = await promiseIfRemote(specificDeletionHandler.requests(), interceptor);
-        expect(specificDeletionRequests).toHaveLength(1);
-        const [specificDeletionRequest] = specificDeletionRequests;
-        expect(specificDeletionRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(specificDeletionRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(specificDeletionRequest.pathParams).toEqual({});
-
-        expectTypeOf(specificDeletionRequest.body).toEqualTypeOf<null>();
-        expect(specificDeletionRequest.body).toBe(null);
-
-        expectTypeOf(specificDeletionRequest.response.status).toEqualTypeOf<200>();
-        expect(specificDeletionRequest.response.status).toEqual(200);
-
-        expectTypeOf(specificDeletionRequest.response.body).toEqualTypeOf<User>();
-        expect(specificDeletionRequest.response.body).toEqual(users[0]);
-
-        const unmatchedDeletionPromise = fetch(joinURL(baseURL, `/users/${2}`), { method: 'DELETE' });
-        await expectFetchError(unmatchedDeletionPromise);
-      });
     });
   });
 

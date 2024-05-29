@@ -39,10 +39,10 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
 
-    Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
+    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
-    overridesPreflightResponse = options.type === 'remote';
-    numberOfRequestsIncludingPrefetch = platform === 'browser' && options.type === 'remote' ? 2 : 1;
+    overridesPreflightResponse = type === 'remote';
+    numberOfRequestsIncludingPrefetch = platform === 'browser' && type === 'remote' ? 2 : 1;
   });
 
   it('should support intercepting OPTIONS requests with a static response', async () => {
@@ -285,7 +285,7 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       const optionsPromise = fetch(joinURL(baseURL, '/filters'), { method: 'OPTIONS' });
 
-      if (options.type === 'remote' && platform === 'browser') {
+      if (type === 'remote' && platform === 'browser') {
         await expectFetchError(optionsPromise);
       } else {
         const optionsResponse = await optionsPromise;
@@ -437,101 +437,6 @@ export function declareOptionsHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       expectTypeOf(optionsWithMessageRequest.response.body).toEqualTypeOf<MessageResponseBody>();
       expect(optionsWithMessageRequest.response.body).toEqual<MessageResponseBody>({ message: 'ok' });
-    });
-  });
-
-  describe('Dynamic paths', () => {
-    it('should support intercepting OPTIONS requests with a dynamic path', async () => {
-      await usingHttpInterceptor<{
-        '/filters/:id': {
-          OPTIONS: {
-            response: {
-              200: { headers: AccessControlHeaders };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const genericOptionsHandler = await promiseIfRemote(
-          interceptor.options('/filters/:id').respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({ id: '1' });
-
-            return {
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            };
-          }),
-          interceptor,
-        );
-        expect(genericOptionsHandler).toBeInstanceOf(Handler);
-
-        let genericOptionsRequests = await promiseIfRemote(genericOptionsHandler.requests(), interceptor);
-        expect(genericOptionsRequests).toHaveLength(0);
-
-        const genericOptionsResponse = await fetch(joinURL(baseURL, `/filters/${1}`), { method: 'OPTIONS' });
-        expect(genericOptionsResponse.status).toBe(200);
-
-        genericOptionsRequests = await promiseIfRemote(genericOptionsHandler.requests(), interceptor);
-        expect(genericOptionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        const genericOptionsRequest = genericOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
-        expect(genericOptionsRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(genericOptionsRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(genericOptionsRequest.pathParams).toEqual({ id: '1' });
-
-        expectTypeOf(genericOptionsRequest.body).toEqualTypeOf<null>();
-        expect(genericOptionsRequest.body).toBe(null);
-
-        expectTypeOf(genericOptionsRequest.response.status).toEqualTypeOf<200>();
-        expect(genericOptionsRequest.response.status).toEqual(200);
-
-        expectTypeOf(genericOptionsRequest.response.body).toEqualTypeOf<null>();
-        expect(genericOptionsRequest.response.body).toBe(null);
-
-        await promiseIfRemote(genericOptionsHandler.bypass(), interceptor);
-
-        const specificOptionsHandler = await promiseIfRemote(
-          interceptor.options(`/filters/${1}`).respond((request) => {
-            expectTypeOf(request.pathParams).toEqualTypeOf<{ id: string }>();
-            expect(request.pathParams).toEqual({});
-
-            return {
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            };
-          }),
-          interceptor,
-        );
-        expect(specificOptionsHandler).toBeInstanceOf(Handler);
-
-        let specificOptionsRequests = await promiseIfRemote(specificOptionsHandler.requests(), interceptor);
-        expect(specificOptionsRequests).toHaveLength(0);
-
-        const specificOptionsResponse = await fetch(joinURL(baseURL, `/filters/${1}`), { method: 'OPTIONS' });
-        expect(specificOptionsResponse.status).toBe(200);
-
-        specificOptionsRequests = await promiseIfRemote(specificOptionsHandler.requests(), interceptor);
-        expect(specificOptionsRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        const specificOptionsRequest = specificOptionsRequests[numberOfRequestsIncludingPrefetch - 1];
-        expect(specificOptionsRequest).toBeInstanceOf(Request);
-
-        expectTypeOf(specificOptionsRequest.pathParams).toEqualTypeOf<{ id: string }>();
-        expect(specificOptionsRequest.pathParams).toEqual({});
-
-        expectTypeOf(specificOptionsRequest.body).toEqualTypeOf<null>();
-        expect(specificOptionsRequest.body).toBe(null);
-
-        expectTypeOf(specificOptionsRequest.response.status).toEqualTypeOf<200>();
-        expect(specificOptionsRequest.response.status).toEqual(200);
-
-        expectTypeOf(specificOptionsRequest.response.body).toEqualTypeOf<null>();
-        expect(specificOptionsRequest.response.body).toBe(null);
-
-        const unmatchedOptionsPromise = fetch(joinURL(baseURL, `/filters/${2}`), { method: 'OPTIONS' });
-        await expectFetchErrorOrPreflightResponse(unmatchedOptionsPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
-      });
     });
   });
 
