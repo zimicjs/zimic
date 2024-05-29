@@ -1,10 +1,20 @@
 import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify } from '@/types/utils';
 
+import { HttpFormDataSchema } from '../formData/types';
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
 
-export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
+export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
+export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[number];
+
+export const HTTP_METHODS_WITHOUT_REQUEST_BODY = Object.freeze(['GET', 'HEAD', 'OPTIONS'] as const);
+export type HttpMethodWithoutRequestBody = (typeof HTTP_METHODS_WITHOUT_REQUEST_BODY)[number];
+
+export const HTTP_METHODS = Object.freeze([
+  ...HTTP_METHODS_WITH_REQUEST_BODY,
+  ...HTTP_METHODS_WITHOUT_REQUEST_BODY,
+] as const);
 /**
  * A type representing the currently supported
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
@@ -131,6 +141,8 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
+
+  export type FormData<Schema extends HttpFormDataSchema> = Schema;
 }
 
 /**

@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { HttpResponse as MSWHttpResponse } from 'msw';
 
+import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { HttpResponse, HttpRequest, HttpBody } from '@/http/types/requests';
@@ -304,36 +305,41 @@ abstract class HttpInterceptorWorker {
   static async parseRawBody<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
     const contentType = resource.headers.get('content-type');
 
-    if (contentType) {
-      if (contentType.startsWith('application/json')) {
-        return this.parseRawBodyAsJSON<Body>(resource);
-      }
-      if (contentType.startsWith('multipart/form-data')) {
-        return this.parseRawBodyAsFormData<Body>(resource);
-      }
-      if (contentType.startsWith('application/x-www-form-urlencoded')) {
-        return this.parseRawBodyAsSearchParams<Body>(resource);
-      }
-      if (contentType.startsWith('text/')) {
-        return this.parseRawBodyAsText<Body>(resource);
-      }
-      if (
-        contentType.startsWith('application/octet-stream') ||
-        contentType.startsWith('image/') ||
-        contentType.startsWith('audio/') ||
-        contentType.startsWith('font/') ||
-        contentType.startsWith('video/')
-      ) {
-        return this.parseRawBodyAsBlob<Body>(resource);
-      }
-    }
-
-    const resourceClone = resource.clone();
-
     try {
-      return await this.parseRawBodyAsJSON<Body>(resource);
-    } catch {
-      return this.parseRawBodyAsText<Body>(resourceClone);
+      if (contentType) {
+        if (contentType.startsWith('application/json')) {
+          return await this.parseRawBodyAsJSON<Body>(resource);
+        }
+        if (contentType.startsWith('multipart/form-data')) {
+          return await this.parseRawBodyAsFormData<Body>(resource);
+        }
+        if (contentType.startsWith('application/x-www-form-urlencoded')) {
+          return await this.parseRawBodyAsSearchParams<Body>(resource);
+        }
+        if (contentType.startsWith('text/')) {
+          return await this.parseRawBodyAsText<Body>(resource);
+        }
+        if (
+          contentType.startsWith('application/octet-stream') ||
+          contentType.startsWith('image/') ||
+          contentType.startsWith('audio/') ||
+          contentType.startsWith('font/') ||
+          contentType.startsWith('video/')
+        ) {
+          return await this.parseRawBodyAsBlob<Body>(resource);
+        }
+      }
+
+      const resourceClone = resource.clone();
+
+      try {
+        return await this.parseRawBodyAsJSON<Body>(resource);
+      } catch {
+        return await this.parseRawBodyAsText<Body>(resourceClone);
+      }
+    } catch (error) {
+      console.error(error);
+      return null;
     }
   }
 
@@ -362,7 +368,13 @@ abstract class HttpInterceptorWorker {
     const resourceClone = resource.clone();
 
     try {
-      const bodyAsFormData = await resource.formData();
+      const bodyAsRawFormData = await resource.formData();
+
+      const bodyAsFormData = new HttpFormData();
+      for (const [key, value] of bodyAsRawFormData) {
+        bodyAsFormData.append(key, value as string);
+      }
+
       return bodyAsFormData as Body;
     } catch {
       const bodyAsText = await resourceClone.text();

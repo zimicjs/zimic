@@ -9,6 +9,7 @@ import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptor
 import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareDeclareHttpInterceptorTests } from './default';
+import { declareDefaultMethodHttpInterceptorTests } from './methods/default';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -75,6 +76,10 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
     });
 
     describe('Methods', () => {
+      describe('Default', async () => {
+        await declareDefaultMethodHttpInterceptorTests(runtimeOptions);
+      });
+
       const methodTestFactories: Record<HttpMethod, () => PossiblePromise<void>> = {
         GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
         POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
