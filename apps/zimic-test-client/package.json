@@ -21,7 +21,7 @@
     "zimic0": "workspace:zimic@*"
   },
   "devDependencies": {
-    "@types/superagent": "^8.1.6",
+    "@types/superagent": "^8.1.7",
     "@vitest/browser": "1.6.0",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
