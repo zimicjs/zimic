@@ -46,8 +46,8 @@ importers:
         version: link:../../packages/zimic
     devDependencies:
       '@types/superagent':
-        specifier: ^8.1.6
-        version: 8.1.6
+        specifier: ^8.1.7
+        version: 8.1.7
       '@vitest/browser':
         specifier: 1.6.0
         version: 1.6.0(playwright@1.44.1)(vitest@1.6.0)
@@ -1732,8 +1732,8 @@ packages:
   '@types/statuses@2.0.5':
     resolution: {integrity: sha512-jmIUGWrAiwu3dZpxntxieC+1n/5c3mjrImkmOSQ2NC5uP6cYO4aAZDdSmRcI5C1oiTmqlZGHC+/NmJrKogbP5A==}
 
-  '@types/superagent@8.1.6':
-    resolution: {integrity: sha512-yzBOv+6meEHSzV2NThYYOA6RtqvPr3Hbob9ZLp3i07SH27CrYVfm8CrF7ydTmidtelsFiKx2I4gZAiAOamGgvQ==}
+  '@types/superagent@8.1.7':
+    resolution: {integrity: sha512-NmIsd0Yj4DDhftfWvvAku482PZum4DBW7U51OvS8gvOkDDY0WT1jsVyDV3hK+vplrsYw8oDwi9QxOM7U68iwww==}
 
   '@types/supertest@6.0.2':
     resolution: {integrity: sha512-137ypx2lk/wTQbW6An6safu9hXmajAifU/s7szAHLN/FeIm5w7yR0Wkl9fdJMRSHwOn4HLAI0DaB2TOORuhPDg==}
@@ -6240,7 +6240,7 @@ snapshots:
 
   '@types/statuses@2.0.5': {}
 
-  '@types/superagent@8.1.6':
+  '@types/superagent@8.1.7':
     dependencies:
       '@types/cookiejar': 2.1.5
       '@types/methods': 1.1.4
@@ -6249,7 +6249,7 @@ snapshots:
   '@types/supertest@6.0.2':
     dependencies:
       '@types/methods': 1.1.4
-      '@types/superagent': 8.1.6
+      '@types/superagent': 8.1.7
 
   '@types/tough-cookie@4.0.5': {}
 
