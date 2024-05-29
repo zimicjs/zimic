@@ -8,13 +8,13 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "fastify": "4.23.2",
-    "zod": "^3.22.4"
+    "fastify": "4.27.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.2",
-    "supertest": "^6.3.4",
-    "typescript": "^5.4.3",
+    "supertest": "^7.0.0",
+    "typescript": "^5.4.5",
     "vitest": "1.6.0",
     "zimic": "latest"
   }

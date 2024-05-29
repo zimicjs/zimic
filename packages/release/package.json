@@ -30,23 +30,23 @@
     "deps:install": "pnpm install --filter @zimic/release"
   },
   "dependencies": {
-    "fs-extra": "^10.1.0",
+    "fs-extra": "^11.2.0",
     "yargs": "^17.7.2",
-    "zod": "^3.22.4",
+    "zod": "^3.23.8",
     "zx": "^4.3.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.12.12",
     "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "dotenv-cli": "^7.3.0",
-    "tsup": "^8.0.1",
-    "tsx": "^4.7.0",
-    "typescript": "^5.4.3",
+    "dotenv-cli": "^7.4.2",
+    "tsup": "^8.0.2",
+    "tsx": "^4.11.0",
+    "typescript": "^5.4.5",
     "vitest": "1.6.0"
   }
 }

@@ -27,12 +27,12 @@
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "axios": "^1.6.8",
-    "dotenv-cli": "^7.3.0",
+    "axios": "^1.7.2",
+    "dotenv-cli": "^7.4.2",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.42.1",
-    "superagent": "^8.1.2",
-    "typescript": "^5.4.3",
+    "playwright": "^1.44.1",
+    "superagent": "^9.0.2",
+    "typescript": "^5.4.5",
     "vitest": "1.6.0"
   }
 }
