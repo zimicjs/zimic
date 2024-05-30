@@ -423,7 +423,7 @@ abstract class HttpInterceptorWorker {
 
     logWithPrefix(
       [
-        `${action === 'bypass' ? 'Warning:' : 'Error:'} Request did not match any handlers and was ` +
+        `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
           `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
         `${request.method} ${request.url}`,
         '\n    Headers:',
