@@ -72,12 +72,19 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const handler = this.httpHandlers.get(handlerId);
     const request = deserializeRequest(serializedRequest);
-    const rawResponse = (await handler?.createResponse({ request })) ?? null;
-    const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
 
-    if (response) {
-      return { response: await serializeResponse(response) };
-    } else {
+    try {
+      const rawResponse = (await handler?.createResponse({ request })) ?? null;
+      const response = rawResponse && request.method === 'HEAD' ? new Response(null, rawResponse) : rawResponse;
+
+      if (response) {
+        return { response: await serializeResponse(response) };
+      } else {
+        await super.handleUnhandledRequest(request);
+        return { response: null };
+      }
+    } catch (error) {
+      console.error(error);
       await super.handleUnhandledRequest(request);
       return { response: null };
     }

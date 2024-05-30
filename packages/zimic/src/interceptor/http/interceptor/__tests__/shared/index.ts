@@ -73,7 +73,7 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       declareBaseURLHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Handler', () => {
+    describe('Handlers', () => {
       declareHandlerHttpInterceptorTests(runtimeOptions);
     });
 
