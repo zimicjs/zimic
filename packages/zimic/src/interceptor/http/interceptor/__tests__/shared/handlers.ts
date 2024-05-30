@@ -38,20 +38,20 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };
     }>;
 
     it(`should support intercepting ${method} requests with a static response`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -88,13 +88,13 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     it(`should support intercepting ${method} requests with a computed response`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -141,20 +141,20 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         accept?: string;
       }>;
 
-      type UserMethodSchema = HttpSchema.Method<{
+      type MethodSchema = HttpSchema.Method<{
         request: { headers: UserRequestHeaders };
         response: { 200: { headers: AccessControlHeaders } };
       }>;
 
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -207,20 +207,20 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         tag?: string;
       }>;
 
-      type UserMethodSchema = HttpSchema.Method<{
+      type MethodSchema = HttpSchema.Method<{
         request: { searchParams: UserSearchParams };
         response: { 200: { headers: AccessControlHeaders } };
       }>;
 
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -258,19 +258,19 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     it(`should not intercept an ${method} request without a registered response`, async () => {
-      type UserMethodSchema = HttpSchema.Method<{
+      type MethodSchema = HttpSchema.Method<{
         response: { 200: { headers: AccessControlHeaders } };
       }>;
 
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         let fetchPromise = fetch(joinURL(baseURL, '/users'), { method });
@@ -328,7 +328,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     it(`should consider only the last declared response when intercepting ${method} requests`, async () => {
-      type UserMethodSchema = HttpSchema.Method<{
+      type MethodSchema = HttpSchema.Method<{
         response: {
           200: { headers: AccessControlHeaders };
           201: { headers: AccessControlHeaders };
@@ -337,13 +337,13 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(

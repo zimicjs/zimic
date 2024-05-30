@@ -36,7 +36,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       response: {
         200: { headers: AccessControlHeaders };
         201: { headers: AccessControlHeaders };
@@ -47,13 +47,13 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
     it(`should ignore handlers with bypassed responses when intercepting ${method} requests`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const okHandler = await promiseIfRemote(

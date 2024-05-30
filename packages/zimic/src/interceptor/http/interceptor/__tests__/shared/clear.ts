@@ -36,20 +36,20 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };
     }>;
 
     it(`should ignore all handlers after cleared when intercepting ${method} requests`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -85,13 +85,13 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     it('should support creating new handlers after cleared', async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         await promiseIfRemote(
@@ -138,13 +138,13 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
     it('should support reusing previous handlers after cleared', async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(interceptor[lowerMethod]('/users'), interceptor);

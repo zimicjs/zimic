@@ -63,17 +63,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
     describe('JSON', () => {
       it(`should try to parse the body of a ${method} request as JSON if no content type exists`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: UserJSONSchema };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -109,17 +109,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should fallback the body of a ${method} request to text if could not be parsed as JSON and no content type exists`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: string };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -155,17 +155,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should try to parse the body of a ${method} request as JSON if the body contains an unknown content type`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: UserJSONSchema };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -201,17 +201,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should fallback the body of a ${method} request to text if could not be parsed as JSON and the content type is unknown`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: string };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -247,17 +247,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should show an error and skip parsing if the body of a ${method} request is defined as JSON, but it is not valid`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: UserJSONSchema };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -300,17 +300,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
     describe('Form data', () => {
       it(`should support intercepting ${method} requests having a form data body`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: HttpFormData<UserFormDataSchema> };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -357,17 +357,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should show an error and skip parsing if the body of a ${method} request is defined as form data, but it is not valid`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: HttpFormData<UserFormDataSchema> };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -410,17 +410,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
     describe('URL search params', () => {
       it(`should support intercepting ${method} requests having a URL search params body`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: HttpSearchParams<UserSearchParamsSchema> };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -461,17 +461,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       });
 
       it(`should not show an error and not skip parsing if the body of a ${method} request is defined as URL search params, but it is not valid`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: HttpSearchParams<UserSearchParamsSchema> };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -515,17 +515,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
     describe('Plain text', () => {
       it(`should support intercepting ${method} requests having a plain text body`, async () => {
-        type UserMethodSchema = HttpSchema.Method<{
+        type MethodSchema = HttpSchema.Method<{
           request: { body: string };
           response: { 200: { body: User } };
         }>;
 
         await usingHttpInterceptor<{
           '/users/:id': {
-            POST: UserMethodSchema;
-            PUT: UserMethodSchema;
-            PATCH: UserMethodSchema;
-            DELETE: UserMethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
@@ -565,17 +565,17 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       it.each(['binary', 'image', 'audio', 'font', 'video'])(
         `should support intercepting ${method} requests having a binary body: %s`,
         async (format) => {
-          type UserMethodSchema = HttpSchema.Method<{
+          type MethodSchema = HttpSchema.Method<{
             request: { body: Blob };
             response: { 200: { body: User } };
           }>;
 
           await usingHttpInterceptor<{
             '/users/:id': {
-              POST: UserMethodSchema;
-              PUT: UserMethodSchema;
-              PATCH: UserMethodSchema;
-              DELETE: UserMethodSchema;
+              POST: MethodSchema;
+              PUT: MethodSchema;
+              PATCH: MethodSchema;
+              DELETE: MethodSchema;
             };
           }>(interceptorOptions, async (interceptor) => {
             const handler = await promiseIfRemote(

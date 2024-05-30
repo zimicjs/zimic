@@ -37,7 +37,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     });
 
     // TODO: improve handler.with() type performance
-    const lowerMethod = method.toLowerCase<'OPTIONS'>();
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     type UserRequestHeaders = HttpSchema.Headers<{
       'content-language'?: string;
@@ -48,7 +48,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       tag?: string;
     }>;
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       request: {
         headers: UserRequestHeaders;
         searchParams: UserSearchParams;
@@ -59,13 +59,13 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     it(`should support intercepting ${method} requests having headers restrictions`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -146,13 +146,13 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
     it(`should support intercepting ${method} requests having search params restrictions`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(

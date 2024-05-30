@@ -42,20 +42,20 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };
     }>;
 
     it(`should ignore all handlers after restarted when intercepting ${method} requests`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
@@ -108,13 +108,13 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
     it(`should ignore all handlers after restarted when intercepting ${method} requests, even if another interceptor is still running`, async () => {
       await usingHttpInterceptor<{
         '/users': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(

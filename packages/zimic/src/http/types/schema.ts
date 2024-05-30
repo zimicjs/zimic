@@ -11,6 +11,19 @@ export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[
 export const HTTP_METHODS_WITHOUT_REQUEST_BODY = Object.freeze(['GET', 'HEAD', 'OPTIONS'] as const);
 export type HttpMethodWithoutRequestBody = (typeof HTTP_METHODS_WITHOUT_REQUEST_BODY)[number];
 
+export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+] as const);
+export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY)[number];
+
+export const HTTP_METHODS_WITHOUT_RESPONSE_BODY = Object.freeze(['HEAD'] as const);
+export type HttpMethodWithoutResponseBody = (typeof HTTP_METHODS_WITHOUT_RESPONSE_BODY)[number];
+
 export const HTTP_METHODS = Object.freeze([
   ...HTTP_METHODS_WITH_REQUEST_BODY,
   ...HTTP_METHODS_WITHOUT_REQUEST_BODY,

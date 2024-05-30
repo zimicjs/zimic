@@ -14,6 +14,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { methodCanHaveResponseBody } from '@/utils/http';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
@@ -182,7 +183,7 @@ abstract class HttpInterceptorWorker {
     const headers = new HttpHeaders(responseDeclaration.headers);
     const status = responseDeclaration.status;
 
-    const canHaveBody = request.method !== 'HEAD' && status !== 204;
+    const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && status !== 204;
 
     const response = canHaveBody
       ? MSWHttpResponse.json(responseDeclaration.body, { headers, status })

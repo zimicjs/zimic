@@ -50,20 +50,20 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    type UserMethodSchema = HttpSchema.Method<{
+    type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };
     }>;
 
     it(`should support intercepting ${method} requests with a dynamic path`, async () => {
       await usingHttpInterceptor<{
         '/users/:id': {
-          GET: UserMethodSchema;
-          POST: UserMethodSchema;
-          PUT: UserMethodSchema;
-          PATCH: UserMethodSchema;
-          DELETE: UserMethodSchema;
-          HEAD: UserMethodSchema;
-          OPTIONS: UserMethodSchema;
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
         const genericHandler = await promiseIfRemote(
