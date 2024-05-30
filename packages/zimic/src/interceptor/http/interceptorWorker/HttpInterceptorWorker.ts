@@ -112,17 +112,21 @@ abstract class HttpInterceptorWorker {
     const action: UnhandledRequestStrategy.Action = this.type === 'local' ? 'bypass' : 'reject';
 
     if (typeof declarationOrHandler === 'function') {
-      await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, declarationOrHandler, action);
+      await HttpInterceptorWorker.logUnhandledRequestWithHandler(request, declarationOrHandler, action);
     } else if (declarationOrHandler?.log !== undefined) {
-      await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declarationOrHandler.log }, action);
+      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(
+        request,
+        { log: declarationOrHandler.log },
+        action,
+      );
     } else if (typeof defaultDeclarationOrHandler === 'function') {
-      await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
+      await HttpInterceptorWorker.logUnhandledRequestWithHandler(request, defaultDeclarationOrHandler, action);
     } else {
-      await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, defaultDeclarationOrHandler, action);
     }
   }
 
-  static async useUnhandledRequestStrategyHandler(
+  static async logUnhandledRequestWithHandler(
     request: Request,
     handler: UnhandledRequestStrategy.Handler,
     action: UnhandledRequestStrategy.Action,
@@ -140,7 +144,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  static async useStaticUnhandledStrategy(
+  static async logUnhandledRequestWithStaticStrategy(
     request: Request,
     declaration: Required<UnhandledRequestStrategy.Declaration>,
     action: UnhandledRequestStrategy.Action,

@@ -224,40 +224,36 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
     const request = normalizeNodeRequest(nodeRequest, Request);
-    const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
 
-    if (response) {
-      this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
-      await sendNodeResponse(response, nodeResponse, nodeRequest);
-      return;
-    }
+    try {
+      const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
 
-    const isUnhandledPreflightResponse = request.method === 'OPTIONS';
-
-    if (isUnhandledPreflightResponse) {
-      const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
-      this.setDefaultAccessControlHeaders(defaultPreflightResponse);
-      await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
-    }
-
-    const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
-
-    if (shouldWarnUnhandledRequest) {
-      const action: UnhandledRequestStrategy.Action = 'reject';
-
-      const declaration = this.onUnhandledRequest;
-      const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
-
-      if (declaration?.log !== undefined) {
-        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, { log: declaration.log }, action);
-      } else if (typeof defaultDeclarationOrHandler === 'function') {
-        await HttpInterceptorWorker.useUnhandledRequestStrategyHandler(request, defaultDeclarationOrHandler, action);
-      } else {
-        await HttpInterceptorWorker.useStaticUnhandledStrategy(request, defaultDeclarationOrHandler, action);
+      if (response) {
+        this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
+        await sendNodeResponse(response, nodeResponse, nodeRequest);
+        return;
       }
-    }
 
-    nodeResponse.destroy();
+      const isUnhandledPreflightResponse = request.method === 'OPTIONS';
+
+      if (isUnhandledPreflightResponse) {
+        const defaultPreflightResponse = new Response(null, { status: DEFAULT_PREFLIGHT_STATUS_CODE });
+        this.setDefaultAccessControlHeaders(defaultPreflightResponse);
+        await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
+      }
+
+      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
+      if (shouldWarnUnhandledRequest) {
+        await this.logUnhandledRequest(request);
+      }
+
+      nodeResponse.destroy();
+    } catch (error) {
+      console.error(error);
+      await this.logUnhandledRequest(request);
+
+      nodeResponse.destroy();
+    }
   };
 
   private async createResponseForRequest(request: Request) {
@@ -309,6 +305,21 @@ class InterceptorServer implements PublicInterceptorServer {
       if (value) {
         response.headers.set(key, value);
       }
+    }
+  }
+
+  private async logUnhandledRequest(request: Request) {
+    const action: UnhandledRequestStrategy.Action = 'reject';
+
+    const declaration = this.onUnhandledRequest;
+    const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
+
+    if (declaration?.log !== undefined) {
+      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, { log: declaration.log }, action);
+    } else if (typeof defaultDeclarationOrHandler === 'function') {
+      await HttpInterceptorWorker.logUnhandledRequestWithHandler(request, defaultDeclarationOrHandler, action);
+    } else {
+      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, defaultDeclarationOrHandler, action);
     }
   }
 }
