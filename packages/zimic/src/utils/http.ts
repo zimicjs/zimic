@@ -1,5 +1,13 @@
 import { Server as HttpServer } from 'http';
 
+import {
+  HTTP_METHODS_WITH_REQUEST_BODY,
+  HTTP_METHODS_WITH_RESPONSE_BODY,
+  HttpMethod,
+  HttpMethodWithRequestBody,
+  HttpMethodWithResponseBody,
+} from '@/http/types/schema';
+
 class HttpServerTimeoutError extends Error {}
 
 export class HttpServerStartTimeoutError extends HttpServerTimeoutError {
@@ -85,4 +93,12 @@ export function getHttpServerPort(server: HttpServer) {
   } else {
     return undefined;
   }
+}
+
+export function methodCanHaveRequestBody(method: HttpMethod): method is HttpMethodWithRequestBody {
+  return HTTP_METHODS_WITH_REQUEST_BODY.includes(method as HttpMethodWithRequestBody);
+}
+
+export function methodCanHaveResponseBody(method: HttpMethod): method is HttpMethodWithResponseBody {
+  return HTTP_METHODS_WITH_RESPONSE_BODY.includes(method as HttpMethodWithResponseBody);
 }

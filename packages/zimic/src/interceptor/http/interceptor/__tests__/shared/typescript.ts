@@ -115,7 +115,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
   it('should correctly type requests with headers', async () => {
     type UserListHeaders = HttpSchema.Headers<{
       accept: string;
-      'content-type': string;
+      'content-language': string;
     }>;
 
     await usingHttpInterceptor<{

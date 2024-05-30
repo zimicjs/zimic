@@ -15,6 +15,9 @@ import {
   type HttpHeadersSchema,
   type HttpHeadersSchemaTuple,
   type StrictHeaders,
+  HttpFormData,
+  type HttpFormDataSchema,
+  type StrictFormData,
   type HttpSchema,
   type HttpMethod,
   type HttpServiceSchema,
@@ -75,6 +78,13 @@ describe('Exports', () => {
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
 
+    expectTypeOf<HttpHeaders>().not.toBeAny();
+    expect(new HttpHeaders()).toBeInstanceOf(Headers);
+    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
+
     expectTypeOf<HttpSearchParams>().not.toBeAny();
     expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
     expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
@@ -82,12 +92,10 @@ describe('Exports', () => {
     expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
     expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
 
-    expectTypeOf<HttpHeaders>().not.toBeAny();
-    expect(new HttpHeaders()).toBeInstanceOf(Headers);
-    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
-    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
+    expectTypeOf<HttpFormData>().not.toBeAny();
+    expect(new HttpFormData()).toBeInstanceOf(FormData);
+    expectTypeOf<HttpFormDataSchema>().not.toBeAny();
+    expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
