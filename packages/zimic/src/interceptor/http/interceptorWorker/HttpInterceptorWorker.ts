@@ -190,7 +190,6 @@ abstract class HttpInterceptorWorker {
 
     if (
       typeof declaration.body === 'string' ||
-      declaration.body === null ||
       declaration.body === undefined ||
       declaration.body instanceof FormData ||
       declaration.body instanceof URLSearchParams ||
@@ -198,7 +197,7 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof ReadableStream ||
       declaration.body instanceof ArrayBuffer
     ) {
-      return new Response(declaration.body, { headers, status });
+      return new Response(declaration.body ?? null, { headers, status });
     }
 
     return Response.json(declaration.body, { headers, status });
@@ -373,6 +372,11 @@ abstract class HttpInterceptorWorker {
 
   private static async parseRawBodyAsSearchParams<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
     const bodyAsText = await resource.text();
+
+    if (!bodyAsText.trim()) {
+      return null;
+    }
+
     const bodyAsSearchParams = new HttpSearchParams(bodyAsText);
     return bodyAsSearchParams as Body;
   }
@@ -391,6 +395,11 @@ abstract class HttpInterceptorWorker {
       return bodyAsFormData as Body;
     } catch {
       const bodyAsText = await resourceClone.text();
+
+      if (!bodyAsText.trim()) {
+        return null;
+      }
+
       throw new InvalidFormDataError(bodyAsText);
     }
   }

@@ -28,8 +28,8 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > =
-  | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
-  | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+  | Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
+  | HttpHeaders<Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>>;
 
 /**
  * A static search params restriction to match intercepted requests.
@@ -41,8 +41,8 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > =
-  | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
-  | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+  | Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>
+  | HttpSearchParams<Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>>;
 
 /**
  * A static body restriction to match intercepted requests.
@@ -53,7 +53,7 @@ export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
+> = Default<HttpRequestBodySchema<Default<Schema[Path][Method]>>, null>;
 
 /**
  * A static restriction to match intercepted requests.

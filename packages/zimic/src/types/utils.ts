@@ -1,8 +1,8 @@
-export type Default<Type, IfEmpty = never> = undefined extends Type
+export type Default<Type, IfEmpty = never> = [undefined | void] extends [Type]
   ? IfEmpty
-  : void extends Type
-    ? IfEmpty
-    : Exclude<Type, undefined | void>;
+  : Exclude<Type, undefined | void>;
+
+export type DefaultNoExclude<Type, IfEmpty = never> = [undefined | void] extends Type ? IfEmpty : Type;
 
 export type IfAny<Type, Yes, No> = 0 extends 1 & Type ? Yes : No;
 
