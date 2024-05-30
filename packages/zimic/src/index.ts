@@ -14,7 +14,14 @@ export type {
 
 export type { HttpFormDataSchema } from './http/formData/types';
 
-export type { HttpBody, HttpRequest, HttpResponse, StrictHeaders, StrictURLSearchParams } from './http/types/requests';
+export type {
+  HttpBody,
+  HttpRequest,
+  HttpResponse,
+  StrictHeaders,
+  StrictURLSearchParams,
+  StrictFormData,
+} from './http/types/requests';
 
 export type {
   HttpSchema,

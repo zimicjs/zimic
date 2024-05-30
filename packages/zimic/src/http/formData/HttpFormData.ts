@@ -2,6 +2,10 @@ import { ArrayItemIfArray, ArrayKey, Defined, NonArrayKey, ReplaceBy } from '@/t
 
 import { HttpFormDataSchema } from './types';
 
+/**
+ * An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
+ */
 class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> extends FormData {
   constructor(form?: HTMLFormElement, submitter?: HTMLElement | null) {
     super(form, submitter);
@@ -106,6 +110,14 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     >;
   }
 
+  /**
+   * Checks if the data is equal to the other data. Equality is defined as having the same keys and values, regardless
+   * of the order of keys.
+   *
+   * @param otherData The other data to compare.
+   * @returns A promise that resolves with `true` if the data is equal to the other data, or `false` otherwise.
+   *   Important: both form data might be read while comparing.
+   */
   async equals<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
     if (!(await this.contains(otherData))) {
       return false;
@@ -121,6 +133,14 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     return true;
   }
 
+  /**
+   * Checks if the data contains the other data. This method is less strict than {@link HttpFormData.equals} and only
+   * requires that all keys and values in the other data are present in this data.
+   *
+   * @param otherData The other data to compare.
+   * @returns A promise that resolves with `true` if this data contains the other data, or `false` otherwise. Important:
+   *   both form data might be read while comparing.
+   */
   async contains<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
     for (const [key, value] of otherData.entries()) {
       const otherValue = super.get.call(this, key);

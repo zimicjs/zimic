@@ -1,6 +1,7 @@
 import { JSONValue } from '@/types/json';
 
 import HttpFormData from '../formData/HttpFormData';
+import { HttpFormDataSchema } from '../formData/types';
 import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
@@ -26,6 +27,15 @@ export type StrictHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> 
 export type StrictURLSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = Pick<
   HttpSearchParams<Schema>,
   keyof URLSearchParams
+>;
+
+/**
+ * An HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
+ * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
+ */
+export type StrictFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> = Pick<
+  HttpFormData<Schema>,
+  keyof FormData
 >;
 
 /**
