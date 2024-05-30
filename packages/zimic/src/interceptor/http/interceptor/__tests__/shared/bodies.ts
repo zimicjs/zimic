@@ -133,6 +133,114 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         });
       });
 
+      it(`should support intercepting ${method} requests having a number as JSON body`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: { body: number };
+          response: { 200: { body: number } };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<number>();
+              expect(request.body).toBe(1);
+
+              return { status: 200, body: 2 };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(1),
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = (await response.json()) as number;
+          expect(fetchedBody).toBe(2);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.body).toEqualTypeOf<number>();
+          expect(request.body).toBe(1);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<number>();
+          expect(request.response.body).toBe(2);
+        });
+      });
+
+      it(`should support intercepting ${method} requests having a boolean as JSON body`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: { body: boolean };
+          response: { 200: { body: boolean } };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<boolean>();
+              expect(request.body).toBe(true);
+
+              return { status: 200, body: false };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(true),
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = (await response.json()) as boolean;
+          expect(fetchedBody).toBe(false);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.body).toEqualTypeOf<boolean>();
+          expect(request.body).toBe(true);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<boolean>();
+          expect(request.response.body).toBe(false);
+        });
+      });
+
       it(`should try to parse the body of a ${method} request or response as JSON if no content type exists`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: {

@@ -188,10 +188,6 @@ abstract class HttpInterceptorWorker {
       return new Response(null, { headers, status });
     }
 
-    if (typeof declaration.body === 'number' || typeof declaration.body === 'boolean') {
-      return new Response(declaration.body.toString(), { headers, status });
-    }
-
     if (
       typeof declaration.body === 'string' ||
       declaration.body === null ||
