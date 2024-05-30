@@ -7,13 +7,11 @@ import { http } from '@/interceptor';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 import { verifyUnhandledRequestMessage } from '../utils';
@@ -164,125 +162,6 @@ export function declareHeadHttpInterceptorTests(options: RuntimeSharedHttpInterc
         headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
         expect(headRequests).toHaveLength(1);
       });
-    });
-  });
-
-  describe('Life cycle', () => {
-    it('should ignore all handlers after restarted when intercepting HEAD requests', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          HEAD: {
-            response: {
-              200: {};
-              204: {};
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const headHandler = await promiseIfRemote(
-          interceptor.head('/users').respond({
-            status: 200,
-          }),
-          interceptor,
-        );
-
-        let headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(0);
-
-        const headResponse = await fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-        expect(headResponse.status).toBe(200);
-
-        headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(1);
-
-        expect(interceptor.isRunning()).toBe(true);
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-
-        let headPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-          method: 'HEAD',
-          timeout: 200,
-        });
-        await expectFetchError(headPromise, { canBeAborted: true });
-
-        headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(1);
-
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-
-        headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-        await expectFetchError(headPromise);
-
-        headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(1);
-      });
-    });
-
-    it('should ignore all handlers after restarted when intercepting HEAD requests, even if another interceptor is still running', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          HEAD: {
-            response: {
-              200: {};
-              204: {};
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const headHandler = await promiseIfRemote(
-          interceptor.head('/users').respond({
-            status: 200,
-          }),
-          interceptor,
-        );
-
-        let headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(0);
-
-        const headResponse = await fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-        expect(headResponse.status).toBe(200);
-
-        headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-        expect(headRequests).toHaveLength(1);
-
-        await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          let headPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-            method: 'HEAD',
-            timeout: 200,
-          });
-          await expectFetchError(headPromise, { canBeAborted: true });
-
-          headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-          expect(headRequests).toHaveLength(1);
-
-          await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          headPromise = fetch(joinURL(baseURL, '/users'), { method: 'HEAD' });
-          await expectFetchError(headPromise);
-
-          headRequests = await promiseIfRemote(headHandler.requests(), interceptor);
-          expect(headRequests).toHaveLength(1);
-        });
-      });
-    });
-
-    it('should throw an error when trying to create a HEAD request handler if not running', async () => {
-      const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
-
-      await expect(async () => {
-        await interceptor.head('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
     });
   });
 

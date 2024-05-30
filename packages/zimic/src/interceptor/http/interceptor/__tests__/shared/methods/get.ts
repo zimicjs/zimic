@@ -9,13 +9,11 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 import { verifyUnhandledRequestMessage } from '../utils';
@@ -206,125 +204,6 @@ export async function declareGetHttpInterceptorTests(options: RuntimeSharedHttpI
         listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
         expect(listRequests).toHaveLength(1);
       });
-    });
-  });
-
-  describe('Life cycle', () => {
-    it('should ignore all handlers after restarted when intercepting GET requests', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: {
-            response: {
-              200: { body: User[] };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const listHandler = await promiseIfRemote(
-          interceptor.get('/users').respond({
-            status: 200,
-            body: users,
-          }),
-          interceptor,
-        );
-
-        let listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(0);
-
-        const listResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(listResponse.status).toBe(200);
-
-        listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(1);
-
-        expect(interceptor.isRunning()).toBe(true);
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-
-        let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-          method: 'GET',
-          timeout: 200,
-        });
-        await expectFetchError(listPromise, { canBeAborted: true });
-
-        listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(1);
-
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-
-        listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        await expectFetchError(listPromise);
-
-        listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(1);
-      });
-    });
-
-    it('should ignore all handlers after restarted when intercepting GET requests, even if another interceptor is still running', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: {
-            response: {
-              200: { body: User[] };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const listHandler = await promiseIfRemote(
-          interceptor.get('/users').respond({
-            status: 200,
-            body: users,
-          }),
-          interceptor,
-        );
-
-        let listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(0);
-
-        const listResponse = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-        expect(listResponse.status).toBe(200);
-
-        listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-        expect(listRequests).toHaveLength(1);
-
-        await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          let listPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-            method: 'GET',
-            timeout: 200,
-          });
-          await expectFetchError(listPromise, { canBeAborted: true });
-
-          listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-          expect(listRequests).toHaveLength(1);
-
-          await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          listPromise = fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-          await expectFetchError(listPromise);
-
-          listRequests = await promiseIfRemote(listHandler.requests(), interceptor);
-          expect(listRequests).toHaveLength(1);
-        });
-      });
-    });
-
-    it('should throw an error when trying to create a GET request handler if not running', async () => {
-      const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
-
-      await expect(async () => {
-        await interceptor.get('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
     });
   });
 

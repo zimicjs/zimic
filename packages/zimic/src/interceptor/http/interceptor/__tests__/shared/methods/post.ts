@@ -9,13 +9,11 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 import { verifyUnhandledRequestMessage } from '../utils';
@@ -243,125 +241,6 @@ export async function declarePostHttpInterceptorTests(options: RuntimeSharedHttp
         creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
         expect(creationRequests).toHaveLength(1);
       });
-    });
-  });
-
-  describe('Life cycle', () => {
-    it('should ignore all handlers after restarted when intercepting POST requests', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          POST: {
-            response: {
-              201: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const creationHandler = await promiseIfRemote(
-          interceptor.post('/users').respond({
-            status: 201,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(0);
-
-        const creationResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
-        expect(creationResponse.status).toBe(201);
-
-        creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(1);
-
-        expect(interceptor.isRunning()).toBe(true);
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-
-        let creationPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-          method: 'POST',
-          timeout: 200,
-        });
-        await expectFetchError(creationPromise, { canBeAborted: true });
-
-        creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(1);
-
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-
-        creationPromise = fetch(joinURL(baseURL, '/users'), { method: 'POST' });
-        await expectFetchError(creationPromise);
-
-        creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(1);
-      });
-    });
-
-    it('should ignore all handlers after restarted when intercepting POST requests, even if another interceptor is still running', async () => {
-      await usingHttpInterceptor<{
-        '/users': {
-          POST: {
-            response: {
-              201: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const creationHandler = await promiseIfRemote(
-          interceptor.post('/users').respond({
-            status: 201,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(0);
-
-        const creationResponse = await fetch(joinURL(baseURL, '/users'), { method: 'POST' });
-        expect(creationResponse.status).toBe(201);
-
-        creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-        expect(creationRequests).toHaveLength(1);
-
-        await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          let creationPromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-            method: 'POST',
-            timeout: 200,
-          });
-          await expectFetchError(creationPromise, { canBeAborted: true });
-
-          creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(1);
-
-          await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          creationPromise = fetch(joinURL(baseURL, '/users'), { method: 'POST' });
-          await expectFetchError(creationPromise);
-
-          creationRequests = await promiseIfRemote(creationHandler.requests(), interceptor);
-          expect(creationRequests).toHaveLength(1);
-        });
-      });
-    });
-
-    it('should throw an error when trying to create a POST request handler if not running', async () => {
-      const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
-
-      await expect(async () => {
-        await interceptor.post('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
     });
   });
 

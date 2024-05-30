@@ -14,6 +14,7 @@ import { declareClearHttpInterceptorTests } from './clear';
 import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareHandlerHttpInterceptorTests } from './handlers';
+import { declareLifeCycleHttpInterceptorTests } from './lifeCycle';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -97,6 +98,10 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     describe('Clear', () => {
       declareClearHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Life cycle', () => {
+      declareLifeCycleHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Methods', () => {

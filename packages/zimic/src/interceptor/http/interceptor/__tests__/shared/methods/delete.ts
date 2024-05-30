@@ -9,13 +9,11 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 import { verifyUnhandledRequestMessage } from '../utils';
@@ -279,125 +277,6 @@ export async function declareDeleteHttpInterceptorTests(options: RuntimeSharedHt
         deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
         expect(deletionRequests).toHaveLength(2);
       });
-    });
-  });
-
-  describe('Life cycle', () => {
-    it('should ignore all handlers after restarted when intercepting DELETE requests', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          DELETE: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const deletionHandler = await promiseIfRemote(
-          interceptor.delete(`/users/${users[0].id}`).respond({
-            status: 200,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(0);
-
-        const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        expect(deletionResponse.status).toBe(200);
-
-        deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(1);
-
-        expect(interceptor.isRunning()).toBe(true);
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-
-        let deletionPromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
-          method: 'DELETE',
-          timeout: 200,
-        });
-        await expectFetchError(deletionPromise, { canBeAborted: true });
-
-        deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(1);
-
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-
-        deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        await expectFetchError(deletionPromise);
-
-        deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(1);
-      });
-    });
-
-    it('should ignore all handlers after restarted when intercepting DELETE requests, even if another interceptor is still running', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          DELETE: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const deletionHandler = await promiseIfRemote(
-          interceptor.delete(`/users/${users[0].id}`).respond({
-            status: 200,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(0);
-
-        const deletionResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-        expect(deletionResponse.status).toBe(200);
-
-        deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-        expect(deletionRequests).toHaveLength(1);
-
-        await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          let deletionPromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
-            method: 'DELETE',
-            timeout: 200,
-          });
-          await expectFetchError(deletionPromise, { canBeAborted: true });
-
-          deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(1);
-
-          await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          deletionPromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'DELETE' });
-          await expectFetchError(deletionPromise);
-
-          deletionRequests = await promiseIfRemote(deletionHandler.requests(), interceptor);
-          expect(deletionRequests).toHaveLength(1);
-        });
-      });
-    });
-
-    it('should throw an error when trying to create a DELETE request handler if not running', async () => {
-      const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
-
-      await expect(async () => {
-        await interceptor.delete('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
     });
   });
 

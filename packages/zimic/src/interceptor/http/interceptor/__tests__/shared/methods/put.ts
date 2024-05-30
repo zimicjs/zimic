@@ -9,13 +9,11 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { createInternalHttpInterceptor, usingHttpInterceptor } from '@tests/utils/interceptors';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../../errors/NotStartedHttpInterceptorError';
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
 import { verifyUnhandledRequestMessage } from '../utils';
@@ -249,125 +247,6 @@ export async function declarePutHttpInterceptorTests(options: RuntimeSharedHttpI
         updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
         expect(updateRequests).toHaveLength(1);
       });
-    });
-  });
-
-  describe('Life cycle', () => {
-    it('should ignore all handlers after restarted when intercepting PUT requests', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          PUT: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const updateHandler = await promiseIfRemote(
-          interceptor.put(`/users/${users[0].id}`).respond({
-            status: 200,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(0);
-
-        const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-        expect(updateResponse.status).toBe(200);
-
-        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(1);
-
-        expect(interceptor.isRunning()).toBe(true);
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-
-        let updatePromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
-          method: 'PUT',
-          timeout: 200,
-        });
-        await expectFetchError(updatePromise, { canBeAborted: true });
-
-        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(1);
-
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-
-        updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-        await expectFetchError(updatePromise);
-
-        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(1);
-      });
-    });
-
-    it('should ignore all handlers after restarted when intercepting PUT requests, even if another interceptor is still running', async () => {
-      await usingHttpInterceptor<{
-        '/users/:id': {
-          PUT: {
-            response: {
-              200: { body: User };
-            };
-          };
-        };
-      }>(interceptorOptions, async (interceptor) => {
-        const updateHandler = await promiseIfRemote(
-          interceptor.put(`/users/${users[0].id}`).respond({
-            status: 200,
-            body: users[0],
-          }),
-          interceptor,
-        );
-
-        let updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(0);
-
-        const updateResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-        expect(updateResponse.status).toBe(200);
-
-        updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-        expect(updateRequests).toHaveLength(1);
-
-        await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          let updatePromise = fetchWithTimeout(joinURL(baseURL, `/users/${users[0].id}`), {
-            method: 'PUT',
-            timeout: 200,
-          });
-          await expectFetchError(updatePromise, { canBeAborted: true });
-
-          updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-          expect(updateRequests).toHaveLength(1);
-
-          await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
-
-          updatePromise = fetch(joinURL(baseURL, `/users/${users[0].id}`), { method: 'PUT' });
-          await expectFetchError(updatePromise);
-
-          updateRequests = await promiseIfRemote(updateHandler.requests(), interceptor);
-          expect(updateRequests).toHaveLength(1);
-        });
-      });
-    });
-
-    it('should throw an error when trying to create a PUT request handler if not running', async () => {
-      const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
-
-      await expect(async () => {
-        await interceptor.put('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
     });
   });
 
