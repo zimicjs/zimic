@@ -8,7 +8,7 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | BufferSource | ReadableStream;
+export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer | ReadableStream;
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in

@@ -17,6 +17,20 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
+function createSampleFile(format: string, content: string[]) {
+  if (format === 'image') {
+    return new File(content, 'image.png', { type: 'image/png' });
+  } else if (format === 'audio') {
+    return new File(content, 'audio.mp3', { type: 'audio/mpeg' });
+  } else if (format === 'font') {
+    return new File(content, 'font.ttf', { type: 'font/ttf' });
+  } else if (format === 'video') {
+    return new File(content, 'video.mp4', { type: 'video/mp4' });
+  } else {
+    return new File(content, 'file.bin', { type: 'application/octet-stream' });
+  }
+}
+
 export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
 
@@ -47,9 +61,12 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
     const lowerMethod = method.toLowerCase<typeof method>();
 
-    const invalidJSONString = '<invalid-json>';
-    const invalidFormDataString = '<invalid-form-data>';
-    const invalidURLSearchParamsString = '<invalid-url-search-params>';
+    const invalidRequestJSONString = '<invalid-request-json>';
+    const invalidResponseJSONString = '<invalid-response-json>';
+    const invalidRequestFormDataString = '<invalid-request-form-data>';
+    const invalidResponseFormDataString = '<invalid-response-form-data>';
+    const invalidRequestURLSearchParamsString = '<invalid-request-url-search-params>';
+    const invalidResponseURLSearchParamsString = '<invalid-response-url-search-params>';
 
     type UserJSONSchema = User;
 
@@ -62,10 +79,10 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     }>;
 
     describe('JSON', () => {
-      it(`should try to parse the body of a ${method} request as JSON if no content type exists`, async () => {
+      it(`should support intercepting ${method} requests having a JSON body`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: { body: UserJSONSchema };
-          response: { 200: { body: User } };
+          response: { 200: { body: UserJSONSchema } };
         }>;
 
         await usingHttpInterceptor<{
@@ -92,72 +109,42 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
-            headers: { 'content-type': '' },
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify(users[0]),
           });
           expect(response.status).toBe(200);
 
+          const fetchedUser = (await response.json()) as UserJSONSchema;
+          expect(fetchedUser).toEqual(users[0]);
+
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
-          expect(request.headers.get('content-type')).toBe('');
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
           expectTypeOf(request.body).toEqualTypeOf<User>();
           expect(request.body).toEqual(users[0]);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<UserJSONSchema>();
+          expect(request.response.body).toEqual(users[0]);
         });
       });
 
-      it(`should fallback the body of a ${method} request to text if could not be parsed as JSON and no content type exists`, async () => {
+      it(`should try to parse the body of a ${method} request or response as JSON if no content type exists`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: string };
-          response: { 200: { body: User } };
-        }>;
-
-        await usingHttpInterceptor<{
-          '/users/:id': {
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
+          request: {
+            headers: { 'content-type': string };
+            body: UserJSONSchema;
           };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users/:id').respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<string>();
-              expect(request.body).toBe(invalidJSONString);
-
-              return { status: 200, body: users[0] };
-            }),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
-
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
-
-          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-            method,
-            headers: { 'content-type': '' },
-            body: invalidJSONString,
-          });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(1);
-          const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
-
-          expect(request.headers.get('content-type')).toBe('');
-          expectTypeOf(request.body).toEqualTypeOf<string>();
-          expect(request.body).toBe(invalidJSONString);
-        });
-      });
-
-      it(`should try to parse the body of a ${method} request as JSON if the body contains an unknown content type`, async () => {
-        type MethodSchema = HttpSchema.Method<{
-          request: { body: UserJSONSchema };
-          response: { 200: { body: User } };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: UserJSONSchema;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -173,7 +160,143 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
               expectTypeOf(request.body).toEqualTypeOf<User>();
               expect(request.body).toEqual(users[0]);
 
-              return { status: 200, body: users[0] };
+              return {
+                status: 200,
+                headers: { 'content-type': '' },
+                body: users[0],
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': '' },
+            body: JSON.stringify(users[0]),
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedUser = (await response.json()) as UserJSONSchema;
+          expect(fetchedUser).toEqual(users[0]);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('');
+          expectTypeOf(request.body).toEqualTypeOf<User>();
+          expect(request.body).toEqual(users[0]);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('');
+          expectTypeOf(request.response.body).toEqualTypeOf<UserJSONSchema>();
+          expect(request.response.body).toEqual(users[0]);
+        });
+      });
+
+      it(`should fallback the body of a ${method} request or response to text if could not be parsed as JSON and no content type exists`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<string>();
+              expect(request.body).toBe(invalidRequestJSONString);
+
+              return {
+                status: 200,
+                headers: { 'content-type': '' },
+                body: invalidResponseJSONString,
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': '' },
+            body: invalidRequestJSONString,
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe(invalidResponseJSONString);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('');
+          expectTypeOf(request.body).toEqualTypeOf<string>();
+          expect(request.body).toBe(invalidRequestJSONString);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe(invalidResponseJSONString);
+        });
+      });
+
+      it(`should try to parse the body of a ${method} request or response as JSON if the body contains an unknown content type`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
+            headers: { 'content-type': string };
+            body: UserJSONSchema;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: UserJSONSchema;
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<User>();
+              expect(request.body).toEqual(users[0]);
+
+              return {
+                status: 200,
+                headers: { 'content-type': 'unknown' },
+                body: users[0],
+              };
             }),
             interceptor,
           );
@@ -189,21 +312,37 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           });
           expect(response.status).toBe(200);
 
+          const fetchedUser = (await response.json()) as UserJSONSchema;
+          expect(fetchedUser).toEqual(users[0]);
+
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('unknown');
           expectTypeOf(request.body).toEqualTypeOf<User>();
           expect(request.body).toEqual(users[0]);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('unknown');
+          expectTypeOf(request.response.body).toEqualTypeOf<UserJSONSchema>();
+          expect(request.response.body).toEqual(users[0]);
         });
       });
 
-      it(`should fallback the body of a ${method} request to text if could not be parsed as JSON and the content type is unknown`, async () => {
+      it(`should fallback the body of a ${method} request or response to text if could not be parsed as JSON and the content type is unknown`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: string };
-          response: { 200: { body: User } };
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -217,9 +356,13 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
               expectTypeOf(request.body).toEqualTypeOf<string>();
-              expect(request.body).toBe(invalidJSONString);
+              expect(request.body).toBe(invalidRequestJSONString);
 
-              return { status: 200, body: users[0] };
+              return {
+                status: 200,
+                headers: { 'content-type': 'unknown' },
+                body: invalidResponseJSONString,
+              };
             }),
             interceptor,
           );
@@ -231,25 +374,41 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'unknown' },
-            body: invalidJSONString,
+            body: invalidRequestJSONString,
           });
           expect(response.status).toBe(200);
+
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe(invalidResponseJSONString);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('unknown');
           expectTypeOf(request.body).toEqualTypeOf<string>();
-          expect(request.body).toBe(invalidJSONString);
+          expect(request.body).toBe(invalidRequestJSONString);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('unknown');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe(invalidResponseJSONString);
         });
       });
 
-      it(`should show an error and skip parsing if the body of a ${method} request is defined as JSON, but it is not valid`, async () => {
+      it(`should show an error and skip parsing if the body of a ${method} request or response is defined as JSON, but it is not valid`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: UserJSONSchema };
-          response: { 200: { body: User } };
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -262,10 +421,14 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<User>();
+              expectTypeOf(request.body).toEqualTypeOf<string>();
               expect(request.body).toBe(null);
 
-              return { status: 200, body: users[0] };
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+                body: invalidResponseJSONString,
+              };
             }),
             interceptor,
           );
@@ -278,22 +441,33 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
               method,
               headers: { 'content-type': 'application/json' },
-              body: invalidJSONString,
+              body: invalidRequestJSONString,
             });
             expect(response.status).toBe(200);
 
-            expect(spies.error).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledWith(new InvalidJSONError(invalidJSONString));
+            const fetchedBody = await response.text();
+            expect(fetchedBody).toBe(invalidResponseJSONString);
+
+            expect(spies.error).toHaveBeenCalledTimes(2);
+            expect(spies.error.mock.calls).toEqual([
+              [new InvalidJSONError(invalidRequestJSONString)],
+              [new InvalidJSONError(invalidResponseJSONString)],
+            ]);
           });
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('application/json');
-          expectTypeOf(request.body).toEqualTypeOf<User>();
+          expectTypeOf(request.body).toEqualTypeOf<string>();
           expect(request.body).toBe(null);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe(null);
         });
       });
     });
@@ -302,7 +476,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       it(`should support intercepting ${method} requests having a form data body`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: { body: HttpFormData<UserFormDataSchema> };
-          response: { 200: { body: User } };
+          response: { 200: { body: HttpFormData<UserFormDataSchema> } };
         }>;
 
         await usingHttpInterceptor<{
@@ -313,12 +487,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
+          const responseFormData = new HttpFormData<UserFormDataSchema>();
+          const responseTagFile = new File(['response'], 'tag.txt', { type: 'text/plain' });
+          responseFormData.append('tag', responseTagFile);
+
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
               expectTypeOf(request.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
               expect(request.body).toBeInstanceOf(HttpFormData);
 
-              return { status: 200, body: users[0] };
+              return { status: 200, body: responseFormData };
             }),
             interceptor,
           );
@@ -328,8 +506,8 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(requests).toHaveLength(0);
 
           const formData = new HttpFormData<UserFormDataSchema>();
-          const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
-          formData.append('tag', tagFile);
+          const requestTagFile = new File(['request'], 'tag.txt', { type: 'text/plain' });
+          formData.append('tag', requestTagFile);
 
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
@@ -337,29 +515,57 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           });
           expect(response.status).toBe(200);
 
+          const fetchedFormData = await response.formData();
+          expect(fetchedFormData).toBeInstanceOf(FormData);
+          expect(Array.from(fetchedFormData.keys())).toEqual(Array.from(responseFormData.keys()));
+
+          const fetchedTagFile = fetchedFormData.get('tag')!;
+          expect(fetchedTagFile).toEqual(responseTagFile);
+
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toMatch(/^multipart\/form-data; boundary=.+$/);
           expectTypeOf(request.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
           expect(request.body).toBeInstanceOf(HttpFormData);
           expect(request.body).toEqual(formData);
 
-          const requestTagFile = request.body.get('tag');
-          expect(requestTagFile).toEqual(tagFile);
-          expect(requestTagFile.name).toBe(tagFile.name);
-          expect(requestTagFile.size).toBe(tagFile.size);
-          expect(requestTagFile.type).toBe(tagFile.type);
-          expect(await requestTagFile.text()).toEqual(await tagFile.text());
+          const interceptedRequestTagFile = request.body.get('tag');
+          expect(interceptedRequestTagFile).toEqual(requestTagFile);
+          expect(interceptedRequestTagFile.name).toBe(requestTagFile.name);
+          expect(interceptedRequestTagFile.size).toBe(requestTagFile.size);
+          expect(interceptedRequestTagFile.type).toBe(requestTagFile.type);
+          expect(await interceptedRequestTagFile.text()).toEqual(await requestTagFile.text());
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toMatch(/^multipart\/form-data; boundary=.+$/);
+          expectTypeOf(request.response.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
+          expect(request.response.body).toBeInstanceOf(HttpFormData);
+          expect(request.response.body).toEqual(responseFormData);
+
+          const interceptedResponseTagFile = request.response.body.get('tag');
+          expect(interceptedResponseTagFile).toEqual(responseTagFile);
+          expect(interceptedResponseTagFile.name).toBe(responseTagFile.name);
+          expect(interceptedResponseTagFile.size).toBe(responseTagFile.size);
+          expect(interceptedResponseTagFile.type).toBe(responseTagFile.type);
+          expect(await interceptedResponseTagFile.text()).toEqual(await responseTagFile.text());
         });
       });
 
-      it(`should show an error and skip parsing if the body of a ${method} request is defined as form data, but it is not valid`, async () => {
+      it(`should show an error and skip parsing if the body of a ${method} request or response is defined as form data, but it is not valid`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: HttpFormData<UserFormDataSchema> };
-          response: { 200: { body: User } };
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -372,10 +578,14 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
+              expectTypeOf(request.body).toEqualTypeOf<string>();
               expect(request.body).toBe(null);
 
-              return { status: 200, body: users[0] };
+              return {
+                status: 200,
+                headers: { 'content-type': 'multipart/form-data' },
+                body: invalidResponseFormDataString,
+              };
             }),
             interceptor,
           );
@@ -388,22 +598,30 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
               method,
               headers: { 'content-type': 'multipart/form-data' },
-              body: invalidFormDataString,
+              body: invalidRequestFormDataString,
             });
             expect(response.status).toBe(200);
 
-            expect(spies.error).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledWith(new InvalidFormDataError(invalidFormDataString));
+            expect(spies.error).toHaveBeenCalledTimes(2);
+            expect(spies.error.mock.calls).toEqual([
+              [new InvalidFormDataError(invalidRequestFormDataString)],
+              [new InvalidFormDataError(invalidResponseFormDataString)],
+            ]);
           });
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('multipart/form-data');
-          expectTypeOf(request.body).toEqualTypeOf<HttpFormData<UserFormDataSchema>>();
+          expectTypeOf(request.body).toEqualTypeOf<string>();
           expect(request.body).toBe(null);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('multipart/form-data');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe(null);
         });
       });
     });
@@ -412,7 +630,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       it(`should support intercepting ${method} requests having a URL search params body`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: { body: HttpSearchParams<UserSearchParamsSchema> };
-          response: { 200: { body: User } };
+          response: { 200: { body: HttpSearchParams<UserSearchParamsSchema> } };
         }>;
 
         await usingHttpInterceptor<{
@@ -423,12 +641,14 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
+          const responseSearchParams = new HttpSearchParams<UserSearchParamsSchema>({ tag: 'admin-response' });
+
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
               expectTypeOf(request.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
               expect(request.body).toBeInstanceOf(HttpSearchParams);
 
-              return { status: 200, body: users[0] };
+              return { status: 200, body: responseSearchParams };
             }),
             interceptor,
           );
@@ -437,33 +657,52 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           let requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(0);
 
-          const searchParams = new HttpSearchParams<UserSearchParamsSchema>({
-            tag: 'admin',
-          });
+          const requestSearchParams = new HttpSearchParams<UserSearchParamsSchema>({ tag: 'admin' });
 
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
-            body: searchParams,
+            body: requestSearchParams,
           });
           expect(response.status).toBe(200);
+
+          const fetchedSearchParams = await response.formData();
+          expect(fetchedSearchParams).toBeInstanceOf(FormData);
+          expect(Array.from(fetchedSearchParams.keys())).toEqual(Array.from(responseSearchParams.keys()));
+
+          const fetchedTag = fetchedSearchParams.get('tag')!;
+          expect(fetchedTag).toBe(responseSearchParams.get('tag'));
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('application/x-www-form-urlencoded;charset=UTF-8');
           expectTypeOf(request.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
           expect(request.body).toBeInstanceOf(HttpSearchParams);
-          expect(request.body).toEqual(searchParams);
+          expect(request.body).toEqual(requestSearchParams);
           expect(request.body.get('tag')).toEqual('admin');
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/x-www-form-urlencoded;charset=UTF-8');
+          expectTypeOf(request.response.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
+          expect(request.response.body).toBeInstanceOf(HttpSearchParams);
+          expect(request.response.body).toEqual(responseSearchParams);
         });
       });
 
-      it(`should not show an error and not skip parsing if the body of a ${method} request is defined as URL search params, but it is not valid`, async () => {
+      it(`should not show an error and skip parsing if the body of a ${method} request or response is defined as URL search params, but it is not valid`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: HttpSearchParams<UserSearchParamsSchema> };
-          response: { 200: { body: User } };
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -476,11 +715,15 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         }>(interceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users/:id').respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
+              expectTypeOf(request.body).toEqualTypeOf<string>();
               expect(request.body).toBeInstanceOf(HttpSearchParams);
-              expect(Object.fromEntries(request.body)).toEqual({ [invalidURLSearchParamsString]: '' });
+              expect(request.body).toEqual(new HttpSearchParams({ [invalidRequestURLSearchParamsString]: '' }));
 
-              return { status: 200, body: users[0] };
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/x-www-form-urlencoded' },
+                body: invalidResponseURLSearchParamsString,
+              };
             }),
             interceptor,
           );
@@ -493,7 +736,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
               method,
               headers: { 'content-type': 'application/x-www-form-urlencoded' },
-              body: invalidURLSearchParamsString,
+              body: invalidRequestURLSearchParamsString,
             });
             expect(response.status).toBe(200);
 
@@ -503,12 +746,18 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
+          expect(request).toBeInstanceOf(Request);
           expect(request.headers.get('content-type')).toBe('application/x-www-form-urlencoded');
-          expectTypeOf(request.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
+          expectTypeOf(request.body).toEqualTypeOf<string>();
           expect(request.body).toBeInstanceOf(HttpSearchParams);
-          expect(Object.fromEntries(request.body)).toEqual({ [invalidURLSearchParamsString]: '' });
+          expect(request.body).toEqual(new HttpSearchParams({ [invalidRequestURLSearchParamsString]: '' }));
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/x-www-form-urlencoded');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBeInstanceOf(HttpSearchParams);
+          expect(request.response.body).toEqual(new HttpSearchParams({ [invalidResponseURLSearchParamsString]: '' }));
         });
       });
     });
@@ -517,7 +766,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
       it(`should support intercepting ${method} requests having a plain text body`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: { body: string };
-          response: { 200: { body: User } };
+          response: { 200: { body: string } };
         }>;
 
         await usingHttpInterceptor<{
@@ -533,7 +782,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
               expectTypeOf(request.body).toEqualTypeOf<string>();
               expect(request.body).toBe('content');
 
-              return { status: 200, body: users[0] };
+              return { status: 200, body: 'content-response' };
             }),
             interceptor,
           );
@@ -544,19 +793,26 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
-            headers: { 'content-type': 'text/plain' },
             body: 'content',
           });
           expect(response.status).toBe(200);
 
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe('content-response');
+
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
           const [request] = requests;
-          expect(request).toBeInstanceOf(Request);
 
-          expect(request.headers.get('content-type')).toBe('text/plain');
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('text/plain;charset=UTF-8');
           expectTypeOf(request.body).toEqualTypeOf<string>();
           expect(request.body).toBe('content');
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('text/plain;charset=UTF-8');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe('content-response');
         });
       });
     });
@@ -567,7 +823,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         async (format) => {
           type MethodSchema = HttpSchema.Method<{
             request: { body: Blob };
-            response: { 200: { body: User } };
+            response: { 200: { body: Blob } };
           }>;
 
           await usingHttpInterceptor<{
@@ -578,12 +834,14 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
               DELETE: MethodSchema;
             };
           }>(interceptorOptions, async (interceptor) => {
+            const responseFile = createSampleFile(format, ['response']);
+
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users/:id').respond((request) => {
                 expectTypeOf(request.body).toEqualTypeOf<Blob>();
                 expect(request.body).toBeInstanceOf(Blob);
 
-                return { status: 200, body: users[0] };
+                return { status: 200, body: responseFile };
               }),
               interceptor,
             );
@@ -592,37 +850,40 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             let requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(0);
 
-            let file: File;
-            if (format === 'image') {
-              file = new File(['content'], 'image.png', { type: 'image/png' });
-            } else if (format === 'audio') {
-              file = new File(['content'], 'audio.mp3', { type: 'audio/mpeg' });
-            } else if (format === 'font') {
-              file = new File(['content'], 'font.ttf', { type: 'font/ttf' });
-            } else if (format === 'video') {
-              file = new File(['content'], 'video.mp4', { type: 'video/mp4' });
-            } else {
-              file = new File(['content'], 'file.bin', { type: 'application/octet-stream' });
-            }
+            const requestFile = createSampleFile(format, ['request']);
 
             const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
               method,
-              headers: { 'content-type': file.type },
-              body: file,
+              headers: { 'content-type': requestFile.type },
+              body: requestFile,
             });
             expect(response.status).toBe(200);
+
+            const fetchedFile = await response.blob();
+            expect(fetchedFile).toBeInstanceOf(Blob);
+            expect(fetchedFile.type).toBe(responseFile.type);
+            expect(fetchedFile.size).toBe(responseFile.size);
+            expect(await fetchedFile.text()).toEqual(await responseFile.text());
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(1);
             const [request] = requests;
-            expect(request).toBeInstanceOf(Request);
 
-            expect(request.headers.get('content-type')).toBe(file.type);
+            expect(request).toBeInstanceOf(Request);
+            expect(request.headers.get('content-type')).toBe(requestFile.type);
             expectTypeOf(request.body).toEqualTypeOf<Blob>();
             expect(request.body).toBeInstanceOf(Blob);
-            expect(request.body.type).toBe(file.type);
-            expect(request.body.size).toBe(file.size);
-            expect(await request.body.text()).toEqual(await file.text());
+            expect(request.body.type).toBe(requestFile.type);
+            expect(request.body.size).toBe(requestFile.size);
+            expect(await request.body.text()).toEqual(await requestFile.text());
+
+            expect(request.response).toBeInstanceOf(Response);
+            expect(request.response.headers.get('content-type')).toBe(responseFile.type);
+            expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+            expect(request.response.body).toBeInstanceOf(Blob);
+            expect(request.response.body.type).toBe(responseFile.type);
+            expect(request.response.body.size).toBe(responseFile.size);
+            expect(await request.response.body.text()).toEqual(await responseFile.text());
           });
         },
       );

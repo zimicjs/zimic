@@ -176,9 +176,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const searchParams = new HttpSearchParams<UserSearchParams>({
-          tag: 'admin',
-        });
+        const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
 
         const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method,
