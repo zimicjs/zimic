@@ -651,7 +651,8 @@ by default.
 >
 > If you expected a request to be handled, but it was not, make sure that the interceptor
 > [base URL](#httpcreateinterceptor), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
-> [restrictions](#http-handlerwithrestriction) correctly match the request.
+> [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
+> occurred while creating the response.
 
 In a [local interceptor](#local-http-interceptors), unhandled requests are always bypassed, meaning that they pass
 through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with an
