@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import { HttpResponse as MSWHttpResponse } from 'msw';
 
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
@@ -179,17 +178,34 @@ abstract class HttpInterceptorWorker {
       body?: HttpBody;
     },
     HeadersSchema extends HttpHeadersSchema,
-  >(request: HttpRequest, responseDeclaration: Declaration) {
-    const headers = new HttpHeaders(responseDeclaration.headers);
-    const status = responseDeclaration.status;
+  >(request: HttpRequest, declaration: Declaration) {
+    const headers = new HttpHeaders(declaration.headers);
+    const status = declaration.status;
 
     const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && status !== 204;
 
-    const response = canHaveBody
-      ? MSWHttpResponse.json(responseDeclaration.body, { headers, status })
-      : new Response(null, { headers, status });
+    if (!canHaveBody) {
+      return new Response(null, { headers, status });
+    }
 
-    return response as typeof response & HttpResponse<Declaration['body'], Declaration['status'], HeadersSchema>;
+    if (typeof declaration.body === 'number' || typeof declaration.body === 'boolean') {
+      return new Response(declaration.body.toString(), { headers, status });
+    }
+
+    if (
+      typeof declaration.body === 'string' ||
+      declaration.body === null ||
+      declaration.body === undefined ||
+      declaration.body instanceof FormData ||
+      declaration.body instanceof URLSearchParams ||
+      declaration.body instanceof Blob ||
+      declaration.body instanceof ReadableStream ||
+      declaration.body instanceof ArrayBuffer
+    ) {
+      return new Response(declaration.body, { headers, status });
+    }
+
+    return Response.json(declaration.body, { headers, status });
   }
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>(
