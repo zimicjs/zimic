@@ -1,7 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { HttpMethod } from '@/http/types/schema';
-import { PossiblePromise } from '@/types/utils';
 import { ExtendedURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -15,15 +13,10 @@ import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareHandlerHttpInterceptorTests } from './handlers';
 import { declareLifeCycleHttpInterceptorTests } from './lifeCycle';
-import { declareDeleteHttpInterceptorTests } from './methods/delete';
-import { declareGetHttpInterceptorTests } from './methods/get';
-import { declareHeadHttpInterceptorTests } from './methods/head';
-import { declareOptionsHttpInterceptorTests } from './methods/options';
-import { declarePatchHttpInterceptorTests } from './methods/patch';
-import { declarePostHttpInterceptorTests } from './methods/post';
-import { declarePutHttpInterceptorTests } from './methods/put';
+import { declareRestrictionsHttpInterceptorTests } from './restrictions';
 import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOptions } from './types';
 import { declareTypeHttpInterceptorTests } from './typescript';
+import { declareUnhandledRequestHttpInterceptorTests } from './unhandledRequests';
 
 export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptorTestsOptions) {
   const { startServer, getBaseURL, stopServer } = options;
@@ -92,6 +85,10 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       await declareBodyHttpInterceptorTests(runtimeOptions);
     });
 
+    describe('Restrictions', () => {
+      declareRestrictionsHttpInterceptorTests(runtimeOptions);
+    });
+
     describe('Bypass', () => {
       declareBypassHttpInterceptorTests(runtimeOptions);
     });
@@ -104,22 +101,8 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       declareLifeCycleHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Methods', () => {
-      const methodTestFactories: Record<HttpMethod, () => PossiblePromise<void>> = {
-        GET: declareGetHttpInterceptorTests.bind(null, runtimeOptions),
-        POST: declarePostHttpInterceptorTests.bind(null, runtimeOptions),
-        PUT: declarePutHttpInterceptorTests.bind(null, runtimeOptions),
-        PATCH: declarePatchHttpInterceptorTests.bind(null, runtimeOptions),
-        DELETE: declareDeleteHttpInterceptorTests.bind(null, runtimeOptions),
-        HEAD: declareHeadHttpInterceptorTests.bind(null, runtimeOptions),
-        OPTIONS: declareOptionsHttpInterceptorTests.bind(null, runtimeOptions),
-      };
-
-      for (const [method, methodTestFactory] of Object.entries(methodTestFactories)) {
-        describe(method, async () => {
-          await methodTestFactory();
-        });
-      }
+    describe('Unhandled requests', () => {
+      declareUnhandledRequestHttpInterceptorTests(runtimeOptions);
     });
   });
 }

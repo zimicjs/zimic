@@ -143,10 +143,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let promise = fetchWithTimeout(joinURL(baseURL, '/users'), {
-            method,
-            timeout: 200,
-          });
+          let promise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 200 });
           await expectFetchErrorOrPreflightResponse(promise, {
             shouldBePreflight: overridesPreflightResponse,
             canBeAborted: true,
