@@ -156,15 +156,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const request = context.request as MSWStrictRequest<HttpBody>;
       const requestClone = request.clone();
 
-      const result = await createResponse({ ...context, request });
+      try {
+        const result = await createResponse({ ...context, request });
 
-      if (result.bypass) {
+        if (result.bypass) {
+          await super.handleUnhandledRequest(requestClone);
+          return passthrough();
+        }
+
+        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
+        return response;
+      } catch (error) {
+        console.error(error);
         await super.handleUnhandledRequest(requestClone);
         return passthrough();
       }
-
-      const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
-      return response;
     });
 
     internalWorker.use(httpHandler);

@@ -8,11 +8,13 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { joinURL } from '@/utils/urls';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { verifyUnhandledRequestMessage } from './utils';
 
 export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -133,6 +135,72 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
         expect(request.response.body).toBe(null);
+      });
+    });
+
+    it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
+      await usingHttpInterceptor<{
+        '/users': {
+          GET: MethodSchema;
+          POST: MethodSchema;
+          PUT: MethodSchema;
+          PATCH: MethodSchema;
+          DELETE: MethodSchema;
+          HEAD: MethodSchema;
+          OPTIONS: MethodSchema;
+        };
+      }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
+        const error = new Error('An error occurred.');
+
+        const handler = await promiseIfRemote(
+          interceptor[lowerMethod]('/users').respond(() => {
+            throw error;
+          }),
+          interceptor,
+        );
+        expect(handler).toBeInstanceOf(Handler);
+
+        let requests = await promiseIfRemote(handler.requests(), interceptor);
+        expect(requests).toHaveLength(0);
+
+        await usingIgnoredConsole(['error', 'warn'], async (spies) => {
+          const request = new Request(joinURL(baseURL, '/users'), {
+            method,
+            headers: { 'x-value': '1' },
+          });
+
+          const fetchPromise = fetch(request);
+          await expectFetchErrorOrPreflightResponse(fetchPromise, {
+            shouldBePreflight: overridesPreflightResponse,
+          });
+
+          if (type === 'remote') {
+            expect(spies.error).toHaveBeenCalledTimes(method === 'OPTIONS' && platform === 'browser' ? 4 : 2);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error.mock.calls[0]).toEqual([error]);
+
+            const errorMessage = spies.error.mock.calls[1].join(' ');
+            await verifyUnhandledRequestMessage(errorMessage, {
+              type: 'error',
+              platform,
+              request,
+            });
+          } else {
+            expect(spies.error).toHaveBeenCalledTimes(1);
+            expect(spies.warn).toHaveBeenCalledTimes(1);
+            expect(spies.error.mock.calls[0]).toEqual([error]);
+
+            const warnMessage = spies.warn.mock.calls[0].join(' ');
+            await verifyUnhandledRequestMessage(warnMessage, {
+              type: 'warn',
+              platform,
+              request,
+            });
+          }
+        });
+
+        requests = await promiseIfRemote(handler.requests(), interceptor);
+        expect(requests).toHaveLength(0);
       });
     });
 
