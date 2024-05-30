@@ -2,7 +2,7 @@ import { describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpInterceptorTests } from './shared/interceptorTests';
+import { declareSharedHttpInterceptorTests } from './shared';
 
 describe('HttpInterceptor (browser)', () => {
   declareSharedHttpInterceptorTests({

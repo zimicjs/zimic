@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { joinURL } from '@/utils/urls';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
@@ -28,9 +28,11 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
   });
 
   describe.each(HTTP_METHODS)('Method: %s', (method) => {
-    const overridesPreflightResponse = method === 'OPTIONS' && type === 'remote';
-    const numberOfRequestsIncludingPrefetch =
-      method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1;
+    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
+      method,
+      platform,
+      type,
+    });
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
@@ -91,8 +93,8 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(response.status).toBe(201);
 
         requests = await promiseIfRemote(createdHandler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        let request = requests[numberOfRequestsIncludingPrefetch - 1];
+        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        let request = requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -120,11 +122,11 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(otherResponse.status).toBe(204);
 
         requests = await promiseIfRemote(createdHandler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch);
+        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         withMessageRequests = await promiseIfRemote(noContentHandler.requests(), interceptor);
-        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        const withMessageRequest = withMessageRequests[numberOfRequestsIncludingPrefetch - 1];
+        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const withMessageRequest = withMessageRequests[numberOfRequestsIncludingPreflight - 1];
         expect(withMessageRequest).toBeInstanceOf(Request);
 
         expectTypeOf(withMessageRequest.body).toEqualTypeOf<null>();
@@ -142,11 +144,11 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(response.status).toBe(201);
 
         withMessageRequests = await promiseIfRemote(noContentHandler.requests(), interceptor);
-        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         requests = await promiseIfRemote(createdHandler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch * 2);
-        request = requests[numberOfRequestsIncludingPrefetch - 1];
+        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+        request = requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();

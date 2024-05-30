@@ -9,7 +9,7 @@ import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
-import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
@@ -42,9 +42,11 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
   });
 
   describe.each(HTTP_METHODS)('Method: %s', (method) => {
-    const overridesPreflightResponse = method === 'OPTIONS' && type === 'remote';
-    const numberOfRequestsIncludingPrefetch =
-      method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1;
+    const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
+      method,
+      platform,
+      type,
+    });
 
     const lowerMethod = method.toLowerCase<typeof method>();
 
@@ -82,8 +84,8 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
         expect(genericResponse.status).toBe(200);
 
         genericRequests = await promiseIfRemote(genericHandler.requests(), interceptor);
-        expect(genericRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        const genericRequest = genericRequests[numberOfRequestsIncludingPrefetch - 1];
+        expect(genericRequests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const genericRequest = genericRequests[numberOfRequestsIncludingPreflight - 1];
         expect(genericRequest).toBeInstanceOf(Request);
 
         expectTypeOf(genericRequest.pathParams).toEqualTypeOf<{ id: string }>();
@@ -121,8 +123,8 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
         expect(specificResponse.status).toBe(200);
 
         specificRequests = await promiseIfRemote(specificHandler.requests(), interceptor);
-        expect(specificRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
-        const specificRequest = specificRequests[numberOfRequestsIncludingPrefetch - 1];
+        expect(specificRequests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const specificRequest = specificRequests[numberOfRequestsIncludingPreflight - 1];
         expect(specificRequest).toBeInstanceOf(Request);
 
         expectTypeOf(specificRequest.pathParams).toEqualTypeOf<{ id: string }>();
@@ -138,7 +140,6 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
         expect(specificRequest.response.body).toBe(null);
 
         const unmatchedPromise = fetch(joinURL(baseURL, `/users/${2}`), { method });
-
         await expectFetchErrorOrPreflightResponse(unmatchedPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });

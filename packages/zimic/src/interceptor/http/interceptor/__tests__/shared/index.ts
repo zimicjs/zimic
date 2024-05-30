@@ -10,6 +10,7 @@ import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareBodyHttpInterceptorTests } from './bodies';
 import { declareBypassHttpInterceptorTests } from './bypass';
+import { declareClearHttpInterceptorTests } from './clear';
 import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
@@ -87,6 +88,10 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     describe('Bypass', () => {
       declareBypassHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Clear', () => {
+      declareClearHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Methods', () => {
