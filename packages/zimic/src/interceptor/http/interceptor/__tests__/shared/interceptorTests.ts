@@ -9,6 +9,7 @@ import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptor
 import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
 import { declareBodyHttpInterceptorTests } from './bodies';
+import { declareBypassHttpInterceptorTests } from './bypass';
 import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
@@ -82,6 +83,10 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
 
     describe('Dynamic paths', async () => {
       await declareDynamicPathsHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bypass', () => {
+      declareBypassHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Methods', () => {

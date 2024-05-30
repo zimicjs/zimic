@@ -1,0 +1,163 @@
+import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
+
+import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
+import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
+import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
+import { joinURL } from '@/utils/urls';
+import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { usingHttpInterceptor } from '@tests/utils/interceptors';
+
+import { HttpInterceptorOptions } from '../../types/options';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+
+export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+  const { platform, type, getBaseURL, getInterceptorOptions } = options;
+
+  let baseURL: URL;
+  let interceptorOptions: HttpInterceptorOptions;
+
+  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+
+  beforeEach(() => {
+    baseURL = getBaseURL();
+    interceptorOptions = getInterceptorOptions();
+
+    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
+  });
+
+  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+    const overridesPreflightResponse = method === 'OPTIONS' && type === 'remote';
+    const numberOfRequestsIncludingPrefetch =
+      method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1;
+
+    const lowerMethod = method.toLowerCase<typeof method>();
+
+    type UserMethodSchema = HttpSchema.Method<{
+      response: {
+        200: { headers: AccessControlHeaders };
+        201: { headers: AccessControlHeaders };
+        204: { headers: AccessControlHeaders };
+      };
+    }>;
+
+    it(`should ignore handlers with bypassed responses when intercepting ${method} requests`, async () => {
+      await usingHttpInterceptor<{
+        '/users': {
+          GET: UserMethodSchema;
+          POST: UserMethodSchema;
+          PUT: UserMethodSchema;
+          PATCH: UserMethodSchema;
+          DELETE: UserMethodSchema;
+          HEAD: UserMethodSchema;
+          OPTIONS: UserMethodSchema;
+        };
+      }>(interceptorOptions, async (interceptor) => {
+        const okHandler = await promiseIfRemote(
+          interceptor[lowerMethod]('/users')
+            .respond({
+              status: 200,
+              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+            })
+            .bypass(),
+          interceptor,
+        );
+        expect(okHandler).toBeInstanceOf(Handler);
+
+        let initialRequests = await promiseIfRemote(okHandler.requests(), interceptor);
+        expect(initialRequests).toHaveLength(0);
+
+        const promise = fetch(joinURL(baseURL, '/users'), { method });
+        await expectFetchErrorOrPreflightResponse(promise, {
+          shouldBePreflight: overridesPreflightResponse,
+        });
+
+        const createdHandler = await promiseIfRemote(
+          okHandler.respond({
+            status: 201,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          }),
+          interceptor,
+        );
+        expect(createdHandler).toBeInstanceOf(Handler);
+
+        initialRequests = await promiseIfRemote(okHandler.requests(), interceptor);
+        expect(initialRequests).toHaveLength(0);
+        let requests = await promiseIfRemote(createdHandler.requests(), interceptor);
+        expect(requests).toHaveLength(0);
+
+        let response = await fetch(joinURL(baseURL, '/users'), { method });
+        expect(response.status).toBe(201);
+
+        requests = await promiseIfRemote(createdHandler.requests(), interceptor);
+        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch);
+        let request = requests[numberOfRequestsIncludingPrefetch - 1];
+        expect(request).toBeInstanceOf(Request);
+
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+        expect(request.body).toBe(null);
+
+        expectTypeOf(request.response.status).toEqualTypeOf<201>();
+        expect(request.response.status).toEqual(201);
+
+        expectTypeOf(request.response.body).toEqualTypeOf<null>();
+        expect(request.response.body).toBe(null);
+
+        const noContentHandler = await promiseIfRemote(
+          interceptor[lowerMethod]('/users').respond({
+            status: 204,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          }),
+          interceptor,
+        );
+        expect(noContentHandler).toBeInstanceOf(Handler);
+
+        let withMessageRequests = await promiseIfRemote(noContentHandler.requests(), interceptor);
+        expect(withMessageRequests).toHaveLength(0);
+
+        const otherResponse = await fetch(joinURL(baseURL, '/users'), { method });
+        expect(otherResponse.status).toBe(204);
+
+        requests = await promiseIfRemote(createdHandler.requests(), interceptor);
+        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+        withMessageRequests = await promiseIfRemote(noContentHandler.requests(), interceptor);
+        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+        const withMessageRequest = withMessageRequests[numberOfRequestsIncludingPrefetch - 1];
+        expect(withMessageRequest).toBeInstanceOf(Request);
+
+        expectTypeOf(withMessageRequest.body).toEqualTypeOf<null>();
+        expect(withMessageRequest.body).toBe(null);
+
+        expectTypeOf(withMessageRequest.response.status).toEqualTypeOf<204>();
+        expect(withMessageRequest.response.status).toEqual(204);
+
+        expectTypeOf(withMessageRequest.response.body).toEqualTypeOf<null>();
+        expect(withMessageRequest.response.body).toBe(null);
+
+        await promiseIfRemote(noContentHandler.bypass(), interceptor);
+
+        response = await fetch(joinURL(baseURL, '/users'), { method });
+        expect(response.status).toBe(201);
+
+        withMessageRequests = await promiseIfRemote(noContentHandler.requests(), interceptor);
+        expect(withMessageRequests).toHaveLength(numberOfRequestsIncludingPrefetch);
+
+        requests = await promiseIfRemote(createdHandler.requests(), interceptor);
+        expect(requests).toHaveLength(numberOfRequestsIncludingPrefetch * 2);
+        request = requests[numberOfRequestsIncludingPrefetch - 1];
+        expect(request).toBeInstanceOf(Request);
+
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+        expect(request.body).toBe(null);
+
+        expectTypeOf(request.response.status).toEqualTypeOf<201>();
+        expect(request.response.status).toEqual(201);
+
+        expectTypeOf(request.response.body).toEqualTypeOf<null>();
+        expect(request.response.body).toBe(null);
+      });
+    });
+  });
+}
