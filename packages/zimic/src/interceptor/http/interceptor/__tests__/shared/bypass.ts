@@ -101,7 +101,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(request.body).toBe(null);
 
         expectTypeOf(request.response.status).toEqualTypeOf<201>();
-        expect(request.response.status).toEqual(201);
+        expect(request.response.status).toBe(201);
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
         expect(request.response.body).toBe(null);
@@ -133,7 +133,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(withMessageRequest.body).toBe(null);
 
         expectTypeOf(withMessageRequest.response.status).toEqualTypeOf<204>();
-        expect(withMessageRequest.response.status).toEqual(204);
+        expect(withMessageRequest.response.status).toBe(204);
 
         expectTypeOf(withMessageRequest.response.body).toEqualTypeOf<null>();
         expect(withMessageRequest.response.body).toBe(null);
@@ -155,7 +155,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expect(request.body).toBe(null);
 
         expectTypeOf(request.response.status).toEqualTypeOf<201>();
-        expect(request.response.status).toEqual(201);
+        expect(request.response.status).toBe(201);
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
         expect(request.response.body).toBe(null);

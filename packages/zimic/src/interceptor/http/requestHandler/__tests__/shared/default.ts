@@ -234,7 +234,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
@@ -254,12 +254,12 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
     expect(interceptedRequests[1].url).toEqual(secondRequest.url);
     expect(interceptedRequests[1].method).toEqual(secondRequest.method);
-    expect(interceptedRequests[1].response.status).toEqual(secondResponse.status);
+    expect(interceptedRequests[1].response.status).toBe(secondResponse.status);
     expect(interceptedRequests[1].response.body).toEqual(await secondResponse.json());
   });
 
@@ -286,7 +286,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
     await promiseIfRemote(handler.clear(), interceptor);

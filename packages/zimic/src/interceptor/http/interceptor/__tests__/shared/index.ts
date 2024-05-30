@@ -13,6 +13,7 @@ import { declareBypassHttpInterceptorTests } from './bypass';
 import { declareClearHttpInterceptorTests } from './clear';
 import { declareDeclareHttpInterceptorTests } from './default';
 import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
+import { declareHandlerHttpInterceptorTests } from './handlers';
 import { declareDeleteHttpInterceptorTests } from './methods/delete';
 import { declareGetHttpInterceptorTests } from './methods/get';
 import { declareHeadHttpInterceptorTests } from './methods/head';
@@ -78,12 +79,16 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       declareBaseURLHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Bodies', async () => {
-      await declareBodyHttpInterceptorTests(runtimeOptions);
+    describe('Handler', () => {
+      declareHandlerHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Dynamic paths', async () => {
       await declareDynamicPathsHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bodies', async () => {
+      await declareBodyHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Bypass', () => {

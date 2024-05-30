@@ -95,7 +95,7 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
         expect(genericRequest.body).toBe(null);
 
         expectTypeOf(genericRequest.response.status).toEqualTypeOf<200>();
-        expect(genericRequest.response.status).toEqual(200);
+        expect(genericRequest.response.status).toBe(200);
 
         expectTypeOf(genericRequest.response.body).toEqualTypeOf<null>();
         expect(genericRequest.response.body).toBe(null);
@@ -134,7 +134,7 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
         expect(specificRequest.body).toBe(null);
 
         expectTypeOf(specificRequest.response.status).toEqualTypeOf<200>();
-        expect(specificRequest.response.status).toEqual(200);
+        expect(specificRequest.response.status).toBe(200);
 
         expectTypeOf(specificRequest.response.body).toEqualTypeOf<null>();
         expect(specificRequest.response.body).toBe(null);

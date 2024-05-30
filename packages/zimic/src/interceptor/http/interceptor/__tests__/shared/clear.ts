@@ -128,7 +128,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(request.body).toBe(null);
 
         expectTypeOf(request.response.status).toEqualTypeOf<200>();
-        expect(request.response.status).toEqual(200);
+        expect(request.response.status).toBe(200);
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
         expect(request.response.body).toBe(null);
@@ -184,7 +184,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         expect(request.body).toBe(null);
 
         expectTypeOf(request.response.status).toEqualTypeOf<200>();
-        expect(request.response.status).toEqual(200);
+        expect(request.response.status).toBe(200);
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
         expect(request.response.body).toBe(null);
