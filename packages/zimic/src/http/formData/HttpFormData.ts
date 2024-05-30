@@ -145,7 +145,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     for (const [key, value] of otherData.entries()) {
       const otherValue = super.get.call(this, key);
 
-      if (value instanceof File && otherValue instanceof File) {
+      if (value instanceof Blob && otherValue instanceof Blob) {
         if (
           value.name !== otherValue.name ||
           value.size !== otherValue.size ||

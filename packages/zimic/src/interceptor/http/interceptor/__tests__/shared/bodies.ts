@@ -10,6 +10,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
+import { getFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -17,7 +18,9 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-function createSampleFile(format: string, content: string[]) {
+async function createSampleFile(format: string, content: string[]) {
+  const File = await getFile();
+
   if (format === 'image') {
     return new File(content, 'image.png', { type: 'image/png' });
   } else if (format === 'audio') {
@@ -659,6 +662,8 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
+          const File = await getFile();
+
           const responseFormData = new HttpFormData<UserFormDataSchema>();
           const responseTagFile = new File(['response'], 'tag.txt', { type: 'text/plain' });
           responseFormData.append('tag', responseTagFile);
@@ -1198,7 +1203,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
               DELETE: MethodSchema;
             };
           }>(interceptorOptions, async (interceptor) => {
-            const responseFile = createSampleFile(format, ['response']);
+            const responseFile = await createSampleFile(format, ['response']);
 
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users/:id').respond((request) => {
@@ -1214,7 +1219,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             let requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(0);
 
-            const requestFile = createSampleFile(format, ['request']);
+            const requestFile = await createSampleFile(format, ['request']);
 
             const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
               method,

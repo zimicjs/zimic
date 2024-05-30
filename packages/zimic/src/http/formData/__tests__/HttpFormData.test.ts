@@ -1,8 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { getFile } from '@/utils/files';
+
 import HttpFormData from '../HttpFormData';
 
-describe('HttpFormData', () => {
+describe('HttpFormData', async () => {
+  const File = await getFile();
+
   const file = new File(['content'], 'file.txt');
 
   const blob = new Blob(['content'], { type: 'text/plain' });
