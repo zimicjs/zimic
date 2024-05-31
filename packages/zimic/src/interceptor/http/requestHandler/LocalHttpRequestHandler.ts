@@ -81,7 +81,7 @@ class LocalHttpRequestHandler<
     return this._client.requests();
   }
 
-  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): boolean {
+  matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
     return this._client.matchesRequest(request);
   }
 

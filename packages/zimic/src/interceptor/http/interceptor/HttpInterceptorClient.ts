@@ -197,7 +197,7 @@ class HttpInterceptorClient<
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });
-    const matchedHandler = this.findMatchedHandler(method, path, parsedRequest);
+    const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
 
     if (matchedHandler) {
       const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
@@ -217,18 +217,25 @@ class HttpInterceptorClient<
     }
   }
 
-  private findMatchedHandler<
+  private async findMatchedHandler<
     Method extends HttpServiceSchemaMethod<Schema>,
     Path extends HttpServiceSchemaPath<Schema, Method>,
   >(
     method: Method,
     path: Path,
     parsedRequest: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-  ): // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  HttpRequestHandlerClient<Schema, Method, Path, any> | undefined {
-    const methodPathHandlers = this.handlerClientsByMethod[method].get(path);
-    const matchedHandler = methodPathHandlers?.findLast((handler) => handler.matchesRequest(parsedRequest));
-    return matchedHandler;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<HttpRequestHandlerClient<Schema, Method, Path, any> | undefined> {
+    const methodPathHandlers = this.handlerClientsByMethod[method].get(path) ?? [];
+
+    for (let handlerIndex = methodPathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = methodPathHandlers[handlerIndex];
+      if (await handler.matchesRequest(parsedRequest)) {
+        return handler;
+      }
+    }
+
+    return undefined;
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {

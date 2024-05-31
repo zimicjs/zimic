@@ -80,7 +80,7 @@ export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => boolean;
+> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
 
 /**
  * A restriction to match intercepted requests.
