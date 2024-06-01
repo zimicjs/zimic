@@ -385,9 +385,8 @@ afterAll(async () => {
 
 </details></td></tr></table>
 
-When using [remote interceptors](#remote-http-interceptors), a common strategy is to load your mocks to the
-[interceptor server](#zimic-server) before starting your application. See
-[Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
+When using [remote interceptors](#remote-http-interceptors), a common strategy is to apply your mocks before starting
+the application. See [Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
 [Playwright - Loading mocks](./examples/with-playwright/README.md#loading-mocks) for examples.
 
 ---
