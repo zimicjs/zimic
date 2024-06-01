@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: chore(deps)
+      prefix: chore
     target-branch: canary
     reviewers:
       - diego-aquino
@@ -39,7 +39,7 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: chore(deps)
+      prefix: chore
     target-branch: canary
     reviewers:
       - diego-aquino

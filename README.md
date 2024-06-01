@@ -166,9 +166,10 @@ When to use `local`:
 Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), and
 [Next.js Pages Router](./examples/README.md#nextjs) examples use local interceptors.
 
-> [!NOTE]
+> [!IMPORTANT]
 >
-> All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
+> All mocking operations in local interceptor are **synchronous**. There's no need to `await` them before making
+> requests.
 
 #### Remote HTTP interceptors
 
@@ -189,12 +190,12 @@ When to use `remote`:
 Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
 remote interceptors.
 
-> [!NOTE]
+> [!IMPORTANT]
 >
-> All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
+> All mocking operations in remote interceptors are **asynchronous**. Make sure to `await` them before making requests.
 >
-> Some code snippets in this `README.md` display a local and a remote interceptor example side by side. Generally, the
-> remote snippets differ only by adding `await` when necessary.
+> Many code snippets in this `README.md` show examples with a local and a remote interceptor. Generally, the remote
+> snippets differ only by adding `await` where necessary.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks that
@@ -222,7 +223,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
 1. To start using Zimic, create your first [HTTP interceptor](#httpinterceptor):
 
-   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+   <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -246,7 +247,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    });
    ```
 
-   </details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Remote</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -271,13 +272,13 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    });
    ```
 
-   </details></td></tr></table>
+    </details></td></tr></table>
 
-In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
-`/users`. A successful response contains an array of `User` objects. Learn more about
-[declaring HTTP service schemas](#declaring-http-service-schemas).
+   In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
+   `/users`. A successful response contains an array of `User` objects. Learn more about
+   [declaring HTTP service schemas](#declaring-http-service-schemas).
 
-1. Then, start the interceptor:
+2. Then, start the interceptor:
 
    ```ts
    await interceptor.start();
@@ -287,9 +288,9 @@ In this example, we're [creating an interceptor](#httpcreateinterceptor) for a s
    [interceptor server](#zimic-server-start) before starting it. The base URL of the remote interceptor should point to
    the server, optionally including a path to differentiate from other interceptors.
 
-2. Now, you can intercept requests and return mock responses!
+3. Now, you can intercept requests and return mock responses!
 
-   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+   <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
    const listHandler = interceptor.get('/users').respond({
@@ -302,7 +303,7 @@ In this example, we're [creating an interceptor](#httpcreateinterceptor) for a s
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
-   </details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Remote</b></summary>
 
    ```ts
    const listHandler = await interceptor.get('/users').respond({
@@ -327,7 +328,7 @@ test setup file. An example using a Jest/Vitest API:
 
 `tests/setup.ts`
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 // Your interceptors
@@ -355,7 +356,7 @@ afterAll(async () => {
 });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 // Your interceptors
@@ -385,9 +386,8 @@ afterAll(async () => {
 
 </details></td></tr></table>
 
-When using [remote interceptors](#remote-http-interceptors), a common strategy is to load your mocks to the
-[interceptor server](#zimic-server) before starting your application. See
-[Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
+When using [remote interceptors](#remote-http-interceptors), a common strategy is to apply your mocks before starting
+the application. See [Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
 [Playwright - Loading mocks](./examples/with-playwright/README.md#loading-mocks) for examples.
 
 ---
@@ -1041,10 +1041,40 @@ const interceptor = http.createInterceptor<{
 ##### Declaring HTTP requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
-`body` are supported to provide type safety when applying mocks.
+`body` are supported to provide type safety when applying mocks. [Path parameters](#dynamic-path-parameters) are
+automatically inferred from dynamic paths, such as `/users/:id`.
 
-[Path parameters](#dynamic-path-parameters) are automatically inferred from dynamic paths, such as `/users/:id`. Bodies
-can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain text.
+<details open>
+  <summary>
+    Declaring a request type with <b>search params</b>:
+  </summary>
+
+```ts
+import { HttpSchema, JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    GET: {
+      request: { searchParams: UserListSearchParams };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details open>
+  <summary>
+    Declaring a request type with <b>JSON</b> body:
+  </summary>
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
@@ -1054,6 +1084,107 @@ type UserCreationBody = JSONValue<{
   username: string;
 }>;
 
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: UserCreationBody };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+> [!IMPORTANT]
+>
+> JSON body types cannot be declared using TypeScript interfaces, because they do not have implicit index signatures as
+> types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare JSON bodies
+> using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
+
+<details>
+  <summary>
+    Declaring a request type with <b>form data</b> body:
+  </summary>
+
+```ts
+import { HttpSchema, HttpFormData } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type FileUploadData = HttpSchema.FormData<{
+  files: File[];
+  description?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/files': {
+    POST: {
+      request: { body: HttpFormData<FileUploadData> };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request type with <b>blob</b> body:
+  </summary>
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: Blob };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request type with <b>plain text</b> body:
+  </summary>
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: string };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request type with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
+  </summary>
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+import { http } from 'zimic/interceptor';
+
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
@@ -1061,37 +1192,21 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 const interceptor = http.createInterceptor<{
   '/users': {
     POST: {
-      request: {
-        body: UserCreationBody;
-      };
-      // ...
+      request: { body: HttpSearchParams<UserListSearchParams> };
     };
-
-    GET: {
-      request: {
-        searchParams: UserListSearchParams;
-      };
-      // ...
-    };
-    // Other methods
   };
-  // Other paths
 }>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
+</details>
+
 > [!TIP]
 >
 > You only need to include in the schema the properties you want to use in your mocks. Headers, search params, or body
 > fields that are not used do not need to be declared, keeping your type definitions clean and concise.
-
-> [!IMPORTANT]
->
-> Body types cannot be declared using the keyword `interface`, because interfaces do not have implicit index signatures
-> as types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare bodies
-> using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
 
 <details>
   <summary>
@@ -1133,6 +1248,11 @@ keys. `headers` and `body` are supported to provide type safety when applying mo
 Bodies can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain
 text.
 
+<details open>
+  <summary>
+    Declaring a response type with <b>JSON</b> body:
+  </summary>
+
 ```ts
 import { JSONValue } from 'zimic';
 import { http } from 'zimic/interceptor';
@@ -1148,33 +1268,139 @@ type NotFoundError = JSONValue<{
 const interceptor = http.createInterceptor<{
   '/users/:id': {
     GET: {
-      // ...
       response: {
         200: { body: User };
         404: { body: NotFoundError };
       };
     };
-    // Other methods
   };
-  // Other paths
 }>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
 
+</details>
+
+> [!IMPORTANT]
+>
+> Also similarly to [declaring HTTP requests](#declaring-http-requests), JSON body types cannot be declared using
+> TypeScript interfaces, because they do not have implicit index signatures as types do. Part of Zimic's JSON validation
+> relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
+> type is a valid JSON, you can use the utility type `JSONValue`.
+
+<details>
+  <summary>
+    Declaring a response type with <b>form data</b> body:
+  </summary>
+
+```ts
+import { HttpSchema, HttpFormData } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type FileUploadData = HttpSchema.FormData<{
+  files: File[];
+  description?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/files': {
+    POST: {
+      response: {
+        200: { body: HttpFormData<FileUploadData> };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response type with <b>blob</b> body:
+  </summary>
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: Blob };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response type with <b>plain text</b> body:
+  </summary>
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: string };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response type with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
+  </summary>
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: HttpSearchParams<UserListSearchParams> };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
 > [!TIP]
 >
 > Similarly to [declaring HTTP requests](#declaring-http-requests), you only need to include in the schema the
 > properties you want to use in your mocks. Headers, search params, or body fields that are not used do not need to be
 > declared, keeping your type definitions clean and concise.
-
-> [!IMPORTANT]
->
-> Also similarly to [declaring HTTP requests](#declaring-http-requests), body types cannot be declared using the keyword
-> `interface`, because interfaces do not have implicit index signatures as types do. Part of Zimic's JSON validation
-> relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
-> type is a valid JSON, you can use the utility type `JSONValue`.
 
 <details>
   <summary>
@@ -1274,7 +1500,7 @@ The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and 
 When using a [remote interceptor](#remote-http-interceptors), creating a handler is an asynchronous operation, so you
 need to `await` it. You can also chain any number of operations and apply them by awaiting the handler.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1298,7 +1524,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1356,7 +1582,7 @@ interceptor.get(`/users/${1}`); // Only matches id 1
 the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
 `{ userId: string }`.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
@@ -1371,7 +1597,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -1396,13 +1622,13 @@ requests until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 interceptor.clear();
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 await interceptor.clear();
@@ -1423,7 +1649,7 @@ When multiple handlers match the same method and path, the _last_ created with
 
 Returns the method that matches a handler.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const handler = interceptor.post('/users');
@@ -1431,7 +1657,7 @@ const method = handler.method();
 console.log(method); // 'POST'
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.post('/users');
@@ -1446,7 +1672,7 @@ console.log(method); // 'POST'
 Returns the path that matches a handler. The base URL of the interceptor is not included, but it is used when matching
 requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const handler = interceptor.get('/users');
@@ -1454,7 +1680,7 @@ const path = handler.path();
 console.log(path); // '/users'
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.get('/users');
@@ -1473,14 +1699,18 @@ condition.
 
 ##### Static restrictions
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<details open>
+  <summary>
+    Declaring restrictions for <b>headers</b>:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
-  .post('/users')
+  .get('/users')
   .with({
-    headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    headers: { authorization: 'Bearer <token>' },
   })
   .respond({
     status: 200,
@@ -1488,14 +1718,13 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
-  .post('/users')
+  .get('/users')
   .with({
-    headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    headers: { authorization: 'Bearer <token>' },
   })
   .respond({
     status: 200,
@@ -1504,23 +1733,20 @@ const creationHandler = await interceptor
 ```
 
 </details></td></tr></table>
+</details>
 
-By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
-match the handler, regardless of having more properties or values. In the example above, requests with more headers than
-`content-type: application/json` will still match the handler. The same applies to search params and body restrictions.
+<details open>
+  <summary>
+    Declaring restrictions for <b>search params</b>:
+  </summary>
 
-If you want to match only requests with the exact values declared, you can use `exact: true`:
-
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
-  .post('/users')
+  .get('/users')
   .with({
-    headers: { 'content-type': 'application/json' },
-    body: creationPayload,
-    // Only requests with these exact headers and body will match
-    exact: true,
+    searchParams: { username: 'diego-aquino' },
   })
   .respond({
     status: 200,
@@ -1528,20 +1754,246 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .get('/users')
+  .with({
+    searchParams: { username: 'diego-aquino' },
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
+</details>
+
+<details open>
+  <summary>
+    Declaring restrictions for a <b>JSON</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: { username: 'diego-aquino' },
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: { username: 'diego-aquino' },
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+For JSON bodies to be correctly parsed, make sure that the intercepted requests have the header
+`content-type: application/json`.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions for a <b>form data</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserCreationData>();
+formData.append('username', 'diego-aquino');
+formData.append(
+  'profilePicture',
+  new File(['content'], 'profile.png', {
+    type: 'image/png',
+  }),
+);
+
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserCreationData>();
+formData.append('username', 'diego-aquino');
+formData.append(
+  'profilePicture',
+  new File(['content'], 'profile.png', {
+    type: 'image/png',
+  }),
+);
+
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+For form data bodies to be correctly parsed, make sure that the intercepted requests have the header
+`content-type: multipart/form-data`.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions for a <b>blob</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: new Blob(['content'], {
+      type: 'application/octet-stream',
+    }),
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: new Blob(['content'], {
+      type: 'application/octet-stream',
+    }),
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+For blob bodies to be correctly parsed, make sure that the intercepted requests have the header `content-type`
+indicating a binary data, such as `application/octet-stream`, `image/png`, `audio/mpeg`, etc.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions for a <b>plain text</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: 'content',
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: 'content',
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+For plain text bodies to be correctly parsed, make sure that the intercepted requests have the header `content-type`
+indicating a plain text, such as `text/plain`.
+
+</details>
+
+By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
+match the handler, regardless of having more properties or values. In the examples above, requests with more properties
+in the headers, search params, or body would still match the restrictions.
+
+If you want to match only requests with the exact values declared, you can use `exact: true`:
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    headers: { 'content-type': 'application/json' },
+    body: { username: 'diego-aquino' },
+    // Only requests with these exact headers and body will match
+    exact: true,
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    body: { username: 'diego-aquino' },
     // Only requests with these exact headers and body will match
     exact: true,
   })
   .respond({
-    status: 200,
-    body: [{ username: 'diego-aquino' }],
+    status: 201,
+    body: { username: 'diego-aquino' },
   });
 ```
 
@@ -1549,9 +2001,9 @@ const creationHandler = await interceptor
 
 ##### Computed restrictions
 
-A function is also supported to declare restrictions, in case they are dynamic.
+A function is also supported to declare restrictions in case they are dynamic.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1561,12 +2013,12 @@ const creationHandler = interceptor
     return accept !== null && accept.startsWith('application');
   })
   .respond({
-    status: 200,
+    status: 201,
     body: [{ username: 'diego-aquino' }],
   });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1576,7 +2028,7 @@ const creationHandler = await interceptor
     return accept !== null && accept.startsWith('application');
   })
   .respond({
-    status: 200,
+    status: 201,
     body: [{ username: 'diego-aquino' }],
   });
 ```
@@ -1586,7 +2038,7 @@ const creationHandler = await interceptor
 The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
 `request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 The function should return a boolean: `true` if the request matches the handler and should receive the mock response;
-`false` otherwise and the request should bypass the handler.
+`false` otherwise.
 
 #### HTTP `handler.respond(declaration)`
 
@@ -1597,7 +2049,12 @@ validated against the schema of the interceptor.
 
 ##### Static responses
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<details open>
+  <summary>
+    Declaring responses with <b>JSON</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -1606,7 +2063,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1616,12 +2073,155 @@ const listHandler = await interceptor.get('/users').respond({
 ```
 
 </details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with <b>form data</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserGetByIdData>();
+formData.append('username', 'diego-aquino');
+formData.append(
+  'profilePicture',
+  new File(['content'], 'profile.png', {
+    type: 'image/png',
+  }),
+);
+
+const listHandler = interceptor.get('/users/:id').respond({
+  status: 200,
+  body: formData,
+});
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserGetByIdData>();
+formData.append('username', 'diego-aquino');
+formData.append(
+  'profilePicture',
+  new File(['content'], 'profile.png', {
+    type: 'image/png',
+  }),
+);
+
+const listHandler = await interceptor.get('/users/:id').respond({
+  status: 200,
+  body: formData,
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with <b>blob</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: new Blob(['content'], {
+    type: 'application/octet-stream',
+  }),
+});
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: new Blob(['content'], {
+    type: 'application/octet-stream',
+  }),
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with <b>plain text</b> body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: 'content',
+});
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: 'content',
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
+  </summary>
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
+  username: 'diego-aquino',
+});
+
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: searchParams,
+});
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
+  username: 'diego-aquino',
+});
+
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: searchParams,
+});
+```
+
+</details></td></tr></table>
+</details>
 
 ##### Computed responses
 
-A function is also supported to declare a response, in case it is dynamic:
+A function is also supported to declare a response in case it is dynamic:
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond((request) => {
@@ -1633,7 +2233,7 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond((request) => {
@@ -1662,7 +2262,7 @@ To make the handler match requests again, register a new response with
 This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
 removed the response, keeping restrictions and intercepted requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -1679,7 +2279,7 @@ otherListHandler.bypass();
 // Now, requests GET /users will match `listHandler` and receive an empty array
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1710,7 +2310,7 @@ To make the handler match requests again, register a new response with `handler.
 This method is useful to reset handlers to a clean state between tests. It is more aggressive than
 [`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -1729,7 +2329,7 @@ otherListHandler.clear();
 otherListHandler.requests(); // Now empty
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1755,7 +2355,7 @@ await otherListHandler.requests(); // Now empty
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
@@ -1777,7 +2377,7 @@ expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -1813,7 +2413,7 @@ and falls back to plain text if it fails.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listRequests = listHandler.requests();
@@ -1821,7 +2421,7 @@ console.log(listRequests[0].raw); // Request{}
 console.log(listRequests[0].response.raw); // Response{}
 ```
 
-</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listRequests = await listHandler.requests();
