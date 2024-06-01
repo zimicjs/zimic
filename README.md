@@ -246,7 +246,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    });
    ```
 
-    </details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+    </details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -273,11 +273,11 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
     </details></td></tr></table>
 
-In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
-`/users`. A successful response contains an array of `User` objects. Learn more about
-[declaring HTTP service schemas](#declaring-http-service-schemas).
+   In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
+   `/users`. A successful response contains an array of `User` objects. Learn more about
+   [declaring HTTP service schemas](#declaring-http-service-schemas).
 
-1. Then, start the interceptor:
+2. Then, start the interceptor:
 
    ```ts
    await interceptor.start();
@@ -287,7 +287,7 @@ In this example, we're [creating an interceptor](#httpcreateinterceptor) for a s
    [interceptor server](#zimic-server-start) before starting it. The base URL of the remote interceptor should point to
    the server, optionally including a path to differentiate from other interceptors.
 
-2. Now, you can intercept requests and return mock responses!
+3. Now, you can intercept requests and return mock responses!
 
    <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
@@ -302,7 +302,7 @@ In this example, we're [creating an interceptor](#httpcreateinterceptor) for a s
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
-   </details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+   </details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
    ```ts
    const listHandler = await interceptor.get('/users').respond({
@@ -355,7 +355,7 @@ afterAll(async () => {
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 // Your interceptors
@@ -1524,7 +1524,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1597,7 +1597,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -1628,7 +1628,7 @@ This method is useful to reset the interceptor mocks between tests.
 interceptor.clear();
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 await interceptor.clear();
@@ -1657,7 +1657,7 @@ const method = handler.method();
 console.log(method); // 'POST'
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.post('/users');
@@ -1680,7 +1680,7 @@ const path = handler.path();
 console.log(path); // '/users'
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.get('/users');
@@ -1718,7 +1718,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1754,7 +1754,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1790,7 +1790,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1841,7 +1841,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -1894,7 +1894,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1936,7 +1936,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1980,7 +1980,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -2018,7 +2018,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -2063,7 +2063,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2100,7 +2100,7 @@ const listHandler = interceptor.get('/users/:id').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -2139,7 +2139,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2167,7 +2167,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2199,7 +2199,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic';
@@ -2233,7 +2233,7 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond((request) => {
@@ -2279,7 +2279,7 @@ otherListHandler.bypass();
 // Now, requests GET /users will match `listHandler` and receive an empty array
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2329,7 +2329,7 @@ otherListHandler.clear();
 otherListHandler.requests(); // Now empty
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2377,7 +2377,7 @@ expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -2421,7 +2421,7 @@ console.log(listRequests[0].raw); // Request{}
 console.log(listRequests[0].response.raw); // Response{}
 ```
 
-</details></td></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listRequests = await listHandler.requests();
