@@ -1074,7 +1074,7 @@ const interceptor = http.createInterceptor<{
 
 <details open>
   <summary>
-    Declaring a request with a <b>JSON body</b> using <code>JSONValue</code>:
+    Declaring a request with <b>JSON</b> body:
   </summary>
 
 ```ts
@@ -1101,7 +1101,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a request with a <b>form data body</b> using <a href='#httpformdata'><code>HttpFormData</code></a>:
+    Declaring a request with <b>form data</b> body:
   </summary>
 
 ```ts
@@ -1111,10 +1111,6 @@ import { http } from 'zimic/interceptor';
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
   description?: string;
-}>;
-
-type UserListSearchParams = HttpSchema.SearchParams<{
-  username?: string;
 }>;
 
 const interceptor = http.createInterceptor<{
@@ -1133,7 +1129,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a request with a <b>blob body</b>:
+    Declaring a request with <b>blob</b> body:
   </summary>
 
 ```ts
@@ -1156,7 +1152,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a request with <b>plain text body</b>:
+    Declaring a request with <b>plain text</b> body:
   </summary>
 
 ```ts
@@ -1179,7 +1175,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a request with a <b>search params body</b> (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+    Declaring a request with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
 ```ts
@@ -1258,7 +1254,7 @@ text.
 
 <details open>
   <summary>
-    Declaring a response with a <b>JSON body</b> using <code>JSONValue</code>:
+    Declaring a response with <b>JSON</b> body:
   </summary>
 
 ```ts
@@ -1292,7 +1288,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a response with a <b>form data body</b> using <a href='#httpformdata'><code>HttpFormData</code></a>:
+    Declaring a response with <b>form data</b> body:
   </summary>
 
 ```ts
@@ -1322,7 +1318,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a response with a <b>blob body</b>:
+    Declaring a response with <b>blob</b> body:
   </summary>
 
 ```ts
@@ -1347,7 +1343,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a response with <b>plain text body</b>:
+    Declaring a response with <b>plain text</b> body:
   </summary>
 
 ```ts
@@ -1372,7 +1368,7 @@ const interceptor = http.createInterceptor<{
 
 <details>
   <summary>
-    Declaring a response with a <b>search params body</b> (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+    Declaring a response with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
 ```ts
@@ -1711,7 +1707,7 @@ condition.
 
 <details open>
   <summary>
-    Declaring restrictions over a <b>JSON body</b>:
+    Declaring restrictions over a <b>JSON</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -1753,7 +1749,7 @@ const creationHandler = await interceptor
 
 <details>
   <summary>
-    Declaring restrictions over a <b>form data body</b>:
+    Declaring restrictions over a <b>form data</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -1807,7 +1803,7 @@ const creationHandler = await interceptor
 
 <details>
   <summary>
-    Declaring restrictions over a <b>blob body</b>:
+    Declaring restrictions over a <b>blob</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -1849,7 +1845,7 @@ const creationHandler = await interceptor
 
 <details>
   <summary>
-    Declaring restrictions over a <b>plain text body</b>:
+    Declaring restrictions over a <b>plain text</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -2055,7 +2051,7 @@ validated against the schema of the interceptor.
 
 <details open>
   <summary>
-    Declaring responses with a <b>JSON body</b>:
+    Declaring responses with <b>JSON</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -2081,7 +2077,7 @@ const listHandler = await interceptor.get('/users').respond({
 
 <details>
   <summary>
-    Declaring responses with a <b>form data body</b> using <a href='#httpformdata'><code>HttpFormData</code></a>:
+    Declaring responses with <b>form data</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -2119,7 +2115,7 @@ const listHandler = await interceptor.get('/users/:id').respond({
 
 <details>
   <summary>
-    Declaring responses with a <b>blob body</b>:
+    Declaring responses with <b>blob</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -2145,7 +2141,7 @@ const listHandler = await interceptor.get('/users').respond({
 
 <details>
   <summary>
-    Declaring responses with <b>plain text body</b>:
+    Declaring responses with <b>plain text</b> body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
@@ -2171,7 +2167,7 @@ const listHandler = await interceptor.get('/users').respond({
 
 <details>
   <summary>
-    Declaring responses with a <b>search params body</b> (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+    Declaring responses with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b</summary>
