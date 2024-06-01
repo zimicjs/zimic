@@ -1043,8 +1043,39 @@ const interceptor = http.createInterceptor<{
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
 
-[Path parameters](#dynamic-path-parameters) are automatically inferred from dynamic paths, such as `/users/:id`. Bodies
-can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain text.
+[Path parameters](#dynamic-path-parameters) are automatically inferred from dynamic paths, such as `/users/:id`.
+
+<details open>
+  <summary>
+    Declaring a request with search params:
+  </summary>
+
+```ts
+import { HttpSchema, JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    GET: {
+      request: { searchParams: UserListSearchParams };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details open>
+  <summary>
+    Declaring a request with a JSON body using <code>JSONValue</code>:
+  </summary>
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
@@ -1054,6 +1085,107 @@ type UserCreationBody = JSONValue<{
   username: string;
 }>;
 
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: UserCreationBody };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request with a form data body using <a href='#httpformdata'><code>HttpFormData</code></a>:
+  </summary>
+
+```ts
+import { HttpSchema, HttpFormData } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type FileUploadData = HttpSchema.FormData<{
+  files: File[];
+  description?: string;
+}>;
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/files': {
+    POST: {
+      request: { body: HttpFormData<FileUploadData> };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request with a blob body:
+  </summary>
+
+```ts
+import { HttpSchema } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: Blob };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request with plain text body:
+  </summary>
+
+```ts
+import { HttpSchema, JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      request: { body: string };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a request with a search params body (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+  </summary>
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+import { http } from 'zimic/interceptor';
+
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
@@ -1061,26 +1193,16 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 const interceptor = http.createInterceptor<{
   '/users': {
     POST: {
-      request: {
-        body: UserCreationBody;
-      };
-      // ...
+      request: { body: HttpSearchParams<UserListSearchParams> };
     };
-
-    GET: {
-      request: {
-        searchParams: UserListSearchParams;
-      };
-      // ...
-    };
-    // Other methods
   };
-  // Other paths
 }>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
+
+</details>
 
 > [!TIP]
 >
@@ -1089,9 +1211,10 @@ const interceptor = http.createInterceptor<{
 
 > [!IMPORTANT]
 >
-> Body types cannot be declared using the keyword `interface`, because interfaces do not have implicit index signatures
-> as types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare bodies
-> using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
+> JSON body types cannot be declared using the keyword `interface`, because interfaces do not have implicit index
+> signatures as types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can
+> declare JSON bodies using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type
+> `JSONValue`.
 
 <details>
   <summary>
@@ -1133,6 +1256,11 @@ keys. `headers` and `body` are supported to provide type safety when applying mo
 Bodies can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain
 text.
 
+<details open>
+  <summary>
+    Declaring a response with a JSON body using <code>JSONValue</code>:
+  </summary>
+
 ```ts
 import { JSONValue } from 'zimic';
 import { http } from 'zimic/interceptor';
@@ -1148,20 +1276,128 @@ type NotFoundError = JSONValue<{
 const interceptor = http.createInterceptor<{
   '/users/:id': {
     GET: {
-      // ...
       response: {
         200: { body: User };
         404: { body: NotFoundError };
       };
     };
-    // Other methods
   };
-  // Other paths
 }>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response with a form data body using <a href='#httpformdata'><code>HttpFormData</code></a>:
+  </summary>
+
+```ts
+import { HttpSchema, HttpFormData } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type FileUploadData = HttpSchema.FormData<{
+  files: File[];
+  description?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/files': {
+    POST: {
+      response: {
+        200: { body: HttpFormData<FileUploadData> };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response with a blob body:
+  </summary>
+
+```ts
+import { HttpSchema } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: Blob };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response with plain text body:
+  </summary>
+
+```ts
+import { HttpSchema, JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: string };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
+
+<details>
+  <summary>
+    Declaring a response with a search params body (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+  </summary>
+
+```ts
+import { HttpSchema, HttpSearchParams } from 'zimic';
+import { http } from 'zimic/interceptor';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const interceptor = http.createInterceptor<{
+  '/users': {
+    POST: {
+      response: {
+        200: { body: HttpSearchParams<UserListSearchParams> };
+      };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+</details>
 
 > [!TIP]
 >
@@ -1473,14 +1709,198 @@ condition.
 
 ##### Static restrictions
 
+<details open>
+  <summary>
+    Declaring restrictions over a JSON body:
+  </summary>
+
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
   .post('/users')
   .with({
-    headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    body: { username: 'diego-aquino' },
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: { username: 'diego-aquino' },
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+> [!IMPORTANT]
+>
+> For the body to be correctly parsed, make sure that the intercepted requests have the header
+> `content-type: application/json`.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions over a form data body:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserCreationData>();
+formData.append('username', 'diego-aquino');
+formData.append('profilePicture', new File(['content'], 'profile.png', { type: 'image/png' }));
+
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserCreationData>();
+formData.append('username', 'diego-aquino');
+formData.append('profilePicture', new File(['content'], 'profile.png', { type: 'image/png' }));
+
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: formData,
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+> [!IMPORTANT]
+>
+> For the body to be correctly parsed, make sure that the intercepted requests have the header
+> `content-type: multipart/form-data`.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions over a blob body:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: new Blob(['content'], { type: 'application/octet-stream' }),
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: new Blob(['content'], { type: 'application/octet-stream' }),
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+> [!IMPORTANT]
+>
+> For the body to be correctly parsed, make sure that the intercepted requests have the header `content-type` indicating
+> a binary data, such as `application/octet-stream`, `image/png`, `audio/mpeg`, etc.
+
+</details>
+
+<details>
+  <summary>
+    Declaring restrictions over a plain text body:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .post('/users')
+  .with({
+    body: 'content',
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .post('/users')
+  .with({
+    body: 'content',
+  })
+  .respond({
+    status: 201,
+    body: { username: 'diego-aquino' },
+  });
+```
+
+</details></td></tr></table>
+
+> [!IMPORTANT]
+>
+> For the body to be correctly parsed, make sure that the intercepted requests have the header `content-type` indicating
+> a plain text, such as `text/plain`.
+
+</details>
+
+<details open>
+  <summary>
+    Declaring restrictions over search params:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .get('/users')
+  .with({
+    searchParams: { username: 'diego-aquino' },
   })
   .respond({
     status: 200,
@@ -1492,10 +1912,9 @@ const creationHandler = interceptor
 
 ```ts
 const creationHandler = await interceptor
-  .post('/users')
+  .get('/users')
   .with({
-    headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    searchParams: { username: 'diego-aquino' },
   })
   .respond({
     status: 200,
@@ -1504,10 +1923,47 @@ const creationHandler = await interceptor
 ```
 
 </details></td></tr></table>
+</details>
+
+<details open>
+  <summary>
+    Declaring restrictions over headers:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const creationHandler = interceptor
+  .get('/users')
+  .with({
+    headers: { authorization: 'Bearer <token>' },
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const creationHandler = await interceptor
+  .get('/users')
+  .with({
+    headers: { authorization: 'Bearer <token>' },
+  })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
+</details>
 
 By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
-match the handler, regardless of having more properties or values. In the example above, requests with more headers than
-`content-type: application/json` will still match the handler. The same applies to search params and body restrictions.
+match the handler, regardless of having more properties or values. In the examples above, requests with more properties
+in the headers, search params, or body would still match the restrictions.
 
 If you want to match only requests with the exact values declared, you can use `exact: true`:
 
@@ -1518,13 +1974,13 @@ const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    body: { username: 'diego-aquino' },
     // Only requests with these exact headers and body will match
     exact: true,
   })
   .respond({
-    status: 200,
-    body: [{ username: 'diego-aquino' }],
+    status: 201,
+    body: { username: 'diego-aquino' },
   });
 ```
 
@@ -1535,13 +1991,13 @@ const creationHandler = await interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: creationPayload,
+    body: { username: 'diego-aquino' },
     // Only requests with these exact headers and body will match
     exact: true,
   })
   .respond({
-    status: 200,
-    body: [{ username: 'diego-aquino' }],
+    status: 201,
+    body: { username: 'diego-aquino' },
   });
 ```
 
@@ -1549,7 +2005,7 @@ const creationHandler = await interceptor
 
 ##### Computed restrictions
 
-A function is also supported to declare restrictions, in case they are dynamic.
+A function is also supported to declare restrictions in case they are dynamic.
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
@@ -1561,7 +2017,7 @@ const creationHandler = interceptor
     return accept !== null && accept.startsWith('application');
   })
   .respond({
-    status: 200,
+    status: 201,
     body: [{ username: 'diego-aquino' }],
   });
 ```
@@ -1576,7 +2032,7 @@ const creationHandler = await interceptor
     return accept !== null && accept.startsWith('application');
   })
   .respond({
-    status: 200,
+    status: 201,
     body: [{ username: 'diego-aquino' }],
   });
 ```
@@ -1586,7 +2042,7 @@ const creationHandler = await interceptor
 The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
 `request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 The function should return a boolean: `true` if the request matches the handler and should receive the mock response;
-`false` otherwise and the request should bypass the handler.
+`false` otherwise.
 
 #### HTTP `handler.respond(declaration)`
 
@@ -1596,6 +2052,11 @@ When the handler matches a request, it will respond with the given declaration. 
 validated against the schema of the interceptor.
 
 ##### Static responses
+
+<details open>
+  <summary>
+    Declaring responses with a JSON body:
+  </summary>
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
@@ -1616,10 +2077,139 @@ const listHandler = await interceptor.get('/users').respond({
 ```
 
 </details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with a form data body using <a href='#httpformdata'><code>HttpFormData</code></a>:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserGetByIdData>();
+formData.append('username', 'diego-aquino');
+formData.append('profilePicture', new File(['content'], 'profile.png', { type: 'image/png' }));
+
+const listHandler = interceptor.get('/users/:id').respond({
+  status: 200,
+  body: formData,
+});
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<UserGetByIdData>();
+formData.append('username', 'diego-aquino');
+formData.append('profilePicture', new File(['content'], 'profile.png', { type: 'image/png' }));
+
+const listHandler = await interceptor.get('/users/:id').respond({
+  status: 200,
+  body: formData,
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with a blob body:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: new Blob(['content'], { type: 'application/octet-stream' }),
+});
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: new Blob(['content'], { type: 'application/octet-stream' }),
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with plain text body:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: 'content',
+});
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b></summary>
+
+```ts
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: 'content',
+});
+```
+
+</details></td></tr></table>
+</details>
+
+<details>
+  <summary>
+    Declaring responses with a search params body (<code>x-www-form-urlencoded</code>) using <a href='#httpsearchparams'><code>HttpSearchParams</code></a>:
+  </summary>
+
+<table><tr><td valign="top"><details open><summary><b>Local</b</summary>
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
+  username: 'diego-aquino',
+});
+
+const listHandler = interceptor.get('/users').respond({
+  status: 200,
+  body: searchParams,
+});
+```
+
+</details></td><td valign="top"><details open><summary><b>Remote</b</summary>
+
+```ts
+import { HttpSearchParams } from 'zimic';
+
+const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
+  username: 'diego-aquino',
+});
+
+const listHandler = await interceptor.get('/users').respond({
+  status: 200,
+  body: searchParams,
+});
+```
+
+</details></td></tr></table>
+</details>
 
 ##### Computed responses
 
-A function is also supported to declare a response, in case it is dynamic:
+A function is also supported to declare a response in case it is dynamic:
 
 <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
 
