@@ -85,8 +85,8 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       await declareBodyHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Restrictions', () => {
-      declareRestrictionsHttpInterceptorTests(runtimeOptions);
+    describe('Restrictions', async () => {
+      await declareRestrictionsHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Bypass', () => {

@@ -18,8 +18,10 @@ import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
+
+  const File = await getFile();
 
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
@@ -353,8 +355,6 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const File = await getFile();
-
         const restrictedFormData = new HttpFormData<FormDataSchema>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
@@ -436,8 +436,6 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const File = await getFile();
-
         const restrictedFormData = new HttpFormData<FormDataSchema>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
