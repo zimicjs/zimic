@@ -374,6 +374,23 @@ describe('HttpHeaders', () => {
     expect(headers.equals(otherHeaders)).toBe(false);
     headers.delete('keep-alive');
     expect(headers.equals(otherHeaders)).toBe(true);
+
+    headers.set('accept', '*/*');
+    headers.append('accept', 'application/json');
+
+    otherHeaders.set('accept', 'application/json');
+    expect(headers.equals(otherHeaders)).toBe(false);
+
+    otherHeaders.append('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(true);
+
+    otherHeaders.delete('accept');
+    otherHeaders.set('accept', 'application');
+    otherHeaders.append('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(false);
+
+    otherHeaders.append('accept', '*/*');
+    expect(headers.equals(otherHeaders)).toBe(false);
   });
 
   it('should support checking containment with other headers', () => {
@@ -433,5 +450,22 @@ describe('HttpHeaders', () => {
     expect(headers.contains(otherHeaders)).toBe(true);
     headers.delete('keep-alive');
     expect(headers.contains(otherHeaders)).toBe(true);
+
+    headers.set('accept', '*/*');
+    headers.append('accept', 'application/json');
+
+    otherHeaders.set('accept', 'application/json');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    otherHeaders.append('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(true);
+
+    otherHeaders.delete('accept');
+    otherHeaders.set('accept', 'application');
+    otherHeaders.append('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(false);
+
+    otherHeaders.append('accept', '*/*');
+    expect(headers.contains(otherHeaders)).toBe(false);
   });
 });

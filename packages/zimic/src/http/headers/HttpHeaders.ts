@@ -81,10 +81,25 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @returns `true` if the headers are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, value] of otherHeaders.entries()) {
-      const otherValue = super.get.call(this, key);
-      if (value !== otherValue) {
+    for (const [key, otherValue] of otherHeaders.entries()) {
+      const value = super.get.call(this, key);
+
+      if (value === null) {
         return false;
+      }
+
+      const valueItems = this.splitHeaderValues(value);
+      const otherValueItems = this.splitHeaderValues(otherValue);
+
+      const haveCompatibleNumberOfValues = valueItems.length === otherValueItems.length;
+      if (!haveCompatibleNumberOfValues) {
+        return false;
+      }
+
+      for (const otherValueItem of otherValueItems) {
+        if (!valueItems.includes(otherValueItem)) {
+          return false;
+        }
       }
     }
 
@@ -107,22 +122,23 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @returns `true` if these headers contain the other headers, `false` otherwise.
    */
   contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, value] of otherHeaders.entries()) {
-      const otherValue = super.get.call(this, key);
+    for (const [key, otherValue] of otherHeaders.entries()) {
+      const value = super.get.call(this, key);
 
-      if (otherValue === null) {
+      if (value === null) {
         return false;
       }
 
       const valueItems = this.splitHeaderValues(value);
       const otherValueItems = this.splitHeaderValues(otherValue);
 
-      if (otherValueItems.length < valueItems.length) {
+      const haveCompatibleNumberOfValues = valueItems.length >= otherValueItems.length;
+      if (!haveCompatibleNumberOfValues) {
         return false;
       }
 
-      for (const valueItem of valueItems) {
-        if (!otherValueItems.includes(valueItem)) {
+      for (const otherValueItem of otherValueItems) {
+        if (!valueItems.includes(otherValueItem)) {
           return false;
         }
       }
