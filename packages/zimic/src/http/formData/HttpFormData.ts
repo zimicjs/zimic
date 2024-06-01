@@ -146,10 +146,8 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     }
 
     for (const key of this.keys()) {
-      const otherValues = super.getAll.call(otherData, key);
-
-      const haveSameNumberOfValues = otherValues.length === super.getAll.call(this, key).length;
-      if (!haveSameNumberOfValues) {
+      const otherHasKey = super.has.call(otherData, key);
+      if (!otherHasKey) {
         return false;
       }
     }
