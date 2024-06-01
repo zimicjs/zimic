@@ -246,7 +246,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    });
    ```
 
-    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Remote</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -302,7 +302,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
-   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Remote</b></summary>
 
    ```ts
    const listHandler = await interceptor.get('/users').respond({
