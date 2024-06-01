@@ -85,13 +85,13 @@
     "chalk": "^4.1.2",
     "cross-spawn": "^7.0.3",
     "isomorphic-ws": "^5.0.0",
-    "msw": "^2.3.0",
+    "msw": "^2.3.1",
     "ws": "^8.17.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
-    "@types/node": "^20.12.12",
+    "@types/node": "^20.13.0",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "1.6.0",
