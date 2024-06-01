@@ -1,4 +1,4 @@
-import { blobContains, blobEquals } from './blob';
+import { blobEquals } from './blob';
 
 export async function getFile() {
   /* istanbul ignore next -- @preserve
@@ -9,8 +9,4 @@ export async function getFile() {
 
 export async function fileEquals(file: File, otherFile: File) {
   return file.name === otherFile.name && (await blobEquals(file, otherFile));
-}
-
-export async function fileContains(file: File, otherFile: File) {
-  return file.name === otherFile.name && (await blobContains(file, otherFile));
 }
