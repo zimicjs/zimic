@@ -105,6 +105,7 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.Response<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
