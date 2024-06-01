@@ -168,7 +168,8 @@ Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), an
 
 > [!IMPORTANT]
 >
-> All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
+> All mocking operations in local interceptor are **synchronous**. There's no need to `await` them before making
+> requests.
 
 #### Remote HTTP interceptors
 
@@ -191,10 +192,10 @@ remote interceptors.
 
 > [!IMPORTANT]
 >
-> All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
+> All mocking operations in remote interceptors are **asynchronous**. Make sure to `await` them before making requests.
 >
-> Some code snippets in this `README.md` display a local and a remote interceptor example side by side. Generally, the
-> remote snippets differ only by adding `await` when necessary.
+> Many code snippets in this `README.md` show examples with a local and a remote interceptor. Generally, the remote
+> snippets differ only by adding `await` where necessary.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks that
