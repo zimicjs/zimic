@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { HttpInterceptorPlatform } from '../../interceptor/types/options';
-import UnregisteredServiceWorkerError from '../errors/UnregisteredServiceWorkerError';
+import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
 import { BrowserHttpWorker } from '../types/requests';
 
@@ -14,7 +14,7 @@ describe('HttpInterceptorWorker (browser, no worker)', () => {
     });
 
     const interceptorStartPromise = interceptorWorker.start();
-    await expect(interceptorStartPromise).rejects.toThrowError(new UnregisteredServiceWorkerError());
+    await expect(interceptorStartPromise).rejects.toThrowError(new UnregisteredBrowserServiceWorkerError());
 
     expect(interceptorWorker.platform()).toBe(platform);
   });

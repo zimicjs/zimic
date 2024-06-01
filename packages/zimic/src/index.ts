@@ -1,3 +1,5 @@
+import InvalidFormDataError from './http/errors/InvalidFormDataError';
+import InvalidJSONError from './http/errors/InvalidJSONError';
 import HttpFormData from './http/formData/HttpFormData';
 import HttpHeaders from './http/headers/HttpHeaders';
 import HttpSearchParams from './http/searchParams/HttpSearchParams';
@@ -40,4 +42,4 @@ export type {
   PathParamsSchemaFromPath,
 } from './http/types/schema';
 
-export { HttpSearchParams, HttpHeaders, HttpFormData };
+export { HttpSearchParams, HttpHeaders, HttpFormData, InvalidJSONError, InvalidFormDataError };

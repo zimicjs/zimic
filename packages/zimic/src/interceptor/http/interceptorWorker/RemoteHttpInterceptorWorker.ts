@@ -8,7 +8,7 @@ import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
-import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
+import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
@@ -103,8 +103,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     /* istanbul ignore next -- @preserve
-     * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
-    throw new UnknownHttpInterceptorPlatform();
+     * Ignoring because checking unknown platforms is not configured in our test setup. */
+    throw new UnknownHttpInterceptorPlatformError();
   }
 
   async stop() {

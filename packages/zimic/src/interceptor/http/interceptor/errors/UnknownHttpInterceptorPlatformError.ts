@@ -4,7 +4,7 @@
  *
  * @see {@link https://github.com/zimicjs/zimic#http-interceptorplatform `interceptor.platform()` API reference}
  */
-class UnknownHttpInterceptorPlatform extends Error {
+class UnknownHttpInterceptorPlatformError extends Error {
   /* istanbul ignore next -- @preserve
    * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
   constructor() {
@@ -13,4 +13,4 @@ class UnknownHttpInterceptorPlatform extends Error {
   }
 }
 
-export default UnknownHttpInterceptorPlatform;
+export default UnknownHttpInterceptorPlatformError;

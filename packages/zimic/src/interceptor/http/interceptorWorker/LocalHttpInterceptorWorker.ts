@@ -11,9 +11,9 @@ import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
-import UnknownHttpInterceptorPlatform from '../interceptor/errors/UnknownHttpInterceptorPlatform';
+import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import UnregisteredServiceWorkerError from './errors/UnregisteredServiceWorkerError';
+import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
 import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
@@ -60,8 +60,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     /* istanbul ignore next -- @preserve
-     * Ignoring because checking unknown platforms is currently not possible in our Vitest setup. */
-    throw new UnknownHttpInterceptorPlatform();
+     * Ignoring because checking unknown platforms is not configured in our test setup. */
+    throw new UnknownHttpInterceptorPlatformError();
   }
 
   async start() {
@@ -94,8 +94,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private handleBrowserWorkerStartError(error: unknown) {
-    if (UnregisteredServiceWorkerError.matchesRawError(error)) {
-      throw new UnregisteredServiceWorkerError();
+    if (UnregisteredBrowserServiceWorkerError.matchesRawError(error)) {
+      throw new UnregisteredBrowserServiceWorkerError();
     }
     throw error;
   }
