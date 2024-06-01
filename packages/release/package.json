@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.12.12",
+    "@types/node": "^20.13.0",
     "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
