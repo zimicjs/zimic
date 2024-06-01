@@ -166,7 +166,7 @@ When to use `local`:
 Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), and
 [Next.js Pages Router](./examples/README.md#nextjs) examples use local interceptors.
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > All mocking operations in local interceptor are _synchronous_. There's no need to `await` them before making requests.
 
@@ -189,7 +189,7 @@ When to use `remote`:
 Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
 remote interceptors.
 
-> [!NOTE]
+> [!IMPORTANT]
 >
 > All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
 >
