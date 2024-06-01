@@ -57,7 +57,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
       type,
     });
 
-    // TODO: improve handler.with() type performance
+    // TODO: handler.with() restriction types are not performing well when combining many interceptor types and http methods
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having headers restrictions`, async () => {
@@ -208,7 +208,7 @@ export function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHt
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
-    // TODO: improve handler.with() type performance
+    // TODO: handler.with() restriction types are not performing well when combining many interceptor types and http methods
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having exact body JSON restrictions`, async () => {
