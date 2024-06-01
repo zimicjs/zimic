@@ -1,5 +1,5 @@
 import { ArrayItemIfArray, ArrayKey, Defined, NonArrayKey, ReplaceBy } from '@/types/utils';
-import { fileContains, fileEquals } from '@/utils/files';
+import { fileEquals } from '@/utils/files';
 
 import { HttpFormDataSchema } from './types';
 
@@ -177,8 +177,8 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
       for (const value of values) {
         if (
           value === otherValue ||
-          (typeof value === 'string' && typeof otherValue === 'string' && value.includes(otherValue)) ||
-          (value instanceof Blob && otherValue instanceof Blob && (await fileContains(value, otherValue)))
+          (typeof value === 'string' && typeof otherValue === 'string' && value === otherValue) ||
+          (value instanceof Blob && otherValue instanceof Blob && (await fileEquals(value, otherValue)))
         ) {
           valueExists = true;
           break;

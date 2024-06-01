@@ -468,7 +468,7 @@ describe('HttpFormData', async () => {
     expect(await formData.contains(otherFormData)).toBe(false);
 
     formData.append('descriptions', description);
-    expect(await formData.contains(otherFormData)).toBe(true);
+    expect(await formData.contains(otherFormData)).toBe(false);
 
     otherFormData.delete('descriptions');
     expect(await formData.contains(otherFormData)).toBe(true);
@@ -490,5 +490,8 @@ describe('HttpFormData', async () => {
 
     formData.delete('blob');
     expect(await formData.contains(otherFormData)).toBe(true);
+
+    formData.delete('description');
+    expect(await formData.contains(otherFormData)).toBe(false);
   });
 });
