@@ -171,22 +171,22 @@ class HttpRequestHandlerClient<
       return restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
     }
 
-    if (body instanceof HttpFormData) {
-      if (!(restrictionBody instanceof HttpFormData)) {
+    if (restrictionBody instanceof HttpFormData) {
+      if (!(body instanceof HttpFormData)) {
         return false;
       }
       return restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
     }
 
-    if (body instanceof HttpSearchParams) {
-      if (!(restrictionBody instanceof HttpSearchParams)) {
+    if (restrictionBody instanceof HttpSearchParams) {
+      if (!(body instanceof HttpSearchParams)) {
         return false;
       }
       return restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
     }
 
-    if (body instanceof Blob) {
-      if (!(restrictionBody instanceof Blob)) {
+    if (restrictionBody instanceof Blob) {
+      if (!(body instanceof Blob)) {
         return false;
       }
       return restriction.exact ? blobEquals(body, restrictionBody) : blobContains(body, restrictionBody);

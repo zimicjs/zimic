@@ -109,6 +109,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const mismatchingSearchParams of [
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
+          new HttpSearchParams<SearchParamsSchema>({ name: 'other' }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
@@ -215,6 +216,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
         for (const mismatchingHeaders of [
           new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': 'other' }),
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });

@@ -133,22 +133,14 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
       const otherValueItems = this.splitHeaderValues(otherValue);
 
       const haveCompatibleNumberOfValues = valueItems.length >= otherValueItems.length;
-
       if (!haveCompatibleNumberOfValues) {
         return false;
       }
 
-      let valueExists = false;
-
-      for (const valueItem of otherValueItems) {
-        if (valueItems.some((item) => item.includes(valueItem))) {
-          valueExists = true;
-          break;
+      for (const otherValueItem of otherValueItems) {
+        if (!valueItems.includes(otherValueItem)) {
+          return false;
         }
-      }
-
-      if (!valueExists) {
-        return false;
       }
     }
 

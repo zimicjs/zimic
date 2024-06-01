@@ -463,7 +463,7 @@ describe('HttpHeaders', () => {
     otherHeaders.delete('accept');
     otherHeaders.set('accept', 'application');
     otherHeaders.append('accept', '*/*');
-    expect(headers.contains(otherHeaders)).toBe(true);
+    expect(headers.contains(otherHeaders)).toBe(false);
 
     otherHeaders.append('accept', '*/*');
     expect(headers.contains(otherHeaders)).toBe(false);

@@ -427,9 +427,9 @@ describe('HttpSearchParams', () => {
 
     otherSearchParams.delete('names', 'User2');
     otherSearchParams.append('names', 'Use');
-    expect(searchParams.contains(otherSearchParams)).toBe(true);
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
 
-    otherSearchParams.delete('names', 'User1');
+    otherSearchParams.delete('names', 'Use');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
     searchParams.set('page', '2');

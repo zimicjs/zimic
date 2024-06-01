@@ -12,5 +12,5 @@ export async function fileEquals(file: File, otherFile: File) {
 }
 
 export async function fileContains(file: File, otherFile: File) {
-  return file.name.includes(otherFile.name) && file.size >= otherFile.size && (await blobContains(file, otherFile));
+  return file.name === otherFile.name && (await blobContains(file, otherFile));
 }

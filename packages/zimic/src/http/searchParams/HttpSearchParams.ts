@@ -114,15 +114,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
         return false;
       }
 
-      let valueExists = false;
-
-      for (const value of values) {
-        if (value === otherValue) {
-          valueExists = true;
-          break;
-        }
-      }
-
+      const valueExists = values.includes(otherValue);
       if (!valueExists) {
         return false;
       }
@@ -148,15 +140,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
         return false;
       }
 
-      let valueExists = false;
-
-      for (const value of values) {
-        if (value.includes(otherValue)) {
-          valueExists = true;
-          break;
-        }
-      }
-
+      const valueExists = values.includes(otherValue);
       if (!valueExists) {
         return false;
       }
