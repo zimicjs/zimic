@@ -613,6 +613,8 @@ console.log(formData1.contains(formData3)); // true
 console.log(formData3.contains(formData1)); // false
 ```
 
+</details>
+
 ## `zimic/interceptor` API reference
 
 This module provides resources to create HTTP interceptors for both Node.js and browser environments.
