@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 
+import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
+import InvalidJSONError from '@/http/errors/InvalidJSONError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
@@ -25,8 +27,6 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
-import InvalidFormDataError from './errors/InvalidFormDataError';
-import InvalidJSONError from './errors/InvalidJSONError';
 import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
 import { HttpResponseFactory } from './types/requests';
 

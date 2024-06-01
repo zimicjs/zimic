@@ -1,9 +1,15 @@
 import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
-import UnknownHttpInterceptorPlatform from './http/interceptor/errors/UnknownHttpInterceptorPlatform';
-import UnregisteredServiceWorkerError from './http/interceptorWorker/errors/UnregisteredServiceWorkerError';
+import UnknownHttpInterceptorPlatformError from './http/interceptor/errors/UnknownHttpInterceptorPlatformError';
+import UnknownHttpInterceptorTypeError from './http/interceptor/errors/UnknownHttpInterceptorTypeError';
+import UnregisteredBrowserServiceWorkerError from './http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorNamespace from './http/namespace/HttpInterceptorNamespace';
 
-export { UnknownHttpInterceptorPlatform, NotStartedHttpInterceptorError, UnregisteredServiceWorkerError };
+export {
+  UnknownHttpInterceptorPlatformError,
+  UnknownHttpInterceptorTypeError,
+  NotStartedHttpInterceptorError,
+  UnregisteredBrowserServiceWorkerError,
+};
 
 export type {
   HttpRequestHandlerResponseDeclaration,

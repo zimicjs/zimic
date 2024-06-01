@@ -7,7 +7,7 @@ import HttpFormData from '../HttpFormData';
 describe('HttpFormData', async () => {
   const File = await getFile();
 
-  const file = new File(['content'], 'file.txt');
+  const file = new File(['content'], 'file.txt', { type: 'text/plain' });
 
   const blob = new Blob(['content'], { type: 'text/plain' });
   const blobName = 'blob.txt';

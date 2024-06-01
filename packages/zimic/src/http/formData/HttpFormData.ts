@@ -8,10 +8,6 @@ import { HttpFormDataSchema } from './types';
  * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
  */
 class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> extends FormData {
-  constructor(form?: HTMLFormElement, submitter?: HTMLElement | null) {
-    super(form, submitter);
-  }
-
   set<Name extends keyof Schema & string>(
     name: Name,
     value: Exclude<ArrayItemIfArray<Defined<Schema[Name]>>, Blob>,

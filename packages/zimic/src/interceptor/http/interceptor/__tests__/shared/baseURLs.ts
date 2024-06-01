@@ -64,7 +64,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         expect(request.response.status).toBe(200);
 
         expectTypeOf(request.response.body).toEqualTypeOf<null>();
-        expect(request.response.body).toEqual(null);
+        expect(request.response.body).toBe(null);
       });
     }
   });

@@ -8,9 +8,6 @@ import { HttpBody } from './requests';
 export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
 export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[number];
 
-export const HTTP_METHODS_WITHOUT_REQUEST_BODY = Object.freeze(['GET', 'HEAD', 'OPTIONS'] as const);
-export type HttpMethodWithoutRequestBody = (typeof HTTP_METHODS_WITHOUT_REQUEST_BODY)[number];
-
 export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
   'GET',
   'POST',
@@ -21,13 +18,7 @@ export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
 ] as const);
 export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY)[number];
 
-export const HTTP_METHODS_WITHOUT_RESPONSE_BODY = Object.freeze(['HEAD'] as const);
-export type HttpMethodWithoutResponseBody = (typeof HTTP_METHODS_WITHOUT_RESPONSE_BODY)[number];
-
-export const HTTP_METHODS = Object.freeze([
-  ...HTTP_METHODS_WITH_REQUEST_BODY,
-  ...HTTP_METHODS_WITHOUT_REQUEST_BODY,
-] as const);
+export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
  * A type representing the currently supported
  * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
