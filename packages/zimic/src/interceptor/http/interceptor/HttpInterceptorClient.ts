@@ -226,6 +226,8 @@ class HttpInterceptorClient<
     parsedRequest: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<HttpRequestHandlerClient<Schema, Method, Path, any> | undefined> {
+    /* istanbul ignore next -- @preserve
+     * Ignoring because there will always be a handler for the given method and path at this point. */
     const methodPathHandlers = this.handlerClientsByMethod[method].get(path) ?? [];
 
     for (let handlerIndex = methodPathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
