@@ -222,7 +222,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
 1. To start using Zimic, create your first [HTTP interceptor](#httpinterceptor):
 
-   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+   <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -246,7 +246,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    });
    ```
 
-    </details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
    ```ts
    import { JSONValue } from 'zimic';
@@ -289,7 +289,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
 3. Now, you can intercept requests and return mock responses!
 
-   <table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+   <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
    const listHandler = interceptor.get('/users').respond({
@@ -302,7 +302,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    console.log(users); // [{ username: 'diego-aquino' }]
    ```
 
-   </details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
    ```ts
    const listHandler = await interceptor.get('/users').respond({
@@ -327,7 +327,7 @@ test setup file. An example using a Jest/Vitest API:
 
 `tests/setup.ts`
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 // Your interceptors
@@ -355,7 +355,7 @@ afterAll(async () => {
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 // Your interceptors
@@ -1500,7 +1500,7 @@ The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and 
 When using a [remote interceptor](#remote-http-interceptors), creating a handler is an asynchronous operation, so you
 need to `await` it. You can also chain any number of operations and apply them by awaiting the handler.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1524,7 +1524,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -1582,7 +1582,7 @@ interceptor.get(`/users/${1}`); // Only matches id 1
 the path string. For example, the path `/users/:userId` will result in a `request.pathParams` of type
 `{ userId: string }`.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
@@ -1597,7 +1597,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -1622,13 +1622,13 @@ requests until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 interceptor.clear();
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 await interceptor.clear();
@@ -1649,7 +1649,7 @@ When multiple handlers match the same method and path, the _last_ created with
 
 Returns the method that matches a handler.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const handler = interceptor.post('/users');
@@ -1657,7 +1657,7 @@ const method = handler.method();
 console.log(method); // 'POST'
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.post('/users');
@@ -1672,7 +1672,7 @@ console.log(method); // 'POST'
 Returns the path that matches a handler. The base URL of the interceptor is not included, but it is used when matching
 requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const handler = interceptor.get('/users');
@@ -1680,7 +1680,7 @@ const path = handler.path();
 console.log(path); // '/users'
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const handler = await interceptor.get('/users');
@@ -1704,7 +1704,7 @@ condition.
     Declaring restrictions for <b>headers</b>:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1718,7 +1718,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1740,7 +1740,7 @@ const creationHandler = await interceptor
     Declaring restrictions for <b>search params</b>:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1754,7 +1754,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1776,7 +1776,7 @@ const creationHandler = await interceptor
     Declaring restrictions for a <b>JSON</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1790,7 +1790,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1816,7 +1816,7 @@ For JSON bodies to be correctly parsed, make sure that the intercepted requests 
     Declaring restrictions for a <b>form data</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -1841,7 +1841,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -1878,7 +1878,7 @@ For form data bodies to be correctly parsed, make sure that the intercepted requ
     Declaring restrictions for a <b>blob</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1894,7 +1894,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1922,7 +1922,7 @@ indicating a binary data, such as `application/octet-stream`, `image/png`, `audi
     Declaring restrictions for a <b>plain text</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1936,7 +1936,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1963,7 +1963,7 @@ in the headers, search params, or body would still match the restrictions.
 
 If you want to match only requests with the exact values declared, you can use `exact: true`:
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -1980,7 +1980,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -2003,7 +2003,7 @@ const creationHandler = await interceptor
 
 A function is also supported to declare restrictions in case they are dynamic.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const creationHandler = interceptor
@@ -2018,7 +2018,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -2054,7 +2054,7 @@ validated against the schema of the interceptor.
     Declaring responses with <b>JSON</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -2063,7 +2063,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2080,7 +2080,7 @@ const listHandler = await interceptor.get('/users').respond({
     Declaring responses with <b>form data</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -2100,7 +2100,7 @@ const listHandler = interceptor.get('/users/:id').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic';
@@ -2128,7 +2128,7 @@ const listHandler = await interceptor.get('/users/:id').respond({
     Declaring responses with <b>blob</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -2139,7 +2139,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2158,7 +2158,7 @@ const listHandler = await interceptor.get('/users').respond({
     Declaring responses with <b>plain text</b> body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -2167,7 +2167,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2184,7 +2184,7 @@ const listHandler = await interceptor.get('/users').respond({
     Declaring responses with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic';
@@ -2199,7 +2199,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic';
@@ -2221,7 +2221,7 @@ const listHandler = await interceptor.get('/users').respond({
 
 A function is also supported to declare a response in case it is dynamic:
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond((request) => {
@@ -2233,7 +2233,7 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond((request) => {
@@ -2262,7 +2262,7 @@ To make the handler match requests again, register a new response with
 This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
 removed the response, keeping restrictions and intercepted requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -2279,7 +2279,7 @@ otherListHandler.bypass();
 // Now, requests GET /users will match `listHandler` and receive an empty array
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2310,7 +2310,7 @@ To make the handler match requests again, register a new response with `handler.
 This method is useful to reset handlers to a clean state between tests. It is more aggressive than
 [`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listHandler = interceptor.get('/users').respond({
@@ -2329,7 +2329,7 @@ otherListHandler.clear();
 otherListHandler.requests(); // Now empty
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -2355,7 +2355,7 @@ await otherListHandler.requests(); // Now empty
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application.
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const updateHandler = interceptor.put('/users/:id').respond((request) => {
@@ -2377,7 +2377,7 @@ expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -2413,7 +2413,7 @@ and falls back to plain text if it fails.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
-<table><tr><td valign="top"><details open><summary><b>Local</b></summary>
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
 const listRequests = listHandler.requests();
@@ -2421,7 +2421,7 @@ console.log(listRequests[0].raw); // Request{}
 console.log(listRequests[0].response.raw); // Response{}
 ```
 
-</details></td></tr><tr></tr><tr><td valign="top"><details><summary><b>Remote</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
 const listRequests = await listHandler.requests();
