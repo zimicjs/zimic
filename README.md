@@ -24,28 +24,22 @@
 
 ---
 
-> [!NOTE]
->
-> 🚧 This project is still experimental and under active development!
->
-> Check our [roadmap to v1](https://github.com/orgs/zimicjs/projects/1/views/5). Contributors and ideas are welcome!
-
 Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking library, inspired by
-[Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
+[Zod](https://github.com/colinhacks/zod)'s type inference.
 
 ## Features
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**. Declare your HTTP endpoints and get full type inference and validation when applying
-  mocks.
-- :link: **Network-level intercepts**. Internally, Zimic uses [MSW](https://github.com/mswjs/msw), which intercepts HTTP
-  requests right _before_ they leave your app. This means that no parts of your code are stubbed or skipped. From you
-  application's point of view, the mocked requests are indistinguishable from the real ones.
-- :wrench: **Flexibility**. You can simulate real application workflows by mocking the necessary endpoints. This is
-  specially useful in testing, making sure that the real path your application takes is covered.
-- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity and simplicity in your mocks. Check our
-  [getting started guide](#getting-started) and starting mocking!
+- :zap: **Statically-typed mocks**. Declare your HTTP endpoints and get full static type inference and validation when
+  applying mocks.
+- :link: **Network-level intercepts**. Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
+  [interceptor servers](#zimic-server) to act on real HTTP requests. This means that no parts of your code are stubbed
+  or skipped. From you application's point of view, the mocked requests are indistinguishable from the real ones.
+- :wrench: **Flexibility**. You can simulate real application workflows by mocking any number of endpoints. This is
+  specially useful in testing, making sure that the path your application takes is covered.
+- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity, simplicity and developer experience in
+  your mocks. Check our [getting started guide](#getting-started) and starting mocking!
 
 ---
 
@@ -71,6 +65,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpSearchParams`](#httpsearchparams)
     - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
+  - [`HttpFormData`](#httpformdata)
+    - [Comparing `HttpFormData`](#comparing-httpformdata)
 - [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`http.createInterceptor`](#httpcreateinterceptor)
@@ -117,7 +113,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 - [TypeScript](https://www.typescriptlang.org) >= 4.7
 
-- `strict` mode enabled in your `tsconfig.json`:
+- `strict` enabled in your `tsconfig.json`:
   ```jsonc
   {
     // ...
@@ -150,18 +146,22 @@ The latest (possibly unstable) code is available in canary releases, under the t
 
 Zimic interceptors support two types of execution: `local` and `remote`.
 
+> [!TIP]
+>
+> The type is an individual interceptor setting. It is perfectly possible to have multiple interceptors with different
+> types in the same application! However, keep in mind that local interceptors have precedence over remote interceptors.
+
 #### Local HTTP interceptors
 
-When the type of an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests created
-_in the same process_ as your application. This is the simplest way to start mocking requests and does not require any
-server setup.
+When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests _in the same
+process_ as your application. This is the simplest way to start mocking requests and does not require any server setup.
 
 When to use `local`:
 
-- **Testing**: If you run your application in the _same_ process as your tests. This is common when using Jest, Vitest
-  and other test runners for unit and integration tests.
-- **Development**: If you want to mock requests in your development environment without setting up a server. This might
-  be useful when you're working on a feature that requires a backend that is not yet ready.
+- **Testing**: If you run your application in the _same_ process as your tests. This is common when using unit and
+  integration test runners such as [Jest](https://jestjs.io) and [Vitest](https://vitest.dev).
+- **Development**: If you want to mock requests in your development environment without setting up a server. This is be
+  useful when you need a backend that is not ready or available.
 
 Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), and
 [Next.js Pages Router](./examples/README.md#nextjs) examples use local interceptors.
@@ -172,20 +172,19 @@ Our [Vitest](./examples/README.md#vitest), [Jest](./examples/README.md#jest), an
 
 #### Remote HTTP interceptors
 
-When the type of an interceptor is `remote`, Zimic uses a dedicated [interceptor server](#zimic-server) to handle
-requests. This opens up more possibilities for mocking, such as intercepting requests from multiple applications and
-running the interceptor server on a different machine. It is also more robust because it uses a regular HTTP server and
-does not depend on local interception algorithms.
+When an interceptor is `remote`, Zimic uses a dedicated local [interceptor server](#zimic-server) to handle requests.
+This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also more
+robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
 When to use `remote`:
 
 - **Testing**: If you _do not_ run your application in the same process as your tests. When using Cypress, Playwright,
   or other end-to-end testing tools, this is generally the case because the test runner and the application run in
-  separate processes. This might also happen in more complex setups with Jest, Vitest and other test runners, such as
-  testing a backend server running in another process, terminal, or machine.
-- **Development**: If you want your mocked responses to be accessible from outside the process that created them. A
-  common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
-  accessed from any other application (e.g. browser) and return mock responses.
+  separate processes. This might also happen in more complex setups with unit and integration test runners, such as
+  testing a server that is running in another process, terminal, or machine.
+- **Development**: If you want your mocked responses to be accessible by other processes in your local network (e.g.
+  browser, app, `curl`) . A common scenario is to create a mock server along with a script to apply the mocks. After
+  started, the server can be accessed by other applications and return mock responses.
 
 Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
 remote interceptors.
@@ -194,18 +193,12 @@ remote interceptors.
 >
 > All mocking operations in remote interceptors are _asynchronous_. Make sure to `await` them before making requests.
 >
-> Some code snippets are displayed side by side with a local and a remote interceptor example. Generally, the remote
-> snippets differ only by adding `await` when necessary.
+> Some code snippets in this `README.md` display a local and a remote interceptor example side by side. Generally, the
+> remote snippets differ only by adding `await` when necessary.
 >
 > If you are using [`typescript-eslint`](https://typescript-eslint.io), a handy rule is
-> [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
-> unhandled promises, avoiding forgetting to `await` remote interceptor operations.
-
-> [!TIP]
->
-> The type is an individual interceptor configuration. It is perfectly possible to have multiple interceptors with
-> different types in the same application! However, keep in mind that local interceptors have preference over remote
-> interceptors.
+> [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks that
+> no promises are unhandled, avoiding forgetting to `await` remote interceptor operations.
 
 ### 4. Post-install
 
@@ -216,12 +209,12 @@ No additional configuration is necessary for Node.js. Check out the [usage guide
 #### Browser post-install
 
 If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
-[initialize a mock service worker](#zimic-browser-init) in your public directory. After that, you are ready to
-[start mocking](#usage)!
+[initialize a mock service worker](#zimic-browser-init) in your public directory. After that, check out the
+[usage guide](#usage) and start mocking!
 
 ## Examples
 
-Visit our [examples](./examples) to see how to use Zimic with popular frameworks and libraries!
+Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks and libraries!
 
 ## Usage
 
@@ -392,6 +385,11 @@ afterAll(async () => {
 
 </details></td></tr></table>
 
+When using [remote interceptors](#remote-http-interceptors), a common strategy is to load your mocks to the
+[interceptor server](#zimic-server) before starting your application. See
+[Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
+[Playwright - Loading mocks](./examples/with-playwright/README.md#loading-mocks) for examples.
+
 ---
 
 ## `zimic` API reference
@@ -430,7 +428,7 @@ console.log(contentType); // 'application/json'
 
 #### Comparing `HttpHeaders`
 
-`HttpHeaders` also provide the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
+`HttpHeaders` also provides the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
 other headers:
 
 <details>
@@ -478,7 +476,7 @@ console.log(headers3.contains(headers1)); // true
 
 A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
 strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic to provide
-type safety when applying mocks.
+type safety when managing search parameters.
 
 <details>
   <summary><code>HttpSearchParams</code> example:</summary>
@@ -505,7 +503,7 @@ console.log(page); // '1'
 
 #### Comparing `HttpSearchParams`
 
-`HttpSearchParams` also provide the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
+`HttpSearchParams` also provides the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
 comparisons with other search params:
 
 <details>
@@ -548,6 +546,72 @@ console.log(searchParams3.contains(searchParams1)); // true
 ```
 
 </details>
+
+### `HttpFormData`
+
+A superset of the built-in [`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) class, with a
+strictly-typed schema. `HttpFormData` is fully compatible with `FormData` and is used by Zimic to provide type safety
+when managing form data.
+
+<details>
+  <summary><code>HttpFormData</code> example:</summary>
+
+```ts
+import { HttpFormData } from 'zimic';
+
+const formData = new HttpFormData<{
+  files: File[];
+  description?: string;
+}>();
+
+formData.append('file', new File(['content'], 'file.txt', { type: 'text/plain' }));
+formData.append('description', 'My file');
+
+const files = formData.getAll('file');
+console.log(files); // [File { name: 'file.txt', type: 'text/plain' }]
+
+const description = formData.get('description');
+console.log(description); // 'My file'
+```
+
+</details>
+
+#### Comparing `HttpFormData`
+
+`HttpFormData` also provides the utility methods `formData.equals()` and `formData.contains()`, useful in comparisons
+with other form data:
+
+<details>
+  <summary>Comparing <code>HttpFormData</code> example:</summary>
+
+```ts
+import { HttpSchema, HttpFormData } from 'zimic';
+
+type FormDataSchema = HttpSchema.FormData<{
+  files: File[];
+  description?: string;
+}>;
+
+const formData1 = new HttpFormData<FormDataSchema>();
+formData1.append('file', new File(['content'], 'file.txt', { type: 'text/plain' }));
+formData1.append('description', 'My file');
+
+const formData2 = new HttpFormData<FormDataSchema>();
+formData2.append('file', new File(['content'], 'file.txt', { type: 'text/plain' }));
+formData2.append('description', 'My file');
+
+const formData3 = new HttpFormData<FormDataSchema>();
+
+formData3.append('file', new File(['content'], 'file.txt', { type: 'text/plain' }));
+formData3.append('description', 'My file');
+
+console.log(formData1.equals(formData2)); // true
+console.log(formData1.equals(formData3)); // false
+
+console.log(formData1.contains(formData2)); // true
+console.log(formData1.contains(formData3)); // true
+console.log(formData3.contains(formData1)); // false
+```
 
 ## `zimic/interceptor` API reference
 
@@ -617,7 +681,8 @@ const interceptor = http.createInterceptor<{
   };
 }>({
   // The interceptor server is at http://localhost:4000
-  // `/my-service` is a path to differentiate from other interceptors using the same server
+  // `/my-service` is a path to differentiate from other
+  // interceptors using the same server
   type: 'remote',
   baseURL: 'http://localhost:4000/my-service',
 });
@@ -712,7 +777,7 @@ http.default.onUnhandledRequest((request, context) => {
 
 #### Declaring HTTP service schemas
 
-HTTP service schemas define the structure of the real services being used. This includes paths, methods, request and
+HTTP service schemas define the structure of the real services being mocked. This includes paths, methods, request and
 response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying mocks.
 
 <details>
@@ -974,8 +1039,10 @@ const interceptor = http.createInterceptor<{
 ##### Declaring HTTP requests
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
-`body` are supported to provide type safety when applying mocks. [Path parameters](#dynamic-path-parameters) are
-automatically inferred from dynamic paths, such as `/users/:id`.
+`body` are supported to provide type safety when applying mocks.
+
+[Path parameters](#dynamic-path-parameters) are automatically inferred from dynamic paths, such as `/users/:id`. Bodies
+can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain text.
 
 ```ts
 import { HttpSchema, JSONValue } from 'zimic';
@@ -1060,6 +1127,9 @@ const interceptor = http.createInterceptor<{
 
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
+
+Bodies can be a JSON object, [`HttpFormData`](#httpformdata), [`HttpSearchParams`](#httpsearchparams), `Blob`, or plain
+text.
 
 ```ts
 import { JSONValue } from 'zimic';
@@ -1731,9 +1801,13 @@ expect(updateRequests[0].body).toEqual({ username: 'new' });
 
 The return by `requests` are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
-[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing an already parsed body in
-`request.body`, typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params
-in `request.searchParams`.
+[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing the body in `request.body`,
+typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params in
+`request.searchParams`.
+
+The body is already parsed based on the header `content-type` of the request or response. JSON objects, form data,
+search params, blobs, and plain text are supported. If no `content-type` exists, Zimic tries to parse the body as JSON
+and falls back to plain text if it fails.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
@@ -1795,7 +1869,10 @@ being used after upgrading Zimic.
 ### `zimic server`
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
-in combination with [remote interceptors](#remote-http-interceptors) to simulate real services.
+in combination with [remote interceptors](#remote-http-interceptors), which declare which responses the server should
+return for a given request. Interceptor servers and remote interceptors communicate with
+[remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
+[WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API).
 
 #### `zimic server start`
 

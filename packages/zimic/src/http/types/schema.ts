@@ -145,7 +145,7 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
-
+  /** Validates that a type is a valid HTTP form data schema. */
   export type FormData<Schema extends HttpFormDataSchema> = Schema;
 }
 

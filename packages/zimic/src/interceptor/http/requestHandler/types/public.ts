@@ -65,9 +65,28 @@ export interface HttpRequestHandlerStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > {
+  /**
+   * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
+   * must contain exactly these headers and no others.
+   */
   headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
+   * request must contain exactly these search params and no others.
+   */
   searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
+   * contain exactly this body and no other.
+   */
   body?: HttpRequestHandlerBodyStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
+   * Otherwise, the request must contain **at least** them.
+   */
   exact?: boolean;
 }
 
