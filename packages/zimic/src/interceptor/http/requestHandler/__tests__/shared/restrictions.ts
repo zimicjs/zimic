@@ -68,7 +68,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingSearchParams of [
@@ -78,7 +78,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -104,16 +104,17 @@ export function declareRestrictionHttpRequestHandlerTests(
         ]) {
           const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingSearchParams of [
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
+          new HttpSearchParams<SearchParamsSchema>({ name: 'other' }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
           const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -141,7 +142,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       ]) {
         const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-        expect(handler.matchesRequest(parsedRequest)).toBe(true);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingSearchParams of [
@@ -150,7 +151,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       ]) {
         const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
@@ -159,11 +160,11 @@ export function declareRestrictionHttpRequestHandlerTests(
     it.each([{ exact: true }])(
       'should match only specific requests if contains a declared response, a static header restriction, and exact: $exact',
       async ({ exact }) => {
-        const contentType = 'application/json';
+        const contentLanguage = 'en';
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
-            headers: { 'content-type': contentType },
+            headers: { 'content-language': contentLanguage },
             exact,
           })
           .respond({
@@ -171,20 +172,20 @@ export function declareRestrictionHttpRequestHandlerTests(
             body: { success: true },
           });
 
-        for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-type': contentType })]) {
+        for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage })]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingHeaders of [
-          new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
-          new HttpHeaders<HeadersSchema>({ 'content-type': `${contentType}/other` }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -192,11 +193,11 @@ export function declareRestrictionHttpRequestHandlerTests(
     it.each([{ exact: false }, { exact: undefined }])(
       'should match only specific requests if contains a declared response, a static header restriction, and exact: $exact',
       async ({ exact }) => {
-        const contentType = 'application/json';
+        const contentLanguage = 'en';
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with({
-            headers: { 'content-type': contentType },
+            headers: { 'content-language': contentLanguage },
             exact,
           })
           .respond({
@@ -205,35 +206,36 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingHeaders of [
-          new HttpHeaders<HeadersSchema>({ 'content-type': contentType }),
-          new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
         ]) {
           const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingHeaders of [
-          new HttpHeaders<HeadersSchema>({ 'content-type': `${contentType}/other` }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
+          new HttpHeaders<HeadersSchema>({ 'content-language': 'other' }),
           new HttpHeaders<HeadersSchema>({}),
         ]) {
           const request = new Request(baseURL, { headers: mismatchingHeaders });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
 
     it('should match only specific requests if contains a declared response and a computed header restriction', async () => {
-      const contentType = 'application/json';
+      const contentLanguage = 'en';
 
       const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
         .with((request) => {
           expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HeadersSchema>>();
           expect(request.headers).toBeInstanceOf(HttpHeaders);
 
-          const nameParam = request.headers.get('content-type');
-          return nameParam?.startsWith(contentType) ?? false;
+          const nameParam = request.headers.get('content-language');
+          return nameParam?.startsWith(contentLanguage) ?? false;
         })
         .respond({
           status: 200,
@@ -241,22 +243,22 @@ export function declareRestrictionHttpRequestHandlerTests(
         });
 
       for (const matchingHeaders of [
-        new HttpHeaders<HeadersSchema>({ 'content-type': contentType }),
-        new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
-        new HttpHeaders<HeadersSchema>({ 'content-type': `${contentType}/other` }),
+        new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
+        new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
+        new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
       ]) {
         const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-        expect(handler.matchesRequest(parsedRequest)).toBe(true);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingHeaders of [
-        new HttpHeaders<HeadersSchema>({ 'content-type': `other/${contentType}` }),
+        new HttpHeaders<HeadersSchema>({ 'content-language': `other/${contentLanguage}` }),
         new HttpHeaders<HeadersSchema>({}),
       ]) {
         const request = new Request(baseURL, { headers: mismatchingHeaders });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
@@ -280,10 +282,11 @@ export function declareRestrictionHttpRequestHandlerTests(
         for (const matchingBody of [{ name }] satisfies MethodSchema['request']['body'][]) {
           const matchingRequest = new Request(baseURL, {
             method: 'POST',
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingBody of [
@@ -293,10 +296,11 @@ export function declareRestrictionHttpRequestHandlerTests(
         ] satisfies MethodSchema['request']['body'][]) {
           const request = new Request(baseURL, {
             method: 'POST',
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify(mismatchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -323,19 +327,21 @@ export function declareRestrictionHttpRequestHandlerTests(
         ] satisfies MethodSchema['request']['body'][]) {
           const matchingRequest = new Request(baseURL, {
             method: 'POST',
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-          expect(handler.matchesRequest(parsedRequest)).toBe(true);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
         for (const mismatchingBody of [{}] satisfies MethodSchema['request']['body'][]) {
           const request = new Request(baseURL, {
             method: 'POST',
+            headers: { 'content-type': 'application/json' },
             body: JSON.stringify(mismatchingBody),
           });
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-          expect(handler.matchesRequest(parsedRequest)).toBe(false);
+          expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
       },
     );
@@ -361,30 +367,32 @@ export function declareRestrictionHttpRequestHandlerTests(
       ] satisfies MethodSchema['request']['body'][]) {
         const matchingRequest = new Request(baseURL, {
           method: 'POST',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(matchingBody),
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-        expect(handler.matchesRequest(parsedRequest)).toBe(true);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingBody of [{ name: `Other ${name}` }, {}] satisfies MethodSchema['request']['body'][]) {
         const request = new Request(baseURL, {
           method: 'POST',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(mismatchingBody),
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
     });
   });
 
   it('should match only specific requests if contains a declared response and multiple restrictions', async () => {
     const name = 'User';
-    const contentType = 'application/json';
+    const contentLanguage = 'en';
 
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
       .with({
-        headers: { 'content-type': contentType },
+        headers: { 'content-language': contentLanguage },
         searchParams: { name },
       })
       .with((request) => {
@@ -405,14 +413,14 @@ export function declareRestrictionHttpRequestHandlerTests(
       });
 
     const matchingHeadersSamples = [
-      new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*' }),
-      new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: 'application/json, */*' }),
-      new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: '*/*, application/json' }),
+      new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
+      new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: 'application/json, */*' }),
+      new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*, application/json' }),
     ];
 
     const mismatchingHeadersSamples = [
-      new HttpHeaders<HeadersSchema>({ 'content-type': contentType, accept: 'application/json' }),
-      new HttpHeaders<HeadersSchema>({ 'content-type': contentType }),
+      new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: 'application/json' }),
+      new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
       new HttpHeaders<HeadersSchema>({}),
     ];
 
@@ -437,7 +445,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-        expect(handler.matchesRequest(parsedRequest)).toBe(true);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
@@ -445,7 +453,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }
 
@@ -455,7 +463,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
@@ -463,7 +471,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-        expect(handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
     }
   });

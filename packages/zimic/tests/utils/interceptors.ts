@@ -1,12 +1,13 @@
 import { expect } from 'vitest';
 
-import { HttpServiceSchema } from '@/http/types/schema';
+import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { http } from '@/interceptor';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import {
   HttpInterceptorOptions,
+  HttpInterceptorPlatform,
   HttpInterceptorType,
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
@@ -144,4 +145,17 @@ export function getSingletonWorkerByType(
   serverURL: ExtendedURL,
 ) {
   return type === 'local' ? store.localWorker() : store.remoteWorker(serverURL);
+}
+
+export function assessPreflightInterference(resources: {
+  method: HttpMethod;
+  platform: HttpInterceptorPlatform;
+  type: HttpInterceptorType;
+}) {
+  const { method, platform, type } = resources;
+
+  return {
+    overridesPreflightResponse: method === 'OPTIONS' && type === 'remote',
+    numberOfRequestsIncludingPreflight: method === 'OPTIONS' && platform === 'browser' && type === 'remote' ? 2 : 1,
+  };
 }

@@ -5,7 +5,7 @@ import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/shared/constants';
  *
  * @see {@link https://github.com/zimicjs/zimic#zimic-browser-init `zimic browser init` API reference}
  */
-class UnregisteredServiceWorkerError extends Error {
+class UnregisteredBrowserServiceWorkerError extends Error {
   constructor() {
     super(
       `Failed to register the browser service worker: ` +
@@ -13,10 +13,10 @@ class UnregisteredServiceWorkerError extends Error {
         'Did you forget to run "npx zimic browser init <public-directory>"?\n\n' +
         'Learn more at https://github.com/zimicjs/zimic#browser-post-install.',
     );
-    this.name = 'UnregisteredServiceWorkerError';
+    this.name = 'UnregisteredBrowserServiceWorkerError';
   }
 
-  static matchesRawError(error: unknown): error is UnregisteredServiceWorkerError {
+  static matchesRawError(error: unknown): error is UnregisteredBrowserServiceWorkerError {
     return (
       error instanceof Error &&
       error.message.toLowerCase().startsWith('[msw] failed to register a service worker for scope')
@@ -24,4 +24,4 @@ class UnregisteredServiceWorkerError extends Error {
   }
 }
 
-export default UnregisteredServiceWorkerError;
+export default UnregisteredBrowserServiceWorkerError;

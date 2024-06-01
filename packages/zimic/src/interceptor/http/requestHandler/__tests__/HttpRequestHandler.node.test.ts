@@ -3,7 +3,7 @@ import { describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareSharedHttpRequestHandlerTests } from './shared/requestHandlerTests';
+import { declareSharedHttpRequestHandlerTests } from './shared';
 
 describe('HttpRequestHandler (Node.js)', () => {
   const server = createInternalInterceptorServer();

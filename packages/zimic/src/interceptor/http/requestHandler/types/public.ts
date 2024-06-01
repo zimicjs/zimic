@@ -28,8 +28,8 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > =
-  | HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
-  | HttpHeaders<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+  | Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
+  | HttpHeaders<Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>>;
 
 /**
  * A static search params restriction to match intercepted requests.
@@ -41,8 +41,8 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > =
-  | HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>
-  | HttpSearchParams<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+  | Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>
+  | HttpSearchParams<Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>>;
 
 /**
  * A static body restriction to match intercepted requests.
@@ -53,7 +53,7 @@ export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = HttpRequestBodySchema<Default<Schema[Path][Method]>>;
+> = Default<HttpRequestBodySchema<Default<Schema[Path][Method]>>, null>;
 
 /**
  * A static restriction to match intercepted requests.
@@ -65,9 +65,28 @@ export interface HttpRequestHandlerStaticRestriction<
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
 > {
+  /**
+   * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
+   * must contain exactly these headers and no others.
+   */
   headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
+   * request must contain exactly these search params and no others.
+   */
   searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
+   * contain exactly this body and no other.
+   */
   body?: HttpRequestHandlerBodyStaticRestriction<Schema, Path, Method>;
+
+  /**
+   * If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
+   * Otherwise, the request must contain **at least** them.
+   */
   exact?: boolean;
 }
 
@@ -80,7 +99,7 @@ export type HttpRequestHandlerComputedRestriction<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => boolean;
+> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
 
 /**
  * A restriction to match intercepted requests.

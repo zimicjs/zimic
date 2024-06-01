@@ -1,8 +1,22 @@
 import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify } from '@/types/utils';
 
+import { HttpFormDataSchema } from '../formData/types';
 import { HttpHeadersSchema } from '../headers/types';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 import { HttpBody } from './requests';
+
+export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
+export type HttpMethodWithRequestBody = (typeof HTTP_METHODS_WITH_REQUEST_BODY)[number];
+
+export const HTTP_METHODS_WITH_RESPONSE_BODY = Object.freeze([
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+] as const);
+export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY)[number];
 
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
@@ -131,6 +145,8 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
+  /** Validates that a type is a valid HTTP form data schema. */
+  export type FormData<Schema extends HttpFormDataSchema> = Schema;
 }
 
 /**

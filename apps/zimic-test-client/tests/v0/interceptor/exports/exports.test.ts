@@ -15,6 +15,9 @@ import {
   type HttpHeadersSchema,
   type HttpHeadersSchemaTuple,
   type StrictHeaders,
+  HttpFormData,
+  type HttpFormDataSchema,
+  type StrictFormData,
   type HttpSchema,
   type HttpMethod,
   type HttpServiceSchema,
@@ -29,6 +32,8 @@ import {
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
+  InvalidJSONError,
+  InvalidFormDataError,
 } from 'zimic0';
 import {
   http,
@@ -60,9 +65,10 @@ import {
   type HttpRequestHandlerSearchParamsStaticRestriction,
   type HttpRequestHandlerStaticRestriction,
   type HttpRequestHandlerBodyStaticRestriction,
-  UnknownHttpInterceptorPlatform,
+  UnknownHttpInterceptorPlatformError,
+  UnknownHttpInterceptorTypeError,
   NotStartedHttpInterceptorError,
-  UnregisteredServiceWorkerError,
+  UnregisteredBrowserServiceWorkerError,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
@@ -75,6 +81,13 @@ describe('Exports', () => {
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
 
+    expectTypeOf<HttpHeaders>().not.toBeAny();
+    expect(new HttpHeaders()).toBeInstanceOf(Headers);
+    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
+
     expectTypeOf<HttpSearchParams>().not.toBeAny();
     expect(new HttpSearchParams()).toBeInstanceOf(URLSearchParams);
     expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
@@ -82,12 +95,10 @@ describe('Exports', () => {
     expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
     expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
 
-    expectTypeOf<HttpHeaders>().not.toBeAny();
-    expect(new HttpHeaders()).toBeInstanceOf(Headers);
-    expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchema>().not.toBeAny();
-    expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
-    expectTypeOf<StrictHeaders<never>>().not.toBeAny();
+    expectTypeOf<HttpFormData>().not.toBeAny();
+    expect(new HttpFormData()).toBeInstanceOf(FormData);
+    expectTypeOf<HttpFormDataSchema>().not.toBeAny();
+    expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
@@ -97,6 +108,7 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.Response<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
@@ -112,6 +124,11 @@ describe('Exports', () => {
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
+
+    expectTypeOf<InvalidJSONError>().not.toBeAny();
+    expect(typeof InvalidJSONError).toBe('function');
+    expectTypeOf<InvalidFormDataError>().not.toBeAny();
+    expect(typeof InvalidFormDataError).toBe('function');
 
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
     expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();
@@ -156,11 +173,13 @@ describe('Exports', () => {
     expectTypeOf<HttpRequestHandlerStaticRestriction<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerBodyStaticRestriction<never, never, never>>().not.toBeAny();
 
-    expectTypeOf<UnknownHttpInterceptorPlatform>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorPlatform).toBe('function');
+    expectTypeOf<UnknownHttpInterceptorPlatformError>().not.toBeAny();
+    expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
+    expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
+    expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
     expectTypeOf<NotStartedHttpInterceptorError>().not.toBeAny();
     expect(typeof NotStartedHttpInterceptorError).toBe('function');
-    expectTypeOf<UnregisteredServiceWorkerError>().not.toBeAny();
-    expect(typeof UnregisteredServiceWorkerError).toBe('function');
+    expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
+    expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
   });
 });

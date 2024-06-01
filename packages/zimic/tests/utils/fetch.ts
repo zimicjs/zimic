@@ -13,7 +13,7 @@ export async function expectFetchError(fetchPromise: Promise<Response>, options:
     'fetch failed',
     'Failed to fetch',
     canBeAborted && 'This operation was aborted',
-    canBeAborted && 'The user aborted a request.',
+    canBeAborted && 'signal is aborted without reason',
   ].filter((option): option is string => typeof option === 'string');
 
   const errorMessageExpression = new RegExp(`^${errorMessageOptions.join('|')}$`);

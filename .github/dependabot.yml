@@ -1,0 +1,49 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)
+    target-branch: canary
+    reviewers:
+      - diego-aquino
+    groups:
+      npm:
+        patterns:
+          - '*'
+
+    ignore:
+      - dependency-name: zimic
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
+
+      - dependency-name: zx
+        update-types:
+          - version-update:semver-major
+
+      - dependency-name: chalk
+        update-types:
+          - version-update:semver-major
+
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)
+    target-branch: canary
+    reviewers:
+      - diego-aquino
+    groups:
+      github-actions:
+        patterns:
+          - '*'

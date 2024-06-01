@@ -14,6 +14,8 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
 /**
  * An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#httpheaders `HttpHeaders` API reference}
  */
 class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
   constructor(init?: HttpHeadersInit<Schema>) {
@@ -24,26 +26,32 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     }
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
   set<Name extends keyof Schema & string>(name: Name, value: Defined<Schema[Name]>): void {
     super.set(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
   append<Name extends keyof Schema & string>(name: Name, value: Defined<Schema[Name]>): void {
     super.append(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/get MDN Reference} */
   get<Name extends keyof Schema & string>(name: Name): ReplaceBy<Schema[Name], undefined, null> {
     return super.get(name) as ReplaceBy<Schema[Name], undefined, null>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
   getSetCookie(): Defined<Default<Schema['Set-Cookie'], string>>[] {
     return super.getSetCookie() as Defined<Default<Schema['Set-Cookie'], string>>[];
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
   has<Name extends keyof Schema & string>(name: Name): boolean {
     return super.has(name);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/delete MDN Reference} */
   delete<Name extends keyof Schema & string>(name: Name): void {
     super.delete(name);
   }
@@ -55,14 +63,17 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     super.forEach(callback as (value: string, key: string, parent: Headers) => void, thisArg);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/keys MDN Reference} */
   keys(): IterableIterator<keyof Schema & string> {
     return super.keys() as IterableIterator<keyof Schema & string>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
   values(): IterableIterator<Defined<Schema[keyof Schema & string]>> {
     return super.values() as IterableIterator<Defined<Schema[keyof Schema & string]>>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
   entries(): IterableIterator<[keyof Schema & string, Defined<Schema[keyof Schema & string]>]> {
     return super.entries() as IterableIterator<[keyof Schema & string, Defined<Schema[keyof Schema & string]>]>;
   }
@@ -81,16 +92,31 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @returns `true` if the headers are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, value] of otherHeaders.entries()) {
-      const otherValue = super.get.call(this, key);
-      if (value !== otherValue) {
+    for (const [key, otherValue] of otherHeaders.entries()) {
+      const value = super.get.call(this, key);
+
+      if (value === null) {
         return false;
+      }
+
+      const valueItems = this.splitHeaderValues(value);
+      const otherValueItems = this.splitHeaderValues(otherValue);
+
+      const haveCompatibleNumberOfValues = valueItems.length === otherValueItems.length;
+      if (!haveCompatibleNumberOfValues) {
+        return false;
+      }
+
+      for (const otherValueItem of otherValueItems) {
+        if (!valueItems.includes(otherValueItem)) {
+          return false;
+        }
       }
     }
 
-    for (const otherKey of this.keys()) {
-      const hasKey = super.has.call(otherHeaders, otherKey);
-      if (!hasKey) {
+    for (const key of this.keys()) {
+      const otherHasKey = super.has.call(otherHeaders, key);
+      if (!otherHasKey) {
         return false;
       }
     }
@@ -107,22 +133,23 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
    * @returns `true` if these headers contain the other headers, `false` otherwise.
    */
   contains<OtherSchema extends Schema>(otherHeaders: HttpHeaders<OtherSchema>): boolean {
-    for (const [key, value] of otherHeaders.entries()) {
-      const otherValue = super.get.call(this, key);
+    for (const [key, otherValue] of otherHeaders.entries()) {
+      const value = super.get.call(this, key);
 
-      if (otherValue === null) {
+      if (value === null) {
         return false;
       }
 
       const valueItems = this.splitHeaderValues(value);
       const otherValueItems = this.splitHeaderValues(otherValue);
 
-      if (otherValueItems.length < valueItems.length) {
+      const haveCompatibleNumberOfValues = valueItems.length >= otherValueItems.length;
+      if (!haveCompatibleNumberOfValues) {
         return false;
       }
 
-      for (const valueItem of valueItems) {
-        if (!otherValueItems.includes(valueItem)) {
+      for (const otherValueItem of otherValueItems) {
+        if (!valueItems.includes(otherValueItem)) {
           return false;
         }
       }

@@ -189,14 +189,14 @@ describe('HttpSearchParams', () => {
     expectTypeOf(names).toEqualTypeOf<string[]>();
     expect(names).toEqual(['User1', 'User2']);
 
-    // @ts-expect-error `get` not allow accessing array keys
+    // @ts-expect-error `get` should not access array keys
     searchParams.get('names');
 
     const page = searchParams.get('page');
     expectTypeOf(page).toEqualTypeOf<`${number}` | null>();
     expect(page).toBe('1');
 
-    // @ts-expect-error `getAll` not allow accessing non-array keys
+    // @ts-expect-error `getAll` should not access non-array keys
     searchParams.getAll('page');
   });
 
@@ -376,6 +376,14 @@ describe('HttpSearchParams', () => {
     otherSearchParams.delete('names', 'User3');
     expect(searchParams.equals(otherSearchParams)).toBe(true);
 
+    otherSearchParams.delete('names', 'User2');
+    otherSearchParams.append('names', 'Use');
+    expect(searchParams.equals(otherSearchParams)).toBe(false);
+
+    otherSearchParams.append('names', 'User2');
+    otherSearchParams.delete('names', 'Use');
+    expect(searchParams.equals(otherSearchParams)).toBe(true);
+
     otherSearchParams.set('page', '2');
     expect(searchParams.equals(otherSearchParams)).toBe(false);
     otherSearchParams.set('page', '1');
@@ -417,13 +425,20 @@ describe('HttpSearchParams', () => {
     searchParams.delete('names', 'User3');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
+    otherSearchParams.delete('names', 'User2');
+    otherSearchParams.append('names', 'Use');
+    expect(searchParams.contains(otherSearchParams)).toBe(false);
+
+    otherSearchParams.delete('names', 'Use');
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
+
     searchParams.set('page', '2');
     expect(searchParams.contains(otherSearchParams)).toBe(false);
     searchParams.set('page', '1');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 
     searchParams.delete('names', 'User2');
-    expect(searchParams.contains(otherSearchParams)).toBe(false);
+    expect(searchParams.contains(otherSearchParams)).toBe(true);
     searchParams.append('names', 'User2');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
 

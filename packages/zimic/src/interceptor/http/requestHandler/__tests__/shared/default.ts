@@ -73,7 +73,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
   });
 
   it('should match any request if contains a declared response and no restrictions', async () => {
@@ -84,11 +84,11 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
 
     await promiseIfRemote(handler.with({}), interceptor);
 
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not match any request if bypassed', async () => {
@@ -96,10 +96,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.bypass(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -108,10 +108,10 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
 
     await promiseIfRemote(handler.bypass(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -120,7 +120,7 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not match any request if cleared', async () => {
@@ -128,10 +128,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.clear(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -140,10 +140,10 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
 
     await promiseIfRemote(handler.clear(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -152,7 +152,7 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should create response with declared status and body', async () => {
@@ -234,7 +234,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
@@ -254,12 +254,12 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
     expect(interceptedRequests[1].url).toEqual(secondRequest.url);
     expect(interceptedRequests[1].method).toEqual(secondRequest.method);
-    expect(interceptedRequests[1].response.status).toEqual(secondResponse.status);
+    expect(interceptedRequests[1].response.status).toBe(secondResponse.status);
     expect(interceptedRequests[1].response.body).toEqual(await secondResponse.json());
   });
 
@@ -286,7 +286,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].url).toEqual(firstRequest.url);
     expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toEqual(firstResponse.status);
+    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
 
     await promiseIfRemote(handler.clear(), interceptor);
@@ -304,6 +304,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL, {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'User' } satisfies MethodSchema['request']['body']),
     });
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -379,10 +380,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.clear(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler
@@ -393,10 +394,10 @@ export function declareDefaultHttpRequestHandlerTests(
         }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.clear(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -405,7 +406,7 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(true);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
   it('should not clear restrictions after bypassed', async () => {
@@ -413,10 +414,10 @@ export function declareDefaultHttpRequestHandlerTests(
 
     const request = new Request(baseURL);
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.bypass(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler
@@ -427,10 +428,10 @@ export function declareDefaultHttpRequestHandlerTests(
         }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(handler.bypass(), interceptor);
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
     await promiseIfRemote(
       handler.respond({
@@ -439,7 +440,7 @@ export function declareDefaultHttpRequestHandlerTests(
       }),
       interceptor,
     );
-    expect(handler.matchesRequest(parsedRequest)).toBe(false);
+    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
   });
 
   if (Handler === RemoteHttpRequestHandler) {
