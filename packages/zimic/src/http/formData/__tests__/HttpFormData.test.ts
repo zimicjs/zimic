@@ -337,12 +337,14 @@ describe('HttpFormData', async () => {
       file?: File;
       blob: Blob[];
       description: string;
+      descriptions: string[];
     }>();
 
     const otherFormData = new HttpFormData<{
       file?: File;
       blob: Blob[];
       description: string;
+      descriptions: string[];
     }>();
 
     expect(await formData.equals(otherFormData)).toBe(true);
@@ -357,10 +359,17 @@ describe('HttpFormData', async () => {
     otherFormData.append('blob', blob, blobName);
     expect(await formData.equals(otherFormData)).toBe(false);
 
+    formData.delete('blob');
     otherFormData.delete('blob');
+
+    formData.append('blob', blob, blobName);
+    otherFormData.append('blob', blob);
     expect(await formData.equals(otherFormData)).toBe(false);
 
-    otherFormData.append('blob', blob);
+    formData.delete('blob');
+    expect(await formData.equals(otherFormData)).toBe(false);
+
+    formData.append('blob', blob);
     expect(await formData.equals(otherFormData)).toBe(true);
 
     otherFormData.set('description', description);
@@ -369,6 +378,21 @@ describe('HttpFormData', async () => {
     otherFormData.delete('description');
     expect(await formData.equals(otherFormData)).toBe(true);
 
+    formData.append('descriptions', description);
+    expect(await formData.equals(otherFormData)).toBe(false);
+
+    otherFormData.append('descriptions', description);
+    expect(await formData.equals(otherFormData)).toBe(true);
+
+    otherFormData.append('descriptions', description.slice(0, -1));
+    expect(await formData.equals(otherFormData)).toBe(false);
+
+    formData.append('descriptions', description.slice(0, -1));
+    expect(await formData.equals(otherFormData)).toBe(true);
+
+    otherFormData.delete('descriptions');
+    expect(await formData.equals(otherFormData)).toBe(false);
+
     otherFormData.set('description', description);
     otherFormData.delete('file');
 
@@ -376,6 +400,9 @@ describe('HttpFormData', async () => {
 
     formData.delete('file');
     formData.set('description', description);
+    expect(await formData.equals(otherFormData)).toBe(false);
+
+    formData.delete('descriptions');
     expect(await formData.equals(otherFormData)).toBe(true);
 
     otherFormData.delete('blob');
@@ -390,12 +417,14 @@ describe('HttpFormData', async () => {
       file?: File;
       blob: Blob[];
       description: string;
+      descriptions: string[];
     }>();
 
     const otherFormData = new HttpFormData<{
       file?: File;
       blob: Blob[];
       description: string;
+      descriptions: string[];
     }>();
 
     expect(await formData.contains(otherFormData)).toBe(true);
@@ -410,7 +439,20 @@ describe('HttpFormData', async () => {
     otherFormData.append('blob', blob, blobName);
     expect(await formData.contains(otherFormData)).toBe(false);
 
+    formData.delete('blob');
     otherFormData.delete('blob');
+
+    formData.append('blob', blob, blobName);
+    otherFormData.append('blob', blob);
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    otherFormData.delete('blob');
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    otherFormData.append('blob', blob);
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    formData.append('blob', blob);
     expect(await formData.contains(otherFormData)).toBe(true);
 
     otherFormData.append('blob', blob);
@@ -422,6 +464,21 @@ describe('HttpFormData', async () => {
     otherFormData.delete('description');
     expect(await formData.contains(otherFormData)).toBe(true);
 
+    formData.append('descriptions', description);
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    otherFormData.append('descriptions', description);
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    otherFormData.append('descriptions', description.slice(0, -1));
+    expect(await formData.contains(otherFormData)).toBe(false);
+
+    formData.append('descriptions', description);
+    expect(await formData.contains(otherFormData)).toBe(true);
+
+    otherFormData.delete('descriptions');
+    expect(await formData.contains(otherFormData)).toBe(true);
+
     otherFormData.set('description', description);
     otherFormData.delete('file');
 
@@ -431,13 +488,13 @@ describe('HttpFormData', async () => {
     formData.set('description', description);
     expect(await formData.contains(otherFormData)).toBe(true);
 
+    formData.delete('descriptions');
+    expect(await formData.contains(otherFormData)).toBe(true);
+
     otherFormData.delete('blob');
     expect(await formData.contains(otherFormData)).toBe(true);
 
     formData.delete('blob');
     expect(await formData.contains(otherFormData)).toBe(true);
-
-    formData.delete('description');
-    expect(await formData.contains(otherFormData)).toBe(false);
   });
 });

@@ -8,7 +8,7 @@ export async function getFile() {
 }
 
 export async function fileEquals(file: File, otherFile: File) {
-  return file.name.includes(otherFile.name) && (await blobEquals(file, otherFile));
+  return file.name === otherFile.name && (await blobEquals(file, otherFile));
 }
 
 export async function fileContains(file: File, otherFile: File) {

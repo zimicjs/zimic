@@ -1,4 +1,5 @@
 import { ArrayItemIfArray, ArrayKey, Defined, NonArrayKey, ReplaceBy } from '@/types/utils';
+import { fileContains, fileEquals } from '@/utils/files';
 
 import { HttpFormDataSchema } from './types';
 
@@ -119,13 +120,36 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    *   Important: both form data might be read while comparing.
    */
   async equals<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
-    if (!(await this.contains(otherData))) {
-      return false;
+    for (const [otherKey, otherValue] of otherData.entries()) {
+      const values = super.getAll.call(this, otherKey);
+
+      const haveSameNumberOfValues = values.length === super.getAll.call(otherData, otherKey).length;
+      if (!haveSameNumberOfValues) {
+        return false;
+      }
+
+      let valueExists = false;
+
+      for (const value of values) {
+        if (
+          value === otherValue ||
+          (value instanceof Blob && otherValue instanceof Blob && (await fileEquals(value, otherValue)))
+        ) {
+          valueExists = true;
+          break;
+        }
+      }
+
+      if (!valueExists) {
+        return false;
+      }
     }
 
     for (const key of this.keys()) {
-      const otherHasKey = super.has.call(otherData, key);
-      if (!otherHasKey) {
+      const otherValues = super.getAll.call(otherData, key);
+
+      const haveSameNumberOfValues = otherValues.length === super.getAll.call(this, key).length;
+      if (!haveSameNumberOfValues) {
         return false;
       }
     }
@@ -142,23 +166,28 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    *   both form data might be read while comparing.
    */
   async contains<OtherSchema extends Schema>(otherData: HttpFormData<OtherSchema>): Promise<boolean> {
-    for (const [key, value] of otherData.entries()) {
-      const otherValue = super.get.call(this, key);
+    for (const [otherKey, otherValue] of otherData.entries()) {
+      const values = super.getAll.call(this, otherKey);
 
-      if (value instanceof Blob && otherValue instanceof Blob) {
-        if (
-          value.name !== otherValue.name ||
-          value.size !== otherValue.size ||
-          value.type !== otherValue.type ||
-          (await value.text()) !== (await otherValue.text())
-        ) {
-          return false;
-        }
-
-        continue;
+      const haveCompatibleNumberOfValues = values.length >= super.getAll.call(otherData, otherKey).length;
+      if (!haveCompatibleNumberOfValues) {
+        return false;
       }
 
-      if (value !== otherValue) {
+      let valueExists = false;
+
+      for (const value of values) {
+        if (
+          value === otherValue ||
+          (typeof value === 'string' && typeof otherValue === 'string' && value.includes(otherValue)) ||
+          (value instanceof Blob && otherValue instanceof Blob && (await fileContains(value, otherValue)))
+        ) {
+          valueExists = true;
+          break;
+        }
+      }
+
+      if (!valueExists) {
         return false;
       }
     }

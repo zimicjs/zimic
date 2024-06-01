@@ -106,7 +106,29 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns `true` if the search parameters are equal, `false` otherwise.
    */
   equals<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
-    return this.contains(otherParams) && this.size === otherParams.size;
+    for (const [key, otherValue] of otherParams.entries()) {
+      const values = super.getAll.call(this, key);
+
+      const haveSameNumberOfValues = values.length === super.getAll.call(otherParams, key).length;
+      if (!haveSameNumberOfValues) {
+        return false;
+      }
+
+      let valueExists = false;
+
+      for (const value of values) {
+        if (value === otherValue) {
+          valueExists = true;
+          break;
+        }
+      }
+
+      if (!valueExists) {
+        return false;
+      }
+    }
+
+    return this.size === otherParams.size;
   }
 
   /**
@@ -118,11 +140,28 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns `true` if these search parameters contain the other search parameters, `false` otherwise.
    */
   contains<OtherSchema extends Schema>(otherParams: HttpSearchParams<OtherSchema>): boolean {
-    for (const [key, value] of otherParams.entries()) {
-      if (!super.has.call(this, key, value)) {
+    for (const [key, otherValue] of otherParams.entries()) {
+      const values = super.getAll.call(this, key);
+
+      const haveCompatibleNumberOfValues = values.length >= super.getAll.call(otherParams, key).length;
+      if (!haveCompatibleNumberOfValues) {
+        return false;
+      }
+
+      let valueExists = false;
+
+      for (const value of values) {
+        if (value.includes(otherValue)) {
+          valueExists = true;
+          break;
+        }
+      }
+
+      if (!valueExists) {
         return false;
       }
     }
+
     return true;
   }
 }
