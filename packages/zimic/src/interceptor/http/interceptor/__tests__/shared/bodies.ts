@@ -18,7 +18,10 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-async function createSampleFile(format: string, content: string[]) {
+export async function createSampleFile(
+  format: 'image' | 'audio' | 'font' | 'video' | 'binary',
+  content: string[],
+): Promise<File> {
   const File = await getFile();
 
   if (format === 'image') {
@@ -1187,7 +1190,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     });
 
     describe('Blob', () => {
-      it.each(['binary', 'image', 'audio', 'font', 'video'])(
+      it.each(['binary', 'image', 'audio', 'font', 'video'] as const)(
         `should support intercepting ${method} requests having a binary body: %s`,
         async (format) => {
           type MethodSchema = HttpSchema.Method<{
