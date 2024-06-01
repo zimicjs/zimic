@@ -177,12 +177,14 @@ When to use `remote`:
   or other end-to-end testing tools, this is generally the case because the test runner and the application run in
   separate processes. This might also happen in more complex setups with Jest, Vitest and other test runners, such as
   testing a backend server running in another process, terminal, or machine.
-- **Development**: If you want your mocked responses to be accessible from outside the process that created them. A
-  common scenario is to create a mock server along with a script to apply the mocks. After started, the server can be
-  accessed from any other application (e.g. browser) and return mock responses.
+- **Development**: If you want your mocked responses to be accessible by other processes in your local network (e.g.
+  browser, app, `curl`) . A common scenario is to create a mock server along with a script to apply the mocks. After
+  started, the server can be accessed by other applications and return mock responses.
 
 Our [Playwright](./examples/README.md#playwright) and [Next.js App Router](./examples/README.md#nextjs) examples use
-remote interceptors.
+remote interceptors. See [Next.js App Router - Loading mocks](./examples/with-next-js-app/README.md#loading-mocks) and
+[Playwright - Loading mocks](./examples/with-playwright/README.md#loading-mocks) for examples on how to load mocks
+before starting the application in development.
 
 > [!NOTE]
 >

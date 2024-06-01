@@ -14,10 +14,6 @@ The tested application is a simple [Next.js](https://nextjs.org) project, fetchi
 
 A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers.
 
-The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and mocks
-before the application is started in development. It is used by the command `dev:mock` in
-[`package.json`](./package.json).
-
 > [!NOTE]
 >
 > **Preventing racing conditions**
@@ -41,6 +37,12 @@ GitHub API and simulate a test case where the repository is found and another wh
 ### Zimic
 
 - GitHub interceptor and mocks: [`tests/interceptors/github.ts`](./tests/interceptors/github.ts)
+
+#### Loading mocks
+
+The script [`tests/interceptors/scripts/load.ts`](./tests/interceptors/scripts/load.ts) loads the interceptors and mocks
+before the application is started in development. It is used by the command `dev:mock` in
+[`package.json`](./package.json).
 
 ### Test
 
