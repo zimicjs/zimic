@@ -39,28 +39,50 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     }
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
   set<Name extends keyof Schema & string>(name: Name, value: ArrayItemIfArray<Defined<Schema[Name]>>): void {
     super.set(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
   append<Name extends keyof Schema & string>(name: Name, value: ArrayItemIfArray<Defined<Schema[Name]>>): void {
     super.append(name, value);
   }
 
+  /**
+   * Get the value of the entry associated to a key name.
+   *
+   * If the key might have multiple values, use {@link HttpSearchParams.getAll} instead.
+   *
+   * @param name The name of the key to get the value of.
+   * @returns The value associated with the key name, or `null` if the key does not exist.
+   * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/get MDN Reference}
+   */
   get<Name extends NonArrayKey<Schema> & string>(
     name: Name,
   ): ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null> {
     return super.get(name) as ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>;
   }
 
+  /**
+   * Get all the values of the entry associated with a key name.
+   *
+   * If the key has at most one value, use {@link HttpSearchParams.get} instead.
+   *
+   * @param name The name of the key to get the values of.
+   * @returns An array of values associated with the key name, or an empty array if the key does not exist.
+   * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
+   */
   getAll<Name extends ArrayKey<Schema> & string>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
     return super.getAll(name) as ArrayItemIfArray<Defined<Schema[Name]>>[];
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
   has<Name extends keyof Schema & string>(name: Name, value?: ArrayItemIfArray<Defined<Schema[Name]>>): boolean {
     return super.has(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
   delete<Name extends keyof Schema & string>(name: Name, value?: ArrayItemIfArray<Defined<Schema[Name]>>): void {
     super.delete(name, value);
   }
@@ -76,14 +98,17 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     super.forEach(callback as (value: string, key: string, parent: URLSearchParams) => void, thisArg);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys MDN Reference} */
   keys(): IterableIterator<keyof Schema & string> {
     return super.keys() as IterableIterator<keyof Schema & string>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
   values(): IterableIterator<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>> {
     return super.values() as IterableIterator<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
   entries(): IterableIterator<[keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]> {
     return super.entries() as IterableIterator<
       [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]

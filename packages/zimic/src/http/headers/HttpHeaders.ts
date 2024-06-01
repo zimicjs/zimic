@@ -24,26 +24,32 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     }
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
   set<Name extends keyof Schema & string>(name: Name, value: Defined<Schema[Name]>): void {
     super.set(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
   append<Name extends keyof Schema & string>(name: Name, value: Defined<Schema[Name]>): void {
     super.append(name, value);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/get MDN Reference} */
   get<Name extends keyof Schema & string>(name: Name): ReplaceBy<Schema[Name], undefined, null> {
     return super.get(name) as ReplaceBy<Schema[Name], undefined, null>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
   getSetCookie(): Defined<Default<Schema['Set-Cookie'], string>>[] {
     return super.getSetCookie() as Defined<Default<Schema['Set-Cookie'], string>>[];
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
   has<Name extends keyof Schema & string>(name: Name): boolean {
     return super.has(name);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/delete MDN Reference} */
   delete<Name extends keyof Schema & string>(name: Name): void {
     super.delete(name);
   }
@@ -55,14 +61,17 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     super.forEach(callback as (value: string, key: string, parent: Headers) => void, thisArg);
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/keys MDN Reference} */
   keys(): IterableIterator<keyof Schema & string> {
     return super.keys() as IterableIterator<keyof Schema & string>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
   values(): IterableIterator<Defined<Schema[keyof Schema & string]>> {
     return super.values() as IterableIterator<Defined<Schema[keyof Schema & string]>>;
   }
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
   entries(): IterableIterator<[keyof Schema & string, Defined<Schema[keyof Schema & string]>]> {
     return super.entries() as IterableIterator<[keyof Schema & string, Defined<Schema[keyof Schema & string]>]>;
   }
