@@ -24,12 +24,6 @@
 
 ---
 
-> [!NOTE]
->
-> 🚧 This project is still experimental and under active development!
->
-> Check our [roadmap to v1](https://github.com/orgs/zimicjs/projects/1/views/5). Contributors and ideas are welcome!
-
 Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking library, inspired by
 [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
 
