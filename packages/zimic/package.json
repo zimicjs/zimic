@@ -85,13 +85,13 @@
     "chalk": "^4.1.2",
     "cross-spawn": "^7.0.3",
     "isomorphic-ws": "^5.0.0",
-    "msw": "^2.3.0",
+    "msw": "^2.3.1",
     "ws": "^8.17.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
-    "@types/node": "^20.12.12",
+    "@types/node": "^20.14.0",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "1.6.0",
@@ -101,7 +101,7 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "playwright": "^1.44.1",
-    "tsup": "^8.0.2",
+    "tsup": "^8.1.0",
     "typescript": "^5.4.5",
     "vitest": "1.6.0"
   },
