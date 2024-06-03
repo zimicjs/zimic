@@ -1104,6 +1104,27 @@ const interceptor = http.createInterceptor<{
 > types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare JSON bodies
 > using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
 
+> [!TIP]
+>
+> The utility type `JSONSerialized`, exported from `zimic`, can be handy to infer the serialized type of an object. It
+> converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
+
+```ts
+import { JSONSerialized } from 'zimic';
+
+class User {
+  name: string;
+  age: number;
+  createdAt: Date;
+  method() {
+    // ...
+  }
+}
+
+type SerializedUser = JSONSerialized<User>;
+// { name: string, age: number, createdAt: string }
+```
+
 <details>
   <summary>
     Declaring a request type with <b>form data</b> body:
@@ -2401,7 +2422,7 @@ expect(updateRequests[0].body).toEqual({ username: 'new' });
 
 </details></td></tr></table>
 
-The return by `requests` are simplified objects based on the
+The returned requests are simplified objects based on the
 [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing the body in `request.body`,
 typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params in
