@@ -98,6 +98,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [HTTP `handler.bypass()`](#http-handlerbypass)
     - [HTTP `handler.clear()`](#http-handlerclear)
     - [HTTP `handler.requests()`](#http-handlerrequests)
+    - [Intercepted HTTP requests and responses](#intercepted-http-requests-and-responses)
 - [CLI](#cli)
   - [`zimic`](#zimic)
   - [`zimic browser`](#zimic-browser)
@@ -738,7 +739,8 @@ const interceptor = http.createInterceptor<Schema>({
 ```
 
 `onUnhandledRequest` also accepts a function to dynamically choose when to ignore an unhandled request. Calling
-`await context.log()` logs the request to the console.
+`await context.log()` logs the request to the console. Learn more about the
+[`request` object](#intercepted-http-requests-and-responses).
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -2022,7 +2024,8 @@ const creationHandler = await interceptor
 
 ##### Computed restrictions
 
-A function is also supported to declare restrictions in case they are dynamic.
+A function is also supported to declare restrictions in case they are dynamic. Learn more about the
+[`request` object](#intercepted-http-requests-and-responses).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2056,8 +2059,6 @@ const creationHandler = await interceptor
 
 </details></td></tr></table>
 
-The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
-`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 The function should return a boolean: `true` if the request matches the handler and should receive the mock response;
 `false` otherwise.
 
@@ -2240,7 +2241,8 @@ const listHandler = await interceptor.get('/users').respond({
 
 ##### Computed responses
 
-A function is also supported to declare a response in case it is dynamic:
+A function is also supported to declare a response in case it is dynamic. Learn more about the
+[`request` object](#intercepted-http-requests-and-responses).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2267,9 +2269,6 @@ const listHandler = await interceptor.get('/users').respond((request) => {
 ```
 
 </details></td></tr></table>
-
-The `request` parameter represents the intercepted request, containing useful properties such as `request.body`,
-`request.headers`, `request.pathParams`, and `request.searchParams`, which are typed based on the interceptor schema.
 
 #### HTTP `handler.bypass()`
 
@@ -2374,7 +2373,8 @@ await otherListHandler.requests(); // Now empty
 #### HTTP `handler.requests()`
 
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
-useful for testing that the correct requests were made by your application.
+useful for testing that the correct requests were made by your application. Learn more about the
+[`request` and `response` objects](#intercepted-http-requests-and-responses).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2392,10 +2392,12 @@ await fetch(`http://localhost:3000/users/${1}`, {
   body: JSON.stringify({ username: 'new' }),
 });
 
-const updateRequests = updateHandler.requests();
+const updateRequests = await updateHandler.requests();
 expect(updateRequests).toHaveLength(1);
 expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
+expect(updateRequests[0].response.status).toBe(200);
+expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 ```
 
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
@@ -2418,15 +2420,18 @@ const updateRequests = await updateHandler.requests();
 expect(updateRequests).toHaveLength(1);
 expect(updateRequests[0].pathParams).toEqual({ id: '1' });
 expect(updateRequests[0].body).toEqual({ username: 'new' });
+expect(updateRequests[0].response.status).toBe(200);
+expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 ```
 
 </details></td></tr></table>
 
-The returned requests are simplified objects based on the
-[`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
-[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs, containing the body in `request.body`,
-typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params in
-`request.searchParams`.
+#### Intercepted HTTP requests and responses
+
+The intercepted requests and responses are typed based on the interceptor schema. They are available as simplified
+objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
+[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
+typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
 
 The body is automatically parsed based on the header `content-type` of the request or response. The following table
 shows how each type is parsed, where `*` indicates any other resource that does not match the previous types:
@@ -2451,23 +2456,10 @@ fails.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
-<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
-
 ```ts
-const listRequests = listHandler.requests();
-console.log(listRequests[0].raw); // Request{}
-console.log(listRequests[0].response.raw); // Response{}
+console.log(request.raw); // Request{}
+console.log(request.response.raw); // Response{}
 ```
-
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
-
-```ts
-const listRequests = await listHandler.requests();
-console.log(listRequests[0].raw); // Request{}
-console.log(listRequests[0].response.raw); // Response{}
-```
-
-</details></td></tr></table>
 
 ## CLI
 
