@@ -1,6 +1,6 @@
 import { JSONValue } from '@/types/json';
 
-import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './files';
+import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';
 
 export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestInit & { timeout: number }) {
   const abort = new AbortController();
