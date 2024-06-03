@@ -11,6 +11,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { JSONValue } from '@/types/json';
 import { getCrypto } from '@/utils/crypto';
 import { getFile } from '@/utils/files';
+import { randomInt } from '@/utils/numbers';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -18,22 +19,32 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-export async function createSampleFile(
-  format: 'image' | 'audio' | 'font' | 'video' | 'binary',
-  content: string[],
+export async function createRandomFile(
+  contentType:
+    | 'image/png'
+    | 'audio/mp3'
+    | 'font/ttf'
+    | 'video/mp4'
+    | 'application/pdf'
+    | 'application/octet-stream'
+    | 'multipart/mixed',
 ): Promise<File> {
   const File = await getFile();
 
-  if (format === 'image') {
-    return new File(content, 'image.png', { type: 'image/png' });
-  } else if (format === 'audio') {
-    return new File(content, 'audio.mp3', { type: 'audio/mpeg' });
-  } else if (format === 'font') {
-    return new File(content, 'font.ttf', { type: 'font/ttf' });
-  } else if (format === 'video') {
-    return new File(content, 'video.mp4', { type: 'video/mp4' });
+  const randomContent = Uint8Array.from({ length: 1024 }, () => randomInt(0, 256));
+
+  if (contentType === 'image/png') {
+    return new File([randomContent], 'image.png', { type: contentType });
+  } else if (contentType === 'audio/mp3') {
+    return new File([randomContent], 'audio.mp3', { type: contentType });
+  } else if (contentType === 'font/ttf') {
+    return new File([randomContent], 'font.ttf', { type: contentType });
+  } else if (contentType === 'video/mp4') {
+    return new File([randomContent], 'video.mp4', { type: contentType });
+  } else if (contentType === 'application/pdf') {
+    return new File([randomContent], 'file.pdf', { type: contentType });
   } else {
-    return new File(content, 'file.bin', { type: 'application/octet-stream' });
+    return new File([randomContent], 'file.bin', { type: contentType });
   }
 }
 
@@ -1124,6 +1135,72 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         });
       });
 
+      it(`should consider ${method} request or response XML bodies as plain text`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: string;
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<string>();
+              expect(request.body).toBe('<request>content</request>');
+
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/xml' },
+                body: '<response>content-response</response>',
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/xml' },
+            body: '<request>content</request>',
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedBody = await response.text();
+          expect(fetchedBody).toBe('<response>content-response</response>');
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/xml');
+          expectTypeOf(request.body).toEqualTypeOf<string>();
+          expect(request.body).toBe('<request>content</request>');
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/xml');
+          expectTypeOf(request.response.body).toEqualTypeOf<string>();
+          expect(request.response.body).toBe('<response>content-response</response>');
+        });
+      });
+
       it(`should consider empty ${method} request or response plain text bodies as null`, async () => {
         type MethodSchema = HttpSchema.Method<{
           request: {
@@ -1190,75 +1267,80 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     });
 
     describe('Blob', () => {
-      it.each(['binary', 'image', 'audio', 'font', 'video'] as const)(
-        `should support intercepting ${method} requests having a binary body: %s`,
-        async (format) => {
-          type MethodSchema = HttpSchema.Method<{
-            request: { body: Blob };
-            response: { 200: { body: Blob } };
-          }>;
+      it.each([
+        'image/png',
+        'audio/mp3',
+        'font/ttf',
+        'video/mp4',
+        'application/pdf',
+        'application/octet-stream',
+        'multipart/mixed',
+      ] as const)(`should support intercepting ${method} requests having a binary body: %s`, async (contentType) => {
+        type MethodSchema = HttpSchema.Method<{
+          request: { body: Blob };
+          response: { 200: { body: Blob } };
+        }>;
 
-          await usingHttpInterceptor<{
-            '/users/:id': {
-              POST: MethodSchema;
-              PUT: MethodSchema;
-              PATCH: MethodSchema;
-              DELETE: MethodSchema;
-            };
-          }>(interceptorOptions, async (interceptor) => {
-            const responseFile = await createSampleFile(format, ['response']);
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const responseFile = await createRandomFile(contentType);
 
-            const handler = await promiseIfRemote(
-              interceptor[lowerMethod]('/users/:id').respond((request) => {
-                expectTypeOf(request.body).toEqualTypeOf<Blob>();
-                expect(request.body).toBeInstanceOf(Blob);
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<Blob>();
+              expect(request.body).toBeInstanceOf(Blob);
 
-                return { status: 200, body: responseFile };
-              }),
-              interceptor,
-            );
-            expect(handler).toBeInstanceOf(Handler);
+              return { status: 200, body: responseFile };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-            const requestFile = await createSampleFile(format, ['request']);
+          const requestFile = await createRandomFile(contentType);
 
-            const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
-              method,
-              headers: { 'content-type': requestFile.type },
-              body: requestFile,
-            });
-            expect(response.status).toBe(200);
-
-            const fetchedFile = await response.blob();
-            expect(fetchedFile).toBeInstanceOf(Blob);
-            expect(fetchedFile.type).toBe(responseFile.type);
-            expect(fetchedFile.size).toBe(responseFile.size);
-            expect(await fetchedFile.text()).toEqual(await responseFile.text());
-
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(1);
-            const [request] = requests;
-
-            expect(request).toBeInstanceOf(Request);
-            expect(request.headers.get('content-type')).toBe(requestFile.type);
-            expectTypeOf(request.body).toEqualTypeOf<Blob>();
-            expect(request.body).toBeInstanceOf(Blob);
-            expect(request.body.type).toBe(requestFile.type);
-            expect(request.body.size).toBe(requestFile.size);
-            expect(await request.body.text()).toEqual(await requestFile.text());
-
-            expect(request.response).toBeInstanceOf(Response);
-            expect(request.response.headers.get('content-type')).toBe(responseFile.type);
-            expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
-            expect(request.response.body).toBeInstanceOf(Blob);
-            expect(request.response.body.type).toBe(responseFile.type);
-            expect(request.response.body.size).toBe(responseFile.size);
-            expect(await request.response.body.text()).toEqual(await responseFile.text());
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': contentType },
+            body: requestFile,
           });
-        },
-      );
+          expect(response.status).toBe(200);
+
+          const fetchedFile = await response.blob();
+          expect(fetchedFile).toBeInstanceOf(Blob);
+          expect(fetchedFile.type).toBe(responseFile.type);
+          expect(fetchedFile.size).toBe(responseFile.size);
+          expect(await fetchedFile.text()).toEqual(await responseFile.text());
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe(contentType);
+          expectTypeOf(request.body).toEqualTypeOf<Blob>();
+          expect(request.body).toBeInstanceOf(Blob);
+          expect(request.body.type).toBe(contentType);
+          expect(request.body.size).toBe(requestFile.size);
+          expect(await request.body.text()).toEqual(await requestFile.text());
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe(responseFile.type);
+          expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+          expect(request.response.body).toBeInstanceOf(Blob);
+          expect(request.response.body.type).toBe(responseFile.type);
+          expect(request.response.body.size).toBe(responseFile.size);
+          expect(await request.response.body.text()).toEqual(await responseFile.text());
+        });
+      });
 
       it(`should consider empty ${method} request or response binary bodies as blob`, async () => {
         type MethodSchema = HttpSchema.Method<{

@@ -1,4 +1,4 @@
-import { blobEquals } from './blob';
+import { blobEquals } from './data';
 
 export async function getFile() {
   /* istanbul ignore next -- @preserve

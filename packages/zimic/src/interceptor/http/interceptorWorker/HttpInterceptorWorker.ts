@@ -332,15 +332,16 @@ abstract class HttpInterceptorWorker {
         if (contentType.startsWith('application/x-www-form-urlencoded')) {
           return await this.parseRawBodyAsSearchParams<Body>(resource);
         }
-        if (contentType.startsWith('text/')) {
+        if (contentType.startsWith('text/') || contentType.startsWith('application/xml')) {
           return await this.parseRawBodyAsText<Body>(resource);
         }
         if (
-          contentType.startsWith('application/octet-stream') ||
+          contentType.startsWith('application/') ||
           contentType.startsWith('image/') ||
           contentType.startsWith('audio/') ||
           contentType.startsWith('font/') ||
-          contentType.startsWith('video/')
+          contentType.startsWith('video/') ||
+          contentType.startsWith('multipart/')
         ) {
           return await this.parseRawBodyAsBlob<Body>(resource);
         }
