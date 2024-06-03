@@ -1,5 +1,7 @@
 import { JSONValue } from '@/types/json';
 
+import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './files';
+
 export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestInit & { timeout: number }) {
   const abort = new AbortController();
 
@@ -32,7 +34,7 @@ export type SerializedHttpRequest = JSONValue<{
 
 export async function serializeRequest(request: Request): Promise<SerializedHttpRequest> {
   const requestClone = request.clone();
-  const serializedBody = request.body ? await requestClone.text() : null;
+  const serializedBody = requestClone.body ? convertArrayBufferToBase64(await requestClone.arrayBuffer()) : null;
 
   return {
     url: request.url,
@@ -51,6 +53,8 @@ export async function serializeRequest(request: Request): Promise<SerializedHttp
 }
 
 export function deserializeRequest(serializedRequest: SerializedHttpRequest): Request {
+  const deserializedBody = serializedRequest.body ? convertBase64ToArrayBuffer(serializedRequest.body) : null;
+
   return new Request(serializedRequest.url, {
     method: serializedRequest.method,
     mode: serializedRequest.mode,
@@ -62,7 +66,7 @@ export function deserializeRequest(serializedRequest: SerializedHttpRequest): Re
     redirect: serializedRequest.redirect,
     referrer: serializedRequest.referrer,
     referrerPolicy: serializedRequest.referrerPolicy,
-    body: serializedRequest.body,
+    body: deserializedBody,
   });
 }
 
@@ -75,7 +79,7 @@ export type SerializedResponse = JSONValue<{
 
 export async function serializeResponse(response: Response): Promise<SerializedResponse> {
   const responseClone = response.clone();
-  const serializedBody = response.body ? await responseClone.text() : null;
+  const serializedBody = responseClone.body ? convertArrayBufferToBase64(await responseClone.arrayBuffer()) : null;
 
   return {
     status: response.status,
@@ -86,7 +90,9 @@ export async function serializeResponse(response: Response): Promise<SerializedR
 }
 
 export function deserializeResponse(serializedResponse: SerializedResponse): Response {
-  return new Response(serializedResponse.body, {
+  const deserializedBody = serializedResponse.body ? convertBase64ToArrayBuffer(serializedResponse.body) : null;
+
+  return new Response(deserializedBody, {
     status: serializedResponse.status,
     statusText: serializedResponse.statusText,
     headers: new Headers(serializedResponse.headers),
