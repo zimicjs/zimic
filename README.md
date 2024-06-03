@@ -1913,7 +1913,7 @@ const creationHandler = await interceptor
 </details></td></tr></table>
 
 For blob bodies to be correctly parsed, make sure that the intercepted requests have the header `content-type`
-indicating a binary data, such as `application/octet-stream`, `image/png`, `audio/mpeg`, etc.
+indicating a binary data, such as `application/octet-stream`, `image/png`, `audio/mp3`, etc.
 
 </details>
 
@@ -2407,9 +2407,26 @@ The return by `requests` are simplified objects based on the
 typed headers in `request.headers`, typed path params in `request.pathParams`, and typed search params in
 `request.searchParams`.
 
-The body is already parsed based on the header `content-type` of the request or response. JSON objects, form data,
-search params, blobs, and plain text are supported. If no `content-type` exists, Zimic tries to parse the body as JSON
-and falls back to plain text if it fails.
+The body is automatically parsed based on the header `content-type` of the request or response. The following table
+shows how each type is parsed, where `*` indicates any other resource that does not match the previous types:
+
+| `content-type`                      | Parsed to                               |
+| ----------------------------------- | --------------------------------------- |
+| `application/json`                  | `JSON`                                  |
+| `application/xml`                   | `String`                                |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](#httpsearchparams) |
+| `application/*` (others)            | `Blob`                                  |
+| `multipart/form-data`               | [`HttpFormData`](#httpformdata)         |
+| `multipart/*` (others)              | `Blob`                                  |
+| `text/*`                            | `String`                                |
+| `image/*`                           | `Blob`                                  |
+| `audio/*`                           | `Blob`                                  |
+| `font/*`                            | `Blob`                                  |
+| `video/*`                           | `Blob`                                  |
+| `*/*` (others)                      | `JSON` if possible, otherwise `String`  |
+
+If no `content-type` exists or it is unknown, Zimic tries to parse the body as JSON and falls back to plain text if it
+fails.
 
 If you need access to the original `Request` and `Response` objects, you can use the `request.raw` property:
 
