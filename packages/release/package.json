@@ -37,15 +37,15 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.13.0",
+    "@types/node": "^20.14.0",
     "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
-    "tsup": "^8.0.2",
-    "tsx": "^4.11.0",
+    "tsup": "^8.1.0",
+    "tsx": "^4.11.2",
     "typescript": "^5.4.5",
     "vitest": "1.6.0"
   }
