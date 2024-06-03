@@ -98,7 +98,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [HTTP `handler.bypass()`](#http-handlerbypass)
     - [HTTP `handler.clear()`](#http-handlerclear)
     - [HTTP `handler.requests()`](#http-handlerrequests)
-    - [Intercepted HTTP requests and responses](#intercepted-http-requests-and-responses)
+  - [Intercepted HTTP resources](#intercepted-http-resources)
 - [CLI](#cli)
   - [`zimic`](#zimic)
   - [`zimic browser`](#zimic-browser)
@@ -739,8 +739,8 @@ const interceptor = http.createInterceptor<Schema>({
 ```
 
 `onUnhandledRequest` also accepts a function to dynamically choose when to ignore an unhandled request. Calling
-`await context.log()` logs the request to the console. Learn more about the
-[`request` object](#intercepted-http-requests-and-responses).
+`await context.log()` logs the request to the console. Learn more about the `request` object at
+[Intercepted HTTP resources](#intercepted-http-resources).
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -2024,8 +2024,8 @@ const creationHandler = await interceptor
 
 ##### Computed restrictions
 
-A function is also supported to declare restrictions in case they are dynamic. Learn more about the
-[`request` object](#intercepted-http-requests-and-responses).
+A function is also supported to declare restrictions in case they are dynamic. Learn more about the `request` object at
+[Intercepted HTTP resources](#intercepted-http-resources).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2241,8 +2241,8 @@ const listHandler = await interceptor.get('/users').respond({
 
 ##### Computed responses
 
-A function is also supported to declare a response in case it is dynamic. Learn more about the
-[`request` object](#intercepted-http-requests-and-responses).
+A function is also supported to declare a response in case it is dynamic. Learn more about the `request` object at
+[Intercepted HTTP resources](#intercepted-http-resources).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2373,8 +2373,8 @@ await otherListHandler.requests(); // Now empty
 #### HTTP `handler.requests()`
 
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
-useful for testing that the correct requests were made by your application. Learn more about the
-[`request` and `response` objects](#intercepted-http-requests-and-responses).
+useful for testing that the correct requests were made by your application. Learn more about the `request` and
+`response` objects at [Intercepted HTTP resources](#intercepted-http-resources).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
@@ -2426,10 +2426,11 @@ expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 
 </details></td></tr></table>
 
-#### Intercepted HTTP requests and responses
+### Intercepted HTTP resources
 
-The intercepted requests and responses are typed based on the interceptor schema. They are available as simplified
-objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
+The intercepted requests and responses are typed based on their [interceptor schema](#declaring-http-service-schemas).
+They are available as simplified objects based on the
+[`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
 typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
 
