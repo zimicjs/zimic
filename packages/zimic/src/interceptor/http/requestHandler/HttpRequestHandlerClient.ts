@@ -8,7 +8,7 @@ import {
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
 import { Default } from '@/types/utils';
-import { blobContains, blobEquals } from '@/utils/blob';
+import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
