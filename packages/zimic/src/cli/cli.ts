@@ -4,6 +4,7 @@ import { hideBin } from 'yargs/helpers';
 import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
+import generateServiceSchemaFromOpenAPI from './generate/openapi';
 import startInterceptorServer from './server/start';
 
 async function runCLI() {
@@ -86,6 +87,40 @@ async function runCLI() {
                 }
               : undefined,
           });
+        },
+      ),
+    )
+
+    .command('generate', 'Generate types', (yargs) =>
+      yargs.demandCommand().command(
+        'openapi <input>',
+        'Generate service schema types from an OpenAPI schema.',
+        (yargs) =>
+          yargs
+            .positional('input', {
+              type: 'string',
+              description: 'The path to a local OpenAPI schema file or an URL to fetch it.',
+              demandOption: true,
+            })
+            .option('output', {
+              type: 'string',
+              description: 'The path to write the generated types to.',
+              alias: 'o',
+              demandOption: true,
+            })
+            .option('service-name', {
+              type: 'string',
+              description: 'The name of the service to generate types for.',
+              alias: 's',
+              demandOption: true,
+            })
+            .option('remove-comments', {
+              type: 'boolean',
+              description: 'Whether to remove comments from the generated types.',
+              default: false,
+            }),
+        async (cliArguments) => {
+          await generateServiceSchemaFromOpenAPI(cliArguments);
         },
       ),
     )
