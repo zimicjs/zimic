@@ -452,4 +452,34 @@ describe('HttpSearchParams', () => {
     searchParams.delete('orderBy', 'asc');
     expect(searchParams.contains(otherSearchParams)).toBe(true);
   });
+
+  it('should correctly show type errors if unexpected schemas are used', () => {
+    const defaultSchemaSearchParams = new HttpSearchParams();
+    defaultSchemaSearchParams.set('unknown', 'value');
+    defaultSchemaSearchParams.append('unknown', 'value');
+    defaultSchemaSearchParams.get('unknown');
+    defaultSchemaSearchParams.getAll('unknown');
+    defaultSchemaSearchParams.has('unknown');
+    defaultSchemaSearchParams.has('unknown', 'value');
+    defaultSchemaSearchParams.delete('unknown');
+
+    const emptySchemaSearchParams = new HttpSearchParams<{}>();
+    // @ts-expect-error
+    emptySchemaSearchParams.set('unknown', 'value');
+    // @ts-expect-error
+    emptySchemaSearchParams.append('unknown', 'value');
+    // @ts-expect-error
+    emptySchemaSearchParams.get('unknown');
+    // @ts-expect-error
+    emptySchemaSearchParams.getAll('unknown');
+    // @ts-expect-error
+    emptySchemaSearchParams.has('unknown');
+    // @ts-expect-error
+    emptySchemaSearchParams.has('unknown', 'value');
+    // @ts-expect-error
+    emptySchemaSearchParams.delete('unknown');
+
+    // @ts-expect-error
+    new HttpSearchParams<string>();
+  });
 });

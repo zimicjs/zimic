@@ -91,14 +91,24 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     await usingHttpInterceptor<{
       '/users': {
         GET: {
-          response: {
-            200: { body: User };
-          };
+          response: { 200: { body: User } };
+        } & {
+          request: {};
+          response: { 200: { body: User } };
+        } & {
+          request: never;
+          response: { 200: { body: User } };
+        } & {
+          request: { searchParams: {} };
+          response: { 200: { body: User } };
+        } & {
+          request: { searchParams: never };
+          response: { 200: { body: User } };
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
       const listHandler = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
 
         return {
           status: 200,
@@ -108,7 +118,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       const listRequests = await listHandler.requests();
       type RequestSearchParams = (typeof listRequests)[number]['searchParams'];
-      expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<never>>();
+      expectTypeOf<RequestSearchParams>().toEqualTypeOf<HttpSearchParams<{}>>();
     });
   });
 
@@ -149,14 +159,24 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     await usingHttpInterceptor<{
       '/users': {
         GET: {
-          response: {
-            200: { body: User };
-          };
+          response: { 200: { body: User } };
+        } & {
+          request: {};
+          response: { 200: { body: User } };
+        } & {
+          request: never;
+          response: { 200: { body: User } };
+        } & {
+          request: { headers: {} };
+          response: { 200: { body: User } };
+        } & {
+          request: { headers: never };
+          response: { 200: { body: User } };
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
       const listHandler = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<{}>>();
 
         return {
           status: 200,
@@ -166,7 +186,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       const listRequests = await listHandler.requests();
       type RequestHeaders = (typeof listRequests)[number]['headers'];
-      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<{}>>();
     });
   });
 
