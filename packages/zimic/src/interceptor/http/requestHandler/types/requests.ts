@@ -22,10 +22,12 @@ export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends Ht
 export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = {
-  status: StatusCode;
-} & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
-  HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
+> = StatusCode extends StatusCode
+  ? {
+      status: StatusCode;
+    } & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
+      HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>
+  : never;
 
 /**
  * A factory to create {@link HttpRequestHandlerResponseDeclaration} objects.
@@ -78,13 +80,13 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['headers']>;
+> = IfNever<Default<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['headers']>>, {}>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = ReplaceBy<
-  ReplaceBy<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['body'], null>, undefined, null>,
+  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['body']>, null>, undefined, null>,
   ArrayBuffer,
   Blob
 >;
@@ -98,7 +100,7 @@ export interface HttpInterceptorResponse<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<HttpResponse, keyof Body | 'headers'> {
   /** The headers of the response. */
-  headers: HttpHeaders<Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>>;
+  headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
   /** The status code of the response. */
   status: StatusCode;
   /** The body of the response. It is already parsed by default. */
