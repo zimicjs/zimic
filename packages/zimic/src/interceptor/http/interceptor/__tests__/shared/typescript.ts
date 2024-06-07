@@ -170,6 +170,53 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
+  it('should correctly type responses, based on one status code', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+            500: { body: { message: string } };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const successfulHandlers = [
+        interceptor.get('/users').respond({
+          status: 200,
+          body: users,
+        }),
+        interceptor.get('/users').respond(() => ({
+          status: 200,
+          body: users,
+        })),
+      ];
+
+      for (const handler of successfulHandlers) {
+        const successfulRequests = await handler.requests();
+        type SuccessfulResponseBody = (typeof successfulRequests)[number]['response']['body'];
+        expectTypeOf<SuccessfulResponseBody>().toEqualTypeOf<User[]>();
+      }
+
+      const failedHandlers = [
+        interceptor.get('/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        }),
+        interceptor.get('/users').respond(() => ({
+          status: 500,
+          body: { message: 'Internal server error' },
+        })),
+      ];
+
+      for (const handler of failedHandlers) {
+        const failedRequests = await handler.requests();
+        type FailedResponseBody = (typeof failedRequests)[number]['response']['body'];
+        expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
+      }
+    });
+  });
+
   it('should correctly type responses with headers', async () => {
     type UserListHeaders = HttpSchema.Headers<{
       accept: string;
@@ -219,6 +266,229 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       const listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof listRequests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+    });
+  });
+
+  it('should show a type error if trying to use a non-specified status code', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({
+        status: 200,
+        body: users,
+      });
+
+      await interceptor.get('/users').respond({
+        // @ts-expect-error The status code should match the schema
+        status: 201,
+        body: users,
+      });
+
+      // @ts-expect-error The status code should match the schema
+      await interceptor.get('/users').respond(() => ({
+        status: 201,
+        body: users,
+      }));
+    });
+  });
+
+  it('should show a type error if trying to use a non-assignable response body', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+
+      '/notifications/read': {
+        POST: {
+          response: { 204: {} };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      await interceptor.get('/users').respond({
+        status: 200,
+        body: users,
+      });
+      await interceptor.post('/notifications/read').respond({
+        status: 204,
+      });
+      await interceptor.post('/notifications/read').respond({
+        status: 204,
+        body: null,
+      });
+      await interceptor.post('/notifications/read').respond({
+        status: 204,
+        body: undefined,
+      });
+
+      await interceptor.get('/users').respond({
+        status: 200,
+        // @ts-expect-error The response body should match the schema
+        body: '',
+      });
+      // @ts-expect-error The response body should match the schema
+      await interceptor.get('/users').respond(() => ({
+        status: 200,
+        body: '',
+      }));
+
+      await interceptor.post('/notifications/read').respond({
+        status: 204,
+        // @ts-expect-error The response body should match the schema
+        body: users,
+      });
+      // @ts-expect-error The response body should match the schema
+      await interceptor.post('/notifications/read').respond(() => ({
+        status: 204,
+        body: users,
+      }));
+    });
+  });
+
+  it('should show a type error if trying to use a non-specified path and/or method', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+
+      '/users/:id': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+
+      '/notifications/read': {
+        POST: {
+          response: { 204: {} };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      await interceptor.get('/users');
+      await interceptor.get('/users/:id');
+      await interceptor.get(`/users/${123}`);
+      await interceptor.post('/notifications/read');
+
+      // @ts-expect-error The path `/users` does not contain a POST method
+      await interceptor.post('/users');
+      // @ts-expect-error The path `/users/:id` does not contain a POST method
+      await interceptor.post('/users/:id');
+      // @ts-expect-error The path `/users/:id` with dynamic parameter does not contain a POST method
+      await interceptor.post(`/users/${123}`);
+      // @ts-expect-error The path `/notifications/read` does not contain a GET method
+      await interceptor.get('/notifications/read');
+
+      // @ts-expect-error The path `/path` is not declared
+      await interceptor.get('/path');
+      // @ts-expect-error The path `/path` is not declared
+      await interceptor.post('/path');
+
+      // @ts-expect-error The path `/users` does not contain a PUT method
+      await interceptor.put('/users');
+    });
+  });
+
+  it('should correctly type paths with multiple methods', async () => {
+    type Schema = HttpSchema.Paths<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+
+        GET: {
+          response: {
+            200: { body: User[] };
+          };
+        };
+      };
+
+      '/groups/:groupId': {
+        GET: {
+          response: {
+            200: { body: { users: User[] } };
+          };
+        };
+
+        DELETE: {
+          response: {
+            204: {};
+          };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
+      const userCreationHandler = interceptor.post('/users').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<User>();
+
+        return {
+          status: 201,
+          body: users[0],
+        };
+      });
+
+      const userCreationRequests = await userCreationHandler.requests();
+
+      type UserCreationRequestBody = (typeof userCreationRequests)[number]['body'];
+      expectTypeOf<UserCreationRequestBody>().toEqualTypeOf<User>();
+
+      type UserCreationResponseBody = (typeof userCreationRequests)[number]['response']['body'];
+      expectTypeOf<UserCreationResponseBody>().toEqualTypeOf<User>();
+
+      const userListHandler = interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+        expect(request.body).toBe(null);
+
+        return {
+          status: 200,
+          body: users,
+        };
+      });
+
+      const userListRequests = await userListHandler.requests();
+
+      type UserListRequestBody = (typeof userListRequests)[number]['body'];
+      expectTypeOf<UserListRequestBody>().toEqualTypeOf<null>();
+
+      type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
+      expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
+
+      const groupGetHandler = interceptor.get(`/groups/${1}`).respond((request) => {
+        expectTypeOf(request.body).toEqualTypeOf<null>();
+        expect(request.body).toBe(null);
+
+        return {
+          status: 200,
+          body: { users },
+        };
+      });
+
+      expectTypeOf<HttpRequestHandlerPath<typeof groupGetHandler>>().toEqualTypeOf<'/groups/:groupId'>();
+
+      const groupGetRequests = await groupGetHandler.requests();
+
+      type GroupGetRequestBody = (typeof groupGetRequests)[number]['body'];
+      expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<null>();
+
+      type GroupGetResponseBody = (typeof groupGetRequests)[number]['response']['body'];
+      expectTypeOf<GroupGetResponseBody>().toEqualTypeOf<{ users: User[] }>();
     });
   });
 
@@ -333,6 +603,80 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: null } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: { body: undefined } } } } }>({ type, baseURL });
     createHttpInterceptor<{ '/users': { OPTIONS: { response: { 204: {} } } } }>({ type, baseURL });
+  });
+
+  it('should support declaring schemas using type composition', () => {
+    const inlineInterceptor = createHttpInterceptor<{
+      '/users': {
+        POST: {
+          request: { body: User };
+          response: {
+            201: { body: User };
+          };
+        };
+      };
+
+      '/users/:id': {
+        GET: {
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ type, baseURL });
+
+    type UserCreationRequest = HttpSchema.Request<{
+      body: User;
+    }>;
+
+    type UserCreationResponse = HttpSchema.Response<{
+      body: User;
+    }>;
+
+    type UserCreationResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
+      201: UserCreationResponse;
+    }>;
+
+    type UserCreationMethod = HttpSchema.Method<{
+      request: UserCreationRequest;
+      response: UserCreationResponseByStatusCode;
+    }>;
+
+    type UserCreationMethods = HttpSchema.Methods<{
+      POST: UserCreationMethod;
+    }>;
+
+    type UserGetResponse = HttpSchema.Response<{
+      body: User;
+    }>;
+
+    type UserGetResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
+      200: UserGetResponse;
+    }>;
+
+    type UserGetMethod = HttpSchema.Method<{
+      response: UserGetResponseByStatusCode;
+    }>;
+
+    type UserGetMethods = HttpSchema.Methods<{
+      GET: UserGetMethod;
+    }>;
+
+    type UserPaths = HttpSchema.Paths<{
+      '/users': UserCreationMethods;
+    }>;
+
+    type UserByIdPaths = HttpSchema.Paths<{
+      '/users/:id': UserGetMethods;
+    }>;
+
+    type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
+
+    const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
+
+    type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
+    type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
+    expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
   });
 
   describe('Dynamic paths', () => {
@@ -680,390 +1024,62 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         expectTypeOf<SpecificResponseBody>().toEqualTypeOf<GenericResponseBody>();
       });
     });
-  });
 
-  it('should correctly type responses, based on the applied status code', async () => {
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-            500: { body: { message: string } };
+    it('should correctly type responses with dynamic paths, based on the applied status code', async () => {
+      await usingHttpInterceptor<{
+        '/groups/:groupId/users': {
+          GET: {
+            response: {
+              200: { body: User[] };
+              500: { body: { message: string } };
+            };
           };
         };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      const successfulUserListHandler = interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
-
-      const successfulUserListRequests = await successfulUserListHandler.requests();
-      type SuccessfulResponseBody = (typeof successfulUserListRequests)[number]['response']['body'];
-      expectTypeOf<SuccessfulResponseBody>().toEqualTypeOf<User[]>();
-
-      const failedUserListHandler = interceptor.get('/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
-
-      const failedUserListRequests = await failedUserListHandler.requests();
-      type FailedResponseBody = (typeof failedUserListRequests)[number]['response']['body'];
-      expectTypeOf<FailedResponseBody>().toEqualTypeOf<{ message: string }>();
-    });
-  });
-
-  it('should correctly type responses with dynamic paths, based on the applied status code', async () => {
-    await usingHttpInterceptor<{
-      '/groups/:groupId/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-            500: { body: { message: string } };
-          };
-        };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      const successfulGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
-        status: 200,
-        body: users,
-      });
-
-      const successfulGenericUserListRequests = await successfulGenericUserListHandler.requests();
-      type SuccessfulGenericResponseBody = (typeof successfulGenericUserListRequests)[number]['response']['body'];
-      expectTypeOf<SuccessfulGenericResponseBody>().toEqualTypeOf<User[]>();
-
-      const failedGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
-
-      const failedGenericUserListRequests = await failedGenericUserListHandler.requests();
-      type FailedGenericResponseBody = (typeof failedGenericUserListRequests)[number]['response']['body'];
-      expectTypeOf<FailedGenericResponseBody>().toEqualTypeOf<{ message: string }>();
-
-      const successfulSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
-        status: 200,
-        body: users,
-      });
-
-      expectTypeOf<
-        HttpRequestHandlerPath<typeof successfulSpecificUserListHandler>
-      >().toEqualTypeOf<'/groups/:groupId/users'>();
-
-      const successfulSpecificUserListRequests = await successfulSpecificUserListHandler.requests();
-      type SuccessfulSpecificResponseBody = (typeof successfulSpecificUserListRequests)[number]['response']['body'];
-      expectTypeOf<SuccessfulSpecificResponseBody>().toEqualTypeOf<User[]>();
-
-      const failedSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
-        status: 500,
-        body: { message: 'Internal server error' },
-      });
-
-      expectTypeOf<
-        HttpRequestHandlerPath<typeof failedSpecificUserListHandler>
-      >().toEqualTypeOf<'/groups/:groupId/users'>();
-
-      const failedSpecificUserListRequests = await failedSpecificUserListHandler.requests();
-      type FailedSpecificResponseBody = (typeof failedSpecificUserListRequests)[number]['response']['body'];
-      expectTypeOf<FailedSpecificResponseBody>().toEqualTypeOf<{ message: string }>();
-    });
-  });
-
-  it('should show a type error if trying to use a non-specified status code', async () => {
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-          };
-        };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      await interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
-
-      await interceptor.get('/users').respond({
-        // @ts-expect-error The status code should match the schema
-        status: 201,
-        body: users,
-      });
-
-      // @ts-expect-error The status code should match the schema
-      await interceptor.get('/users').respond(() => ({
-        status: 201,
-        body: users,
-      }));
-    });
-  });
-
-  it('should show a type error if trying to use a non-assignable response body', async () => {
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-          };
-        };
-      };
-
-      '/notifications/read': {
-        POST: {
-          response: { 204: {} };
-        };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      await interceptor.get('/users').respond({
-        status: 200,
-        body: users,
-      });
-      await interceptor.post('/notifications/read').respond({
-        status: 204,
-      });
-      await interceptor.post('/notifications/read').respond({
-        status: 204,
-        body: null,
-      });
-      await interceptor.post('/notifications/read').respond({
-        status: 204,
-        body: undefined,
-      });
-
-      await interceptor.get('/users').respond({
-        status: 200,
-        // @ts-expect-error The response body should match the schema
-        body: '',
-      });
-      // @ts-expect-error The response body should match the schema
-      await interceptor.get('/users').respond(() => ({
-        status: 200,
-        body: '',
-      }));
-
-      await interceptor.post('/notifications/read').respond({
-        status: 204,
-        // @ts-expect-error The response body should match the schema
-        body: users,
-      });
-      // @ts-expect-error The response body should match the schema
-      await interceptor.post('/notifications/read').respond(() => ({
-        status: 204,
-        body: users,
-      }));
-    });
-  });
-
-  it('should show a type error if trying to use a non-specified path and/or method', async () => {
-    await usingHttpInterceptor<{
-      '/users': {
-        GET: {
-          response: {
-            200: { body: User[] };
-          };
-        };
-      };
-
-      '/users/:id': {
-        GET: {
-          response: {
-            200: { body: User };
-          };
-        };
-      };
-
-      '/notifications/read': {
-        POST: {
-          response: { 204: {} };
-        };
-      };
-    }>({ type, baseURL }, async (interceptor) => {
-      await interceptor.get('/users');
-      await interceptor.get('/users/:id');
-      await interceptor.get(`/users/${123}`);
-      await interceptor.post('/notifications/read');
-
-      // @ts-expect-error The path `/users` does not contain a POST method
-      await interceptor.post('/users');
-      // @ts-expect-error The path `/users/:id` does not contain a POST method
-      await interceptor.post('/users/:id');
-      // @ts-expect-error The path `/users/:id` with dynamic parameter does not contain a POST method
-      await interceptor.post(`/users/${123}`);
-      // @ts-expect-error The path `/notifications/read` does not contain a GET method
-      await interceptor.get('/notifications/read');
-
-      // @ts-expect-error The path `/path` is not declared
-      await interceptor.get('/path');
-      // @ts-expect-error The path `/path` is not declared
-      await interceptor.post('/path');
-
-      // @ts-expect-error The path `/users` does not contain a PUT method
-      await interceptor.put('/users');
-    });
-  });
-
-  it('should correctly type paths with multiple methods', async () => {
-    type Schema = HttpSchema.Paths<{
-      '/users': {
-        POST: {
-          request: { body: User };
-          response: {
-            201: { body: User };
-          };
-        };
-
-        GET: {
-          response: {
-            200: { body: User[] };
-          };
-        };
-      };
-
-      '/groups/:groupId': {
-        GET: {
-          response: {
-            200: { body: { users: User[] } };
-          };
-        };
-
-        DELETE: {
-          response: {
-            204: {};
-          };
-        };
-      };
-    }>;
-
-    await usingHttpInterceptor<Schema>({ type, baseURL }, async (interceptor) => {
-      const userCreationHandler = interceptor.post('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<User>();
-
-        return {
-          status: 201,
-          body: users[0],
-        };
-      });
-
-      const userCreationRequests = await userCreationHandler.requests();
-
-      type UserCreationRequestBody = (typeof userCreationRequests)[number]['body'];
-      expectTypeOf<UserCreationRequestBody>().toEqualTypeOf<User>();
-
-      type UserCreationResponseBody = (typeof userCreationRequests)[number]['response']['body'];
-      expectTypeOf<UserCreationResponseBody>().toEqualTypeOf<User>();
-
-      const userListHandler = interceptor.get('/users').respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
-
-        return {
+      }>({ type, baseURL }, async (interceptor) => {
+        const successfulGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
           status: 200,
           body: users,
-        };
-      });
+        });
 
-      const userListRequests = await userListHandler.requests();
+        const successfulGenericUserListRequests = await successfulGenericUserListHandler.requests();
+        type SuccessfulGenericResponseBody = (typeof successfulGenericUserListRequests)[number]['response']['body'];
+        expectTypeOf<SuccessfulGenericResponseBody>().toEqualTypeOf<User[]>();
 
-      type UserListRequestBody = (typeof userListRequests)[number]['body'];
-      expectTypeOf<UserListRequestBody>().toEqualTypeOf<null>();
+        const failedGenericUserListHandler = interceptor.get('/groups/:groupId/users').respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        });
 
-      type UserListResponseBody = (typeof userListRequests)[number]['response']['body'];
-      expectTypeOf<UserListResponseBody>().toEqualTypeOf<User[]>();
+        const failedGenericUserListRequests = await failedGenericUserListHandler.requests();
+        type FailedGenericResponseBody = (typeof failedGenericUserListRequests)[number]['response']['body'];
+        expectTypeOf<FailedGenericResponseBody>().toEqualTypeOf<{ message: string }>();
 
-      const groupGetHandler = interceptor.get(`/groups/${1}`).respond((request) => {
-        expectTypeOf(request.body).toEqualTypeOf<null>();
-        expect(request.body).toBe(null);
-
-        return {
+        const successfulSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
           status: 200,
-          body: { users },
-        };
+          body: users,
+        });
+
+        expectTypeOf<
+          HttpRequestHandlerPath<typeof successfulSpecificUserListHandler>
+        >().toEqualTypeOf<'/groups/:groupId/users'>();
+
+        const successfulSpecificUserListRequests = await successfulSpecificUserListHandler.requests();
+        type SuccessfulSpecificResponseBody = (typeof successfulSpecificUserListRequests)[number]['response']['body'];
+        expectTypeOf<SuccessfulSpecificResponseBody>().toEqualTypeOf<User[]>();
+
+        const failedSpecificUserListHandler = interceptor.get(`/groups/${1}/users`).respond({
+          status: 500,
+          body: { message: 'Internal server error' },
+        });
+
+        expectTypeOf<
+          HttpRequestHandlerPath<typeof failedSpecificUserListHandler>
+        >().toEqualTypeOf<'/groups/:groupId/users'>();
+
+        const failedSpecificUserListRequests = await failedSpecificUserListHandler.requests();
+        type FailedSpecificResponseBody = (typeof failedSpecificUserListRequests)[number]['response']['body'];
+        expectTypeOf<FailedSpecificResponseBody>().toEqualTypeOf<{ message: string }>();
       });
-
-      expectTypeOf<HttpRequestHandlerPath<typeof groupGetHandler>>().toEqualTypeOf<'/groups/:groupId'>();
-
-      const groupGetRequests = await groupGetHandler.requests();
-
-      type GroupGetRequestBody = (typeof groupGetRequests)[number]['body'];
-      expectTypeOf<GroupGetRequestBody>().toEqualTypeOf<null>();
-
-      type GroupGetResponseBody = (typeof groupGetRequests)[number]['response']['body'];
-      expectTypeOf<GroupGetResponseBody>().toEqualTypeOf<{ users: User[] }>();
     });
-  });
-
-  it('should support declaring schemas using type composition', () => {
-    const inlineInterceptor = createHttpInterceptor<{
-      '/users': {
-        POST: {
-          request: { body: User };
-          response: {
-            201: { body: User };
-          };
-        };
-      };
-
-      '/users/:id': {
-        GET: {
-          response: {
-            200: { body: User };
-          };
-        };
-      };
-    }>({ type, baseURL });
-
-    type UserCreationRequest = HttpSchema.Request<{
-      body: User;
-    }>;
-
-    type UserCreationResponse = HttpSchema.Response<{
-      body: User;
-    }>;
-
-    type UserCreationResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
-      201: UserCreationResponse;
-    }>;
-
-    type UserCreationMethod = HttpSchema.Method<{
-      request: UserCreationRequest;
-      response: UserCreationResponseByStatusCode;
-    }>;
-
-    type UserCreationMethods = HttpSchema.Methods<{
-      POST: UserCreationMethod;
-    }>;
-
-    type UserGetResponse = HttpSchema.Response<{
-      body: User;
-    }>;
-
-    type UserGetResponseByStatusCode = HttpSchema.ResponseByStatusCode<{
-      200: UserGetResponse;
-    }>;
-
-    type UserGetMethod = HttpSchema.Method<{
-      response: UserGetResponseByStatusCode;
-    }>;
-
-    type UserGetMethods = HttpSchema.Methods<{
-      GET: UserGetMethod;
-    }>;
-
-    type UserPaths = HttpSchema.Paths<{
-      '/users': UserCreationMethods;
-    }>;
-
-    type UserByIdPaths = HttpSchema.Paths<{
-      '/users/:id': UserGetMethods;
-    }>;
-
-    type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
-
-    const compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
-
-    type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof compositeInterceptor>;
-    type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof inlineInterceptor>;
-    expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
   });
 }
