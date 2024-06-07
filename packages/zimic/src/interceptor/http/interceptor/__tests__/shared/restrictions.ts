@@ -36,12 +36,15 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
   });
 
   type UserRequestHeaders = HttpSchema.Headers<{
-    'content-language'?: string;
-    accept?: string;
+    'content-language': string;
+    accept: string;
+    optional?: string;
   }>;
 
   type UserSearchParams = HttpSchema.SearchParams<{
-    tag?: string;
+    tag: string;
+    other: string;
+    optional?: string;
   }>;
 
   type MethodSchema = HttpSchema.Method<{
@@ -185,7 +188,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
+        const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin', other: 'value' });
 
         const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method,

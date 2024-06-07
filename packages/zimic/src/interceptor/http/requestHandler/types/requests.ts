@@ -41,13 +41,13 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { headers: {} }>['headers'],
+export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
+  Default<DefaultNoExclude<Default<MethodSchema['request'], { headers: {} }>['headers'], {}>>,
   {}
 >;
 
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { searchParams: {} }>['searchParams'],
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
+  Default<DefaultNoExclude<Default<MethodSchema['request'], { searchParams: {} }>['searchParams'], {}>>,
   {}
 >;
 
@@ -64,13 +64,13 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   /** The headers of the request. */
-  headers: HttpHeaders<IfNever<Default<HttpRequestHeadersSchema<MethodSchema>>, {}>>;
+  headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
   pathParams: PathParamsSchemaFromPath<Path>;
   /** The search parameters of the request. */
-  searchParams: HttpSearchParams<IfNever<Default<HttpRequestSearchParamsSchema<MethodSchema>>, {}>>;
+  searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
   /** The body of the request. It is already parsed by default. */
-  body: HttpRequestBodySchema<MethodSchema>;
+  body: ReplaceBy<HttpRequestBodySchema<MethodSchema>, ArrayBuffer | ReadableStream, Blob>;
   /** The raw request object. */
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
 }
@@ -98,7 +98,7 @@ export interface HttpInterceptorResponse<
   /** The status code of the response. */
   status: StatusCode;
   /** The body of the response. It is already parsed by default. */
-  body: HttpResponseBodySchema<MethodSchema, StatusCode>;
+  body: ReplaceBy<HttpResponseBodySchema<MethodSchema, StatusCode>, ArrayBuffer | ReadableStream, Blob>;
   /** The raw response object. */
   raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }

@@ -47,7 +47,8 @@ export interface HttpRequest<
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody>;
+  json: () => Promise<StrictBody extends JSONValue ? StrictBody : never>;
+  formData: () => Promise<StrictBody extends HttpFormData<infer _Schema> ? StrictBody : FormData>;
 }
 
 /**
@@ -61,5 +62,6 @@ export interface HttpResponse<
 > extends Response {
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody>;
+  json: () => Promise<StrictBody extends JSONValue ? StrictBody : never>;
+  formData: () => Promise<StrictBody extends HttpFormData<infer _Schema> ? StrictBody : FormData>;
 }
