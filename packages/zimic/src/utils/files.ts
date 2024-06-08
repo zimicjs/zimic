@@ -2,6 +2,8 @@ import { blobEquals } from './data';
 
 let bufferSingleton: typeof import('buffer') | undefined;
 
+/* istanbul ignore next -- @preserve
+ * Ignoring as Node.js >=20 provides a global file and the buffer import won't run. */
 export async function getBuffer() {
   if (bufferSingleton) {
     return bufferSingleton;
