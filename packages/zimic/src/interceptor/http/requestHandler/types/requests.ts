@@ -8,7 +8,7 @@ import {
   HttpServiceResponseSchemaStatusCode,
   PathParamsSchemaFromPath,
 } from '@/http/types/schema';
-import { Default, DefaultNoExclude, PossiblePromise, ReplaceBy } from '@/types/utils';
+import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
 export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpServiceResponseSchema> =
   undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
@@ -42,11 +42,13 @@ export type HttpRequestHandlerResponseDeclarationFactory<
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
 export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { headers: never }>['headers']
+  Default<MethodSchema['request'], { headers: {} }>['headers'],
+  {}
 >;
 
 export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { searchParams: never }>['searchParams']
+  Default<MethodSchema['request'], { searchParams: {} }>['searchParams'],
+  {}
 >;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> = ReplaceBy<
@@ -62,15 +64,15 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   /** The headers of the request. */
-  headers: HttpHeaders<Default<HttpRequestHeadersSchema<MethodSchema>>>;
+  headers: HttpHeaders<IfNever<Default<HttpRequestHeadersSchema<MethodSchema>>, {}>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
   pathParams: PathParamsSchemaFromPath<Path>;
   /** The search parameters of the request. */
-  searchParams: HttpSearchParams<Default<HttpRequestSearchParamsSchema<MethodSchema>>>;
+  searchParams: HttpSearchParams<IfNever<Default<HttpRequestSearchParamsSchema<MethodSchema>>, {}>>;
   /** The body of the request. It is already parsed by default. */
   body: HttpRequestBodySchema<MethodSchema>;
   /** The raw request object. */
-  raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
+  raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
 }
 
 export type HttpResponseHeadersSchema<

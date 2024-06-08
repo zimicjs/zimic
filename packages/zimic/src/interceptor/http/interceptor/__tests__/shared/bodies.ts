@@ -98,8 +98,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     describe('JSON', () => {
       it(`should support intercepting ${method} requests having a JSON body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: UserJSONSchema };
-          response: { 200: { body: UserJSONSchema } };
+          request: {
+            headers: { 'content-type': string };
+            body: UserJSONSchema;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: UserJSONSchema;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -152,8 +160,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
       it(`should support intercepting ${method} requests having a number as JSON body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: number };
-          response: { 200: { body: number } };
+          request: {
+            headers: { 'content-type': string };
+            body: number;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: number;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -206,8 +222,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
       it(`should support intercepting ${method} requests having a boolean as JSON body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: boolean };
-          response: { 200: { body: boolean } };
+          request: {
+            headers: { 'content-type': string };
+            body: boolean;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: boolean;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -664,8 +688,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     describe('Form data', () => {
       it(`should support intercepting ${method} requests having a form data body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: HttpFormData<UserFormDataSchema> };
-          response: { 200: { body: HttpFormData<UserFormDataSchema> } };
+          request: {
+            headers: { 'content-type': string };
+            body: HttpFormData<UserFormDataSchema>;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: HttpFormData<UserFormDataSchema>;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -884,8 +916,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     describe('URL search params', () => {
       it(`should support intercepting ${method} requests having a URL search params body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: HttpSearchParams<UserSearchParamsSchema> };
-          response: { 200: { body: HttpSearchParams<UserSearchParamsSchema> } };
+          request: {
+            headers: { 'content-type': string };
+            body: HttpSearchParams<UserSearchParamsSchema>;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: HttpSearchParams<UserSearchParamsSchema>;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -1084,8 +1124,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
     describe('Plain text', () => {
       it(`should support intercepting ${method} requests having a plain text body`, async () => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: string };
-          response: { 200: { body: string } };
+          request: {
+            headers: { 'content-type': string };
+            body: string;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: string;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
@@ -1277,8 +1325,16 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
         'multipart/mixed',
       ] as const)(`should support intercepting ${method} requests having a binary body: %s`, async (contentType) => {
         type MethodSchema = HttpSchema.Method<{
-          request: { body: Blob };
-          response: { 200: { body: Blob } };
+          request: {
+            headers: { 'content-type': string };
+            body: Blob;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: Blob;
+            };
+          };
         }>;
 
         await usingHttpInterceptor<{
