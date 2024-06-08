@@ -8,8 +8,7 @@
         "{src,tests}/**/*.{ts,tsx,json}",
         "{package,tsconfig}.json",
         "{playwright,tailwind,postcss,next}.config.{ts,mts,js}"
-      ],
-      "outputs": ["tests/outputs", "tests/reports"]
+      ]
     }
   }
 }
