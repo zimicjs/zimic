@@ -327,17 +327,20 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(interceptedRequests[0].raw.headers).toEqual(request.headers);
     expectTypeOf(interceptedRequests[0].raw.json).toEqualTypeOf<() => Promise<MethodSchema['request']['body']>>();
     expect(await interceptedRequests[0].raw.json()).toEqual<MethodSchema['request']['body']>({ name: 'User' });
+    expectTypeOf(interceptedRequests[0].raw.formData).toEqualTypeOf<() => Promise<FormData>>();
 
     expect(interceptedRequests[0].response).toEqual(parsedResponse);
 
     expectTypeOf(interceptedRequests[0].response.raw).toEqualTypeOf<HttpResponse<{ success: true }, 200>>();
     expect(interceptedRequests[0].response.raw).toBeInstanceOf(Response);
+    expectTypeOf(interceptedRequests[0].response.raw.status).toEqualTypeOf<200>();
     expect(interceptedRequests[0].response.raw.status).toBe(200);
     expect(interceptedRequests[0].response.raw.headers).toEqual(response.headers);
     expectTypeOf(interceptedRequests[0].response.raw.json).toEqualTypeOf<() => Promise<{ success: true }>>();
     expect(await interceptedRequests[0].response.raw.json()).toEqual<MethodSchema['response'][200]['body']>({
       success: true,
     });
+    expectTypeOf(interceptedRequests[0].response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
   });
 
   it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {

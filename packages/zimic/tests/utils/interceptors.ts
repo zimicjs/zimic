@@ -23,7 +23,7 @@ import {
 import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { getCrypto } from '@/utils/crypto';
-import { joinURL, createURL, ExtendedURL } from '@/utils/urls';
+import { createURL, ExtendedURL, joinURL } from '@/utils/urls';
 import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/setup/global/browser';
 
 export async function getBrowserBaseURL(workerType: HttpInterceptorType) {

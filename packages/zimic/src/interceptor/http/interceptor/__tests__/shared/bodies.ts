@@ -4,6 +4,7 @@ import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
 import InvalidJSONError from '@/http/errors/InvalidJSONError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
@@ -76,7 +77,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
-    const lowerMethod = method.toLowerCase<typeof method>();
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestJSONString = '<invalid-request-json>';
     const invalidResponseJSONString = '<invalid-response-json>';
@@ -155,6 +156,28 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(request.response.headers.get('content-type')).toBe('application/json');
           expectTypeOf(request.response.body).toEqualTypeOf<UserJSONSchema>();
           expect(request.response.body).toEqual(users[0]);
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<UserJSONSchema>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<UserJSONSchema>>();
+          expect(await request.raw.json()).toEqual<UserJSONSchema>(users[0]);
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<UserJSONSchema, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<UserJSONSchema>>();
+          expect(await request.response.raw.json()).toEqual<UserJSONSchema>(users[0]);
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -217,6 +240,28 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(request.response.headers.get('content-type')).toBe('application/json');
           expectTypeOf(request.response.body).toEqualTypeOf<number>();
           expect(request.response.body).toBe(2);
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<number>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<number>>();
+          expect(await request.raw.json()).toEqual<number>(1);
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<number, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<number>>();
+          expect(await request.response.raw.json()).toEqual<number>(2);
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -279,6 +324,28 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(request.response.headers.get('content-type')).toBe('application/json');
           expectTypeOf(request.response.body).toEqualTypeOf<boolean>();
           expect(request.response.body).toBe(false);
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<boolean>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<boolean>>();
+          expect(await request.raw.json()).toEqual<boolean>(true);
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<boolean, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<boolean>>();
+          expect(await request.response.raw.json()).toEqual<boolean>(false);
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -774,6 +841,30 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(interceptedResponseTagFile.size).toBe(responseTagFile.size);
           expect(interceptedResponseTagFile.type).toBe(responseTagFile.type);
           expect(await interceptedResponseTagFile.text()).toEqual(await responseTagFile.text());
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<HttpFormData<UserFormDataSchema>>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<HttpFormData<UserFormDataSchema>>>();
+          expect(Object.fromEntries(await request.raw.formData())).toEqual(Object.fromEntries(formData));
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpFormData<UserFormDataSchema>, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<HttpFormData<UserFormDataSchema>>>();
+          expect(Object.fromEntries(await request.response.raw.formData())).toEqual(
+            Object.fromEntries(responseFormData),
+          );
         });
       });
 
@@ -983,6 +1074,28 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expectTypeOf(request.response.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
           expect(request.response.body).toBeInstanceOf(HttpSearchParams);
           expect(request.response.body).toEqual(responseSearchParams);
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<HttpSearchParams<UserSearchParamsSchema>>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<
+            HttpResponse<HttpSearchParams<UserSearchParamsSchema>, 200>
+          >();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -1180,6 +1293,26 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(request.response.headers.get('content-type')).toBe('text/plain;charset=UTF-8');
           expectTypeOf(request.response.body).toEqualTypeOf<string>();
           expect(request.response.body).toBe('content-response');
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<string>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<string, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -1395,6 +1528,26 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expect(request.response.body.type).toBe(responseFile.type);
           expect(request.response.body.size).toBe(responseFile.size);
           expect(await request.response.body.text()).toEqual(await responseFile.text());
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
 
@@ -1463,6 +1616,111 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           expectTypeOf(request.response.body).toEqualTypeOf<Blob | null>();
           expect(request.response.body).toBeInstanceOf(Blob);
           expect(request.response.body!.size).toBe(0);
+        });
+      });
+
+      it(`should consider array buffer ${method} request bodies as blob`, async () => {
+        type MethodSchema = HttpSchema.Method<{
+          request: {
+            headers: { 'content-type': string };
+            body: ArrayBuffer;
+          };
+          response: {
+            200: {
+              headers: { 'content-type'?: string };
+              body: ArrayBuffer;
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const responseBuffer = new ArrayBuffer(2);
+          const responseView = new Uint8Array(responseBuffer);
+          responseView[0] = 0x00;
+          responseView[1] = 0xff;
+
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).toEqualTypeOf<Blob>();
+              expect(request.body).toBeInstanceOf(Blob);
+
+              return {
+                status: 200,
+                headers: { 'content-type': 'application/octet-stream' },
+                body: responseBuffer,
+              };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const requestBuffer = new ArrayBuffer(2);
+          const requestView = new Uint8Array(requestBuffer);
+          requestView[0] = 0xff;
+          requestView[1] = 0x00;
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/octet-stream' },
+            body: requestBuffer,
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedFile = await response.blob();
+          expect(fetchedFile).toBeInstanceOf(Blob);
+          expect(fetchedFile.type).toBe('application/octet-stream');
+          expect(fetchedFile.size).toBe(2);
+          expect(await fetchedFile.arrayBuffer()).toEqual(responseBuffer);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/octet-stream');
+          expectTypeOf(request.body).toEqualTypeOf<Blob>();
+          expect(request.body).toBeInstanceOf(Blob);
+          expect(request.body.type).toBe('application/octet-stream');
+          expect(request.body.size).toBe(2);
+          expect(await request.body.arrayBuffer()).toEqual(requestBuffer);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/octet-stream');
+          expectTypeOf(request.response.body).toEqualTypeOf<Blob>();
+          expect(request.response.body).toBeInstanceOf(Blob);
+          expect(request.response.body.type).toBe('application/octet-stream');
+          expect(request.response.body.size).toBe(2);
+          expect(await request.response.body.arrayBuffer()).toEqual(responseBuffer);
+
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<Blob>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<Blob, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });
     });

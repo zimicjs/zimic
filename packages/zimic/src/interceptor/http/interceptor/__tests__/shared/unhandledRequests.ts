@@ -39,7 +39,6 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       type,
     });
 
-    // TODO: handler.with() restriction types are not performing well when combining many interceptor types and http methods
     const lowerMethod = method.toLowerCase<'POST'>();
 
     type MethodSchemaWithoutRequestBody = HttpSchema.Method<{

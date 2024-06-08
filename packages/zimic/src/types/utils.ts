@@ -42,3 +42,12 @@ export type NonArrayKey<Type> =
 export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
 
 export type Collection<Type> = Type[] | Set<Type>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DeepPartial<Type> = Type extends (...parameters: any[]) => any
+  ? Type
+  : Type extends (infer ArrayItem)[]
+    ? DeepPartial<ArrayItem>[]
+    : Type extends object
+      ? { [Key in keyof Type]?: DeepPartial<Type[Key]> }
+      : Type;

@@ -1,12 +1,6 @@
-import {
-  HttpHandler as MSWHttpHandler,
-  SharedOptions as MSWWorkerSharedOptions,
-  StrictRequest as MSWStrictRequest,
-  http,
-  passthrough,
-} from 'msw';
+import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 
-import { HttpBody } from '@/http/types/requests';
+import { HttpRequest } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils/urls';
 
@@ -153,7 +147,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const request = context.request as MSWStrictRequest<HttpBody>;
+      const request = context.request as HttpRequest;
       const requestClone = request.clone();
 
       try {
