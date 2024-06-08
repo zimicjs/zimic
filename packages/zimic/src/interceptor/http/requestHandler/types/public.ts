@@ -22,7 +22,7 @@ import {
   TrackedHttpInterceptorRequest,
 } from './requests';
 
-type HttpHeadersOrPartialSchema<Schema extends HttpHeadersSchema> =
+type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> =
   | Partial<Schema>
   | HttpHeaders<Partial<Schema>>
   | HttpHeaders<Schema>;
@@ -36,9 +36,9 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = HttpHeadersOrPartialSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+> = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
-type HttpSearchParamsOrPartialSchema<Schema extends HttpSearchParamsSchema> =
+type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> =
   | Partial<Schema>
   | HttpSearchParams<Partial<Schema>>
   | HttpSearchParams<Schema>;
@@ -52,9 +52,9 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = HttpSearchParamsOrPartialSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+> = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
-type BodyOrPartialSchema<Body extends HttpBody> =
+type PartialBodyOrSchema<Body extends HttpBody> =
   Body extends HttpFormData<infer Schema>
     ? HttpFormData<Partial<Schema>> | HttpFormData<Schema>
     : Body extends HttpSearchParams<infer Schema>
@@ -72,7 +72,7 @@ export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = BodyOrPartialSchema<Default<HttpRequestBodySchema<Default<Schema[Path][Method]>>, null>>;
+> = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
 /**
  * A static restriction to match intercepted requests.
