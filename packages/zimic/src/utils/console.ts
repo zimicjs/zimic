@@ -1,12 +1,23 @@
 import chalk from 'chalk';
-import util from 'util';
 
 import { isClientSide } from './environment';
 
-export function formatObjectToLog(value: unknown) {
+let utilSingleton: typeof import('util') | undefined;
+
+async function getUtil() {
+  if (!utilSingleton) {
+    utilSingleton = await import('util');
+  }
+  return utilSingleton;
+}
+
+export async function formatObjectToLog(value: unknown) {
   if (isClientSide()) {
     return value;
   }
+
+  const util = await getUtil();
+
   return util.inspect(value, {
     colors: true,
     compact: true,

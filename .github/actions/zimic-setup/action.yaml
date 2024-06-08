@@ -22,10 +22,6 @@ inputs:
     description: Filter to build the dependencies of a specific app or package
     required: false
     default: './packages/*'
-  build-node-env:
-    description: NODE_ENV to use when building packages
-    required: false
-    default: 'development'
   install-playwright-browsers:
     description: Whether to install the browsers for Playwright
     required: false
@@ -100,7 +96,7 @@ runs:
         fi
 
         echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT
-        NODE_ENV='${{ inputs.build-node-env }}' pnpm turbo build $buildFlag
+        pnpm turbo build $buildFlag
 
         # apply the build outputs of the internal packages
         pnpm install --offline $installFlag

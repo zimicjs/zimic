@@ -44,8 +44,6 @@ jobs:
 
       - name: Build zimic
         run: pnpm turbo build --filter zimic
-        env:
-          NODE_ENV: production
 
       - name: Prepare NPM tag
         id: npm-tag
