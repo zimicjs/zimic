@@ -184,7 +184,7 @@ export function declareDefaultHttpRequestHandlerTests(
       body: responseBody,
     }));
 
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
+    const handler = new Handler<Schema, 'POST', '/users', 200>(interceptorClient, 'POST', '/users');
     await promiseIfRemote(handler.respond(responseFactory), interceptor);
 
     const request = new Request(baseURL);

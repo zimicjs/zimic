@@ -190,7 +190,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should correctly type responses, based on one status code', async () => {
+  it('should correctly type responses with a single status code', async () => {
     await usingHttpInterceptor<{
       '/users': {
         GET: {
@@ -237,6 +237,96 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
+  it('should correctly type responses with multiple status codes', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: { name?: string };
+          };
+          response: {
+            200: {
+              headers: { 'content-type': string };
+              body: User[];
+            };
+            400: {
+              body: { message: string };
+            };
+            404: {};
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const handler = interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return {
+            status: 400,
+            body: { message: 'A name is required.' },
+          };
+        }
+
+        if (name === 'not-found') {
+          return { status: 404 };
+        }
+
+        return {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: users,
+        };
+      });
+
+      const requests = await handler.requests();
+      type ResponseBody = (typeof requests)[number]['response']['body'];
+      expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | null>();
+
+      type ResponseHeaders = (typeof requests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<{}>>();
+
+      type ResponseStatus = (typeof requests)[number]['response']['status'];
+      expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 400 | 404>();
+
+      // @ts-expect-error Each response declaration should match the status code
+      await interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return { status: 400 };
+        }
+
+        if (name === 'not-found') {
+          return {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
+            body: users,
+          };
+        }
+
+        return {
+          status: 200,
+          body: { message: 'A name is required.' },
+        };
+      });
+
+      // @ts-expect-error The response declaration should match the schema
+      await interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return { status: 400, body: '' };
+        }
+
+        if (name === 'not-found') {
+          return { status: 404, body: '' };
+        }
+
+        return { status: 200, body: '' };
+      });
+    });
+  });
+
   it('should correctly type responses with headers', async () => {
     type UserListHeaders = HttpSchema.Headers<{
       accept: string;
@@ -275,6 +365,14 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
           response: {
             200: { body: User };
           };
+        } & {
+          response: {
+            200: { headers?: {}; body: User };
+          };
+        } & {
+          response: {
+            200: { headers?: never; body: User };
+          };
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
@@ -285,7 +383,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       const listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof listRequests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{}>>();
     });
   });
 
