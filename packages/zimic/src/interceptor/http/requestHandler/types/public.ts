@@ -13,16 +13,19 @@ import {
 import { DeepPartial, Default, PossiblePromise } from '@/types/utils';
 
 import {
-  HttpRequestHeadersSchema,
   HttpInterceptorRequest,
+  HttpRequestBodySchema,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHeadersSchema,
   HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
-  HttpRequestBodySchema,
 } from './requests';
 
-type HttpHeadersOrPartialSchema<Schema extends HttpHeadersSchema> = Partial<Schema> | HttpHeaders<Schema>;
+type HttpHeadersOrPartialSchema<Schema extends HttpHeadersSchema> =
+  | Partial<Schema>
+  | HttpHeaders<Partial<Schema>>
+  | HttpHeaders<Schema>;
 
 /**
  * A static headers restriction to match intercepted requests.
@@ -37,6 +40,7 @@ export type HttpRequestHandlerHeadersStaticRestriction<
 
 type HttpSearchParamsOrPartialSchema<Schema extends HttpSearchParamsSchema> =
   | Partial<Schema>
+  | HttpSearchParams<Partial<Schema>>
   | HttpSearchParams<Schema>;
 
 /**
@@ -50,12 +54,14 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Method extends HttpServiceSchemaMethod<Schema>,
 > = HttpSearchParamsOrPartialSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
-type BodyOrPartialSchema<Body extends HttpBody> = Body extends
-  | HttpFormData<infer _HttpFormDataSchema>
-  | HttpSearchParams<infer _HttpSearchParamsSchema>
-  | Blob
-  ? Body
-  : DeepPartial<Body>;
+type BodyOrPartialSchema<Body extends HttpBody> =
+  Body extends HttpFormData<infer Schema>
+    ? HttpFormData<Partial<Schema>> | HttpFormData<Schema>
+    : Body extends HttpSearchParams<infer Schema>
+      ? HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
+      : Body extends Blob
+        ? Body
+        : DeepPartial<Body>;
 
 /**
  * A static body restriction to match intercepted requests.
