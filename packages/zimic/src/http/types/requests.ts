@@ -9,7 +9,7 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 
 /** The default body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer | ReadableStream;
+export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
@@ -47,8 +47,8 @@ export interface HttpRequest<
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends JSONValue ? StrictBody : never>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _Schema> ? StrictBody : FormData>;
+  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }
 
 /**
@@ -62,6 +62,6 @@ export interface HttpResponse<
 > extends Response {
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends JSONValue ? StrictBody : never>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _Schema> ? StrictBody : FormData>;
+  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }

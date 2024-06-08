@@ -198,7 +198,6 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof FormData ||
       declaration.body instanceof URLSearchParams ||
       declaration.body instanceof Blob ||
-      declaration.body instanceof ReadableStream ||
       declaration.body instanceof ArrayBuffer
     ) {
       return new Response(declaration.body ?? null, { headers, status });
