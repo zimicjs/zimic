@@ -17,7 +17,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
 
 import runCLI from '../cli';
-import { singletonServer as server } from '../server/start';
+import { serverSingleton as server } from '../server/start';
 import { delayHttpServerCloseIndefinitely, delayHttpServerListenIndefinitely } from './utils';
 
 function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {

@@ -1,10 +1,27 @@
 import { blobEquals } from './data';
 
+let bufferSingleton: typeof import('buffer') | undefined;
+
+export async function getBuffer() {
+  if (bufferSingleton) {
+    return bufferSingleton;
+  }
+  bufferSingleton = await import('buffer');
+  return bufferSingleton;
+}
+
+let FileSingleton: typeof File | undefined;
+
 export async function getFile() {
+  if (FileSingleton) {
+    return FileSingleton;
+  }
+
   /* istanbul ignore next -- @preserve
    * Ignoring as Node.js >=20 provides a global file and the import fallback won't run. */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return globalThis.File ?? (await import('buffer')).File;
+  FileSingleton = globalThis.File ?? (await getBuffer()).File;
+  return FileSingleton;
 }
 
 export async function fileEquals(file: File, otherFile: File) {
