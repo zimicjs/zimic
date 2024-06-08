@@ -48,7 +48,7 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
       type,
     });
 
-    const lowerMethod = method.toLowerCase<typeof method>();
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };
