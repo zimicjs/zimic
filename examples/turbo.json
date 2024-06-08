@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
-  "pipeline": {
+  "tasks": {
     "lint:turbo": {
       "inputs": [
         "with-*/{src,tests}/**/*.{ts,json}",

@@ -1,7 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
   "globalEnv": ["NODE_ENV", "NODE_VERSION", "TYPESCRIPT_VERSION"],
-  "pipeline": {
+  "tasks": {
     "dev": {
       "cache": false,
       "persistent": true,

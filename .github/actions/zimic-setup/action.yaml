@@ -90,7 +90,7 @@ runs:
           installFlag="$workspaceRootInstallFlag $partialInstallFlag"
         fi
 
-        echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
+        echo "install-filters=$partialInstallFlag" >> $GITHUB_OUTPUT
         pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
         if [[ '${{ inputs.build }}' == '' ]]; then
