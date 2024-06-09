@@ -90,6 +90,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
      * All supported websocket messages should be encoded as strings. */
     if (typeof data === 'string') {
       return data;
+    } else if (data instanceof Buffer) {
+      return data.toString('utf-8');
     } else {
       throw new InvalidWebSocketMessage(data);
     }
