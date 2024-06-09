@@ -14,7 +14,11 @@ export interface InterceptorServerOptions {
   /** The port to start the server on. If no port is provided, a random one is chosen. */
   port?: number;
 
-  /** The strategy to handle unhandled requests. */
+  /**
+   * The strategy to handle unhandled requests.
+   *
+   * - @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
+   */
   onUnhandledRequest?: {
     /**
      * Whether to log unhandled requests.

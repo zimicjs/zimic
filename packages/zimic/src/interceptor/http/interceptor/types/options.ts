@@ -88,6 +88,8 @@ export interface SharedHttpInterceptorOptions {
    * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
    * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
    * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest?: UnhandledRequestStrategy;
 }
