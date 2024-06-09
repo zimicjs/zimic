@@ -12,6 +12,7 @@ import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import LocalHttpRequestHandler from './LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from './RemoteHttpRequestHandler';
@@ -245,6 +246,10 @@ class HttpRequestHandlerClient<
   }
 
   requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+    if (!this.interceptor.shouldSaveRequests()) {
+      throw new DisabledRequestSavingError();
+    }
+
     const interceptedRequestsCopy = [...this.interceptedRequests];
     Object.freeze(interceptedRequestsCopy);
     return interceptedRequestsCopy;

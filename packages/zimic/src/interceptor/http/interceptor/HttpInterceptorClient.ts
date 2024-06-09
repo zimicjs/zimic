@@ -33,7 +33,7 @@ class HttpInterceptorClient<
   private _baseURL: ExtendedURL;
   private _isRunning = false;
   private onUnhandledRequest?: UnhandledRequestStrategy;
-  private shouldSaveRequests = false;
+  private _shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
 
@@ -62,7 +62,7 @@ class HttpInterceptorClient<
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
     this.onUnhandledRequest = options.onUnhandledRequest;
-    this.shouldSaveRequests = options.saveRequests ?? false;
+    this._shouldSaveRequests = options.saveRequests ?? false;
   }
 
   baseURL() {
@@ -75,6 +75,10 @@ class HttpInterceptorClient<
 
   isRunning() {
     return this.worker.isRunning() && this._isRunning;
+  }
+
+  shouldSaveRequests() {
+    return this._shouldSaveRequests;
   }
 
   async start() {
@@ -210,7 +214,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.shouldSaveRequests) {
+    if (this.shouldSaveRequests()) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<

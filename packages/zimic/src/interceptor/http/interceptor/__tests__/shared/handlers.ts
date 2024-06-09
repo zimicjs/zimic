@@ -4,6 +4,7 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import DisabledRequestSavingError from '@/interceptor/http/requestHandler/errors/DisabledRequestSavingError';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
@@ -532,8 +533,15 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
               interceptor,
             );
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            const error = new DisabledRequestSavingError();
+
+            await expect(async () => {
+              await promiseIfRemote(handler.requests(), interceptor);
+            }).rejects.toThrowError(error);
+
+            // @ts-expect-error Checking that no intercepted requests are saved.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            expect(handler._client.interceptedRequests).toHaveLength(0);
 
             const numberOfRequests = 5;
 
@@ -542,8 +550,13 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
               expect(response.status).toBe(200);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            await expect(async () => {
+              await promiseIfRemote(handler.requests(), interceptor);
+            }).rejects.toThrowError(error);
+
+            // @ts-expect-error Checking that no intercepted requests are saved.
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            expect(handler._client.interceptedRequests).toHaveLength(0);
           });
         },
       );

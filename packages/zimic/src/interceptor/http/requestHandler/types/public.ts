@@ -237,8 +237,16 @@ export interface HttpRequestHandler<
   clear: () => HttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /**
-   * @returns The intercepted requests that matched this handler, along with the responses returned to each of them.
-   *   This is useful for testing that the correct requests were made by your application.
+   * Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This
+   * is useful for testing that the correct requests were made by your application.
+   *
+   * **IMPORTANT**: The intercepted requests are only accessible through this method if `saveRequests` is set to `true`
+   * when creating> The interceptor. See
+   * {@link https://github.com/zimicjs/zimic#saving-intercepted-requests Saving intercepted requests} for more
+   * information.
+   *
+   * @returns The intercepted requests.
+   * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
    * @see {@link https://github.com/zimicjs/zimic#http-handlerrequests `handler.requests()` API reference}
    */
   requests:

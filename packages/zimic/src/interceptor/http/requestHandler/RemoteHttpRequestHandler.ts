@@ -109,7 +109,13 @@ class RemoteHttpRequestHandler<
   }
 
   requests(): Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]> {
-    return Promise.resolve(this._client.requests());
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(this._client.requests());
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
