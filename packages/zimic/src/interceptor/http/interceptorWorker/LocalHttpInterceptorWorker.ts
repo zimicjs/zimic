@@ -1,14 +1,9 @@
-import {
-  HttpHandler as MSWHttpHandler,
-  SharedOptions as MSWWorkerSharedOptions,
-  StrictRequest as MSWStrictRequest,
-  http,
-  passthrough,
-} from 'msw';
+import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 
-import { HttpBody } from '@/http/types/requests';
+import { HttpRequest } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils/urls';
+import { importMSWBrowser, importMSWNode } from '@/utils/msw';
+import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -48,12 +43,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createInternalWorker() {
-    const { setupServer } = await import('msw/node');
+    const { setupServer } = await importMSWNode();
     if (typeof setupServer !== 'undefined') {
       return setupServer();
     }
 
-    const { setupWorker } = await import('msw/browser');
+    const { setupWorker } = await importMSWBrowser();
     /* istanbul ignore else -- @preserve */
     if (typeof setupWorker !== 'undefined') {
       return setupWorker();
@@ -153,7 +148,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const request = context.request as MSWStrictRequest<HttpBody>;
+      const request = context.request as HttpRequest;
       const requestClone = request.clone();
 
       try {

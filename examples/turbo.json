@@ -1,8 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
-  "pipeline": {
+  "tasks": {
     "lint:turbo": {
+      "dependsOn": ["^build", "zimic#build"],
       "inputs": [
         "with-*/{src,tests}/**/*.{ts,json}",
         "with-*/{package,tsconfig}.json",
@@ -10,10 +11,6 @@
         ".eslintrc.js",
         "../.prettierrc.json"
       ]
-    },
-
-    "types:check": {
-      "inputs": ["with-*/{src,tests}/**/*.{ts,json}", "with-*/{package,tsconfig}.json", "{package,tsconfig}.json"]
     }
   }
 }

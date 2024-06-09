@@ -468,4 +468,28 @@ describe('HttpHeaders', () => {
     otherHeaders.append('accept', '*/*');
     expect(headers.contains(otherHeaders)).toBe(false);
   });
+
+  it('should correctly show type errors if unexpected schemas are used', () => {
+    const defaultSchemaHeaders = new HttpHeaders();
+    defaultSchemaHeaders.set('unknown', 'value');
+    defaultSchemaHeaders.append('unknown', 'value');
+    defaultSchemaHeaders.get('unknown');
+    defaultSchemaHeaders.has('unknown');
+    defaultSchemaHeaders.delete('unknown');
+
+    const emptySchemaHeaders = new HttpHeaders<{}>();
+    // @ts-expect-error
+    emptySchemaHeaders.set('unknown', '*/*');
+    // @ts-expect-error
+    emptySchemaHeaders.append('unknown', '*/*');
+    // @ts-expect-error
+    emptySchemaHeaders.get('unknown');
+    // @ts-expect-error
+    emptySchemaHeaders.has('unknown');
+    // @ts-expect-error
+    emptySchemaHeaders.delete('unknown');
+
+    // @ts-expect-error
+    new HttpHeaders<string>();
+  });
 });

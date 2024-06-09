@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } f
 import { HttpRequest, HttpResponse, HttpSearchParams, JSONSerialized } from 'zimic0';
 import { http, HttpInterceptorType } from 'zimic0/interceptor';
 
-import { getCrypto } from '@tests/utils/crypto';
+import { importCrypto } from '@tests/utils/crypto';
 
 import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 import {
@@ -18,7 +18,7 @@ import {
 } from './schema';
 
 async function getAuthBaseURL(type: HttpInterceptorType) {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   return type === 'local'
     ? 'http://localhost:3000'
@@ -26,7 +26,7 @@ async function getAuthBaseURL(type: HttpInterceptorType) {
 }
 
 async function getNotificationsBaseURL(type: HttpInterceptorType) {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   return type === 'local'
     ? 'http://localhost:3001'
@@ -86,7 +86,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   }
 
   describe('Users', async () => {
-    const crypto = await getCrypto();
+    const crypto = await importCrypto();
 
     const user: User = {
       id: crypto.randomUUID(),
@@ -153,7 +153,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
@@ -200,7 +200,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
@@ -243,7 +243,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
@@ -452,7 +452,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(getRequests).toHaveLength(1);
         expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
@@ -492,7 +492,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(getRequests[0].pathParams).toEqual({ id: user.id });
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
@@ -534,7 +534,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(deleteRequests[0].pathParams).toEqual({});
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
@@ -574,7 +574,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(deleteRequests[0].pathParams).toEqual({ id: user.id });
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
@@ -597,7 +597,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   });
 
   describe('Notifications', async () => {
-    const crypto = await getCrypto();
+    const crypto = await importCrypto();
 
     const notification: Notification = {
       id: crypto.randomUUID(),
@@ -639,7 +639,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(listRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listRequests[0].pathParams).toEqual({ userId: notification.userId });
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(listRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();

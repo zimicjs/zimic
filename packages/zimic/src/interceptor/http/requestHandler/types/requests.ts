@@ -8,7 +8,7 @@ import {
   HttpServiceResponseSchemaStatusCode,
   PathParamsSchemaFromPath,
 } from '@/http/types/schema';
-import { Default, DefaultNoExclude, PossiblePromise, ReplaceBy } from '@/types/utils';
+import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
 export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpServiceResponseSchema> =
   undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
@@ -22,10 +22,12 @@ export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends Ht
 export type HttpRequestHandlerResponseDeclaration<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = {
-  status: StatusCode;
-} & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
-  HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>;
+> = StatusCode extends StatusCode
+  ? {
+      status: StatusCode;
+    } & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
+      HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>
+  : never;
 
 /**
  * A factory to create {@link HttpRequestHandlerResponseDeclaration} objects.
@@ -41,18 +43,20 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { headers: never }>['headers']
+export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
+  Default<DefaultNoExclude<Default<MethodSchema['request']>['headers']>>,
+  {}
 >;
 
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = DefaultNoExclude<
-  Default<MethodSchema['request'], { searchParams: never }>['searchParams']
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
+  Default<DefaultNoExclude<Default<MethodSchema['request']>['searchParams']>>,
+  {}
 >;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> = ReplaceBy<
-  DefaultNoExclude<Default<MethodSchema['request'], { body: null }>['body'], null>,
-  undefined,
-  null
+  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
+  ArrayBuffer,
+  Blob
 >;
 
 /**
@@ -62,26 +66,30 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   /** The headers of the request. */
-  headers: HttpHeaders<Default<HttpRequestHeadersSchema<MethodSchema>>>;
+  headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
   pathParams: PathParamsSchemaFromPath<Path>;
   /** The search parameters of the request. */
-  searchParams: HttpSearchParams<Default<HttpRequestSearchParamsSchema<MethodSchema>>>;
+  searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
   /** The body of the request. It is already parsed by default. */
-  body: HttpRequestBodySchema<MethodSchema>;
+  body: ReplaceBy<HttpRequestBodySchema<MethodSchema>, ArrayBuffer, Blob>;
   /** The raw request object. */
-  raw: HttpRequest<Default<Default<MethodSchema['request'], { body: null }>['body'], null>>;
+  raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
 }
 
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['headers']>;
+> = IfNever<Default<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['headers']>>, {}>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = ReplaceBy<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['body'], null>, undefined, null>;
+> = ReplaceBy<
+  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['body']>, null>, undefined, null>,
+  ArrayBuffer,
+  Blob
+>;
 
 /**
  * A strict representation of an intercepted HTTP response. The body, search params and path params are already parsed
@@ -92,7 +100,7 @@ export interface HttpInterceptorResponse<
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<HttpResponse, keyof Body | 'headers'> {
   /** The headers of the response. */
-  headers: HttpHeaders<Default<HttpResponseHeadersSchema<MethodSchema, StatusCode>>>;
+  headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
   /** The status code of the response. */
   status: StatusCode;
   /** The body of the response. It is already parsed by default. */

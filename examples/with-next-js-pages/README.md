@@ -16,6 +16,10 @@ The application is a simple [Next.js](https://nextjs.org) project using the
 The file [`_app.page.tsx`](./src/pages/_app.page.tsx) loads the interceptors and mocks before the rest of the
 application is rendered in development.
 
+A `postinstall` script in [`package.json`](./package.json) is used to install Playwright's browsers and initialize
+Zimic's mock service worker to the `./public` directory. The mock service worker at `./public/mockServiceWorker.js` is
+ignored in the [`.gitignore`](./.gitignore) file.
+
 ## Testing
 
 An example test suite uses [Playwright](https://playwright.dev) to test the application. Zimic is used to mock the

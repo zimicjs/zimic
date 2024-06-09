@@ -4,7 +4,9 @@ export type Default<Type, IfEmpty = never> = [undefined | void] extends [Type]
 
 export type DefaultNoExclude<Type, IfEmpty = never> = [undefined | void] extends Type ? IfEmpty : Type;
 
-export type IfAny<Type, Yes, No> = 0 extends 1 & Type ? Yes : No;
+export type IfAny<Type, Yes, No = Type> = 0 extends 1 & Type ? Yes : No;
+
+export type IfNever<Type, Yes, No = Type> = [Type] extends [never] ? Yes : No;
 
 export type PossiblePromise<Type> = Type | PromiseLike<Type>;
 
@@ -34,8 +36,18 @@ type PickArrayProperties<Type> = {
 
 export type ArrayKey<Type> = keyof PickArrayProperties<Type>;
 
-export type NonArrayKey<Type> = Exclude<keyof Type, ArrayKey<Type>>;
+export type NonArrayKey<Type> =
+  string | number extends ArrayKey<Type> ? keyof Type : Exclude<keyof Type, ArrayKey<Type>>;
 
 export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
 
 export type Collection<Type> = Type[] | Set<Type>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DeepPartial<Type> = Type extends (...parameters: any[]) => any
+  ? Type
+  : Type extends (infer ArrayItem)[]
+    ? DeepPartial<ArrayItem>[]
+    : Type extends object
+      ? { [Key in keyof Type]?: DeepPartial<Type[Key]> }
+      : Type;

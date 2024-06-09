@@ -1,16 +1,13 @@
 import { Options, defineConfig } from 'tsup';
 
-const NODE_ENV = process.env.NODE_ENV ?? 'development';
-const isProductionBuild = NODE_ENV === 'production';
-
 const sharedConfig: Options = {
   format: ['cjs', 'esm'],
   dts: true,
   bundle: true,
   sourcemap: true,
-  treeshake: isProductionBuild,
+  treeshake: true,
   minify: false,
-  clean: false,
+  clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
   },
@@ -19,13 +16,17 @@ const sharedConfig: Options = {
 export default defineConfig([
   {
     ...sharedConfig,
+    name: 'neutral',
+    platform: 'neutral',
     entry: {
       index: 'src/index.ts',
       interceptor: 'src/interceptor/index.ts',
     },
+    external: ['util', 'buffer', 'crypto'],
   },
   {
     ...sharedConfig,
+    name: 'node',
     platform: 'node',
     entry: {
       server: 'src/interceptor/server/index.ts',
@@ -33,12 +34,13 @@ export default defineConfig([
   },
   {
     ...sharedConfig,
+    name: 'cli',
     platform: 'node',
+    format: ['cjs'],
+    dts: false,
     entry: {
       cli: 'src/cli/index.ts',
       'scripts/postinstall': 'scripts/postinstall.ts',
     },
-    format: ['cjs'],
-    dts: false,
   },
 ]);

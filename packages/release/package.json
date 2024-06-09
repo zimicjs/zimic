@@ -24,10 +24,7 @@
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -- vitest",
     "test:turbo": "pnpm run test run --coverage",
-    "types:check": "tsc --noEmit",
-    "deps:prepare": "pnpm deps:build && pnpm deps:install",
-    "deps:build": "pnpm turbo build --filter @zimic/release^...",
-    "deps:install": "pnpm install --filter @zimic/release"
+    "types:check": "tsc --noEmit"
   },
   "dependencies": {
     "fs-extra": "^11.2.0",

@@ -22,10 +22,6 @@ inputs:
     description: Filter to build the dependencies of a specific app or package
     required: false
     default: './packages/*'
-  build-node-env:
-    description: NODE_ENV to use when building packages
-    required: false
-    default: 'development'
   install-playwright-browsers:
     description: Whether to install the browsers for Playwright
     required: false
@@ -61,9 +57,9 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
-        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
       id: install-dependencies
@@ -90,7 +86,7 @@ runs:
           installFlag="$workspaceRootInstallFlag $partialInstallFlag"
         fi
 
-        echo "install-filters=$installFlag" >> $GITHUB_OUTPUT
+        echo "install-filters=$partialInstallFlag" >> $GITHUB_OUTPUT
         pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
         if [[ '${{ inputs.build }}' == '' ]]; then
@@ -100,7 +96,7 @@ runs:
         fi
 
         echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT
-        NODE_ENV='${{ inputs.build-node-env }}' pnpm turbo build $buildFlag
+        pnpm turbo build $buildFlag
 
         # apply the build outputs of the internal packages
         pnpm install --offline $installFlag
@@ -110,7 +106,7 @@ runs:
           pnpm --dir apps/zimic-test-client deps:install-playwright
         fi
       env:
-        NODE_VERSION: ${{ matrix.node-version }}
+        NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
@@ -120,4 +116,4 @@ runs:
       if: ${{ steps.pnpm-cache.outputs.cache-hit != 'true' }}
       with:
         path: ${{ steps.pnpm-store.outputs.path }}
-        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}

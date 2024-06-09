@@ -1,7 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV", "NODE_VERSION", "TYPESCRIPT_VERSION"],
-  "pipeline": {
+  "ui": "stream",
+  "globalEnv": ["NODE_VERSION"],
+  "tasks": {
     "dev": {
       "cache": false,
       "persistent": true,
@@ -17,11 +18,13 @@
     },
 
     "lint:turbo": {
+      "env": ["TYPESCRIPT_VERSION"],
       "dependsOn": ["^build"],
       "outputs": [".eslintcache"]
     },
 
     "types:check": {
+      "env": ["TYPESCRIPT_VERSION"],
       "dependsOn": ["^build"],
       "outputs": ["tsconfig.tsbuildinfo"]
     }

@@ -40,7 +40,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
       type,
     });
 
-    const lowerMethod = method.toLowerCase<typeof method>();
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };

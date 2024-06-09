@@ -29,7 +29,7 @@ export async function verifyUnhandledRequestMessage(
     const headersLine = message.match(/Headers: (?<headers>[^\n]*)\n/)!;
     expect(headersLine).not.toBe(null);
 
-    const formattedHeaders = formatObjectToLog(Object.fromEntries(request.headers)) as string;
+    const formattedHeaders = (await formatObjectToLog(Object.fromEntries(request.headers))) as string;
     const formattedHeadersIgnoringWrapperBrackets = formattedHeaders.slice(1, -1);
 
     for (const headerKeyValuePair of formattedHeadersIgnoringWrapperBrackets.split(', ')) {
@@ -39,17 +39,19 @@ export async function verifyUnhandledRequestMessage(
 
   expect(message).toContain(
     platform === 'node'
-      ? `Search params: ${formatObjectToLog(Object.fromEntries(request.searchParams))}`
+      ? `Search params: ${await formatObjectToLog(Object.fromEntries(request.searchParams))}`
       : 'Search params: [object Object]',
   );
 
   const body: unknown = request.body;
 
   if (body === null) {
-    expect(message).toContain(platform === 'node' ? `Body: ${formatObjectToLog(body)}` : 'Body: ');
+    expect(message).toContain(platform === 'node' ? `Body: ${await formatObjectToLog(body)}` : 'Body: ');
   } else {
     expect(message).toContain(
-      platform === 'node' || typeof body !== 'object' ? `Body: ${formatObjectToLog(body)}` : 'Body: [object Object]',
+      platform === 'node' || typeof body !== 'object'
+        ? `Body: ${await formatObjectToLog(body)}`
+        : 'Body: [object Object]',
     );
   }
 }

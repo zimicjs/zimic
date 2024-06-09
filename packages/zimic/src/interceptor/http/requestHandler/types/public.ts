@@ -1,22 +1,31 @@
+import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
+import { HttpHeadersSchema } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
+import { HttpSearchParamsSchema } from '@/http/searchParams/types';
+import { HttpBody } from '@/http/types/requests';
 import {
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
   HttpServiceSchemaMethod,
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
-import { Default, PossiblePromise } from '@/types/utils';
+import { DeepPartial, Default, PossiblePromise } from '@/types/utils';
 
 import {
-  HttpRequestHeadersSchema,
   HttpInterceptorRequest,
+  HttpRequestBodySchema,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHeadersSchema,
   HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
-  HttpRequestBodySchema,
 } from './requests';
+
+type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> =
+  | Partial<Schema>
+  | HttpHeaders<Partial<Schema>>
+  | HttpHeaders<Schema>;
 
 /**
  * A static headers restriction to match intercepted requests.
@@ -27,9 +36,12 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> =
-  | Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>
-  | HttpHeaders<Default<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>>;
+> = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
+
+type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> =
+  | Partial<Schema>
+  | HttpSearchParams<Partial<Schema>>
+  | HttpSearchParams<Schema>;
 
 /**
  * A static search params restriction to match intercepted requests.
@@ -40,9 +52,16 @@ export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> =
-  | Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>
-  | HttpSearchParams<Default<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>>;
+> = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
+
+type PartialBodyOrSchema<Body extends HttpBody> =
+  Body extends HttpFormData<infer Schema>
+    ? HttpFormData<Partial<Schema>> | HttpFormData<Schema>
+    : Body extends HttpSearchParams<infer Schema>
+      ? HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
+      : Body extends Blob
+        ? Body
+        : DeepPartial<Body>;
 
 /**
  * A static body restriction to match intercepted requests.
@@ -53,7 +72,7 @@ export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpServiceSchema,
   Path extends HttpServiceSchemaPath<Schema, Method>,
   Method extends HttpServiceSchemaMethod<Schema>,
-> = Default<HttpRequestBodySchema<Default<Schema[Path][Method]>>, null>;
+> = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
 /**
  * A static restriction to match intercepted requests.

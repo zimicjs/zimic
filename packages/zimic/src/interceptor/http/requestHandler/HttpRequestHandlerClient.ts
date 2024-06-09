@@ -25,6 +25,8 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHeadersSchema,
+  HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 
@@ -138,7 +140,9 @@ class HttpRequestHandlerClient<
       return true;
     }
 
-    const restrictedHeaders = new HttpHeaders(restriction.headers);
+    const restrictedHeaders = new HttpHeaders(
+      restriction.headers as HttpRequestHeadersSchema<Default<Schema[Path][Method]>>,
+    );
     return restriction.exact ? request.headers.equals(restrictedHeaders) : request.headers.contains(restrictedHeaders);
   }
 
@@ -150,7 +154,9 @@ class HttpRequestHandlerClient<
       return true;
     }
 
-    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams);
+    const restrictedSearchParams = new HttpSearchParams(
+      restriction.searchParams as HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>,
+    );
     return restriction.exact
       ? request.searchParams.equals(restrictedSearchParams)
       : request.searchParams.contains(restrictedSearchParams);
