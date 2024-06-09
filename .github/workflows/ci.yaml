@@ -16,9 +16,6 @@ env:
   CI: true
   NODE_VERSION: 20
 
-  IS_PULL_REQUEST_TO_MAIN:
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && 'true' || 'false' }}
-
   TURBO_TOKEN:
     ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
     secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
@@ -54,7 +51,6 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
           install-playwright-browsers: true
 
       - name: Check formatting style
@@ -99,7 +95,6 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
           install-playwright-browsers: true
 
       - name: Run tests
@@ -146,7 +141,6 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          build-node-env: ${{ env.IS_PULL_REQUEST_TO_MAIN == 'false' && 'development' || 'production' }}
           install-playwright-browsers: false
 
       - name: Set TypeScript version

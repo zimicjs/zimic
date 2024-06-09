@@ -36,7 +36,6 @@ jobs:
           node-registry-url: https://registry.npmjs.org
           install: zimic...
           build: zimic^...
-          build-node-env: production
           install-playwright-browsers: true
 
       - name: Build zimic
