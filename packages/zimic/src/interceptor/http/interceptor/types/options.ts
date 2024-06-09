@@ -25,7 +25,7 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
  */
 export namespace UnhandledRequestStrategy {
   /**
-   * A static declaration of the strategy to handle unhandled requests.
+   * A static declaration of the strategy to use for unhandled requests.
    *
    * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
@@ -85,9 +85,28 @@ export interface SharedHttpInterceptorOptions {
   baseURL: string | URL;
 
   /**
-   * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * Whether {@link https://github.com/zimicjs/zimic#httprequesthandler request handlers} should save their intercepted
+   * requests in memory and make them accessible through
+   * {@link https://github.com/zimicjs/zimic#http-handlerrequests `handler.requests()`}.
+   *
+   * **IMPORTANT**: Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the
+   * interceptor or disposal of the handlers (i.e. garbage collection). If you plan on accessing those requests, such as
+   * to assert them in your tests, set this option to `true` and make sure to regularly clear the interceptor. A common
+   * practice is to call {@link https://github.com/zimicjs/zimic#http-interceptorclear `interceptor.clear()`} after each
+   * test. This prevents leaking memory from the accumulated requests.
+   *
+   * @default false
+   * @see {@link https://github.com/zimicjs/zimic#saving-intercepted-requests Saving intercepted requests}
+   * @see {@link https://github.com/zimicjs/zimic#testing Testing}
+   */
+  saveRequests?: boolean;
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
    * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
    * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest?: UnhandledRequestStrategy;
 }

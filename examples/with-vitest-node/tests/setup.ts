@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach } from 'vitest';
+import { afterAll, beforeAll, afterEach } from 'vitest';
 import { http } from 'zimic/interceptor';
 
 import githubInterceptor from './interceptors/github';
@@ -9,7 +9,7 @@ beforeAll(async () => {
   await githubInterceptor.start();
 });
 
-beforeEach(() => {
+afterEach(() => {
   githubInterceptor.clear();
 });
 

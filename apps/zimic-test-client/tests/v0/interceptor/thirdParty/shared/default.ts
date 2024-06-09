@@ -39,11 +39,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   const authInterceptor = http.createInterceptor<AuthServiceSchema>({
     type,
     baseURL: await getAuthBaseURL(type),
+    saveRequests: true,
   });
 
   const notificationInterceptor = http.createInterceptor<NotificationServiceSchema>({
     type,
     baseURL: await getNotificationsBaseURL(type),
+    saveRequests: true,
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];

@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, afterAll } from '@jest/globals';
+import { beforeAll, afterEach, afterAll } from '@jest/globals';
 import { http } from 'zimic/interceptor';
 
 import githubInterceptor from './interceptors/github';
@@ -9,7 +9,7 @@ beforeAll(async () => {
   await githubInterceptor.start();
 });
 
-beforeEach(() => {
+afterEach(() => {
   githubInterceptor.clear();
 });
 

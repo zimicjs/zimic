@@ -73,6 +73,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Unhandled requests](#unhandled-requests)
+      - [Saving intercepted requests](#saving-intercepted-requests)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -343,7 +344,7 @@ beforeAll(async () => {
 });
 
 // Clear all interceptors so that no tests affect each other
-beforeEach(() => {
+afterEach(() => {
   for (const interceptor of interceptors) {
     interceptor.clear();
   }
@@ -371,7 +372,7 @@ beforeAll(async () => {
 });
 
 // Clear all interceptors so that no tests affect each other
-beforeEach(async () => {
+afterEach(async () => {
   for (const interceptor of interceptors) {
     await interceptor.clear();
   }
@@ -776,6 +777,51 @@ http.default.onUnhandledRequest((request, context) => {
   if (!url.pathname.startsWith('/assets')) {
     await context.log();
   }
+});
+```
+
+##### Saving intercepted requests
+
+The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
+requests in memory and make them accessible through [`handler.requests()`](#http-handlerrequests).
+
+This setting is configured per interceptor and is `false` by default. If set to `true`, each handler will keep track of
+their intercepted requests in memory.
+
+> [!IMPORTANT]
+>
+> Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the interceptor or
+> disposal of the handlers (i.e. garbage collection).
+>
+> If you plan on accessing those requests, such as to assert them in your tests, set `saveRequests` to `true` and make
+> sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
+> after each test.
+>
+> See [Testing](#testing) for an example of how to manage the lifecycle of interceptors in your tests.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  saveRequests: true,
+});
+```
+
+> [!TIP]
+>
+> If you use an interceptor both in tests and as a standalone mock server, consider setting `saveRequests` based on an
+> environment variable. This allows you to access the requests in tests, while preventing memory leaks in long-running
+> mock servers.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  saveRequests: process.env.NODE_ENV === 'test',
 });
 ```
 
@@ -2450,6 +2496,11 @@ await otherListHandler.requests(); // Now empty
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application. Learn more about the `request` and
 `response` objects at [Intercepted HTTP resources](#intercepted-http-resources).
+
+> [!IMPORTANT]
+>
+> This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+> [Saving intercepted requests](#saving-intercepted-requests) for more information.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
