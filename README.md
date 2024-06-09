@@ -1733,7 +1733,7 @@ condition.
 const creationHandler = interceptor
   .get('/users')
   .with({
-    headers: { authorization: 'Bearer <token>' },
+    headers: { authorization: `Bearer ${token}` },
   })
   .respond({
     status: 200,
@@ -1747,8 +1747,42 @@ const creationHandler = interceptor
 const creationHandler = await interceptor
   .get('/users')
   .with({
-    headers: { authorization: 'Bearer <token>' },
+    headers: { authorization: `Bearer ${token}` },
   })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
+
+An equivalent alternative using [`HttpHeaders`](#httpheaders):
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const headers = new HttpHeaders<Partial<UserListHeaders>>();
+headers.set('authorization', `Bearer ${token}`);
+
+const creationHandler = interceptor
+  .get('/users')
+  .with({ headers })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const headers = new HttpHeaders<Partial<UserListHeaders>>();
+headers.set('authorization', `Bearer ${token}`);
+
+const creationHandler = await interceptor
+  .get('/users')
+  .with({ headers })
   .respond({
     status: 200,
     body: [{ username: 'diego-aquino' }],
@@ -1785,6 +1819,40 @@ const creationHandler = await interceptor
   .with({
     searchParams: { username: 'diego-aquino' },
   })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr></table>
+
+An equivalent alternative using [`HttpSearchParams`](#httpsearchparams):
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
+
+```ts
+const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
+searchParams.set('username', 'diego-aquino');
+
+const creationHandler = interceptor
+  .get('/users')
+  .with({ searchParams })
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  });
+```
+
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
+
+```ts
+const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
+searchParams.set('username', 'diego-aquino');
+
+const creationHandler = await interceptor
+  .get('/users')
+  .with({ searchParams })
   .respond({
     status: 200,
     body: [{ username: 'diego-aquino' }],
@@ -1844,7 +1912,7 @@ For JSON bodies to be correctly parsed, make sure that the intercepted requests 
 ```ts
 import { HttpFormData } from 'zimic';
 
-const formData = new HttpFormData<UserCreationData>();
+const formData = new HttpFormData<Partial<UserCreationData>>();
 formData.append('username', 'diego-aquino');
 formData.append(
   'profilePicture',
@@ -1869,7 +1937,7 @@ const creationHandler = interceptor
 ```ts
 import { HttpFormData } from 'zimic';
 
-const formData = new HttpFormData<UserCreationData>();
+const formData = new HttpFormData<Partial<UserCreationData>>();
 formData.append('username', 'diego-aquino');
 formData.append(
   'profilePicture',
@@ -1994,8 +2062,7 @@ const creationHandler = interceptor
   .with({
     headers: { 'content-type': 'application/json' },
     body: { username: 'diego-aquino' },
-    // Only requests with these exact headers and body will match
-    exact: true,
+    exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
@@ -2011,8 +2078,7 @@ const creationHandler = await interceptor
   .with({
     headers: { 'content-type': 'application/json' },
     body: { username: 'diego-aquino' },
-    // Only requests with these exact headers and body will match
-    exact: true,
+    exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
@@ -2249,6 +2315,11 @@ A function is also supported to declare a response in case it is dynamic. Learn 
 ```ts
 const listHandler = interceptor.get('/users').respond((request) => {
   const username = request.searchParams.get('username');
+
+  if (!username) {
+    return { status: 400 };
+  }
+
   return {
     status: 200,
     body: [{ username }],
@@ -2261,6 +2332,11 @@ const listHandler = interceptor.get('/users').respond((request) => {
 ```ts
 const listHandler = await interceptor.get('/users').respond((request) => {
   const username = request.searchParams.get('username');
+
+  if (!username) {
+    return { status: 400 };
+  }
+
   return {
     status: 200,
     body: [{ username }],
