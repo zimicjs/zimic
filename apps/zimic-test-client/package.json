@@ -11,11 +11,9 @@
     "test": "dotenv -v NODE_ENV=test -- zimic server start --port 4000 --ephemeral -- vitest",
     "test:turbo": "pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "deps:prepare": "pnpm deps:build && pnpm deps:install",
-    "deps:build": "pnpm turbo build --filter zimic-test-client^...",
-    "deps:install": "pnpm install --filter zimic-test-client && pnpm deps:install-playwright && pnpm deps:init-zimic",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public"
+    "deps:init-zimic": "zimic browser init ./public",
+    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
   },
   "dependencies": {
     "zimic0": "workspace:zimic@*"

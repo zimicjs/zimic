@@ -8,7 +8,8 @@
     "test:turbo": "pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
-    "postinstall": "pnpm deps:install-playwright && zimic browser init ./public || echo 'Could not postinstall.'"
+    "deps:init-zimic": "zimic browser init ./public",
+    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.40.0",
