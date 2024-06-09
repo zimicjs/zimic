@@ -1,19 +1,20 @@
-let mswNodeSingleton: typeof import('msw/node') | undefined;
+const mswSingleton: {
+  node?: typeof import('msw/node');
+  browser?: typeof import('msw/browser');
+} = {};
 
-export async function getMSWNode() {
-  if (mswNodeSingleton) {
-    return mswNodeSingleton;
+export async function importMSWNode() {
+  if (mswSingleton.node) {
+    return mswSingleton.node;
   }
-  mswNodeSingleton = await import('msw/node');
-  return mswNodeSingleton;
+  mswSingleton.node = await import('msw/node');
+  return mswSingleton.node;
 }
 
-let mswBrowserSingleton: typeof import('msw/browser') | undefined;
-
-export async function getMSWBrowser() {
-  if (mswBrowserSingleton) {
-    return mswBrowserSingleton;
+export async function importMSWBrowser() {
+  if (mswSingleton.browser) {
+    return mswSingleton.browser;
   }
-  mswBrowserSingleton = await import('msw/browser');
-  return mswBrowserSingleton;
+  mswSingleton.browser = await import('msw/browser');
+  return mswSingleton.browser;
 }

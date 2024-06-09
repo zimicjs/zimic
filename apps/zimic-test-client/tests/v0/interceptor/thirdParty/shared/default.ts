@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } f
 import { HttpRequest, HttpResponse, HttpSearchParams, JSONSerialized } from 'zimic0';
 import { http, HttpInterceptorType } from 'zimic0/interceptor';
 
-import { getCrypto } from '@tests/utils/crypto';
+import { importCrypto } from '@tests/utils/crypto';
 
 import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 import {
@@ -18,7 +18,7 @@ import {
 } from './schema';
 
 async function getAuthBaseURL(type: HttpInterceptorType) {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   return type === 'local'
     ? 'http://localhost:3000'
@@ -26,7 +26,7 @@ async function getAuthBaseURL(type: HttpInterceptorType) {
 }
 
 async function getNotificationsBaseURL(type: HttpInterceptorType) {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   return type === 'local'
     ? 'http://localhost:3001'
@@ -86,7 +86,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   }
 
   describe('Users', async () => {
-    const crypto = await getCrypto();
+    const crypto = await importCrypto();
 
     const user: User = {
       id: crypto.randomUUID(),
@@ -597,7 +597,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   });
 
   describe('Notifications', async () => {
-    const crypto = await getCrypto();
+    const crypto = await importCrypto();
 
     const notification: Notification = {
       id: crypto.randomUUID(),

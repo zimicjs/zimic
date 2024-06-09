@@ -10,7 +10,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { JSONValue } from '@/types/json';
-import { getFile } from '@/utils/files';
+import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
@@ -22,7 +22,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  const File = await getFile();
+  const File = await importFile();
 
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;

@@ -1,9 +1,9 @@
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
-import { getCrypto, IsomorphicCrypto } from '@/utils/crypto';
+import { importCrypto, IsomorphicCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { getMSWBrowser, getMSWNode } from '@/utils/msw';
+import { importMSWBrowser, importMSWNode } from '@/utils/msw';
 import { createURL, ensureUniquePathParams, excludeNonPathParams, ExtendedURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -50,7 +50,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private async crypto() {
     if (!this._crypto) {
-      this._crypto = await getCrypto();
+      this._crypto = await importCrypto();
     }
     return this._crypto;
   }
@@ -92,12 +92,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   };
 
   private async readPlatform(): Promise<HttpInterceptorPlatform> {
-    const { setupServer } = await getMSWNode();
+    const { setupServer } = await importMSWNode();
     if (typeof setupServer !== 'undefined') {
       return 'node';
     }
 
-    const { setupWorker } = await getMSWBrowser();
+    const { setupWorker } = await importMSWBrowser();
     /* istanbul ignore else -- @preserve */
     if (typeof setupWorker !== 'undefined') {
       return 'browser';

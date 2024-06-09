@@ -4,7 +4,7 @@ let bufferSingleton: typeof import('buffer') | undefined;
 
 /* istanbul ignore next -- @preserve
  * Ignoring as Node.js >=20 provides a global file and the buffer import won't run. */
-export async function getBuffer() {
+export async function importBuffer() {
   if (bufferSingleton) {
     return bufferSingleton;
   }
@@ -14,7 +14,7 @@ export async function getBuffer() {
 
 let FileSingleton: typeof File | undefined;
 
-export async function getFile() {
+export async function importFile() {
   if (FileSingleton) {
     return FileSingleton;
   }
@@ -22,7 +22,7 @@ export async function getFile() {
   /* istanbul ignore next -- @preserve
    * Ignoring as Node.js >=20 provides a global file and the import fallback won't run. */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  FileSingleton = globalThis.File ?? (await getBuffer()).File;
+  FileSingleton = globalThis.File ?? (await importBuffer()).File;
   return FileSingleton;
 }
 

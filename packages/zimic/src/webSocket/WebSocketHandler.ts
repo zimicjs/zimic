@@ -1,7 +1,7 @@
 import ClientSocket from 'isomorphic-ws';
 
 import { Collection } from '@/types/utils';
-import { IsomorphicCrypto, getCrypto } from '@/utils/crypto';
+import { IsomorphicCrypto, importCrypto } from '@/utils/crypto';
 import { isClientSide } from '@/utils/environment';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
@@ -38,7 +38,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   private async crypto() {
     if (!this._crypto) {
-      this._crypto = await getCrypto();
+      this._crypto = await importCrypto();
     }
     return this._crypto;
   }

@@ -4,7 +4,7 @@ import { isClientSide } from './environment';
 
 let utilSingleton: typeof import('util') | undefined;
 
-async function getUtil() {
+async function importUtil() {
   if (!utilSingleton) {
     utilSingleton = await import('util');
   }
@@ -16,7 +16,7 @@ export async function formatObjectToLog(value: unknown) {
     return value;
   }
 
-  const util = await getUtil();
+  const util = await importUtil();
 
   return util.inspect(value, {
     colors: true,

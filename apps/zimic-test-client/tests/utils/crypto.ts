@@ -1,6 +1,6 @@
 export type IsomorphicCrypto = Crypto | typeof import('crypto');
 
-export async function getCrypto(): Promise<IsomorphicCrypto> {
+export async function importCrypto(): Promise<IsomorphicCrypto> {
   const globalCrypto = globalThis.crypto as Crypto | undefined;
   /* istanbul ignore next -- @preserve
    * Ignoring as Node.js >=20 provides a global crypto and the import fallback won't run. */

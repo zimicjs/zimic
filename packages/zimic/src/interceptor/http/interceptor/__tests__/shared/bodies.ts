@@ -10,8 +10,8 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@/utils/crypto';
-import { getFile } from '@/utils/files';
+import { importCrypto } from '@/utils/crypto';
+import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -30,7 +30,7 @@ export async function createRandomFile(
     | 'application/octet-stream'
     | 'multipart/mixed',
 ): Promise<File> {
-  const File = await getFile();
+  const File = await importFile();
 
   const randomContent = Uint8Array.from({ length: 1024 }, () => randomInt(0, 256));
 
@@ -52,7 +52,7 @@ export async function createRandomFile(
 export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
 
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   type User = JSONValue<{
     id: string;
@@ -775,7 +775,7 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
             DELETE: MethodSchema;
           };
         }>(interceptorOptions, async (interceptor) => {
-          const File = await getFile();
+          const File = await importFile();
 
           const responseFormData = new HttpFormData<UserFormDataSchema>();
           const responseTagFile = new File(['response'], 'tag.txt', { type: 'text/plain' });

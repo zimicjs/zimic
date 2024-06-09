@@ -2,7 +2,7 @@ export type IsomorphicCrypto = Crypto | typeof import('crypto');
 
 let cryptoSingleton: IsomorphicCrypto | undefined;
 
-export async function getCrypto(): Promise<IsomorphicCrypto> {
+export async function importCrypto(): Promise<IsomorphicCrypto> {
   if (cryptoSingleton) {
     return cryptoSingleton;
   }
