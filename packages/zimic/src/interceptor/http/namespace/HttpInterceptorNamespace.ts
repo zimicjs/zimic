@@ -13,6 +13,7 @@ export class HttpInterceptorNamespaceDefault {
    * {@link https://github.com/zimicjs/zimic#httpcreateinterceptor `http.createInterceptor()`}.
    *
    * @param strategy The default strategy to be set.
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest(strategy: UnhandledRequestStrategy) {
     this.store.setDefaultUnhandledRequestStrategy(strategy);

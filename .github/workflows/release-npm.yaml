@@ -11,9 +11,6 @@ concurrency:
 
 env:
   NODE_VERSION: 20
-
-  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
   TURBO_LOG_ORDER: stream
 
 jobs:
@@ -37,11 +34,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           node-registry-url: https://registry.npmjs.org
-          turbo-token: ${{ env.TURBO_TOKEN }}
-          turbo-team: ${{ env.TURBO_TEAM }}
           install: zimic...
           build: zimic^...
-          build-node-env: production
           install-playwright-browsers: true
 
       - name: Build zimic

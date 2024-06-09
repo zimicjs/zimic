@@ -14,6 +14,7 @@ const githubInterceptor = http.createInterceptor<{
 }>({
   type: 'local',
   baseURL: GITHUB_API_BASE_URL,
+  saveRequests: true,
 });
 
 export default githubInterceptor;

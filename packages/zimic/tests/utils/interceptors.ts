@@ -62,9 +62,10 @@ export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
 ): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(options: HttpInterceptorOptions) {
-  return http.createInterceptor<Schema>(options) satisfies HttpInterceptor<Schema> as
-    | LocalHttpInterceptor<Schema>
-    | RemoteHttpInterceptor<Schema>;
+  return http.createInterceptor<Schema>({
+    saveRequests: true,
+    ...options,
+  }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 }
 
 type UsingInterceptorCallback<Schema extends HttpServiceSchema> = (

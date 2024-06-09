@@ -69,6 +69,7 @@ import {
   UnknownHttpInterceptorTypeError,
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
+  DisabledRequestSavingError,
 } from 'zimic0/interceptor';
 
 describe('Exports', () => {
@@ -181,5 +182,7 @@ describe('Exports', () => {
     expect(typeof NotStartedHttpInterceptorError).toBe('function');
     expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
+    expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
+    expect(typeof DisabledRequestSavingError).toBe('function');
   });
 });

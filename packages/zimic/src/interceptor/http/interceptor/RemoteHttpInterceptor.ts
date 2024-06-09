@@ -35,6 +35,7 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
       baseURL,
       Handler: RemoteHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
+      saveRequests: options.saveRequests,
     });
   }
 
