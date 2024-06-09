@@ -1715,10 +1715,9 @@ console.log(path); // '/users'
 
 #### HTTP `handler.with(restriction)`
 
-Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
-which requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a
-single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
-condition.
+Declares a restriction to intercepted requests. `headers`, `searchParams`, and `body` are supported to limit which
+requests will match the handler and receive the mock response. If multiple restrictions are declared, either in a single
+object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND condition.
 
 ##### Static restrictions
 
