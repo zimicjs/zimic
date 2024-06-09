@@ -15,9 +15,9 @@ export interface InterceptorServerOptions {
   port?: number;
 
   /**
-   * The strategy to handle unhandled requests.
+   * The strategy to use for unhandled requests.
    *
-   * - @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest?: {
     /**

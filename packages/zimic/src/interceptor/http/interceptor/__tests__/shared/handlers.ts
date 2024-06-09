@@ -512,7 +512,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     describe('Request saving', () => {
       it.each([false, undefined])(
-        `should not save intercepted ${method} requests if disabled: %s`,
+        `should not save intercepted ${method} requests if disabled with: %s`,
         async (saveRequests) => {
           await usingHttpInterceptor<{
             '/users': {
@@ -561,7 +561,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         },
       );
 
-      it.each([true])(`should not save intercepted ${method} requests if disabled: %s`, async (saveRequests) => {
+      it.each([true])(`should save intercepted ${method} requests if enabled with: %s`, async (saveRequests) => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;

@@ -25,7 +25,7 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
  */
 export namespace UnhandledRequestStrategy {
   /**
-   * A static declaration of the strategy to handle unhandled requests.
+   * A static declaration of the strategy to use for unhandled requests.
    *
    * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
@@ -86,7 +86,7 @@ export interface SharedHttpInterceptorOptions {
 
   /**
    * Whether {@link https://github.com/zimicjs/zimic#httprequesthandler request handlers} should save their intercepted
-   * requests and make them accessible through
+   * requests in memory and make them accessible through
    * {@link https://github.com/zimicjs/zimic#http-handlerrequests `handler.requests()`}.
    *
    * **IMPORTANT**: Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the
@@ -102,7 +102,7 @@ export interface SharedHttpInterceptorOptions {
   saveRequests?: boolean;
 
   /**
-   * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
    * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
    * unhandled request.
    *

@@ -782,8 +782,8 @@ http.default.onUnhandledRequest((request, context) => {
 
 ##### Saving intercepted requests
 
-The option `saveRequests` represents whether [request handlers](#httprequesthandler) should save their intercepted
-requests and make them accessible through [`handler.requests()`](#http-handlerrequests).
+The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
+requests in memory and make them accessible through [`handler.requests()`](#http-handlerrequests).
 
 This setting is configured per interceptor and is `false` by default. If set to `true`, each handler will keep track of
 their intercepted requests in memory.
@@ -811,8 +811,8 @@ const interceptor = http.createInterceptor<Schema>({
 
 > [!TIP]
 >
-> If you use an interceptor both in tests and as a standalone mock server, consider setting `saveRequests` based on some
-> environment variable. This allows you to access the requests in tests while preventing memory leaks in long-running
+> If you use an interceptor both in tests and as a standalone mock server, consider setting `saveRequests` based on an
+> environment variable. This allows you to access the requests in tests, while preventing memory leaks in long-running
 > mock servers.
 
 ```ts
@@ -2499,8 +2499,8 @@ useful for testing that the correct requests were made by your application. Lear
 
 > [!IMPORTANT]
 >
-> The intercepted requests are only accessible through this method if `saveRequests` is set to `true` when creating the
-> interceptor. See [Saving intercepted requests](#saving-intercepted-requests) for more information.
+> This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+> [Saving intercepted requests](#saving-intercepted-requests) for more information.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
