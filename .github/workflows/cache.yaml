@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TURBO_LOG_ORDER: stream
   TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
 
 jobs:
   cache-canary:
@@ -21,15 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
-    strategy:
-      matrix:
-        node-version:
-          - 18
-          - 20
-          - 22
-
     env:
-      NODE_VERSION: ${{ matrix.node-version }}
+      NODE_VERSION: 20
 
     steps:
       - name: Checkout code
@@ -38,11 +31,9 @@ jobs:
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
 
       - name: Check formatting style and save prettier cache
         uses: ./.github/actions/zimic-style-check
-        with:
-          node-version: ${{ matrix.node-version }}

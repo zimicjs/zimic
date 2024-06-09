@@ -15,15 +15,18 @@ concurrency:
 env:
   CI: true
   NODE_VERSION: 20
+
   IS_PULL_REQUEST_TO_MAIN:
     ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && 'true' || 'false' }}
-  TURBO_LOG_ORDER: stream
+
   TURBO_TOKEN:
     ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
     secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM:
     ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
     secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  TURBO_LOG_ORDER: stream
+
   INSTALL_OPTIONS:
     ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
   BUILD_OPTIONS:
@@ -56,8 +59,6 @@ jobs:
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
-        with:
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Lint code and check types
         run: |
