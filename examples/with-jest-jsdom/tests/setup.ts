@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/jest-globals';
 
-import { beforeAll, beforeEach, afterAll } from '@jest/globals';
+import { beforeAll, afterEach, afterAll } from '@jest/globals';
 
 import githubInterceptor from './interceptors/github';
 
@@ -8,7 +8,7 @@ beforeAll(async () => {
   await githubInterceptor.start();
 });
 
-beforeEach(() => {
+afterEach(() => {
   githubInterceptor.clear();
 });
 
