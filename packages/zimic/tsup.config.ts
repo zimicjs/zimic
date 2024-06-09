@@ -7,7 +7,7 @@ const sharedConfig: Options = {
   sourcemap: true,
   treeshake: true,
   minify: false,
-  clean: false,
+  clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
   },

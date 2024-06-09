@@ -62,8 +62,7 @@
   "scripts": {
     "dev": "pnpm build --watch",
     "cli": "node ./dist/cli.js",
-    "build": "pnpm build:clear && tsup",
-    "build:clear": "rimraf ./dist",
+    "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
@@ -99,7 +98,6 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "playwright": "^1.44.1",
-    "rimraf": "^5.0.7",
     "tsup": "^8.1.0",
     "typescript": "^5.4.5",
     "vitest": "1.6.0"
