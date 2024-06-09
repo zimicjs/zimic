@@ -543,6 +543,9 @@ importers:
       playwright:
         specifier: ^1.44.1
         version: 1.44.1
+      rimraf:
+        specifier: ^5.0.7
+        version: 5.0.7
       tsup:
         specifier: ^8.1.0
         version: 8.1.0(@swc/core@1.5.25)(postcss@8.4.38)(typescript@5.4.5)
@@ -4146,6 +4149,11 @@ packages:
   rimraf@3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     deprecated: Rimraf versions prior to v4 are no longer supported
+    hasBin: true
+
+  rimraf@5.0.7:
+    resolution: {integrity: sha512-nV6YcJo5wbLW77m+8KjH8aB/7/rxQy9SZ0HY5shnwULfS+9nmTtVXAJET5NdZmCzA4fPI/Hm1wo/Po/4mopOdg==}
+    engines: {node: '>=14.18'}
     hasBin: true
 
   rollup@4.18.0:
@@ -8932,6 +8940,10 @@ snapshots:
   rimraf@3.0.2:
     dependencies:
       glob: 7.2.3
+
+  rimraf@5.0.7:
+    dependencies:
+      glob: 10.4.1
 
   rollup@4.18.0:
     dependencies:
