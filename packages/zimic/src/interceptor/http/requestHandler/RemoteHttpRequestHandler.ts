@@ -126,7 +126,7 @@ class RemoteHttpRequestHandler<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    this._client.registerInterceptedRequest(request, response);
+    this._client.saveInterceptedRequest(request, response);
   }
 
   registerSyncPromise(promise: Promise<unknown>) {

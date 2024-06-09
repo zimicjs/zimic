@@ -508,5 +508,80 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         });
       });
     }
+
+    describe('Request saving', () => {
+      it.each([false, undefined])(
+        `should not save intercepted ${method} requests if disabled: %s`,
+        async (saveRequests) => {
+          await usingHttpInterceptor<{
+            '/users': {
+              GET: MethodSchema;
+              POST: MethodSchema;
+              PUT: MethodSchema;
+              PATCH: MethodSchema;
+              DELETE: MethodSchema;
+              HEAD: MethodSchema;
+              OPTIONS: MethodSchema;
+            };
+          }>({ ...interceptorOptions, saveRequests }, async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+              interceptor,
+            );
+
+            let requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(0);
+
+            const numberOfRequests = 5;
+
+            for (let index = 0; index < numberOfRequests; index++) {
+              const response = await fetch(joinURL(baseURL, '/users'), { method });
+              expect(response.status).toBe(200);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(0);
+          });
+        },
+      );
+
+      it.each([true])(`should not save intercepted ${method} requests if disabled: %s`, async (saveRequests) => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>({ ...interceptorOptions, saveRequests }, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users').respond({
+              status: 200,
+              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+            }),
+            interceptor,
+          );
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const numberOfRequests = 5;
+
+          for (let index = 0; index < numberOfRequests; index++) {
+            const response = await fetch(joinURL(baseURL, '/users'), { method });
+            expect(response.status).toBe(200);
+          }
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
+        });
+      });
+    });
   });
 }

@@ -85,6 +85,22 @@ export interface SharedHttpInterceptorOptions {
   baseURL: string | URL;
 
   /**
+   * Whether {@link https://github.com/zimicjs/zimic#httprequesthandler request handlers} should save their intercepted
+   * requests and make them accessible through
+   * {@link https://github.com/zimicjs/zimic#http-handlerrequests `handler.requests()`}.
+   *
+   * **IMPORTANT**: Handlers won't save their intercepted requests by default. If you plan on accessing those requests,
+   * such as to assert them in your tests, set this option to `true` and make sure to regularly clear the interceptor. A
+   * common practice is to call {@link https://github.com/zimicjs/zimic#http-interceptorclear `interceptor.clear()`}
+   * after each test. This avoids leaking memory from the accumulated requests.
+   *
+   * @default false
+   * @see {@link https://github.com/zimicjs/zimic#saving-intercepted-requests Saving intercepted requests}
+   * @see {@link https://github.com/zimicjs/zimic#testing Testing}
+   */
+  saveRequests?: boolean;
+
+  /**
    * The strategy to handle unhandled requests. If a request starts with the base URL of the interceptor, but no
    * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
    * unhandled request.

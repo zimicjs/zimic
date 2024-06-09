@@ -73,6 +73,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Unhandled requests](#unhandled-requests)
+      - [Saving intercepted requests](#saving-intercepted-requests)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
       - [Declaring HTTP paths](#declaring-http-paths)
       - [Declaring HTTP methods](#declaring-http-methods)
@@ -343,7 +344,7 @@ beforeAll(async () => {
 });
 
 // Clear all interceptors so that no tests affect each other
-beforeEach(() => {
+afterEach(() => {
   for (const interceptor of interceptors) {
     interceptor.clear();
   }
@@ -371,7 +372,7 @@ beforeAll(async () => {
 });
 
 // Clear all interceptors so that no tests affect each other
-beforeEach(async () => {
+afterEach(async () => {
   for (const interceptor of interceptors) {
     await interceptor.clear();
   }
@@ -778,6 +779,31 @@ http.default.onUnhandledRequest((request, context) => {
   }
 });
 ```
+
+##### Saving intercepted requests
+
+The option `saveRequests` represents whether [request handlers](#httprequesthandler) should save their intercepted
+requests and make them accessible through [`handler.requests()`](#http-handlerrequests). This setting is configured per
+interceptor and is `false` by default.
+
+```ts
+import { http } from 'zimic/interceptor';
+
+const interceptor = http.createInterceptor<Schema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+  saveRequests: true,
+});
+```
+
+> [!IMPORTANT]
+>
+> If you plan on accessing the intercepted requests, such as to assert them in your tests, set this `saveRequests` to
+> `true` and make sure to regularly clear the interceptor. A common practice is to call
+> [`interceptor.clear()`](#http-interceptorclear) after each test. This avoids leaking memory from the accumulated
+> requests.
+>
+> See [Testing](#testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 #### Declaring HTTP service schemas
 

@@ -30,6 +30,7 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
       baseURL,
       Handler: LocalHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
+      saveRequests: options.saveRequests,
     });
   }
 

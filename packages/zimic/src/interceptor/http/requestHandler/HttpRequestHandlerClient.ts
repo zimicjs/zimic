@@ -219,7 +219,7 @@ class HttpRequestHandlerClient<
     return appliedDeclaration;
   }
 
-  registerInterceptedRequest(
+  saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {

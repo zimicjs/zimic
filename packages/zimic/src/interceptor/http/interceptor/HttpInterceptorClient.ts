@@ -33,6 +33,7 @@ class HttpInterceptorClient<
   private _baseURL: ExtendedURL;
   private _isRunning = false;
   private onUnhandledRequest?: UnhandledRequestStrategy;
+  private shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
 
@@ -54,12 +55,14 @@ class HttpInterceptorClient<
     baseURL: ExtendedURL;
     Handler: HandlerConstructor;
     onUnhandledRequest?: UnhandledRequestStrategy;
+    saveRequests?: boolean;
   }) {
     this.worker = options.worker;
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
     this.onUnhandledRequest = options.onUnhandledRequest;
+    this.shouldSaveRequests = options.saveRequests ?? false;
   }
 
   baseURL() {
@@ -197,24 +200,28 @@ class HttpInterceptorClient<
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });
+
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
 
-    if (matchedHandler) {
-      const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
-      const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
-      const responseToReturn = response.clone();
+    if (!matchedHandler) {
+      return { bypass: true };
+    }
+
+    const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
+    const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
+
+    if (this.shouldSaveRequests) {
+      const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
         Default<Schema[Path][Method]>,
         typeof responseDeclaration.status
-      >(response);
+      >(responseClone);
 
-      matchedHandler.registerInterceptedRequest(parsedRequest, parsedResponse);
-
-      return { response: responseToReturn };
-    } else {
-      return { bypass: true };
+      matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
+
+    return { response };
   }
 
   private async findMatchedHandler<
