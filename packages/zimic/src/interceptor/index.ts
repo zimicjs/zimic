@@ -3,12 +3,14 @@ import UnknownHttpInterceptorPlatformError from './http/interceptor/errors/Unkno
 import UnknownHttpInterceptorTypeError from './http/interceptor/errors/UnknownHttpInterceptorTypeError';
 import UnregisteredBrowserServiceWorkerError from './http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorNamespace from './http/namespace/HttpInterceptorNamespace';
+import DisabledRequestSavingError from './http/requestHandler/errors/DisabledRequestSavingError';
 
 export {
   UnknownHttpInterceptorPlatformError,
   UnknownHttpInterceptorTypeError,
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
+  DisabledRequestSavingError,
 };
 
 export type {
