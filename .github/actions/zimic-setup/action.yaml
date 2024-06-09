@@ -106,7 +106,7 @@ runs:
           pnpm --dir apps/zimic-test-client deps:install-playwright
         fi
       env:
-        NODE_VERSION: ${{ matrix.node-version }}
+        NODE_VERSION: ${{ inputs.node-version }}
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
         TURBO_LOG_ORDER: stream
