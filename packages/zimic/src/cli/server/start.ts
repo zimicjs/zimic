@@ -12,7 +12,7 @@ interface InterceptorServerStartOptions extends InterceptorServerOptions {
   };
 }
 
-export let singletonServer: InterceptorServer | undefined;
+export let serverSingleton: InterceptorServer | undefined;
 
 async function startInterceptorServer({
   hostname,
@@ -27,7 +27,7 @@ async function startInterceptorServer({
     onUnhandledRequest,
   });
 
-  singletonServer = server;
+  serverSingleton = server;
 
   await server.start();
 

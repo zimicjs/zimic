@@ -3,8 +3,12 @@
   "extends": ["//"],
   "tasks": {
     "test:turbo": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "zimic#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "jest.config.js"]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build", "zimic#build"]
     }
   }
 }

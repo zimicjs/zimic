@@ -3,7 +3,7 @@ import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { startHttpServer, stopHttpServer } from '@/utils/http';
 import {
   closeClientSocket,
@@ -28,7 +28,7 @@ import {
 } from './utils';
 
 describe('Web socket server', async () => {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   const httpServer = createServer();
   let port: number;

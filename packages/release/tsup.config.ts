@@ -1,20 +1,32 @@
-import { defineConfig } from 'tsup';
+import { Options, defineConfig } from 'tsup';
 
-const NODE_ENV = process.env.NODE_ENV ?? 'development';
-const isProduction = NODE_ENV === 'production';
-
-export default defineConfig({
-  entry: {
-    index: 'src/index.ts',
-    cli: 'src/cli/entry.ts',
-  },
-  env: {
-    NODE_ENV,
-  },
-  format: ['cjs'],
+const sharedConfig: Options = {
+  format: ['cjs', 'esm'],
   dts: true,
-  sourcemap: !isProduction,
-  treeshake: isProduction,
-  minify: isProduction,
+  bundle: true,
+  sourcemap: true,
+  treeshake: true,
+  minify: false,
   clean: true,
-});
+};
+
+export default defineConfig([
+  {
+    ...sharedConfig,
+    name: 'node',
+    platform: 'node',
+    entry: {
+      index: 'src/index.ts',
+    },
+  },
+  {
+    ...sharedConfig,
+    name: 'cli',
+    platform: 'node',
+    format: ['cjs'],
+    dts: false,
+    entry: {
+      cli: 'src/cli/entry.ts',
+    },
+  },
+]);

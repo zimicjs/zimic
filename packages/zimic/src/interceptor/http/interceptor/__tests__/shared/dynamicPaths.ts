@@ -6,7 +6,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { JSONValue } from '@/types/json';
-import { getCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -17,7 +17,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   type User = JSONValue<{
     id: string;

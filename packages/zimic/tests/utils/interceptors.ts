@@ -22,7 +22,7 @@ import {
 } from '@/interceptor/http/interceptorWorker/types/options';
 import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
-import { getCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { createURL, ExtendedURL, joinURL } from '@/utils/urls';
 import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/setup/global/browser';
 
@@ -31,7 +31,7 @@ export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
     return createURL('http://localhost:3000');
   }
 
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${GLOBAL_SETUP_SERVER_HOSTNAME}:${GLOBAL_SETUP_SERVER_PORT}`, pathPrefix);
   return createURL(baseURL);
@@ -46,7 +46,7 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
   const port = server.port()!;
   expect(port).not.toBe(null);
 
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
   return createURL(baseURL);

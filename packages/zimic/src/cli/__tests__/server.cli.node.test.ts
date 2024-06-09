@@ -8,7 +8,7 @@ import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
-import { getCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -17,7 +17,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
 
 import runCLI from '../cli';
-import { singletonServer as server } from '../server/start';
+import { serverSingleton as server } from '../server/start';
 import { delayHttpServerCloseIndefinitely, delayHttpServerListenIndefinitely } from './utils';
 
 function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
@@ -34,7 +34,7 @@ function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]
 }
 
 describe('CLI (server)', async () => {
-  const crypto = await getCrypto();
+  const crypto = await importCrypto();
 
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOnSpy = vi.spyOn(process, 'on');

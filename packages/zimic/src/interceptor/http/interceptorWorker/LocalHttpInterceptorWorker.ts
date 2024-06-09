@@ -2,7 +2,8 @@ import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions,
 
 import { HttpRequest } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { excludeNonPathParams, ensureUniquePathParams, createURL } from '@/utils/urls';
+import { importMSWBrowser, importMSWNode } from '@/utils/msw';
+import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -42,12 +43,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private async createInternalWorker() {
-    const { setupServer } = await import('msw/node');
+    const { setupServer } = await importMSWNode();
     if (typeof setupServer !== 'undefined') {
       return setupServer();
     }
 
-    const { setupWorker } = await import('msw/browser');
+    const { setupWorker } = await importMSWBrowser();
     /* istanbul ignore else -- @preserve */
     if (typeof setupWorker !== 'undefined') {
       return setupWorker();

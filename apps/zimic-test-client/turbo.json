@@ -2,14 +2,8 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
-    "deps:init-zimic": {
-      "dependsOn": ["^build"],
-      "inputs": ["package.json"],
-      "outputs": ["public/mockServiceWorker.js"]
-    },
-
     "test:turbo": {
-      "dependsOn": ["^build", "deps:init-zimic"],
+      "dependsOn": ["^build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 

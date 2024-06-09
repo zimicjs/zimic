@@ -5,7 +5,7 @@ import InvalidJSONError from '@/http/errors/InvalidJSONError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
-import { HttpResponse, HttpRequest, HttpBody } from '@/http/types/requests';
+import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
 import {
   HttpMethod,
   HttpServiceMethodSchema,
@@ -427,11 +427,11 @@ abstract class HttpInterceptorWorker {
           `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
         `${request.method} ${request.url}`,
         '\n    Headers:',
-        formatObjectToLog(Object.fromEntries(request.headers)),
+        await formatObjectToLog(Object.fromEntries(request.headers)),
         '\n    Search params:',
-        formatObjectToLog(Object.fromEntries(request.searchParams)),
+        await formatObjectToLog(Object.fromEntries(request.searchParams)),
         '\n    Body:',
-        formatObjectToLog(request.body),
+        await formatObjectToLog(request.body),
         '\n\nLearn more about unhandled requests: https://github.com/zimicjs/zimic#unhandled-requests',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },
