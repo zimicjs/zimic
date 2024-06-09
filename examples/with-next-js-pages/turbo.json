@@ -3,12 +3,16 @@
   "extends": ["//"],
   "tasks": {
     "test:turbo": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "zimic#build"],
       "inputs": [
         "{src,tests}/**/*.{ts,tsx,json}",
         "{package,tsconfig}.json",
         "{playwright,tailwind,postcss,next}.config.{ts,mts,js}"
       ]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build", "zimic#build"]
     }
   }
 }

@@ -3,14 +3,18 @@
   "extends": ["//"],
   "tasks": {
     "deps:init-zimic": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "zimic#build"],
       "inputs": ["package.json"],
       "outputs": ["public/mockServiceWorker.js"]
     },
 
     "test:turbo": {
-      "dependsOn": ["^build", "deps:init-zimic"],
+      "dependsOn": ["^build", "zimic#build", "deps:init-zimic"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build", "zimic#build"]
     }
   }
 }
