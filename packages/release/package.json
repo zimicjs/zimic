@@ -42,7 +42,7 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "tsup": "^8.1.0",
-    "tsx": "^4.11.2",
+    "tsx": "^4.15.1",
     "typescript": "^5.4.5",
     "vitest": "1.6.0"
   }
