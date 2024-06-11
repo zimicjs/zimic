@@ -4,10 +4,13 @@ import path from 'path';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
+import { isDefined } from '@/utils/data';
 import { toPascalCase } from '@/utils/strings';
 import { createURL } from '@/utils/urls';
 
 const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
+
+export const TYPEGEN_IMPORT_FROM = process.env.TYPEGEN_IMPORT_FROM!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 function createFileURL(filePathOrURL: string) {
   const isRemoteFile = /^[^:]+:\/\//.test(filePathOrURL);
@@ -25,10 +28,6 @@ function isNeverType(type: ts.TypeNode) {
 
 function isUnknownType(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.UnknownKeyword;
-}
-
-function noUndefined<Value>(value: Value): value is Exclude<Value, undefined> {
-  return value !== undefined;
 }
 
 function normalizeBodyContentType(contentType: ts.TypeElement) {
@@ -53,7 +52,7 @@ function normalizeBodyContentType(contentType: ts.TypeElement) {
 
 function normalizeBodyMemberType(requestBodyMemberType: ts.TypeNode | undefined) {
   if (requestBodyMemberType && ts.isTypeLiteralNode(requestBodyMemberType)) {
-    const newType = requestBodyMemberType.members.map(normalizeBodyContentType).find(noUndefined);
+    const newType = requestBodyMemberType.members.map(normalizeBodyContentType).find(isDefined);
     return newType;
   }
   return undefined;
@@ -86,7 +85,7 @@ function normalizeMethodRequestBody(requestBody: ts.PropertySignature) {
   const newIdentifier = ts.factory.createIdentifier('request');
 
   if (requestBody.type && ts.isTypeLiteralNode(requestBody.type)) {
-    const newMembers = requestBody.type.members.map(normalizeBodyMember).filter(noUndefined);
+    const newMembers = requestBody.type.members.map(normalizeBodyMember).filter(isDefined);
 
     return ts.factory.updatePropertySignature(
       requestBody,
@@ -108,7 +107,7 @@ function normalizeMethodRequestBody(requestBody: ts.PropertySignature) {
 
 function normalizeMethodResponsesMemberType(responseMemberType: ts.TypeNode | undefined) {
   if (responseMemberType && ts.isTypeLiteralNode(responseMemberType)) {
-    const newMembers = responseMemberType.members.map(normalizeBodyMember).filter(noUndefined);
+    const newMembers = responseMemberType.members.map(normalizeBodyMember).filter(isDefined);
     return ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
   }
 
@@ -140,7 +139,7 @@ function normalizeMethodResponses(responses: ts.PropertySignature) {
   const newIdentifier = ts.factory.createIdentifier('response');
 
   if (responses.type && ts.isTypeLiteralNode(responses.type)) {
-    const newMembers = responses.type.members.map(normalizeMethodResponsesMember).filter(noUndefined);
+    const newMembers = responses.type.members.map(normalizeMethodResponsesMember).filter(isDefined);
 
     return ts.factory.updatePropertySignature(
       responses,
@@ -169,7 +168,7 @@ function normalizeMethodMember(member: ts.TypeElement) {
 }
 
 function normalizeMethodType(methodType: ts.TypeLiteralNode) {
-  const newMembers = methodType.members.map(normalizeMethodMember).filter(noUndefined);
+  const newMembers = methodType.members.map(normalizeMethodMember).filter(isDefined);
   return ts.factory.updateTypeLiteralNode(methodType, ts.factory.createNodeArray(newMembers));
 }
 
@@ -206,7 +205,7 @@ function normalizePathMethod(pathMethod: ts.TypeElement) {
 
 function normalizePath(path: ts.TypeElement) {
   if (ts.isPropertySignature(path) && path.type && ts.isTypeLiteralNode(path.type)) {
-    const newPathMembers = path.type.members.map(normalizePathMethod).filter(noUndefined);
+    const newPathMembers = path.type.members.map(normalizePathMethod).filter(isDefined);
 
     return ts.factory.updatePropertySignature(
       path,
@@ -246,8 +245,8 @@ function transformRootNode(node: ts.Node, context: NodeTransformationContext) {
   return node;
 }
 
-function addImportDeclaration(nodes: ts.Node[]) {
-  const httpSchemaImportDeclaration = ts.factory.createImportDeclaration(
+function addImportDeclarations(nodes: ts.Node[]) {
+  const rootImportDeclaration = ts.factory.createImportDeclaration(
     undefined,
     ts.factory.createImportClause(
       true,
@@ -256,10 +255,10 @@ function addImportDeclaration(nodes: ts.Node[]) {
         ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
       ]),
     ),
-    ts.factory.createStringLiteral('zimic'),
+    ts.factory.createStringLiteral(TYPEGEN_IMPORT_FROM),
   );
 
-  nodes.unshift(httpSchemaImportDeclaration);
+  nodes.unshift(rootImportDeclaration);
 }
 
 interface OpenAPITypeGenerationOptions {
@@ -289,8 +288,8 @@ async function generateServiceSchemaFromOpenAPI({
     silent: true,
   });
 
-  const transformedNodes = nodes.map((node) => transformRootNode(node, { serviceName })).filter(noUndefined);
-  addImportDeclaration(transformedNodes);
+  const transformedNodes = nodes.map((node) => transformRootNode(node, { serviceName })).filter(isDefined);
+  addImportDeclarations(transformedNodes);
 
   const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
   await filesystem.promises.writeFile(path.resolve(outputFilePath), content);

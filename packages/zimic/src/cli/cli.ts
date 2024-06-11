@@ -91,15 +91,16 @@ async function runCLI() {
       ),
     )
 
-    .command('typegen', 'Generate types', (yargs) =>
+    .command('typegen', 'Type generation', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
-        'Generate service schema types from an OpenAPI schema.',
+        'Generate service types from an OpenAPI schema.',
         (yargs) =>
           yargs
             .positional('input', {
               type: 'string',
-              description: 'The path to a local OpenAPI schema file or an URL to fetch it.',
+              description:
+                'The path to a local OpenAPI schema file or an URL to fetch it. YAML and JSON are supported.',
               demandOption: true,
             })
             .option('output', {

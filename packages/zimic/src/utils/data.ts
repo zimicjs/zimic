@@ -1,3 +1,5 @@
+import { Defined } from '@/types/utils';
+
 import { isClientSide } from './environment';
 
 export async function blobEquals(blob: Blob, otherBlob: Blob) {
@@ -29,4 +31,12 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
   } else {
     return Buffer.from(base64Value, 'base64');
   }
+}
+
+export function isDefined<Value>(value: Value): value is Defined<Value> {
+  return value !== undefined && value !== null;
+}
+
+export function isNonEmpty<Value>(value: Value): value is Exclude<Defined<Value>, ''> {
+  return isDefined(value) && value !== '';
 }
