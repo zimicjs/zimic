@@ -10,6 +10,7 @@ pnpm-lock.yaml
 /packages/*/build
 /examples/*/.next
 **/public/mockServiceWorker.js
+**/typegen/fixtures/**/*.output.ts
 
 # Tests
 /apps/*/tests/coverage

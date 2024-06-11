@@ -8,6 +8,7 @@ const sharedConfig: Options = {
   clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
+    TYPEGEN_IMPORT_FROM: 'zimic',
   },
 };
 

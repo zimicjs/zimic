@@ -11,7 +11,7 @@ node_modules
 
 # Tests
 /tests/coverage
-**/__tests__/fixtures/**/*.js
+**/typegen/fixtures/**/*.output.ts
 
 # Cache
 .turbo

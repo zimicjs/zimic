@@ -14,5 +14,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "**/typegen/fixtures/**/*.output.ts"]
 }
