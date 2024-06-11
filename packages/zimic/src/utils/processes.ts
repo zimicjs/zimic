@@ -18,6 +18,14 @@ export class CommandError extends Error {
   }
 }
 
+function logCommandStdout(data: Buffer) {
+  console.log(data.toString());
+}
+
+function logCommandStderr(data: Buffer) {
+  console.error(data.toString());
+}
+
 /**
  * Runs a command with the given arguments.
  *
@@ -26,12 +34,44 @@ export class CommandError extends Error {
  * @param options The options to pass to the spawn function. By default, stdio is set to 'inherit'.
  * @throws {CommandError} When the command exits with a non-zero code.
  */
-export async function runCommand(command: string, commandArguments: string[], options: SpawnOptions = {}) {
+export async function runCommand(
+  command: string,
+  commandArguments: string[],
+  options: SpawnOptions & {
+    /**
+     * Can be set to 'pipe', 'inherit', 'overlapped', or 'ignore', or an array of these strings. If passed as an array,
+     * the first element is used for `stdin`, the second for `stdout`, and the third for `stderr`. A fourth element can
+     * be used to specify the `stdio` behavior beyond the standard streams. See {@link ChildProcess.stdio} for more
+     * information.
+     *
+     * @default 'inherit'
+     */
+    stdio?: SpawnOptions['stdio'];
+
+    /**
+     * A function that will be called with the data emitted by the child process's `stdout` stream.
+     *
+     * If `stdio` is set to 'pipe', the data will be logged to the console by default using `console.log`.
+     */
+    onStdout?: (data: Buffer) => void;
+
+    /**
+     * A function that will be called with the data emitted by the child process's `stderr` stream.
+     *
+     * If `stdio` is set to 'pipe', the data will be logged to the console by default using `console.error`.
+     */
+    onStderr?: (data: Buffer) => void;
+  } = {},
+) {
   await new Promise<void>((resolve, reject) => {
-    const childProcess = spawn(command, commandArguments, {
-      stdio: 'inherit',
-      ...options,
-    });
+    const {
+      stdio = 'inherit',
+      onStdout = stdio === 'pipe' ? logCommandStdout : undefined,
+      onStderr = stdio === 'pipe' ? logCommandStderr : undefined,
+      ...otherOptions
+    } = options;
+
+    const childProcess = spawn(command, commandArguments, { ...otherOptions, stdio });
 
     childProcess.once('error', (error) => {
       childProcess.removeAllListeners();
@@ -49,5 +89,13 @@ export async function runCommand(command: string, commandArguments: string[], op
       const failureError = new CommandError(command, exitCode, signal);
       reject(failureError);
     });
+
+    if (onStdout) {
+      childProcess.stdout?.on('data', onStdout);
+    }
+
+    if (onStderr) {
+      childProcess.stderr?.on('data', onStderr);
+    }
   });
 }
