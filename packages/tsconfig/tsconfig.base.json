@@ -16,6 +16,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "preserveWatchOutput": true,
+    "incremental": true,
     "skipLibCheck": true,
     "pretty": true,
     "strict": true

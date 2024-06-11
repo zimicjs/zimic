@@ -2,6 +2,7 @@
   "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "target": "es2022",
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
