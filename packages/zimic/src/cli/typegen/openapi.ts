@@ -13,8 +13,7 @@ const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
 export const TYPEGEN_IMPORT_FROM = process.env.TYPEGEN_IMPORT_FROM!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 function createFileURL(filePathOrURL: string) {
-  const isRemoteFile = /^[^:]+:\/\//.test(filePathOrURL);
-  const fileURL = isRemoteFile ? createURL(filePathOrURL) : new URL(`file://${path.resolve(filePathOrURL)}`);
+  const fileURL = createURL(`file://${path.resolve(filePathOrURL)}`);
   return fileURL;
 }
 

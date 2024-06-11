@@ -99,8 +99,7 @@ async function runCLI() {
           yargs
             .positional('input', {
               type: 'string',
-              description:
-                'The path to a local OpenAPI schema file or an URL to fetch it. YAML and JSON are supported.',
+              description: 'The path to a local YAML or JSON OpenAPI schema file.',
               demandOption: true,
             })
             .option('output', {
