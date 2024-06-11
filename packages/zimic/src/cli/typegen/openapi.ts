@@ -246,22 +246,38 @@ function transformRootNode(node: ts.Node, context: NodeTransformationContext) {
   return node;
 }
 
+function addImportDeclaration(nodes: ts.Node[]) {
+  const httpSchemaImportDeclaration = ts.factory.createImportDeclaration(
+    undefined,
+    ts.factory.createImportClause(
+      true,
+      undefined,
+      ts.factory.createNamedImports([
+        ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
+      ]),
+    ),
+    ts.factory.createStringLiteral('zimic'),
+  );
+
+  nodes.unshift(httpSchemaImportDeclaration);
+}
+
 interface OpenAPITypeGenerationOptions {
-  input: string;
-  output: string;
+  inputFilePath: string;
+  outputFilePath: string;
   serviceName: string;
   removeComments: boolean;
 }
 
 async function generateServiceSchemaFromOpenAPI({
-  input: filePathOrURL,
-  output: outputFilePath,
+  inputFilePath,
+  outputFilePath,
   serviceName: rawServiceName,
   removeComments,
 }: OpenAPITypeGenerationOptions) {
   const serviceName = toPascalCase(rawServiceName);
 
-  const fileURL = createFileURL(filePathOrURL);
+  const fileURL = createFileURL(inputFilePath);
 
   const nodes = await generateTypesFromOpenAPI(fileURL, {
     alphabetize: false,
@@ -274,24 +290,9 @@ async function generateServiceSchemaFromOpenAPI({
   });
 
   const transformedNodes = nodes.map((node) => transformRootNode(node, { serviceName })).filter(noUndefined);
+  addImportDeclaration(transformedNodes);
 
-  const httpSchemaImportDeclaration = ts.factory.createImportDeclaration(
-    undefined,
-    ts.factory.createImportClause(
-      true,
-      undefined,
-      ts.factory.createNamedImports([
-        ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
-      ]),
-    ),
-    ts.factory.createStringLiteral('zimic'), // tmp
-  );
-
-  transformedNodes.unshift(httpSchemaImportDeclaration);
-
-  const content = convertTypeASTToString(transformedNodes, {
-    formatOptions: { removeComments },
-  });
+  const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
   await filesystem.promises.writeFile(path.resolve(outputFilePath), content);
 }
 

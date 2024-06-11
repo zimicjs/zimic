@@ -4,8 +4,8 @@ import { hideBin } from 'yargs/helpers';
 import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
-import generateServiceSchemaFromOpenAPI from './generate/openapi';
 import startInterceptorServer from './server/start';
+import generateServiceSchemaFromOpenAPI from './typegen/openapi';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -91,7 +91,7 @@ async function runCLI() {
       ),
     )
 
-    .command('generate', 'Generate types', (yargs) =>
+    .command('typegen', 'Generate types', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
         'Generate service schema types from an OpenAPI schema.',
@@ -120,7 +120,12 @@ async function runCLI() {
               default: false,
             }),
         async (cliArguments) => {
-          await generateServiceSchemaFromOpenAPI(cliArguments);
+          await generateServiceSchemaFromOpenAPI({
+            inputFilePath: cliArguments.input,
+            outputFilePath: cliArguments.output,
+            serviceName: cliArguments.serviceName,
+            removeComments: cliArguments.removeComments,
+          });
         },
       ),
     )
