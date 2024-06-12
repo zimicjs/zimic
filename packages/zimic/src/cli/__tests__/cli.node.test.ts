@@ -16,6 +16,7 @@ describe('CLI', () => {
     'Commands:',
     '  zimic browser  Browser',
     '  zimic server   Interceptor server',
+    '  zimic typegen  Type generation',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',

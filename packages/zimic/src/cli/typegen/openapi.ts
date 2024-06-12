@@ -6,16 +6,11 @@ import ts from 'typescript';
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import { isDefined } from '@/utils/data';
 import { toPascalCase } from '@/utils/strings';
-import { createURL } from '@/utils/urls';
+import { createFileURL } from '@/utils/urls';
 
 const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
 
 export const TYPEGEN_IMPORT_FROM = process.env.TYPEGEN_IMPORT_FROM!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
-
-function createFileURL(filePathOrURL: string) {
-  const fileURL = createURL(`file://${path.resolve(filePathOrURL)}`);
-  return fileURL;
-}
 
 interface NodeTransformationContext {
   serviceName: string;
@@ -273,9 +268,7 @@ async function generateServiceSchemaFromOpenAPI({
   serviceName: rawServiceName,
   removeComments,
 }: OpenAPITypeGenerationOptions) {
-  const serviceName = toPascalCase(rawServiceName);
-
-  const fileURL = createFileURL(inputFilePath);
+  const fileURL = createFileURL(path.resolve(inputFilePath));
 
   const nodes = await generateTypesFromOpenAPI(fileURL, {
     alphabetize: false,
@@ -287,7 +280,10 @@ async function generateServiceSchemaFromOpenAPI({
     silent: true,
   });
 
-  const transformedNodes = nodes.map((node) => transformRootNode(node, { serviceName })).filter(isDefined);
+  const transformedNodes = nodes
+    .map((node) => transformRootNode(node, { serviceName: toPascalCase(rawServiceName) }))
+    .filter(isDefined);
+
   addImportDeclarations(transformedNodes);
 
   const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });

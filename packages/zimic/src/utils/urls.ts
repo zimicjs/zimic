@@ -51,6 +51,10 @@ export function createURL(
   return url;
 }
 
+export function createFileURL(filePath: string) {
+  return createURL(`file://${filePath}`);
+}
+
 export function excludeNonPathParams(url: URL) {
   url.hash = '';
   url.search = '';
