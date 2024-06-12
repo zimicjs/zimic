@@ -1,7 +1,7 @@
 import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
-import prettier, { Options } from 'prettier'; // eslint-disable-line import/no-extraneous-dependencies
+import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
@@ -83,8 +83,8 @@ describe('Type generation (OpenAPI)', () => {
 
   describe.each([{ fileType: 'yaml' }, { fileType: 'json' }] as const)('Type $fileType', ({ fileType }) => {
     it('should generate types from a simple schema', async () => {
-      const inputFilePath = path.join(fixtures.openapiDirectory, `simpleSchema.${fileType}`);
-      const outputFilePath = path.join(fixtures.openapiDirectory, `simpleSchema.${fileType}.output.ts`);
+      const inputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}`);
+      const outputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}.output.ts`);
 
       processArgvSpy.mockReturnValue([
         'node',
@@ -139,8 +139,8 @@ describe('Type generation (OpenAPI)', () => {
     it.each(['', '--remove-comments=false'])(
       'should support keeping comments in the generated types: %s',
       async (removeCommentFlag) => {
-        const inputFilePath = path.join(fixtures.openapiDirectory, `simpleSchema.${fileType}`);
-        const outputFilePath = path.join(fixtures.openapiDirectory, `simpleSchema.${fileType}.output.ts`);
+        const inputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}`);
+        const outputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}.output.ts`);
 
         processArgvSpy.mockReturnValue(
           [
