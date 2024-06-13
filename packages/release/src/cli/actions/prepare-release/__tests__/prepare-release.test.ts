@@ -1,4 +1,4 @@
-import filesystem from 'fs-extra';
+import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessOutput, ProcessPromise } from 'zx';
 
@@ -44,8 +44,8 @@ describe('Prepare release command', () => {
     ],
   });
 
-  const readJSONSpy = vi.spyOn(filesystem, 'readJSON');
-  const writeJSONSpy = vi.spyOn(filesystem, 'writeJSON');
+  const readFileSpy = vi.spyOn(filesystem, 'readFile');
+  const writeFileSpy = vi.spyOn(filesystem, 'writeFile');
 
   beforeEach(() => {
     metadataFileContent.version = '0.0.0';
@@ -55,18 +55,18 @@ describe('Prepare release command', () => {
     config.metadata[0].partialVersions.appendTo = [];
     config.tagSuffix = undefined;
 
-    readJSONSpy.mockClear();
-    readJSONSpy.mockImplementation((filePath) => {
+    readFileSpy.mockClear();
+    readFileSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
-        return Promise.resolve({ ...metadataFileContent });
+        return Promise.resolve(JSON.stringify(metadataFileContent));
       }
       return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
-    writeJSONSpy.mockClear();
-    writeJSONSpy.mockImplementation((filePath, newMetadataFileContent) => {
-      if (filePath === metadataFilePath) {
-        Object.assign(metadataFileContent, newMetadataFileContent);
+    writeFileSpy.mockClear();
+    writeFileSpy.mockImplementation((filePath, newMetadataFileContent) => {
+      if (filePath === metadataFilePath && typeof newMetadataFileContent === 'string') {
+        Object.assign(metadataFileContent, JSON.parse(newMetadataFileContent));
         return Promise.resolve();
       }
       return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
