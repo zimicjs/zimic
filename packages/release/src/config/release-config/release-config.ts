@@ -1,5 +1,6 @@
-import filesystem from 'fs-extra';
 import path from 'path';
+
+import { pathExists } from '@/utils/files';
 
 import { CONFIG_FILENAME, PACKAGE_JSON_FILENAME, importedReleaseConfigSchema } from './constants';
 import { MissingReleaseConfigError, InvalidReleaseConfigError } from './errors';
@@ -10,14 +11,14 @@ async function findConfigFilePath() {
   while (true) {
     const configFilePath = path.join(directory, CONFIG_FILENAME);
 
-    const configFileExists = await filesystem.pathExists(configFilePath);
+    const configFileExists = await pathExists(configFilePath);
     if (configFileExists) {
       return configFilePath;
     }
 
     const packageJSONFilePath = path.join(directory, PACKAGE_JSON_FILENAME);
 
-    const packageJSONExists = await filesystem.pathExists(packageJSONFilePath);
+    const packageJSONExists = await pathExists(packageJSONFilePath);
     if (packageJSONExists) {
       throw new MissingReleaseConfigError();
     }
