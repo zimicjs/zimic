@@ -11,6 +11,7 @@ pnpm-lock.yaml
 /examples/*/.next
 **/public/mockServiceWorker.js
 **/typegen/fixtures/**/*.output.ts
+**/typegen/fixtures/openapi/**/*.json
 
 # Tests
 /apps/*/tests/coverage

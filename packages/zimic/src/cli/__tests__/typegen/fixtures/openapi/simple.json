@@ -2,8 +2,16 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Simple Schema",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT"
+    }
   },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
   "paths": {
     "/user": {
       "post": {
@@ -33,7 +41,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "The user was created successfully",
             "content": {
               "application/json": {

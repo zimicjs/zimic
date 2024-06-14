@@ -1,5 +1,6 @@
 import glob from 'fast-glob';
 import filesystem from 'fs/promises';
+import yaml from 'js-yaml';
 import path from 'path';
 import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +28,15 @@ describe('Type generation (OpenAPI)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   function findOutputFilePaths() {
-    return glob(path.join(fixtures.directory, '**', '*.output.ts'));
+    return glob(path.join(fixtures.openapiDirectory, '**', '*.output.ts'));
+  }
+
+  function findJSONSchemaFilePaths() {
+    return glob(path.join(fixtures.openapiDirectory, '**', '*.json'));
+  }
+
+  function findYAMLSchemaFilePaths() {
+    return glob(path.join(fixtures.openapiDirectory, '**', '*.yaml'));
   }
 
   beforeAll(async () => {
@@ -37,6 +46,22 @@ describe('Type generation (OpenAPI)', () => {
     for (const outputFilePath of outputFilePaths) {
       await filesystem.unlink(outputFilePath);
     }
+
+    const jsonSchemaFilePaths = await findJSONSchemaFilePaths();
+    for (const jsonFilePath of jsonSchemaFilePaths) {
+      await filesystem.unlink(jsonFilePath);
+    }
+
+    const yamlSchemaFilePaths = await findYAMLSchemaFilePaths();
+    await Promise.all(
+      yamlSchemaFilePaths.map(async (yamlFilePath) => {
+        const yamlFileContent = await filesystem.readFile(yamlFilePath, 'utf-8');
+
+        const jsonFilePath = yamlFilePath.replace(/\.yaml$/, '.json');
+        const jsonFileContent = JSON.stringify(yaml.load(yamlFileContent), null, 2);
+        await filesystem.writeFile(jsonFilePath, jsonFileContent);
+      }),
+    );
   });
 
   beforeEach(() => {
@@ -81,7 +106,7 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each([{ fileType: 'yaml' }, { fileType: 'json' }] as const)('Type $fileType', ({ fileType }) => {
+  describe.each(['yaml', 'json'] as const)('Type: %s', (fileType) => {
     it('should generate types from a simple schema', async () => {
       const inputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}`);
       const outputFilePath = path.join(fixtures.openapiDirectory, `simple.${fileType}.output.ts`);
@@ -95,7 +120,7 @@ describe('Type generation (OpenAPI)', () => {
         '--output',
         outputFilePath,
         '--service-name',
-        'auth-service',
+        'my-service',
         '--remove-comments',
       ]);
 
@@ -107,7 +132,7 @@ describe('Type generation (OpenAPI)', () => {
       expect(outputContent).toBe(
         [
           `import type { HttpSchema } from '${TYPEGEN_IMPORT_FROM}';`,
-          'export type AuthServiceSchema = HttpSchema.Paths<{',
+          'export type MyServiceSchema = HttpSchema.Paths<{',
           "  '/user': {",
           '    POST: {',
           '      request: {',
@@ -136,6 +161,81 @@ describe('Type generation (OpenAPI)', () => {
       );
     });
 
+    it('should generate types from a schema having components', async () => {
+      const inputFilePath = path.join(fixtures.openapiDirectory, `components.${fileType}`);
+      const outputFilePath = path.join(fixtures.openapiDirectory, `components.${fileType}.output.ts`);
+
+      processArgvSpy.mockReturnValue([
+        'node',
+        'cli.js',
+        'typegen',
+        'openapi',
+        inputFilePath,
+        '--output',
+        outputFilePath,
+        '--service-name',
+        'my-service',
+        '--remove-comments',
+      ]);
+
+      await runCLI();
+
+      const rawOutputContent = await filesystem.readFile(outputFilePath, 'utf-8');
+      const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+      expect(outputContent).toBe(
+        [
+          `import type { HttpSchema } from '${TYPEGEN_IMPORT_FROM}';`,
+          'export type MyServiceSchema = HttpSchema.Paths<{',
+          "  '/pets': {",
+          "    GET: MyServiceOperations['listPets'];",
+          "    POST: MyServiceOperations['createPets'];",
+          '  };',
+          '}>;',
+          'export interface MyServiceComponents {',
+          '  schemas: {',
+          '    Pet: {',
+          '      id: number;',
+          '      name: string;',
+          '      tag?: string;',
+          '    };',
+          "    Pets: MyServiceComponents['schemas']['Pet'][];",
+          '    Error: {',
+          '      code: number;',
+          '      message: string;',
+          '    };',
+          '  };',
+          '}',
+          'export interface MyServiceOperations {',
+          '  listPets: {',
+          '    request: {',
+          '      searchParams: {',
+          '        limit?: `${number}`;',
+          '      };',
+          '    };',
+          '    response: {',
+          '      200: {',
+          '        headers: {',
+          "          'x-next'?: string;",
+          '        };',
+          "        body: MyServiceComponents['schemas']['Pets'];",
+          '      };',
+          '    };',
+          '  };',
+          '  createPets: {',
+          '    request: {',
+          "      body: MyServiceComponents['schemas']['Pet'];",
+          '    };',
+          '    response: {',
+          '      201: {};',
+          '    };',
+          '  };',
+          '}',
+          '',
+        ].join('\n'),
+      );
+    });
+
     it.each(['', '--remove-comments=false'])(
       'should support keeping comments in the generated types: %s',
       async (removeCommentFlag) => {
@@ -152,7 +252,7 @@ describe('Type generation (OpenAPI)', () => {
             '--output',
             outputFilePath,
             '--service-name',
-            'auth-service',
+            'my-service',
             removeCommentFlag,
           ].filter(isNonEmpty),
         );
@@ -165,7 +265,7 @@ describe('Type generation (OpenAPI)', () => {
         expect(outputContent).toBe(
           [
             `import type { HttpSchema } from '${TYPEGEN_IMPORT_FROM}';`,
-            'export type AuthServiceSchema = HttpSchema.Paths<{',
+            'export type MyServiceSchema = HttpSchema.Paths<{',
             "  '/user': {",
             '    /** Create user */',
             '    POST: {',

@@ -10,6 +10,7 @@ tsconfig.tsbuildinfo
 /dist
 /public/mockServiceWorker.js
 **/typegen/fixtures/**/*.output.ts
+**/typegen/fixtures/openapi/**/*.json
 
 # Tests
 /tests/coverage
