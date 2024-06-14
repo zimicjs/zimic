@@ -15,6 +15,17 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
     return ts.factory.updateArrayTypeNode(node, newElementType);
   }
 
+  if (ts.isTypeLiteralNode(node)) {
+    const newMembers = node.members.map((member) => {
+      if (!ts.isPropertySignature(member) || !member.type) {
+        return member;
+      }
+      const newType = renameComponentReferences(member.type, context);
+      return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+    });
+    return ts.factory.updateTypeLiteralNode(node, ts.factory.createNodeArray(newMembers));
+  }
+
   if (ts.isIndexedAccessTypeNode(node)) {
     if (ts.isIndexedAccessTypeNode(node.objectType)) {
       const newObjectType = renameComponentReferences(node.objectType, context);

@@ -6,7 +6,7 @@ import { isDefined } from '@/utils/data';
 import { NodeTransformationContext, SUPPORTED_HTTP_METHODS } from '../openapi';
 import { renameComponentReferences } from './components';
 import { createOperationsIdentifier } from './operations';
-import { isUnknownType, isNumberType, isNeverTypeMember, isNeverType } from './types';
+import { isUnknownType, isNumberType, isNeverTypeMember, isNeverType, isBooleanType } from './types';
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestBodyMember)) {
@@ -127,7 +127,7 @@ function normalizeMethodResponses(responses: ts.PropertySignature, context: Node
 
   if (responses.type && ts.isTypeLiteralNode(responses.type)) {
     const newMembers = responses.type.members
-      .map((member) => normalizeMethodResponsesMember(member, context))
+      .map((member) => normalizeMethodResponsesMember(member, context), context)
       .filter(isDefined);
 
     return ts.factory.updatePropertySignature(
@@ -135,7 +135,10 @@ function normalizeMethodResponses(responses: ts.PropertySignature, context: Node
       responses.modifiers,
       newIdentifier,
       undefined,
-      ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers)),
+      renameComponentReferences(
+        ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers)),
+        context,
+      ),
     );
   }
 
@@ -169,12 +172,32 @@ function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature
   return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
 }
 
-function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNode) {
-  if (ts.isTypeLiteralNode(methodRequestType)) {
+function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
+  if (methodRequestType && ts.isTypeLiteralNode(methodRequestType)) {
     const newMembers = methodRequestType.members.map((member) => {
       if (ts.isPropertySignature(member) && member.type && isNumberType(member.type)) {
         return transformNumberTypeToNumberTemplateLiteral(member);
       }
+      return member;
+    });
+
+    return ts.factory.updateTypeLiteralNode(methodRequestType, ts.factory.createNodeArray(newMembers));
+  }
+
+  return undefined;
+}
+
+function normalizeBooleanMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
+  if (methodRequestType && ts.isTypeLiteralNode(methodRequestType)) {
+    const newMembers = methodRequestType.members.map((member) => {
+      if (ts.isPropertySignature(member) && member.type && isBooleanType(member.type)) {
+        const newType = ts.factory.createUnionTypeNode([
+          ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('true')),
+          ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('false')),
+        ]);
+        return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+      }
+
       return member;
     });
 
@@ -189,12 +212,17 @@ function normalizeMethodRequestMemberWithParameters(
   context: NodeTransformationContext,
 ) {
   if (ts.isPropertySignature(methodRequestMember) && ts.isIdentifier(methodRequestMember.name)) {
+    if (methodRequestMember.name.text === 'path') {
+      return undefined;
+    }
+
     const newQuestionToken = undefined;
 
     if (methodRequestMember.name.text === 'query' && methodRequestMember.type) {
       const newIdentifier = ts.factory.createIdentifier('searchParams');
-      const newType = normalizeNumericMembersToTemplateLiterals(
-        renameComponentReferences(methodRequestMember.type, context),
+
+      const newType = normalizeBooleanMembersToTemplateLiterals(
+        normalizeNumericMembersToTemplateLiterals(renameComponentReferences(methodRequestMember.type, context)),
       );
 
       if (!newType) {

@@ -15,3 +15,7 @@ export function isUnknownType(type: ts.TypeNode) {
 export function isNumberType(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.NumberKeyword;
 }
+
+export function isBooleanType(type: ts.TypeNode) {
+  return type.kind === ts.SyntaxKind.BooleanKeyword;
+}

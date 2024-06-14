@@ -11,13 +11,17 @@ export function createPathsIdentifier(serviceName: string) {
 
 function normalizePath(path: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(path) && path.type && ts.isTypeLiteralNode(path.type)) {
+    const newIdentifier = ts.isStringLiteral(path.name)
+      ? ts.factory.createStringLiteral(path.name.text.replace(/{([^}]+)}/g, ':$1'))
+      : path.name;
+
     const newTypeMembers = path.type.members
       .map((pathMethod) => normalizeMethod(pathMethod, context))
       .filter(isDefined);
 
     const newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newTypeMembers));
 
-    return ts.factory.updatePropertySignature(path, path.modifiers, path.name, path.questionToken, newType);
+    return ts.factory.updatePropertySignature(path, path.modifiers, newIdentifier, path.questionToken, newType);
   }
 
   return path;
