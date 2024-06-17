@@ -33,14 +33,33 @@ paths:
       tags:
         - pets
       parameters:
-        - name: limit
+        - $ref: '#/components/parameters/search'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/order'
+        - $ref: '#/components/parameters/archived'
+
+        - name: otherSearch
           in: query
-          description: How many items to return at one time (max 100)
+          description: The search text
           required: false
           schema:
+            type: string
+            default: ''
+        - name: otherLimit
+          in: query
+          description: How many items to return at one time
+          required: true
+          schema:
             type: integer
-            maximum: 100
             format: int32
+            maximum: 100
+        - name: otherArchived
+          in: query
+          description: Whether to include archived pets
+          required: false
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: A paged array of pets
@@ -147,3 +166,43 @@ components:
                 type: string
             additionalProperties:
               type: string
+
+  parameters:
+    search:
+      name: search
+      in: query
+      description: The search text
+      required: false
+      schema:
+        type: string
+        default: ''
+
+    limit:
+      name: limit
+      in: query
+      description: How many items to return at one time
+      required: true
+      schema:
+        type: integer
+        format: int32
+        maximum: 100
+
+    archived:
+      name: archived
+      in: query
+      description: Whether to include archived pets
+      required: false
+      schema:
+        type: boolean
+        default: false
+
+    order:
+      name: order
+      in: query
+      description: The sort order
+      required: false
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc

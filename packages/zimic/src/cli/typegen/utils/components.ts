@@ -3,7 +3,8 @@ import ts from 'typescript';
 import { isDefined } from '@/utils/data';
 
 import { NodeTransformationContext } from '../openapi';
-import { isNeverType } from './types';
+import { transformNumberTypeToNumberTemplateLiteral, transformBooleanTypeToBooleanTemplateLiteral } from './methods';
+import { isBooleanType, isNeverType, isNumericType } from './types';
 
 function createComponentsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Components`);
@@ -72,7 +73,11 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
   return node;
 }
 
-function normalizeComponent(component: ts.TypeElement, context: NodeTransformationContext): ts.TypeElement | undefined {
+function normalizeComponent(
+  componentMember: ts.TypeElement,
+  component: ts.TypeElement,
+  context: NodeTransformationContext,
+): ts.TypeElement | undefined {
   if (!ts.isPropertySignature(component)) {
     return component;
   }
@@ -81,24 +86,35 @@ function normalizeComponent(component: ts.TypeElement, context: NodeTransformati
     return undefined;
   }
 
-  const newType = renameComponentReferences(component.type, context);
+  if (componentMember.name && ts.isIdentifier(componentMember.name) && componentMember.name.text === 'parameters') {
+    if (isNumericType(component.type)) {
+      return transformNumberTypeToNumberTemplateLiteral(component);
+    }
+    if (isBooleanType(component.type)) {
+      return transformBooleanTypeToBooleanTemplateLiteral(component);
+    }
+  }
 
   return ts.factory.updatePropertySignature(
     component,
     component.modifiers,
     component.name,
     component.questionToken,
-    newType,
+    renameComponentReferences(component.type, context),
   );
 }
 
-function normalizeComponentMemberType(componentType: ts.TypeNode, context: NodeTransformationContext) {
-  if (ts.isTypeLiteralNode(componentType)) {
-    const newMembers = componentType.members
-      .map((component) => normalizeComponent(component, context))
+function normalizeComponentMemberType(
+  componentMember: ts.TypeElement,
+  componentMemberType: ts.TypeNode,
+  context: NodeTransformationContext,
+) {
+  if (ts.isTypeLiteralNode(componentMemberType)) {
+    const newMembers = componentMemberType.members
+      .map((component) => normalizeComponent(componentMember, component, context))
       .filter(isDefined);
 
-    return ts.factory.updateTypeLiteralNode(componentType, ts.factory.createNodeArray(newMembers));
+    return ts.factory.updateTypeLiteralNode(componentMemberType, ts.factory.createNodeArray(newMembers));
   }
 
   return undefined;
@@ -113,7 +129,7 @@ function normalizeComponentMember(componentMember: ts.TypeElement, context: Node
     return undefined;
   }
 
-  const newType = normalizeComponentMemberType(componentMember.type, context);
+  const newType = normalizeComponentMemberType(componentMember, componentMember.type, context);
 
   return ts.factory.updatePropertySignature(
     componentMember,

@@ -12,7 +12,7 @@ export function isUnknownType(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.UnknownKeyword;
 }
 
-export function isNumberType(type: ts.TypeNode) {
+export function isNumericType(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.NumberKeyword;
 }
 

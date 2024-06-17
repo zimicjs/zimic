@@ -6,7 +6,7 @@ import { isDefined } from '@/utils/data';
 import { NodeTransformationContext, SUPPORTED_HTTP_METHODS } from '../openapi';
 import { renameComponentReferences } from './components';
 import { createOperationsIdentifier } from './operations';
-import { isUnknownType, isNumberType, isNeverTypeMember, isNeverType, isBooleanType } from './types';
+import { isUnknownType, isNumericType, isNeverTypeMember, isNeverType, isBooleanType } from './types';
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestBodyMember)) {
@@ -161,7 +161,7 @@ function normalizeMethodMember(methodMember: ts.TypeElement, context: NodeTransf
   return undefined;
 }
 
-function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature) {
+export function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature) {
   const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
     ts.factory.createTemplateLiteralTypeSpan(
       ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('number'), undefined),
@@ -175,7 +175,7 @@ function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature
 function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
   if (methodRequestType && ts.isTypeLiteralNode(methodRequestType)) {
     const newMembers = methodRequestType.members.map((member) => {
-      if (ts.isPropertySignature(member) && member.type && isNumberType(member.type)) {
+      if (ts.isPropertySignature(member) && member.type && isNumericType(member.type)) {
         return transformNumberTypeToNumberTemplateLiteral(member);
       }
       return member;
@@ -187,17 +187,23 @@ function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNod
   return undefined;
 }
 
+export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.PropertySignature) {
+  const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
+    ts.factory.createTemplateLiteralTypeSpan(
+      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('boolean'), undefined),
+      ts.factory.createTemplateTail(''),
+    ),
+  ]);
+
+  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+}
+
 function normalizeBooleanMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
   if (methodRequestType && ts.isTypeLiteralNode(methodRequestType)) {
     const newMembers = methodRequestType.members.map((member) => {
       if (ts.isPropertySignature(member) && member.type && isBooleanType(member.type)) {
-        const newType = ts.factory.createUnionTypeNode([
-          ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('true')),
-          ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('false')),
-        ]);
-        return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+        return transformBooleanTypeToBooleanTemplateLiteral(member);
       }
-
       return member;
     });
 
