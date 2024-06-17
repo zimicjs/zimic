@@ -32,12 +32,19 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
 
   if (ts.isTypeLiteralNode(node)) {
     const newMembers = node.members.map((member) => {
-      if (!ts.isPropertySignature(member) || !member.type) {
-        return member;
+      if (ts.isPropertySignature(member) && member.type) {
+        const newType = renameComponentReferences(member.type, context);
+        return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
       }
-      const newType = renameComponentReferences(member.type, context);
-      return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+
+      if (ts.isIndexSignatureDeclaration(member)) {
+        const newType = renameComponentReferences(member.type, context);
+        return ts.factory.updateIndexSignature(member, member.modifiers, member.parameters, newType);
+      }
+
+      return member;
     });
+
     return ts.factory.updateTypeLiteralNode(node, ts.factory.createNodeArray(newMembers));
   }
 

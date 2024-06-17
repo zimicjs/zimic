@@ -136,3 +136,14 @@ components:
           format: int32
         message:
           type: string
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            additionalProperties:
+              type: string
