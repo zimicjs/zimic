@@ -20,6 +20,16 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
     return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
   }
 
+  if (ts.isIntersectionTypeNode(node)) {
+    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    return ts.factory.updateIntersectionTypeNode(node, ts.factory.createNodeArray(newTypes));
+  }
+
+  if (ts.isParenthesizedTypeNode(node)) {
+    const newType = renameComponentReferences(node.type, context);
+    return ts.factory.updateParenthesizedType(node, newType);
+  }
+
   if (ts.isTypeLiteralNode(node)) {
     const newMembers = node.members.map((member) => {
       if (!ts.isPropertySignature(member) || !member.type) {
@@ -64,59 +74,15 @@ function normalizeComponent(component: ts.TypeElement, context: NodeTransformati
     return undefined;
   }
 
-  if (ts.isArrayTypeNode(component.type)) {
-    const newType = renameComponentReferences(component.type.elementType, context);
+  const newType = renameComponentReferences(component.type, context);
 
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      ts.factory.updateArrayTypeNode(component.type, newType),
-    );
-  }
-
-  if (ts.isUnionTypeNode(component.type)) {
-    const newTypes = component.type.types.map((type) => renameComponentReferences(type, context)).filter(isDefined);
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      ts.factory.updateUnionTypeNode(component.type, ts.factory.createNodeArray(newTypes)),
-    );
-  }
-
-  if (ts.isTypeLiteralNode(component.type)) {
-    const newMembers = component.type.members
-      .map((component) => normalizeComponent(component, context))
-      .filter(isDefined);
-
-    const newType = ts.factory.updateTypeLiteralNode(component.type, ts.factory.createNodeArray(newMembers));
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      newType,
-    );
-  }
-
-  if (ts.isIndexedAccessTypeNode(component.type)) {
-    const newType = renameComponentReferences(component.type, context);
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      newType,
-    );
-  }
-
-  return component;
+  return ts.factory.updatePropertySignature(
+    component,
+    component.modifiers,
+    component.name,
+    component.questionToken,
+    newType,
+  );
 }
 
 function normalizeComponentMemberType(componentType: ts.TypeNode, context: NodeTransformationContext) {

@@ -92,19 +92,38 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Pet'
-      maxItems: 100
 
     PetsWithCount:
       type: object
       properties:
-        count:
-          type: integer
-          format: int32
         pets:
           type: array
           items:
             $ref: '#/components/schemas/Pet'
-          maxItems: 100
+        numberOfPets:
+          type: integer
+          format: int32
+
+    PetsWithDogCount:
+      type: object
+      properties:
+        dogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+        numberOfDogs:
+          type: integer
+          format: int32
+
+    PetsWithAnyCount:
+      anyOf:
+        - $ref: '#/components/schemas/PetsWithCount'
+        - $ref: '#/components/schemas/PetsWithDogCount'
+
+    PatsWithAllCounts:
+      allOf:
+        - $ref: '#/components/schemas/PetsWithCount'
+        - $ref: '#/components/schemas/PetsWithDogCount'
 
     Error:
       type: object
