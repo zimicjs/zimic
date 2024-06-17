@@ -15,6 +15,11 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
     return ts.factory.updateArrayTypeNode(node, newElementType);
   }
 
+  if (ts.isUnionTypeNode(node)) {
+    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
+  }
+
   if (ts.isTypeLiteralNode(node)) {
     const newMembers = node.members.map((member) => {
       if (!ts.isPropertySignature(member) || !member.type) {
@@ -59,6 +64,30 @@ function normalizeComponent(component: ts.TypeElement, context: NodeTransformati
     return undefined;
   }
 
+  if (ts.isArrayTypeNode(component.type)) {
+    const newType = renameComponentReferences(component.type.elementType, context);
+
+    return ts.factory.updatePropertySignature(
+      component,
+      component.modifiers,
+      component.name,
+      component.questionToken,
+      ts.factory.updateArrayTypeNode(component.type, newType),
+    );
+  }
+
+  if (ts.isUnionTypeNode(component.type)) {
+    const newTypes = component.type.types.map((type) => renameComponentReferences(type, context)).filter(isDefined);
+
+    return ts.factory.updatePropertySignature(
+      component,
+      component.modifiers,
+      component.name,
+      component.questionToken,
+      ts.factory.updateUnionTypeNode(component.type, ts.factory.createNodeArray(newTypes)),
+    );
+  }
+
   if (ts.isTypeLiteralNode(component.type)) {
     const newMembers = component.type.members
       .map((component) => normalizeComponent(component, context))
@@ -84,18 +113,6 @@ function normalizeComponent(component: ts.TypeElement, context: NodeTransformati
       component.name,
       component.questionToken,
       newType,
-    );
-  }
-
-  if (ts.isArrayTypeNode(component.type)) {
-    const newType = renameComponentReferences(component.type.elementType, context);
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      ts.factory.updateArrayTypeNode(component.type, newType),
     );
   }
 

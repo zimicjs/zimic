@@ -62,6 +62,14 @@ paths:
 
 components:
   schemas:
+    PetTag:
+      type: string
+      enum:
+        - bird
+        - cat
+        - dog
+        - fish
+
     Pet:
       type: object
       required:
@@ -74,13 +82,29 @@ components:
         name:
           type: string
         tag:
-          type: string
+          type: object
+          nullable: true
+          properties:
+            code:
+              $ref: '#/components/schemas/PetTag'
 
     Pets:
       type: array
       items:
         $ref: '#/components/schemas/Pet'
       maxItems: 100
+
+    PetsWithCount:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int32
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+          maxItems: 100
 
     Error:
       type: object
