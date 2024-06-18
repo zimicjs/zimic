@@ -11,6 +11,37 @@ paths:
       operationId: createPets
       tags:
         - pets
+      parameters:
+        - name: content-type
+          in: header
+          schema:
+            $ref: '#/components/headers/content-type'
+        - name: x-rate-limit-remaining
+          in: header
+          schema:
+            $ref: '#/components/headers/x-rate-limit-remaining'
+        - name: x-rate-limit-reset
+          in: header
+          schema:
+            $ref: '#/components/headers/x-rate-limit-reset'
+
+        - $ref: '#/components/parameters/content-type'
+        - $ref: '#/components/parameters/x-rate-limit-remaining'
+        - $ref: '#/components/parameters/x-rate-limit-reset'
+
+        - name: literal-content-type
+          in: header
+          schema:
+            type: string
+        - name: literal-x-rate-limit-remaining
+          in: header
+          schema:
+            type: integer
+        - name: literal-x-rate-limit-reset
+          in: header
+          schema:
+            type: boolean
+
       requestBody:
         content:
           application/json:
@@ -20,6 +51,25 @@ paths:
       responses:
         '201':
           description: Empty response
+          headers:
+            content-type:
+              schema:
+                $ref: '#/components/headers/content-type'
+            x-rate-limit-remaining:
+              schema:
+                $ref: '#/components/headers/x-rate-limit-remaining'
+            x-rate-limit-reset:
+              schema:
+                $ref: '#/components/headers/x-rate-limit-reset'
+            literal-content-type:
+              schema:
+                type: string
+            literal-x-rate-limit-remaining:
+              schema:
+                type: integer
+            literal-x-rate-limit-reset:
+              schema:
+                type: boolean
         default:
           description: Unexpected error
           content:
@@ -206,3 +256,34 @@ components:
         enum:
           - asc
           - desc
+
+    content-type:
+      name: parameter-content-type
+      in: header
+      schema:
+        type: string
+
+    x-rate-limit-remaining:
+      name: parameter-x-rate-limit-remaining
+      in: header
+      schema:
+        type: integer
+
+    x-rate-limit-reset:
+      name: parameter-x-rate-limit-reset
+      in: header
+      schema:
+        type: boolean
+
+  headers:
+    content-type:
+      schema:
+        type: string
+
+    x-rate-limit-remaining:
+      schema:
+        type: integer
+
+    x-rate-limit-reset:
+      schema:
+        type: boolean

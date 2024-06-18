@@ -86,7 +86,11 @@ function normalizeComponent(
     return undefined;
   }
 
-  if (componentMember.name && ts.isIdentifier(componentMember.name) && componentMember.name.text === 'parameters') {
+  if (
+    componentMember.name &&
+    ts.isIdentifier(componentMember.name) &&
+    ['parameters', 'headers'].includes(componentMember.name.text)
+  ) {
     if (isNumericType(component.type)) {
       return transformNumberTypeToNumberTemplateLiteral(component);
     }

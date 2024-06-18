@@ -75,7 +75,7 @@ async function generateServiceSchemaFromOpenAPI({
     excludeDeprecated: false,
     propertiesRequiredByDefault: true,
     pathParamsAsTypes: false,
-    emptyObjectsUnknown: false,
+    emptyObjectsUnknown: true,
     exportType: false,
     enum: false,
     silent: true,

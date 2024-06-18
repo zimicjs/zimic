@@ -8,6 +8,28 @@ import { renameComponentReferences } from './components';
 import { createOperationsIdentifier } from './operations';
 import { isUnknownType, isNumericType, isNeverTypeMember, isNeverType, isBooleanType } from './types';
 
+export function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature) {
+  const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
+    ts.factory.createTemplateLiteralTypeSpan(
+      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('number'), undefined),
+      ts.factory.createTemplateTail(''),
+    ),
+  ]);
+
+  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+}
+
+export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.PropertySignature) {
+  const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
+    ts.factory.createTemplateLiteralTypeSpan(
+      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('boolean'), undefined),
+      ts.factory.createTemplateTail(''),
+    ),
+  ]);
+
+  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
+}
+
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestBodyMember)) {
     const newIdentifier = ts.factory.createIdentifier('body');
@@ -35,15 +57,25 @@ function normalizeRequestBody(requestBody: ts.TypeNode | undefined, context: Nod
 
 function normalizeBodyHeader(headerType: ts.TypeNode | undefined) {
   if (headerType && ts.isTypeLiteralNode(headerType)) {
-    const knownTypeMembers = headerType.members.filter(
-      (member) => !ts.isIndexSignatureDeclaration(member) || !isUnknownType(member.type),
-    );
+    const newMembers = headerType.members
+      .filter((member) => !ts.isIndexSignatureDeclaration(member) || !isUnknownType(member.type))
+      .map((member) => {
+        if (ts.isPropertySignature(member) && member.type) {
+          if (isNumericType(member.type)) {
+            return transformNumberTypeToNumberTemplateLiteral(member);
+          }
+          if (isBooleanType(member.type)) {
+            return transformBooleanTypeToBooleanTemplateLiteral(member);
+          }
+        }
+        return member;
+      });
 
-    if (knownTypeMembers.length === 0) {
+    if (newMembers.length === 0) {
       return undefined;
     }
 
-    return ts.factory.updateTypeLiteralNode(headerType, ts.factory.createNodeArray(knownTypeMembers));
+    return ts.factory.updateTypeLiteralNode(headerType, ts.factory.createNodeArray(newMembers));
   }
 
   return headerType;
@@ -161,17 +193,6 @@ function normalizeMethodMember(methodMember: ts.TypeElement, context: NodeTransf
   return undefined;
 }
 
-export function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature) {
-  const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
-    ts.factory.createTemplateLiteralTypeSpan(
-      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('number'), undefined),
-      ts.factory.createTemplateTail(''),
-    ),
-  ]);
-
-  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
-}
-
 function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
   if (methodRequestType && ts.isTypeLiteralNode(methodRequestType)) {
     const newMembers = methodRequestType.members.map((member) => {
@@ -185,17 +206,6 @@ function normalizeNumericMembersToTemplateLiterals(methodRequestType: ts.TypeNod
   }
 
   return undefined;
-}
-
-export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.PropertySignature) {
-  const newType = ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
-    ts.factory.createTemplateLiteralTypeSpan(
-      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('boolean'), undefined),
-      ts.factory.createTemplateTail(''),
-    ),
-  ]);
-
-  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
 }
 
 function normalizeBooleanMembersToTemplateLiterals(methodRequestType: ts.TypeNode | undefined) {
@@ -244,8 +254,8 @@ function normalizeMethodRequestMemberWithParameters(
       );
     } else if (methodRequestMember.name.text === 'header' && methodRequestMember.type) {
       const newIdentifier = ts.factory.createIdentifier('headers');
-      const newType = normalizeNumericMembersToTemplateLiterals(
-        renameComponentReferences(methodRequestMember.type, context),
+      const newType = normalizeBooleanMembersToTemplateLiterals(
+        normalizeNumericMembersToTemplateLiterals(renameComponentReferences(methodRequestMember.type, context)),
       );
 
       if (!newType) {
