@@ -29,6 +29,10 @@ paths:
                 password:
                   type: string
                   example: '123456'
+              required:
+                - name
+                - email
+                - password
       responses:
         200:
           description: The user was created successfully
@@ -52,3 +56,9 @@ paths:
                   updatedAt:
                     type: string
                     example: '2024-01-01T00:00:00.000Z'
+                required:
+                  - id
+                  - name
+                  - email
+                  - createdAt
+                  - updatedAt

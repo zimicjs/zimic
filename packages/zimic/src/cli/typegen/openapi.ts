@@ -72,11 +72,14 @@ async function generateServiceSchemaFromOpenAPI({
 
   const nodes = await generateTypesFromOpenAPI(fileURL, {
     alphabetize: false,
+    additionalProperties: false,
     excludeDeprecated: false,
-    propertiesRequiredByDefault: true,
+    propertiesRequiredByDefault: false,
+    defaultNonNullable: true,
     pathParamsAsTypes: false,
     emptyObjectsUnknown: true,
     exportType: false,
+    enumValues: false,
     enum: false,
     silent: true,
   });

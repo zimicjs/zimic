@@ -156,6 +156,8 @@ components:
           properties:
             code:
               $ref: '#/components/schemas/PetTag'
+          required:
+            - code
 
     Pets:
       type: array
@@ -172,6 +174,9 @@ components:
         numberOfPets:
           type: integer
           format: int32
+      required:
+        - pets
+        - numberOfPets
 
     PetsWithDogCount:
       type: object
@@ -183,6 +188,9 @@ components:
         numberOfDogs:
           type: integer
           format: int32
+      required:
+        - dogs
+        - numberOfDogs
 
     PetsWithAnyCount:
       anyOf:
@@ -214,6 +222,9 @@ components:
                 type: string
               message:
                 type: string
+            required:
+              - field
+              - message
             additionalProperties:
               type: string
 
