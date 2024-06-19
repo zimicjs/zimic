@@ -19,3 +19,7 @@ export function isNumericType(type: ts.TypeNode) {
 export function isBooleanType(type: ts.TypeNode) {
   return type.kind === ts.SyntaxKind.BooleanKeyword;
 }
+
+export function isNullType(type: ts.TypeNode | ts.LiteralTypeNode['literal']) {
+  return type.kind === ts.SyntaxKind.NullKeyword;
+}

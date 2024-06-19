@@ -4,12 +4,12 @@ import { isDefined } from '@/utils/data';
 
 import { NodeTransformationContext } from '../openapi';
 import {
-  transformNumberTypeToNumberTemplateLiteral,
-  transformBooleanTypeToBooleanTemplateLiteral,
   wrapUncheckedHttpSearchParamIndexedAccessNode,
   wrapUncheckedHttpHeaderIndexedAccessNode,
+  normalizeSearchParamType,
+  normalizeHeaderType,
 } from './methods';
-import { isBooleanType, isNeverType, isNumericType } from './types';
+import { isNeverType, isUnknownType } from './types';
 
 function createComponentsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Components`);
@@ -28,6 +28,22 @@ export function renameComponentReferences(
     ) => ts.TypeNode;
   } = {},
 ): ts.TypeNode {
+  if (isUnknownType(node)) {
+    return ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
+  }
+
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName) && node.typeName.text === 'Record') {
+    const [keyType, valueType] = node.typeArguments ?? [];
+
+    if (isUnknownType(valueType)) {
+      return ts.factory.updateTypeReferenceNode(
+        node,
+        node.typeName,
+        ts.factory.createNodeArray([keyType, ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)]),
+      );
+    }
+  }
+
   if (ts.isArrayTypeNode(node)) {
     const newElementType = renameComponentReferences(node.elementType, context, options);
     return ts.factory.updateArrayTypeNode(node, newElementType);
@@ -116,25 +132,20 @@ function normalizeComponent(
   }
 
   if (componentMember.name && ts.isIdentifier(componentMember.name)) {
-    if (['parameters', 'headers'].includes(componentMember.name.text)) {
-      if (isNumericType(component.type)) {
-        return transformNumberTypeToNumberTemplateLiteral(component);
-      }
-      if (isBooleanType(component.type)) {
-        return transformBooleanTypeToBooleanTemplateLiteral(component);
-      }
-    }
+    if (componentMember.name.text === 'parameters') {
+      let newType = normalizeSearchParamType(component.type);
 
-    if (componentMember.name.text === 'parameters' && ts.isIndexedAccessTypeNode(component.type)) {
-      const newType = renameComponentReferences(component.type, context, {
-        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-          return wrapUncheckedHttpSearchParamIndexedAccessNode(
-            rootIndexedAccessNode,
-            renamedIndexedAccessNode,
-            context,
-          );
-        },
-      });
+      if (ts.isIndexedAccessTypeNode(component.type)) {
+        newType = renameComponentReferences(newType, context, {
+          onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+            return wrapUncheckedHttpSearchParamIndexedAccessNode(
+              rootIndexedAccessNode,
+              renamedIndexedAccessNode,
+              context,
+            );
+          },
+        });
+      }
 
       return ts.factory.updatePropertySignature(
         component,
@@ -145,12 +156,16 @@ function normalizeComponent(
       );
     }
 
-    if (componentMember.name.text === 'headers' && ts.isIndexedAccessTypeNode(component.type)) {
-      const newType = renameComponentReferences(component.type, context, {
-        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-          return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
-        },
-      });
+    if (componentMember.name.text === 'headers') {
+      let newType = normalizeHeaderType(component.type);
+
+      if (ts.isIndexedAccessTypeNode(component.type)) {
+        newType = renameComponentReferences(newType, context, {
+          onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+            return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
+          },
+        });
+      }
 
       return ts.factory.updatePropertySignature(
         component,

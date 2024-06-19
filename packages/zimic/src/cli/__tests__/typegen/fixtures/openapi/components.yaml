@@ -64,6 +64,7 @@ paths:
             literal-content-type:
               schema:
                 type: string
+                nullable: true
             literal-x-rate-limit-remaining:
               schema:
                 type: integer
@@ -94,7 +95,7 @@ paths:
           required: false
           schema:
             type: string
-            default: ''
+            nullable: true
         - name: otherLimit
           in: query
           description: How many items to return at one time
@@ -246,7 +247,7 @@ components:
       required: false
       schema:
         type: string
-        default: ''
+        nullable: true
 
     limit:
       name: limit
@@ -297,6 +298,7 @@ components:
     content-type:
       schema:
         type: string
+        nullable: true
 
     x-rate-limit-remaining:
       schema:

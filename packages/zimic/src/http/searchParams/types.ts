@@ -22,4 +22,8 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
 
 export type HttpSearchParamSerialized<SearchParamValue> = SearchParamValue extends (infer ArrayItem)[]
   ? HttpSearchParamSerialized<ArrayItem>[]
-  : ReplaceBy<SearchParamValue, number | boolean, `${Extract<SearchParamValue, number | boolean>}`>;
+  : ReplaceBy<
+      ReplaceBy<SearchParamValue, number | boolean, `${Extract<SearchParamValue, number | boolean>}`>,
+      null,
+      undefined
+    >;
