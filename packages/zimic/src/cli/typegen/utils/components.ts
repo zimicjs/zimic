@@ -3,43 +3,60 @@ import ts from 'typescript';
 import { isDefined } from '@/utils/data';
 
 import { NodeTransformationContext } from '../openapi';
-import { transformNumberTypeToNumberTemplateLiteral, transformBooleanTypeToBooleanTemplateLiteral } from './methods';
+import {
+  transformNumberTypeToNumberTemplateLiteral,
+  transformBooleanTypeToBooleanTemplateLiteral,
+  wrapUncheckedHttpSearchParamIndexedAccessNode,
+  wrapUncheckedHttpHeaderIndexedAccessNode,
+} from './methods';
 import { isBooleanType, isNeverType, isNumericType } from './types';
 
 function createComponentsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Components`);
 }
 
-export function renameComponentReferences(node: ts.TypeNode, context: NodeTransformationContext): ts.TypeNode {
+export function renameComponentReferences(
+  node: ts.TypeNode,
+  context: NodeTransformationContext & {
+    isTopLevelIndexedAccessNode?: boolean;
+    renamedIndexedAccessTypeNode?: ts.IndexedAccessTypeNode;
+  },
+  options: {
+    onRenameIndexedAccess?: (
+      rootIndexedAccessNode: ts.IndexedAccessTypeNode,
+      renamedIndexedAccessNode: ts.IndexedAccessTypeNode,
+    ) => ts.TypeNode;
+  } = {},
+): ts.TypeNode {
   if (ts.isArrayTypeNode(node)) {
-    const newElementType = renameComponentReferences(node.elementType, context);
+    const newElementType = renameComponentReferences(node.elementType, context, options);
     return ts.factory.updateArrayTypeNode(node, newElementType);
   }
 
   if (ts.isUnionTypeNode(node)) {
-    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    const newTypes = node.types.map((type) => renameComponentReferences(type, context, options));
     return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
   }
 
   if (ts.isIntersectionTypeNode(node)) {
-    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    const newTypes = node.types.map((type) => renameComponentReferences(type, context, options));
     return ts.factory.updateIntersectionTypeNode(node, ts.factory.createNodeArray(newTypes));
   }
 
   if (ts.isParenthesizedTypeNode(node)) {
-    const newType = renameComponentReferences(node.type, context);
+    const newType = renameComponentReferences(node.type, context, options);
     return ts.factory.updateParenthesizedType(node, newType);
   }
 
   if (ts.isTypeLiteralNode(node)) {
     const newMembers = node.members.map((member) => {
       if (ts.isPropertySignature(member) && member.type) {
-        const newType = renameComponentReferences(member.type, context);
+        const newType = renameComponentReferences(member.type, context, options);
         return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
       }
 
       if (ts.isIndexSignatureDeclaration(member)) {
-        const newType = renameComponentReferences(member.type, context);
+        const newType = renameComponentReferences(member.type, context, options);
         return ts.factory.updateIndexSignature(member, member.modifiers, member.parameters, newType);
       }
 
@@ -50,9 +67,18 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
   }
 
   if (ts.isIndexedAccessTypeNode(node)) {
+    const isTopLevelIndexedAccessNode = context.isTopLevelIndexedAccessNode ?? true;
+
     if (ts.isIndexedAccessTypeNode(node.objectType)) {
-      const newObjectType = renameComponentReferences(node.objectType, context);
-      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
+      const childContext: typeof context = { ...context, isTopLevelIndexedAccessNode: false };
+      const newObjectType = renameComponentReferences(node.objectType, childContext, options);
+
+      const newNode = ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
+
+      if (isTopLevelIndexedAccessNode && childContext.renamedIndexedAccessTypeNode) {
+        return options.onRenameIndexedAccess?.(newNode, childContext.renamedIndexedAccessTypeNode) ?? newNode;
+      }
+      return newNode;
     }
 
     if (
@@ -66,6 +92,9 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
         newIdentifier,
         node.objectType.typeArguments,
       );
+
+      context.renamedIndexedAccessTypeNode = node;
+
       return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
     }
   }
@@ -86,16 +115,50 @@ function normalizeComponent(
     return undefined;
   }
 
-  if (
-    componentMember.name &&
-    ts.isIdentifier(componentMember.name) &&
-    ['parameters', 'headers'].includes(componentMember.name.text)
-  ) {
-    if (isNumericType(component.type)) {
-      return transformNumberTypeToNumberTemplateLiteral(component);
+  if (componentMember.name && ts.isIdentifier(componentMember.name)) {
+    if (['parameters', 'headers'].includes(componentMember.name.text)) {
+      if (isNumericType(component.type)) {
+        return transformNumberTypeToNumberTemplateLiteral(component);
+      }
+      if (isBooleanType(component.type)) {
+        return transformBooleanTypeToBooleanTemplateLiteral(component);
+      }
     }
-    if (isBooleanType(component.type)) {
-      return transformBooleanTypeToBooleanTemplateLiteral(component);
+
+    if (componentMember.name.text === 'parameters' && ts.isIndexedAccessTypeNode(component.type)) {
+      const newType = renameComponentReferences(component.type, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpSearchParamIndexedAccessNode(
+            rootIndexedAccessNode,
+            renamedIndexedAccessNode,
+            context,
+          );
+        },
+      });
+
+      return ts.factory.updatePropertySignature(
+        component,
+        component.modifiers,
+        component.name,
+        component.questionToken,
+        newType,
+      );
+    }
+
+    if (componentMember.name.text === 'headers' && ts.isIndexedAccessTypeNode(component.type)) {
+      const newType = renameComponentReferences(component.type, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
+        },
+      });
+
+      return ts.factory.updatePropertySignature(
+        component,
+        component.modifiers,
+        component.name,
+        component.questionToken,
+        newType,
+      );
     }
   }
 

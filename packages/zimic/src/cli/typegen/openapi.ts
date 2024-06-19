@@ -17,6 +17,7 @@ export const TYPEGEN_IMPORT_FROM = process.env.TYPEGEN_IMPORT_FROM!; // eslint-d
 
 export interface NodeTransformationContext {
   serviceName: string;
+  additionalImports: Set<'HttpSearchParamSerialized' | 'HttpHeaderSerialized'>;
 }
 
 function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext) {
@@ -39,16 +40,25 @@ function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext
   return rootNode;
 }
 
-function addImportDeclarations(nodes: ts.Node[]) {
+function addImportDeclarations(nodes: ts.Node[], context: NodeTransformationContext) {
+  const namedImports: ts.ImportSpecifier[] = [
+    ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
+  ];
+
+  if (context.additionalImports.has('HttpSearchParamSerialized')) {
+    namedImports.push(
+      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSearchParamSerialized')),
+    );
+  }
+  if (context.additionalImports.has('HttpHeaderSerialized')) {
+    namedImports.push(
+      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpHeaderSerialized')),
+    );
+  }
+
   const rootImportDeclaration = ts.factory.createImportDeclaration(
     undefined,
-    ts.factory.createImportClause(
-      true,
-      undefined,
-      ts.factory.createNamedImports([
-        ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
-      ]),
-    ),
+    ts.factory.createImportClause(true, undefined, ts.factory.createNamedImports(namedImports)),
     ts.factory.createStringLiteral(TYPEGEN_IMPORT_FROM),
   );
 
@@ -84,11 +94,13 @@ async function generateServiceSchemaFromOpenAPI({
     silent: true,
   });
 
-  const transformedNodes = nodes
-    .map((node) => normalizeRootNode(node, { serviceName: toPascalCase(rawServiceName) }))
-    .filter(isDefined);
+  const context: NodeTransformationContext = {
+    serviceName: toPascalCase(rawServiceName),
+    additionalImports: new Set(),
+  };
 
-  addImportDeclarations(transformedNodes);
+  const transformedNodes = nodes.map((node) => normalizeRootNode(node, context)).filter(isDefined);
+  addImportDeclarations(transformedNodes, context);
 
   const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
   await filesystem.promises.writeFile(path.resolve(outputFilePath), content);

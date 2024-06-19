@@ -223,6 +223,50 @@ function normalizeBooleanMembersToTemplateLiterals(methodRequestType: ts.TypeNod
   return undefined;
 }
 
+export function wrapUncheckedHttpSearchParamIndexedAccessNode(
+  rootIndexedAccessNode: ts.IndexedAccessTypeNode,
+  renamedIndexedAccessNode: ts.IndexedAccessTypeNode,
+  context: NodeTransformationContext,
+) {
+  const isAlreadyChecked =
+    ts.isLiteralTypeNode(renamedIndexedAccessNode.indexType) &&
+    ts.isStringLiteral(renamedIndexedAccessNode.indexType.literal) &&
+    ['parameters', 'headers'].includes(renamedIndexedAccessNode.indexType.literal.text);
+
+  if (isAlreadyChecked) {
+    return rootIndexedAccessNode;
+  }
+
+  context.additionalImports.add('HttpSearchParamSerialized');
+
+  const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamSerialized'), [
+    rootIndexedAccessNode,
+  ]);
+  return wrappedNode;
+}
+
+export function wrapUncheckedHttpHeaderIndexedAccessNode(
+  rootIndexedAccessNode: ts.IndexedAccessTypeNode,
+  renamedIndexedAccessNode: ts.IndexedAccessTypeNode,
+  context: NodeTransformationContext,
+) {
+  const isAlreadyChecked =
+    ts.isLiteralTypeNode(renamedIndexedAccessNode.indexType) &&
+    ts.isStringLiteral(renamedIndexedAccessNode.indexType.literal) &&
+    ['parameters', 'headers'].includes(renamedIndexedAccessNode.indexType.literal.text);
+
+  if (isAlreadyChecked) {
+    return rootIndexedAccessNode;
+  }
+
+  context.additionalImports.add('HttpHeaderSerialized');
+
+  const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpHeaderSerialized'), [
+    rootIndexedAccessNode,
+  ]);
+  return wrappedNode;
+}
+
 function normalizeMethodRequestMemberWithParameters(
   methodRequestMember: ts.TypeElement,
   context: NodeTransformationContext,
@@ -237,8 +281,18 @@ function normalizeMethodRequestMemberWithParameters(
     if (methodRequestMember.name.text === 'query' && methodRequestMember.type) {
       const newIdentifier = ts.factory.createIdentifier('searchParams');
 
+      const renamedNewType = renameComponentReferences(methodRequestMember.type, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpSearchParamIndexedAccessNode(
+            rootIndexedAccessNode,
+            renamedIndexedAccessNode,
+            context,
+          );
+        },
+      });
+
       const newType = normalizeBooleanMembersToTemplateLiterals(
-        normalizeNumericMembersToTemplateLiterals(renameComponentReferences(methodRequestMember.type, context)),
+        normalizeNumericMembersToTemplateLiterals(renamedNewType),
       );
 
       if (!newType) {
@@ -254,8 +308,15 @@ function normalizeMethodRequestMemberWithParameters(
       );
     } else if (methodRequestMember.name.text === 'header' && methodRequestMember.type) {
       const newIdentifier = ts.factory.createIdentifier('headers');
+
+      const renamedNewType = renameComponentReferences(methodRequestMember.type, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
+        },
+      });
+
       const newType = normalizeBooleanMembersToTemplateLiterals(
-        normalizeNumericMembersToTemplateLiterals(renameComponentReferences(methodRequestMember.type, context)),
+        normalizeNumericMembersToTemplateLiterals(renamedNewType),
       );
 
       if (!newType) {

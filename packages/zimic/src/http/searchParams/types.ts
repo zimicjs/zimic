@@ -1,4 +1,4 @@
-import { Defined, ArrayItemIfArray } from '@/types/utils';
+import { Defined, ArrayItemIfArray, ReplaceBy } from '@/types/utils';
 
 import HttpSearchParams from './HttpSearchParams';
 
@@ -19,3 +19,7 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
   | Schema
   | HttpSearchParams<Schema>
   | HttpSearchParamsSchemaTuple<Schema>[];
+
+export type HttpSearchParamSerialized<SearchParamValue> = SearchParamValue extends (infer ArrayItem)[]
+  ? HttpSearchParamSerialized<ArrayItem>[]
+  : ReplaceBy<SearchParamValue, number | boolean, `${Extract<SearchParamValue, number | boolean>}`>;

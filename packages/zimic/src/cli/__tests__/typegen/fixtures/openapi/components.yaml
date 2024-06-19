@@ -228,6 +228,16 @@ components:
             additionalProperties:
               type: string
 
+    sortOrder:
+      type: string
+      description: The sort order
+      enum:
+        - asc
+        - desc
+
+    x-rate-limit-remaining-other:
+      $ref: '#/components/headers/x-rate-limit-remaining'
+
   parameters:
     search:
       name: search
@@ -263,10 +273,7 @@ components:
       description: The sort order
       required: false
       schema:
-        type: string
-        enum:
-          - asc
-          - desc
+        $ref: '#/components/schemas/sortOrder'
 
     content-type:
       name: parameter-content-type
@@ -298,3 +305,7 @@ components:
     x-rate-limit-reset:
       schema:
         type: boolean
+
+    x-rate-limit-remaining-other:
+      schema:
+        $ref: '#/components/schemas/x-rate-limit-remaining-other'

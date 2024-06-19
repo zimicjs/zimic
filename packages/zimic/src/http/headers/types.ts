@@ -1,4 +1,4 @@
-import { Defined } from '@/types/utils';
+import { Defined, ReplaceBy } from '@/types/utils';
 
 import HttpHeaders from './HttpHeaders';
 
@@ -18,3 +18,9 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | Schema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
+
+export type HttpHeaderSerialized<HeaderValue> = ReplaceBy<
+  HeaderValue,
+  number | boolean,
+  `${Extract<HeaderValue, number | boolean>}`
+>;
