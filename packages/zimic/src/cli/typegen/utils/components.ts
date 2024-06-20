@@ -8,6 +8,7 @@ import {
   wrapUncheckedHttpHeaderIndexedAccessNode,
   normalizeSearchParamType,
   normalizeHeaderType,
+  normalizeMethodResponsesMember,
 } from './methods';
 import { isNeverType, isUnknownType } from './types';
 
@@ -119,8 +120,8 @@ export function renameComponentReferences(
 }
 
 function normalizeComponent(
-  componentMember: ts.TypeElement,
   component: ts.TypeElement,
+  componentName: ts.Identifier | undefined,
   context: NodeTransformationContext,
 ): ts.TypeElement | undefined {
   if (!ts.isPropertySignature(component)) {
@@ -131,50 +132,52 @@ function normalizeComponent(
     return undefined;
   }
 
-  if (componentMember.name && ts.isIdentifier(componentMember.name)) {
-    if (componentMember.name.text === 'parameters') {
-      let newType = normalizeSearchParamType(component.type);
+  if (componentName?.text === 'parameters') {
+    let newType = normalizeSearchParamType(component.type);
 
-      if (ts.isIndexedAccessTypeNode(component.type)) {
-        newType = renameComponentReferences(newType, context, {
-          onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-            return wrapUncheckedHttpSearchParamIndexedAccessNode(
-              rootIndexedAccessNode,
-              renamedIndexedAccessNode,
-              context,
-            );
-          },
-        });
-      }
-
-      return ts.factory.updatePropertySignature(
-        component,
-        component.modifiers,
-        component.name,
-        component.questionToken,
-        newType,
-      );
+    if (ts.isIndexedAccessTypeNode(component.type)) {
+      newType = renameComponentReferences(newType, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpSearchParamIndexedAccessNode(
+            rootIndexedAccessNode,
+            renamedIndexedAccessNode,
+            context,
+          );
+        },
+      });
     }
 
-    if (componentMember.name.text === 'headers') {
-      let newType = normalizeHeaderType(component.type);
+    return ts.factory.updatePropertySignature(
+      component,
+      component.modifiers,
+      component.name,
+      component.questionToken,
+      newType,
+    );
+  }
 
-      if (ts.isIndexedAccessTypeNode(component.type)) {
-        newType = renameComponentReferences(newType, context, {
-          onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-            return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
-          },
-        });
-      }
+  if (componentName?.text === 'headers') {
+    let newType = normalizeHeaderType(component.type);
 
-      return ts.factory.updatePropertySignature(
-        component,
-        component.modifiers,
-        component.name,
-        component.questionToken,
-        newType,
-      );
+    if (ts.isIndexedAccessTypeNode(component.type)) {
+      newType = renameComponentReferences(newType, context, {
+        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
+          return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
+        },
+      });
     }
+
+    return ts.factory.updatePropertySignature(
+      component,
+      component.modifiers,
+      component.name,
+      component.questionToken,
+      newType,
+    );
+  }
+
+  if (componentName?.text === 'responses') {
+    return normalizeMethodResponsesMember(component, context, { excludeDefault: false });
   }
 
   return ts.factory.updatePropertySignature(
@@ -191,9 +194,11 @@ function normalizeComponentMemberType(
   componentMemberType: ts.TypeNode,
   context: NodeTransformationContext,
 ) {
-  if (ts.isTypeLiteralNode(componentMemberType)) {
+  if (ts.isTypeLiteralNode(componentMemberType) && componentMember.name && ts.isIdentifier(componentMember.name)) {
+    const componentName = componentMember.name;
+
     const newMembers = componentMemberType.members
-      .map((component) => normalizeComponent(componentMember, component, context))
+      .map((component) => normalizeComponent(component, componentName, context))
       .filter(isDefined);
 
     return ts.factory.updateTypeLiteralNode(componentMemberType, ts.factory.createNodeArray(newMembers));

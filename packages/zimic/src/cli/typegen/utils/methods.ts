@@ -203,9 +203,15 @@ function normalizeMethodResponsesMemberType(
   return responseMemberType;
 }
 
-function normalizeMethodResponsesMember(responseMember: ts.TypeElement, context: NodeTransformationContext) {
+export function normalizeMethodResponsesMember(
+  responseMember: ts.TypeElement,
+  context: NodeTransformationContext,
+  options: { excludeDefault?: boolean } = {},
+) {
+  const { excludeDefault = true } = options;
+
   if (ts.isPropertySignature(responseMember)) {
-    if (ts.isIdentifier(responseMember.name) && responseMember.name.text === 'default') {
+    if (excludeDefault && ts.isIdentifier(responseMember.name) && responseMember.name.text === 'default') {
       return undefined;
     }
 
@@ -223,7 +229,7 @@ function normalizeMethodResponsesMember(responseMember: ts.TypeElement, context:
   return responseMember;
 }
 
-function normalizeMethodResponses(responses: ts.PropertySignature, context: NodeTransformationContext) {
+export function normalizeMethodResponses(responses: ts.PropertySignature, context: NodeTransformationContext) {
   const newIdentifier = ts.factory.createIdentifier('response');
 
   if (responses.type && ts.isTypeLiteralNode(responses.type)) {
