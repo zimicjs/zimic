@@ -24,7 +24,8 @@ export const defaultConfig: UserConfig = {
       exclude: [
         '**/local/**',
         '**/public/**',
-        '**/tests/setup/global/**',
+        'tests/setup/global/**',
+        'scripts/dev/**',
         '**/types/**',
         '**/types.ts',
         '**/typescript.ts',
@@ -36,7 +37,7 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.TYPEGEN_IMPORT_FROM': "'src'",
+    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': "'@/index'",
   },
   resolve: {
     alias: {

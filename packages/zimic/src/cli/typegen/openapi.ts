@@ -13,7 +13,7 @@ import { normalizeOperations } from './utils/operations';
 import { normalizePaths } from './utils/paths';
 
 export const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
-export const TYPEGEN_IMPORT_FROM = process.env.TYPEGEN_IMPORT_FROM!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 export interface NodeTransformationContext {
   serviceName: string;
@@ -59,7 +59,7 @@ function addImportDeclarations(nodes: ts.Node[], context: NodeTransformationCont
   const rootImportDeclaration = ts.factory.createImportDeclaration(
     undefined,
     ts.factory.createImportClause(true, undefined, ts.factory.createNamedImports(namedImports)),
-    ts.factory.createStringLiteral(TYPEGEN_IMPORT_FROM),
+    ts.factory.createStringLiteral(TYPEGEN_ROOT_IMPORT_MODULE),
   );
 
   nodes.unshift(rootImportDeclaration);

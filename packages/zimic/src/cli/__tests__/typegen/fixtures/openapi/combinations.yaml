@@ -1,0 +1,158 @@
+openapi: 3.1.0
+
+info:
+  title: Any Of
+  version: 1.0.0
+
+paths:
+  /any-users-or-friends:
+    get:
+      summary: List of users or friends
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersOrFriendsWithCount'
+
+  /all-users-and-friends:
+    get:
+      summary: List of users and friends
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersAndFriendsWithCount'
+
+  /user-or-friend:
+    get:
+      summary: Get a user or a friend
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOrFriend'
+
+  /discriminated-user-or-friend:
+    get:
+      summary: Get a user or a friend with discriminator
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscriminatedUserOrFriend'
+
+  /not-user:
+    get:
+      summary: Get a user or a friend with discriminator
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotUser'
+
+components:
+  schemas:
+    UserType:
+      type: string
+      enum:
+        - user
+        - friend
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/UserType'
+
+    Friend:
+      type: object
+      required:
+        - id
+        - name
+        - userId
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/UserType'
+        userId:
+          type: integer
+          format: int64
+
+    UsersWithCount:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        totalUsers:
+          type: integer
+          format: int32
+      required:
+        - users
+        - totalUsers
+
+    FriendsWithCount:
+      type: object
+      properties:
+        friends:
+          type: array
+          items:
+            $ref: '#/components/schemas/Friend'
+        totalFriends:
+          type: integer
+          format: int32
+      required:
+        - friends
+        - totalFriends
+
+    UsersOrFriendsWithCount:
+      anyOf:
+        - $ref: '#/components/schemas/UsersWithCount'
+        - $ref: '#/components/schemas/FriendsWithCount'
+
+    UsersAndFriendsWithCount:
+      allOf:
+        - $ref: '#/components/schemas/UsersWithCount'
+        - $ref: '#/components/schemas/FriendsWithCount'
+
+    UserOrFriend:
+      oneOf:
+        - $ref: '#/components/schemas/User'
+        - $ref: '#/components/schemas/Friend'
+
+    DiscriminatedUserOrFriend:
+      oneOf:
+        - $ref: '#/components/schemas/User'
+        - $ref: '#/components/schemas/Friend'
+      discriminator:
+        propertyName: type
+        mapping:
+          user: '#/components/schemas/User'
+          friend: '#/components/schemas/Friend'
+
+    NotUser:
+      not:
+        $ref: '#/components/schemas/User'

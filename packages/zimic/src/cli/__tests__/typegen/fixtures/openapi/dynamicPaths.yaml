@@ -1,40 +1,76 @@
 openapi: 3.1.0
 
 info:
-  version: 1.0.0
   title: Dynamic Paths
+  version: 1.0.0
 
 paths:
-  /pets/{petId}:
+  /users/{userId}:
     get:
-      summary: Info for a specific pet
-      operationId: showPetById
-      tags:
-        - pets
+      summary: Info for a specific user
+      operationId: showUserById
       parameters:
-        - name: petId
+        - name: userId
           in: path
           required: true
-          description: The id of the pet to retrieve
+          description: The id of the user to retrieve
           schema:
             type: string
       responses:
         200:
-          description: Expected response to a valid request
+          description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'
-        400:
-          description: Error
+                $ref: '#/components/schemas/User'
+
+  /users/{userId}/friends:
+    get:
+      summary: List of friends for a specific user
+      operationId: listUserFriends
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of the user to retrieve friends for
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Users'
+
+  /users/{userId}/friends/{friendId}:
+    get:
+      summary: Info for a specific friend of a specific user
+      operationId: showUserFriendById
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of the user to retrieve a friend for
+          schema:
+            type: string
+        - name: friendId
+          in: path
+          required: true
+          description: The id of the friend to retrieve
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
 
 components:
   schemas:
-    Pet:
+    User:
       type: object
       required:
         - id
@@ -45,23 +81,7 @@ components:
           format: int64
         name:
           type: string
-        tag:
-          type: string
-
-    Pets:
+    Users:
       type: array
-      maxItems: 100
       items:
-        $ref: '#/components/schemas/Pet'
-
-    Error:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
+        $ref: '#/components/schemas/User'
