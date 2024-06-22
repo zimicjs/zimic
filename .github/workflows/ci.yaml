@@ -107,6 +107,16 @@ jobs:
         env:
           PLAYWRIGHT_WORKERS: 100%
 
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-reports
+          path: |
+            ./examples/*/tests/reports
+            ./examples/*/tests/outputs
+          retention-days: 7
+
   ci-typescript:
     name: CI TypeScript
     runs-on: ubuntu-latest
