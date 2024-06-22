@@ -96,9 +96,11 @@ export function getHttpServerPort(server: HttpServer) {
 }
 
 export function methodCanHaveRequestBody(method: HttpMethod): method is HttpMethodWithRequestBody {
-  return HTTP_METHODS_WITH_REQUEST_BODY.includes(method as HttpMethodWithRequestBody);
+  const methodsToCompare: readonly string[] = HTTP_METHODS_WITH_REQUEST_BODY;
+  return methodsToCompare.includes(method);
 }
 
 export function methodCanHaveResponseBody(method: HttpMethod): method is HttpMethodWithResponseBody {
-  return HTTP_METHODS_WITH_RESPONSE_BODY.includes(method as HttpMethodWithResponseBody);
+  const methodsToCompare: readonly string[] = HTTP_METHODS_WITH_RESPONSE_BODY;
+  return methodsToCompare.includes(method);
 }

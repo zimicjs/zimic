@@ -16,7 +16,7 @@ class UnregisteredBrowserServiceWorkerError extends Error {
     this.name = 'UnregisteredBrowserServiceWorkerError';
   }
 
-  static matchesRawError(error: unknown): error is UnregisteredBrowserServiceWorkerError {
+  static matchesRawError(error: unknown) {
     return (
       error instanceof Error &&
       error.message.toLowerCase().startsWith('[msw] failed to register a service worker for scope')
