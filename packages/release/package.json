@@ -7,15 +7,12 @@
     "index.d.ts",
     "cli.d.ts"
   ],
-  "exports": {
-    ".": "./dist/index.js"
-  },
   "bin": {
     "release": "./dist/cli.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
-    "dev:cli": "tsx src/cli/index.ts",
+    "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -40,7 +37,6 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "tsup": "^8.1.0",
-    "tsx": "^4.15.6",
     "typescript": "^5.4.5",
     "vitest": "1.6.0"
   }

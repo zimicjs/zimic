@@ -1,7 +1,6 @@
 import { Options, defineConfig } from 'tsup';
 
 const sharedConfig: Options = {
-  format: ['cjs', 'esm'],
   dts: true,
   bundle: true,
   sourcemap: true,
@@ -10,23 +9,15 @@ const sharedConfig: Options = {
   clean: true,
 };
 
-export default defineConfig([
-  {
-    ...sharedConfig,
-    name: 'node',
-    platform: 'node',
-    entry: {
-      index: 'src/index.ts',
-    },
+const cliConfig = (['cjs'] as const).map<Options>((format) => ({
+  ...sharedConfig,
+  name: 'cli',
+  platform: 'node',
+  format: [format],
+  dts: false,
+  entry: {
+    cli: 'src/cli/entry.ts',
   },
-  {
-    ...sharedConfig,
-    name: 'cli',
-    platform: 'node',
-    format: ['cjs'],
-    dts: false,
-    entry: {
-      cli: 'src/cli/entry.ts',
-    },
-  },
-]);
+}));
+
+export default defineConfig([...cliConfig]);
