@@ -4,6 +4,7 @@
   "tasks": {
     "test:turbo": {
       "dependsOn": ["^build", "zimic#build"],
+      "passThroughEnv": ["PLAYWRIGHT_WORKERS"],
       "inputs": [
         "{src,tests}/**/*.{ts,tsx,json}",
         "{package,tsconfig}.json",

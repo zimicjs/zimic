@@ -104,6 +104,8 @@ jobs:
             --continue \
             --concurrency 1 \
             ${{ steps.zimic-setup.outputs.install-filters }}
+        env:
+          PLAYWRIGHT_WORKERS: 100%
 
   ci-typescript:
     name: CI TypeScript
