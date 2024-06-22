@@ -247,7 +247,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   private isReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     message: WebSocket.ServiceMessage<Schema, Channel>,
-  ): message is WebSocket.ServiceReplyMessage<Schema, Channel> {
+  ) {
     return 'requestId' in message;
   }
 

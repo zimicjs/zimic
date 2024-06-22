@@ -123,7 +123,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     internalWorker.close();
   }
 
-  private isInternalBrowserWorker(worker: HttpWorker): worker is BrowserHttpWorker {
+  private isInternalBrowserWorker(worker: HttpWorker) {
     return 'start' in worker && 'stop' in worker;
   }
 

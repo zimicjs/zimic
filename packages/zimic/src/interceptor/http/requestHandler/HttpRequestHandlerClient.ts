@@ -16,11 +16,7 @@ import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import LocalHttpRequestHandler from './LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from './RemoteHttpRequestHandler';
-import {
-  HttpRequestHandlerRestriction,
-  HttpRequestHandlerComputedRestriction,
-  HttpRequestHandlerStaticRestriction,
-} from './types/public';
+import { HttpRequestHandlerRestriction, HttpRequestHandlerStaticRestriction } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -95,7 +91,7 @@ class HttpRequestHandlerClient<
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
-  ): declaration is HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode> {
+  ) {
     return typeof declaration === 'function';
   }
 
@@ -204,9 +200,7 @@ class HttpRequestHandlerClient<
       : jsonContains(request.body, restriction.body);
   }
 
-  private isComputedRequestRestriction(
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ): restriction is HttpRequestHandlerComputedRestriction<Schema, Method, Path> {
+  private isComputedRequestRestriction(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) {
     return typeof restriction === 'function';
   }
 
