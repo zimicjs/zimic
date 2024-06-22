@@ -134,6 +134,7 @@ jobs:
           - '5.2'
           - '5.3'
           - '5.4'
+          - '5.5'
 
     env:
       TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
