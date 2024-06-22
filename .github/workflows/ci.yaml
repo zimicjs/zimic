@@ -111,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
-          name: test-reports
+          name: test-reports-node-${{ matrix.node-version }}
           path: |
             ./examples/*/tests/reports
             ./examples/*/tests/outputs
