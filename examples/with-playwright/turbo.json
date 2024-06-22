@@ -4,6 +4,7 @@
   "tasks": {
     "test:turbo": {
       "dependsOn": ["^build", "zimic#build"],
+      "passThroughEnv": ["PLAYWRIGHT_WORKERS"],
       "inputs": [
         "{src,tests}/**/*.{ts,tsx,json}",
         "{package,tsconfig}.json",
@@ -12,7 +13,8 @@
     },
 
     "types:check": {
-      "dependsOn": ["^build", "zimic#build"]
+      "dependsOn": ["^build", "zimic#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }
 }

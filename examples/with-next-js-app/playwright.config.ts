@@ -5,8 +5,10 @@ export default defineConfig({
   testMatch: '**/__tests__/**/*.e2e.test.ts',
   fullyParallel: true,
   retries: 1,
+  workers: process.env.PLAYWRIGHT_WORKERS,
   reporter: [['html', { outputFolder: './tests/reports' }]],
   outputDir: './tests/outputs',
+  timeout: 60 * 1000,
 
   expect: {
     timeout: 10 * 1000,
@@ -16,7 +18,6 @@ export default defineConfig({
     baseURL: 'http://localhost:3004',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
     actionTimeout: 10 * 1000,
     navigationTimeout: 30 * 1000,
   },

@@ -8,7 +8,7 @@
     },
 
     "lint:turbo": {
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", ".eslintrc.js", "../../.prettierrc.json"]
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", ".eslintrc.js"]
     },
 
     "types:check": {

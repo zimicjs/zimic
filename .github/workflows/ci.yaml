@@ -75,7 +75,7 @@ jobs:
         node-version:
           - 18
           - 20
-          - 22
+          - '22.2'
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
@@ -104,6 +104,18 @@ jobs:
             --continue \
             --concurrency 1 \
             ${{ steps.zimic-setup.outputs.install-filters }}
+        env:
+          PLAYWRIGHT_WORKERS: 100%
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-reports-node-${{ matrix.node-version }}
+          path: |
+            ./examples/*/tests/reports
+            ./examples/*/tests/outputs
+          retention-days: 7
 
   ci-typescript:
     name: CI TypeScript

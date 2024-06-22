@@ -1,17 +1,11 @@
-import NotStartedHttpInterceptorError from './http/interceptor/errors/NotStartedHttpInterceptorError';
-import UnknownHttpInterceptorPlatformError from './http/interceptor/errors/UnknownHttpInterceptorPlatformError';
-import UnknownHttpInterceptorTypeError from './http/interceptor/errors/UnknownHttpInterceptorTypeError';
-import UnregisteredBrowserServiceWorkerError from './http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorNamespace from './http/namespace/HttpInterceptorNamespace';
-import DisabledRequestSavingError from './http/requestHandler/errors/DisabledRequestSavingError';
 
-export {
-  UnknownHttpInterceptorPlatformError,
-  UnknownHttpInterceptorTypeError,
-  NotStartedHttpInterceptorError,
-  UnregisteredBrowserServiceWorkerError,
-  DisabledRequestSavingError,
-};
+export { default as NotStartedHttpInterceptorError } from './http/interceptor/errors/NotStartedHttpInterceptorError';
+export { default as UnknownHttpInterceptorPlatformError } from './http/interceptor/errors/UnknownHttpInterceptorPlatformError';
+export { default as UnknownHttpInterceptorTypeError } from './http/interceptor/errors/UnknownHttpInterceptorTypeError';
+export { default as UnregisteredBrowserServiceWorkerError } from './http/interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
+export { default as HttpInterceptorNamespace } from './http/namespace/HttpInterceptorNamespace';
+export { default as DisabledRequestSavingError } from './http/requestHandler/errors/DisabledRequestSavingError';
 
 export type {
   HttpRequestHandlerResponseDeclaration,
@@ -48,7 +42,6 @@ export type { ExtractHttpInterceptorSchema } from './http/interceptor/types/sche
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './http/interceptor/types/public';
 
 export type { HttpInterceptorNamespaceDefault } from './http/namespace/HttpInterceptorNamespace';
-export type { HttpInterceptorNamespace };
 
 /**
  * A set of interceptor resources for mocking HTTP requests.
