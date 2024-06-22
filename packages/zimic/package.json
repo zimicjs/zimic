@@ -78,7 +78,7 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@whatwg-node/server": "^0.9.34",
+    "@whatwg-node/server": "^0.9.35",
     "chalk": "^4.1.2",
     "cross-spawn": "^7.0.3",
     "isomorphic-ws": "^5.0.0",
@@ -88,7 +88,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
-    "@types/node": "^20.14.0",
+    "@types/node": "^20.14.8",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "1.6.0",
@@ -99,7 +99,7 @@
     "dotenv-cli": "^7.4.2",
     "playwright": "^1.44.1",
     "tsup": "^8.1.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "vitest": "1.6.0"
   },
   "optionalDependencies": {
