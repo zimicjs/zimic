@@ -90,6 +90,7 @@ paths:
             type: boolean
       responses:
         200:
+          description: Success
           headers:
             content-type:
               schema:
@@ -126,6 +127,7 @@ paths:
             $ref: '#/components/schemas/x-rate-limit-reached'
       responses:
         200:
+          description: Success
           headers:
             content-type:
               schema:
