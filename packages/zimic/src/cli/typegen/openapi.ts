@@ -72,10 +72,10 @@ interface OpenAPITypeGenerationOptions {
   removeComments: boolean;
 }
 
-async function generateServiceSchemaFromOpenAPI({
+async function generateTypesFromOpenAPISchema({
   inputFilePath,
   outputFilePath,
-  serviceName: rawServiceName,
+  serviceName,
   removeComments,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
@@ -94,8 +94,10 @@ async function generateServiceSchemaFromOpenAPI({
     silent: true,
   });
 
+  const pascalServiceName = toPascalCase(serviceName);
+
   const context: NodeTransformationContext = {
-    serviceName: toPascalCase(rawServiceName),
+    serviceName: pascalServiceName,
     additionalImports: new Set(),
   };
 
@@ -106,4 +108,4 @@ async function generateServiceSchemaFromOpenAPI({
   await filesystem.promises.writeFile(path.resolve(outputFilePath), content);
 }
 
-export default generateServiceSchemaFromOpenAPI;
+export default generateTypesFromOpenAPISchema;

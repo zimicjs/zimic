@@ -3,8 +3,13 @@ import path from 'path';
 const typegenFixtures = {
   directory: __dirname,
 
-  get openapiDirectory() {
-    return path.join(this.directory, 'openapi');
+  openapi: {
+    get directory() {
+      return path.join(typegenFixtures.directory, 'openapi');
+    },
+    get generatedDirectory() {
+      return path.join(typegenFixtures.openapi.directory, 'generated');
+    },
   },
 };
 

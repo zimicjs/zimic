@@ -5,7 +5,7 @@ import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
-import generateServiceSchemaFromOpenAPI from './typegen/openapi';
+import generateTypesFromOpenAPISchema from './typegen/openapi';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -120,7 +120,7 @@ async function runCLI() {
               default: false,
             }),
         async (cliArguments) => {
-          await generateServiceSchemaFromOpenAPI({
+          await generateTypesFromOpenAPISchema({
             inputFilePath: cliArguments.input,
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,

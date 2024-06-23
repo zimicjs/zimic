@@ -1,35 +1,39 @@
+import glob from 'fast-glob';
 import path from 'path';
 
 import typegenFixtures from '@/cli/__tests__/typegen/fixtures';
-import { findYAMLFiles } from '@/cli/__tests__/typegen/utils';
 import { runCommand } from '@/utils/processes';
 
 async function generateBaseFixtureTypes() {
   const [fixtureType, fixtureName, ...otherArguments] = process.argv.slice(2);
 
   const fixtureDirectory = path.join(typegenFixtures.directory, fixtureType);
-  const schemaFilePaths = await findYAMLFiles(fixtureDirectory, fixtureName);
+  const schemaFilePaths = await glob(path.join(fixtureDirectory, `${fixtureName}.yaml`));
 
-  for (const filePath of schemaFilePaths) {
-    const fileName = path.parse(filePath).name;
+  for (const schemaFilePath of schemaFilePaths) {
+    const fileName = path.parse(schemaFilePath).name;
 
-    const removesComments = otherArguments.includes('--remove-comments');
-    const outputFilePath = path.join(
-      typegenFixtures.openapiDirectory,
-      removesComments ? `${fileName}.ts` : `${fileName}.comments.ts`,
+    const removesComments = otherArguments.some(
+      (otherArgument, index) =>
+        otherArgument === '--remove-comments=true' ||
+        (otherArgument === '--remove-comments' && otherArguments.at(index + 1) !== 'false'),
     );
+    const outputFilePath = path.join(fixtureDirectory, removesComments ? `${fileName}.ts` : `${fileName}.comments.ts`);
 
     await runCommand('pnpm', [
       'cli',
       'typegen',
       fixtureType,
-      filePath,
+      schemaFilePath,
       '--output',
       outputFilePath,
       '--service-name',
       'my-service',
       ...otherArguments,
     ]);
+
+    await runCommand('pnpm', ['style:format', outputFilePath]);
+    await runCommand('pnpm', ['lint', outputFilePath]);
   }
 }
 

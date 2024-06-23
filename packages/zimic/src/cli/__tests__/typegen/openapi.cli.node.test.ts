@@ -1,73 +1,68 @@
+import glob from 'fast-glob';
 import filesystem from 'fs/promises';
-import yaml from 'js-yaml';
 import path from 'path';
-import prettier, { Options } from 'prettier';
+import prettier from 'prettier';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
 import { isNonEmpty } from '@/utils/data';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
+import { convertYAMLToJSON } from '@tests/utils/json';
 
 import typegenFixtures from './fixtures';
-import {
-  findGeneratedTypeScriptFiles,
-  findGeneratedJSONFiles,
-  findYAMLFiles,
-  normalizeTypegenFileToCompare,
-} from './utils';
 
-describe('Type generation (OpenAPI)', () => {
-  let prettierConfig: Options;
-
+describe('Type generation (OpenAPI)', async () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
+
+  const prettierConfig = await resolvedPrettierConfig(__filename);
 
   async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
     const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
-      const parsedYAMLFilePath = path.parse(yamlFilePath);
-      const jsonFilePath = path.join(parsedYAMLFilePath.dir, 'generated', `${parsedYAMLFilePath.name}.json`);
-
-      const yamlFileContent = await filesystem.readFile(yamlFilePath, 'utf-8');
-      const jsonFileContent = JSON.stringify(yaml.load(yamlFileContent), null, 2);
-
-      await filesystem.writeFile(jsonFilePath, jsonFileContent);
+      const yamlFileName = path.parse(yamlFilePath).name;
+      const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileName}.json`);
+      await convertYAMLToJSON(yamlFilePath, jsonFilePath);
     });
 
     await Promise.all(generationPromises);
   }
 
-  function getSchemaFilePaths(schemaName: string, fileType: 'yaml' | 'json') {
+  type SchemaName = 'simple' | 'searchParams' | 'headers' | 'dynamicPaths' | 'combinations';
+  type SchemaFileType = 'yaml' | 'json';
+
+  function getSchemaFilePaths(schemaName: SchemaName, fileType: SchemaFileType) {
     const fileName = `${schemaName}.${fileType}`;
 
     const inputDirectory =
-      fileType === 'json' ? path.join(typegenFixtures.openapiDirectory, 'generated') : typegenFixtures.openapiDirectory;
+      fileType === 'json' ? typegenFixtures.openapi.generatedDirectory : typegenFixtures.openapi.directory;
 
     return {
       input: path.join(inputDirectory, fileName),
       output: {
-        expected: path.join(typegenFixtures.openapiDirectory, `${schemaName}.ts`),
-        expectedWithComments: path.join(typegenFixtures.openapiDirectory, `${schemaName}.comments.ts`),
-        generated: path.join(typegenFixtures.openapiDirectory, 'generated', `${fileName}.output.ts`),
-        generatedWithComments: path.join(typegenFixtures.openapiDirectory, 'generated', `${fileName}.comments.ts`),
+        expected: path.join(typegenFixtures.openapi.directory, `${schemaName}.ts`),
+        expectedWithComments: path.join(typegenFixtures.openapi.directory, `${schemaName}.comments.ts`),
+        generated: path.join(typegenFixtures.openapi.generatedDirectory, `${fileName}.output.ts`),
+        generatedWithComments: path.join(typegenFixtures.openapi.generatedDirectory, `${fileName}.comments.ts`),
       },
     };
   }
 
-  beforeAll(async () => {
-    prettierConfig = await resolvedPrettierConfig(__filename);
+  function normalizeGeneratedFileToCompare(fileContent: string) {
+    return fileContent.replace(/^\s*\/\/ eslint-disable-next-.+$/gm, '').replace(/\n{2,}/g, '\n');
+  }
 
-    const [generatedTypeScriptFilePaths, generatedJSONFilePaths, yamlSchemaFilePaths] = await Promise.all([
-      findGeneratedTypeScriptFiles(typegenFixtures.openapiDirectory),
-      findGeneratedJSONFiles(typegenFixtures.openapiDirectory),
-      findYAMLFiles(typegenFixtures.openapiDirectory),
+  beforeAll(async () => {
+    await filesystem.mkdir(typegenFixtures.openapi.directory, { recursive: true });
+    await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+
+    const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
+      glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
+      glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
+      glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
     ]);
 
-    const filePathsToRemove = [...generatedTypeScriptFilePaths, ...generatedJSONFilePaths];
-    await Promise.all(
-      filePathsToRemove.map(async (filePath) => {
-        await filesystem.unlink(filePath);
-      }),
-    );
+    const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
+    await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
 
     await generateJSONSchemas(yamlSchemaFilePaths);
   });
@@ -107,8 +102,8 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each(['yaml', 'json'] as const)('Type: %s', (fileType) => {
-    it.each(['simple', 'searchParams', 'headers', 'dynamicPaths', 'combinations'])(
+  describe.each(['yaml', 'json'] satisfies SchemaFileType[])('Type: %s', (fileType) => {
+    it.each(['simple', 'searchParams', 'headers', 'dynamicPaths', 'combinations'] satisfies SchemaName[])(
       'should correctly generate types from the schema: %s',
       async (schemaName) => {
         const filePaths = getSchemaFilePaths(schemaName, fileType);
@@ -132,7 +127,7 @@ describe('Type generation (OpenAPI)', () => {
         const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
         const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
-        expect(outputContent).toBe(normalizeTypegenFileToCompare(expectedOutputContent));
+        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
       },
     );
 
@@ -162,7 +157,7 @@ describe('Type generation (OpenAPI)', () => {
         const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
         const expectedOutputContent = await filesystem.readFile(filePaths.output.expectedWithComments, 'utf-8');
-        expect(outputContent).toBe(normalizeTypegenFileToCompare(expectedOutputContent));
+        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
       },
     );
   });
