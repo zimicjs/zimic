@@ -8,7 +8,6 @@ paths:
   /users/{userId}:
     get:
       summary: Info for a specific user
-      operationId: showUserById
       parameters:
         - name: userId
           in: path
@@ -27,7 +26,6 @@ paths:
   /users/{userId}/friends:
     get:
       summary: List of friends for a specific user
-      operationId: listUserFriends
       parameters:
         - name: userId
           in: path
@@ -46,7 +44,6 @@ paths:
   /users/{userId}/friends/{friendId}:
     get:
       summary: Info for a specific friend of a specific user
-      operationId: showUserFriendById
       parameters:
         - name: userId
           in: path
