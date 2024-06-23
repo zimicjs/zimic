@@ -196,12 +196,29 @@ function normalizeMethodRequest(request: ts.PropertySignature, context: NodeTran
 function normalizeMethodResponsesMemberType(
   responseMemberType: ts.TypeNode | undefined,
   context: NodeTransformationContext,
+  options: { isComponent: boolean },
 ) {
+  const { isComponent } = options;
+
   if (responseMemberType && ts.isTypeLiteralNode(responseMemberType)) {
     const newMembers = responseMemberType.members
       .map((member) => normalizeRequestMember(member, context))
       .filter(isDefined);
-    return ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
+
+    const newType = ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
+
+    if (isComponent) {
+      const wrappedNewType = ts.factory.createTypeReferenceNode(
+        ts.factory.createQualifiedName(
+          ts.factory.createIdentifier('HttpSchema'),
+          ts.factory.createIdentifier('Response'),
+        ),
+        [newType],
+      );
+      return wrappedNewType;
+    }
+
+    return newType;
   }
 
   return responseMemberType;
@@ -210,16 +227,16 @@ function normalizeMethodResponsesMemberType(
 export function normalizeMethodResponsesMember(
   responseMember: ts.TypeElement,
   context: NodeTransformationContext,
-  options: { excludeDefault?: boolean } = {},
+  options: { isComponent?: boolean } = {},
 ) {
-  const { excludeDefault = true } = options;
+  const { isComponent = false } = options;
 
   if (ts.isPropertySignature(responseMember)) {
-    if (excludeDefault && ts.isIdentifier(responseMember.name) && responseMember.name.text === 'default') {
+    if (!isComponent && ts.isIdentifier(responseMember.name) && responseMember.name.text === 'default') {
       return undefined;
     }
 
-    const newType = normalizeMethodResponsesMemberType(responseMember.type, context);
+    const newType = normalizeMethodResponsesMemberType(responseMember.type, context, { isComponent });
 
     return ts.factory.updatePropertySignature(
       responseMember,

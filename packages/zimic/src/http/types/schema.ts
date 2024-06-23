@@ -26,6 +26,13 @@ export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELET
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 /**
+ * A schema representing the structure of HTTP bodies.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ */
+export type HttpBodySchema<Type extends HttpBody = HttpBody> = Type;
+
+/**
  * A schema representing the structure of an HTTP request.
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
@@ -33,7 +40,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
   searchParams?: HttpSearchParamsSchema;
-  body?: HttpBody;
+  body?: HttpBodySchema;
 }
 
 /**
@@ -43,7 +50,7 @@ export interface HttpServiceRequestSchema {
  */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
-  body?: HttpBody;
+  body?: HttpBodySchema;
 }
 
 export namespace HttpServiceResponseSchema {
@@ -141,6 +148,8 @@ export namespace HttpSchema {
   export type ResponseByStatusCode<Schema extends HttpServiceResponseSchemaByStatusCode> = Schema;
   /** Validates that a type is a valid HTTP service response schema. */
   export type Response<Schema extends HttpServiceResponseSchema> = Schema;
+  /** Validates that a type is a valid HTTP body schema. */
+  export type Body<Schema extends HttpBodySchema> = Schema;
   /** Validates that a type is a valid HTTP headers schema. */
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */

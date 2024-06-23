@@ -33,6 +33,7 @@ describe('Type generation (OpenAPI)', () => {
     'headers',
     'requestBodies',
     'dynamicPaths',
+    'responses',
     'combinations',
     'examples',
   ] as const;

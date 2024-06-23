@@ -203,7 +203,7 @@ function normalizeComponent(
   }
 
   if (componentName?.text === 'responses') {
-    return normalizeMethodResponsesMember(component, context, { excludeDefault: false });
+    return normalizeMethodResponsesMember(component, context, { isComponent: true });
   }
 
   if (componentName?.text === 'requestBodies') {

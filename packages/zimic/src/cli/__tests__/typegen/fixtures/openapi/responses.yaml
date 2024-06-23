@@ -1,0 +1,90 @@
+openapi: 3.1.0
+
+info:
+  title: Responses
+  version: 1.0.0
+
+paths:
+  /user:
+    post:
+      summary: Create user
+      operationId: createUser
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: John
+                email:
+                  type: string
+                  example: john@email.com
+                password:
+                  type: string
+                  example: '123456'
+              required:
+                - email
+                - password
+
+      responses:
+        200:
+          $ref: '#/components/responses/userCreated'
+        400:
+          $ref: '#/components/responses/error'
+
+components:
+  responses:
+    userCreated:
+      description: The user was created successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                example: be8253f9-124b-4c32-b046-c25b6fd0af0c
+              name:
+                type: string
+                example: John
+              email:
+                type: string
+                example: john@email.com
+              createdAt:
+                type: string
+                example: '2024-01-01T00:00:00.000Z'
+              updatedAt:
+                type: string
+                example: '2024-01-01T00:00:00.000Z'
+            required:
+              - id
+              - email
+              - createdAt
+              - updatedAt
+        examples:
+          default:
+            value:
+              id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+              name: John
+              email: john@email.com
+              createdAt: '2024-01-01T00:00:00.000Z'
+              updatedAt: '2024-01-01T00:00:00.000Z'
+    error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+          examples:
+            default:
+              value:
+                message: Invalid limit
