@@ -1,7 +1,7 @@
 import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
-import prettier from 'prettier';
+import prettier, { Options } from 'prettier';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
@@ -12,10 +12,10 @@ import { convertYAMLToJSON } from '@tests/utils/json';
 
 import typegenFixtures from './fixtures';
 
-describe('Type generation (OpenAPI)', async () => {
+describe('Type generation (OpenAPI)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
-  const prettierConfig = await resolvedPrettierConfig(__filename);
+  let prettierConfig: Options;
 
   async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
     const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
@@ -27,8 +27,11 @@ describe('Type generation (OpenAPI)', async () => {
     await Promise.all(generationPromises);
   }
 
-  type SchemaName = 'simple' | 'searchParams' | 'headers' | 'dynamicPaths' | 'combinations';
-  type SchemaFileType = 'yaml' | 'json';
+  const schemaNames = ['simple', 'searchParams', 'headers', 'dynamicPaths', 'combinations', 'examples'] as const;
+  type SchemaName = (typeof schemaNames)[number];
+
+  const schemaFileTypes = ['yaml', 'json'] as const;
+  type SchemaFileType = (typeof schemaFileTypes)[number];
 
   function getSchemaFilePaths(schemaName: SchemaName, fileType: SchemaFileType) {
     const fileName = `${schemaName}.${fileType}`;
@@ -52,19 +55,26 @@ describe('Type generation (OpenAPI)', async () => {
   }
 
   beforeAll(async () => {
-    await filesystem.mkdir(typegenFixtures.openapi.directory, { recursive: true });
-    await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+    await Promise.all([
+      (async () => {
+        prettierConfig = await resolvedPrettierConfig(__filename);
+      })(),
 
-    const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
-      glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
-      glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
-      glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
+      (async () => {
+        await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+
+        const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
+          glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
+          glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
+          glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
+        ]);
+
+        const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
+        await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
+
+        await generateJSONSchemas(yamlSchemaFilePaths);
+      })(),
     ]);
-
-    const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
-    await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
-
-    await generateJSONSchemas(yamlSchemaFilePaths);
   });
 
   beforeEach(() => {
@@ -102,34 +112,31 @@ describe('Type generation (OpenAPI)', async () => {
     });
   });
 
-  describe.each(['yaml', 'json'] satisfies SchemaFileType[])('Type: %s', (fileType) => {
-    it.each(['simple', 'searchParams', 'headers', 'dynamicPaths', 'combinations'] satisfies SchemaName[])(
-      'should correctly generate types from the schema: %s',
-      async (schemaName) => {
-        const filePaths = getSchemaFilePaths(schemaName, fileType);
+  describe.each(schemaFileTypes)('Type: %s', (fileType) => {
+    it.each(schemaNames)('should correctly generate types from the schema: %s', async (schemaName) => {
+      const filePaths = getSchemaFilePaths(schemaName, fileType);
 
-        processArgvSpy.mockReturnValue([
-          'node',
-          'cli.js',
-          'typegen',
-          'openapi',
-          filePaths.input,
-          '--output',
-          filePaths.output.generated,
-          '--service-name',
-          'my-service',
-          '--remove-comments',
-        ]);
+      processArgvSpy.mockReturnValue([
+        'node',
+        'cli.js',
+        'typegen',
+        'openapi',
+        filePaths.input,
+        '--output',
+        filePaths.output.generated,
+        '--service-name',
+        'my-service',
+        '--remove-comments',
+      ]);
 
-        await runCLI();
+      await runCLI();
 
-        const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
-        const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+      const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+      const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
-        const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
-        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
-      },
-    );
+      const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
+      expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+    });
 
     it.each(['', '--remove-comments=false'])(
       'should support keeping comments in the generated types using: %s',

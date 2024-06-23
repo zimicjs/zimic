@@ -1,0 +1,90 @@
+openapi: 3.1.0
+
+info:
+  title: Examples
+  version: 1.0.0
+
+paths:
+  /users:
+    post:
+      summary: Create user
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: John
+                email:
+                  type: string
+                  example: john@email.com
+                password:
+                  type: string
+                  example: '123456'
+              required:
+                - email
+                - password
+            examples:
+              default:
+                $ref: '#/components/examples/CreateUserBody'
+
+      responses:
+        200:
+          description: The user was created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  createdAt:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - email
+                  - createdAt
+                  - updatedAt
+            examples:
+              default:
+                $ref: '#/components/examples/User'
+        400:
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+              examples:
+                default:
+                  $ref: '#/components/examples/Error'
+
+components:
+  examples:
+    CreateUserBody:
+      value:
+        name: John
+        email: john@email.com
+        password: '123456'
+    User:
+      value:
+        id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name: John
+        email:
+    Error:
+      value:
+        message: Invalid limit
