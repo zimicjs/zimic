@@ -13,6 +13,9 @@ servers:
 tags:
   - name: users
 
+security:
+  - bearerAuth: []
+
 paths:
   /users:
     post:
@@ -162,3 +165,11 @@ paths:
                 default:
                   value:
                     message: Invalid limit
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The authorization token
