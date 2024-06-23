@@ -27,7 +27,15 @@ describe('Type generation (OpenAPI)', () => {
     await Promise.all(generationPromises);
   }
 
-  const schemaNames = ['simple', 'searchParams', 'headers', 'dynamicPaths', 'combinations', 'examples'] as const;
+  const schemaNames = [
+    'simple',
+    'searchParams',
+    'headers',
+    'requestBodies',
+    'dynamicPaths',
+    'combinations',
+    'examples',
+  ] as const;
   type SchemaName = (typeof schemaNames)[number];
 
   const schemaFileTypes = ['yaml', 'json'] as const;

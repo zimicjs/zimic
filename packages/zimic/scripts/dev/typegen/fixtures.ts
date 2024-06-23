@@ -32,7 +32,6 @@ async function generateBaseFixtureTypes() {
       ...otherArguments,
     ]);
 
-    await runCommand('pnpm', ['style:format', outputFilePath]);
     await runCommand('pnpm', ['lint', outputFilePath]);
   }
 }

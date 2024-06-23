@@ -9,6 +9,7 @@ import {
   normalizeSearchParamType,
   normalizeHeaderType,
   normalizeMethodResponsesMember,
+  normalizeRequestBody,
 } from './methods';
 import { isNeverType, isUnknownType } from './types';
 
@@ -119,6 +120,31 @@ export function renameComponentReferences(
   return node;
 }
 
+function normalizeRequestBodyComponent(component: ts.PropertySignature, context: NodeTransformationContext) {
+  if (!component.type || !ts.isTypeLiteralNode(component.type)) {
+    return undefined;
+  }
+
+  const newMembers = component.type.members
+    .map((member) => (ts.isPropertySignature(member) ? normalizeRequestBody(member.type, context) : member))
+    .filter(isDefined);
+
+  const newType = ts.factory.updateTypeLiteralNode(component.type, ts.factory.createNodeArray(newMembers));
+
+  const wrappedNewType = ts.factory.createTypeReferenceNode(
+    ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Request')),
+    [newType],
+  );
+
+  return ts.factory.updatePropertySignature(
+    component,
+    component.modifiers,
+    component.name,
+    component.questionToken,
+    wrappedNewType,
+  );
+}
+
 function normalizeComponent(
   component: ts.TypeElement,
   componentName: ts.Identifier | undefined,
@@ -178,6 +204,10 @@ function normalizeComponent(
 
   if (componentName?.text === 'responses') {
     return normalizeMethodResponsesMember(component, context, { excludeDefault: false });
+  }
+
+  if (componentName?.text === 'requestBodies') {
+    return normalizeRequestBodyComponent(component, context);
   }
 
   return ts.factory.updatePropertySignature(

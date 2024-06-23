@@ -112,7 +112,7 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
   return undefined;
 }
 
-function normalizeRequestBody(requestBody: ts.TypeNode | undefined, context: NodeTransformationContext) {
+export function normalizeRequestBody(requestBody: ts.TypeNode | undefined, context: NodeTransformationContext) {
   if (requestBody && ts.isTypeLiteralNode(requestBody)) {
     const newType = requestBody.members.map((member) => normalizeRequestBodyMember(member, context)).find(isDefined);
     return newType;
@@ -184,6 +184,10 @@ function normalizeMethodRequest(request: ts.PropertySignature, context: NodeTran
   if (request.type && ts.isTypeLiteralNode(request.type)) {
     const newMembers = request.type.members.map((member) => normalizeRequestMember(member, context)).filter(isDefined);
     newType = ts.factory.updateTypeLiteralNode(request.type, ts.factory.createNodeArray(newMembers));
+  }
+
+  if (request.type && ts.isIndexedAccessTypeNode(request.type)) {
+    newType = renameComponentReferences(request.type, context);
   }
 
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, newQuestionToken, newType);
@@ -383,6 +387,9 @@ function normalizeMethodRequestTypeWithParameters(
     .filter((member): member is ts.PropertySignature => isDefined(member) && !isNeverTypeMember(member));
 
   if (newTypeMembers.length === 0) {
+    if (ts.isIndexedAccessTypeNode(methodMemberType)) {
+      return renameComponentReferences(methodMemberType, context);
+    }
     return undefined;
   }
 

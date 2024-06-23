@@ -6,6 +6,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: MyServiceOperations['createUser'];
   };
 }>;
+
 export interface MyServiceOperations {
   listUsers: HttpSchema.Method<{
     request: {
