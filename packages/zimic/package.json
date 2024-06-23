@@ -62,6 +62,7 @@
   "scripts": {
     "dev": "pnpm build --watch",
     "cli": "node ./dist/cli.js",
+    "typegen:fixtures": "tsx ./scripts/dev/typegen/fixtures.ts",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -71,7 +72,6 @@
     "test": "dotenv -v NODE_ENV=test -- vitest",
     "test:turbo": "pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "typegen:fixtures": "tsx ./scripts/dev/typegen/fixtures.ts",
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall.js')}catch(error){console.error(error)}\"",
