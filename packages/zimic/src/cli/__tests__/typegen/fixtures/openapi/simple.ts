@@ -1,57 +1,58 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/user': {
-    GET: {
-      request: {
-        searchParams: {
-          limit: `${number}`;
-        };
-        headers: {
-          authorization: string;
-        };
-      };
-      response: {
-        200: {
-          body: {
-            id: string;
-            name?: string;
-            email: string;
-            createdAt: string;
-            updatedAt: string;
-          };
-        };
-        400: {
-          body: {
-            message: string;
-          };
-        };
-      };
-    };
-    POST: {
-      request: {
-        body: {
-          name?: string;
-          email: string;
-          password: string;
-        };
-      };
-      response: {
-        200: {
-          body: {
-            id: string;
-            name?: string;
-            email: string;
-            createdAt: string;
-            updatedAt: string;
-          };
-        };
-        400: {
-          body: {
-            message: string;
-          };
-        };
-      };
-    };
+  '/users': {
+    GET: MyServiceOperations['listUsers'];
+    POST: MyServiceOperations['createUser'];
   };
 }>;
+export interface MyServiceOperations {
+  listUsers: HttpSchema.Method<{
+    request: {
+      searchParams: {
+        limit: `${number}`;
+      };
+    };
+    response: {
+      200: {
+        body: {
+          id: string;
+          name?: string;
+          email: string;
+          createdAt: string;
+          updatedAt: string;
+        }[];
+      };
+      400: {
+        body: {
+          message: string;
+        };
+      };
+    };
+  }>;
+  createUser: HttpSchema.Method<{
+    request: {
+      body: {
+        name?: string;
+        email: string;
+        password: string;
+      };
+    };
+    response: {
+      200: {
+        body: {
+          id: string;
+          name?: string;
+          email: string;
+          createdAt: string;
+          updatedAt: string;
+        };
+      };
+      400: {
+        body: {
+          message: string;
+        };
+      };
+    };
+  }>;
+}

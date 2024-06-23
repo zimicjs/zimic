@@ -21,12 +21,17 @@ function normalizeOperation(operation: ts.TypeElement, context: NodeTransformati
 
   const newType = normalizeMethodTypeLiteral(operation.type, context);
 
+  const wrappedNewType = ts.factory.createTypeReferenceNode(
+    ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Method')),
+    [newType],
+  );
+
   return ts.factory.updatePropertySignature(
     operation,
     operation.modifiers,
     operation.name,
     operation.questionToken,
-    newType,
+    wrappedNewType,
   );
 }
 

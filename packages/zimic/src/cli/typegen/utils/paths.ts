@@ -32,7 +32,11 @@ export function normalizePaths(paths: ts.InterfaceDeclaration, context: NodeTran
 
   const newMembers = paths.members.map((path) => normalizePath(path, context));
   const newType = ts.factory.createTypeLiteralNode(ts.factory.createNodeArray(newMembers));
-  const wrappedNewType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSchema.Paths'), [newType]);
+
+  const wrappedNewType = ts.factory.createTypeReferenceNode(
+    ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Paths')),
+    [newType],
+  );
 
   return ts.factory.createTypeAliasDeclaration(paths.modifiers, newIdentifier, paths.typeParameters, wrappedNewType);
 }

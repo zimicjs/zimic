@@ -14,9 +14,10 @@ tags:
   - name: users
 
 paths:
-  /user:
+  /users:
     post:
       summary: Create user
+      operationId: createUser
       tags:
         - users
 
@@ -68,6 +69,14 @@ paths:
                   - email
                   - createdAt
                   - updatedAt
+            examples:
+              default:
+                value:
+                  id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                  name: John
+                  email: john@email.com
+                  createdAt: '2024-01-01T00:00:00.000Z'
+                  updatedAt: '2024-01-01T00:00:00.000Z'
         400:
           description: Error
           content:
@@ -79,19 +88,18 @@ paths:
                 properties:
                   message:
                     type: string
+              examples:
+                default:
+                  value:
+                    message: Email is already in use
 
     get:
       summary: List users
+      operationId: listUsers
       tags:
         - users
 
       parameters:
-        - name: authorization
-          in: header
-          description: The authorization token
-          required: true
-          schema:
-            type: string
         - name: limit
           in: query
           description: How many items to return
@@ -107,28 +115,38 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                  name:
-                    type: string
-                    example: John
-                  email:
-                    type: string
-                    example: john@email.com
-                  createdAt:
-                    type: string
-                    example: '2024-01-01T00:00:00.000Z'
-                  updatedAt:
-                    type: string
-                    example: '2024-01-01T00:00:00.000Z'
-                required:
-                  - id
-                  - email
-                  - createdAt
-                  - updatedAt
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                    name:
+                      type: string
+                      example: John
+                    email:
+                      type: string
+                      example: john@email.com
+                    createdAt:
+                      type: string
+                      example: '2024-01-01T00:00:00.000Z'
+                    updatedAt:
+                      type: string
+                      example: '2024-01-01T00:00:00.000Z'
+                  required:
+                    - id
+                    - email
+                    - createdAt
+                    - updatedAt
+            examples:
+              default:
+                value:
+                  - id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                    name: John
+                    email: john@email.com
+                    createdAt: '2024-01-01T00:00:00.000Z'
+                    updatedAt: '2024-01-01T00:00:00.000Z'
         400:
           description: Error
           content:
@@ -140,3 +158,7 @@ paths:
                 properties:
                   message:
                     type: string
+              examples:
+                default:
+                  value:
+                    message: Invalid limit
