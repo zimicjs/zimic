@@ -1,6 +1,23 @@
 import type { HttpSchema, HttpSearchParamSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
+  '/users-with-literal-component-search-params-in-path': {
+    GET: {
+      request: {
+        searchParams: {
+          search?: MyServiceComponents['parameters']['literalSearch'];
+          order?: MyServiceComponents['parameters']['literalOrder'];
+          limit: MyServiceComponents['parameters']['literalLimit'];
+          archived?: MyServiceComponents['parameters']['literalArchived'];
+        };
+      };
+      response: {
+        200: {
+          body: MyServiceComponents['schemas']['User'][];
+        };
+      };
+    };
+  };
   '/users-with-literal-component-search-params': {
     GET: {
       request: {
@@ -56,7 +73,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: {
-          search?: string | undefined;
+          search?: (string | undefined) | string[];
           order?: 'asc' | 'desc';
           limit: `${number}`;
           archived?: `${boolean}`;
@@ -70,19 +87,20 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
 }>;
+
 export interface MyServiceComponents {
   schemas: {
     User: {
       id: number;
       name: string;
     };
-    search: string | null;
+    search: (string | null) | string[];
     order: 'asc' | 'desc';
     limit: number;
     archived: boolean;
   };
   parameters: {
-    literalSearch: string | undefined;
+    literalSearch: (string | undefined) | string[];
     literalOrder: HttpSearchParamSerialized<MyServiceComponents['schemas']['order']>;
     literalLimit: `${number}`;
     literalArchived: `${boolean}`;
