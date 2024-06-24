@@ -33,6 +33,8 @@ describe('Type generation (OpenAPI)', () => {
     'headers',
     'requestBodies',
     'dynamicPaths',
+    'pathItems',
+    'security',
     'responses',
     'combinations',
     'examples',

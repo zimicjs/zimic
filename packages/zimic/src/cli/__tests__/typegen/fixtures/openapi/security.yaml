@@ -1,0 +1,114 @@
+openapi: 3.1.0
+
+info:
+  title: Security
+  version: 1.0.0
+
+paths:
+  /users:
+    post:
+      summary: Create user
+      security:
+        - apiKey: []
+        - bearerAuth: []
+        - oauth2: [create:users]
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUser'
+
+      responses:
+        200:
+          description: The user was created successfully
+
+  /users-with-bearer-auth:
+    post:
+      summary: Create user with bearer auth
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUser'
+
+      responses:
+        200:
+          description: The user was created successfully
+
+  /users-with-api-key:
+    post:
+      summary: Create user with API key
+      security:
+        - apiKey: []
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUser'
+
+      responses:
+        200:
+          description: The user was created successfully
+
+  /users-with-bearer-oauth2:
+    post:
+      summary: Create user with bearer OAuth2
+      security:
+        - oauth2: [create:users]
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUser'
+
+      responses:
+        200:
+          description: The user was created successfully
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The authorization token
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-Key
+      description: The API key
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.com/oauth/authorize
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            create:users: Grants write access
+
+  schemas:
+    createUser:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          example: '123456'
+      required:
+        - email
+        - password
