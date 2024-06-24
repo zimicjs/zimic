@@ -1,8 +1,10 @@
 import glob from 'fast-glob';
+import filesystem from 'fs/promises';
 import path from 'path';
 
 import typegenFixtures from '@/cli/__tests__/typegen/fixtures';
 import { runCommand } from '@/utils/processes';
+import { TEST_TYPEGEN_ROOT_IMPORT_MODULE } from '@tests/setup/constants';
 
 async function generateBaseFixtureTypes() {
   const [fixtureType, fixtureName, ...otherArguments] = process.argv.slice(2);
@@ -33,6 +35,12 @@ async function generateBaseFixtureTypes() {
     ]);
 
     await runCommand('pnpm', ['lint', outputFilePath]);
+
+    const outputFileContent = await filesystem.readFile(outputFilePath, 'utf-8');
+    await filesystem.writeFile(
+      outputFilePath,
+      outputFileContent.replace(/ from 'zimic';/, ` from '${TEST_TYPEGEN_ROOT_IMPORT_MODULE}';`),
+    );
   }
 }
 

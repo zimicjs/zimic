@@ -3,6 +3,8 @@
 import path from 'path';
 import { UserConfig, defineConfig } from 'vitest/config';
 
+import { TEST_TYPEGEN_ROOT_IMPORT_MODULE } from './tests/setup/constants';
+
 export const defaultConfig: UserConfig = {
   publicDir: './public',
   test: {
@@ -37,7 +39,7 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': "'@/index'",
+    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': `'${TEST_TYPEGEN_ROOT_IMPORT_MODULE}'`,
   },
   resolve: {
     alias: {
