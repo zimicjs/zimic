@@ -32,6 +32,7 @@ describe('Type generation (OpenAPI)', () => {
     'searchParams',
     'headers',
     'requestBodies',
+    'binary',
     'dynamicPaths',
     'pathItems',
     'security',

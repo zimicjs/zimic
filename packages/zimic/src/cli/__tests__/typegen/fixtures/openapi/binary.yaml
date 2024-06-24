@@ -1,0 +1,27 @@
+openapi: 3.1.0
+
+info:
+  title: Binary Bodies
+  version: 1.0.0
+
+paths:
+  /upload:
+    post:
+      summary: Upload a binary file
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+
+      responses:
+        200:
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                nullable: true

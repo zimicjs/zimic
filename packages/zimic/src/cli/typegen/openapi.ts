@@ -100,6 +100,12 @@ async function generateTypesFromOpenAPISchema({
     enumValues: false,
     enum: false,
     silent: true,
+
+    transform(schemaObject) {
+      if (schemaObject.format === 'binary') {
+        return ts.factory.createTypeReferenceNode('Blob');
+      }
+    },
   });
 
   const pascalServiceName = toPascalCase(serviceName);
