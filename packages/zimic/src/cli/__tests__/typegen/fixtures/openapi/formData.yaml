@@ -1,0 +1,43 @@
+openapi: 3.1.0
+
+info:
+  title: Form Data
+  version: 1.0.0
+
+paths:
+  /upload:
+    post:
+      summary: Upload a form data file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                content:
+                  type: string
+                  format: binary
+                  nullable: true
+              required:
+                - name
+                - content
+
+      responses:
+        200:
+          description: Success
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  content:
+                    type: string
+                    format: binary
+                    nullable: true
+                required:
+                  - content

@@ -17,7 +17,7 @@ export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE
 
 export interface NodeTransformationContext {
   serviceName: string;
-  typeImports: Set<'HttpSchema' | 'HttpSearchParamSerialized' | 'HttpHeaderSerialized'>;
+  typeImports: Set<'HttpSchema' | 'HttpFormData' | 'HttpSearchParamSerialized' | 'HttpHeaderSerialized'>;
 }
 
 function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext) {
@@ -47,6 +47,12 @@ function addImportDeclarations(nodes: ts.Node[], context: NodeTransformationCont
   if (context.typeImports.has('HttpSchema')) {
     namedTypeImports.push(
       ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
+    );
+  }
+
+  if (context.typeImports.has('HttpFormData')) {
+    namedTypeImports.push(
+      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpFormData')),
     );
   }
 

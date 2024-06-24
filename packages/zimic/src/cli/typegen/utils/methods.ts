@@ -98,7 +98,17 @@ export function normalizeSearchParamType(node: ts.TypeNode): ts.TypeNode {
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestBodyMember)) {
     const newIdentifier = ts.factory.createIdentifier('body');
-    const newType = requestBodyMember.type ? renameComponentReferences(requestBodyMember.type, context) : undefined;
+
+    if (!requestBodyMember.type) {
+      return undefined;
+    }
+
+    let newType = renameComponentReferences(requestBodyMember.type, context);
+
+    if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'multipart/form-data') {
+      context.typeImports.add('HttpFormData');
+      newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [newType]);
+    }
 
     return ts.factory.updatePropertySignature(
       requestBodyMember,

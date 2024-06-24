@@ -18,7 +18,7 @@ describe('HttpFormData', async () => {
     const formData = new HttpFormData<{
       file?: File;
       blob: Blob[];
-      description: string;
+      description: string | null;
     }>();
 
     formData.set('file', file);
@@ -45,14 +45,14 @@ describe('HttpFormData', async () => {
     formData.set('description', description);
 
     const descriptionField = formData.get('description');
-    expectTypeOf(descriptionField).toEqualTypeOf<string>();
+    expectTypeOf(descriptionField).toEqualTypeOf<string | null>();
     expect(descriptionField).toEqual(description);
 
     const otherDescription = 'other description';
     formData.set('description', otherDescription);
 
     const otherDescriptionField = formData.get('description');
-    expectTypeOf(otherDescriptionField).toEqualTypeOf<string>();
+    expectTypeOf(otherDescriptionField).toEqualTypeOf<string | null>();
     expect(otherDescriptionField).toEqual(otherDescription);
   });
 
