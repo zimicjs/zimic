@@ -208,6 +208,8 @@ function normalizeMethodResponsesMemberType(
     const newType = ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
 
     if (isComponent) {
+      context.typeImports.add('HttpSchema');
+
       const wrappedNewType = ts.factory.createTypeReferenceNode(
         ts.factory.createQualifiedName(
           ts.factory.createIdentifier('HttpSchema'),
@@ -303,7 +305,7 @@ export function wrapUncheckedHttpSearchParamIndexedAccessNode(
     return rootIndexedAccessNode;
   }
 
-  context.additionalImports.add('HttpSearchParamSerialized');
+  context.typeImports.add('HttpSearchParamSerialized');
 
   const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamSerialized'), [
     rootIndexedAccessNode,
@@ -325,7 +327,7 @@ export function wrapUncheckedHttpHeaderIndexedAccessNode(
     return rootIndexedAccessNode;
   }
 
-  context.additionalImports.add('HttpHeaderSerialized');
+  context.typeImports.add('HttpHeaderSerialized');
 
   const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpHeaderSerialized'), [
     rootIndexedAccessNode,

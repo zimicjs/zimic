@@ -11,6 +11,7 @@ import {
   normalizeMethodResponsesMember,
   normalizeRequestBody,
 } from './methods';
+import { normalizePath } from './paths';
 import { isNeverType, isUnknownType } from './types';
 
 function createComponentsIdentifier(serviceName: string) {
@@ -131,6 +132,8 @@ function normalizeRequestBodyComponent(component: ts.PropertySignature, context:
 
   const newType = ts.factory.updateTypeLiteralNode(component.type, ts.factory.createNodeArray(newMembers));
 
+  context.typeImports.add('HttpSchema');
+
   const wrappedNewType = ts.factory.createTypeReferenceNode(
     ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Request')),
     [newType],
@@ -208,6 +211,10 @@ function normalizeComponent(
 
   if (componentName?.text === 'requestBodies') {
     return normalizeRequestBodyComponent(component, context);
+  }
+
+  if (componentName?.text === 'pathItems') {
+    return normalizePath(component, context, { isComponent: true });
   }
 
   return ts.factory.updatePropertySignature(

@@ -9,17 +9,46 @@ export function createPathsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Schema`);
 }
 
-function normalizePath(path: ts.TypeElement, context: NodeTransformationContext) {
+export function normalizePath(
+  path: ts.TypeElement,
+  context: NodeTransformationContext,
+  options: {
+    isComponent?: boolean;
+  } = {},
+) {
+  const { isComponent = false } = options;
+
   if (ts.isPropertySignature(path) && path.type && ts.isTypeLiteralNode(path.type)) {
-    const newIdentifier = ts.isStringLiteral(path.name)
-      ? ts.factory.createStringLiteral(path.name.text.replace(/{([^}]+)}/g, ':$1'))
-      : path.name;
+    const newIdentifier =
+      ts.isStringLiteral(path.name) && !isComponent
+        ? ts.factory.createStringLiteral(path.name.text.replace(/{([^}]+)}/g, ':$1'))
+        : path.name;
 
     const newTypeMembers = path.type.members
       .map((pathMethod) => normalizeMethod(pathMethod, context))
       .filter(isDefined);
 
     const newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newTypeMembers));
+
+    if (isComponent) {
+      context.typeImports.add('HttpSchema');
+
+      const wrappedNewType = ts.factory.createTypeReferenceNode(
+        ts.factory.createQualifiedName(
+          ts.factory.createIdentifier('HttpSchema'),
+          ts.factory.createIdentifier('Methods'),
+        ),
+        [newType],
+      );
+
+      return ts.factory.updatePropertySignature(
+        path,
+        path.modifiers,
+        newIdentifier,
+        path.questionToken,
+        wrappedNewType,
+      );
+    }
 
     return ts.factory.updatePropertySignature(path, path.modifiers, newIdentifier, path.questionToken, newType);
   }
@@ -32,6 +61,8 @@ export function normalizePaths(paths: ts.InterfaceDeclaration, context: NodeTran
 
   const newMembers = paths.members.map((path) => normalizePath(path, context));
   const newType = ts.factory.createTypeLiteralNode(ts.factory.createNodeArray(newMembers));
+
+  context.typeImports.add('HttpSchema');
 
   const wrappedNewType = ts.factory.createTypeReferenceNode(
     ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Paths')),
