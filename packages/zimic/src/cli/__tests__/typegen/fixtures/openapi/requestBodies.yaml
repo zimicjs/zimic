@@ -22,19 +22,24 @@ paths:
                 properties:
                   id:
                     type: string
-                    example: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                    examples:
+                      - be8253f9-124b-4c32-b046-c25b6fd0af0c
                   name:
                     type: string
-                    example: John
+                    examples:
+                      - John
                   email:
                     type: string
-                    example: john@email.com
+                    examples:
+                      - john@email.com
                   createdAt:
                     type: string
-                    example: '2024-01-01T00:00:00.000Z'
+                    examples:
+                      - '2024-01-01T00:00:00.000Z'
                   updatedAt:
                     type: string
-                    example: '2024-01-01T00:00:00.000Z'
+                    examples:
+                      - '2024-01-01T00:00:00.000Z'
                 required:
                   - id
                   - email
@@ -75,13 +80,16 @@ components:
             properties:
               name:
                 type: string
-                example: John
+                examples:
+                  - John
               email:
                 type: string
-                example: john@email.com
+                examples:
+                  - john@email.com
               password:
                 type: string
-                example: '123456'
+                examples:
+                  - '123456'
             required:
               - email
               - password

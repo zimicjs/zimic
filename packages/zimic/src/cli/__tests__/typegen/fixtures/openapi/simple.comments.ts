@@ -20,30 +20,10 @@ export interface MyServiceOperations {
       /** Success */
       200: {
         body: {
-          /**
-           * @example
-           *   be8253f9-124b-4c32-b046-c25b6fd0af0c
-           */
           id: string;
-          /**
-           * @example
-           *   John;
-           */
           name?: string;
-          /**
-           * @example
-           *   john@email.com
-           */
           email: string;
-          /**
-           * @example
-           *   2024-01-01T00:00:00.000Z
-           */
           createdAt: string;
-          /**
-           * @example
-           *   2024-01-01T00:00:00.000Z
-           */
           updatedAt: string;
         }[];
       };
@@ -59,20 +39,8 @@ export interface MyServiceOperations {
     /** The user to create */
     request: {
       body: {
-        /**
-         * @example
-         *   John;
-         */
         name?: string;
-        /**
-         * @example
-         *   john@email.com
-         */
         email: string;
-        /**
-         * @example
-         *   123456;
-         */
         password: string;
       };
     };
@@ -80,30 +48,10 @@ export interface MyServiceOperations {
       /** The user was created successfully */
       200: {
         body: {
-          /**
-           * @example
-           *   be8253f9-124b-4c32-b046-c25b6fd0af0c
-           */
           id: string;
-          /**
-           * @example
-           *   John;
-           */
           name?: string;
-          /**
-           * @example
-           *   john@email.com
-           */
           email: string;
-          /**
-           * @example
-           *   2024-01-01T00:00:00.000Z
-           */
           createdAt: string;
-          /**
-           * @example
-           *   2024-01-01T00:00:00.000Z
-           */
           updatedAt: string;
         };
       };

@@ -23,7 +23,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
 }>;
-
 export interface MyServiceComponents {
   requestBodies: {
     createUser: HttpSchema.Request<{

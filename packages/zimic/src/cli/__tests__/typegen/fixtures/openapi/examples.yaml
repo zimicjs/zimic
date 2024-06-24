@@ -18,13 +18,16 @@ paths:
               properties:
                 name:
                   type: string
-                  example: John
+                  examples:
+                    - John
                 email:
                   type: string
-                  example: john@email.com
+                  examples:
+                    - john@email.com
                 password:
                   type: string
-                  example: '123456'
+                  examples:
+                    - '123456'
               required:
                 - email
                 - password

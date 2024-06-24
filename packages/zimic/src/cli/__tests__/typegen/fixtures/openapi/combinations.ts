@@ -47,7 +47,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
 }>;
-
 export interface MyServiceComponents {
   schemas: {
     UserType: 'user' | 'friend';
@@ -77,7 +76,6 @@ export interface MyServiceComponents {
       MyServiceComponents['schemas']['FriendsWithCount'];
     UserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
     DiscriminatedUserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     NotUser: any;
   };
 }

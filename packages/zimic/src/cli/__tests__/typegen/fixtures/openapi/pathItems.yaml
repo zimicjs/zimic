@@ -23,7 +23,8 @@ components:
                 properties:
                   name:
                     type: string
-                    example: John
+                    examples:
+                      - John
 
         responses:
           200:
@@ -35,7 +36,9 @@ components:
                   properties:
                     id:
                       type: string
-                      example: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                      examples:
+                        - be8253f9-124b-4c32-b046-c25b6fd0af0c
                     name:
                       type: string
-                      example: John
+                      examples:
+                        - John

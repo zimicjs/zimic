@@ -86,7 +86,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
 }>;
-
 export interface MyServiceComponents {
   schemas: {
     User: {
