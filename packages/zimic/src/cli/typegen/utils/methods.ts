@@ -105,6 +105,29 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
 
     let newType = renameComponentReferences(requestBodyMember.type, context);
 
+    const containsRedundantNullUnion =
+      ts.isUnionTypeNode(newType) &&
+      newType.types.some((type) => ts.isLiteralTypeNode(type) && isNullType(type.literal)) &&
+      newType.types.some(
+        (type) =>
+          ts.isParenthesizedTypeNode(type) &&
+          ts.isUnionTypeNode(type.type) &&
+          type.type.types.some((subType) => ts.isLiteralTypeNode(subType) && isNullType(subType.literal)),
+      );
+
+    if (ts.isUnionTypeNode(newType) && containsRedundantNullUnion) {
+      const typesWithoutRedundantNullUnion = newType.types
+        .filter((type) => !(ts.isLiteralTypeNode(type) && isNullType(type.literal)))
+        .flatMap((type) => {
+          if (ts.isParenthesizedTypeNode(type) && ts.isUnionTypeNode(type.type)) {
+            return type.type.types;
+          }
+          return [type];
+        });
+
+      newType = ts.factory.createUnionTypeNode(typesWithoutRedundantNullUnion);
+    }
+
     if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'multipart/form-data') {
       context.typeImports.add('HttpFormData');
       newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [newType]);

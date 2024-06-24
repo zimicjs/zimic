@@ -109,7 +109,13 @@ async function generateTypesFromOpenAPISchema({
 
     transform(schemaObject) {
       if (schemaObject.format === 'binary') {
-        return ts.factory.createTypeReferenceNode('Blob');
+        const blobType = ts.factory.createTypeReferenceNode('Blob');
+
+        if (schemaObject.nullable) {
+          return ts.factory.createUnionTypeNode([blobType, ts.factory.createLiteralTypeNode(ts.factory.createNull())]);
+        }
+
+        return blobType;
       }
     },
   });
