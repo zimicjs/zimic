@@ -1,4 +1,4 @@
-import filesystem from 'fs-extra';
+import filesystem from 'fs/promises';
 import { z } from 'zod';
 
 import { MetadataFileEntry } from '@/config/release-config';
@@ -9,9 +9,12 @@ import { MetadataFileContent, Version } from '../types';
 import { formatVersion, parseVersion } from './version';
 
 async function readMetadataFileContent(file: MetadataFileEntry) {
-  const rawFileContent = (await filesystem.readJSON(file.path)) as unknown;
+  const stringifiedFileContent = await filesystem.readFile(file.path, 'utf8');
+  const rawFileContent = JSON.parse(stringifiedFileContent) as unknown;
+
   const metadataFileSchema = z.object({ [file.versionKey]: z.string() }).passthrough();
   metadataFileSchema.parse(rawFileContent);
+
   return rawFileContent as MetadataFileContent satisfies z.infer<typeof metadataFileSchema>;
 }
 
@@ -27,8 +30,9 @@ export function getPrimaryVersion(metadataFiles: MetadataFileEntry[], metadataFi
   return primaryVersion;
 }
 
-async function writeMetadataFileContent(file: MetadataFileEntry, upgradedFileContent: MetadataFileContent) {
-  await filesystem.writeJSON(file.path, upgradedFileContent, { spaces: 2 });
+async function writeMetadataFileContent(file: MetadataFileEntry, fileContent: MetadataFileContent) {
+  const stringifiedFileContent = JSON.stringify(fileContent, null, 2);
+  await filesystem.writeFile(file.path, stringifiedFileContent);
 }
 
 export async function writeMetadataFileContents(

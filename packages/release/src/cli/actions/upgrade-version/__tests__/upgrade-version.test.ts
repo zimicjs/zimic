@@ -1,4 +1,4 @@
-import filesystem from 'fs-extra';
+import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/release-config';
@@ -34,8 +34,8 @@ describe('Upgrade version command', () => {
     ],
   });
 
-  const readJSONSpy = vi.spyOn(filesystem, 'readJSON');
-  const writeJSONSpy = vi.spyOn(filesystem, 'writeJSON');
+  const readFileSpy = vi.spyOn(filesystem, 'readFile');
+  const writeFileSpy = vi.spyOn(filesystem, 'writeFile');
 
   beforeEach(() => {
     metadataFileContent.version = '0.0.0';
@@ -43,16 +43,16 @@ describe('Upgrade version command', () => {
     config.metadata[0].partialVersions.includeInVersionKey = true;
     config.metadata[0].partialVersions.appendTo = [];
 
-    readJSONSpy.mockClear();
-    readJSONSpy.mockImplementation((filePath) => {
+    readFileSpy.mockClear();
+    readFileSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
-        return Promise.resolve({ ...metadataFileContent });
+        return Promise.resolve(JSON.stringify(metadataFileContent));
       }
       return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
-    writeJSONSpy.mockClear();
-    writeJSONSpy.mockImplementation((filePath) => {
+    writeFileSpy.mockClear();
+    writeFileSpy.mockImplementation((filePath) => {
       if (filePath === metadataFilePath) {
         return Promise.resolve();
       }
@@ -63,17 +63,17 @@ describe('Upgrade version command', () => {
   });
 
   function expectUpgradedMetadataFiles(upgradedVersion: string, extraUpgradedFileContent?: MetadataFileContent) {
-    expect(readJSONSpy).toHaveBeenCalledTimes(1);
-    expect(readJSONSpy).toHaveBeenCalledWith(metadataFilePath);
+    expect(readFileSpy).toHaveBeenCalledTimes(1);
+    expect(readFileSpy).toHaveBeenCalledWith(metadataFilePath, 'utf8');
 
-    expect(writeJSONSpy).toHaveBeenCalledTimes(1);
+    expect(writeFileSpy).toHaveBeenCalledTimes(1);
 
     const upgradedMetadataFileContent: MetadataFileContent = {
       ...metadataFileContent,
       ...extraUpgradedFileContent,
       version: upgradedVersion,
     };
-    expect(writeJSONSpy).toHaveBeenCalledWith(metadataFilePath, upgradedMetadataFileContent, { spaces: 2 });
+    expect(writeFileSpy).toHaveBeenCalledWith(metadataFilePath, JSON.stringify(upgradedMetadataFileContent, null, 2));
 
     expect(runCommandSpy).toHaveBeenCalledTimes(1);
     expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
@@ -225,9 +225,9 @@ describe('Upgrade version command', () => {
       const expectedError = new MissingRequiredPartialLabelError();
       await expect(upgradePromise).rejects.toThrowError(expectedError);
 
-      expect(readJSONSpy).toHaveBeenCalledTimes(1);
-      expect(readJSONSpy).toHaveBeenCalledWith(metadataFilePath);
-      expect(writeJSONSpy).not.toHaveBeenCalled();
+      expect(readFileSpy).toHaveBeenCalledTimes(1);
+      expect(readFileSpy).toHaveBeenCalledWith(metadataFilePath, 'utf8');
+      expect(writeFileSpy).not.toHaveBeenCalled();
       expect(runCommandSpy).not.toHaveBeenCalled();
     });
   });
@@ -245,8 +245,8 @@ describe('Upgrade version command', () => {
       expect(upgradeResult.isPartialUpgrade).toBe(true);
       expectUpgradedMetadataFiles(upgradedVersionWithPartialLabel);
 
-      readJSONSpy.mockClear();
-      writeJSONSpy.mockClear();
+      readFileSpy.mockClear();
+      writeFileSpy.mockClear();
       runCommandSpy.mockClear();
 
       metadataFileContent.version = '1.2.1';
@@ -277,8 +277,8 @@ describe('Upgrade version command', () => {
         description: descriptionWithAppendedPartialVersion,
       });
 
-      readJSONSpy.mockClear();
-      writeJSONSpy.mockClear();
+      readFileSpy.mockClear();
+      writeFileSpy.mockClear();
       runCommandSpy.mockClear();
 
       metadataFileContent.version = upgradedVersion;
@@ -305,9 +305,9 @@ describe('Upgrade version command', () => {
       const expectedError = new AppendPartialVersionToNonStringError();
       await expect(upgradePromise).rejects.toThrowError(expectedError);
 
-      expect(readJSONSpy).toHaveBeenCalledTimes(1);
-      expect(readJSONSpy).toHaveBeenCalledWith(metadataFilePath);
-      expect(writeJSONSpy).not.toHaveBeenCalled();
+      expect(readFileSpy).toHaveBeenCalledTimes(1);
+      expect(readFileSpy).toHaveBeenCalledWith(metadataFilePath, 'utf8');
+      expect(writeFileSpy).not.toHaveBeenCalled();
       expect(runCommandSpy).not.toHaveBeenCalled();
     });
   });

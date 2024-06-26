@@ -9,11 +9,11 @@ import {
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
 } from './types/public';
 
-function matchLocalHttpInterceptorOptions(options: HttpInterceptorOptions): options is LocalHttpInterceptorOptions {
+function isLocalHttpInterceptorOptions(options: HttpInterceptorOptions) {
   return options.type === 'local';
 }
 
-function matchRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): options is RemoteHttpInterceptorOptions {
+function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
   return options.type === 'remote';
 }
 
@@ -40,9 +40,9 @@ export function createHttpInterceptor<Schema extends HttpServiceSchema>(
 ): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
   const type = options.type;
 
-  if (matchLocalHttpInterceptorOptions(options)) {
+  if (isLocalHttpInterceptorOptions(options)) {
     return new LocalHttpInterceptor<Schema>(options);
-  } else if (matchRemoteHttpInterceptorOptions(options)) {
+  } else if (isRemoteHttpInterceptorOptions(options)) {
     return new RemoteHttpInterceptor<Schema>(options);
   }
 

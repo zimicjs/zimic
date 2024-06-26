@@ -7,15 +7,12 @@
     "index.d.ts",
     "cli.d.ts"
   ],
-  "exports": {
-    ".": "./dist/index.js"
-  },
   "bin": {
     "release": "./dist/cli.js"
   },
   "scripts": {
     "dev": "pnpm build --watch",
-    "dev:cli": "tsx src/cli/index.ts",
+    "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -27,14 +24,12 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "fs-extra": "^11.2.0",
     "yargs": "^17.7.2",
     "zod": "^3.23.8",
     "zx": "^4.3.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "@types/node": "^20.14.0",
+    "@types/node": "^20.14.8",
     "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
@@ -42,8 +37,7 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "tsup": "^8.1.0",
-    "tsx": "^4.11.2",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.2",
     "vitest": "1.6.0"
   }
 }
