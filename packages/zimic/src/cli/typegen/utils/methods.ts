@@ -6,7 +6,7 @@ import { isDefined } from '@/utils/data';
 import { NodeTransformationContext, SUPPORTED_HTTP_METHODS } from '../openapi';
 import { renameComponentReferences } from './components';
 import { createOperationsIdentifier } from './operations';
-import { isUnknownType, isNumericType, isNeverTypeMember, isNeverType, isBooleanType, isNullType } from './types';
+import { isUnknownType, isNeverTypeMember, isNeverType, isNullType } from './types';
 
 function createNumberTemplateLiteral() {
   return ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
@@ -34,65 +34,6 @@ function createBooleanTemplateLiteral() {
 export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.PropertySignature) {
   const newType = createBooleanTemplateLiteral();
   return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
-}
-
-export function normalizeHeaderType(node: ts.TypeNode): ts.TypeNode {
-  if (ts.isLiteralTypeNode(node) && isNullType(node.literal)) {
-    return ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword);
-  }
-  if (isNumericType(node)) {
-    return createNumberTemplateLiteral();
-  }
-  if (isBooleanType(node)) {
-    return createBooleanTemplateLiteral();
-  }
-
-  if (ts.isArrayTypeNode(node)) {
-    const newElementType = normalizeHeaderType(node.elementType);
-    return ts.factory.updateArrayTypeNode(node, newElementType);
-  }
-
-  if (ts.isUnionTypeNode(node)) {
-    const newTypes = node.types.map((type) => normalizeHeaderType(type));
-    return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
-  }
-
-  if (ts.isIntersectionTypeNode(node)) {
-    const newTypes = node.types.map((type) => normalizeHeaderType(type));
-    return ts.factory.updateIntersectionTypeNode(node, ts.factory.createNodeArray(newTypes));
-  }
-
-  if (ts.isParenthesizedTypeNode(node)) {
-    return ts.factory.updateParenthesizedType(node, normalizeHeaderType(node.type));
-  }
-
-  if (ts.isTypeLiteralNode(node)) {
-    const newMembers = node.members.map((member) => {
-      if (ts.isPropertySignature(member) && member.type) {
-        const newMemberType = normalizeHeaderType(member.type);
-        return ts.factory.updatePropertySignature(
-          member,
-          member.modifiers,
-          member.name,
-          member.questionToken,
-          newMemberType,
-        );
-      }
-      return member;
-    });
-
-    return ts.factory.updateTypeLiteralNode(node, ts.factory.createNodeArray(newMembers));
-  }
-
-  if (ts.isIndexedAccessTypeNode(node)) {
-    return ts.factory.updateIndexedAccessTypeNode(node, node.objectType, normalizeHeaderType(node.indexType));
-  }
-
-  return node;
-}
-
-export function normalizeSearchParamType(node: ts.TypeNode): ts.TypeNode {
-  return normalizeHeaderType(node);
 }
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
@@ -129,8 +70,19 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
     }
 
     if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'multipart/form-data') {
-      context.typeImports.add('HttpFormData');
+      context.typeImports.root.add('HttpFormData');
       newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [newType]);
+    }
+
+    if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'x-www-form-urlencoded') {
+      context.typeImports.root.add('HttpSearchParams');
+      context.typeImports.root.add('HttpSearchParamsSerialized');
+
+      newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParams'), [
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamsSerialized'), [
+          renameComponentReferences(newType, context),
+        ]),
+      ]);
     }
 
     return ts.factory.updatePropertySignature(
@@ -153,31 +105,25 @@ export function normalizeRequestBody(requestBody: ts.TypeNode | undefined, conte
   return undefined;
 }
 
-function normalizeHeader(headerType: ts.TypeNode | undefined) {
-  if (headerType && ts.isTypeLiteralNode(headerType)) {
-    const newMembers = headerType.members
-      .filter((member) => !ts.isIndexSignatureDeclaration(member) || !isUnknownType(member.type))
-      .map((member) => {
-        if (ts.isPropertySignature(member) && member.type) {
-          const newMemberType = normalizeHeaderType(member.type);
+function normalizeHeader(headerType: ts.TypeNode | undefined, context: NodeTransformationContext) {
+  if (!headerType || isNeverType(headerType)) {
+    return undefined;
+  }
 
-          return ts.factory.updatePropertySignature(
-            member,
-            member.modifiers,
-            member.name,
-            member.questionToken,
-            newMemberType,
-          );
-        }
-
-        return member;
-      });
+  if (ts.isTypeLiteralNode(headerType)) {
+    const newMembers = headerType.members.filter(
+      (member) => !ts.isIndexSignatureDeclaration(member) || !isUnknownType(member.type),
+    );
 
     if (newMembers.length === 0) {
       return undefined;
     }
 
-    return ts.factory.updateTypeLiteralNode(headerType, ts.factory.createNodeArray(newMembers));
+    context.typeImports.root.add('HttpHeadersSerialized');
+
+    return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpHeadersSerialized'), [
+      ts.factory.updateTypeLiteralNode(headerType, ts.factory.createNodeArray(newMembers)),
+    ]);
   }
 
   return headerType;
@@ -190,7 +136,8 @@ function normalizeRequestMember(requestMember: ts.TypeElement, context: NodeTran
     }
 
     if (requestMember.name.text === 'headers') {
-      const newType = normalizeHeader(requestMember.type);
+      const newType = normalizeHeader(requestMember.type, context);
+
       if (!newType) {
         return undefined;
       }
@@ -240,20 +187,20 @@ function normalizeMethodResponsesMemberType(
 
     const newType = ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
 
-    if (isComponent) {
-      context.typeImports.add('HttpSchema');
-
-      const wrappedNewType = ts.factory.createTypeReferenceNode(
-        ts.factory.createQualifiedName(
-          ts.factory.createIdentifier('HttpSchema'),
-          ts.factory.createIdentifier('Response'),
-        ),
-        [newType],
-      );
-      return wrappedNewType;
+    if (!isComponent) {
+      return newType;
     }
 
-    return newType;
+    context.typeImports.root.add('HttpSchema');
+
+    const wrappedNewType = ts.factory.createTypeReferenceNode(
+      ts.factory.createQualifiedName(
+        ts.factory.createIdentifier('HttpSchema'),
+        ts.factory.createIdentifier('Response'),
+      ),
+      [newType],
+    );
+    return wrappedNewType;
   }
 
   return responseMemberType;
@@ -268,10 +215,15 @@ export function normalizeMethodResponsesMember(
 
   if (ts.isPropertySignature(responseMember)) {
     if (!isComponent && ts.isIdentifier(responseMember.name) && responseMember.name.text === 'default') {
+      console.warn('[zimic] Response using `default` are not supported. Please use a specific, numeric status code.');
       return undefined;
     }
 
     const newType = normalizeMethodResponsesMemberType(responseMember.type, context, { isComponent });
+
+    if (!newType) {
+      return undefined;
+    }
 
     return ts.factory.updatePropertySignature(
       responseMember,
@@ -287,8 +239,13 @@ export function normalizeMethodResponsesMember(
 
 export function normalizeMethodResponses(responses: ts.PropertySignature, context: NodeTransformationContext) {
   const newIdentifier = ts.factory.createIdentifier('response');
+  const newQuestionToken = undefined;
 
-  if (responses.type && ts.isTypeLiteralNode(responses.type)) {
+  if (!responses.type || isNeverType(responses.type)) {
+    return undefined;
+  }
+
+  if (ts.isTypeLiteralNode(responses.type)) {
     const newMembers = responses.type.members
       .map((member) => normalizeMethodResponsesMember(member, context), context)
       .filter(isDefined);
@@ -297,7 +254,7 @@ export function normalizeMethodResponses(responses: ts.PropertySignature, contex
       responses,
       responses.modifiers,
       newIdentifier,
-      undefined,
+      newQuestionToken,
       renameComponentReferences(
         ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers)),
         context,
@@ -305,7 +262,13 @@ export function normalizeMethodResponses(responses: ts.PropertySignature, contex
     );
   }
 
-  return ts.factory.updatePropertySignature(responses, responses.modifiers, newIdentifier, undefined, responses.type);
+  return ts.factory.updatePropertySignature(
+    responses,
+    responses.modifiers,
+    newIdentifier,
+    newQuestionToken,
+    responses.type,
+  );
 }
 
 function normalizeMethodMember(methodMember: ts.TypeElement, context: NodeTransformationContext) {
@@ -324,96 +287,50 @@ function normalizeMethodMember(methodMember: ts.TypeElement, context: NodeTransf
   return undefined;
 }
 
-export function wrapUncheckedHttpSearchParamIndexedAccessNode(
-  rootIndexedAccessNode: ts.IndexedAccessTypeNode,
-  renamedIndexedAccessNode: ts.IndexedAccessTypeNode,
-  context: NodeTransformationContext,
-) {
-  const isAlreadyChecked =
-    ts.isLiteralTypeNode(renamedIndexedAccessNode.indexType) &&
-    ts.isStringLiteral(renamedIndexedAccessNode.indexType.literal) &&
-    ['parameters', 'headers'].includes(renamedIndexedAccessNode.indexType.literal.text);
-
-  if (isAlreadyChecked) {
-    return rootIndexedAccessNode;
-  }
-
-  context.typeImports.add('HttpSearchParamSerialized');
-
-  const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamSerialized'), [
-    rootIndexedAccessNode,
-  ]);
-  return wrappedNode;
-}
-
-export function wrapUncheckedHttpHeaderIndexedAccessNode(
-  rootIndexedAccessNode: ts.IndexedAccessTypeNode,
-  renamedIndexedAccessNode: ts.IndexedAccessTypeNode,
-  context: NodeTransformationContext,
-) {
-  const isAlreadyChecked =
-    ts.isLiteralTypeNode(renamedIndexedAccessNode.indexType) &&
-    ts.isStringLiteral(renamedIndexedAccessNode.indexType.literal) &&
-    ['parameters', 'headers'].includes(renamedIndexedAccessNode.indexType.literal.text);
-
-  if (isAlreadyChecked) {
-    return rootIndexedAccessNode;
-  }
-
-  context.typeImports.add('HttpHeaderSerialized');
-
-  const wrappedNode = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpHeaderSerialized'), [
-    rootIndexedAccessNode,
-  ]);
-  return wrappedNode;
-}
-
 function normalizeMethodRequestMemberWithParameters(
   methodRequestMember: ts.TypeElement,
   context: NodeTransformationContext,
 ) {
   if (ts.isPropertySignature(methodRequestMember) && ts.isIdentifier(methodRequestMember.name)) {
-    if (methodRequestMember.name.text === 'path') {
+    if (
+      methodRequestMember.name.text === 'path' ||
+      !methodRequestMember.type ||
+      isNeverType(methodRequestMember.type)
+    ) {
       return undefined;
     }
 
     const newQuestionToken = undefined;
 
-    if (methodRequestMember.name.text === 'query' && methodRequestMember.type) {
+    if (methodRequestMember.name.text === 'query') {
+      context.typeImports.root.add('HttpSearchParamsSerialized');
+
       const newIdentifier = ts.factory.createIdentifier('searchParams');
-
-      const newType = renameComponentReferences(methodRequestMember.type, context, {
-        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-          return wrapUncheckedHttpSearchParamIndexedAccessNode(
-            rootIndexedAccessNode,
-            renamedIndexedAccessNode,
-            context,
-          );
-        },
-      });
+      const newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamsSerialized'), [
+        renameComponentReferences(methodRequestMember.type, context),
+      ]);
 
       return ts.factory.updatePropertySignature(
         methodRequestMember,
         methodRequestMember.modifiers,
         newIdentifier,
         newQuestionToken,
-        normalizeSearchParamType(newType),
+        newType,
       );
-    } else if (methodRequestMember.name.text === 'header' && methodRequestMember.type) {
-      const newIdentifier = ts.factory.createIdentifier('headers');
+    } else if (methodRequestMember.name.text === 'header') {
+      context.typeImports.root.add('HttpHeadersSerialized');
 
-      const newType = renameComponentReferences(methodRequestMember.type, context, {
-        onRenameIndexedAccess(rootIndexedAccessNode, renamedIndexedAccessNode) {
-          return wrapUncheckedHttpHeaderIndexedAccessNode(rootIndexedAccessNode, renamedIndexedAccessNode, context);
-        },
-      });
+      const newIdentifier = ts.factory.createIdentifier('headers');
+      const newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpHeadersSerialized'), [
+        renameComponentReferences(methodRequestMember.type, context),
+      ]);
 
       return ts.factory.updatePropertySignature(
         methodRequestMember,
         methodRequestMember.modifiers,
         newIdentifier,
         newQuestionToken,
-        normalizeHeaderType(newType),
+        newType,
       );
     }
   }

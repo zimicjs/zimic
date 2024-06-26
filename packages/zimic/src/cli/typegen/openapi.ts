@@ -17,13 +17,17 @@ export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE
 
 export interface NodeTransformationContext {
   serviceName: string;
-  typeImports: Set<'HttpSchema' | 'HttpFormData' | 'HttpSearchParamSerialized' | 'HttpHeaderSerialized'>;
+  typeImports: {
+    root: Set<
+      'HttpSchema' | 'HttpFormData' | 'HttpSearchParams' | 'HttpSearchParamsSerialized' | 'HttpHeadersSerialized'
+    >;
+  };
 }
 
 function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext) {
   if (ts.isInterfaceDeclaration(rootNode)) {
     if (rootNode.name.text === 'paths') {
-      context.typeImports.add('HttpSchema');
+      context.typeImports.root.add('HttpSchema');
       return normalizePaths(rootNode, context);
     }
     if (rootNode.name.text === 'operations') {
@@ -42,41 +46,24 @@ function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext
 }
 
 function addImportDeclarations(nodes: ts.Node[], context: NodeTransformationContext) {
-  const namedTypeImports: ts.ImportSpecifier[] = [];
+  const namedTypeImports = Array.from(context.typeImports.root)
+    .sort()
+    .map<ts.ImportSpecifier>((typeImportName) => {
+      const typeImport = ts.factory.createImportSpecifier(
+        false,
+        undefined,
+        ts.factory.createIdentifier(typeImportName),
+      );
+      return typeImport;
+    });
 
-  if (context.typeImports.has('HttpSchema')) {
-    namedTypeImports.push(
-      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSchema')),
-    );
-  }
+  const rootImportDeclaration = ts.factory.createImportDeclaration(
+    undefined,
+    ts.factory.createImportClause(true, undefined, ts.factory.createNamedImports(namedTypeImports)),
+    ts.factory.createStringLiteral(TYPEGEN_ROOT_IMPORT_MODULE),
+  );
 
-  if (context.typeImports.has('HttpFormData')) {
-    namedTypeImports.push(
-      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpFormData')),
-    );
-  }
-
-  if (context.typeImports.has('HttpSearchParamSerialized')) {
-    namedTypeImports.push(
-      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpSearchParamSerialized')),
-    );
-  }
-
-  if (context.typeImports.has('HttpHeaderSerialized')) {
-    namedTypeImports.push(
-      ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier('HttpHeaderSerialized')),
-    );
-  }
-
-  if (namedTypeImports.length > 0) {
-    const rootImportDeclaration = ts.factory.createImportDeclaration(
-      undefined,
-      ts.factory.createImportClause(true, undefined, ts.factory.createNamedImports(namedTypeImports)),
-      ts.factory.createStringLiteral(TYPEGEN_ROOT_IMPORT_MODULE),
-    );
-
-    nodes.unshift(rootImportDeclaration);
-  }
+  nodes.unshift(rootImportDeclaration);
 }
 
 interface OpenAPITypeGenerationOptions {
@@ -124,11 +111,14 @@ async function generateTypesFromOpenAPISchema({
 
   const context: NodeTransformationContext = {
     serviceName: pascalServiceName,
-    typeImports: new Set(),
+    typeImports: { root: new Set() },
   };
 
   const transformedNodes = nodes.map((node) => normalizeRootNode(node, context)).filter(isDefined);
-  addImportDeclarations(transformedNodes, context);
+
+  if (context.typeImports.root.size > 0) {
+    addImportDeclarations(transformedNodes, context);
+  }
 
   const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
   await filesystem.promises.writeFile(path.resolve(outputFilePath), content);

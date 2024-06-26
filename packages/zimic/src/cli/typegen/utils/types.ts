@@ -5,7 +5,7 @@ export function isNeverType(type: ts.TypeNode | undefined): type is undefined {
 }
 
 export function isNeverTypeMember(member: ts.TypeElement) {
-  return ts.isPropertySignature(member) && member.type !== undefined && isNeverType(member.type);
+  return ts.isPropertySignature(member) && isNeverType(member.type);
 }
 
 export function isUnknownType(type: ts.TypeNode) {

@@ -5,8 +5,8 @@ export { default as HttpHeaders } from './http/headers/HttpHeaders';
 export { default as HttpSearchParams } from './http/searchParams/HttpSearchParams';
 
 export type { JSONValue, JSONSerialized } from './types/json';
-export type { HttpSearchParamSerialized } from './http/searchParams/types';
-export type { HttpHeaderSerialized } from './http/headers/types';
+export type { HttpSearchParamsSerialized } from './http/searchParams/types';
+export type { HttpHeadersSerialized } from './http/headers/types';
 
 export type { HttpHeadersInit, HttpHeadersSchema, HttpHeadersSchemaTuple } from './http/headers/types';
 

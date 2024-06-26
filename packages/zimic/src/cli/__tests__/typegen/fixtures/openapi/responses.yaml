@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 paths:
-  /user:
+  /users:
     post:
       summary: Create user
       operationId: createUser
@@ -38,6 +38,82 @@ paths:
           $ref: '#/components/responses/userCreated'
         400:
           $ref: '#/components/responses/error'
+
+  /users-no-request:
+    post:
+      summary: Create user with no request
+      operationId: createUserNoRequest
+
+      responses:
+        200:
+          $ref: '#/components/responses/userCreated'
+        400:
+          $ref: '#/components/responses/error'
+
+  /users-no-response-content:
+    post:
+      summary: Create user with no response content
+      operationId: createUserNoResponseContent
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  examples:
+                    - John
+                email:
+                  type: string
+                  examples:
+                    - john@email.com
+                password:
+                  type: string
+                  examples:
+                    - '123456'
+              required:
+                - email
+                - password
+
+      responses:
+        200:
+          description: The user was created successfully
+
+  /users-no-response:
+    post:
+      summary: Create user with no response
+      operationId: createUserNoResponse
+
+      requestBody:
+        description: The user to create
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  examples:
+                    - John
+                email:
+                  type: string
+                  examples:
+                    - john@email.com
+                password:
+                  type: string
+                  examples:
+                    - '123456'
+              required:
+                - email
+                - password
+
+  /users-no-request-or-response:
+    post:
+      summary: Create user with no request or response
+      operationId: createUserNoRequestOrResponse
 
 components:
   responses:

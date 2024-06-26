@@ -1,5 +1,6 @@
-import { Defined, ReplaceBy } from '@/types/utils';
+import { Defined } from '@/types/utils';
 
+import { HttpSearchParamsSerialized } from '../searchParams/types';
 import HttpHeaders from './HttpHeaders';
 
 /** A schema for strict HTTP headers. */
@@ -19,8 +20,4 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
 
-export type HttpHeaderSerialized<HeaderValue> = ReplaceBy<
-  ReplaceBy<HeaderValue, number | boolean, `${Extract<HeaderValue, number | boolean>}`>,
-  null,
-  undefined
->;
+export type HttpHeadersSerialized<Type> = HttpSearchParamsSerialized<Type>;

@@ -21,7 +21,7 @@ function normalizeOperation(operation: ts.TypeElement, context: NodeTransformati
 
   const newType = normalizeMethodTypeLiteral(operation.type, context);
 
-  context.typeImports.add('HttpSchema');
+  context.typeImports.root.add('HttpSchema');
 
   const wrappedNewType = ts.factory.createTypeReferenceNode(
     ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Method')),

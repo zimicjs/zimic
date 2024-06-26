@@ -31,7 +31,7 @@ export function normalizePath(
     const newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newTypeMembers));
 
     if (isComponent) {
-      context.typeImports.add('HttpSchema');
+      context.typeImports.root.add('HttpSchema');
 
       const wrappedNewType = ts.factory.createTypeReferenceNode(
         ts.factory.createQualifiedName(
@@ -62,7 +62,7 @@ export function normalizePaths(paths: ts.InterfaceDeclaration, context: NodeTran
   const newMembers = paths.members.map((path) => normalizePath(path, context));
   const newType = ts.factory.createTypeLiteralNode(ts.factory.createNodeArray(newMembers));
 
-  context.typeImports.add('HttpSchema');
+  context.typeImports.root.add('HttpSchema');
 
   const wrappedNewType = ts.factory.createTypeReferenceNode(
     ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Paths')),

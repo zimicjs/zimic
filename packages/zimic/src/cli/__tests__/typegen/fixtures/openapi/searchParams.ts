@@ -1,15 +1,15 @@
-import type { HttpSchema, HttpSearchParamSerialized } from '@/index';
+import type { HttpSchema, HttpSearchParams, HttpSearchParamsSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-literal-component-search-params-in-path': {
     GET: {
       request: {
-        searchParams: {
+        searchParams: HttpSearchParamsSerialized<{
           search?: MyServiceComponents['parameters']['literalSearch'];
           order?: MyServiceComponents['parameters']['literalOrder'];
           limit: MyServiceComponents['parameters']['literalLimit'];
           archived?: MyServiceComponents['parameters']['literalArchived'];
-        };
+        }>;
       };
       response: {
         200: {
@@ -21,12 +21,12 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-literal-component-search-params': {
     GET: {
       request: {
-        searchParams: {
+        searchParams: HttpSearchParamsSerialized<{
           search?: MyServiceComponents['parameters']['literalSearch'];
           order?: MyServiceComponents['parameters']['literalOrder'];
           limit: MyServiceComponents['parameters']['literalLimit'];
           archived?: MyServiceComponents['parameters']['literalArchived'];
-        };
+        }>;
       };
       response: {
         200: {
@@ -38,12 +38,12 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-reference-component-search-params': {
     GET: {
       request: {
-        searchParams: {
+        searchParams: HttpSearchParamsSerialized<{
           search?: MyServiceComponents['parameters']['referenceSearch'];
           order?: MyServiceComponents['parameters']['referenceOrder'];
           limit: MyServiceComponents['parameters']['referenceLimit'];
           archived?: MyServiceComponents['parameters']['referenceArchived'];
-        };
+        }>;
       };
       response: {
         200: {
@@ -55,12 +55,12 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-reference-search-params': {
     GET: {
       request: {
-        searchParams: {
-          search?: HttpSearchParamSerialized<MyServiceComponents['schemas']['search']>;
-          order?: HttpSearchParamSerialized<MyServiceComponents['schemas']['order']>;
-          limit: HttpSearchParamSerialized<MyServiceComponents['schemas']['limit']>;
-          archived?: HttpSearchParamSerialized<MyServiceComponents['schemas']['archived']>;
-        };
+        searchParams: HttpSearchParamsSerialized<{
+          search?: MyServiceComponents['schemas']['search'];
+          order?: MyServiceComponents['schemas']['order'];
+          limit: MyServiceComponents['schemas']['limit'];
+          archived?: MyServiceComponents['schemas']['archived'];
+        }>;
       };
       response: {
         200: {
@@ -72,16 +72,48 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-literal-search-params': {
     GET: {
       request: {
-        searchParams: {
-          search?: (string | undefined) | string[];
+        searchParams: HttpSearchParamsSerialized<{
+          search?: (string | null) | string[];
           order?: 'asc' | 'desc';
-          limit: `${number}`;
-          archived?: `${boolean}`;
-        };
+          limit: number;
+          archived?: boolean;
+        }>;
       };
       response: {
         200: {
           body: MyServiceComponents['schemas']['User'][];
+        };
+      };
+    };
+  };
+  '/users-with-reference-search-params-in-body': {
+    GET: {
+      response: {
+        200: {
+          body: HttpSearchParams<
+            HttpSearchParamsSerialized<{
+              search: MyServiceComponents['schemas']['search'];
+              order: MyServiceComponents['schemas']['order'];
+              limit: MyServiceComponents['schemas']['limit'];
+              archived: MyServiceComponents['schemas']['archived'];
+            }>
+          >;
+        };
+      };
+    };
+  };
+  '/users-with-literal-search-params-in-body': {
+    GET: {
+      response: {
+        200: {
+          body: HttpSearchParams<
+            HttpSearchParamsSerialized<{
+              search?: (string | null) | string[];
+              order?: 'asc' | 'desc';
+              limit?: number | null;
+              archived: boolean;
+            }>
+          >;
         };
       };
     };
@@ -95,17 +127,17 @@ export interface MyServiceComponents {
     };
     search: (string | null) | string[];
     order: 'asc' | 'desc';
-    limit: number;
+    limit: number | null;
     archived: boolean;
   };
   parameters: {
-    literalSearch: (string | undefined) | string[];
-    literalOrder: HttpSearchParamSerialized<MyServiceComponents['schemas']['order']>;
-    literalLimit: `${number}`;
-    literalArchived: `${boolean}`;
-    referenceSearch: HttpSearchParamSerialized<MyServiceComponents['schemas']['search']>;
-    referenceOrder: HttpSearchParamSerialized<MyServiceComponents['schemas']['order']>;
-    referenceLimit: HttpSearchParamSerialized<MyServiceComponents['schemas']['limit']>;
-    referenceArchived: HttpSearchParamSerialized<MyServiceComponents['schemas']['archived']>;
+    literalSearch: (string | null) | string[];
+    literalOrder: MyServiceComponents['schemas']['order'];
+    literalLimit: number | null;
+    literalArchived: boolean;
+    referenceSearch: MyServiceComponents['schemas']['search'];
+    referenceOrder: MyServiceComponents['schemas']['order'];
+    referenceLimit: MyServiceComponents['schemas']['limit'];
+    referenceArchived: MyServiceComponents['schemas']['archived'];
   };
 }

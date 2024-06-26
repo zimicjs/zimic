@@ -1,4 +1,4 @@
-import type { HttpSchema } from '@/index';
+import type { HttpSchema, HttpSearchParamsSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users': {
@@ -11,10 +11,10 @@ export type MyServiceSchema = HttpSchema.Paths<{
 export interface MyServiceOperations {
   listUsers: HttpSchema.Method<{
     request: {
-      searchParams: {
+      searchParams: HttpSearchParamsSerialized<{
         /** How many items to return */
-        limit: `${number}`;
-      };
+        limit: number;
+      }>;
     };
     response: {
       /** Success */

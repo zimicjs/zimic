@@ -1,4 +1,4 @@
-import type { HttpSchema, HttpFormData } from '@/index';
+import type { HttpFormData, HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/upload': {

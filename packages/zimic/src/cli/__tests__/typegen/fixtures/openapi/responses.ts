@@ -1,8 +1,20 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/user': {
+  '/users': {
     POST: MyServiceOperations['createUser'];
+  };
+  '/users-no-request': {
+    POST: MyServiceOperations['createUserNoRequest'];
+  };
+  '/users-no-response-content': {
+    POST: MyServiceOperations['createUserNoResponseContent'];
+  };
+  '/users-no-response': {
+    POST: MyServiceOperations['createUserNoResponse'];
+  };
+  '/users-no-request-or-response': {
+    POST: MyServiceOperations['createUserNoRequestOrResponse'];
   };
 }>;
 export interface MyServiceComponents {
@@ -37,4 +49,32 @@ export interface MyServiceOperations {
       400: MyServiceComponents['responses']['error'];
     };
   }>;
+  createUserNoRequest: HttpSchema.Method<{
+    response: {
+      200: MyServiceComponents['responses']['userCreated'];
+      400: MyServiceComponents['responses']['error'];
+    };
+  }>;
+  createUserNoResponseContent: HttpSchema.Method<{
+    request: {
+      body: {
+        name?: string;
+        email: string;
+        password: string;
+      };
+    };
+    response: {
+      200: {};
+    };
+  }>;
+  createUserNoResponse: HttpSchema.Method<{
+    request: {
+      body: {
+        name?: string;
+        email: string;
+        password: string;
+      };
+    };
+  }>;
+  createUserNoRequestOrResponse: HttpSchema.Method<{}>;
 }
