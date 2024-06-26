@@ -39,8 +39,20 @@ export interface MyServiceOperations {
     /** The user to create */
     request: {
       body: {
+        /**
+         * @example
+         *   John;
+         */
         name?: string;
+        /**
+         * @example
+         *   john@email.com
+         */
         email: string;
+        /**
+         * @example
+         *   123456;
+         */
         password: string;
       };
     };
