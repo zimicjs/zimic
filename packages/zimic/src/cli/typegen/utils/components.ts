@@ -3,7 +3,7 @@ import ts from 'typescript';
 import { isDefined } from '@/utils/data';
 
 import { NodeTransformationContext } from '../openapi';
-import { normalizeMethodResponsesMember, normalizeRequestBody } from './methods';
+import { normalizeMethodContentType, normalizeMethodResponsesMember } from './methods';
 import { normalizePath } from './paths';
 import { isNeverType, isUnknownType } from './types';
 
@@ -90,16 +90,12 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
   return node;
 }
 
-function normalizeRequestBodyComponent(component: ts.PropertySignature, context: NodeTransformationContext) {
+function normalizeRequestComponent(component: ts.PropertySignature, context: NodeTransformationContext) {
   if (!component.type || !ts.isTypeLiteralNode(component.type)) {
     return undefined;
   }
 
-  const newMembers = component.type.members
-    .map((member) => (ts.isPropertySignature(member) ? normalizeRequestBody(member.type, context) : member))
-    .filter(isDefined);
-
-  const newType = ts.factory.updateTypeLiteralNode(component.type, ts.factory.createNodeArray(newMembers));
+  const newType = normalizeMethodContentType(component.type, context);
 
   context.typeImports.root.add('HttpSchema');
 
@@ -163,7 +159,7 @@ function normalizeComponent(
   }
 
   if (componentName?.text === 'requestBodies') {
-    return normalizeRequestBodyComponent(component, context);
+    return normalizeRequestComponent(component, context);
   }
 
   if (componentName?.text === 'pathItems') {

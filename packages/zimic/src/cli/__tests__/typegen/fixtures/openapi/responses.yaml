@@ -10,76 +10,28 @@ paths:
       summary: Create user
       operationId: createUser
 
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  examples:
-                    - John
-                email:
-                  type: string
-                  examples:
-                    - john@email.com
-                password:
-                  type: string
-                  examples:
-                    - '123456'
-              required:
-                - email
-                - password
-
       responses:
-        200:
+        '200':
           $ref: '#/components/responses/userCreated'
-        400:
+        '400':
           $ref: '#/components/responses/error'
 
   /users-no-request:
     post:
       summary: Create user with no request
       operationId: createUserNoRequest
-
       responses:
-        200:
+        '200':
           $ref: '#/components/responses/userCreated'
-        400:
+        '400':
           $ref: '#/components/responses/error'
 
   /users-no-response-content:
     post:
       summary: Create user with no response content
       operationId: createUserNoResponseContent
-
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  examples:
-                    - John
-                email:
-                  type: string
-                  examples:
-                    - john@email.com
-                password:
-                  type: string
-                  examples:
-                    - '123456'
-              required:
-                - email
-                - password
-
       responses:
-        200:
+        '200':
           description: The user was created successfully
 
   /users-no-response:
@@ -87,76 +39,93 @@ paths:
       summary: Create user with no response
       operationId: createUserNoResponse
 
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  examples:
-                    - John
-                email:
-                  type: string
-                  examples:
-                    - john@email.com
-                password:
-                  type: string
-                  examples:
-                    - '123456'
-              required:
-                - email
-                - password
-
   /users-no-request-or-response:
     post:
       summary: Create user with no request or response
       operationId: createUserNoRequestOrResponse
 
+  /users-multiple-response-contents:
+    post:
+      summary: Create user with multiple response-contents
+      operationId: createUserWithMultipleResponse-contents
+
+      responses:
+        '200':
+          description: The user was created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [user-as-json]
+                  value:
+                    $ref: '#/components/schemas/User'
+                required:
+                  - type
+                  - value
+            application/xml:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [user-as-xml]
+                  value:
+                    $ref: '#/components/schemas/User'
+                required:
+                  - type
+                  - value
+        '400':
+          $ref: '#/components/responses/error'
+
 components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          examples:
+            - be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name:
+          type: string
+          examples:
+            - John
+        email:
+          type: string
+          examples:
+            - john@email.com
+        createdAt:
+          type: string
+          examples:
+            - '2024-01-01T00:00:00.000Z'
+        updatedAt:
+          type: string
+          examples:
+            - '2024-01-01T00:00:00.000Z'
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+
   responses:
     userCreated:
       description: The user was created successfully
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              id:
-                type: string
-                examples:
-                  - be8253f9-124b-4c32-b046-c25b6fd0af0c
-              name:
-                type: string
-                examples:
-                  - John
-              email:
-                type: string
-                examples:
-                  - john@email.com
-              createdAt:
-                type: string
-                examples:
-                  - '2024-01-01T00:00:00.000Z'
-              updatedAt:
-                type: string
-                examples:
-                  - '2024-01-01T00:00:00.000Z'
-            required:
-              - id
-              - email
-              - createdAt
-              - updatedAt
-        examples:
-          default:
-            value:
-              id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-              name: John
-              email: john@email.com
-              createdAt: '2024-01-01T00:00:00.000Z'
-              updatedAt: '2024-01-01T00:00:00.000Z'
+            $ref: '#/components/schemas/User'
+          examples:
+            default:
+              value:
+                id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                name: John
+                email: john@email.com
+                createdAt: '2024-01-01T00:00:00.000Z'
+                updatedAt: '2024-01-01T00:00:00.000Z'
     error:
       description: Error
       content:

@@ -1,7 +1,7 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/user': {
+  '/users': {
     POST: {
       request: MyServiceComponents['requestBodies']['createUser'];
       response: {
@@ -20,6 +20,29 @@ export type MyServiceSchema = HttpSchema.Paths<{
           };
         };
       };
+    };
+  };
+  '/users-with-multiple-request-contents': {
+    POST: {
+      request:
+        | {
+            headers: {
+              'content-type': 'application/json';
+            };
+            body: {
+              email: string;
+              password: string;
+            };
+          }
+        | {
+            headers: {
+              'content-type': 'application/xml';
+            };
+            body: {
+              name: string;
+              password: string;
+            };
+          };
     };
   };
 }>;

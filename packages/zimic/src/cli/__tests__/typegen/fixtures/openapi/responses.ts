@@ -16,17 +16,23 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-no-request-or-response': {
     POST: MyServiceOperations['createUserNoRequestOrResponse'];
   };
+  '/users-multiple-response-contents': {
+    POST: MyServiceOperations['createUserWithMultipleResponse-contents'];
+  };
 }>;
 export interface MyServiceComponents {
+  schemas: {
+    User: {
+      id: string;
+      name?: string;
+      email: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
   responses: {
     userCreated: HttpSchema.Response<{
-      body: {
-        id: string;
-        name?: string;
-        email: string;
-        createdAt: string;
-        updatedAt: string;
-      };
+      body: MyServiceComponents['schemas']['User'];
     }>;
     error: HttpSchema.Response<{
       body: {
@@ -37,13 +43,6 @@ export interface MyServiceComponents {
 }
 export interface MyServiceOperations {
   createUser: HttpSchema.Method<{
-    request: {
-      body: {
-        name?: string;
-        email: string;
-        password: string;
-      };
-    };
     response: {
       200: MyServiceComponents['responses']['userCreated'];
       400: MyServiceComponents['responses']['error'];
@@ -56,25 +55,34 @@ export interface MyServiceOperations {
     };
   }>;
   createUserNoResponseContent: HttpSchema.Method<{
-    request: {
-      body: {
-        name?: string;
-        email: string;
-        password: string;
-      };
-    };
     response: {
       200: {};
     };
   }>;
-  createUserNoResponse: HttpSchema.Method<{
-    request: {
-      body: {
-        name?: string;
-        email: string;
-        password: string;
-      };
+  createUserNoResponse: HttpSchema.Method<{}>;
+  createUserNoRequestOrResponse: HttpSchema.Method<{}>;
+  'createUserWithMultipleResponse-contents': HttpSchema.Method<{
+    response: {
+      200:
+        | {
+            headers: {
+              'content-type': 'application/json';
+            };
+            body: {
+              type: 'user-as-json';
+              value: MyServiceComponents['schemas']['User'];
+            };
+          }
+        | {
+            headers: {
+              'content-type': 'application/xml';
+            };
+            body: {
+              type: 'user-as-xml';
+              value: MyServiceComponents['schemas']['User'];
+            };
+          };
+      400: MyServiceComponents['responses']['error'];
     };
   }>;
-  createUserNoRequestOrResponse: HttpSchema.Method<{}>;
 }

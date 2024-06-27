@@ -37,13 +37,12 @@ export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.Property
 }
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
-  if (ts.isPropertySignature(requestBodyMember)) {
-    const newIdentifier = ts.factory.createIdentifier('body');
-
+  if (ts.isPropertySignature(requestBodyMember) && ts.isModuleName(requestBodyMember.name)) {
     if (!requestBodyMember.type) {
       return undefined;
     }
 
+    const newIdentifier = ts.factory.createIdentifier('body');
     let newType = renameComponentReferences(requestBodyMember.type, context);
 
     const containsRedundantNullUnion =
@@ -69,12 +68,14 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
       newType = ts.factory.createUnionTypeNode(typesWithoutRedundantNullUnion);
     }
 
-    if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'multipart/form-data') {
+    const contentTypeName = requestBodyMember.name.text;
+
+    if (contentTypeName === 'multipart/form-data') {
       context.typeImports.root.add('HttpFormData');
       newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [newType]);
     }
 
-    if (ts.isModuleName(requestBodyMember.name) && requestBodyMember.name.text === 'x-www-form-urlencoded') {
+    if (contentTypeName === 'x-www-form-urlencoded') {
       context.typeImports.root.add('HttpSearchParams');
       context.typeImports.root.add('HttpSearchParamsSerialized');
 
@@ -85,13 +86,16 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
       ]);
     }
 
-    return ts.factory.updatePropertySignature(
-      requestBodyMember,
-      requestBodyMember.modifiers,
-      newIdentifier,
-      requestBodyMember.questionToken,
-      newType,
-    );
+    return {
+      propertySignature: ts.factory.updatePropertySignature(
+        requestBodyMember,
+        requestBodyMember.modifiers,
+        newIdentifier,
+        requestBodyMember.questionToken,
+        newType,
+      ),
+      contentTypeName,
+    };
   }
 
   return undefined;
@@ -99,9 +103,13 @@ function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: 
 
 export function normalizeRequestBody(requestBody: ts.TypeNode | undefined, context: NodeTransformationContext) {
   if (requestBody && ts.isTypeLiteralNode(requestBody)) {
-    const newType = requestBody.members.map((member) => normalizeRequestBodyMember(member, context)).find(isDefined);
-    return newType;
+    const newMembers = requestBody.members
+      .map((member) => normalizeRequestBodyMember(member, context))
+      .filter(isDefined);
+
+    return newMembers;
   }
+
   return undefined;
 }
 
@@ -129,12 +137,8 @@ function normalizeHeader(headerType: ts.TypeNode | undefined, context: NodeTrans
   return headerType;
 }
 
-function normalizeRequestMember(requestMember: ts.TypeElement, context: NodeTransformationContext) {
+function normalizeRequestMemberHeader(requestMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestMember) && ts.isIdentifier(requestMember.name)) {
-    if (requestMember.name.text === 'content') {
-      return normalizeRequestBody(requestMember.type, context);
-    }
-
     if (requestMember.name.text === 'headers') {
       const newType = normalizeHeader(requestMember.type, context);
 
@@ -155,21 +159,75 @@ function normalizeRequestMember(requestMember: ts.TypeElement, context: NodeTran
   return undefined;
 }
 
+function normalizeRequestMemberBody(requestMember: ts.TypeElement, context: NodeTransformationContext) {
+  if (ts.isPropertySignature(requestMember) && ts.isIdentifier(requestMember.name)) {
+    if (requestMember.name.text === 'content') {
+      return normalizeRequestBody(requestMember.type, context);
+    }
+  }
+
+  return undefined;
+}
+
+export function normalizeMethodContentType(contentType: ts.TypeNode, context: NodeTransformationContext) {
+  if (ts.isTypeLiteralNode(contentType)) {
+    const newHeaderMember = contentType.members
+      .map((member) => normalizeRequestMemberHeader(member, context))
+      .find(isDefined);
+
+    const newBodyMembers = contentType.members
+      .flatMap((member) => normalizeRequestMemberBody(member, context))
+      .filter(isDefined);
+
+    if (newBodyMembers.length <= 1) {
+      const newMembers = [newHeaderMember, ...newBodyMembers.map((member) => member.propertySignature)];
+      return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers.filter(isDefined)));
+    } else if (newBodyMembers.length > 1) {
+      const unionTypes = newBodyMembers.map((bodyMember) => {
+        let headerMemberType = ts.factory.createTypeLiteralNode([
+          ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier('"content-type"'),
+            undefined,
+            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(bodyMember.contentTypeName)),
+          ),
+        ]);
+
+        if (newHeaderMember?.type && ts.isTypeLiteralNode(newHeaderMember.type)) {
+          headerMemberType = ts.factory.updateTypeLiteralNode(
+            newHeaderMember.type,
+            ts.factory.createNodeArray([...headerMemberType.members, ...newHeaderMember.type.members]),
+          );
+        }
+
+        const headerMember = ts.factory.createPropertySignature(
+          newHeaderMember?.modifiers,
+          ts.factory.createIdentifier('headers'),
+          undefined,
+          headerMemberType,
+        );
+
+        return ts.factory.createTypeLiteralNode([headerMember, bodyMember.propertySignature]);
+      });
+
+      return ts.factory.createUnionTypeNode(unionTypes);
+    }
+  } else if (ts.isIndexedAccessTypeNode(contentType)) {
+    return renameComponentReferences(contentType, context);
+  }
+
+  return contentType;
+}
+
 function normalizeMethodRequest(request: ts.PropertySignature, context: NodeTransformationContext) {
   const newIdentifier = ts.factory.createIdentifier('request');
   const newQuestionToken = undefined;
 
-  let newType = request.type;
-
-  if (request.type && ts.isTypeLiteralNode(request.type)) {
-    const newMembers = request.type.members.map((member) => normalizeRequestMember(member, context)).filter(isDefined);
-    newType = ts.factory.updateTypeLiteralNode(request.type, ts.factory.createNodeArray(newMembers));
+  if (!request.type) {
+    return undefined;
   }
 
-  if (request.type && ts.isIndexedAccessTypeNode(request.type)) {
-    newType = renameComponentReferences(request.type, context);
-  }
-
+  const newType = normalizeMethodContentType(request.type, context);
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, newQuestionToken, newType);
 }
 
@@ -181,11 +239,7 @@ function normalizeMethodResponsesMemberType(
   const { isComponent } = options;
 
   if (responseMemberType && ts.isTypeLiteralNode(responseMemberType)) {
-    const newMembers = responseMemberType.members
-      .map((member) => normalizeRequestMember(member, context))
-      .filter(isDefined);
-
-    const newType = ts.factory.updateTypeLiteralNode(responseMemberType, ts.factory.createNodeArray(newMembers));
+    const newType = normalizeMethodContentType(responseMemberType, context);
 
     if (!isComponent) {
       return newType;
@@ -342,7 +396,15 @@ function normalizeMethodRequestTypeWithParameters(
   methodMemberType: ts.TypeNode,
   methodMembers: ts.TypeElement[],
   context: NodeTransformationContext,
-) {
+): ts.TypeNode | undefined {
+  if (ts.isUnionTypeNode(methodMemberType)) {
+    const newTypes = methodMemberType.types
+      .map((type) => normalizeMethodRequestTypeWithParameters(type, methodMembers, context))
+      .filter(isDefined);
+
+    return ts.factory.updateUnionTypeNode(methodMemberType, ts.factory.createNodeArray(newTypes));
+  }
+
   const requestParameterTypeMembers = ts.isTypeLiteralNode(methodMemberType) ? methodMemberType.members : [];
 
   const parametersMember = methodMembers.find((member): member is ts.PropertySignature => {
@@ -373,6 +435,7 @@ function normalizeMethodMemberWithParameters(
   if (ts.isPropertySignature(methodMember) && ts.isIdentifier(methodMember.name)) {
     if (methodMember.name.text === 'request' && methodMember.type) {
       const newType = normalizeMethodRequestTypeWithParameters(methodMember.type, methodMembers, context);
+
       if (!newType) {
         return undefined;
       }
