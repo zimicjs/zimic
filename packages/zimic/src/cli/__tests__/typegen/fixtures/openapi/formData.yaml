@@ -14,6 +14,9 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - name
+                - content
               properties:
                 name:
                   type: string
@@ -21,10 +24,6 @@ paths:
                   type: string
                   format: binary
                   nullable: true
-              required:
-                - name
-                - content
-
       responses:
         '200':
           description: Success
@@ -32,6 +31,8 @@ paths:
             multipart/form-data:
               schema:
                 type: object
+                required:
+                  - content
                 properties:
                   name:
                     type: string
@@ -39,5 +40,3 @@ paths:
                     type: string
                     format: binary
                     nullable: true
-                required:
-                  - content

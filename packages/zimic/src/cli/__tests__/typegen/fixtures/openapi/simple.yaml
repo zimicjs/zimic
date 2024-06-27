@@ -5,11 +5,9 @@ info:
   version: 1.0.0
   license:
     name: MIT
-
 servers:
   - url: http://localhost:3000
     description: Local
-
 tags:
   - name: users
 
@@ -23,68 +21,38 @@ paths:
       operationId: createUser
       tags:
         - users
-
       requestBody:
         description: The user to create
         content:
           application/json:
             schema:
               type: object
-              properties:
-                name:
-                  type: string
-                  example: John
-                email:
-                  type: string
-                  example: john@email.com
-                password:
-                  type: string
-                  example: '123456'
               required:
                 - email
                 - password
-
+              properties:
+                name:
+                  type: string
+                  description: The user's name
+                  example: John
+                email:
+                  type: string
+                  description: The user's email
+                  example: john@email.com
+                password:
+                  type: string
+                  description: The user's password
+                  example: '123456'
       responses:
         '200':
           description: The user was created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    examples:
-                      - be8253f9-124b-4c32-b046-c25b6fd0af0c
-                  name:
-                    type: string
-                    examples:
-                      - John
-                  email:
-                    type: string
-                    examples:
-                      - john@email.com
-                  createdAt:
-                    type: string
-                    examples:
-                      - '2024-01-01T00:00:00.000Z'
-                  updatedAt:
-                    type: string
-                    examples:
-                      - '2024-01-01T00:00:00.000Z'
-                required:
-                  - id
-                  - email
-                  - createdAt
-                  - updatedAt
+                $ref: '#/components/schemas/User'
               examples:
                 default:
-                  value:
-                    id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                    name: John
-                    email: john@email.com
-                    createdAt: '2024-01-01T00:00:00.000Z'
-                    updatedAt: '2024-01-01T00:00:00.000Z'
+                  $ref: '#/components/examples/User'
         '400':
           description: Error
           content:
@@ -96,6 +64,7 @@ paths:
                 properties:
                   message:
                     type: string
+                    description: The error message
               examples:
                 default:
                   value:
@@ -106,7 +75,6 @@ paths:
       operationId: listUsers
       tags:
         - users
-
       parameters:
         - name: limit
           in: query
@@ -116,7 +84,6 @@ paths:
             type: integer
             format: int32
             maximum: 100
-
       responses:
         '200':
           description: Success
@@ -124,42 +91,13 @@ paths:
             application/json:
               schema:
                 type: array
+                description: List of users
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      examples:
-                        - be8253f9-124b-4c32-b046-c25b6fd0af0c
-                    name:
-                      type: string
-                      examples:
-                        - John
-                    email:
-                      type: string
-                      examples:
-                        - john@email.com
-                    createdAt:
-                      type: string
-                      examples:
-                        - '2024-01-01T00:00:00.000Z'
-                    updatedAt:
-                      type: string
-                      examples:
-                        - '2024-01-01T00:00:00.000Z'
-                  required:
-                    - id
-                    - email
-                    - createdAt
-                    - updatedAt
+                  $ref: '#/components/schemas/User'
               examples:
                 default:
                   value:
-                    - id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                      name: John
-                      email: john@email.com
-                      createdAt: '2024-01-01T00:00:00.000Z'
-                      updatedAt: '2024-01-01T00:00:00.000Z'
+                    - $ref: '#/components/examples/User'
         '400':
           description: Error
           content:
@@ -183,3 +121,47 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: The authorization token
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: The user's id
+          examples:
+            - be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name:
+          type: string
+          description: The user's name
+          examples:
+            - John
+        email:
+          type: string
+          description: The user's email
+          examples:
+            - john@email.com
+        createdAt:
+          type: string
+          description: The user's creation date
+          examples:
+            - '2024-01-01T00:00:00.000Z'
+        updatedAt:
+          type: string
+          description: The user's last update date
+          examples:
+            - '2024-01-01T00:00:00.000Z'
+
+  examples:
+    User:
+      value:
+        id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+        name: John
+        email: john@email.com
+        createdAt: '2024-01-01T00:00:00.000Z'
+        updatedAt: '2024-01-01T00:00:00.000Z'

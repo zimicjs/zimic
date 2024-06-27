@@ -13,7 +13,6 @@ components:
     users:
       post:
         summary: Create user
-
         requestBody:
           description: The user to create
           content:
@@ -25,7 +24,6 @@ components:
                     type: string
                     examples:
                       - John
-
         responses:
           '200':
             description: The user was created successfully

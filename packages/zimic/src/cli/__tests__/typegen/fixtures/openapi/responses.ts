@@ -1,11 +1,14 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
-    POST: MyServiceOperations['createUser'];
-  };
   '/users-no-request': {
     POST: MyServiceOperations['createUserNoRequest'];
+  };
+  '/users-multiple-reference-response-contents': {
+    POST: MyServiceOperations['createUserWithMultipleReferenceResponseContents'];
+  };
+  '/users-multiple-literal-response-contents': {
+    POST: MyServiceOperations['createUserWithMultipleLiteralResponseContents'];
   };
   '/users-no-response-content': {
     POST: MyServiceOperations['createUserNoResponseContent'];
@@ -15,9 +18,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
   };
   '/users-no-request-or-response': {
     POST: MyServiceOperations['createUserNoRequestOrResponse'];
-  };
-  '/users-multiple-response-contents': {
-    POST: MyServiceOperations['createUserWithMultipleResponse-contents'];
   };
 }>;
 export interface MyServiceComponents {
@@ -34,6 +34,26 @@ export interface MyServiceComponents {
     userCreated: HttpSchema.Response<{
       body: MyServiceComponents['schemas']['User'];
     }>;
+    userCreatedMultipleContents: HttpSchema.Response<
+      | {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: {
+            type?: 'user-as-json';
+            value?: MyServiceComponents['schemas']['User'];
+          };
+        }
+      | {
+          headers: {
+            'content-type': 'application/xml';
+          };
+          body: {
+            type?: 'user-as-xml';
+            value?: MyServiceComponents['schemas']['User'];
+          };
+        }
+    >;
     error: HttpSchema.Response<{
       body: {
         message: string;
@@ -42,26 +62,19 @@ export interface MyServiceComponents {
   };
 }
 export interface MyServiceOperations {
-  createUser: HttpSchema.Method<{
-    response: {
-      200: MyServiceComponents['responses']['userCreated'];
-      400: MyServiceComponents['responses']['error'];
-    };
-  }>;
   createUserNoRequest: HttpSchema.Method<{
     response: {
       200: MyServiceComponents['responses']['userCreated'];
       400: MyServiceComponents['responses']['error'];
     };
   }>;
-  createUserNoResponseContent: HttpSchema.Method<{
+  createUserWithMultipleReferenceResponseContents: HttpSchema.Method<{
     response: {
-      200: {};
+      200: MyServiceComponents['responses']['userCreatedMultipleContents'];
+      400: MyServiceComponents['responses']['error'];
     };
   }>;
-  createUserNoResponse: HttpSchema.Method<{}>;
-  createUserNoRequestOrResponse: HttpSchema.Method<{}>;
-  'createUserWithMultipleResponse-contents': HttpSchema.Method<{
+  createUserWithMultipleLiteralResponseContents: HttpSchema.Method<{
     response: {
       200:
         | {
@@ -85,4 +98,11 @@ export interface MyServiceOperations {
       400: MyServiceComponents['responses']['error'];
     };
   }>;
+  createUserNoResponseContent: HttpSchema.Method<{
+    response: {
+      200: {};
+    };
+  }>;
+  createUserNoResponse: HttpSchema.Method<{}>;
+  createUserNoRequestOrResponse: HttpSchema.Method<{}>;
 }

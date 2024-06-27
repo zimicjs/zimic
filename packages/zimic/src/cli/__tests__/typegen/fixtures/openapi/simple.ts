@@ -6,6 +6,17 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: MyServiceOperations['createUser'];
   };
 }>;
+export interface MyServiceComponents {
+  schemas: {
+    User: {
+      id: string;
+      name?: string;
+      email: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+}
 export interface MyServiceOperations {
   listUsers: HttpSchema.Method<{
     request: {
@@ -15,13 +26,7 @@ export interface MyServiceOperations {
     };
     response: {
       200: {
-        body: {
-          id: string;
-          name?: string;
-          email: string;
-          createdAt: string;
-          updatedAt: string;
-        }[];
+        body: MyServiceComponents['schemas']['User'][];
       };
       400: {
         body: {
@@ -40,13 +45,7 @@ export interface MyServiceOperations {
     };
     response: {
       200: {
-        body: {
-          id: string;
-          name?: string;
-          email: string;
-          createdAt: string;
-          updatedAt: string;
-        };
+        body: MyServiceComponents['schemas']['User'];
       };
       400: {
         body: {

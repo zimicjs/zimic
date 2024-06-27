@@ -13,13 +13,6 @@ paths:
         - bearerAuth: []
         - oauth2: [create:users]
 
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/createUser'
-
       responses:
         '200':
           description: The user was created successfully
@@ -29,13 +22,6 @@ paths:
       summary: Create user with bearer auth
       security:
         - bearerAuth: []
-
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/createUser'
 
       responses:
         '200':
@@ -47,13 +33,6 @@ paths:
       security:
         - apiKey: []
 
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/createUser'
-
       responses:
         '200':
           description: The user was created successfully
@@ -63,13 +42,6 @@ paths:
       summary: Create user with bearer OAuth2
       security:
         - oauth2: [create:users]
-
-      requestBody:
-        description: The user to create
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/createUser'
 
       responses:
         '200':
@@ -95,23 +67,3 @@ components:
           tokenUrl: https://example.com/oauth/token
           scopes:
             create:users: Grants write access
-
-  schemas:
-    createUser:
-      type: object
-      properties:
-        name:
-          type: string
-          examples:
-            - John
-        email:
-          type: string
-          examples:
-            - john@email.com
-        password:
-          type: string
-          examples:
-            - '123456'
-      required:
-        - email
-        - password
