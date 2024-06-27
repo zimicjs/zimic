@@ -125,60 +125,62 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each(schemaFileTypes)('Type: %s', (fileType) => {
-    it.each(schemaNames)('should correctly generate types from the schema: %s', async (schemaName) => {
-      const filePaths = getSchemaFilePaths(schemaName, fileType);
+  describe.each(schemaNames)('Schema: %s', (schemaName) => {
+    describe.each(schemaFileTypes)('Type: %s', (fileType) => {
+      it('should correctly generate types from the schema', async () => {
+        const filePaths = getSchemaFilePaths(schemaName, fileType);
 
-      processArgvSpy.mockReturnValue([
-        'node',
-        'cli.js',
-        'typegen',
-        'openapi',
-        filePaths.input,
-        '--output',
-        filePaths.output.generated,
-        '--service-name',
-        'my-service',
-        '--remove-comments',
-      ]);
-
-      await runCLI();
-
-      const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
-      const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
-
-      const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
-      expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
-    });
-
-    it.each(['', '--remove-comments=false'])(
-      'should support keeping comments in the generated types using: %s',
-      async (removeCommentFlag) => {
-        const filePaths = getSchemaFilePaths('simple', fileType);
-
-        processArgvSpy.mockReturnValue(
-          [
-            'node',
-            'cli.js',
-            'typegen',
-            'openapi',
-            filePaths.input,
-            '--output',
-            filePaths.output.generatedWithComments,
-            '--service-name',
-            'my-service',
-            removeCommentFlag,
-          ].filter(isNonEmpty),
-        );
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'typegen',
+          'openapi',
+          filePaths.input,
+          '--output',
+          filePaths.output.generated,
+          '--service-name',
+          'my-service',
+          '--remove-comments',
+        ]);
 
         await runCLI();
 
-        const rawOutputContent = await filesystem.readFile(filePaths.output.generatedWithComments, 'utf-8');
+        const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
         const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
-        const expectedOutputContent = await filesystem.readFile(filePaths.output.expectedWithComments, 'utf-8');
+        const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
         expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
-      },
-    );
+      });
+
+      it.each(['', '--remove-comments=false'])(
+        'should support keeping comments in the generated types using: %s',
+        async (removeCommentFlag) => {
+          const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+          processArgvSpy.mockReturnValue(
+            [
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generatedWithComments,
+              '--service-name',
+              'my-service',
+              removeCommentFlag,
+            ].filter(isNonEmpty),
+          );
+
+          await runCLI();
+
+          const rawOutputContent = await filesystem.readFile(filePaths.output.generatedWithComments, 'utf-8');
+          const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+          const expectedOutputContent = await filesystem.readFile(filePaths.output.expectedWithComments, 'utf-8');
+          expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+        },
+      );
+    });
   });
 });

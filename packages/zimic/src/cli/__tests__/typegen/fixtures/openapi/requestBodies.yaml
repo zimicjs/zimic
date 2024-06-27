@@ -17,6 +17,11 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - id
+                  - email
+                  - createdAt
+                  - updatedAt
                 properties:
                   id:
                     type: string
@@ -38,11 +43,6 @@ paths:
                     type: string
                     examples:
                       - '2024-01-01T00:00:00.000Z'
-                required:
-                  - id
-                  - email
-                  - createdAt
-                  - updatedAt
               examples:
                 default:
                   value:
@@ -76,25 +76,25 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - email
+                - password
               properties:
                 email:
                   type: string
                 password:
                   type: string
-              required:
-                - email
-                - password
           application/xml:
             schema:
               type: object
+              required:
+                - name
+                - password
               properties:
                 name:
                   type: string
                 password:
                   type: string
-              required:
-                - name
-                - password
         responses:
           '200':
             description: The user was created successfully
@@ -107,6 +107,9 @@ components:
         application/json:
           schema:
             type: object
+            required:
+              - email
+              - password
             properties:
               name:
                 type: string
@@ -120,6 +123,3 @@ components:
                 type: string
                 examples:
                   - '123456'
-            required:
-              - email
-              - password

@@ -38,27 +38,27 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - type
+                  - value
                 properties:
                   type:
                     type: string
                     enum: [user-as-json]
                   value:
                     $ref: '#/components/schemas/User'
-                required:
-                  - type
-                  - value
             application/xml:
               schema:
                 type: object
+                required:
+                  - type
+                  - value
                 properties:
                   type:
                     type: string
                     enum: [user-as-xml]
                   value:
                     $ref: '#/components/schemas/User'
-                required:
-                  - type
-                  - value
         '400':
           $ref: '#/components/responses/error'
 
@@ -84,6 +84,11 @@ components:
   schemas:
     User:
       type: object
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
       properties:
         id:
           type: string
@@ -105,11 +110,6 @@ components:
           type: string
           examples:
             - '2024-01-01T00:00:00.000Z'
-      required:
-        - id
-        - email
-        - createdAt
-        - updatedAt
 
   responses:
     userCreated:

@@ -159,6 +159,11 @@ paths:
             x-www-form-urlencoded:
               schema:
                 type: object
+                required:
+                  - search
+                  - order
+                  - limit
+                  - archived
                 properties:
                   search:
                     $ref: '#/components/schemas/search'
@@ -168,11 +173,6 @@ paths:
                     $ref: '#/components/schemas/limit'
                   archived:
                     $ref: '#/components/schemas/archived'
-                required:
-                  - search
-                  - order
-                  - limit
-                  - archived
 
   /users-with-literal-search-params-in-body:
     get:

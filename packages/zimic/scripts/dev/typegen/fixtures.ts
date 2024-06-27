@@ -1,4 +1,3 @@
-import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
 
@@ -6,42 +5,49 @@ import typegenFixtures from '@/cli/__tests__/typegen/fixtures';
 import { runCommand } from '@/utils/processes';
 import { TEST_TYPEGEN_ROOT_IMPORT_MODULE } from '@tests/setup/constants';
 
-async function generateBaseFixtureTypes() {
-  const [fixtureType, fixtureName, ...otherArguments] = process.argv.slice(2);
-
+async function generateBaseFixtureType(fixtureName: string, fixtureType: string, otherArguments: string[]) {
   const fixtureDirectory = path.join(typegenFixtures.directory, fixtureType);
-  const schemaFilePaths = await glob(path.join(fixtureDirectory, `${fixtureName}.yaml`));
+  const schemaFilePath = path.join(fixtureDirectory, `${fixtureName}.yaml`);
 
-  for (const schemaFilePath of schemaFilePaths) {
-    const fileName = path.parse(schemaFilePath).name;
+  const fileName = path.parse(schemaFilePath).name;
 
-    const removesComments = otherArguments.some(
-      (otherArgument, index) =>
-        otherArgument === '--remove-comments=true' ||
-        (otherArgument === '--remove-comments' && otherArguments.at(index + 1) !== 'false'),
-    );
-    const outputFilePath = path.join(fixtureDirectory, removesComments ? `${fileName}.ts` : `${fileName}.comments.ts`);
+  const removesComments = otherArguments.some(
+    (otherArgument, index) =>
+      otherArgument === '--remove-comments=true' ||
+      (otherArgument === '--remove-comments' && otherArguments.at(index + 1) !== 'false'),
+  );
+  const outputFilePath = path.join(fixtureDirectory, removesComments ? `${fileName}.ts` : `${fileName}.comments.ts`);
 
-    await runCommand('pnpm', [
-      'cli',
-      'typegen',
-      fixtureType,
-      schemaFilePath,
-      '--output',
-      outputFilePath,
-      '--service-name',
-      'my-service',
-      ...otherArguments,
-    ]);
+  await runCommand('pnpm', [
+    'cli',
+    'typegen',
+    fixtureType,
+    schemaFilePath,
+    '--output',
+    outputFilePath,
+    '--service-name',
+    'my-service',
+    ...otherArguments,
+  ]);
 
-    await runCommand('pnpm', ['lint', outputFilePath]);
+  const outputFileContent = await filesystem.readFile(outputFilePath, 'utf-8');
+  await filesystem.writeFile(
+    outputFilePath,
+    outputFileContent.replace(/ from "zimic";/, ` from '${TEST_TYPEGEN_ROOT_IMPORT_MODULE}';`),
+  );
 
-    const outputFileContent = await filesystem.readFile(outputFilePath, 'utf-8');
-    await filesystem.writeFile(
-      outputFilePath,
-      outputFileContent.replace(/ from 'zimic';/, ` from '${TEST_TYPEGEN_ROOT_IMPORT_MODULE}';`),
-    );
-  }
+  return outputFilePath;
+}
+
+async function generateBaseFixtureTypes() {
+  const [fixtureType, joinedFixtureNames, ...otherArguments] = process.argv.slice(2);
+  const fixtureNames = joinedFixtureNames.split(/\W+/);
+
+  const outputFilePaths = await Promise.all(
+    fixtureNames.map((fixtureName) => generateBaseFixtureType(fixtureName, fixtureType, otherArguments)),
+  );
+
+  await runCommand('pnpm', ['lint', ...outputFilePaths]);
 }
 
 void generateBaseFixtureTypes();

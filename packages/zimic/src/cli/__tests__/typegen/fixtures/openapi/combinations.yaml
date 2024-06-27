@@ -102,6 +102,9 @@ components:
 
     UsersWithCount:
       type: object
+      required:
+        - users
+        - totalUsers
       properties:
         users:
           type: array
@@ -110,12 +113,12 @@ components:
         totalUsers:
           type: integer
           format: int32
-      required:
-        - users
-        - totalUsers
 
     FriendsWithCount:
       type: object
+      required:
+        - friends
+        - totalFriends
       properties:
         friends:
           type: array
@@ -124,9 +127,6 @@ components:
         totalFriends:
           type: integer
           format: int32
-      required:
-        - friends
-        - totalFriends
 
     UsersOrFriendsWithCount:
       anyOf:
