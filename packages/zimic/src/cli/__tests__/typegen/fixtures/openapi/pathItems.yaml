@@ -27,7 +27,7 @@ components:
                       - John
 
         responses:
-          200:
+          '200':
             description: The user was created successfully
             content:
               application/json:

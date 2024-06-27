@@ -36,7 +36,7 @@ paths:
                 $ref: '#/components/examples/CreateUserBody'
 
       responses:
-        200:
+        '200':
           description: The user was created successfully
           content:
             application/json:
@@ -58,10 +58,10 @@ paths:
                   - email
                   - createdAt
                   - updatedAt
-            examples:
-              default:
-                $ref: '#/components/examples/User'
-        400:
+              examples:
+                default:
+                  $ref: '#/components/examples/User'
+        '400':
           description: Error
           content:
             application/json:

@@ -9,7 +9,7 @@ paths:
     get:
       summary: List of users or friends
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -20,7 +20,7 @@ paths:
     get:
       summary: List of users and friends
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -31,7 +31,7 @@ paths:
     get:
       summary: Get a user or a friend
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -42,7 +42,7 @@ paths:
     get:
       summary: Get a user or a friend with discriminator
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -53,7 +53,7 @@ paths:
     get:
       summary: Get a user or a friend with discriminator
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:

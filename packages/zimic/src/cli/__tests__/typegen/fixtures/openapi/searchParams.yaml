@@ -15,7 +15,7 @@ paths:
     get:
       summary: List of users with literal component search params
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -33,7 +33,7 @@ paths:
         - $ref: '#/components/parameters/literalLimit'
         - $ref: '#/components/parameters/literalArchived'
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -51,7 +51,7 @@ paths:
         - $ref: '#/components/parameters/referenceLimit'
         - $ref: '#/components/parameters/referenceArchived'
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -89,7 +89,7 @@ paths:
           schema:
             $ref: '#/components/schemas/archived'
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -140,7 +140,7 @@ paths:
             type: boolean
             default: false
       responses:
-        200:
+        '200':
           description: Success
           content:
             application/json:
@@ -153,7 +153,7 @@ paths:
     get:
       summary: List of users with reference search params
       responses:
-        200:
+        '200':
           description: Success
           content:
             x-www-form-urlencoded:
@@ -178,7 +178,7 @@ paths:
     get:
       summary: List of users with literal search params
       responses:
-        200:
+        '200':
           description: Success
           content:
             x-www-form-urlencoded:

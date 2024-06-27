@@ -21,7 +21,7 @@ paths:
               $ref: '#/components/schemas/createUser'
 
       responses:
-        200:
+        '200':
           description: The user was created successfully
 
   /users-with-bearer-auth:
@@ -38,7 +38,7 @@ paths:
               $ref: '#/components/schemas/createUser'
 
       responses:
-        200:
+        '200':
           description: The user was created successfully
 
   /users-with-api-key:
@@ -55,7 +55,7 @@ paths:
               $ref: '#/components/schemas/createUser'
 
       responses:
-        200:
+        '200':
           description: The user was created successfully
 
   /users-with-bearer-oauth2:
@@ -72,7 +72,7 @@ paths:
               $ref: '#/components/schemas/createUser'
 
       responses:
-        200:
+        '200':
           description: The user was created successfully
 
 components:
