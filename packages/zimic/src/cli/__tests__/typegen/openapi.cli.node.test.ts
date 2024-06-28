@@ -64,7 +64,7 @@ describe('Type generation (OpenAPI)', () => {
   }
 
   function normalizeGeneratedFileToCompare(fileContent: string) {
-    return fileContent.replace(/^\s*\/\/ eslint-disable-next-.+$/gm, '').replace(/\n{2,}/g, '\n');
+    return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '');
   }
 
   beforeAll(async () => {
