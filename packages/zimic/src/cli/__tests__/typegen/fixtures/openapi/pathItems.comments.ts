@@ -8,6 +8,10 @@ export interface MyServiceComponents {
         /** The user to create */
         request: {
           body: {
+            /**
+             * @example
+             *   John;
+             */
             name?: string;
           };
         };
@@ -15,7 +19,15 @@ export interface MyServiceComponents {
           /** The user was created successfully */
           200: {
             body: {
+              /**
+               * @example
+               *   be8253f9-124b-4c32-b046-c25b6fd0af0c
+               */
               id?: string;
+              /**
+               * @example
+               *   John;
+               */
               name?: string;
             };
           };

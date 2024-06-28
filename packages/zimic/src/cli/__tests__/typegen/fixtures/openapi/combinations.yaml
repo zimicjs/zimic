@@ -5,31 +5,8 @@ info:
   version: 1.0.0
 
 paths:
-  /any-users-or-friends:
-    get:
-      summary: List of users or friends
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsersOrFriendsWithCount'
-
-  /all-users-and-friends:
-    get:
-      summary: List of users and friends
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsersAndFriendsWithCount'
-
   /user-or-friend:
     get:
-      summary: Get a user or a friend
       responses:
         '200':
           description: Success
@@ -40,7 +17,6 @@ paths:
 
   /discriminated-user-or-friend:
     get:
-      summary: Get a user or a friend with discriminator
       responses:
         '200':
           description: Success
@@ -49,9 +25,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/DiscriminatedUserOrFriend'
 
+  /any-of-users-or-friends:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyOfUsersOrFriends'
+
+  /all-of-users-and-friends:
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllOfUsersAndFriends'
+
   /not-user:
     get:
-      summary: Get a user or a friend with discriminator
       responses:
         '200':
           description: Success
@@ -100,7 +95,7 @@ components:
           type: integer
           format: int64
 
-    UsersWithCount:
+    Users:
       type: object
       required:
         - users
@@ -114,7 +109,7 @@ components:
           type: integer
           format: int32
 
-    FriendsWithCount:
+    Friends:
       type: object
       required:
         - friends
@@ -127,16 +122,6 @@ components:
         totalFriends:
           type: integer
           format: int32
-
-    UsersOrFriendsWithCount:
-      anyOf:
-        - $ref: '#/components/schemas/UsersWithCount'
-        - $ref: '#/components/schemas/FriendsWithCount'
-
-    UsersAndFriendsWithCount:
-      allOf:
-        - $ref: '#/components/schemas/UsersWithCount'
-        - $ref: '#/components/schemas/FriendsWithCount'
 
     UserOrFriend:
       oneOf:
@@ -152,6 +137,16 @@ components:
         mapping:
           user: '#/components/schemas/User'
           friend: '#/components/schemas/Friend'
+
+    AnyOfUsersOrFriends:
+      anyOf:
+        - $ref: '#/components/schemas/Users'
+        - $ref: '#/components/schemas/Friends'
+
+    AllOfUsersAndFriends:
+      allOf:
+        - $ref: '#/components/schemas/Users'
+        - $ref: '#/components/schemas/Friends'
 
     NotUser:
       not:

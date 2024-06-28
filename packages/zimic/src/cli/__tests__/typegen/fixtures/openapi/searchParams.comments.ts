@@ -2,7 +2,6 @@ import type { HttpSchema, HttpSearchParams, HttpSearchParamsSerialized } from '@
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-literal-component-search-params-in-path': {
-    /** List of users with literal component search params */
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -18,14 +17,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
       response: {
         /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
   '/users-with-literal-component-search-params': {
-    /** List of users with literal component search params */
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -41,14 +37,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
       response: {
         /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
   '/users-with-reference-component-search-params': {
-    /** List of users with reference component search params */
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -64,14 +57,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
       response: {
         /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
   '/users-with-reference-search-params': {
-    /** List of users with reference search params */
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -87,14 +77,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
       response: {
         /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
   '/users-with-literal-search-params': {
-    /** List of users with literal search params */
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -110,14 +97,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
       response: {
         /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
   '/users-with-reference-search-params-in-body': {
-    /** List of users with reference search params */
     GET: {
       response: {
         /** Success */
@@ -135,7 +119,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-literal-search-params-in-body': {
-    /** List of users with literal search params */
     GET: {
       response: {
         /** Success */
@@ -158,11 +141,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
-    User: {
-      /** Format: int64 */
-      id: number;
-      name: string;
-    };
     search: (string | null) | string[];
     /**
      * The sort order

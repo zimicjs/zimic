@@ -22,6 +22,7 @@ paths:
       tags:
         - users
       requestBody:
+        required: true
         description: The user to create
         content:
           application/json:
@@ -134,28 +135,23 @@ components:
         id:
           type: string
           description: The user's id
-          examples:
-            - be8253f9-124b-4c32-b046-c25b6fd0af0c
+          example: be8253f9-124b-4c32-b046-c25b6fd0af0c
         name:
           type: string
           description: The user's name
-          examples:
-            - John
+          example: John
         email:
           type: string
           description: The user's email
-          examples:
-            - john@email.com
+          example: john@email.com
         createdAt:
           type: string
           description: The user's creation date
-          examples:
-            - '2024-01-01T00:00:00.000Z'
+          example: '2024-01-01T00:00:00.000Z'
         updatedAt:
           type: string
           description: The user's last update date
-          examples:
-            - '2024-01-01T00:00:00.000Z'
+          example: '2024-01-01T00:00:00.000Z'
 
   examples:
     User:

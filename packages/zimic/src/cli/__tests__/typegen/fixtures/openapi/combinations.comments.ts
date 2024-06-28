@@ -1,30 +1,7 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/any-users-or-friends': {
-    /** List of users or friends */
-    GET: {
-      response: {
-        /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['UsersOrFriendsWithCount'];
-        };
-      };
-    };
-  };
-  '/all-users-and-friends': {
-    /** List of users and friends */
-    GET: {
-      response: {
-        /** Success */
-        200: {
-          body: MyServiceComponents['schemas']['UsersAndFriendsWithCount'];
-        };
-      };
-    };
-  };
   '/user-or-friend': {
-    /** Get a user or a friend */
     GET: {
       response: {
         /** Success */
@@ -35,7 +12,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/discriminated-user-or-friend': {
-    /** Get a user or a friend with discriminator */
     GET: {
       response: {
         /** Success */
@@ -45,8 +21,27 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
+  '/any-of-users-or-friends': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          body: MyServiceComponents['schemas']['AnyOfUsersOrFriends'];
+        };
+      };
+    };
+  };
+  '/all-of-users-and-friends': {
+    GET: {
+      response: {
+        /** Success */
+        200: {
+          body: MyServiceComponents['schemas']['AllOfUsersAndFriends'];
+        };
+      };
+    };
+  };
   '/not-user': {
-    /** Get a user or a friend with discriminator */
     GET: {
       response: {
         /** Success */
@@ -85,23 +80,20 @@ export interface MyServiceComponents {
       /** Format: int64 */
       userId: number;
     };
-    UsersWithCount: {
+    Users: {
       users: MyServiceComponents['schemas']['User'][];
       /** Format: int32 */
       totalUsers: number;
     };
-    FriendsWithCount: {
+    Friends: {
       friends: MyServiceComponents['schemas']['Friend'][];
       /** Format: int32 */
       totalFriends: number;
     };
-    UsersOrFriendsWithCount:
-      | MyServiceComponents['schemas']['UsersWithCount']
-      | MyServiceComponents['schemas']['FriendsWithCount'];
-    UsersAndFriendsWithCount: MyServiceComponents['schemas']['UsersWithCount'] &
-      MyServiceComponents['schemas']['FriendsWithCount'];
     UserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
     DiscriminatedUserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
+    AnyOfUsersOrFriends: MyServiceComponents['schemas']['Users'] | MyServiceComponents['schemas']['Friends'];
+    AllOfUsersAndFriends: MyServiceComponents['schemas']['Users'] & MyServiceComponents['schemas']['Friends'];
     NotUser: any;
   };
 }

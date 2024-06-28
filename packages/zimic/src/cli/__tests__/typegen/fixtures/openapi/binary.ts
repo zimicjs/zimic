@@ -1,7 +1,7 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/upload': {
+  '/binary-upload': {
     POST: {
       request: {
         body: Blob;

@@ -7,10 +7,8 @@ info:
 paths:
   /users:
     post:
-      summary: Create user
-
       requestBody:
-        description: The user to create
+        required: true
         content:
           application/json:
             schema:
@@ -21,23 +19,24 @@ paths:
               properties:
                 name:
                   type: string
-                  examples:
-                    - John
+                  example: John
                 email:
                   type: string
-                  examples:
-                    - john@email.com
+                  example: john@email.com
                 password:
                   type: string
-                  examples:
-                    - '123456'
+                  example: '123456'
             examples:
-              default:
+              reference:
                 $ref: '#/components/examples/CreateUserBody'
-
+              literal:
+                value:
+                  name: John
+                  email: john@email.com
+                  password: '123456'
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
           content:
             application/json:
               schema:
@@ -50,17 +49,29 @@ paths:
                 properties:
                   id:
                     type: string
+                    example: be8253f9-124b-4c32-b046-c25b6fd0af0c
                   name:
                     type: string
+                    example: John
                   email:
                     type: string
+                    example: john@email.com
                   createdAt:
                     type: string
+                    example: '2024-01-01T00:00:00.000Z'
                   updatedAt:
                     type: string
+                    example: '2024-01-01T00:00:00.000Z'
               examples:
-                default:
+                reference:
                   $ref: '#/components/examples/User'
+                literal:
+                  value:
+                    id: be8253f9-124b-4c32-b046-c25b6fd0af0c
+                    name: John
+                    email: john@email.com
+                    createdAt: '2024-01-01T00:00:00.000Z'
+                    updatedAt: '2024-01-01T00:00:00.000Z'
         '400':
           description: Error
           content:
@@ -72,9 +83,13 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: Invalid limit
               examples:
-                default:
+                reference:
                   $ref: '#/components/examples/Error'
+                literal:
+                  value:
+                    message: Invalid limit
 
 components:
   examples:
@@ -87,7 +102,9 @@ components:
       value:
         id: be8253f9-124b-4c32-b046-c25b6fd0af0c
         name: John
-        email:
+        email: john@email.com
+        createdAt: '2024-01-01T00:00:00.000Z'
+        updatedAt: '2024-01-01T00:00:00.000Z'
     Error:
       value:
         message: Invalid limit

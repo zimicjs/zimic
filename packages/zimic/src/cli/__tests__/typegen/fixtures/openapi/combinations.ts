@@ -1,24 +1,6 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/any-users-or-friends': {
-    GET: {
-      response: {
-        200: {
-          body: MyServiceComponents['schemas']['UsersOrFriendsWithCount'];
-        };
-      };
-    };
-  };
-  '/all-users-and-friends': {
-    GET: {
-      response: {
-        200: {
-          body: MyServiceComponents['schemas']['UsersAndFriendsWithCount'];
-        };
-      };
-    };
-  };
   '/user-or-friend': {
     GET: {
       response: {
@@ -33,6 +15,24 @@ export type MyServiceSchema = HttpSchema.Paths<{
       response: {
         200: {
           body: MyServiceComponents['schemas']['DiscriminatedUserOrFriend'];
+        };
+      };
+    };
+  };
+  '/any-of-users-or-friends': {
+    GET: {
+      response: {
+        200: {
+          body: MyServiceComponents['schemas']['AnyOfUsersOrFriends'];
+        };
+      };
+    };
+  };
+  '/all-of-users-and-friends': {
+    GET: {
+      response: {
+        200: {
+          body: MyServiceComponents['schemas']['AllOfUsersAndFriends'];
         };
       };
     };
@@ -61,21 +61,18 @@ export interface MyServiceComponents {
       type: 'friend';
       userId: number;
     };
-    UsersWithCount: {
+    Users: {
       users: MyServiceComponents['schemas']['User'][];
       totalUsers: number;
     };
-    FriendsWithCount: {
+    Friends: {
       friends: MyServiceComponents['schemas']['Friend'][];
       totalFriends: number;
     };
-    UsersOrFriendsWithCount:
-      | MyServiceComponents['schemas']['UsersWithCount']
-      | MyServiceComponents['schemas']['FriendsWithCount'];
-    UsersAndFriendsWithCount: MyServiceComponents['schemas']['UsersWithCount'] &
-      MyServiceComponents['schemas']['FriendsWithCount'];
     UserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
     DiscriminatedUserOrFriend: MyServiceComponents['schemas']['User'] | MyServiceComponents['schemas']['Friend'];
+    AnyOfUsersOrFriends: MyServiceComponents['schemas']['Users'] | MyServiceComponents['schemas']['Friends'];
+    AllOfUsersAndFriends: MyServiceComponents['schemas']['Users'] & MyServiceComponents['schemas']['Friends'];
     NotUser: any;
   };
 }

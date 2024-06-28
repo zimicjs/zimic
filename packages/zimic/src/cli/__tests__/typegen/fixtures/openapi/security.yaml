@@ -5,37 +5,34 @@ info:
   version: 1.0.0
 
 paths:
-  /users:
+  /users-with-multiple-security-schemes:
     post:
       summary: Create user
       security:
         - apiKey: []
         - bearerAuth: []
         - oauth2: [create:users]
-
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
 
   /users-with-bearer-auth:
     post:
       summary: Create user with bearer auth
       security:
         - bearerAuth: []
-
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
 
   /users-with-api-key:
     post:
       summary: Create user with API key
       security:
         - apiKey: []
-
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
 
   /users-with-bearer-oauth2:
     post:
@@ -45,7 +42,7 @@ paths:
 
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
 
 components:
   securitySchemes:
@@ -54,11 +51,13 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: The authorization token
+
     apiKey:
       type: apiKey
       in: header
       name: x-api-Key
       description: The API key
+
     oauth2:
       type: oauth2
       flows:
@@ -66,4 +65,4 @@ components:
           authorizationUrl: https://example.com/oauth/authorize
           tokenUrl: https://example.com/oauth/token
           scopes:
-            create:users: Grants write access
+            create:users: Grants access to create users

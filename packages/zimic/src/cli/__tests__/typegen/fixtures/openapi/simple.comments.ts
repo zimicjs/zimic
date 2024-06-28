@@ -11,15 +11,40 @@ export type MyServiceSchema = HttpSchema.Paths<{
 export interface MyServiceComponents {
   schemas: {
     User: {
-      /** The user's id */
+      /**
+       * The user's id
+       *
+       * @example
+       *   be8253f9-124b-4c32-b046-c25b6fd0af0c
+       */
       id: string;
-      /** The user's name */
+      /**
+       * The user's name
+       *
+       * @example
+       *   John;
+       */
       name?: string;
-      /** The user's email */
+      /**
+       * The user's email
+       *
+       * @example
+       *   john@email.com
+       */
       email: string;
-      /** The user's creation date */
+      /**
+       * The user's creation date
+       *
+       * @example
+       *   2024-01-01T00:00:00.000Z
+       */
       createdAt: string;
-      /** The user's last update date */
+      /**
+       * The user's last update date
+       *
+       * @example
+       *   2024-01-01T00:00:00.000Z
+       */
       updatedAt: string;
     };
   };

@@ -9,6 +9,7 @@ paths:
     post:
       summary: Create user
       requestBody:
+        required: true
         $ref: '#/components/requestBodies/createUser'
       responses:
         '200':
@@ -25,24 +26,19 @@ paths:
                 properties:
                   id:
                     type: string
-                    examples:
-                      - be8253f9-124b-4c32-b046-c25b6fd0af0c
+                    example: be8253f9-124b-4c32-b046-c25b6fd0af0c
                   name:
                     type: string
-                    examples:
-                      - John
+                    example: John
                   email:
                     type: string
-                    examples:
-                      - john@email.com
+                    example: john@email.com
                   createdAt:
                     type: string
-                    examples:
-                      - '2024-01-01T00:00:00.000Z'
+                    example: '2024-01-01T00:00:00.000Z'
                   updatedAt:
                     type: string
-                    examples:
-                      - '2024-01-01T00:00:00.000Z'
+                    example: '2024-01-01T00:00:00.000Z'
               examples:
                 default:
                   value:
@@ -71,6 +67,7 @@ paths:
     post:
       summary: Create user with multiple request contents
       requestBody:
+        required: true
         description: The user to create
         content:
           application/json:
@@ -113,13 +110,10 @@ components:
             properties:
               name:
                 type: string
-                examples:
-                  - John
+                example: John
               email:
                 type: string
-                examples:
-                  - john@email.com
+                example: john@email.com
               password:
                 type: string
-                examples:
-                  - '123456'
+                example: '123456'

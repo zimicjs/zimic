@@ -5,9 +5,8 @@ info:
   version: 1.0.0
 
 paths:
-  /upload:
+  /binary-upload:
     post:
-      summary: Upload a binary file
       requestBody:
         required: true
         content:
@@ -15,7 +14,6 @@ paths:
             schema:
               type: string
               format: binary
-
       responses:
         '200':
           description: Success

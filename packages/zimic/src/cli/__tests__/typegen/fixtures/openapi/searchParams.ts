@@ -12,9 +12,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
         }>;
       };
       response: {
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
@@ -29,9 +27,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
         }>;
       };
       response: {
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
@@ -46,9 +42,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
         }>;
       };
       response: {
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
@@ -63,9 +57,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
         }>;
       };
       response: {
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
@@ -80,9 +72,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
         }>;
       };
       response: {
-        200: {
-          body: MyServiceComponents['schemas']['User'][];
-        };
+        200: {};
       };
     };
   };
@@ -121,10 +111,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
-    User: {
-      id: number;
-      name: string;
-    };
     search: (string | null) | string[];
     order: 'asc' | 'desc';
     limit: number | null;

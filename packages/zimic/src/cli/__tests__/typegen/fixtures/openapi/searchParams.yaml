@@ -11,22 +11,13 @@ paths:
       - $ref: '#/components/parameters/literalOrder'
       - $ref: '#/components/parameters/literalLimit'
       - $ref: '#/components/parameters/literalArchived'
-
     get:
-      summary: List of users with literal component search params
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-literal-component-search-params:
     get:
-      summary: List of users with literal component search params
       parameters:
         - $ref: '#/components/parameters/literalSearch'
         - $ref: '#/components/parameters/literalOrder'
@@ -35,16 +26,9 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-reference-component-search-params:
     get:
-      summary: List of users with reference component search params
       parameters:
         - $ref: '#/components/parameters/referenceSearch'
         - $ref: '#/components/parameters/referenceOrder'
@@ -53,16 +37,9 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-reference-search-params:
     get:
-      summary: List of users with reference search params
       parameters:
         - name: search
           in: query
@@ -91,16 +68,9 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-literal-search-params:
     get:
-      summary: List of users with literal search params
       parameters:
         - name: search
           in: query
@@ -142,16 +112,9 @@ paths:
       responses:
         '200':
           description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-reference-search-params-in-body:
     get:
-      summary: List of users with reference search params
       responses:
         '200':
           description: Success
@@ -176,7 +139,6 @@ paths:
 
   /users-with-literal-search-params-in-body:
     get:
-      summary: List of users with literal search params
       responses:
         '200':
           description: Success
@@ -210,18 +172,6 @@ paths:
 
 components:
   schemas:
-    User:
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-
     search:
       oneOf:
         - type: string

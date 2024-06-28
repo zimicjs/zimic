@@ -29,12 +29,12 @@ describe('Type generation (OpenAPI)', () => {
 
   const schemaNames = [
     'simple',
+    'pathParams',
     'searchParams',
     'headers',
     'requestBodies',
     'formData',
     'binary',
-    'dynamicPaths',
     'pathItems',
     'security',
     'responses',
@@ -69,11 +69,11 @@ describe('Type generation (OpenAPI)', () => {
 
   beforeAll(async () => {
     await Promise.all([
-      (async () => {
+      (async function loadPrettierConfig() {
         prettierConfig = await resolvedPrettierConfig(__filename);
       })(),
 
-      (async () => {
+      (async function validateAndGenerateSchemas() {
         await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
 
         const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
@@ -81,6 +81,14 @@ describe('Type generation (OpenAPI)', () => {
           glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
           glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
         ]);
+
+        if (yamlSchemaFilePaths.length !== schemaNames.length) {
+          throw new Error(
+            'Some schemas are not being tested or were not found: ' +
+              `got [${yamlSchemaFilePaths.map((p) => path.parse(p).name).join(', ')}], ` +
+              `expected [${schemaNames.join(', ')}]`,
+          );
+        }
 
         const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
         await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));

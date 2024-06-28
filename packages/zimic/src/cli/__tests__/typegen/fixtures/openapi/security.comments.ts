@@ -1,11 +1,11 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
+  '/users-with-multiple-security-schemes': {
     /** Create user */
     POST: {
       response: {
-        /** The user was created successfully */
+        /** Success */
         200: {};
       };
     };
@@ -14,7 +14,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     /** Create user with bearer auth */
     POST: {
       response: {
-        /** The user was created successfully */
+        /** Success */
         200: {};
       };
     };
@@ -23,7 +23,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     /** Create user with API key */
     POST: {
       response: {
-        /** The user was created successfully */
+        /** Success */
         200: {};
       };
     };
@@ -32,7 +32,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     /** Create user with bearer OAuth2 */
     POST: {
       response: {
-        /** The user was created successfully */
+        /** Success */
         200: {};
       };
     };

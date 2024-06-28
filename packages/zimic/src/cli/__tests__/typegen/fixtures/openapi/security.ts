@@ -1,7 +1,7 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
+  '/users-with-multiple-security-schemes': {
     POST: {
       response: {
         200: {};
