@@ -18,12 +18,10 @@ export class CommandError extends Error {
   }
 }
 
-function logCommandStdout(data: Buffer) {
-  console.log(data.toString());
-}
+export type CommandStreamType = 'stdout' | 'stderr';
 
-function logCommandStderr(data: Buffer) {
-  console.error(data.toString());
+function defaultPipeCommandOutput(data: Buffer, streamType: CommandStreamType) {
+  process[streamType].write(data);
 }
 
 /**
@@ -48,30 +46,17 @@ export async function runCommand(
      */
     stdio?: SpawnOptions['stdio'];
 
-    /**
-     * A function that will be called with the data emitted by the child process's `stdout` stream.
-     *
-     * If `stdio` is set to 'pipe', the data will be logged to the console by default using `console.log`.
-     */
-    onStdout?: (data: Buffer) => void;
-
-    /**
-     * A function that will be called with the data emitted by the child process's `stderr` stream.
-     *
-     * If `stdio` is set to 'pipe', the data will be logged to the console by default using `console.error`.
-     */
-    onStderr?: (data: Buffer) => void;
+    onOutput?: (data: Buffer, streamType: CommandStreamType) => void;
   } = {},
 ) {
   await new Promise<void>((resolve, reject) => {
     const {
       stdio = 'inherit',
-      onStdout = stdio === 'pipe' ? logCommandStdout : undefined,
-      onStderr = stdio === 'pipe' ? logCommandStderr : undefined,
+      onOutput = stdio === 'pipe' ? defaultPipeCommandOutput : undefined,
       ...otherOptions
     } = options;
 
-    const childProcess = spawn(command, commandArguments, { ...otherOptions, stdio });
+    const childProcess = spawn(command, commandArguments, { stdio, ...otherOptions });
 
     childProcess.once('error', (error) => {
       childProcess.removeAllListeners();
@@ -90,12 +75,14 @@ export async function runCommand(
       reject(failureError);
     });
 
-    if (onStdout) {
-      childProcess.stdout?.on('data', onStdout);
-    }
+    if (onOutput) {
+      childProcess.stdout?.on('data', (data: Buffer) => {
+        onOutput(data, 'stdout');
+      });
 
-    if (onStderr) {
-      childProcess.stderr?.on('data', onStderr);
+      childProcess.stderr?.on('data', (data: Buffer) => {
+        onOutput(data, 'stderr');
+      });
     }
   });
 }

@@ -9,3 +9,4 @@ export { createInterceptorServer } from './factory';
 export { NotStartedInterceptorServerError };
 
 export { runCommand, CommandError } from '@/utils/processes';
+export type { CommandStreamType } from '@/utils/processes';
