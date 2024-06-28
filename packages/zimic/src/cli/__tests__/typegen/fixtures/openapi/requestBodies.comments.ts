@@ -79,7 +79,9 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request: {
         body: {
+          /** The email of the user */
           email: string;
+          /** The password of the user */
           password: string;
         };
       };
@@ -93,7 +95,9 @@ export type MyServiceSchema = HttpSchema.Paths<{
               'content-type': 'application/json';
             };
             body: {
+              /** The email of the user */
               email: string;
+              /** The password of the user */
               password: string;
             };
           }
@@ -102,7 +106,9 @@ export type MyServiceSchema = HttpSchema.Paths<{
               'content-type': 'application/xml';
             };
             body: {
+              /** The name of the user */
               name: string;
+              /** The password of the user */
               password: string;
             };
           };
@@ -112,7 +118,9 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request: {
         body?: {
+          /** The email of the user */
           email: string;
+          /** The password of the user */
           password: string;
         };
       };
@@ -122,7 +130,9 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request: {
         body?: {
+          /** The email of the user */
           email: string;
+          /** The password of the user */
           password: string;
         };
       };
@@ -131,24 +141,34 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
+    /** A user to create */
     CreateUserBody: {
+      /** The name of the user */
       name?: string;
+      /** The email of the user */
       email: string;
+      /** The password of the user */
       password: string;
     };
   };
   requestBodies: {
     createUser: HttpSchema.Request<{
       body: {
+        /** The name of the user */
         name?: string;
+        /** The email of the user */
         email: string;
+        /** The password of the user */
         password: string;
       };
     }>;
     requiredCreateUser: HttpSchema.Request<{
       body: {
+        /** The name of the user */
         name?: string;
+        /** The email of the user */
         email: string;
+        /** The password of the user */
         password: string;
       };
     }>;
@@ -158,8 +178,9 @@ export interface MyServiceComponents {
             'content-type': 'application/json';
           };
           body: {
-            name?: string;
+            /** The email of the user */
             email: string;
+            /** The password of the user */
             password: string;
           };
         }
@@ -168,15 +189,20 @@ export interface MyServiceComponents {
             'content-type': 'application/xml';
           };
           body: {
+            /** The name of the user */
             name: string;
+            /** The password of the user */
             password: string;
           };
         }
     >;
     optionalCreateUser: HttpSchema.Request<{
       body: {
+        /** The name of the user */
         name?: string;
+        /** The email of the user */
         email: string;
+        /** The password of the user */
         password: string;
       };
     }>;

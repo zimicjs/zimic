@@ -5,8 +5,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request: {
         body: HttpFormData<{
+          /** The name of the file */
           name: string;
-          /** Format: binary */
+          /**
+           * Format: binary
+           *
+           * The content of the file
+           */
           content: Blob | null;
         }>;
       };
@@ -14,8 +19,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
         /** Success */
         200: {
           body: HttpFormData<{
+            /** The name of the file */
             name?: string;
-            /** Format: binary */
+            /**
+             * Format: binary
+             *
+             * The content of the file
+             */
             content: Blob | null;
           }>;
         };

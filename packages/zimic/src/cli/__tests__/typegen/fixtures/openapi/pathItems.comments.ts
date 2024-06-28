@@ -2,6 +2,7 @@ import type { HttpSchema } from '@/index';
 
 export interface MyServiceComponents {
   pathItems: {
+    /** User paths */
     users: HttpSchema.Methods<{
       POST: {
         request: {

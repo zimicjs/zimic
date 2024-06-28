@@ -7,10 +7,12 @@ info:
 paths:
   /users/{userId}:
     get:
+      summary: Info for a specific user
       parameters:
         - name: userId
           in: path
           required: true
+          description: The id of the user to retrieve
           schema:
             type: string
       responses:
@@ -23,10 +25,12 @@ paths:
 
   /users/{userId}/friends:
     get:
+      summary: List of friends for a specific user
       parameters:
         - name: userId
           in: path
           required: true
+          description: The id of the user to retrieve friends for
           schema:
             type: string
       responses:
@@ -39,15 +43,18 @@ paths:
 
   /users/{userId}/friends/{friendId}:
     get:
+      summary: Info for a specific friend of a specific user
       parameters:
         - name: userId
           in: path
           required: true
+          description: The id of the user to retrieve a friend for
           schema:
             type: string
         - name: friendId
           in: path
           required: true
+          description: The id of the friend to retrieve
           schema:
             type: string
       responses:

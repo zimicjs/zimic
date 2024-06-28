@@ -27,7 +27,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
                 'content-type': 'application/json';
               };
               body: {
-                /** @enum {string} */
+                /**
+                 * The type of the response
+                 *
+                 * @enum {string}
+                 */
                 type: 'user-as-json';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -37,7 +41,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
                 'content-type': 'application/xml';
               };
               body: {
-                /** @enum {string} */
+                /**
+                 * The type of the response
+                 *
+                 * @enum {string}
+                 */
                 type: 'user-as-xml';
                 value: MyServiceComponents['schemas']['User'];
               };
@@ -61,11 +69,17 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
+    /** A user */
     User: {
+      /** The user ID */
       id: string;
+      /** The user's name */
       name?: string;
+      /** The user's email address */
       email: string;
+      /** The date and time the user was created */
       createdAt: string;
+      /** The date and time the user was last updated */
       updatedAt: string;
     };
   };
@@ -81,7 +95,11 @@ export interface MyServiceComponents {
             'content-type': 'application/json';
           };
           body: {
-            /** @enum {string} */
+            /**
+             * The type of the response
+             *
+             * @enum {string}
+             */
             type?: 'user-as-json';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -91,7 +109,11 @@ export interface MyServiceComponents {
             'content-type': 'application/xml';
           };
           body: {
-            /** @enum {string} */
+            /**
+             * The type of the response
+             *
+             * @enum {string}
+             */
             type?: 'user-as-xml';
             value?: MyServiceComponents['schemas']['User'];
           };
@@ -100,6 +122,7 @@ export interface MyServiceComponents {
     /** Error */
     error: HttpSchema.Response<{
       body: {
+        /** A message describing the error */
         message: string;
       };
     }>;

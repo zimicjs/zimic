@@ -5,9 +5,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
+          /** The search text */
           search?: MyServiceComponents['parameters']['literalSearch'];
+          /** The sort order */
           order?: MyServiceComponents['parameters']['literalOrder'];
+          /** How many items to return */
           limit: MyServiceComponents['parameters']['literalLimit'];
+          /** Whether to include archived pets */
           archived?: MyServiceComponents['parameters']['literalArchived'];
         }>;
       };
@@ -21,9 +25,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
+          /** The search text */
           search?: MyServiceComponents['parameters']['literalSearch'];
+          /** The sort order */
           order?: MyServiceComponents['parameters']['literalOrder'];
+          /** How many items to return */
           limit: MyServiceComponents['parameters']['literalLimit'];
+          /** Whether to include archived pets */
           archived?: MyServiceComponents['parameters']['literalArchived'];
         }>;
       };
@@ -37,9 +45,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
+          /** The search text */
           search?: MyServiceComponents['parameters']['referenceSearch'];
+          /** The sort order */
           order?: MyServiceComponents['parameters']['referenceOrder'];
+          /** How many items to return */
           limit: MyServiceComponents['parameters']['referenceLimit'];
+          /** Whether to include archived pets */
           archived?: MyServiceComponents['parameters']['referenceArchived'];
         }>;
       };
@@ -53,9 +65,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
+          /** The search text */
           search?: MyServiceComponents['schemas']['search'];
+          /** The sort order */
           order?: MyServiceComponents['schemas']['order'];
+          /** How many items to return */
           limit: MyServiceComponents['schemas']['limit'];
+          /** Whether to include archived pets */
           archived?: MyServiceComponents['schemas']['archived'];
         }>;
       };
@@ -69,9 +85,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
+          /** The search text */
           search?: (string | null) | string[];
+          /** The sort order */
           order?: 'asc' | 'desc';
+          /** How many items to return */
           limit: number;
+          /** Whether to include archived pets */
           archived?: boolean;
         }>;
       };
@@ -122,21 +142,41 @@ export type MyServiceSchema = HttpSchema.Paths<{
 export interface MyServiceComponents {
   schemas: {
     search: (string | null) | string[];
-    /** @enum {string} */
+    /**
+     * The sort order
+     *
+     * @enum {string}
+     */
     order: 'asc' | 'desc';
-    /** Format: int32 */
+    /**
+     * Format: int32
+     *
+     * How many items to return
+     */
     limit: number | null;
-    /** @default false */
+    /**
+     * Whether to include archived pets
+     *
+     * @default false
+     */
     archived: boolean;
   };
   parameters: {
+    /** The search text */
     literalSearch: (string | null) | string[];
+    /** The sort order */
     literalOrder: MyServiceComponents['schemas']['order'];
+    /** How many items to return */
     literalLimit: number | null;
+    /** Whether to include archived pets */
     literalArchived: boolean;
+    /** The search text */
     referenceSearch: MyServiceComponents['schemas']['search'];
+    /** The sort order */
     referenceOrder: MyServiceComponents['schemas']['order'];
+    /** How many items to return */
     referenceLimit: MyServiceComponents['schemas']['limit'];
+    /** Whether to include archived pets */
     referenceArchived: MyServiceComponents['schemas']['archived'];
   };
 }

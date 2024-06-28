@@ -154,7 +154,6 @@ export interface MyServiceComponents {
             'content-type': 'application/json';
           };
           body: {
-            name?: string;
             email: string;
             password: string;
           };

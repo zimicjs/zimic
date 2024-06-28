@@ -30,12 +30,14 @@ paths:
             application/json:
               schema:
                 type: object
+                description: The created user
                 required:
                   - type
                   - value
                 properties:
                   type:
                     type: string
+                    description: The type of the response
                     enum: [user-as-json]
                   value:
                     $ref: '#/components/schemas/User'
@@ -48,6 +50,7 @@ paths:
                 properties:
                   type:
                     type: string
+                    description: The type of the response
                     enum: [user-as-xml]
                   value:
                     $ref: '#/components/schemas/User'
@@ -68,6 +71,7 @@ components:
   schemas:
     User:
       type: object
+      description: A user
       required:
         - id
         - email
@@ -76,14 +80,19 @@ components:
       properties:
         id:
           type: string
+          description: The user ID
         name:
           type: string
+          description: The user's name
         email:
           type: string
+          description: The user's email address
         createdAt:
           type: string
+          description: The date and time the user was created
         updatedAt:
           type: string
+          description: The date and time the user was last updated
 
   responses:
     userCreated:
@@ -99,19 +108,23 @@ components:
         application/json:
           schema:
             type: object
+            description: The created user as JSON
             properties:
               type:
                 type: string
                 enum: [user-as-json]
+                description: The type of the response
               value:
                 $ref: '#/components/schemas/User'
         application/xml:
           schema:
             type: object
+            description: The created user as XML
             properties:
               type:
                 type: string
                 enum: [user-as-xml]
+                description: The type of the response
               value:
                 $ref: '#/components/schemas/User'
 
@@ -121,8 +134,10 @@ components:
         application/json:
           schema:
             type: object
+            description: An error response
             required:
               - message
             properties:
               message:
                 type: string
+                description: A message describing the error

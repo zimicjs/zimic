@@ -101,8 +101,10 @@ paths:
               properties:
                 email:
                   type: string
+                  description: The email of the user
                 password:
                   type: string
+                  description: The password of the user
         responses:
           '200':
             description: Success
@@ -121,8 +123,10 @@ paths:
               properties:
                 email:
                   type: string
+                  description: The email of the user
                 password:
                   type: string
+                  description: The password of the user
           application/xml:
             schema:
               type: object
@@ -132,8 +136,10 @@ paths:
               properties:
                 name:
                   type: string
+                  description: The name of the user
                 password:
                   type: string
+                  description: The password of the user
         responses:
           '200':
             description: Success
@@ -152,8 +158,10 @@ paths:
               properties:
                 email:
                   type: string
+                  description: The email of the user
                 password:
                   type: string
+                  description: The password of the user
         responses:
           '200':
             description: Success
@@ -171,8 +179,10 @@ paths:
               properties:
                 email:
                   type: string
+                  description: The email of the user
                 password:
                   type: string
+                  description: The password of the user
         responses:
           '200':
             description: Success
@@ -181,16 +191,20 @@ components:
   schemas:
     CreateUserBody:
       type: object
+      description: A user to create
       required:
         - email
         - password
       properties:
         name:
           type: string
+          description: The name of the user
         email:
           type: string
+          description: The email of the user
         password:
           type: string
+          description: The password of the user
 
   requestBodies:
     createUser:
@@ -204,10 +218,13 @@ components:
             properties:
               name:
                 type: string
+                description: The name of the user
               email:
                 type: string
+                description: The email of the user
               password:
                 type: string
+                description: The password of the user
 
     requiredCreateUser:
       required: true
@@ -221,10 +238,13 @@ components:
             properties:
               name:
                 type: string
+                description: The name of the user
               email:
                 type: string
+                description: The email of the user
               password:
                 type: string
+                description: The password of the user
 
     requiredCreateUserMultiple:
       required: true
@@ -236,12 +256,12 @@ components:
               - email
               - password
             properties:
-              name:
-                type: string
               email:
                 type: string
+                description: The email of the user
               password:
                 type: string
+                description: The password of the user
         application/xml:
           schema:
             type: object
@@ -251,8 +271,10 @@ components:
             properties:
               name:
                 type: string
+                description: The name of the user
               password:
                 type: string
+                description: The password of the user
 
     optionalCreateUser:
       required: false
@@ -266,7 +288,10 @@ components:
             properties:
               name:
                 type: string
+                description: The name of the user
               email:
                 type: string
+                description: The email of the user
               password:
                 type: string
+                description: The password of the user

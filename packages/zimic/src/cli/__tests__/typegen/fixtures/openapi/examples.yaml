@@ -94,11 +94,13 @@ paths:
 components:
   examples:
     CreateUserBody:
+      description: Create user body
       value:
         name: John
         email: john@email.com
         password: '123456'
     User:
+      description: User
       value:
         id: be8253f9-124b-4c32-b046-c25b6fd0af0c
         name: John
@@ -106,5 +108,6 @@ components:
         createdAt: '2024-01-01T00:00:00.000Z'
         updatedAt: '2024-01-01T00:00:00.000Z'
     Error:
+      description: Error
       value:
         message: Invalid limit

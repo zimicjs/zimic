@@ -43,21 +43,25 @@ paths:
       parameters:
         - name: search
           in: query
+          description: The search text
           required: false
           schema:
             $ref: '#/components/schemas/search'
         - name: order
           in: query
+          description: The sort order
           required: false
           schema:
             $ref: '#/components/schemas/order'
         - name: limit
           in: query
+          description: How many items to return
           required: true
           schema:
             $ref: '#/components/schemas/limit'
         - name: archived
           in: query
+          description: Whether to include archived pets
           required: false
           schema:
             $ref: '#/components/schemas/archived'
@@ -70,16 +74,20 @@ paths:
       parameters:
         - name: search
           in: query
+          description: The search text
           required: false
           schema:
             oneOf:
               - type: string
+                description: The search text
                 nullable: true
               - type: array
+                description: The search text
                 items:
                   type: string
         - name: order
           in: query
+          description: The sort order
           required: false
           schema:
             type: string
@@ -88,6 +96,7 @@ paths:
               - desc
         - name: limit
           in: query
+          description: How many items to return
           required: true
           schema:
             type: integer
@@ -95,6 +104,7 @@ paths:
             maximum: 100
         - name: archived
           in: query
+          description: Whether to include archived pets
           required: false
           schema:
             type: boolean
@@ -140,8 +150,10 @@ paths:
                   search:
                     oneOf:
                       - type: string
+                        description: The search text
                         nullable: true
                       - type: array
+                        description: The search text
                         items:
                           type: string
                   order:
@@ -163,45 +175,55 @@ components:
     search:
       oneOf:
         - type: string
+          description: The search text
           nullable: true
         - type: array
+          description: The search text
           items:
             type: string
     order:
       type: string
+      description: The sort order
       enum:
         - asc
         - desc
     limit:
       type: integer
       format: int32
+      description: How many items to return
       maximum: 100
       nullable: true
     archived:
       type: boolean
+      description: Whether to include archived pets
       default: false
 
   parameters:
     literalSearch:
       name: search
       in: query
+      description: The search text
       required: false
       schema:
         oneOf:
           - type: string
+            description: The search text
             nullable: true
           - type: array
+            description: The search text
             items:
               type: string
     literalOrder:
       name: order
       in: query
+      description: The sort order
       required: false
       schema:
         $ref: '#/components/schemas/order'
     literalLimit:
       name: limit
       in: query
+      description: How many items to return
       required: true
       schema:
         type: integer
@@ -211,6 +233,7 @@ components:
     literalArchived:
       name: archived
       in: query
+      description: Whether to include archived pets
       required: false
       schema:
         type: boolean
@@ -219,18 +242,21 @@ components:
     referenceSearch:
       name: search
       in: query
+      description: The search text
       required: false
       schema:
         $ref: '#/components/schemas/search'
     referenceOrder:
       name: order
       in: query
+      description: The sort order
       required: false
       schema:
         $ref: '#/components/schemas/order'
     referenceLimit:
       name: limit
       in: query
+      description: How many items to return
       required: true
       nullable: true
       schema:
@@ -238,6 +264,7 @@ components:
     referenceArchived:
       name: archived
       in: query
+      description: Whether to include archived pets
       required: false
       schema:
         $ref: '#/components/schemas/archived'

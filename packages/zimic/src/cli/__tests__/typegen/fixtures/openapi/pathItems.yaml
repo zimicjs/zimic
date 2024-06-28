@@ -11,6 +11,7 @@ paths:
 components:
   pathItems:
     users:
+      description: User paths
       post:
         requestBody:
           required: true

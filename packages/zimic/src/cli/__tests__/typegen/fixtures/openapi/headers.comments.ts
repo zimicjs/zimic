@@ -5,8 +5,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
+          /** The content type */
           'content-type'?: MyServiceComponents['headers']['literal-content-type'];
+          /** The number of requests remaining */
           'x-rate-limit-remaining'?: MyServiceComponents['headers']['literal-x-rate-limit-remaining'];
+          /** Whether the rate limit has been reached */
           'x-rate-limit-reached'?: MyServiceComponents['headers']['literal-x-rate-limit-reached'];
         }>;
       };
@@ -18,7 +21,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining': MyServiceComponents['headers']['literal-x-rate-limit-remaining'];
             'x-rate-limit-reached': MyServiceComponents['headers']['literal-x-rate-limit-reached'];
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -27,8 +29,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
+          /** The content type */
           'content-type'?: MyServiceComponents['headers']['reference-content-type'];
+          /** The number of requests remaining */
           'x-rate-limit-remaining'?: MyServiceComponents['headers']['reference-x-rate-limit-remaining'];
+          /** Whether the rate limit has been reached */
           'x-rate-limit-reached'?: MyServiceComponents['headers']['reference-x-rate-limit-reached'];
         }>;
       };
@@ -40,7 +45,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining': MyServiceComponents['headers']['reference-x-rate-limit-remaining'];
             'x-rate-limit-reached': MyServiceComponents['headers']['reference-x-rate-limit-reached'];
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -49,8 +53,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
+          /** The content type */
           'content-type'?: string | null;
+          /** The number of requests remaining */
           'x-rate-limit-remaining'?: number;
+          /** Whether the rate limit has been reached */
           'x-rate-limit-reached'?: boolean;
         }>;
       };
@@ -58,11 +65,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
         /** Success */
         200: {
           headers: HttpHeadersSerialized<{
+            /** The content type */
             'content-type'?: string | null;
+            /** The number of requests remaining */
             'x-rate-limit-remaining'?: number;
+            /** Whether the rate limit has been reached */
             'x-rate-limit-reached'?: boolean;
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -71,8 +80,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
+          /** The content type */
           'content-type'?: MyServiceComponents['schemas']['content-type'];
+          /** The number of requests remaining */
           'x-rate-limit-remaining'?: MyServiceComponents['schemas']['x-rate-limit-remaining'];
+          /** Whether the rate limit has been reached */
           'x-rate-limit-reached'?: MyServiceComponents['schemas']['x-rate-limit-reached'];
         }>;
       };
@@ -80,11 +92,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
         /** Success */
         200: {
           headers: HttpHeadersSerialized<{
+            /** The content type */
             'content-type'?: string | null;
+            /** The number of requests remaining */
             'x-rate-limit-remaining'?: number;
+            /** Whether the rate limit has been reached */
             'x-rate-limit-reached'?: boolean;
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -92,13 +106,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
-    User: {
-      /** Format: int64 */
-      id: number;
-      name: string;
-    };
+    /** The content type */
     'content-type': string;
+    /** The number of requests remaining */
     'x-rate-limit-remaining': number;
+    /** Whether the rate limit has been reached */
     'x-rate-limit-reached': boolean;
   };
   headers: {

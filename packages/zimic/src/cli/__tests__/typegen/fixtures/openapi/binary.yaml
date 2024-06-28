@@ -13,6 +13,7 @@ paths:
           application/octet-stream:
             schema:
               type: string
+              description: The file to upload
               format: binary
       responses:
         '200':
@@ -21,5 +22,6 @@ paths:
             application/octet-stream:
               schema:
                 type: string
+                description: The file uploaded
                 format: binary
                 nullable: true

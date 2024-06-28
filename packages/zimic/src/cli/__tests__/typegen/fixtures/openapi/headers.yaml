@@ -10,18 +10,22 @@ paths:
       parameters:
         - name: content-type
           in: header
+          description: The content type
           schema:
             $ref: '#/components/headers/literal-content-type'
         - name: x-rate-limit-remaining
           in: header
+          description: The number of requests remaining
           schema:
             $ref: '#/components/headers/literal-x-rate-limit-remaining'
         - name: x-rate-limit-reached
           in: header
+          description: Whether the rate limit has been reached
           schema:
             $ref: '#/components/headers/literal-x-rate-limit-reached'
       responses:
         '200':
+          description: Success
           headers:
             content-type:
               $ref: '#/components/headers/literal-content-type'
@@ -29,31 +33,28 @@ paths:
               $ref: '#/components/headers/literal-x-rate-limit-remaining'
             x-rate-limit-reached:
               $ref: '#/components/headers/literal-x-rate-limit-reached'
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-reference-component-headers:
     get:
       parameters:
         - name: content-type
           in: header
+          description: The content type
           schema:
             $ref: '#/components/headers/reference-content-type'
         - name: x-rate-limit-remaining
           in: header
+          description: The number of requests remaining
           schema:
             $ref: '#/components/headers/reference-x-rate-limit-remaining'
         - name: x-rate-limit-reached
           in: header
+          description: Whether the rate limit has been reached
           schema:
             $ref: '#/components/headers/reference-x-rate-limit-reached'
       responses:
         '200':
+          description: Success
           headers:
             content-type:
               $ref: '#/components/headers/reference-content-type'
@@ -61,28 +62,24 @@ paths:
               $ref: '#/components/headers/reference-x-rate-limit-remaining'
             x-rate-limit-reached:
               $ref: '#/components/headers/reference-x-rate-limit-reached'
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-literal-headers:
     get:
       parameters:
         - name: content-type
           in: header
+          description: The content type
           schema:
             type: string
             nullable: true
         - name: x-rate-limit-remaining
           in: header
+          description: The number of requests remaining
           schema:
             type: integer
         - name: x-rate-limit-reached
           in: header
+          description: Whether the rate limit has been reached
           schema:
             type: boolean
       responses:
@@ -90,35 +87,35 @@ paths:
           description: Success
           headers:
             content-type:
+              description: The content type
               schema:
                 type: string
                 nullable: true
             x-rate-limit-remaining:
+              description: The number of requests remaining
               schema:
                 type: integer
             x-rate-limit-reached:
+              description: Whether the rate limit has been reached
               schema:
                 type: boolean
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
   /users-with-reference-headers:
     get:
       parameters:
         - name: content-type
           in: header
+          description: The content type
           schema:
             $ref: '#/components/schemas/content-type'
         - name: x-rate-limit-remaining
           in: header
+          description: The number of requests remaining
           schema:
             $ref: '#/components/schemas/x-rate-limit-remaining'
         - name: x-rate-limit-reached
           in: header
+          description: Whether the rate limit has been reached
           schema:
             $ref: '#/components/schemas/x-rate-limit-reached'
       responses:
@@ -126,54 +123,45 @@ paths:
           description: Success
           headers:
             content-type:
+              description: The content type
               schema:
                 type: string
                 nullable: true
             x-rate-limit-remaining:
+              description: The number of requests remaining
               schema:
                 type: integer
             x-rate-limit-reached:
+              description: Whether the rate limit has been reached
               schema:
                 type: boolean
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
 
 components:
   schemas:
-    User:
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          type: integer
-          format: int64
-        name:
-          type: string
-
     content-type:
       type: string
+      description: The content type
     x-rate-limit-remaining:
       type: integer
+      description: The number of requests remaining
     x-rate-limit-reached:
       type: boolean
+      description: Whether the rate limit has been reached
 
   headers:
     literal-content-type:
       schema:
         type: string
+        description: The content type
         nullable: true
     literal-x-rate-limit-remaining:
       schema:
         type: integer
+        description: The number of requests remaining
     literal-x-rate-limit-reached:
       schema:
         type: boolean
+        description: Whether the rate limit has been reached
 
     reference-content-type:
       schema:

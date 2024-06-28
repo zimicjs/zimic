@@ -2,6 +2,7 @@ import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users/:userId': {
+    /** Info for a specific user */
     GET: {
       response: {
         /** Success */
@@ -12,6 +13,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users/:userId/friends': {
+    /** List of friends for a specific user */
     GET: {
       response: {
         /** Success */
@@ -22,6 +24,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users/:userId/friends/:friendId': {
+    /** Info for a specific friend of a specific user */
     GET: {
       response: {
         /** Success */

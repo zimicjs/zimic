@@ -17,7 +17,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining': MyServiceComponents['headers']['literal-x-rate-limit-remaining'];
             'x-rate-limit-reached': MyServiceComponents['headers']['literal-x-rate-limit-reached'];
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -38,7 +37,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining': MyServiceComponents['headers']['reference-x-rate-limit-remaining'];
             'x-rate-limit-reached': MyServiceComponents['headers']['reference-x-rate-limit-reached'];
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -59,7 +57,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining'?: number;
             'x-rate-limit-reached'?: boolean;
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -80,7 +77,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
             'x-rate-limit-remaining'?: number;
             'x-rate-limit-reached'?: boolean;
           }>;
-          body: MyServiceComponents['schemas']['User'][];
         };
       };
     };
@@ -88,10 +84,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
 }>;
 export interface MyServiceComponents {
   schemas: {
-    User: {
-      id: number;
-      name: string;
-    };
     'content-type': string;
     'x-rate-limit-remaining': number;
     'x-rate-limit-reached': boolean;
