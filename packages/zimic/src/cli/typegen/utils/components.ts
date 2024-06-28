@@ -95,7 +95,7 @@ function normalizeRequestComponent(component: ts.PropertySignature, context: Nod
     return undefined;
   }
 
-  const newType = normalizeMethodContentType(component.type, context);
+  const newType = normalizeMethodContentType(component.type, context, { questionToken: component.questionToken });
 
   context.typeImports.root.add('HttpSchema');
 

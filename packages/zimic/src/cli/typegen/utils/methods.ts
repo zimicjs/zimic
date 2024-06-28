@@ -169,7 +169,13 @@ function normalizeRequestMemberBody(requestMember: ts.TypeElement, context: Node
   return undefined;
 }
 
-export function normalizeMethodContentType(contentType: ts.TypeNode, context: NodeTransformationContext) {
+export function normalizeMethodContentType(
+  contentType: ts.TypeNode,
+  context: NodeTransformationContext,
+  options: { questionToken: ts.QuestionToken | undefined },
+) {
+  const { questionToken } = options;
+
   if (ts.isTypeLiteralNode(contentType)) {
     const newHeaderMember = contentType.members
       .map((member) => normalizeRequestMemberHeader(member, context))
@@ -179,11 +185,23 @@ export function normalizeMethodContentType(contentType: ts.TypeNode, context: No
       .flatMap((member) => normalizeRequestMemberBody(member, context))
       .filter(isDefined);
 
+    const newBodyMemberPropertySignatures = newBodyMembers.map((member) =>
+      ts.factory.updatePropertySignature(
+        member.propertySignature,
+        member.propertySignature.modifiers,
+        member.propertySignature.name,
+        questionToken,
+        member.propertySignature.type,
+      ),
+    );
+
     if (newBodyMembers.length <= 1) {
-      const newMembers = [newHeaderMember, ...newBodyMembers.map((member) => member.propertySignature)];
+      const newMembers = [newHeaderMember, ...newBodyMemberPropertySignatures];
       return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers.filter(isDefined)));
     } else if (newBodyMembers.length > 1) {
-      const unionTypes = newBodyMembers.map((bodyMember) => {
+      const unionTypes = newBodyMembers.map((bodyMember, index) => {
+        const propertySignature = newBodyMemberPropertySignatures[index];
+
         let headerMemberType = ts.factory.createTypeLiteralNode([
           ts.factory.createPropertySignature(
             undefined,
@@ -207,7 +225,7 @@ export function normalizeMethodContentType(contentType: ts.TypeNode, context: No
           headerMemberType,
         );
 
-        return ts.factory.createTypeLiteralNode([headerMember, bodyMember.propertySignature]);
+        return ts.factory.createTypeLiteralNode([headerMember, propertySignature]);
       });
 
       return ts.factory.createUnionTypeNode(unionTypes);
@@ -221,25 +239,26 @@ export function normalizeMethodContentType(contentType: ts.TypeNode, context: No
 
 function normalizeMethodRequest(request: ts.PropertySignature, context: NodeTransformationContext) {
   const newIdentifier = ts.factory.createIdentifier('request');
-  const newQuestionToken = undefined;
 
   if (!request.type) {
     return undefined;
   }
 
-  const newType = normalizeMethodContentType(request.type, context);
-  return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, newQuestionToken, newType);
+  const newType = normalizeMethodContentType(request.type, context, { questionToken: request.questionToken });
+  return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);
 }
 
 function normalizeMethodResponsesMemberType(
-  responseMemberType: ts.TypeNode | undefined,
+  responseMember: ts.PropertySignature,
   context: NodeTransformationContext,
   options: { isComponent: boolean },
 ) {
   const { isComponent } = options;
 
-  if (responseMemberType && ts.isTypeLiteralNode(responseMemberType)) {
-    const newType = normalizeMethodContentType(responseMemberType, context);
+  if (responseMember.type && ts.isTypeLiteralNode(responseMember.type)) {
+    const newType = normalizeMethodContentType(responseMember.type, context, {
+      questionToken: responseMember.questionToken,
+    });
 
     if (!isComponent) {
       return newType;
@@ -257,7 +276,7 @@ function normalizeMethodResponsesMemberType(
     return wrappedNewType;
   }
 
-  return responseMemberType;
+  return responseMember.type;
 }
 
 export function normalizeMethodResponsesMember(
@@ -273,7 +292,7 @@ export function normalizeMethodResponsesMember(
       return undefined;
     }
 
-    const newType = normalizeMethodResponsesMemberType(responseMember.type, context, { isComponent });
+    const newType = normalizeMethodResponsesMemberType(responseMember, context, { isComponent });
 
     if (!newType) {
       return undefined;
