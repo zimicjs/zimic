@@ -5,35 +5,27 @@ info:
   version: 1.0.0
 
 paths:
-  /users-no-request:
+  /users-with-no-request:
     post:
-      summary: Create user with no request
-      operationId: createUserNoRequest
       responses:
         '200':
           $ref: '#/components/responses/userCreated'
         '400':
           $ref: '#/components/responses/error'
 
-  /users-multiple-reference-response-contents:
+  /users-with-multiple-reference-response-contents:
     post:
-      summary: Create user with multiple response-contents
-      operationId: createUserWithMultipleReferenceResponseContents
-
       responses:
         '200':
           $ref: '#/components/responses/userCreatedMultipleContents'
         '400':
           $ref: '#/components/responses/error'
 
-  /users-multiple-literal-response-contents:
+  /users-with-multiple-literal-response-contents:
     post:
-      summary: Create user with multiple response-contents
-      operationId: createUserWithMultipleLiteralResponseContents
-
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
           content:
             application/json:
               schema:
@@ -62,23 +54,15 @@ paths:
         '400':
           $ref: '#/components/responses/error'
 
-  /users-no-response-content:
+  /users-with-no-response-content:
     post:
-      summary: Create user with no response content
-      operationId: createUserNoResponseContent
       responses:
         '200':
-          description: The user was created successfully
+          description: Success
 
-  /users-no-response:
+  /users-with-no-request-or-response:
     post:
-      summary: Create user with no response
-      operationId: createUserNoResponse
-
-  /users-no-request-or-response:
-    post:
-      summary: Create user with no request or response
-      operationId: createUserNoRequestOrResponse
+      summary: Empty
 
 components:
   schemas:
@@ -92,37 +76,25 @@ components:
       properties:
         id:
           type: string
-          example: be8253f9-124b-4c32-b046-c25b6fd0af0c
         name:
           type: string
-          example: John
         email:
           type: string
-          example: john@email.com
         createdAt:
           type: string
-          example: '2024-01-01T00:00:00.000Z'
         updatedAt:
           type: string
-          example: '2024-01-01T00:00:00.000Z'
 
   responses:
     userCreated:
-      description: The user was created successfully
+      description: Success
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/User'
-          examples:
-            default:
-              value:
-                id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                name: John
-                email: john@email.com
-                createdAt: '2024-01-01T00:00:00.000Z'
-                updatedAt: '2024-01-01T00:00:00.000Z'
+
     userCreatedMultipleContents:
-      description: The user was created successfully
+      description: Success
       content:
         application/json:
           schema:
@@ -133,14 +105,6 @@ components:
                 enum: [user-as-json]
               value:
                 $ref: '#/components/schemas/User'
-          examples:
-            default:
-              value:
-                id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                name: John
-                email: john@email.com
-                createdAt: '2024-01-01T00:00:00.000Z'
-                updatedAt: '2024-01-01T00:00:00.000Z'
         application/xml:
           schema:
             type: object
@@ -150,14 +114,7 @@ components:
                 enum: [user-as-xml]
               value:
                 $ref: '#/components/schemas/User'
-          examples:
-            default:
-              value:
-                id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                name: John
-                email: john@email.com
-                createdAt: '2024-01-01T00:00:00.000Z'
-                updatedAt: '2024-01-01T00:00:00.000Z'
+
     error:
       description: Error
       content:
@@ -169,7 +126,3 @@ components:
             properties:
               message:
                 type: string
-          examples:
-            default:
-              value:
-                message: Invalid limit

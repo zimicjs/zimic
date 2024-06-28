@@ -2,7 +2,6 @@ import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-multiple-security-schemes': {
-    /** Create user */
     POST: {
       response: {
         /** Success */
@@ -11,7 +10,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-bearer-auth': {
-    /** Create user with bearer auth */
     POST: {
       response: {
         /** Success */
@@ -20,7 +18,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-api-key': {
-    /** Create user with API key */
     POST: {
       response: {
         /** Success */
@@ -29,7 +26,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-bearer-oauth2': {
-    /** Create user with bearer OAuth2 */
     POST: {
       response: {
         /** Success */

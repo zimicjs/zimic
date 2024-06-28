@@ -1,54 +1,92 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
-    /** Create user */
+  '/users-with-request-body-component': {
+    POST: {
+      request: MyServiceComponents['requestBodies']['requiredCreateUser'];
+      response: {
+        /** Success */
+        200: {};
+      };
+    };
+  };
+  '/users-with-request-body-component-having-multiple-contents': {
+    POST: {
+      request: MyServiceComponents['requestBodies']['requiredCreateUserMultiple'];
+      response: {
+        /** Success */
+        200: {};
+      };
+    };
+  };
+  '/users-with-optional-request-body-component': {
+    POST: {
+      request: MyServiceComponents['requestBodies']['optionalCreateUser'];
+      response: {
+        /** Success */
+        200: {};
+      };
+    };
+  };
+  '/users-with-optional-by-default-request-body-component': {
     POST: {
       request: MyServiceComponents['requestBodies']['createUser'];
       response: {
-        /** The user was created successfully */
-        200: {
-          body: {
-            /**
-             * @example
-             *   be8253f9-124b-4c32-b046-c25b6fd0af0c
-             */
-            id: string;
-            /**
-             * @example
-             *   John;
-             */
-            name?: string;
-            /**
-             * @example
-             *   john@email.com
-             */
-            email: string;
-            /**
-             * @example
-             *   2024-01-01T00:00:00.000Z
-             */
-            createdAt: string;
-            /**
-             * @example
-             *   2024-01-01T00:00:00.000Z
-             */
-            updatedAt: string;
+        /** Success */
+        200: {};
+      };
+    };
+  };
+  '/users-with-schema-component-in-request-body': {
+    POST: {
+      request: {
+        body: MyServiceComponents['schemas']['CreateUserBody'];
+      };
+    };
+  };
+  '/users-with-schema-component-in-multiple-request-bodies': {
+    POST: {
+      request:
+        | {
+            headers: {
+              'content-type': 'application/json';
+            };
+            body: MyServiceComponents['schemas']['CreateUserBody'];
+          }
+        | {
+            headers: {
+              'content-type': 'application/xml';
+            };
+            body: MyServiceComponents['schemas']['CreateUserBody'];
           };
-        };
-        /** Error */
-        400: {
-          body: {
-            message: string;
-          };
+    };
+  };
+  '/users-with-optional-schema-request-body': {
+    POST: {
+      request: {
+        body?: MyServiceComponents['schemas']['CreateUserBody'];
+      };
+    };
+  };
+  '/users-with-optional-by-default-schema-request-body': {
+    POST: {
+      request: {
+        body?: MyServiceComponents['schemas']['CreateUserBody'];
+      };
+    };
+  };
+  '/users-with-literal-request-body': {
+    POST: {
+      request: {
+        body: {
+          email: string;
+          password: string;
         };
       };
     };
   };
-  '/users-with-multiple-request-contents': {
-    /** Create user with multiple request contents */
+  '/users-with-literal-multiple-request-bodies': {
     POST: {
-      /** The user to create */
       request:
         | {
             headers: {
@@ -70,26 +108,75 @@ export type MyServiceSchema = HttpSchema.Paths<{
           };
     };
   };
+  '/users-with-optional-literal-request-body': {
+    POST: {
+      request: {
+        body?: {
+          email: string;
+          password: string;
+        };
+      };
+    };
+  };
+  '/users-with-optional-by-default-literal-request-body': {
+    POST: {
+      request: {
+        body?: {
+          email: string;
+          password: string;
+        };
+      };
+    };
+  };
 }>;
 export interface MyServiceComponents {
+  schemas: {
+    CreateUserBody: {
+      name?: string;
+      email: string;
+      password: string;
+    };
+  };
   requestBodies: {
-    /** The user to create */
     createUser: HttpSchema.Request<{
       body: {
-        /**
-         * @example
-         *   John;
-         */
         name?: string;
-        /**
-         * @example
-         *   john@email.com
-         */
         email: string;
-        /**
-         * @example
-         *   123456;
-         */
+        password: string;
+      };
+    }>;
+    requiredCreateUser: HttpSchema.Request<{
+      body: {
+        name?: string;
+        email: string;
+        password: string;
+      };
+    }>;
+    requiredCreateUserMultiple: HttpSchema.Request<
+      | {
+          headers: {
+            'content-type': 'application/json';
+          };
+          body: {
+            name?: string;
+            email: string;
+            password: string;
+          };
+        }
+      | {
+          headers: {
+            'content-type': 'application/xml';
+          };
+          body: {
+            name: string;
+            password: string;
+          };
+        }
+    >;
+    optionalCreateUser: HttpSchema.Request<{
+      body: {
+        name?: string;
+        email: string;
         password: string;
       };
     }>;

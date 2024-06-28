@@ -7,7 +7,6 @@ info:
 paths:
   /users-with-literal-component-headers:
     get:
-      summary: List of users with component headers
       parameters:
         - name: content-type
           in: header
@@ -40,7 +39,6 @@ paths:
 
   /users-with-reference-component-headers:
     get:
-      summary: List of users with component headers
       parameters:
         - name: content-type
           in: header
@@ -73,7 +71,6 @@ paths:
 
   /users-with-literal-headers:
     get:
-      summary: List of users with literal headers
       parameters:
         - name: content-type
           in: header
@@ -111,7 +108,6 @@ paths:
 
   /users-with-reference-headers:
     get:
-      summary: List of users with reference headers
       parameters:
         - name: content-type
           in: header

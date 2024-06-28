@@ -2,7 +2,6 @@ import type { HttpFormData, HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/upload': {
-    /** Upload a form data file */
     POST: {
       request: {
         body: HttpFormData<{

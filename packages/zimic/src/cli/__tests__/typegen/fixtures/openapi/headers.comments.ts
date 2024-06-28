@@ -2,7 +2,6 @@ import type { HttpHeadersSerialized, HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-literal-component-headers': {
-    /** List of users with component headers */
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
@@ -25,7 +24,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-reference-component-headers': {
-    /** List of users with component headers */
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
@@ -48,7 +46,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-literal-headers': {
-    /** List of users with literal headers */
     GET: {
       request: {
         headers: HttpHeadersSerialized<{
@@ -71,7 +68,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/users-with-reference-headers': {
-    /** List of users with reference headers */
     GET: {
       request: {
         headers: HttpHeadersSerialized<{

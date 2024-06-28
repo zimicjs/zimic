@@ -7,7 +7,6 @@ info:
 paths:
   /upload:
     post:
-      summary: Upload a form data file
       requestBody:
         required: true
         content:

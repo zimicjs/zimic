@@ -5,70 +5,112 @@ info:
   version: 1.0.0
 
 paths:
-  /users:
+  /users-with-request-body-component:
     post:
-      summary: Create user
       requestBody:
-        required: true
+        $ref: '#/components/requestBodies/requiredCreateUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-request-body-component-having-multiple-contents:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/requiredCreateUserMultiple'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-optional-request-body-component:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/optionalCreateUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-optional-by-default-request-body-component:
+    post:
+      requestBody:
         $ref: '#/components/requestBodies/createUser'
       responses:
         '200':
-          description: The user was created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - id
-                  - email
-                  - createdAt
-                  - updatedAt
-                properties:
-                  id:
-                    type: string
-                    example: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                  name:
-                    type: string
-                    example: John
-                  email:
-                    type: string
-                    example: john@email.com
-                  createdAt:
-                    type: string
-                    example: '2024-01-01T00:00:00.000Z'
-                  updatedAt:
-                    type: string
-                    example: '2024-01-01T00:00:00.000Z'
-              examples:
-                default:
-                  value:
-                    id: be8253f9-124b-4c32-b046-c25b6fd0af0c
-                    name: John
-                    email: john@email.com
-                    createdAt: '2024-01-01T00:00:00.000Z'
-                    updatedAt: '2024-01-01T00:00:00.000Z'
-        '400':
-          description: Error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
-              examples:
-                default:
-                  value:
-                    message: Invalid limit
+          description: Success
 
-  /users-with-multiple-request-contents:
+  /users-with-schema-component-in-request-body:
     post:
-      summary: Create user with multiple request contents
       requestBody:
         required: true
-        description: The user to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-schema-component-in-multiple-request-bodies:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-schema-request-body:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-by-default-schema-request-body:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-request-body:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-multiple-request-bodies:
+    post:
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -94,12 +136,64 @@ paths:
                   type: string
         responses:
           '200':
-            description: The user was created successfully
+            description: Success
+
+  /users-with-optional-literal-request-body:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-by-default-literal-request-body:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+        responses:
+          '200':
+            description: Success
 
 components:
+  schemas:
+    CreateUserBody:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
   requestBodies:
     createUser:
-      description: The user to create
       content:
         application/json:
           schema:
@@ -110,10 +204,69 @@ components:
             properties:
               name:
                 type: string
-                example: John
               email:
                 type: string
-                example: john@email.com
               password:
                 type: string
-                example: '123456'
+
+    requiredCreateUser:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
+
+    requiredCreateUserMultiple:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
+        application/xml:
+          schema:
+            type: object
+            required:
+              - name
+              - password
+            properties:
+              name:
+                type: string
+              password:
+                type: string
+
+    optionalCreateUser:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              password:
+                type: string
