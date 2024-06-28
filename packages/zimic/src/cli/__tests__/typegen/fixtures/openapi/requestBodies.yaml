@@ -37,6 +37,25 @@ paths:
         '200':
           description: Success
 
+  /users-with-request-body-component-and-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        $ref: '#/components/requestBodies/optionalCreateUser'
+      responses:
+        '200':
+          description: Success
+
   /users-with-schema-component-in-request-body:
     post:
       requestBody:

@@ -37,7 +37,7 @@ export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.Property
 }
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
-  if (ts.isPropertySignature(requestBodyMember) && ts.isModuleName(requestBodyMember.name)) {
+  if (ts.isPropertySignature(requestBodyMember) && ts.isStringLiteral(requestBodyMember.name)) {
     if (!requestBodyMember.type) {
       return undefined;
     }
@@ -172,9 +172,9 @@ function normalizeRequestMemberBody(requestMember: ts.TypeElement, context: Node
 export function normalizeMethodContentType(
   contentType: ts.TypeNode,
   context: NodeTransformationContext,
-  options: { questionToken: ts.QuestionToken | undefined },
+  options: { bodyQuestionToken: ts.QuestionToken | undefined },
 ) {
-  const { questionToken } = options;
+  const { bodyQuestionToken } = options;
 
   if (ts.isTypeLiteralNode(contentType)) {
     const newHeaderMember = contentType.members
@@ -190,7 +190,7 @@ export function normalizeMethodContentType(
         member.propertySignature,
         member.propertySignature.modifiers,
         member.propertySignature.name,
-        questionToken,
+        bodyQuestionToken,
         member.propertySignature.type,
       ),
     );
@@ -244,7 +244,21 @@ function normalizeMethodRequest(request: ts.PropertySignature, context: NodeTran
     return undefined;
   }
 
-  const newType = normalizeMethodContentType(request.type, context, { questionToken: request.questionToken });
+  const newType = normalizeMethodContentType(request.type, context, { bodyQuestionToken: request.questionToken });
+
+  if (request.questionToken && ts.isIndexedAccessTypeNode(request.type)) {
+    const referencedComponentName =
+      ts.isLiteralTypeNode(request.type.indexType) && ts.isStringLiteral(request.type.indexType.literal)
+        ? request.type.indexType.literal.text
+        : undefined;
+
+    if (referencedComponentName) {
+      const existingActions = context.pendingActions.components.requests.get(referencedComponentName) ?? [];
+      existingActions.push({ type: 'markAsOptional' });
+      context.pendingActions.components.requests.set(referencedComponentName, existingActions);
+    }
+  }
+
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);
 }
 
@@ -257,7 +271,7 @@ function normalizeMethodResponsesMemberType(
 
   if (responseMember.type && ts.isTypeLiteralNode(responseMember.type)) {
     const newType = normalizeMethodContentType(responseMember.type, context, {
-      questionToken: responseMember.questionToken,
+      bodyQuestionToken: responseMember.questionToken,
     });
 
     if (!isComponent) {
@@ -424,7 +438,17 @@ function normalizeMethodRequestTypeWithParameters(
     return ts.factory.updateUnionTypeNode(methodMemberType, ts.factory.createNodeArray(newTypes));
   }
 
-  const requestParameterTypeMembers = ts.isTypeLiteralNode(methodMemberType) ? methodMemberType.members : [];
+  if (ts.isIndexedAccessTypeNode(methodMemberType)) {
+    const partialNewType = normalizeMethodRequestTypeWithParameters(
+      ts.factory.createTypeLiteralNode([]),
+      methodMembers,
+      context,
+    );
+
+    return ts.factory.createIntersectionTypeNode([methodMemberType, partialNewType].filter(isDefined));
+  }
+
+  const methodMemberTypeMembers = ts.isTypeLiteralNode(methodMemberType) ? methodMemberType.members : [];
 
   const parametersMember = methodMembers.find((member): member is ts.PropertySignature => {
     return ts.isPropertySignature(member) && ts.isIdentifier(member.name) && member.name.text === 'parameters';
@@ -432,7 +456,15 @@ function normalizeMethodRequestTypeWithParameters(
   const parametersTypeMembers =
     parametersMember?.type && ts.isTypeLiteralNode(parametersMember.type) ? parametersMember.type.members : [];
 
-  const newTypeMembers = [...requestParameterTypeMembers, ...parametersTypeMembers]
+  const newTypeMembers = [
+    ...parametersTypeMembers.toSorted((member, otherMember) => {
+      if (member.name && ts.isIdentifier(member.name) && otherMember.name && ts.isIdentifier(otherMember.name)) {
+        return member.name.text.localeCompare(otherMember.name.text);
+      }
+      return 0;
+    }),
+    ...methodMemberTypeMembers,
+  ]
     .map((member) => normalizeMethodRequestMemberWithParameters(member, context))
     .filter((member): member is ts.PropertySignature => isDefined(member) && !isNeverTypeMember(member));
 

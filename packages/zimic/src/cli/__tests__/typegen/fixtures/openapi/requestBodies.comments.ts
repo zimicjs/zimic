@@ -1,9 +1,9 @@
-import type { HttpSchema } from '@/index';
+import type { HttpHeadersSerialized, HttpSchema, HttpSearchParamsSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-request-body-component': {
     POST: {
-      request: MyServiceComponents['requestBodies']['requiredCreateUser'];
+      request: MyServiceComponents['requests']['requiredCreateUser'];
       response: {
         /** Success */
         200: {};
@@ -12,7 +12,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
   };
   '/users-with-request-body-component-having-multiple-contents': {
     POST: {
-      request: MyServiceComponents['requestBodies']['requiredCreateUserMultiple'];
+      request: MyServiceComponents['requests']['requiredCreateUserMultiple'];
       response: {
         /** Success */
         200: {};
@@ -21,7 +21,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
   };
   '/users-with-optional-request-body-component': {
     POST: {
-      request: MyServiceComponents['requestBodies']['optionalCreateUser'];
+      request: MyServiceComponents['requests']['optionalCreateUser'];
       response: {
         /** Success */
         200: {};
@@ -30,7 +30,23 @@ export type MyServiceSchema = HttpSchema.Paths<{
   };
   '/users-with-optional-by-default-request-body-component': {
     POST: {
-      request: MyServiceComponents['requestBodies']['createUser'];
+      request: MyServiceComponents['requests']['createUser'];
+      response: {
+        /** Success */
+        200: {};
+      };
+    };
+  };
+  '/users-with-request-body-component-and-parameters': {
+    POST: {
+      request: MyServiceComponents['requests']['optionalCreateUser'] & {
+        headers: HttpHeadersSerialized<{
+          'x-value'?: string;
+        }>;
+        searchParams: HttpSearchParamsSerialized<{
+          name?: string;
+        }>;
+      };
       response: {
         /** Success */
         200: {};
@@ -151,9 +167,9 @@ export interface MyServiceComponents {
       password: string;
     };
   };
-  requestBodies: {
+  requests: {
     createUser: HttpSchema.Request<{
-      body: {
+      body?: {
         /** The name of the user */
         name?: string;
         /** The email of the user */
@@ -197,7 +213,7 @@ export interface MyServiceComponents {
         }
     >;
     optionalCreateUser: HttpSchema.Request<{
-      body: {
+      body?: {
         /** The name of the user */
         name?: string;
         /** The email of the user */

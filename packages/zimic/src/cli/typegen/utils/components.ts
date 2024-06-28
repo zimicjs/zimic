@@ -83,7 +83,14 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
         node.objectType.typeArguments,
       );
 
-      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
+      const newIndexType =
+        ts.isLiteralTypeNode(node.indexType) &&
+        ts.isStringLiteral(node.indexType.literal) &&
+        node.indexType.literal.text === 'requestBodies'
+          ? ts.factory.updateLiteralTypeNode(node.indexType, ts.factory.createStringLiteral('requests'))
+          : node.indexType;
+
+      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, newIndexType);
     }
   }
 
@@ -95,7 +102,22 @@ function normalizeRequestComponent(component: ts.PropertySignature, context: Nod
     return undefined;
   }
 
-  const newType = normalizeMethodContentType(component.type, context, { questionToken: component.questionToken });
+  const componentName = ts.isIdentifier(component.name) ? component.name.text : undefined;
+  let bodyQuestionToken = component.questionToken;
+
+  if (componentName) {
+    const pendingActions = context.pendingActions.components.requests.get(componentName) ?? [];
+
+    for (const action of pendingActions) {
+      if (action.type === 'markAsOptional') {
+        bodyQuestionToken = ts.factory.createToken(ts.SyntaxKind.QuestionToken);
+      }
+    }
+
+    context.pendingActions.components.requests.delete(componentName);
+  }
+
+  const newType = normalizeMethodContentType(component.type, context, { bodyQuestionToken });
 
   context.typeImports.root.add('HttpSchema');
 
@@ -204,10 +226,15 @@ function normalizeComponentMember(componentMember: ts.TypeElement, context: Node
 
   const newType = normalizeComponentMemberType(componentMember, componentMember.type, context);
 
+  const newIdentifier =
+    ts.isIdentifier(componentMember.name) && componentMember.name.text === 'requestBodies'
+      ? ts.factory.createIdentifier('requests')
+      : componentMember.name;
+
   return ts.factory.updatePropertySignature(
     componentMember,
     componentMember.modifiers,
-    componentMember.name,
+    newIdentifier,
     componentMember.questionToken,
     newType,
   );

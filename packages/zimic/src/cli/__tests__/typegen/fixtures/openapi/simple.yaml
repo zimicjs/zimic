@@ -21,6 +21,19 @@ paths:
       operationId: createUser
       tags:
         - users
+      parameters:
+        - name: authorization
+          in: header
+          description: The authorization token
+          required: true
+          schema:
+            type: string
+        - name: utm_source
+          in: query
+          description: The UTM source
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         description: The user to create
@@ -77,6 +90,12 @@ paths:
       tags:
         - users
       parameters:
+        - name: authorization
+          in: header
+          description: The authorization token
+          required: true
+          schema:
+            type: string
         - name: limit
           in: query
           description: How many items to return
@@ -85,6 +104,12 @@ paths:
             type: integer
             format: int32
             maximum: 100
+        - name: utm_source
+          in: query
+          description: The UTM source
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: Success

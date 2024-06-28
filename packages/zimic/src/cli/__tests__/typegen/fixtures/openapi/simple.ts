@@ -1,4 +1,4 @@
-import type { HttpSchema, HttpSearchParamsSerialized } from '@/index';
+import type { HttpHeadersSerialized, HttpSchema, HttpSearchParamsSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users': {
@@ -20,8 +20,12 @@ export interface MyServiceComponents {
 export interface MyServiceOperations {
   listUsers: HttpSchema.Method<{
     request: {
+      headers: HttpHeadersSerialized<{
+        authorization: string;
+      }>;
       searchParams: HttpSearchParamsSerialized<{
         limit: number;
+        utm_source?: string;
       }>;
     };
     response: {
@@ -37,6 +41,12 @@ export interface MyServiceOperations {
   }>;
   createUser: HttpSchema.Method<{
     request: {
+      headers: HttpHeadersSerialized<{
+        authorization: string;
+      }>;
+      searchParams: HttpSearchParamsSerialized<{
+        utm_source?: string;
+      }>;
       body: {
         name?: string;
         email: string;

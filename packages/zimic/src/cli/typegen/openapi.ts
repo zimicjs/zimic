@@ -15,33 +15,56 @@ import { normalizePaths } from './utils/paths';
 export const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
 export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
+type RootTypeImportName =
+  | 'HttpSchema'
+  | 'HttpFormData'
+  | 'HttpSearchParams'
+  | 'HttpSearchParamsSerialized'
+  | 'HttpHeadersSerialized';
+
+type ComponentChangeActionType = 'markAsOptional' | 'unknown';
+
+interface ComponentChangeAction {
+  type: ComponentChangeActionType;
+}
+
 export interface NodeTransformationContext {
   serviceName: string;
-  typeImports: {
-    root: Set<
-      'HttpSchema' | 'HttpFormData' | 'HttpSearchParams' | 'HttpSearchParamsSerialized' | 'HttpHeadersSerialized'
-    >;
+  typeImports: { root: Set<RootTypeImportName> };
+  pendingActions: {
+    components: { requests: Map<string, ComponentChangeAction[]> };
   };
 }
 
-function normalizeRootNode(rootNode: ts.Node, context: NodeTransformationContext) {
-  if (ts.isInterfaceDeclaration(rootNode)) {
-    if (rootNode.name.text === 'paths') {
-      context.typeImports.root.add('HttpSchema');
-      return normalizePaths(rootNode, context);
-    }
-    if (rootNode.name.text === 'operations') {
-      return normalizeOperations(rootNode, context);
-    }
-    if (rootNode.name.text === 'components') {
-      return normalizeComponents(rootNode, context);
-    }
-  } else if (ts.isTypeAliasDeclaration(rootNode)) {
-    if (['paths', 'webhooks', 'operations', 'components', '$defs'].includes(rootNode.name.text)) {
-      return undefined;
-    }
+function normalizeRootPaths(rootNode: ts.Node, context: NodeTransformationContext) {
+  if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'paths') {
+    return normalizePaths(rootNode, context);
   }
+  return rootNode;
+}
 
+function normalizeRootOperations(rootNode: ts.Node, context: NodeTransformationContext) {
+  if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'operations') {
+    return normalizeOperations(rootNode, context);
+  }
+  return rootNode;
+}
+
+function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationContext) {
+  if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
+    return normalizeComponents(rootNode, context);
+  }
+  return rootNode;
+}
+
+function normalizeRootUnknowns(rootNode: ts.Node | undefined) {
+  if (
+    !rootNode ||
+    (ts.isTypeAliasDeclaration(rootNode) &&
+      ['paths', 'webhooks', 'operations', 'components', '$defs'].includes(rootNode.name.text))
+  ) {
+    return undefined;
+  }
   return rootNode;
 }
 
@@ -112,9 +135,17 @@ async function generateTypesFromOpenAPISchema({
   const context: NodeTransformationContext = {
     serviceName: pascalServiceName,
     typeImports: { root: new Set() },
+    pendingActions: {
+      components: { requests: new Map() },
+    },
   };
 
-  const transformedNodes = nodes.map((node) => normalizeRootNode(node, context)).filter(isDefined);
+  const transformedNodes = nodes
+    .map((node) => normalizeRootPaths(node, context))
+    .map((node) => normalizeRootOperations(node, context))
+    .map((node) => normalizeRootComponents(node, context))
+    .map((node) => normalizeRootUnknowns(node))
+    .filter(isDefined);
 
   if (context.typeImports.root.size > 0) {
     addImportDeclarations(transformedNodes, context);
