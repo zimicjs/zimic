@@ -189,6 +189,43 @@ describe('Type generation (OpenAPI)', () => {
           expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
         },
       );
+
+      it('should support redirecting the output to stdout', async () => {
+        const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+        processArgvSpy.mockReturnValue([
+          'node',
+          'cli.js',
+          'typegen',
+          'openapi',
+          filePaths.input,
+          '--output=-',
+          '--service-name',
+          'my-service',
+          '--remove-comments',
+        ]);
+
+        const processStdoutWriteSpy = vi.spyOn(process.stdout, 'write').mockImplementation(vi.fn());
+
+        let rawOutputContent: string;
+
+        try {
+          await runCLI();
+
+          rawOutputContent = processStdoutWriteSpy.mock.calls[0][0].toString();
+
+          expect(processStdoutWriteSpy).toHaveBeenCalledTimes(1);
+          expect(processStdoutWriteSpy).toHaveBeenCalledWith(expect.any(String));
+          expect(processStdoutWriteSpy.mock.calls[0]).toHaveLength(1);
+        } finally {
+          processStdoutWriteSpy.mockRestore();
+        }
+
+        const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+        const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
+        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+      });
     });
   });
 });

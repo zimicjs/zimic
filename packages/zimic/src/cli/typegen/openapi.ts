@@ -152,7 +152,14 @@ async function generateTypesFromOpenAPISchema({
   }
 
   const content = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
-  await filesystem.promises.writeFile(path.resolve(outputFilePath), content);
+
+  const shouldOutputToStdout = outputFilePath === '-';
+
+  if (shouldOutputToStdout) {
+    process.stdout.write(content);
+  } else {
+    await filesystem.promises.writeFile(path.resolve(outputFilePath), content);
+  }
 }
 
 export default generateTypesFromOpenAPISchema;
