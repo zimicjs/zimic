@@ -52,6 +52,38 @@ function normalizeRootOperations(rootNode: ts.Node, context: NodeTransformationC
   return rootNode;
 }
 
+function normalizeEnumValue(rootNode: ts.VariableStatement) {
+  const newDeclarations = rootNode.declarationList.declarations.map((declaration) => {
+    const newType = undefined;
+
+    const newInitializer = declaration.initializer
+      ? ts.factory.createAsExpression(declaration.initializer, ts.factory.createTypeReferenceNode('const', undefined))
+      : undefined;
+
+    return ts.factory.updateVariableDeclaration(
+      declaration,
+      declaration.name,
+      declaration.exclamationToken,
+      newType,
+      newInitializer,
+    );
+  });
+
+  return ts.factory.updateVariableStatement(
+    rootNode,
+    rootNode.modifiers,
+    ts.factory.createVariableDeclarationList(newDeclarations, rootNode.declarationList.flags),
+  );
+}
+
+function normalizeRootEnumValues(rootNode: ts.Node) {
+  if (ts.isVariableStatement(rootNode)) {
+    return normalizeEnumValue(rootNode);
+  }
+
+  return rootNode;
+}
+
 function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
     return normalizeComponents(rootNode, context);
@@ -60,13 +92,17 @@ function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationC
 }
 
 function normalizeRootUnknowns(rootNode: ts.Node | undefined) {
+  if (!rootNode) {
+    return undefined;
+  }
+
   if (
-    !rootNode ||
-    (ts.isTypeAliasDeclaration(rootNode) &&
-      ['paths', 'webhooks', 'operations', 'components', '$defs'].includes(rootNode.name.text))
+    ts.isTypeAliasDeclaration(rootNode) &&
+    ['paths', 'webhooks', 'operations', 'components', '$defs'].includes(rootNode.name.text)
   ) {
     return undefined;
   }
+
   return rootNode;
 }
 
@@ -117,7 +153,7 @@ async function generateTypesFromOpenAPISchema({
     exportType: false,
     arrayLength: false,
     immutable: false,
-    enumValues: false,
+    enumValues: true,
     enum: false,
     silent: true,
 
@@ -147,6 +183,7 @@ async function generateTypesFromOpenAPISchema({
   const transformedNodes = nodes
     .map((node) => normalizeRootPaths(node, context))
     .map((node) => normalizeRootOperations(node, context))
+    .map((node) => normalizeRootEnumValues(node))
     .map((node) => normalizeRootComponents(node, context))
     .map((node) => normalizeRootUnknowns(node))
     .filter(isDefined);
