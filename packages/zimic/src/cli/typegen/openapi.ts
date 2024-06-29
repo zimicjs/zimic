@@ -1,4 +1,4 @@
-import filesystem from 'fs';
+import filesystem from 'fs/promises';
 import generateTypesFromOpenAPI, { astToString as convertTypeASTToString } from 'openapi-typescript';
 import path from 'path';
 import ts from 'typescript';
@@ -6,7 +6,7 @@ import ts from 'typescript';
 import { version } from '@@/package.json';
 
 import { HTTP_METHODS } from '@/http/types/schema';
-import { isDefined } from '@/utils/data';
+import { isDefined, isNonEmpty } from '@/utils/data';
 import { toPascalCase } from '@/utils/strings';
 import { createFileURL, createRegexFromWildcardPath } from '@/utils/urls';
 
@@ -30,13 +30,30 @@ interface ComponentChangeAction {
   type: ComponentChangeActionType;
 }
 
+interface PathFilters {
+  positive: RegExp[];
+  negative: RegExp[];
+}
+
 export interface NodeTransformationContext {
   serviceName: string;
   typeImports: { root: Set<RootTypeImportName> };
-  filters: { paths?: RegExp[] };
+  filters: { paths: PathFilters };
   pendingActions: {
     components: { requests: Map<string, ComponentChangeAction[]> };
   };
+}
+
+export async function readPathFiltersFromFile(filePath: string) {
+  const fileContent = await filesystem.readFile(path.resolve(filePath), 'utf-8');
+  const fileContentWithoutComments = fileContent.replace(/#.*$/gm, '');
+
+  const filters = fileContentWithoutComments
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(isNonEmpty);
+
+  return filters;
 }
 
 function normalizeRootPaths(rootNode: ts.Node, context: NodeTransformationContext) {
@@ -101,7 +118,7 @@ interface OpenAPITypeGenerationOptions {
   outputFilePath: string;
   serviceName: string;
   removeComments: boolean;
-  pathFilters?: string[];
+  filters: string[];
 }
 
 async function generateTypesFromOpenAPISchema({
@@ -109,7 +126,7 @@ async function generateTypesFromOpenAPISchema({
   outputFilePath,
   serviceName,
   removeComments,
-  pathFilters,
+  filters,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
 
@@ -149,28 +166,52 @@ async function generateTypesFromOpenAPISchema({
     'i',
   );
 
+  const parsedFilters = filters.map((rawFilter) => {
+    const filterMatch = rawFilter.trim().match(filterRegex);
+    const { method, path } = filterMatch?.groups ?? {};
+
+    if (!method || !path) {
+      console.error(`Filter is not valid: ${rawFilter}`);
+      return undefined;
+    }
+
+    const regex = createRegexFromWildcardPath(path, {
+      prefix: `(?:${method.toUpperCase().replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
+    });
+
+    return {
+      expression: regex.expression,
+      negativeMatch: regex.negativeMatch,
+    };
+  });
+
+  const pathFilters = parsedFilters.reduce<PathFilters>(
+    (partialFilters, filter) => {
+      if (!filter) {
+        return partialFilters;
+      }
+
+      if (filter.negativeMatch) {
+        partialFilters.negative.push(filter.expression);
+      } else {
+        partialFilters.positive.push(filter.expression);
+      }
+
+      return partialFilters;
+    },
+    { positive: [], negative: [] },
+  );
+
   const context: NodeTransformationContext = {
     serviceName: pascalServiceName,
-    typeImports: { root: new Set() },
-    filters: {
-      paths: pathFilters
-        ?.map((rawFilter) => {
-          const filterMatch = rawFilter.trim().match(filterRegex);
-          const { method, path } = filterMatch?.groups ?? {};
-
-          if (!method || !path) {
-            console.error(`Filter is not valid: ${rawFilter}`);
-            return undefined;
-          }
-
-          return createRegexFromWildcardPath(path, {
-            prefix: `(?:${method.toUpperCase().replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
-          });
-        })
-        .filter(isDefined),
+    typeImports: {
+      root: new Set(),
     },
     pendingActions: {
       components: { requests: new Map() },
+    },
+    filters: {
+      paths: pathFilters,
     },
   };
 
@@ -203,7 +244,7 @@ async function generateTypesFromOpenAPISchema({
   if (shouldOutputToStdout) {
     process.stdout.write(outputContentWithPrefix);
   } else {
-    await filesystem.promises.writeFile(path.resolve(outputFilePath), outputContentWithPrefix);
+    await filesystem.writeFile(path.resolve(outputFilePath), outputContentWithPrefix);
   }
 }
 

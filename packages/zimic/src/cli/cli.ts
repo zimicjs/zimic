@@ -5,7 +5,7 @@ import { version } from '@@/package.json';
 
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
-import generateTypesFromOpenAPISchema from './typegen/openapi';
+import generateTypesFromOpenAPISchema, { readPathFiltersFromFile } from './typegen/openapi';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -123,15 +123,25 @@ async function runCLI() {
               type: 'string',
               array: true,
               description: 'One or more expressions to filter paths to generate types for.',
-              default: ['* **'],
+              default: [],
+            })
+            .option('filter-file', {
+              type: 'string',
+              description:
+                'A path to a file containing expressions to filter paths to generate types for. One expression is ' +
+                'expected per line. Comments are prefixed with `#`. Additional `--filter` expressions will be ' +
+                'appended to the considered filters.',
             }),
         async (cliArguments) => {
+          const filtersFromFile = cliArguments.filterFile ? await readPathFiltersFromFile(cliArguments.filterFile) : [];
+          const filters = [...filtersFromFile, ...cliArguments.filter];
+
           await generateTypesFromOpenAPISchema({
             inputFilePath: cliArguments.input,
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,
             removeComments: cliArguments.removeComments,
-            pathFilters: cliArguments.filter,
+            filters,
           });
         },
       ),

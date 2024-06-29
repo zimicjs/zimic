@@ -527,13 +527,18 @@ export function normalizeMethod(
     return undefined;
   }
 
-  if (context.filters.paths) {
-    const pathMethodCompareString = `${methodName} ${options.pathName}`;
+  const pathMethodCompareString = `${methodName} ${options.pathName}`;
 
-    const isIncluded = context.filters.paths.some((filter) => filter.test(pathMethodCompareString));
-    if (!isIncluded) {
-      return undefined;
-    }
+  const matchesPositiveFilters =
+    context.filters.paths.positive.length === 0 ||
+    context.filters.paths.positive.some((filter) => filter.test(pathMethodCompareString));
+
+  const matchesNegativeFilters =
+    context.filters.paths.negative.length > 0 &&
+    context.filters.paths.negative.some((filter) => filter.test(pathMethodCompareString));
+
+  if (!matchesPositiveFilters || matchesNegativeFilters) {
+    return undefined;
   }
 
   const newIdentifier = ts.factory.createIdentifier(methodName);

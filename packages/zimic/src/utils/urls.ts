@@ -88,13 +88,9 @@ export function ensureUniquePathParams(url: string) {
   }
 }
 
-function prepareWildcardPathForRegex(path: string) {
-  const encodedURL = encodeURI(path);
-  return encodedURL.replace(/([-_.!~'();/?:@&=+$,#])/g, '\\$1');
-}
-
 function prepareURLForRegex(url: string) {
-  return prepareWildcardPathForRegex(url).replace(/([*])/g, '\\$1');
+  const encodedURL = encodeURI(url);
+  return encodedURL.replace(/([-_.!~'();*/?:@&=+$,#])/g, '\\$1');
 }
 
 export function createRegexFromURL(url: string) {
@@ -108,12 +104,17 @@ export function createRegexFromURL(url: string) {
 export function createRegexFromWildcardPath(path: string, options: { prefix?: string } = {}) {
   const { prefix = '' } = options;
 
-  const pathWithReplacedWildcards = prepareWildcardPathForRegex(path)
+  const pathWithReplacedWildcards = prepareURLForRegex(path)
+    .replace(/^\\!/, '')
+    .replace(/\\\*/g, '*')
     .replace(/\*\*\/\*$/g, '**')
-    .replace(/(^|[^*])\*/g, '$1[^/]*')
+    .replace(/(^|[^*])\*([^*]|$)/g, '$1[^/]*$2')
     .replace(/\*\*/g, '.*');
 
-  return new RegExp(`^${prefix}/*${pathWithReplacedWildcards}/*$`);
+  return {
+    expression: new RegExp(`^${prefix}/*${pathWithReplacedWildcards}/*$`),
+    negativeMatch: path.startsWith('!'),
+  };
 }
 
 export function joinURL(...parts: (string | URL)[]) {
