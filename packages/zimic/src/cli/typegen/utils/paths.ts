@@ -22,13 +22,11 @@ export function normalizePath(
     }
 
     const pathName = path.name.text;
-
-    const newIdentifier = isComponent
-      ? path.name
-      : ts.factory.createStringLiteral(pathName.replace(/{([^}]+)}/g, ':$1'));
+    const newPathName = pathName.replace(/{([^}]+)}/g, ':$1');
+    const newIdentifier = isComponent ? path.name : ts.factory.createStringLiteral(newPathName);
 
     const newTypeMembers = path.type.members
-      .map((pathMethod) => normalizeMethod(pathMethod, context, { pathName }))
+      .map((pathMethod) => normalizeMethod(pathMethod, context, { pathName: newPathName }))
       .filter(isDefined);
 
     if (newTypeMembers.length === 0) {
