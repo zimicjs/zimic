@@ -302,7 +302,9 @@ async function generateTypesFromOpenAPISchema({
   const shouldOutputToStdout = outputFilePath === '-';
 
   if (shouldOutputToStdout) {
-    process.stdout.write(outputContentWithPrefix);
+    await new Promise((resolve) => {
+      process.stdout.write(outputContentWithPrefix, 'utf-8', resolve);
+    });
   } else {
     await filesystem.writeFile(path.resolve(outputFilePath), outputContentWithPrefix);
   }

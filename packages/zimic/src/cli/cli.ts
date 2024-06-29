@@ -104,7 +104,7 @@ async function runCLI() {
             })
             .option('output', {
               type: 'string',
-              description: 'The path to write the generated types to.',
+              description: 'The path to write the generated types to. If `-`, the output will be written to stdout.',
               alias: 'o',
               demandOption: true,
             })

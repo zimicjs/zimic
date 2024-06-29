@@ -85,7 +85,7 @@ describe('Type generation (OpenAPI)', () => {
         if (yamlSchemaFilePaths.length !== schemaNames.length) {
           throw new Error(
             'Some schemas are not being tested or were not found: ' +
-              `got [${yamlSchemaFilePaths.map((p) => path.parse(p).name).join(', ')}], ` +
+              `got [${yamlSchemaFilePaths.map((filePath) => path.parse(filePath).name).join(', ')}], ` +
               `expected [${schemaNames.join(', ')}]`,
           );
         }
@@ -115,8 +115,8 @@ describe('Type generation (OpenAPI)', () => {
     'Options:',
     '      --help             Show help                                     [boolean]',
     '      --version          Show version number                           [boolean]',
-    '  -o, --output           The path to write the generated types to.',
-    '                                                             [string] [required]',
+    '  -o, --output           The path to write the generated types to. If `-`, the o',
+    '                         utput will be written to stdout.    [string] [required]',
     '  -s, --service-name     The name of the service to generate types for.',
     '                                                             [string] [required]',
     '      --remove-comments  Whether to remove comments from the generated types.',
@@ -135,6 +135,7 @@ describe('Type generation (OpenAPI)', () => {
 
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', 'cli.js', 'typegen', 'openapi', '--help']);
+
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -215,18 +216,22 @@ describe('Type generation (OpenAPI)', () => {
           '--remove-comments',
         ]);
 
-        const processStdoutWriteSpy = vi.spyOn(process.stdout, 'write').mockImplementation(vi.fn());
+        const processStdoutWriteSpy = vi
+          .spyOn(process.stdout, 'write')
+          .mockImplementation((_data, _encoding, callback) => {
+            callback?.();
+            return true;
+          });
 
         let rawOutputContent: string;
 
         try {
           await runCLI();
 
-          rawOutputContent = processStdoutWriteSpy.mock.calls[0][0].toString();
-
           expect(processStdoutWriteSpy).toHaveBeenCalledTimes(1);
-          expect(processStdoutWriteSpy).toHaveBeenCalledWith(expect.any(String));
-          expect(processStdoutWriteSpy.mock.calls[0]).toHaveLength(1);
+          expect(processStdoutWriteSpy).toHaveBeenCalledWith(expect.any(String), 'utf-8', expect.any(Function));
+
+          rawOutputContent = processStdoutWriteSpy.mock.calls[0][0].toString();
         } finally {
           processStdoutWriteSpy.mockRestore();
         }
