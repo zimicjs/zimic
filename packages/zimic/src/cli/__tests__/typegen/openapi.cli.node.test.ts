@@ -4,6 +4,8 @@ import path from 'path';
 import prettier, { Options } from 'prettier';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { version } from '@@/package.json';
+
 import runCLI from '@/cli/cli';
 import { isNonEmpty } from '@/utils/data';
 import { resolvedPrettierConfig } from '@/utils/prettier';
@@ -64,7 +66,7 @@ describe('Type generation (OpenAPI)', () => {
   }
 
   function normalizeGeneratedFileToCompare(fileContent: string) {
-    return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '');
+    return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '').replace(/zimic@[\d.]+/g, `zimic@${version}`);
   }
 
   beforeAll(async () => {
@@ -168,7 +170,9 @@ describe('Type generation (OpenAPI)', () => {
         const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
         const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
-        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+        expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+          normalizeGeneratedFileToCompare(expectedOutputContent),
+        );
       });
 
       it.each(['', '--remove-comments=false'])(
@@ -197,7 +201,9 @@ describe('Type generation (OpenAPI)', () => {
           const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
           const expectedOutputContent = await filesystem.readFile(filePaths.output.expectedWithComments, 'utf-8');
-          expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+          expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+            normalizeGeneratedFileToCompare(expectedOutputContent),
+          );
         },
       );
 
@@ -239,7 +245,9 @@ describe('Type generation (OpenAPI)', () => {
         const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
 
         const expectedOutputContent = await filesystem.readFile(filePaths.output.expected, 'utf-8');
-        expect(outputContent).toBe(normalizeGeneratedFileToCompare(expectedOutputContent));
+        expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+          normalizeGeneratedFileToCompare(expectedOutputContent),
+        );
       });
     });
   });
