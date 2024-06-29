@@ -165,7 +165,7 @@ async function generateTypesFromOpenAPISchema({
   serviceName,
   removeComments,
   pruneUnused,
-  filters,
+  filters: rawFilters,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
 
@@ -205,7 +205,7 @@ async function generateTypesFromOpenAPISchema({
     'i',
   );
 
-  const parsedFilters = filters.map((rawFilter) => {
+  const filters = rawFilters.map((rawFilter) => {
     const filterMatch = rawFilter.trim().match(filterRegex);
     const { method, path } = filterMatch?.groups ?? {};
 
@@ -214,23 +214,21 @@ async function generateTypesFromOpenAPISchema({
       return undefined;
     }
 
-    const regex = createRegexFromWildcardPath(path, {
-      prefix: `(?:${method.toUpperCase().replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
-    });
-
     return {
-      expression: regex.expression,
-      negativeMatch: regex.negativeMatch,
+      expression: createRegexFromWildcardPath(path, {
+        prefix: `(?:${method.toUpperCase().replace(/^!/, '').replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
+      }),
+      isNegativeMatch: method.startsWith('!'),
     };
   });
 
-  const pathFilters = parsedFilters.reduce<PathFilters>(
+  const pathFilters = filters.reduce<PathFilters>(
     (partialFilters, filter) => {
       if (!filter) {
         return partialFilters;
       }
 
-      if (filter.negativeMatch) {
+      if (filter.isNegativeMatch) {
         partialFilters.negative.push(filter.expression);
       } else {
         partialFilters.positive.push(filter.expression);

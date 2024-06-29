@@ -105,16 +105,12 @@ export function createRegexFromWildcardPath(path: string, options: { prefix?: st
   const { prefix = '' } = options;
 
   const pathWithReplacedWildcards = prepareURLForRegex(path)
-    .replace(/^\\!/, '')
     .replace(/\\\*/g, '*')
     .replace(/\*\*\/\*$/g, '**')
     .replace(/(^|[^*])\*([^*]|$)/g, '$1[^/]*$2')
     .replace(/\*\*/g, '.*');
 
-  return {
-    expression: new RegExp(`^${prefix}/*${pathWithReplacedWildcards}/*$`),
-    negativeMatch: path.startsWith('!'),
-  };
+  return new RegExp(`^${prefix}/*${pathWithReplacedWildcards}/*$`);
 }
 
 export function joinURL(...parts: (string | URL)[]) {
