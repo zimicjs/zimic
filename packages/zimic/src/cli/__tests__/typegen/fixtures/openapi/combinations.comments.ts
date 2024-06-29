@@ -58,8 +58,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
 
 export interface MyServiceComponents {
   schemas: {
-    /** @enum {string} */
-    UserType: 'user' | 'friend';
     User: {
       /** Format: int64 */
       id: number;

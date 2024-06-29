@@ -10,8 +10,13 @@ import { isDefined, isNonEmpty } from '@/utils/data';
 import { toPascalCase } from '@/utils/strings';
 import { createFileURL, createRegexFromWildcardPath } from '@/utils/urls';
 
-import { normalizeComponents } from './utils/components';
-import { normalizeOperations } from './utils/operations';
+import {
+  createComponentsIdentifierText,
+  normalizeComponents,
+  populateReferencedComponents,
+  removeUnreferencedComponents,
+} from './utils/components';
+import { normalizeOperations, removeUnreferencedOperations } from './utils/operations';
 import { normalizePaths } from './utils/paths';
 
 export const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
@@ -37,8 +42,17 @@ interface PathFilters {
 
 export interface NodeTransformationContext {
   serviceName: string;
-  typeImports: { root: Set<RootTypeImportName> };
-  filters: { paths: PathFilters };
+  typeImports: {
+    root: Set<RootTypeImportName>;
+  };
+  referencedTypes: {
+    operationPaths: Set<string>;
+    componentPaths: Set<string>;
+    shouldPopulateComponentPaths: boolean;
+  };
+  filters: {
+    paths: PathFilters;
+  };
   pendingActions: {
     components: { requests: Map<string, ComponentChangeAction[]> };
   };
@@ -70,6 +84,13 @@ function normalizeRootOperations(rootNode: ts.Node, context: NodeTransformationC
   return rootNode;
 }
 
+function removeRootUnreferencedOperations(rootNode: ts.Node, context: NodeTransformationContext) {
+  if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'operations') {
+    return removeUnreferencedOperations(rootNode, context);
+  }
+  return rootNode;
+}
+
 function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
     return normalizeComponents(rootNode, context);
@@ -77,7 +98,23 @@ function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationC
   return rootNode;
 }
 
-function normalizeRootUnknowns(rootNode: ts.Node | undefined) {
+function populateRootReferencedComponents(rootNode: ts.Node | undefined, context: NodeTransformationContext) {
+  if (rootNode && ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
+    populateReferencedComponents(rootNode, context);
+  }
+}
+
+function removeRootUnreferencedComponents(rootNode: ts.Node, context: NodeTransformationContext) {
+  if (
+    ts.isInterfaceDeclaration(rootNode) &&
+    rootNode.name.text === createComponentsIdentifierText(context.serviceName)
+  ) {
+    return removeUnreferencedComponents(rootNode, context);
+  }
+  return rootNode;
+}
+
+function normalizeRootUnknownResources(rootNode: ts.Node | undefined) {
   if (!rootNode) {
     return undefined;
   }
@@ -118,6 +155,7 @@ interface OpenAPITypeGenerationOptions {
   outputFilePath: string;
   serviceName: string;
   removeComments: boolean;
+  pruneUnused: boolean;
   filters: string[];
 }
 
@@ -126,11 +164,12 @@ async function generateTypesFromOpenAPISchema({
   outputFilePath,
   serviceName,
   removeComments,
+  pruneUnused,
   filters,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
 
-  const nodes = await generateTypesFromOpenAPI(fileURL, {
+  const rawNodes = await generateTypesFromOpenAPI(fileURL, {
     alphabetize: false,
     additionalProperties: false,
     excludeDeprecated: false,
@@ -207,6 +246,11 @@ async function generateTypesFromOpenAPISchema({
     typeImports: {
       root: new Set(),
     },
+    referencedTypes: {
+      operationPaths: new Set(),
+      componentPaths: new Set(),
+      shouldPopulateComponentPaths: true,
+    },
     pendingActions: {
       components: { requests: new Map() },
     },
@@ -215,18 +259,34 @@ async function generateTypesFromOpenAPISchema({
     },
   };
 
-  const transformedNodes = nodes
-    .map((node) => normalizeRootPaths(node, context))
-    .map((node) => normalizeRootOperations(node, context))
-    .map((node) => normalizeRootComponents(node, context))
-    .map((node) => normalizeRootUnknowns(node))
-    .filter(isDefined);
-
-  if (context.typeImports.root.size > 0) {
-    addImportDeclarations(transformedNodes, context);
+  let partialNodes: (ts.Node | undefined)[] = rawNodes.map((node) => normalizeRootPaths(node, context));
+  if (pruneUnused) {
+    partialNodes = partialNodes.map((node) => node && removeRootUnreferencedOperations(node, context));
   }
 
-  const outputContent = convertTypeASTToString(transformedNodes, { formatOptions: { removeComments } });
+  partialNodes = partialNodes.map((node) => node && normalizeRootOperations(node, context));
+  if (pruneUnused) {
+    for (const node of partialNodes) {
+      populateRootReferencedComponents(node, context);
+    }
+  }
+
+  context.referencedTypes.shouldPopulateComponentPaths = false;
+
+  partialNodes = partialNodes.map((node) => node && normalizeRootComponents(node, context));
+  if (pruneUnused) {
+    partialNodes = partialNodes.map((node) => node && removeRootUnreferencedComponents(node, context));
+  }
+
+  const nodes = partialNodes.map((node) => normalizeRootUnknownResources(node)).filter(isDefined);
+
+  if (context.typeImports.root.size > 0) {
+    addImportDeclarations(nodes, context);
+  }
+
+  const outputContent = convertTypeASTToString(nodes, {
+    formatOptions: { removeComments },
+  });
 
   const outputContentWithNewLinesBeforeExports = outputContent.replace(
     /^export (type|interface|const)/gm,

@@ -53,7 +53,6 @@ export type MyServiceSchema = HttpSchema.Paths<{
 
 export interface MyServiceComponents {
   schemas: {
-    UserType: 'user' | 'friend';
     User: {
       id: number;
       name: string;

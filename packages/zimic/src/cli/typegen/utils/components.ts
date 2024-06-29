@@ -7,53 +7,72 @@ import { normalizeMethodContentType, normalizeMethodResponsesMember } from './me
 import { normalizePath } from './paths';
 import { isNeverType, isUnknownType } from './types';
 
-function createComponentIdentifierText(serviceName: string) {
+export function createComponentsIdentifierText(serviceName: string) {
   return `${serviceName}Components`;
 }
 
 function createComponentsIdentifier(serviceName: string) {
-  return ts.factory.createIdentifier(createComponentIdentifierText(serviceName));
+  return ts.factory.createIdentifier(createComponentsIdentifierText(serviceName));
 }
 
-export function renameComponentReferences(node: ts.TypeNode, context: NodeTransformationContext): ts.TypeNode {
+function unchangedIndexedAccessTypeNode(node: ts.IndexedAccessTypeNode) {
+  return node;
+}
+
+function visitComponentReferences(
+  node: ts.TypeNode,
+  context: NodeTransformationContext & {
+    isComponentIndexedAccessNode?: boolean;
+    splitComponentPath?: string[];
+  },
+  options: {
+    onComponentReference?: (node: ts.IndexedAccessTypeNode, referencedComponentPath: string) => void;
+    renameComponentReference?: (
+      node: ts.IndexedAccessTypeNode,
+      objectType: ts.TypeReferenceNode,
+    ) => ts.IndexedAccessTypeNode;
+  } = {},
+): ts.TypeNode {
+  const { onComponentReference, renameComponentReference = unchangedIndexedAccessTypeNode } = options;
+
   if (isUnknownType(node)) {
     return ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
   }
 
   if (ts.isTypeReferenceNode(node)) {
-    const newTypeArguments = node.typeArguments?.map((type) => renameComponentReferences(type, context));
+    const newTypeArguments = node.typeArguments?.map((type) => visitComponentReferences(type, context, options));
     return ts.factory.updateTypeReferenceNode(node, node.typeName, ts.factory.createNodeArray(newTypeArguments));
   }
 
   if (ts.isArrayTypeNode(node)) {
-    const newElementType = renameComponentReferences(node.elementType, context);
+    const newElementType = visitComponentReferences(node.elementType, context, options);
     return ts.factory.updateArrayTypeNode(node, newElementType);
   }
 
   if (ts.isUnionTypeNode(node)) {
-    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    const newTypes = node.types.map((type) => visitComponentReferences(type, context, options));
     return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
   }
 
   if (ts.isIntersectionTypeNode(node)) {
-    const newTypes = node.types.map((type) => renameComponentReferences(type, context));
+    const newTypes = node.types.map((type) => visitComponentReferences(type, context, options));
     return ts.factory.updateIntersectionTypeNode(node, ts.factory.createNodeArray(newTypes));
   }
 
   if (ts.isParenthesizedTypeNode(node)) {
-    const newType = renameComponentReferences(node.type, context);
+    const newType = visitComponentReferences(node.type, context, options);
     return ts.factory.updateParenthesizedType(node, newType);
   }
 
   if (ts.isTypeLiteralNode(node)) {
     const newMembers = node.members.map((member) => {
       if (ts.isPropertySignature(member) && member.type) {
-        const newType = renameComponentReferences(member.type, context);
+        const newType = visitComponentReferences(member.type, context, options);
         return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
       }
 
       if (ts.isIndexSignatureDeclaration(member)) {
-        const newType = renameComponentReferences(member.type, context);
+        const newType = visitComponentReferences(member.type, context, options);
         return ts.factory.updateIndexSignature(member, member.modifiers, member.parameters, newType);
       }
 
@@ -64,37 +83,76 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
   }
 
   if (ts.isIndexedAccessTypeNode(node)) {
+    const isTopLevelIndexedAccessNode = context.isComponentIndexedAccessNode ?? true;
+
     if (ts.isIndexedAccessTypeNode(node.objectType)) {
-      const newObjectType = renameComponentReferences(node.objectType, context);
-      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
+      const childContext: typeof context = { ...context, isComponentIndexedAccessNode: false };
+      const newObjectType = visitComponentReferences(node.objectType, childContext, options);
+
+      const newNode = ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
+
+      if (childContext.splitComponentPath) {
+        if (ts.isLiteralTypeNode(node.indexType) && ts.isStringLiteral(node.indexType.literal)) {
+          const indexTypeName = node.indexType.literal.text;
+          childContext.splitComponentPath.push(indexTypeName);
+        }
+
+        if (isTopLevelIndexedAccessNode) {
+          const referencedComponentPath = childContext.splitComponentPath.join('.');
+          onComponentReference?.(newNode, referencedComponentPath);
+        }
+      }
+
+      return newNode;
     }
 
     const isComponentIndexedAccess =
       ts.isTypeReferenceNode(node.objectType) &&
       ts.isIdentifier(node.objectType.typeName) &&
-      node.objectType.typeName.text === 'components';
+      ['components', createComponentsIdentifierText(context.serviceName)].includes(node.objectType.typeName.text);
 
     if (isComponentIndexedAccess) {
-      const newIdentifier = createComponentsIdentifier(context.serviceName);
+      const isRawComponent = node.objectType.typeName.text === 'components';
+      const newNode = isRawComponent ? renameComponentReference(node, node.objectType) : node;
 
-      const newObjectType = ts.factory.updateTypeReferenceNode(
-        node.objectType,
-        newIdentifier,
-        node.objectType.typeArguments,
-      );
+      if (ts.isLiteralTypeNode(newNode.indexType) && ts.isStringLiteral(newNode.indexType.literal)) {
+        const indexTypeName = newNode.indexType.literal.text;
+        context.splitComponentPath = [indexTypeName];
+      }
 
-      const newIndexType =
-        ts.isLiteralTypeNode(node.indexType) &&
-        ts.isStringLiteral(node.indexType.literal) &&
-        node.indexType.literal.text === 'requestBodies'
-          ? ts.factory.updateLiteralTypeNode(node.indexType, ts.factory.createStringLiteral('requests'))
-          : node.indexType;
-
-      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, newIndexType);
+      return newNode;
     }
   }
 
   return node;
+}
+
+export function renameComponentReferences(node: ts.TypeNode, context: NodeTransformationContext): ts.TypeNode {
+  return visitComponentReferences(node, context, {
+    onComponentReference(_node, referencedComponentPath) {
+      if (context.referencedTypes.shouldPopulateComponentPaths) {
+        context.referencedTypes.componentPaths.add(referencedComponentPath);
+      }
+    },
+
+    renameComponentReference(node, objectType) {
+      const newIdentifier = createComponentsIdentifier(context.serviceName);
+      const newObjectType = ts.factory.updateTypeReferenceNode(objectType, newIdentifier, objectType.typeArguments);
+
+      let newIndexType = node.indexType;
+
+      const shouldRenameToRequests =
+        ts.isLiteralTypeNode(node.indexType) &&
+        ts.isStringLiteral(node.indexType.literal) &&
+        node.indexType.literal.text === 'requestBodies';
+
+      if (shouldRenameToRequests) {
+        newIndexType = ts.factory.updateLiteralTypeNode(node.indexType, ts.factory.createStringLiteral('requests'));
+      }
+
+      return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, newIndexType);
+    },
+  });
 }
 
 function normalizeRequestComponent(component: ts.PropertySignature, context: NodeTransformationContext) {
@@ -102,7 +160,9 @@ function normalizeRequestComponent(component: ts.PropertySignature, context: Nod
     return undefined;
   }
 
-  const componentName = ts.isIdentifier(component.name) ? component.name.text : undefined;
+  const componentName =
+    ts.isIdentifier(component.name) || ts.isStringLiteral(component.name) ? component.name.text : undefined;
+
   let bodyQuestionToken = component.questionToken;
 
   if (componentName) {
@@ -137,7 +197,7 @@ function normalizeRequestComponent(component: ts.PropertySignature, context: Nod
 
 function normalizeComponent(
   component: ts.TypeElement,
-  componentName: ts.Identifier | undefined,
+  componentName: ts.Identifier | ts.StringLiteral | undefined,
   context: NodeTransformationContext,
 ): ts.TypeElement | undefined {
   if (!ts.isPropertySignature(component)) {
@@ -202,7 +262,11 @@ function normalizeComponentMemberType(
   componentMemberType: ts.TypeNode,
   context: NodeTransformationContext,
 ) {
-  if (ts.isTypeLiteralNode(componentMemberType) && componentMember.name && ts.isIdentifier(componentMember.name)) {
+  if (
+    ts.isTypeLiteralNode(componentMemberType) &&
+    componentMember.name &&
+    (ts.isIdentifier(componentMember.name) || ts.isStringLiteral(componentMember.name))
+  ) {
     const componentName = componentMember.name;
 
     const newMembers = componentMemberType.members
@@ -227,7 +291,8 @@ function normalizeComponentMember(componentMember: ts.TypeElement, context: Node
   const newType = normalizeComponentMemberType(componentMember, componentMember.type, context);
 
   const newIdentifier =
-    ts.isIdentifier(componentMember.name) && componentMember.name.text === 'requestBodies'
+    (ts.isIdentifier(componentMember.name) || ts.isStringLiteral(componentMember.name)) &&
+    componentMember.name.text === 'requestBodies'
       ? ts.factory.createIdentifier('requests')
       : componentMember.name;
 
@@ -255,6 +320,118 @@ export function normalizeComponents(components: ts.InterfaceDeclaration, context
     components,
     components.modifiers,
     newIdentifier,
+    components.typeParameters,
+    components.heritageClauses,
+    newMembers,
+  );
+}
+
+export function populateReferencedComponents(components: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+  const pathsToVisit = new Set(context.referencedTypes.componentPaths);
+
+  while (pathsToVisit.size > 0) {
+    const previousPathsToVisit = new Set(pathsToVisit);
+    pathsToVisit.clear();
+
+    for (const componentGroup of components.members) {
+      if (
+        !ts.isPropertySignature(componentGroup) ||
+        !componentGroup.type ||
+        !ts.isTypeLiteralNode(componentGroup.type)
+      ) {
+        continue;
+      }
+
+      const componentGroupName =
+        ts.isIdentifier(componentGroup.name) || ts.isStringLiteral(componentGroup.name) ? componentGroup.name.text : '';
+
+      for (const component of componentGroup.type.members) {
+        if (!ts.isPropertySignature(component) || !component.type) {
+          continue;
+        }
+
+        const componentName =
+          ts.isIdentifier(component.name) || ts.isStringLiteral(component.name) ? component.name.text : '';
+
+        const componentPath = [componentGroupName, componentName].join('.');
+
+        const isComponentToVisit = previousPathsToVisit.has(componentPath);
+        if (!isComponentToVisit) {
+          continue;
+        }
+
+        context.referencedTypes.componentPaths.add(componentPath);
+
+        visitComponentReferences(component.type, context, {
+          onComponentReference(_node, referencedComponentPath) {
+            if (!context.referencedTypes.componentPaths.has(referencedComponentPath)) {
+              pathsToVisit.add(referencedComponentPath);
+            }
+          },
+        });
+      }
+    }
+  }
+}
+
+export function removeUnreferencedComponents(components: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+  const newMembers = components.members
+    .map((componentGroup) => {
+      if (!ts.isPropertySignature(componentGroup)) {
+        return componentGroup;
+      }
+
+      const componentGroupName =
+        ts.isIdentifier(componentGroup.name) || ts.isStringLiteral(componentGroup.name) ? componentGroup.name.text : '';
+
+      if (componentGroup.type && ts.isTypeLiteralNode(componentGroup.type)) {
+        const newMembers = componentGroup.type.members
+          .map((member) => {
+            if (!ts.isPropertySignature(member)) {
+              return member;
+            }
+
+            const componentName =
+              ts.isIdentifier(member.name) || ts.isStringLiteral(member.name) ? member.name.text : '';
+
+            const componentPath = [componentGroupName, componentName].join('.');
+
+            if (context.referencedTypes.componentPaths.has(componentPath)) {
+              context.referencedTypes.componentPaths.delete(componentPath);
+              return member;
+            }
+
+            return undefined;
+          })
+          .filter(isDefined);
+
+        if (newMembers.length === 0) {
+          return undefined;
+        }
+
+        return ts.factory.updatePropertySignature(
+          componentGroup,
+          componentGroup.modifiers,
+          componentGroup.name,
+          componentGroup.questionToken,
+          ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newMembers)),
+        );
+      }
+
+      return componentGroup;
+    })
+    .filter(isDefined);
+
+  context.referencedTypes.componentPaths.clear();
+
+  if (newMembers.length === 0) {
+    return undefined;
+  }
+
+  return ts.factory.updateInterfaceDeclaration(
+    components,
+    components.modifiers,
+    components.name,
     components.typeParameters,
     components.heritageClauses,
     newMembers,

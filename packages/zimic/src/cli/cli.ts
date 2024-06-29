@@ -119,6 +119,13 @@ async function runCLI() {
               description: 'Whether to remove comments from the generated types.',
               default: false,
             })
+            .option('prune-unused', {
+              type: 'boolean',
+              description:
+                'Whether to remove unused operations and components from the generated types. This is useful for ' +
+                'reducing the size of the output file.',
+              default: true,
+            })
             .option('filter', {
               type: 'string',
               array: true,
@@ -141,6 +148,7 @@ async function runCLI() {
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,
             removeComments: cliArguments.removeComments,
+            pruneUnused: cliArguments.pruneUnused,
             filters,
           });
         },

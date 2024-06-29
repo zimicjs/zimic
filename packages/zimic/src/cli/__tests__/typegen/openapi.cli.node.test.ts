@@ -121,6 +121,16 @@ describe('Type generation (OpenAPI)', () => {
     '                                                             [string] [required]',
     '      --remove-comments  Whether to remove comments from the generated types.',
     '                                                      [boolean] [default: false]',
+    '      --prune-unused     Whether to remove unused operations and components from',
+    '                          the generated types. This is useful for reducing the s',
+    '                         ize of the output file.       [boolean] [default: true]',
+    '      --filter           One or more expressions to filter paths to generate typ',
+    '                         es for.                           [array] [default: []]',
+    '      --filter-file      A path to a file containing expressions to filter paths',
+    '                          to generate types for. One expression is expected per',
+    '                         line. Comments are prefixed with `#`. Additional `--fil',
+    '                         ter` expressions will be appended to the considered fil',
+    '                         ters.                                          [string]',
   ].join('\n');
 
   it('should show a help message', async () => {
