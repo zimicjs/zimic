@@ -8,34 +8,6 @@ import { renameComponentReferences } from './components';
 import { createOperationsIdentifier } from './operations';
 import { isUnknownType, isNeverTypeMember, isNeverType, isNullType } from './types';
 
-function createNumberTemplateLiteral() {
-  return ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
-    ts.factory.createTemplateLiteralTypeSpan(
-      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('number'), undefined),
-      ts.factory.createTemplateTail(''),
-    ),
-  ]);
-}
-
-export function transformNumberTypeToNumberTemplateLiteral(member: ts.PropertySignature) {
-  const newType = createNumberTemplateLiteral();
-  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
-}
-
-function createBooleanTemplateLiteral() {
-  return ts.factory.createTemplateLiteralType(ts.factory.createTemplateHead(''), [
-    ts.factory.createTemplateLiteralTypeSpan(
-      ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('boolean'), undefined),
-      ts.factory.createTemplateTail(''),
-    ),
-  ]);
-}
-
-export function transformBooleanTypeToBooleanTemplateLiteral(member: ts.PropertySignature) {
-  const newType = createBooleanTemplateLiteral();
-  return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
-}
-
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: NodeTransformationContext) {
   if (ts.isPropertySignature(requestBodyMember) && ts.isStringLiteral(requestBodyMember.name)) {
     if (!requestBodyMember.type) {
@@ -540,14 +512,28 @@ function normalizeMethodIndexedAccessType(methodType: ts.IndexedAccessTypeNode, 
   return methodType;
 }
 
-export function normalizeMethod(method: ts.TypeElement, context: NodeTransformationContext) {
+export function normalizeMethod(
+  method: ts.TypeElement,
+  context: NodeTransformationContext,
+  options: { pathName: string },
+) {
   if (!ts.isPropertySignature(method) || !ts.isIdentifier(method.name) || isNeverType(method.type)) {
     return undefined;
   }
 
   const methodName = method.name.text.toUpperCase<HttpMethod>();
+
   if (!SUPPORTED_HTTP_METHODS.has(methodName)) {
     return undefined;
+  }
+
+  if (context.filters.paths) {
+    const pathMethodCompareString = `${methodName} ${options.pathName}`;
+
+    const isIncluded = context.filters.paths.some((filter) => filter.test(pathMethodCompareString));
+    if (!isIncluded) {
+      return undefined;
+    }
   }
 
   const newIdentifier = ts.factory.createIdentifier(methodName);

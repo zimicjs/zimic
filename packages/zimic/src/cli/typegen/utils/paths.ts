@@ -12,21 +12,28 @@ export function createPathsIdentifier(serviceName: string) {
 export function normalizePath(
   path: ts.TypeElement,
   context: NodeTransformationContext,
-  options: {
-    isComponent?: boolean;
-  } = {},
+  options: { isComponent?: boolean } = {},
 ) {
   const { isComponent = false } = options;
 
   if (ts.isPropertySignature(path) && path.type && ts.isTypeLiteralNode(path.type)) {
-    const newIdentifier =
-      ts.isStringLiteral(path.name) && !isComponent
-        ? ts.factory.createStringLiteral(path.name.text.replace(/{([^}]+)}/g, ':$1'))
-        : path.name;
+    if (!ts.isStringLiteral(path.name)) {
+      return undefined;
+    }
+
+    const pathName = path.name.text;
+
+    const newIdentifier = isComponent
+      ? path.name
+      : ts.factory.createStringLiteral(pathName.replace(/{([^}]+)}/g, ':$1'));
 
     const newTypeMembers = path.type.members
-      .map((pathMethod) => normalizeMethod(pathMethod, context))
+      .map((pathMethod) => normalizeMethod(pathMethod, context, { pathName }))
       .filter(isDefined);
+
+    if (newTypeMembers.length === 0) {
+      return undefined;
+    }
 
     const newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newTypeMembers));
 
@@ -59,7 +66,7 @@ export function normalizePath(
 export function normalizePaths(paths: ts.InterfaceDeclaration, context: NodeTransformationContext) {
   const newIdentifier = createPathsIdentifier(context.serviceName);
 
-  const newMembers = paths.members.map((path) => normalizePath(path, context));
+  const newMembers = paths.members.map((path) => normalizePath(path, context)).filter(isDefined);
   const newType = ts.factory.createTypeLiteralNode(ts.factory.createNodeArray(newMembers));
 
   context.typeImports.root.add('HttpSchema');

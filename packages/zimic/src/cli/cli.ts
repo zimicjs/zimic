@@ -118,6 +118,12 @@ async function runCLI() {
               type: 'boolean',
               description: 'Whether to remove comments from the generated types.',
               default: false,
+            })
+            .option('filter', {
+              type: 'string',
+              array: true,
+              description: 'One or more expressions to filter paths to generate types for.',
+              default: ['* **'],
             }),
         async (cliArguments) => {
           await generateTypesFromOpenAPISchema({
@@ -125,6 +131,7 @@ async function runCLI() {
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,
             removeComments: cliArguments.removeComments,
+            pathFilters: cliArguments.filter,
           });
         },
       ),

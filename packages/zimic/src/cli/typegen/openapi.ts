@@ -8,7 +8,7 @@ import { version } from '@@/package.json';
 import { HTTP_METHODS } from '@/http/types/schema';
 import { isDefined } from '@/utils/data';
 import { toPascalCase } from '@/utils/strings';
-import { createFileURL } from '@/utils/urls';
+import { createFileURL, createRegexFromWildcardPath } from '@/utils/urls';
 
 import { normalizeComponents } from './utils/components';
 import { normalizeOperations } from './utils/operations';
@@ -33,6 +33,7 @@ interface ComponentChangeAction {
 export interface NodeTransformationContext {
   serviceName: string;
   typeImports: { root: Set<RootTypeImportName> };
+  filters: { paths?: RegExp[] };
   pendingActions: {
     components: { requests: Map<string, ComponentChangeAction[]> };
   };
@@ -100,6 +101,7 @@ interface OpenAPITypeGenerationOptions {
   outputFilePath: string;
   serviceName: string;
   removeComments: boolean;
+  pathFilters?: string[];
 }
 
 async function generateTypesFromOpenAPISchema({
@@ -107,6 +109,7 @@ async function generateTypesFromOpenAPISchema({
   outputFilePath,
   serviceName,
   removeComments,
+  pathFilters,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
 
@@ -140,9 +143,32 @@ async function generateTypesFromOpenAPISchema({
 
   const pascalServiceName = toPascalCase(serviceName);
 
+  const supportedMethodsGroup = Array.from(SUPPORTED_HTTP_METHODS).join('|');
+  const filterRegex = new RegExp(
+    `^(?<method>\\*|(?:${supportedMethodsGroup})(?:,\\s*(?:${supportedMethodsGroup}))*)\\s+(?<path>.+)$`,
+    'i',
+  );
+
   const context: NodeTransformationContext = {
     serviceName: pascalServiceName,
     typeImports: { root: new Set() },
+    filters: {
+      paths: pathFilters
+        ?.map((rawFilter) => {
+          const filterMatch = rawFilter.trim().match(filterRegex);
+          const { method, path } = filterMatch?.groups ?? {};
+
+          if (!method || !path) {
+            console.error(`Filter is not valid: ${rawFilter}`);
+            return undefined;
+          }
+
+          return createRegexFromWildcardPath(path, {
+            prefix: `(?:${method.toUpperCase().replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
+          });
+        })
+        .filter(isDefined),
+    },
     pendingActions: {
       components: { requests: new Map() },
     },
