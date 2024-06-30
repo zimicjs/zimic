@@ -101,9 +101,7 @@ export function createRegexFromURL(url: string) {
   return new RegExp(`^${urlWithReplacedPathParams}$`);
 }
 
-export function createRegexFromWildcardPath(path: string, options: { prefix?: string } = {}) {
-  const { prefix = '' } = options;
-
+export function createRegexFromWildcardPath(path: string, options: { prefix: string }) {
   const pathWithReplacedWildcards = prepareURLForRegex(path)
     .replace(/^\/+|\/+$/g, '')
     .replace(/\\\*/g, '*')
@@ -111,7 +109,7 @@ export function createRegexFromWildcardPath(path: string, options: { prefix?: st
     .replace(/(^|[^*])\*([^*]|$)/g, '$1[^/]*$2')
     .replace(/\*\*/g, '.*');
 
-  return new RegExp(`^${prefix}/*${pathWithReplacedWildcards}/*$`);
+  return new RegExp(`^${options.prefix}/*${pathWithReplacedWildcards}/*$`);
 }
 
 export function joinURL(...parts: (string | URL)[]) {

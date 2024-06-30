@@ -54,6 +54,7 @@ export function normalizePath(
 ) {
   const { isComponent = false } = options;
 
+  /* istanbul ignore if -- @preserve */
   if (!isPath(path)) {
     return undefined;
   }

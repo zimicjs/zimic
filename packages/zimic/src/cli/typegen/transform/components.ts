@@ -42,7 +42,7 @@ function isComponentGroup(node: ts.TypeElement): node is ComponentGroup {
     ts.isPropertySignature(node) &&
     node.type !== undefined &&
     ts.isTypeLiteralNode(node.type) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ts.isIdentifier(node.name)
   );
 }
 
@@ -125,11 +125,14 @@ function visitComponentReferences(
         return ts.factory.updatePropertySignature(member, member.modifiers, member.name, member.questionToken, newType);
       }
 
+      /* istanbul ignore else -- @preserve */
       if (ts.isIndexSignatureDeclaration(member)) {
         const newType = visitComponentReferences(member.type, context, options);
         return ts.factory.updateIndexSignature(member, member.modifiers, member.parameters, newType);
       }
 
+      /* istanbul ignore next -- @preserve
+       * All members are expected to be either a property signature or an index signature. */
       return member;
     });
 

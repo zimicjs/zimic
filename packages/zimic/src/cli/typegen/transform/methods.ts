@@ -24,7 +24,7 @@ function isMethod(node: ts.Node): node is Method {
     node.type !== undefined &&
     !isNeverType(node.type) &&
     (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type)) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ts.isIdentifier(node.name)
   );
 }
 
@@ -41,7 +41,7 @@ function isMethodMember(node: ts.Node): node is MethodMember {
     ts.isPropertySignature(node) &&
     node.type !== undefined &&
     (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type) || isNeverType(node.type)) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ts.isIdentifier(node.name)
   );
 }
 
@@ -56,7 +56,7 @@ type RequestHeaders = Override<
 function isRequestHeaders(node: ts.Node): node is RequestHeaders {
   return (
     ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
+    ts.isIdentifier(node.name) &&
     node.name.text === 'headers' &&
     node.type !== undefined &&
     ts.isTypeLiteralNode(node.type)
@@ -91,7 +91,7 @@ type Content = Override<
 function isContentPropertySignature(node: ts.Node): node is Content {
   return (
     ts.isPropertySignature(node) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
+    ts.isIdentifier(node.name) &&
     node.name.text === 'content' &&
     node.type !== undefined &&
     ts.isTypeLiteralNode(node.type)
@@ -206,7 +206,12 @@ function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformCon
   ]);
 }
 
-function normalizeRequestHeaders(requestHeader: ts.TypeElement, context: TypeTransformContext) {
+type NormalizedRequestHeaders = Override<ts.PropertySignature, { type: ts.TypeReferenceNode }>;
+
+function normalizeRequestHeaders(
+  requestHeader: ts.TypeElement,
+  context: TypeTransformContext,
+): NormalizedRequestHeaders | undefined {
   if (!isRequestHeaders(requestHeader)) {
     return undefined;
   }
@@ -221,13 +226,20 @@ function normalizeRequestHeaders(requestHeader: ts.TypeElement, context: TypeTra
     requestHeader.modifiers,
     requestHeader.name,
     requestHeader.questionToken,
-    newType,
-  );
+    newType satisfies NormalizedRequestHeaders['type'],
+  ) satisfies ts.PropertySignature as NormalizedRequestHeaders;
 }
 
-function createHeaderForUnionByContentType(existingHeader: ts.PropertySignature | undefined, contentTypeName: string) {
+function createHeaderForUnionByContentType(
+  existingHeader: NormalizedRequestHeaders | undefined,
+  contentTypeName: string,
+) {
   const existingHeaderMembers =
-    existingHeader?.type && ts.isTypeLiteralNode(existingHeader.type) ? existingHeader.type.members : [];
+    existingHeader &&
+    existingHeader.type.typeArguments?.[0] &&
+    ts.isTypeLiteralNode(existingHeader.type.typeArguments[0])
+      ? existingHeader.type.typeArguments[0].members
+      : [];
 
   const contentTypeIdentifier = ts.factory.createIdentifier('"content-type"');
   const contentTypeValue = ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(contentTypeName));
@@ -421,7 +433,7 @@ function normalizeRequestMemberWithParameters(
   methodRequestMember: ts.PropertySignature,
   context: TypeTransformContext,
 ) {
-  if (!ts.isIdentifier(methodRequestMember.name) && !ts.isStringLiteral(methodRequestMember.name)) {
+  if (!ts.isIdentifier(methodRequestMember.name)) {
     return methodRequestMember;
   }
 
@@ -477,22 +489,24 @@ function mergeRequestAndParameterTypes(
 ) {
   const requestTypeMembers = ts.isTypeLiteralNode(requestType) ? requestType.members : [];
 
-  const parametersMember = methodMembers.find((member): member is ts.PropertySignature => {
-    const isParameters =
-      ts.isPropertySignature(member) &&
-      (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) &&
-      member.name.text === 'parameters';
+  const parametersMember = methodMembers.find(
+    (member): member is Override<ts.PropertySignature, { type: ts.TypeLiteralNode }> => {
+      const isParameters =
+        ts.isPropertySignature(member) &&
+        ts.isIdentifier(member.name) &&
+        member.name.text === 'parameters' &&
+        member.type !== undefined &&
+        ts.isTypeLiteralNode(member.type);
 
-    return isParameters;
-  });
+      return isParameters;
+    },
+  );
 
-  const parametersTypeMembers =
-    parametersMember?.type && ts.isTypeLiteralNode(parametersMember.type) ? parametersMember.type.members : [];
+  const parametersTypeMembers = parametersMember ? parametersMember.type.members : [];
 
   const orderedParameterTypeMembers = parametersTypeMembers.toSorted((member, otherMember) => {
-    const memberHasName = member.name && (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name));
-    const otherMemberHasName =
-      otherMember.name && (ts.isIdentifier(otherMember.name) || ts.isStringLiteral(otherMember.name));
+    const memberHasName = member.name && ts.isIdentifier(member.name);
+    const otherMemberHasName = otherMember.name && ts.isIdentifier(otherMember.name);
 
     if (memberHasName && otherMemberHasName) {
       return member.name.text.localeCompare(otherMember.name.text);
@@ -537,7 +551,7 @@ function normalizeMethodMemberWithParameters(
   methodMembers: ts.TypeElement[],
   context: TypeTransformContext,
 ) {
-  if ((!ts.isIdentifier(methodMember.name) && !ts.isStringLiteral(methodMember.name)) || !methodMember.type) {
+  if (!ts.isIdentifier(methodMember.name) || !methodMember.type) {
     return undefined;
   }
 
@@ -575,7 +589,7 @@ export function normalizeTypeLiteralMethodType(methodType: ts.TypeLiteralNode, c
 function normalizeIndexedAccessMethodType(methodType: ts.IndexedAccessTypeNode, context: TypeTransformContext) {
   const isOperationsReference =
     ts.isTypeReferenceNode(methodType.objectType) &&
-    (ts.isIdentifier(methodType.objectType.typeName) || ts.isStringLiteral(methodType.objectType.typeName)) &&
+    ts.isIdentifier(methodType.objectType.typeName) &&
     methodType.objectType.typeName.text === 'operations';
 
   if (!isOperationsReference) {

@@ -31,7 +31,7 @@ function isOperation(node: ts.Node): node is Operation {
     ts.isPropertySignature(node) &&
     node.type !== undefined &&
     ts.isTypeLiteralNode(node.type) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ts.isIdentifier(node.name)
   );
 }
 
@@ -46,6 +46,7 @@ function wrapOperationTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTr
 }
 
 function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
+  /* istanbul ignore if -- @preserve */
   if (!isOperation(operation)) {
     return undefined;
   }
@@ -62,13 +63,8 @@ function normalizeOperation(operation: ts.TypeElement, context: TypeTransformCon
 }
 
 export function normalizeOperations(operations: ts.InterfaceDeclaration, context: TypeTransformContext) {
-  const newMembers = operations.members.map((operation) => normalizeOperation(operation, context)).filter(isDefined);
-
-  if (newMembers.length === 0) {
-    return undefined;
-  }
-
   const newIdentifier = createOperationsIdentifier(context.serviceName);
+  const newMembers = operations.members.map((operation) => normalizeOperation(operation, context)).filter(isDefined);
 
   return ts.factory.updateInterfaceDeclaration(
     operations,
@@ -81,6 +77,7 @@ export function normalizeOperations(operations: ts.InterfaceDeclaration, context
 }
 
 function removeOperationIfUnreferenced(operation: ts.TypeElement, context: TypeTransformContext) {
+  /* istanbul ignore if -- @preserve */
   if (!isOperation(operation)) {
     return undefined;
   }
