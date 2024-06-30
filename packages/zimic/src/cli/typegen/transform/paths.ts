@@ -9,6 +9,10 @@ export function createPathsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Schema`);
 }
 
+export function isPathsDeclaration(node: ts.Node | undefined): node is ts.InterfaceDeclaration {
+  return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'paths';
+}
+
 export function normalizePath(
   path: ts.TypeElement,
   context: TypeTransformContext,

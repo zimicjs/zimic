@@ -11,6 +11,17 @@ export function createComponentsIdentifierText(serviceName: string) {
   return `${serviceName}Components`;
 }
 
+export function isComponentsDeclaration(
+  node: ts.Node | undefined,
+  context: TypeTransformContext,
+): node is ts.InterfaceDeclaration {
+  return (
+    node !== undefined &&
+    ts.isInterfaceDeclaration(node) &&
+    (node.name.text === 'components' || node.name.text === createComponentsIdentifierText(context.serviceName))
+  );
+}
+
 function createComponentsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(createComponentsIdentifierText(serviceName));
 }
@@ -130,7 +141,7 @@ function visitComponentReferences(
 export function renameComponentReferences(node: ts.TypeNode, context: TypeTransformContext): ts.TypeNode {
   return visitComponentReferences(node, context, {
     onComponentReference(_node, referencedComponentPath) {
-      if (context.referencedTypes.shouldPopulateComponentPaths) {
+      if (context.referencedTypes.shouldPopulate) {
         context.referencedTypes.components.add(referencedComponentPath);
       }
     },

@@ -10,6 +10,10 @@ export function createOperationsIdentifierText(serviceName: string) {
   return `${serviceName}Operations`;
 }
 
+export function isOperationsDeclaration(node: ts.Node | undefined): node is ts.InterfaceDeclaration {
+  return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'operations';
+}
+
 export function createOperationsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
 }
