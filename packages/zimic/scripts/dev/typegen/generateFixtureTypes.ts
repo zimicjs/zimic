@@ -10,7 +10,6 @@ import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '
 import { runCommand } from '@/utils/processes';
 
 import { usingConsoleTime } from '../utils/console';
-import { prefixLines } from '../utils/strings';
 
 const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
 
@@ -40,12 +39,7 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
       ...fixtureCase.additionalArguments,
     ];
 
-    await runCommand('node', commandArguments, {
-      stdio: 'pipe',
-      onOutput(data, type) {
-        process[type].write(prefixLines(`${typegenPrefix}: `, data.toString()));
-      },
-    });
+    await runCommand('node', commandArguments);
   });
 
   await normalizeOutputTypeImports(outputFilePath);
@@ -54,15 +48,10 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
 }
 
 async function lintGeneratedFiles(filePaths: string[]) {
-  const lintPrefix = '[lint] ';
+  const lintPrefix = '[lint]';
 
-  await usingConsoleTime(lintPrefix.trim(), async () => {
-    await runCommand('pnpm', ['--silent', 'lint', ...filePaths], {
-      stdio: 'pipe',
-      onOutput(data, type) {
-        process[type].write(prefixLines(lintPrefix, data.toString()));
-      },
-    });
+  await usingConsoleTime(lintPrefix, async () => {
+    await runCommand('pnpm', ['--silent', 'lint', ...filePaths]);
   });
 }
 

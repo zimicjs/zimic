@@ -20,10 +20,6 @@ export class CommandError extends Error {
 
 export type CommandStreamType = 'stdout' | 'stderr';
 
-function defaultPipeCommandOutput(data: Buffer, streamType: CommandStreamType) {
-  process[streamType].write(data);
-}
-
 /**
  * Runs a command with the given arguments.
  *
@@ -45,16 +41,10 @@ export async function runCommand(
      * @default 'inherit'
      */
     stdio?: SpawnOptions['stdio'];
-
-    onOutput?: (data: Buffer, streamType: CommandStreamType) => void;
   } = {},
 ) {
   await new Promise<void>((resolve, reject) => {
-    const {
-      stdio = 'inherit',
-      onOutput = stdio === 'pipe' ? defaultPipeCommandOutput : undefined,
-      ...otherOptions
-    } = options;
+    const { stdio = 'inherit', ...otherOptions } = options;
 
     const childProcess = spawn(command, commandArguments, { stdio, ...otherOptions });
 
@@ -74,15 +64,5 @@ export async function runCommand(
       const failureError = new CommandError(command, exitCode, signal);
       reject(failureError);
     });
-
-    if (onOutput) {
-      childProcess.stdout?.on('data', (data: Buffer) => {
-        onOutput(data, 'stdout');
-      });
-
-      childProcess.stderr?.on('data', (data: Buffer) => {
-        onOutput(data, 'stderr');
-      });
-    }
   });
 }
