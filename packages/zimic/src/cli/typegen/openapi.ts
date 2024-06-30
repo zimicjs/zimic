@@ -1,5 +1,9 @@
+import chalk from 'chalk';
+import filesystem from 'fs/promises';
+import path from 'path';
 import ts from 'typescript';
 
+import { logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 
 import {
@@ -10,7 +14,12 @@ import {
 } from './transform/components';
 import { createTypeTransformationContext, TypeTransformContext } from './transform/context';
 import { createImportDeclarations } from './transform/imports';
-import { convertTypesToString, importTypesFromOpenAPI, writeTypeOutput } from './transform/io';
+import {
+  convertTypesToString,
+  importTypesFromOpenAPI,
+  prepareTypeOutputToSave,
+  writeTypeOutputToStandardOutput,
+} from './transform/io';
 import { isOperationsDeclaration, normalizeOperations, removeUnreferencedOperations } from './transform/operations';
 import { isPathsDeclaration, normalizePaths } from './transform/paths';
 
@@ -116,6 +125,8 @@ async function generateTypesFromOpenAPISchema({
   pruneUnused,
   filters,
 }: OpenAPITypeGenerationOptions) {
+  const startTimeInMilliseconds = performance.now();
+
   const rawNodes = await importTypesFromOpenAPI(inputFilePath);
 
   const context = createTypeTransformationContext(serviceName, filters);
@@ -125,7 +136,26 @@ async function generateTypesFromOpenAPISchema({
   nodes.unshift(...importDeclarations);
 
   const typeOutput = convertTypesToString(nodes, { removeComments });
-  await writeTypeOutput(typeOutput, outputFilePath);
+  const formattedOutput = prepareTypeOutputToSave(typeOutput);
+
+  const isFileOutput = outputFilePath !== '-';
+
+  if (isFileOutput) {
+    await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
+  } else {
+    await writeTypeOutputToStandardOutput(formattedOutput);
+  }
+
+  const endTimeInMilliseconds = performance.now();
+  const elapsedTimeInMilliseconds = (endTimeInMilliseconds - startTimeInMilliseconds).toFixed(0);
+
+  const successMessage = `${chalk.green.bold('✔')} Generated ${chalk.green(outputFilePath)} ${chalk.dim(`(${elapsedTimeInMilliseconds}ms)`)}`;
+
+  if (isFileOutput) {
+    logWithPrefix(successMessage, { method: 'log' });
+  } else {
+    logWithPrefix(successMessage, { method: 'warn' });
+  }
 }
 
 export default generateTypesFromOpenAPISchema;

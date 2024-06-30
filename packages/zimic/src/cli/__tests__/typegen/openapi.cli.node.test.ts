@@ -154,13 +154,13 @@ describe('Type generation (OpenAPI)', () => {
           let rawOutputContent: string;
 
           try {
-            await usingIgnoredConsole(['warn'], async (spies) => {
+            await usingIgnoredConsole(['log', 'warn'], async (spies) => {
               await runCLI();
 
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
 
               if (hasFilterFile) {
-                expect(spies.warn).toHaveBeenCalledTimes(1);
+                expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 2 : 1);
 
                 const message = spies.warn.mock.calls[0].join(' ');
                 expect(message).toMatch(/.*\[zimic\].* /);
@@ -169,9 +169,17 @@ describe('Type generation (OpenAPI)', () => {
                 );
               } else if (fixtureName === 'responses') {
                 const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
-                expect(spies.warn).toHaveBeenCalledTimes(expectedNonNumericStatusCodes.length);
 
-                const messages = spies.warn.mock.calls.map((argument) => argument.join(' ')).sort();
+                const expectedNumberOfWarnings = fixtureCase.shouldWriteToStdout
+                  ? expectedNonNumericStatusCodes.length + 1
+                  : expectedNonNumericStatusCodes.length;
+
+                expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+
+                const messages = spies.warn.mock.calls
+                  .slice(0, expectedNonNumericStatusCodes.length)
+                  .map((argument) => argument.join(' '))
+                  .sort();
 
                 for (const [index, nonNumericStatusCode] of expectedNonNumericStatusCodes.entries()) {
                   const message = messages[index];
@@ -183,8 +191,23 @@ describe('Type generation (OpenAPI)', () => {
                   );
                 }
               } else {
-                expect(spies.warn).not.toHaveBeenCalled();
+                expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }
+
+              let successMessage: string | undefined;
+
+              if (fixtureCase.shouldWriteToStdout) {
+                expect(spies.log).not.toHaveBeenCalled();
+                successMessage = spies.warn.mock.calls.at(-1)?.join(' ');
+              } else {
+                expect(spies.log).toHaveBeenCalledTimes(1);
+                successMessage = spies.log.mock.calls[0].join(' ');
+              }
+
+              expect(successMessage).toBeDefined();
+              expect(successMessage).toMatch(/.*\[zimic\].* /);
+              expect(successMessage).toContain(`Generated ${chalk.green(outputFilePath)}`);
+              expect(successMessage).toMatch(/.*(\d+ms).*$/);
             });
 
             if (fixtureCase.shouldWriteToStdout) {
