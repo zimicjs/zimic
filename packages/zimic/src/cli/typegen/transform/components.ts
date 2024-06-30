@@ -5,7 +5,7 @@ import { isDefined } from '@/utils/data';
 
 import { isNeverType, isUnknownType } from '../utils/types';
 import { TypeTransformContext } from './context';
-import { normalizeMethodContentType, normalizeMethodResponsesMember } from './methods';
+import { normalizeContentType, normalizeResponse } from './methods';
 import { normalizePath } from './paths';
 
 export function createComponentsIdentifierText(serviceName: string) {
@@ -251,7 +251,7 @@ function normalizeRequestComponent(component: Component, context: TypeTransformC
   }
 
   const { bodyQuestionToken } = processPendingRequestComponentActions(component, context);
-  const newType = normalizeMethodContentType(component.type, context, { bodyQuestionToken });
+  const newType = normalizeContentType(component.type, context, { bodyQuestionToken });
 
   return ts.factory.updatePropertySignature(
     component,
@@ -272,7 +272,7 @@ function normalizeComponent(
   }
 
   if (componentGroupName === 'responses') {
-    return normalizeMethodResponsesMember(component, context, { isComponent: true });
+    return normalizeResponse(component, context, { isComponent: true });
   }
 
   if (componentGroupName === 'requestBodies') {

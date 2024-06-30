@@ -4,7 +4,7 @@ import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
 import { TypeTransformContext } from './context';
-import { normalizeMethodTypeLiteral } from './methods';
+import { normalizeTypeLiteralMethodType } from './methods';
 
 export function createOperationsIdentifierText(serviceName: string) {
   return `${serviceName}Operations`;
@@ -50,7 +50,7 @@ function normalizeOperation(operation: ts.TypeElement, context: TypeTransformCon
     return undefined;
   }
 
-  const newType = normalizeMethodTypeLiteral(operation.type, context);
+  const newType = normalizeTypeLiteralMethodType(operation.type, context);
 
   return ts.factory.updatePropertySignature(
     operation,
