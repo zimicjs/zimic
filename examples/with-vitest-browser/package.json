@@ -11,11 +11,11 @@
     "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.1.0",
+    "@testing-library/dom": "^10.2.0",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/user-event": "^14.5.2",
     "@vitest/browser": "1.6.0",
-    "playwright": "^1.44.1",
+    "playwright": "^1.45.0",
     "typescript": "^5.5.2",
     "vitest": "1.6.0",
     "zimic": "latest"
