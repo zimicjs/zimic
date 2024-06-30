@@ -31,7 +31,7 @@ describe('CLI (browser)', () => {
   ].join('\n');
 
   it('should show a help message', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', '--help']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -41,7 +41,7 @@ describe('CLI (browser)', () => {
   });
 
   it('should throw an error if no command is provided', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -67,7 +67,7 @@ describe('CLI (browser)', () => {
     ].join('\n');
 
     it('should show a help message', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init', '--help']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', '--help']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
@@ -83,7 +83,7 @@ describe('CLI (browser)', () => {
 
       await usingIgnoredConsole(['log'], async (spies) => {
         const publicDirectory = './public';
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init', publicDirectory]);
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', publicDirectory]);
 
         await runCLI();
 
@@ -109,7 +109,7 @@ describe('CLI (browser)', () => {
     });
 
     it('should throw an error if no public directory is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'browser', 'init']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init']);
 
       await usingIgnoredConsole(['error'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');

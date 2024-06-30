@@ -31,7 +31,7 @@ describe('CLI', () => {
   });
 
   it('should throw an error if no command is provided', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -44,7 +44,7 @@ describe('CLI', () => {
   it('should throw an error if an unknown command is provided', async () => {
     const unknownCommand = 'unknown';
 
-    processArgvSpy.mockReturnValue(['node', 'cli.js', unknownCommand]);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', unknownCommand]);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -55,7 +55,7 @@ describe('CLI', () => {
   });
 
   it('should show a help message', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -65,7 +65,7 @@ describe('CLI', () => {
   });
 
   it('should show the CLI version', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--version']);
 
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');

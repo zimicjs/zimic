@@ -60,7 +60,7 @@ describe('CLI (server)', async () => {
   ].join('\n');
 
   it('should show a help message', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', '--help']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -70,7 +70,7 @@ describe('CLI (server)', async () => {
   });
 
   it('should throw an error if no command is provided', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -121,7 +121,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should show a help message', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--help']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--help']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
@@ -132,7 +132,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on localhost if no hostname is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--port', '5000']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5000']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -151,7 +151,16 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on the provided hostname', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--hostname',
+        '0.0.0.0',
+        '--port',
+        '3000',
+      ]);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -167,7 +176,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on any available port if none is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -186,7 +195,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is not an integer, positive number', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
 
       await usingIgnoredConsole(['error'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError(
@@ -201,7 +210,16 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is already in use', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--hostname',
+        '0.0.0.0',
+        '--port',
+        '3000',
+      ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         await runCLI();
@@ -230,7 +248,7 @@ describe('CLI (server)', async () => {
       const delayedListen = delayHttpServerListenIndefinitely();
 
       try {
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
         await usingIgnoredConsole(['error', 'log'], async (spies) => {
           const cliPromise = runCLI();
@@ -253,7 +271,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -287,7 +305,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -327,7 +345,7 @@ describe('CLI (server)', async () => {
       });
 
       try {
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral']);
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral']);
 
         await usingIgnoredConsole(['error', 'log'], async (spies) => {
           const cliPromise = runCLI();
@@ -347,7 +365,7 @@ describe('CLI (server)', async () => {
     it('should throw an error if the on-ready command executable is not found', async () => {
       const unknownCommand = 'unknown';
 
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError(`spawn ${unknownCommand} ENOENT`);
@@ -362,7 +380,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -387,7 +405,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -410,7 +428,7 @@ describe('CLI (server)', async () => {
     it.each(PROCESS_EXIT_EVENTS)('should stop the sever after a process exit event: %s', async (exitEvent) => {
       const exitEventListeners = watchExitEventListeners(exitEvent);
 
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -439,7 +457,7 @@ describe('CLI (server)', async () => {
     it('should stop the server even if a client is connected', async () => {
       const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
 
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -489,7 +507,7 @@ describe('CLI (server)', async () => {
 
         processArgvSpy.mockReturnValue([
           'node',
-          'cli.js',
+          './dist/cli.js',
           'server',
           'start',
           ...(overrideDefault === false ? ['--log-unhandled-requests'] : []),
@@ -553,7 +571,7 @@ describe('CLI (server)', async () => {
         const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
         processArgvSpy.mockReturnValue([
           'node',
-          'cli.js',
+          './dist/cli.js',
           'server',
           'start',
           ...(overrideDefault === false ? ['--log-unhandled-requests', 'false'] : []),
@@ -605,7 +623,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--port',
