@@ -1,11 +1,7 @@
 import ts from 'typescript';
 
-export function isNeverType(type: ts.TypeNode | undefined): type is undefined {
-  return !type || type.kind === ts.SyntaxKind.NeverKeyword;
-}
-
-export function isNeverTypeMember(member: ts.TypeElement) {
-  return ts.isPropertySignature(member) && isNeverType(member.type);
+export function isNeverType(type: ts.TypeNode) {
+  return type.kind === ts.SyntaxKind.NeverKeyword;
 }
 
 export function isUnknownType(type: ts.TypeNode) {

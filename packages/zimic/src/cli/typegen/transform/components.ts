@@ -1,5 +1,6 @@
 import ts from 'typescript';
 
+import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
 import { isNeverType, isUnknownType } from '../utils/types';
@@ -11,10 +12,16 @@ export function createComponentsIdentifierText(serviceName: string) {
   return `${serviceName}Components`;
 }
 
+function createComponentsIdentifier(serviceName: string) {
+  return ts.factory.createIdentifier(createComponentsIdentifierText(serviceName));
+}
+
+type ComponentsDeclaration = ts.InterfaceDeclaration;
+
 export function isComponentsDeclaration(
   node: ts.Node | undefined,
   context: TypeTransformContext,
-): node is ts.InterfaceDeclaration {
+): node is ComponentsDeclaration {
   return (
     node !== undefined &&
     ts.isInterfaceDeclaration(node) &&
@@ -22,8 +29,44 @@ export function isComponentsDeclaration(
   );
 }
 
-function createComponentsIdentifier(serviceName: string) {
-  return ts.factory.createIdentifier(createComponentsIdentifierText(serviceName));
+type ComponentGroup = Override<
+  ts.PropertySignature,
+  {
+    type: ts.TypeLiteralNode;
+    name: ts.Identifier | ts.StringLiteral;
+  }
+>;
+
+function isComponentGroup(node: ts.TypeElement): node is ComponentGroup {
+  return (
+    ts.isPropertySignature(node) &&
+    node.type !== undefined &&
+    ts.isTypeLiteralNode(node.type) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+  );
+}
+
+type Component = Override<
+  ts.PropertySignature,
+  {
+    type: ts.TypeNode;
+    name: ts.Identifier | ts.StringLiteral;
+  }
+>;
+
+function isComponent(node: ts.TypeElement): node is Component {
+  return (
+    ts.isPropertySignature(node) &&
+    node.type !== undefined &&
+    !isNeverType(node.type) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+  );
+}
+
+type RequestComponent = Override<Component, { type: ts.TypeLiteralNode }>;
+
+function isRequestComponent(node: Component): node is RequestComponent {
+  return ts.isTypeLiteralNode(node.type);
 }
 
 function unchangedIndexedAccessTypeNode(node: ts.IndexedAccessTypeNode) {
@@ -33,8 +76,8 @@ function unchangedIndexedAccessTypeNode(node: ts.IndexedAccessTypeNode) {
 function visitComponentReferences(
   node: ts.TypeNode,
   context: TypeTransformContext & {
-    isComponentIndexedAccessNode?: boolean;
-    splitComponentPath?: string[];
+    isComponentIndexedAccess?: boolean;
+    partialComponentPath?: string[];
   },
   options: {
     onComponentReference?: (node: ts.IndexedAccessTypeNode, referencedComponentPath: string) => void;
@@ -94,22 +137,26 @@ function visitComponentReferences(
   }
 
   if (ts.isIndexedAccessTypeNode(node)) {
-    const isTopLevelIndexedAccessNode = context.isComponentIndexedAccessNode ?? true;
+    const isRootIndexedAccess = context.isComponentIndexedAccess ?? true;
 
     if (ts.isIndexedAccessTypeNode(node.objectType)) {
-      const childContext: typeof context = { ...context, isComponentIndexedAccessNode: false };
+      const childContext: typeof context = { ...context, isComponentIndexedAccess: false };
       const newObjectType = visitComponentReferences(node.objectType, childContext, options);
 
       const newNode = ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
 
-      if (childContext.splitComponentPath) {
-        if (ts.isLiteralTypeNode(node.indexType) && ts.isStringLiteral(node.indexType.literal)) {
+      if (childContext.partialComponentPath) {
+        const hasIndexTypeName =
+          ts.isLiteralTypeNode(node.indexType) &&
+          (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
+
+        if (hasIndexTypeName) {
           const indexTypeName = node.indexType.literal.text;
-          childContext.splitComponentPath.push(indexTypeName);
+          childContext.partialComponentPath.push(indexTypeName);
         }
 
-        if (isTopLevelIndexedAccessNode) {
-          const referencedComponentPath = childContext.splitComponentPath.join('.');
+        if (isRootIndexedAccess) {
+          const referencedComponentPath = childContext.partialComponentPath.join('.');
           onComponentReference?.(newNode, referencedComponentPath);
         }
       }
@@ -117,18 +164,24 @@ function visitComponentReferences(
       return newNode;
     }
 
+    const componentIdentifiers = ['components', createComponentsIdentifierText(context.serviceName)];
+
     const isComponentIndexedAccess =
       ts.isTypeReferenceNode(node.objectType) &&
       ts.isIdentifier(node.objectType.typeName) &&
-      ['components', createComponentsIdentifierText(context.serviceName)].includes(node.objectType.typeName.text);
+      componentIdentifiers.includes(node.objectType.typeName.text);
 
     if (isComponentIndexedAccess) {
       const isRawComponent = node.objectType.typeName.text === 'components';
       const newNode = isRawComponent ? renameComponentReference(node, node.objectType) : node;
 
-      if (ts.isLiteralTypeNode(newNode.indexType) && ts.isStringLiteral(newNode.indexType.literal)) {
+      const hasIndexTypeName =
+        ts.isLiteralTypeNode(newNode.indexType) &&
+        (ts.isIdentifier(newNode.indexType.literal) || ts.isStringLiteral(newNode.indexType.literal));
+
+      if (hasIndexTypeName) {
         const indexTypeName = newNode.indexType.literal.text;
-        context.splitComponentPath = [indexTypeName];
+        context.partialComponentPath = [indexTypeName];
       }
 
       return newNode;
@@ -141,7 +194,7 @@ function visitComponentReferences(
 export function renameComponentReferences(node: ts.TypeNode, context: TypeTransformContext): ts.TypeNode {
   return visitComponentReferences(node, context, {
     onComponentReference(_node, referencedComponentPath) {
-      if (context.referencedTypes.shouldPopulate) {
+      if (context.referencedTypes.shouldTrackReferences) {
         context.referencedTypes.components.add(referencedComponentPath);
       }
     },
@@ -154,7 +207,7 @@ export function renameComponentReferences(node: ts.TypeNode, context: TypeTransf
 
       const shouldRenameToRequests =
         ts.isLiteralTypeNode(node.indexType) &&
-        ts.isStringLiteral(node.indexType.literal) &&
+        (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal)) &&
         node.indexType.literal.text === 'requestBodies';
 
       if (shouldRenameToRequests) {
@@ -166,96 +219,67 @@ export function renameComponentReferences(node: ts.TypeNode, context: TypeTransf
   });
 }
 
-function normalizeRequestComponent(component: ts.PropertySignature, context: TypeTransformContext) {
-  if (!component.type || !ts.isTypeLiteralNode(component.type)) {
-    return undefined;
-  }
-
-  const componentName =
-    ts.isIdentifier(component.name) || ts.isStringLiteral(component.name) ? component.name.text : undefined;
+function processPendingRequestComponentActions(component: RequestComponent, context: TypeTransformContext) {
+  const componentName = component.name.text;
+  const pendingActions = context.pendingActions.components.requests.get(componentName) ?? [];
 
   let bodyQuestionToken = component.questionToken;
 
-  if (componentName) {
-    const pendingActions = context.pendingActions.components.requests.get(componentName) ?? [];
-
-    for (const action of pendingActions) {
-      if (action.type === 'markAsOptional') {
-        bodyQuestionToken = ts.factory.createToken(ts.SyntaxKind.QuestionToken);
-      }
+  for (const action of pendingActions) {
+    if (action.type === 'markAsOptional') {
+      bodyQuestionToken = ts.factory.createToken(ts.SyntaxKind.QuestionToken);
     }
-
-    context.pendingActions.components.requests.delete(componentName);
   }
+  context.pendingActions.components.requests.delete(componentName);
 
-  const newType = normalizeMethodContentType(component.type, context, { bodyQuestionToken });
+  return { bodyQuestionToken };
+}
 
+function wrapRequestComponentTypeInHttpSchema(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
-  const wrappedNewType = ts.factory.createTypeReferenceNode(
-    ts.factory.createQualifiedName(ts.factory.createIdentifier('HttpSchema'), ts.factory.createIdentifier('Request')),
-    [newType],
+  const httpSchemaRequestWrapper = ts.factory.createQualifiedName(
+    ts.factory.createIdentifier('HttpSchema'),
+    ts.factory.createIdentifier('Request'),
   );
+  return ts.factory.createTypeReferenceNode(httpSchemaRequestWrapper, [type]);
+}
+
+function normalizeRequestComponent(component: Component, context: TypeTransformContext) {
+  if (!isRequestComponent(component)) {
+    return undefined;
+  }
+
+  const { bodyQuestionToken } = processPendingRequestComponentActions(component, context);
+  const newType = normalizeMethodContentType(component.type, context, { bodyQuestionToken });
 
   return ts.factory.updatePropertySignature(
     component,
     component.modifiers,
     component.name,
     component.questionToken,
-    wrappedNewType,
+    wrapRequestComponentTypeInHttpSchema(newType, context),
   );
 }
 
 function normalizeComponent(
   component: ts.TypeElement,
-  componentName: ts.Identifier | ts.StringLiteral | undefined,
+  componentGroupName: string,
   context: TypeTransformContext,
 ): ts.TypeElement | undefined {
-  if (!ts.isPropertySignature(component)) {
-    return component;
-  }
-
-  if (isNeverType(component.type)) {
+  if (!isComponent(component)) {
     return undefined;
   }
 
-  if (componentName?.text === 'parameters') {
-    const newType = ts.isIndexedAccessTypeNode(component.type)
-      ? renameComponentReferences(component.type, context)
-      : component.type;
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      newType,
-    );
-  }
-
-  if (componentName?.text === 'headers') {
-    const newType = ts.isIndexedAccessTypeNode(component.type)
-      ? renameComponentReferences(component.type, context)
-      : component.type;
-
-    return ts.factory.updatePropertySignature(
-      component,
-      component.modifiers,
-      component.name,
-      component.questionToken,
-      newType,
-    );
-  }
-
-  if (componentName?.text === 'responses') {
+  if (componentGroupName === 'responses') {
     return normalizeMethodResponsesMember(component, context, { isComponent: true });
   }
 
-  if (componentName?.text === 'requestBodies') {
+  if (componentGroupName === 'requestBodies') {
     return normalizeRequestComponent(component, context);
   }
 
-  if (componentName?.text === 'pathItems') {
+  if (componentGroupName === 'pathItems') {
     return normalizePath(component, context, { isComponent: true });
   }
 
@@ -268,50 +292,31 @@ function normalizeComponent(
   );
 }
 
-function normalizeComponentMemberType(
-  componentMember: ts.TypeElement,
-  componentMemberType: ts.TypeNode,
-  context: TypeTransformContext,
-) {
-  if (
-    ts.isTypeLiteralNode(componentMemberType) &&
-    componentMember.name &&
-    (ts.isIdentifier(componentMember.name) || ts.isStringLiteral(componentMember.name))
-  ) {
-    const componentName = componentMember.name;
-
-    const newMembers = componentMemberType.members
-      .map((component) => normalizeComponent(component, componentName, context))
-      .filter(isDefined);
-
-    return ts.factory.updateTypeLiteralNode(componentMemberType, ts.factory.createNodeArray(newMembers));
-  }
-
-  return undefined;
-}
-
-function normalizeComponentMember(componentMember: ts.TypeElement, context: TypeTransformContext) {
-  if (!ts.isPropertySignature(componentMember)) {
-    return componentMember;
-  }
-
-  if (isNeverType(componentMember.type)) {
+function normalizeComponentGroup(componentGroup: ts.TypeElement, context: TypeTransformContext) {
+  if (!isComponentGroup(componentGroup)) {
     return undefined;
   }
 
-  const newType = normalizeComponentMemberType(componentMember, componentMember.type, context);
+  const componentGroupName = componentGroup.name.text;
+
+  const newComponents = componentGroup.type.members
+    .map((component) => normalizeComponent(component, componentGroupName, context))
+    .filter(isDefined);
+
+  if (newComponents.length === 0) {
+    return undefined;
+  }
+
+  const newType = ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newComponents));
 
   const newIdentifier =
-    (ts.isIdentifier(componentMember.name) || ts.isStringLiteral(componentMember.name)) &&
-    componentMember.name.text === 'requestBodies'
-      ? ts.factory.createIdentifier('requests')
-      : componentMember.name;
+    componentGroupName === 'requestBodies' ? ts.factory.createIdentifier('requests') : componentGroup.name;
 
   return ts.factory.updatePropertySignature(
-    componentMember,
-    componentMember.modifiers,
+    componentGroup,
+    componentGroup.modifiers,
     newIdentifier,
-    componentMember.questionToken,
+    componentGroup.questionToken,
     newType,
   );
 }
@@ -320,7 +325,7 @@ export function normalizeComponents(components: ts.InterfaceDeclaration, context
   const newIdentifier = createComponentsIdentifier(context.serviceName);
 
   const newMembers = components.members
-    .map((component) => normalizeComponentMember(component, context))
+    .map((componentGroup) => normalizeComponentGroup(componentGroup, context))
     .filter(isDefined);
 
   if (newMembers.length === 0) {
@@ -345,25 +350,18 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
     pathsToVisit.clear();
 
     for (const componentGroup of components.members) {
-      if (
-        !ts.isPropertySignature(componentGroup) ||
-        !componentGroup.type ||
-        !ts.isTypeLiteralNode(componentGroup.type)
-      ) {
+      if (!isComponentGroup(componentGroup)) {
         continue;
       }
 
-      const componentGroupName =
-        ts.isIdentifier(componentGroup.name) || ts.isStringLiteral(componentGroup.name) ? componentGroup.name.text : '';
+      const componentGroupName = componentGroup.name.text;
 
       for (const component of componentGroup.type.members) {
-        if (!ts.isPropertySignature(component) || !component.type) {
+        if (!isComponent(component)) {
           continue;
         }
 
-        const componentName =
-          ts.isIdentifier(component.name) || ts.isStringLiteral(component.name) ? component.name.text : '';
-
+        const componentName = component.name.text;
         const componentPath = [componentGroupName, componentName].join('.');
 
         const isComponentToVisit = previousPathsToVisit.has(componentPath);
@@ -375,7 +373,8 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
 
         visitComponentReferences(component.type, context, {
           onComponentReference(_node, referencedComponentPath) {
-            if (!context.referencedTypes.components.has(referencedComponentPath)) {
+            const isKnownReferencedComponent = context.referencedTypes.components.has(referencedComponentPath);
+            if (!isKnownReferencedComponent) {
               pathsToVisit.add(referencedComponentPath);
             }
           },
@@ -385,52 +384,56 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
   }
 }
 
+export function removeComponentIfUnreferenced(
+  component: ts.TypeElement,
+  componentGroupName: string,
+  context: TypeTransformContext,
+) {
+  if (!isComponent(component)) {
+    return undefined;
+  }
+
+  const componentName = component.name.text;
+  const componentPath = [componentGroupName, componentName].join('.');
+
+  if (context.referencedTypes.components.has(componentPath)) {
+    context.referencedTypes.components.delete(componentPath);
+    return component;
+  }
+
+  return undefined;
+}
+
+function removeUnreferencedComponentsInGroup(componentGroup: ts.TypeElement, context: TypeTransformContext) {
+  if (!isComponentGroup(componentGroup)) {
+    return undefined;
+  }
+  if (!ts.isTypeLiteralNode(componentGroup.type)) {
+    return componentGroup;
+  }
+
+  const componentGroupName = componentGroup.name.text;
+
+  const newComponents = componentGroup.type.members
+    .map((component) => removeComponentIfUnreferenced(component, componentGroupName, context))
+    .filter(isDefined);
+
+  if (newComponents.length === 0) {
+    return undefined;
+  }
+
+  return ts.factory.updatePropertySignature(
+    componentGroup,
+    componentGroup.modifiers,
+    componentGroup.name,
+    componentGroup.questionToken,
+    ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newComponents)),
+  );
+}
+
 export function removeUnreferencedComponents(components: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newMembers = components.members
-    .map((componentGroup) => {
-      if (!ts.isPropertySignature(componentGroup)) {
-        return componentGroup;
-      }
-
-      const componentGroupName =
-        ts.isIdentifier(componentGroup.name) || ts.isStringLiteral(componentGroup.name) ? componentGroup.name.text : '';
-
-      if (componentGroup.type && ts.isTypeLiteralNode(componentGroup.type)) {
-        const newMembers = componentGroup.type.members
-          .map((member) => {
-            if (!ts.isPropertySignature(member)) {
-              return member;
-            }
-
-            const componentName =
-              ts.isIdentifier(member.name) || ts.isStringLiteral(member.name) ? member.name.text : '';
-
-            const componentPath = [componentGroupName, componentName].join('.');
-
-            if (context.referencedTypes.components.has(componentPath)) {
-              context.referencedTypes.components.delete(componentPath);
-              return member;
-            }
-
-            return undefined;
-          })
-          .filter(isDefined);
-
-        if (newMembers.length === 0) {
-          return undefined;
-        }
-
-        return ts.factory.updatePropertySignature(
-          componentGroup,
-          componentGroup.modifiers,
-          componentGroup.name,
-          componentGroup.questionToken,
-          ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newMembers)),
-        );
-      }
-
-      return componentGroup;
-    })
+    .map((componentGroup) => removeUnreferencedComponentsInGroup(componentGroup, context))
     .filter(isDefined);
 
   context.referencedTypes.components.clear();

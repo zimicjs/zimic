@@ -31,9 +31,14 @@ function normalizeRawNodes(
   },
 ) {
   let partialNodes = rawNodes.map((node) => {
-    if (isPathsDeclaration(node)) {
-      return normalizePaths(node, context);
+    const nodeToUse = ts.isTypeAliasDeclaration(node)
+      ? ts.factory.createInterfaceDeclaration(node.modifiers, node.name, undefined, undefined, [])
+      : node;
+
+    if (isPathsDeclaration(nodeToUse)) {
+      return normalizePaths(nodeToUse, context);
     }
+
     return node;
   });
 
@@ -65,7 +70,7 @@ function normalizeRawNodes(
     }
   }
 
-  context.referencedTypes.shouldPopulate = false;
+  context.referencedTypes.shouldTrackReferences = false;
 
   partialNodes = partialNodes
     .map((node) => {

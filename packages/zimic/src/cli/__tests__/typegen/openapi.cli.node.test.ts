@@ -29,7 +29,7 @@ describe('Type generation (OpenAPI)', () => {
   }
 
   const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name) => name !== 'all');
-  const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases);
+  const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
   const fixtureFileTypes = ['yaml', 'json'] as const;
 
   function normalizeGeneratedFileToCompare(fileContent: string) {

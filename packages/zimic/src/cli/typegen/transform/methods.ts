@@ -3,14 +3,17 @@ import ts from 'typescript';
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import { isDefined } from '@/utils/data';
 
-import { isUnknownType, isNeverTypeMember, isNeverType, isNullType } from '../utils/types';
+import { isUnknownType, isNeverType, isNullType } from '../utils/types';
 import { renameComponentReferences } from './components';
 import { TypeTransformContext } from './context';
 import { createOperationsIdentifier } from './operations';
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: TypeTransformContext) {
-  if (ts.isPropertySignature(requestBodyMember) && ts.isStringLiteral(requestBodyMember.name)) {
-    if (!requestBodyMember.type) {
+  if (
+    ts.isPropertySignature(requestBodyMember) &&
+    (ts.isIdentifier(requestBodyMember.name) || ts.isStringLiteral(requestBodyMember.name))
+  ) {
+    if (!requestBodyMember.type || isNeverType(requestBodyMember.type)) {
       return undefined;
     }
 
@@ -226,7 +229,8 @@ function normalizeMethodRequest(request: ts.PropertySignature, context: TypeTran
 
   if (request.questionToken && ts.isIndexedAccessTypeNode(request.type)) {
     const referencedComponentName =
-      ts.isLiteralTypeNode(request.type.indexType) && ts.isStringLiteral(request.type.indexType.literal)
+      ts.isLiteralTypeNode(request.type.indexType) &&
+      (ts.isIdentifier(request.type.indexType.literal) || ts.isStringLiteral(request.type.indexType.literal))
         ? request.type.indexType.literal.text
         : undefined;
 
@@ -463,7 +467,7 @@ function normalizeMethodRequestTypeWithParameters(
     ...methodMemberTypeMembers,
   ]
     .map((member) => normalizeMethodRequestMemberWithParameters(member, context))
-    .filter((member): member is ts.PropertySignature => isDefined(member) && !isNeverTypeMember(member));
+    .filter((member): member is ts.PropertySignature => isDefined(member) && ts.isPropertySignature(member));
 
   if (newTypeMembers.length === 0) {
     if (ts.isIndexedAccessTypeNode(methodMemberType)) {
@@ -534,7 +538,10 @@ function normalizeMethodIndexedAccessType(methodType: ts.IndexedAccessTypeNode, 
     const newIdentifier = createOperationsIdentifier(context.serviceName);
     const newObjectType = ts.factory.createTypeReferenceNode(newIdentifier, methodType.objectType.typeArguments);
 
-    if (ts.isLiteralTypeNode(methodType.indexType) && ts.isStringLiteral(methodType.indexType.literal)) {
+    if (
+      ts.isLiteralTypeNode(methodType.indexType) &&
+      (ts.isIdentifier(methodType.indexType.literal) || ts.isStringLiteral(methodType.indexType.literal))
+    ) {
       const operationName = methodType.indexType.literal.text;
       context.referencedTypes.operations.add(operationName);
     }
@@ -549,6 +556,7 @@ export function normalizeMethod(method: ts.TypeElement, context: TypeTransformCo
   if (
     !ts.isPropertySignature(method) ||
     !(ts.isIdentifier(method.name) || ts.isStringLiteral(method.name)) ||
+    !method.type ||
     isNeverType(method.type)
   ) {
     return undefined;

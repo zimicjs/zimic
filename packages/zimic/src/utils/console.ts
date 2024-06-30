@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 
+import { PossiblePromise } from '@/types/utils';
+
 import { isClientSide } from './environment';
 
 let utilSingleton: typeof import('util') | undefined;
@@ -39,4 +41,17 @@ export function logWithPrefix(
 
   const messages = Array.isArray(messageOrMessages) ? messageOrMessages : [messageOrMessages];
   console[method](chalk.cyan('[zimic]'), ...messages);
+}
+
+export async function usingConsoleTime<ReturnType>(
+  label: string,
+  callback: () => PossiblePromise<ReturnType>,
+): Promise<ReturnType> {
+  console.time(label);
+
+  try {
+    return await callback();
+  } finally {
+    console.timeEnd(label);
+  }
 }

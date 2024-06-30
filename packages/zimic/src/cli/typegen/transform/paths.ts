@@ -1,5 +1,6 @@
 import ts from 'typescript';
 
+import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
 import { TypeTransformContext } from './context';
@@ -9,8 +10,27 @@ export function createPathsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Schema`);
 }
 
-export function isPathsDeclaration(node: ts.Node | undefined): node is ts.InterfaceDeclaration {
+type PathsDeclaration = ts.InterfaceDeclaration;
+
+export function isPathsDeclaration(node: ts.Node | undefined): node is PathsDeclaration {
   return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'paths';
+}
+
+type Path = Override<
+  ts.PropertySignature,
+  {
+    type: ts.TypeLiteralNode;
+    name: ts.StringLiteral;
+  }
+>;
+
+function isPath(node: ts.TypeElement): node is Path {
+  return (
+    ts.isPropertySignature(node) &&
+    node.type !== undefined &&
+    ts.isTypeLiteralNode(node.type) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+  );
 }
 
 function normalizePathNameWithParameters(pathName: string) {
@@ -34,13 +54,7 @@ export function normalizePath(
 ) {
   const { isComponent = false } = options;
 
-  const isPath =
-    ts.isPropertySignature(path) &&
-    path.type !== undefined &&
-    ts.isTypeLiteralNode(path.type) &&
-    ts.isStringLiteral(path.name);
-
-  if (!isPath) {
+  if (!isPath(path)) {
     return undefined;
   }
 

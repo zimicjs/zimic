@@ -24,16 +24,3 @@ export async function usingIgnoredConsole<Method extends keyof Console>(
     }
   }
 }
-
-export async function usingConsoleTime<ReturnType>(
-  label: string,
-  callback: () => PossiblePromise<ReturnType>,
-): Promise<ReturnType> {
-  console.time(label);
-
-  try {
-    return await callback();
-  } finally {
-    console.timeEnd(label);
-  }
-}

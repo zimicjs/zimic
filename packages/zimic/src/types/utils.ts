@@ -60,3 +60,5 @@ export type DeepPartial<Type> = Type extends (...parameters: any[]) => any
     : Type extends object
       ? { [Key in keyof Type]?: DeepPartial<Type[Key]> }
       : Type;
+
+export type Override<Type, OverrideType> = Omit<Type, keyof OverrideType> & OverrideType;

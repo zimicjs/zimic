@@ -1,8 +1,8 @@
 import ts from 'typescript';
 
+import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
-import { isNeverType } from '../utils/types';
 import { TypeTransformContext } from './context';
 import { normalizeMethodTypeLiteral } from './methods';
 
@@ -10,12 +10,29 @@ export function createOperationsIdentifierText(serviceName: string) {
   return `${serviceName}Operations`;
 }
 
+export function createOperationsIdentifier(serviceName: string) {
+  return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
+}
+
 export function isOperationsDeclaration(node: ts.Node | undefined): node is ts.InterfaceDeclaration {
   return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'operations';
 }
 
-export function createOperationsIdentifier(serviceName: string) {
-  return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
+type Operation = Override<
+  ts.PropertySignature,
+  {
+    type: ts.TypeLiteralNode;
+    name: ts.Identifier | ts.StringLiteral;
+  }
+>;
+
+function isOperation(node: ts.Node): node is Operation {
+  return (
+    ts.isPropertySignature(node) &&
+    node.type !== undefined &&
+    ts.isTypeLiteralNode(node.type) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+  );
 }
 
 function wrapOperationTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTransformContext) {
@@ -29,10 +46,7 @@ function wrapOperationTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTr
 }
 
 function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
-  const isOperation =
-    ts.isPropertySignature(operation) && !isNeverType(operation.type) && ts.isTypeLiteralNode(operation.type);
-
-  if (!isOperation) {
+  if (!isOperation(operation)) {
     return undefined;
   }
 
@@ -67,10 +81,7 @@ export function normalizeOperations(operations: ts.InterfaceDeclaration, context
 }
 
 function removeOperationIfUnreferenced(operation: ts.TypeElement, context: TypeTransformContext) {
-  const isOperationWithName =
-    ts.isPropertySignature(operation) && (ts.isIdentifier(operation.name) || ts.isStringLiteral(operation.name));
-
-  if (!isOperationWithName) {
+  if (!isOperation(operation)) {
     return undefined;
   }
 

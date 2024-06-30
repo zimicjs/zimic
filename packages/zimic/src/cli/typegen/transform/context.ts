@@ -33,7 +33,7 @@ export interface TypeTransformContext {
   referencedTypes: {
     operations: Set<ReferencedOperationTypePath>;
     components: Set<ReferencedComponentTypePath>;
-    shouldPopulate: boolean;
+    shouldTrackReferences: boolean;
   };
   pendingActions: {
     components: {
@@ -56,7 +56,7 @@ export function createTypeTransformationContext(serviceName: string, rawFilters:
     referencedTypes: {
       operations: new Set(),
       components: new Set(),
-      shouldPopulate: true,
+      shouldTrackReferences: true,
     },
     pendingActions: {
       components: {
