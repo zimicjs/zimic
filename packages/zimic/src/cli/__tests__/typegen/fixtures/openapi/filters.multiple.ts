@@ -57,12 +57,20 @@ export interface MyServiceComponents {
     };
     Users: MyServiceComponents['schemas']['User'][];
   };
+  responses: {
+    error: HttpSchema.Response<{
+      body: {
+        message: string;
+      };
+    }>;
+  };
 }
 
 export interface MyServiceOperations {
   deleteNotifications: HttpSchema.Method<{
     response: {
       204: {};
+      400: MyServiceComponents['responses']['error'];
     };
   }>;
 }

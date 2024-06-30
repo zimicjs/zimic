@@ -102,6 +102,8 @@ paths:
   /notifications:
     get:
       operationId: getNotifications
+      parameters:
+        - $ref: '#/components/parameters/from'
       responses:
         '200':
           description: Success
@@ -115,6 +117,8 @@ paths:
       responses:
         '204':
           description: Success
+        '400':
+          $ref: '#/components/responses/error'
 
 components:
   schemas:
@@ -151,3 +155,25 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Notification'
+
+  parameters:
+    from:
+      name: from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+
+  responses:
+    error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string

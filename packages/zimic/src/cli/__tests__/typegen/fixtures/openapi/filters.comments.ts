@@ -93,10 +93,26 @@ export interface MyServiceComponents {
     };
     Notifications: MyServiceComponents['schemas']['Notification'][];
   };
+  responses: {
+    /** Error */
+    error: HttpSchema.Response<{
+      body: {
+        message: string;
+      };
+    }>;
+  };
+  parameters: {
+    from: string;
+  };
 }
 
 export interface MyServiceOperations {
   getNotifications: HttpSchema.Method<{
+    request: {
+      searchParams: HttpSearchParamsSerialized<{
+        from?: MyServiceComponents['parameters']['from'];
+      }>;
+    };
     response: {
       /** Success */
       200: {
@@ -108,6 +124,7 @@ export interface MyServiceOperations {
     response: {
       /** Success */
       204: {};
+      400: MyServiceComponents['responses']['error'];
     };
   }>;
 }

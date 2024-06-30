@@ -54,10 +54,18 @@ export interface MyServiceComponents {
     };
     Notifications: MyServiceComponents['schemas']['Notification'][];
   };
+  parameters: {
+    from: string;
+  };
 }
 
 export interface MyServiceOperations {
   getNotifications: HttpSchema.Method<{
+    request: {
+      searchParams: HttpSearchParamsSerialized<{
+        from?: MyServiceComponents['parameters']['from'];
+      }>;
+    };
     response: {
       200: {
         body: MyServiceComponents['schemas']['Notifications'];

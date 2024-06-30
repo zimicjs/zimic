@@ -33,10 +33,25 @@ export interface MyServiceComponents {
     };
     Notifications: MyServiceComponents['schemas']['Notification'][];
   };
+  responses: {
+    error: HttpSchema.Response<{
+      body: {
+        message: string;
+      };
+    }>;
+  };
+  parameters: {
+    from: string;
+  };
 }
 
 export interface MyServiceOperations {
   getNotifications: HttpSchema.Method<{
+    request: {
+      searchParams: HttpSearchParamsSerialized<{
+        from?: MyServiceComponents['parameters']['from'];
+      }>;
+    };
     response: {
       200: {
         body: MyServiceComponents['schemas']['Notifications'];
@@ -46,6 +61,7 @@ export interface MyServiceOperations {
   deleteNotifications: HttpSchema.Method<{
     response: {
       204: {};
+      400: MyServiceComponents['responses']['error'];
     };
   }>;
 }
