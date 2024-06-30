@@ -11,6 +11,8 @@ import { usingConsoleTime } from '@/utils/console';
 import { runCommand } from '@/utils/processes';
 import { prefixLines } from '@tests/utils/strings';
 
+const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
+
 async function normalizeOutputTypeImports(filePath: string) {
   const fileContent = await filesystem.readFile(filePath, 'utf-8');
   const fileContentWithCorrectImports = fileContent.replace(/ from "zimic";/, " from '@/index';");
@@ -62,8 +64,6 @@ async function lintGeneratedFiles(filePaths: string[]) {
     });
   });
 }
-
-const FIXTURE_TYPEGEN_BATCH_SIZE = 5;
 
 interface FixtureTypegenOptions {
   fixtureType: TypegenFixtureType;
