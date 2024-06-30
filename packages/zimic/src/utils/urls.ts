@@ -90,7 +90,7 @@ export function ensureUniquePathParams(url: string) {
 
 function prepareURLForRegex(url: string) {
   const encodedURL = encodeURI(url);
-  return encodedURL.replace(/([-_.!~'();*/?:@&=+$,#])/g, '\\$1');
+  return encodedURL.replace(/([.()*?+$])/g, '\\$1');
 }
 
 export function createRegexFromURL(url: string) {
@@ -105,9 +105,9 @@ export function createRegexFromWildcardPath(path: string, options: { prefix?: st
   const { prefix = '' } = options;
 
   const pathWithReplacedWildcards = prepareURLForRegex(path)
-    .replace(/^\\\/+|\\\/+$/g, '')
+    .replace(/^\/+|\/+$/g, '')
     .replace(/\\\*/g, '*')
-    .replace(/\*\*\\\/\*/g, '**')
+    .replace(/\*\*\/\*/g, '**')
     .replace(/(^|[^*])\*([^*]|$)/g, '$1[^/]*$2')
     .replace(/\*\*/g, '.*');
 
