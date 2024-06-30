@@ -15,12 +15,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'simple.yaml',
       outputFileName: 'simple.ts',
-      commandArguments: ['--remove-comments', 'true'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'simple.yaml',
       outputFileName: 'simple.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -28,12 +28,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'pathParams.yaml',
       outputFileName: 'pathParams.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'pathParams.yaml',
       outputFileName: 'pathParams.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -41,12 +41,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'searchParams.yaml',
       outputFileName: 'searchParams.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'searchParams.yaml',
       outputFileName: 'searchParams.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -54,12 +54,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'headers.yaml',
       outputFileName: 'headers.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'headers.yaml',
       outputFileName: 'headers.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -67,12 +67,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'requestBodies.yaml',
       outputFileName: 'requestBodies.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'requestBodies.yaml',
       outputFileName: 'requestBodies.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -80,12 +80,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'responses.yaml',
       outputFileName: 'responses.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'responses.yaml',
       outputFileName: 'responses.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -93,12 +93,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'formData.yaml',
       outputFileName: 'formData.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'formData.yaml',
       outputFileName: 'formData.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -106,12 +106,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'binary.yaml',
       outputFileName: 'binary.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'binary.yaml',
       outputFileName: 'binary.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -119,12 +119,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'pathItems.yaml',
       outputFileName: 'pathItems.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'pathItems.yaml',
       outputFileName: 'pathItems.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -132,12 +132,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'combinations.yaml',
       outputFileName: 'combinations.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'combinations.yaml',
       outputFileName: 'combinations.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -145,12 +145,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'examples.yaml',
       outputFileName: 'examples.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'examples.yaml',
       outputFileName: 'examples.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -158,12 +158,12 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'security.yaml',
       outputFileName: 'security.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'security.yaml',
       outputFileName: 'security.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
   ],
 
@@ -171,72 +171,77 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.ts',
-      commandArguments: ['--remove-comments'],
+      additionalArguments: ['--remove-comments'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.comments.ts',
-      commandArguments: ['--remove-comments', 'false'],
+      additionalArguments: [],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.oneMethod.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET /users'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET /users'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.multipleMethods.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET,PUT /users/:userId'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET,PUT /users/:userId'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.wildcardMethod.ts',
-      commandArguments: ['--remove-comments', '--filter', '* /users/:userId'],
+      additionalArguments: ['--remove-comments', '--filter', '* /users/:userId'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.pathWildcard.1.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET *'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET *'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.pathWildcard.2.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET **'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET **'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.pathWildcard.3.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET /users**'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET /users**'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.pathWildcard.4.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET /users/**'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET /users/**'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.pathWildcard.5.ts',
-      commandArguments: ['--remove-comments', '--filter', 'GET /users/**/*'],
+      additionalArguments: ['--remove-comments', '--filter', 'GET /users/**/*'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.negative.1.ts',
-      commandArguments: ['--remove-comments', '--filter', '!GET /users'],
+      additionalArguments: ['--remove-comments', '--filter', '!GET /users'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.negative.2.ts',
-      commandArguments: ['--remove-comments', '--filter', '!* /users**'],
+      additionalArguments: ['--remove-comments', '--filter', '!* /users**'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.negative.3.ts',
-      commandArguments: ['--remove-comments', '--filter', '!GET /users/**/*'],
+      additionalArguments: ['--remove-comments', '--filter', '!GET /users/**/*'],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.empty.ts',
+      additionalArguments: ['--remove-comments', '--filter', '!* **'],
     },
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.multiple.ts',
-      commandArguments: [
+      additionalArguments: [
         '--remove-comments',
         '--filter',
         'POST /users',
@@ -251,8 +256,52 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.multipleFromFile.ts',
-      commandArguments: [
+      additionalArguments: [
         '--remove-comments',
+        '--filter-file',
+        path.join(baseTypegenFixturesDirectory, 'openapi', 'filters.txt'),
+      ],
+    },
+
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.oneMethod.notPruned.ts',
+      additionalArguments: ['--remove-comments', '--prune-unused', 'false', '--filter', 'GET /users'],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.wildcardMethod.notPruned.ts',
+      additionalArguments: ['--remove-comments', '--prune-unused', 'false', '--filter', '* /users/:userId'],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.empty.notPruned.ts',
+      additionalArguments: ['--remove-comments', '--prune-unused', 'false', '--filter', '!* **'],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.multiple.notPruned.ts',
+      additionalArguments: [
+        '--remove-comments',
+        '--prune-unused',
+        'false',
+        '--filter',
+        'POST /users',
+        '--filter',
+        '* /users/**/*',
+        '--filter',
+        '!PATCH /users/:userId',
+        '--filter',
+        'DELETE /notifications',
+      ],
+    },
+    {
+      inputFileName: 'filters.yaml',
+      outputFileName: 'filters.multipleFromFile.notPruned.ts',
+      additionalArguments: [
+        '--remove-comments',
+        '--prune-unused',
+        'false',
         '--filter-file',
         path.join(baseTypegenFixturesDirectory, 'openapi', 'filters.txt'),
       ],

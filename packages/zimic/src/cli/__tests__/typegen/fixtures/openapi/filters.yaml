@@ -64,12 +64,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - name
-              properties:
-                name:
-                  type: string
+              $ref: '#/components/schemas/User'
       responses:
         '204':
           description: Success
@@ -106,6 +101,7 @@ paths:
 
   /notifications:
     get:
+      operationId: getNotifications
       responses:
         '200':
           description: Success
@@ -115,6 +111,7 @@ paths:
                 $ref: '#/components/schemas/Notifications'
 
     delete:
+      operationId: deleteNotifications
       responses:
         '204':
           description: Success

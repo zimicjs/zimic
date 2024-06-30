@@ -3,15 +3,15 @@
 
 import type { HttpSchema } from '@/index';
 
-export type MyServiceSchema = HttpSchema.Paths<{
-  '/notifications': {
-    GET: MyServiceOperations['getNotifications'];
-    DELETE: MyServiceOperations['deleteNotifications'];
-  };
-}>;
+export type MyServiceSchema = HttpSchema.Paths<{}>;
 
 export interface MyServiceComponents {
   schemas: {
+    User: {
+      id: number;
+      name: string;
+    };
+    Users: MyServiceComponents['schemas']['User'][];
     Notification: {
       id: number;
       message: string;

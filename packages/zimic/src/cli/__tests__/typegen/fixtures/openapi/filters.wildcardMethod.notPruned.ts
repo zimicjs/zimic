@@ -4,14 +4,42 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/notifications': {
-    GET: MyServiceOperations['getNotifications'];
-    DELETE: MyServiceOperations['deleteNotifications'];
+  '/users/:userId': {
+    GET: {
+      response: {
+        200: {
+          body: MyServiceComponents['schemas']['User'];
+        };
+      };
+    };
+    PUT: {
+      request: {
+        body: MyServiceComponents['schemas']['User'];
+      };
+      response: {
+        204: {};
+      };
+    };
+    PATCH: {
+      request: {
+        body: {
+          name?: string;
+        };
+      };
+      response: {
+        204: {};
+      };
+    };
   };
 }>;
 
 export interface MyServiceComponents {
   schemas: {
+    User: {
+      id: number;
+      name: string;
+    };
+    Users: MyServiceComponents['schemas']['User'][];
     Notification: {
       id: number;
       message: string;

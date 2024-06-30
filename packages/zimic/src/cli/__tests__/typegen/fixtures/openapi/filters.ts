@@ -40,9 +40,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
     PUT: {
       request: {
-        body: {
-          name: string;
-        };
+        body: MyServiceComponents['schemas']['User'];
       };
       response: {
         204: {};
@@ -69,18 +67,8 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/notifications': {
-    GET: {
-      response: {
-        200: {
-          body: MyServiceComponents['schemas']['Notifications'];
-        };
-      };
-    };
-    DELETE: {
-      response: {
-        204: {};
-      };
-    };
+    GET: MyServiceOperations['getNotifications'];
+    DELETE: MyServiceOperations['deleteNotifications'];
   };
 }>;
 
@@ -97,4 +85,19 @@ export interface MyServiceComponents {
     };
     Notifications: MyServiceComponents['schemas']['Notification'][];
   };
+}
+
+export interface MyServiceOperations {
+  getNotifications: HttpSchema.Method<{
+    response: {
+      200: {
+        body: MyServiceComponents['schemas']['Notifications'];
+      };
+    };
+  }>;
+  deleteNotifications: HttpSchema.Method<{
+    response: {
+      204: {};
+    };
+  }>;
 }

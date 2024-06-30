@@ -28,9 +28,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
     PUT: {
       request: {
-        body: {
-          name: string;
-        };
+        body: MyServiceComponents['schemas']['User'];
       };
       response: {
         204: {};
@@ -47,11 +45,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/notifications': {
-    DELETE: {
-      response: {
-        204: {};
-      };
-    };
+    DELETE: MyServiceOperations['deleteNotifications'];
   };
 }>;
 
@@ -63,4 +57,12 @@ export interface MyServiceComponents {
     };
     Users: MyServiceComponents['schemas']['User'][];
   };
+}
+
+export interface MyServiceOperations {
+  deleteNotifications: HttpSchema.Method<{
+    response: {
+      204: {};
+    };
+  }>;
 }

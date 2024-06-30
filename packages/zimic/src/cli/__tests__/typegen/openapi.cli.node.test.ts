@@ -151,7 +151,7 @@ describe('Type generation (OpenAPI)', () => {
           outputFilePath,
           '--service-name',
           'my-service',
-          ...fixtureCase.commandArguments,
+          ...fixtureCase.additionalArguments,
         ]);
 
         let rawOutputContent: string;

@@ -7,5 +7,5 @@ export type TypegenFixtureCaseName = keyof (typeof typegenFixtures)[TypegenFixtu
 export interface TypegenFixtureCase {
   inputFileName: string;
   outputFileName: string;
-  commandArguments: string[];
+  additionalArguments: string[];
 }

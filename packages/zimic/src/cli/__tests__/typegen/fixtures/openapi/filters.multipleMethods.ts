@@ -14,9 +14,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
     PUT: {
       request: {
-        body: {
-          name: string;
-        };
+        body: MyServiceComponents['schemas']['User'];
       };
       response: {
         204: {};

@@ -37,13 +37,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     };
   };
   '/notifications': {
-    GET: {
-      response: {
-        200: {
-          body: MyServiceComponents['schemas']['Notifications'];
-        };
-      };
-    };
+    GET: MyServiceOperations['getNotifications'];
   };
 }>;
 
@@ -60,4 +54,14 @@ export interface MyServiceComponents {
     };
     Notifications: MyServiceComponents['schemas']['Notification'][];
   };
+}
+
+export interface MyServiceOperations {
+  getNotifications: HttpSchema.Method<{
+    response: {
+      200: {
+        body: MyServiceComponents['schemas']['Notifications'];
+      };
+    };
+  }>;
 }
