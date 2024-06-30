@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
 
@@ -25,7 +26,9 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
 
   const isValidFilter = !filteredMethodsOrWildcard || !filteredPath;
   if (isValidFilter) {
-    logWithPrefix(`Error: Filter could not be parsed and was ignored: ${rawFilter}`, { method: 'error' });
+    logWithPrefix(`Warning: Filter could not be parsed and was ignored: ${chalk.yellow(rawFilter)}`, {
+      method: 'warn',
+    });
     return undefined;
   }
 

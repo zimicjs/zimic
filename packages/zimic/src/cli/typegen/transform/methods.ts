@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
@@ -371,7 +372,7 @@ export function normalizeResponse(
 
   if (!isComponent && isNonNumericStatusCode) {
     logWithPrefix(
-      `Warning: Response has non-numeric status code: ${response.name.text}. ` +
+      `Warning: Response has non-numeric status code: ${chalk.yellow(response.name.text)}. ` +
         'Consider replacing it with a number, such as 200, 404, and 500. ' +
         'Only numeric status codes can be used in interceptors.',
       { method: 'warn' },

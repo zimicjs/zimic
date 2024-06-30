@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
@@ -153,20 +154,21 @@ describe('Type generation (OpenAPI)', () => {
           let rawOutputContent: string;
 
           try {
-            await usingIgnoredConsole(['error', 'warn'], async (spies) => {
+            await usingIgnoredConsole(['warn'], async (spies) => {
               await runCLI();
 
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
 
               if (hasFilterFile) {
-                expect(spies.error).toHaveBeenCalledTimes(1);
+                expect(spies.warn).toHaveBeenCalledTimes(1);
 
-                const message = spies.error.mock.calls[0].join(' ');
+                const message = spies.warn.mock.calls[0].join(' ');
                 expect(message).toMatch(/.*\[zimic\].* /);
-                expect(message).toContain('Error: Filter could not be parsed and was ignored: invalid filter line');
+                expect(message).toContain(
+                  `Warning: Filter could not be parsed and was ignored: ${chalk.yellow('invalid filter line')}`,
+                );
               } else if (fixtureName === 'responses') {
                 const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
-
                 expect(spies.warn).toHaveBeenCalledTimes(expectedNonNumericStatusCodes.length);
 
                 const messages = spies.warn.mock.calls.map((argument) => argument.join(' ')).sort();
@@ -175,12 +177,13 @@ describe('Type generation (OpenAPI)', () => {
                   const message = messages[index];
                   expect(message).toMatch(/.*\[zimic\].* /);
                   expect(message).toContain(
-                    `Warning: Response has non-numeric status code: ${nonNumericStatusCode}. Consider replacing it ` +
-                      'with a number, such as 200, 404, and 500. Only numeric status codes can be used in interceptors.',
+                    `Warning: Response has non-numeric status code: ${chalk.yellow(nonNumericStatusCode)}. ` +
+                      'Consider replacing it with a number, such as 200, 404, and 500. Only numeric status codes can ' +
+                      'be used in interceptors.',
                   );
                 }
               } else {
-                expect(spies.error).not.toHaveBeenCalled();
+                expect(spies.warn).not.toHaveBeenCalled();
               }
             });
 
