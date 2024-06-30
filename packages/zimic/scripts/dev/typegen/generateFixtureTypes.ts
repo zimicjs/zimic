@@ -7,9 +7,9 @@ import { version } from '@@/package.json';
 
 import typegenFixtures from '@/cli/__tests__/typegen/fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/__tests__/typegen/fixtures/types';
-import { usingConsoleTime } from '@/utils/console';
 import { runCommand } from '@/utils/processes';
-import { prefixLines } from '@/utils/strings';
+import { usingConsoleTime } from '@tests/utils/console';
+import { prefixLines } from '@tests/utils/strings';
 
 async function normalizeOutputTypeImports(filePath: string) {
   const fileContent = await filesystem.readFile(filePath, 'utf-8');

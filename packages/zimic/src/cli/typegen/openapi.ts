@@ -5,106 +5,58 @@ import ts from 'typescript';
 
 import { version } from '@@/package.json';
 
-import { HTTP_METHODS } from '@/http/types/schema';
-import { isDefined, isNonEmpty } from '@/utils/data';
-import { toPascalCase } from '@/utils/strings';
-import { createFileURL, createRegexFromWildcardPath } from '@/utils/urls';
+import { isDefined } from '@/utils/data';
+import { createFileURL } from '@/utils/urls';
 
 import {
   createComponentsIdentifierText,
   normalizeComponents,
   populateReferencedComponents,
   removeUnreferencedComponents,
-} from './utils/components';
-import { normalizeOperations, removeUnreferencedOperations } from './utils/operations';
-import { normalizePaths } from './utils/paths';
+} from './transform/components';
+import { createTypeTransformationContext, TypeTransformContext } from './transform/context';
+import { normalizeOperations, removeUnreferencedOperations } from './transform/operations';
+import { normalizePaths } from './transform/paths';
+import { transformSchemaObject } from './transform/schema';
 
-export const SUPPORTED_HTTP_METHODS = new Set<string>(HTTP_METHODS);
-export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE!;
 
-type RootTypeImportName =
-  | 'HttpSchema'
-  | 'HttpFormData'
-  | 'HttpSearchParams'
-  | 'HttpSearchParamsSerialized'
-  | 'HttpHeadersSerialized';
-
-type ComponentChangeActionType = 'markAsOptional' | 'unknown';
-
-interface ComponentChangeAction {
-  type: ComponentChangeActionType;
-}
-
-interface PathFilters {
-  positive: RegExp[];
-  negative: RegExp[];
-}
-
-export interface NodeTransformationContext {
-  serviceName: string;
-  typeImports: {
-    root: Set<RootTypeImportName>;
-  };
-  referencedTypes: {
-    operationPaths: Set<string>;
-    componentPaths: Set<string>;
-    shouldPopulateComponentPaths: boolean;
-  };
-  filters: {
-    paths: PathFilters;
-  };
-  pendingActions: {
-    components: { requests: Map<string, ComponentChangeAction[]> };
-  };
-}
-
-export async function readPathFiltersFromFile(filePath: string) {
-  const fileContent = await filesystem.readFile(path.resolve(filePath), 'utf-8');
-  const fileContentWithoutComments = fileContent.replace(/#.*$/gm, '');
-
-  const filters = fileContentWithoutComments
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(isNonEmpty);
-
-  return filters;
-}
-
-function normalizeRootPaths(rootNode: ts.Node, context: NodeTransformationContext) {
+function normalizeRootPaths(rootNode: ts.Node, context: TypeTransformContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'paths') {
     return normalizePaths(rootNode, context);
   }
   return rootNode;
 }
 
-function normalizeRootOperations(rootNode: ts.Node, context: NodeTransformationContext) {
+function normalizeRootOperations(rootNode: ts.Node, context: TypeTransformContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'operations') {
     return normalizeOperations(rootNode, context);
   }
   return rootNode;
 }
 
-function removeRootUnreferencedOperations(rootNode: ts.Node, context: NodeTransformationContext) {
+function removeRootUnreferencedOperations(rootNode: ts.Node, context: TypeTransformContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'operations') {
     return removeUnreferencedOperations(rootNode, context);
   }
   return rootNode;
 }
 
-function normalizeRootComponents(rootNode: ts.Node, context: NodeTransformationContext) {
+function normalizeRootComponents(rootNode: ts.Node, context: TypeTransformContext) {
   if (ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
     return normalizeComponents(rootNode, context);
   }
   return rootNode;
 }
 
-function populateRootReferencedComponents(rootNode: ts.Node | undefined, context: NodeTransformationContext) {
+function populateRootReferencedComponents(rootNode: ts.Node | undefined, context: TypeTransformContext) {
   if (rootNode && ts.isInterfaceDeclaration(rootNode) && rootNode.name.text === 'components') {
     populateReferencedComponents(rootNode, context);
   }
 }
 
-function removeRootUnreferencedComponents(rootNode: ts.Node, context: NodeTransformationContext) {
+function removeRootUnreferencedComponents(rootNode: ts.Node, context: TypeTransformContext) {
   if (
     ts.isInterfaceDeclaration(rootNode) &&
     rootNode.name.text === createComponentsIdentifierText(context.serviceName)
@@ -129,7 +81,7 @@ function normalizeRootUnknownResources(rootNode: ts.Node | undefined) {
   return rootNode;
 }
 
-function addImportDeclarations(nodes: ts.Node[], context: NodeTransformationContext) {
+function addImportDeclarations(nodes: ts.Node[], context: TypeTransformContext) {
   const namedTypeImports = Array.from(context.typeImports.root)
     .sort()
     .map<ts.ImportSpecifier>((typeImportName) => {
@@ -165,7 +117,7 @@ async function generateTypesFromOpenAPISchema({
   serviceName,
   removeComments,
   pruneUnused,
-  filters: rawFilters,
+  filters,
 }: OpenAPITypeGenerationOptions) {
   const fileURL = createFileURL(path.resolve(inputFilePath));
 
@@ -183,79 +135,10 @@ async function generateTypesFromOpenAPISchema({
     enumValues: false,
     enum: false,
     silent: true,
-
-    transform(schemaObject) {
-      if (schemaObject.format === 'binary') {
-        const blobType = ts.factory.createTypeReferenceNode('Blob');
-
-        if (schemaObject.nullable) {
-          return ts.factory.createUnionTypeNode([blobType, ts.factory.createLiteralTypeNode(ts.factory.createNull())]);
-        }
-
-        return blobType;
-      }
-    },
+    transform: transformSchemaObject,
   });
 
-  const pascalServiceName = toPascalCase(serviceName);
-
-  const supportedMethodsGroup = Array.from(SUPPORTED_HTTP_METHODS).join('|');
-  const filterRegex = new RegExp(
-    `^(?<methods>!?(?:\\*|(?:${supportedMethodsGroup})(?:,\\s*(?:${supportedMethodsGroup}))*))\\s+(?<path>.+)$`,
-    'i',
-  );
-
-  const filters = rawFilters.map((rawFilter) => {
-    const filterMatch = rawFilter.trim().match(filterRegex);
-    const { methods, path } = filterMatch?.groups ?? {};
-
-    if (!methods || !path) {
-      console.error(`Filter is not valid: ${rawFilter}`);
-      return undefined;
-    }
-
-    return {
-      expression: createRegexFromWildcardPath(path, {
-        prefix: `(?:${methods.toUpperCase().replace(/^!/, '').replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
-      }),
-      isNegativeMatch: methods.startsWith('!'),
-    };
-  });
-
-  const pathFilters = filters.reduce<PathFilters>(
-    (partialFilters, filter) => {
-      if (!filter) {
-        return partialFilters;
-      }
-
-      if (filter.isNegativeMatch) {
-        partialFilters.negative.push(filter.expression);
-      } else {
-        partialFilters.positive.push(filter.expression);
-      }
-
-      return partialFilters;
-    },
-    { positive: [], negative: [] },
-  );
-
-  const context: NodeTransformationContext = {
-    serviceName: pascalServiceName,
-    typeImports: {
-      root: new Set(),
-    },
-    referencedTypes: {
-      operationPaths: new Set(),
-      componentPaths: new Set(),
-      shouldPopulateComponentPaths: true,
-    },
-    pendingActions: {
-      components: { requests: new Map() },
-    },
-    filters: {
-      paths: pathFilters,
-    },
-  };
+  const context = createTypeTransformationContext(serviceName, filters);
 
   let partialNodes: (ts.Node | undefined)[] = rawNodes.map((node) => normalizeRootPaths(node, context));
   if (pruneUnused) {

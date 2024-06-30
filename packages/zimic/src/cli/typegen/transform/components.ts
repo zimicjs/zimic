@@ -2,7 +2,7 @@ import ts from 'typescript';
 
 import { isDefined } from '@/utils/data';
 
-import { NodeTransformationContext } from '../openapi';
+import { TypeTransformContext } from './context';
 import { normalizeMethodContentType, normalizeMethodResponsesMember } from './methods';
 import { normalizePath } from './paths';
 import { isNeverType, isUnknownType } from './types';
@@ -21,7 +21,7 @@ function unchangedIndexedAccessTypeNode(node: ts.IndexedAccessTypeNode) {
 
 function visitComponentReferences(
   node: ts.TypeNode,
-  context: NodeTransformationContext & {
+  context: TypeTransformContext & {
     isComponentIndexedAccessNode?: boolean;
     splitComponentPath?: string[];
   },
@@ -127,11 +127,11 @@ function visitComponentReferences(
   return node;
 }
 
-export function renameComponentReferences(node: ts.TypeNode, context: NodeTransformationContext): ts.TypeNode {
+export function renameComponentReferences(node: ts.TypeNode, context: TypeTransformContext): ts.TypeNode {
   return visitComponentReferences(node, context, {
     onComponentReference(_node, referencedComponentPath) {
       if (context.referencedTypes.shouldPopulateComponentPaths) {
-        context.referencedTypes.componentPaths.add(referencedComponentPath);
+        context.referencedTypes.components.add(referencedComponentPath);
       }
     },
 
@@ -155,7 +155,7 @@ export function renameComponentReferences(node: ts.TypeNode, context: NodeTransf
   });
 }
 
-function normalizeRequestComponent(component: ts.PropertySignature, context: NodeTransformationContext) {
+function normalizeRequestComponent(component: ts.PropertySignature, context: TypeTransformContext) {
   if (!component.type || !ts.isTypeLiteralNode(component.type)) {
     return undefined;
   }
@@ -198,7 +198,7 @@ function normalizeRequestComponent(component: ts.PropertySignature, context: Nod
 function normalizeComponent(
   component: ts.TypeElement,
   componentName: ts.Identifier | ts.StringLiteral | undefined,
-  context: NodeTransformationContext,
+  context: TypeTransformContext,
 ): ts.TypeElement | undefined {
   if (!ts.isPropertySignature(component)) {
     return component;
@@ -260,7 +260,7 @@ function normalizeComponent(
 function normalizeComponentMemberType(
   componentMember: ts.TypeElement,
   componentMemberType: ts.TypeNode,
-  context: NodeTransformationContext,
+  context: TypeTransformContext,
 ) {
   if (
     ts.isTypeLiteralNode(componentMemberType) &&
@@ -279,7 +279,7 @@ function normalizeComponentMemberType(
   return undefined;
 }
 
-function normalizeComponentMember(componentMember: ts.TypeElement, context: NodeTransformationContext) {
+function normalizeComponentMember(componentMember: ts.TypeElement, context: TypeTransformContext) {
   if (!ts.isPropertySignature(componentMember)) {
     return componentMember;
   }
@@ -305,7 +305,7 @@ function normalizeComponentMember(componentMember: ts.TypeElement, context: Node
   );
 }
 
-export function normalizeComponents(components: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+export function normalizeComponents(components: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newIdentifier = createComponentsIdentifier(context.serviceName);
 
   const newMembers = components.members
@@ -326,8 +326,8 @@ export function normalizeComponents(components: ts.InterfaceDeclaration, context
   );
 }
 
-export function populateReferencedComponents(components: ts.InterfaceDeclaration, context: NodeTransformationContext) {
-  const pathsToVisit = new Set(context.referencedTypes.componentPaths);
+export function populateReferencedComponents(components: ts.InterfaceDeclaration, context: TypeTransformContext) {
+  const pathsToVisit = new Set(context.referencedTypes.components);
 
   while (pathsToVisit.size > 0) {
     const previousPathsToVisit = new Set(pathsToVisit);
@@ -360,11 +360,11 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
           continue;
         }
 
-        context.referencedTypes.componentPaths.add(componentPath);
+        context.referencedTypes.components.add(componentPath);
 
         visitComponentReferences(component.type, context, {
           onComponentReference(_node, referencedComponentPath) {
-            if (!context.referencedTypes.componentPaths.has(referencedComponentPath)) {
+            if (!context.referencedTypes.components.has(referencedComponentPath)) {
               pathsToVisit.add(referencedComponentPath);
             }
           },
@@ -374,7 +374,7 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
   }
 }
 
-export function removeUnreferencedComponents(components: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+export function removeUnreferencedComponents(components: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newMembers = components.members
     .map((componentGroup) => {
       if (!ts.isPropertySignature(componentGroup)) {
@@ -396,8 +396,8 @@ export function removeUnreferencedComponents(components: ts.InterfaceDeclaration
 
             const componentPath = [componentGroupName, componentName].join('.');
 
-            if (context.referencedTypes.componentPaths.has(componentPath)) {
-              context.referencedTypes.componentPaths.delete(componentPath);
+            if (context.referencedTypes.components.has(componentPath)) {
+              context.referencedTypes.components.delete(componentPath);
               return member;
             }
 
@@ -422,7 +422,7 @@ export function removeUnreferencedComponents(components: ts.InterfaceDeclaration
     })
     .filter(isDefined);
 
-  context.referencedTypes.componentPaths.clear();
+  context.referencedTypes.components.clear();
 
   if (newMembers.length === 0) {
     return undefined;

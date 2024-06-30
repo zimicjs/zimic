@@ -2,7 +2,7 @@ import ts from 'typescript';
 
 import { isDefined } from '@/utils/data';
 
-import { NodeTransformationContext } from '../openapi';
+import { TypeTransformContext } from './context';
 import { normalizeMethodTypeLiteral } from './methods';
 import { isNeverType } from './types';
 
@@ -14,7 +14,7 @@ export function createOperationsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
 }
 
-function normalizeOperation(operation: ts.TypeElement, context: NodeTransformationContext) {
+function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
   if (!ts.isPropertySignature(operation)) {
     return operation;
   }
@@ -41,7 +41,7 @@ function normalizeOperation(operation: ts.TypeElement, context: NodeTransformati
   );
 }
 
-export function normalizeOperations(operations: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+export function normalizeOperations(operations: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newIdentifier = createOperationsIdentifier(context.serviceName);
   const newMembers = operations.members.map((member) => normalizeOperation(member, context)).filter(isDefined);
 
@@ -59,7 +59,7 @@ export function normalizeOperations(operations: ts.InterfaceDeclaration, context
   );
 }
 
-export function removeUnreferencedOperations(operations: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+export function removeUnreferencedOperations(operations: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newMembers = operations.members
     .map((member) => {
       const memberName =
@@ -67,8 +67,8 @@ export function removeUnreferencedOperations(operations: ts.InterfaceDeclaration
           ? member.name.text
           : '';
 
-      if (context.referencedTypes.operationPaths.has(memberName)) {
-        context.referencedTypes.operationPaths.delete(memberName);
+      if (context.referencedTypes.operations.has(memberName)) {
+        context.referencedTypes.operations.delete(memberName);
         return member;
       }
 
@@ -76,7 +76,7 @@ export function removeUnreferencedOperations(operations: ts.InterfaceDeclaration
     })
     .filter(isDefined);
 
-  context.referencedTypes.operationPaths.clear();
+  context.referencedTypes.operations.clear();
 
   if (newMembers.length === 0) {
     return undefined;

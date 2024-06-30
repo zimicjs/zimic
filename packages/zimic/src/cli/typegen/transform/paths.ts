@@ -2,7 +2,7 @@ import ts from 'typescript';
 
 import { isDefined } from '@/utils/data';
 
-import { NodeTransformationContext } from '../openapi';
+import { TypeTransformContext } from './context';
 import { normalizeMethod } from './methods';
 
 export function createPathsIdentifier(serviceName: string) {
@@ -11,7 +11,7 @@ export function createPathsIdentifier(serviceName: string) {
 
 export function normalizePath(
   path: ts.TypeElement,
-  context: NodeTransformationContext,
+  context: TypeTransformContext,
   options: { isComponent?: boolean } = {},
 ) {
   const { isComponent = false } = options;
@@ -61,7 +61,7 @@ export function normalizePath(
   return path;
 }
 
-export function normalizePaths(paths: ts.InterfaceDeclaration, context: NodeTransformationContext) {
+export function normalizePaths(paths: ts.InterfaceDeclaration, context: TypeTransformContext) {
   const newIdentifier = createPathsIdentifier(context.serviceName);
 
   const newMembers = paths.members.map((path) => normalizePath(path, context)).filter(isDefined);
