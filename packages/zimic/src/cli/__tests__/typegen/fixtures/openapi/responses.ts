@@ -4,6 +4,15 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
+  '/users-with-non-numeric-status-codes': {
+    POST: {
+      response: {
+        '2xx': MyServiceComponents['responses']['userCreated'];
+        '4XX': MyServiceComponents['responses']['error'];
+        default: MyServiceComponents['responses']['error'];
+      };
+    };
+  };
   '/users-with-no-request': {
     POST: {
       response: {

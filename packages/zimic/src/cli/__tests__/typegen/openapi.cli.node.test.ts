@@ -114,7 +114,7 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each(fixtureCaseEntries)('Schema: %s', (_fixtureName, fixtureCases: TypegenFixtureCase[]) => {
+  describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
     describe.each(fixtureFileTypes)('Type: %s', (fileType) => {
       for (const fixtureCase of fixtureCases) {
         it(`should correctly generate types: ${fixtureCase.expectedOutputFileName}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`, async () => {
@@ -153,7 +153,7 @@ describe('Type generation (OpenAPI)', () => {
           let rawOutputContent: string;
 
           try {
-            await usingIgnoredConsole(['error'], async (spies) => {
+            await usingIgnoredConsole(['error', 'warn'], async (spies) => {
               await runCLI();
 
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
@@ -163,7 +163,22 @@ describe('Type generation (OpenAPI)', () => {
 
                 const message = spies.error.mock.calls[0].join(' ');
                 expect(message).toMatch(/.*\[zimic\].* /);
-                expect(message).toContain('Filter could not be parsed and was ignored: invalid filter line');
+                expect(message).toContain('Error: Filter could not be parsed and was ignored: invalid filter line');
+              } else if (fixtureName === 'responses') {
+                const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
+
+                expect(spies.warn).toHaveBeenCalledTimes(expectedNonNumericStatusCodes.length);
+
+                const messages = spies.warn.mock.calls.map((argument) => argument.join(' ')).sort();
+
+                for (const [index, nonNumericStatusCode] of expectedNonNumericStatusCodes.entries()) {
+                  const message = messages[index];
+                  expect(message).toMatch(/.*\[zimic\].* /);
+                  expect(message).toContain(
+                    `Warning: Response has non-numeric status code: ${nonNumericStatusCode}. Consider replacing it ` +
+                      'with a number, such as 200, 404, and 500. Only numeric status codes can be used in interceptors.',
+                  );
+                }
               } else {
                 expect(spies.error).not.toHaveBeenCalled();
               }

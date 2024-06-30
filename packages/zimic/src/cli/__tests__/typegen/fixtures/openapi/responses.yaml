@@ -5,6 +5,16 @@ info:
   version: 1.0.0
 
 paths:
+  /users-with-non-numeric-status-codes:
+    post:
+      responses:
+        '2xx':
+          $ref: '#/components/responses/userCreated'
+        '4XX':
+          $ref: '#/components/responses/error'
+        default:
+          $ref: '#/components/responses/error'
+
   /users-with-no-request:
     post:
       responses:

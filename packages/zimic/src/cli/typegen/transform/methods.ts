@@ -126,9 +126,12 @@ function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
       return !isNull;
     })
     .flatMap((type) => {
+      /* istanbul ignore else -- @preserve */
       if (ts.isParenthesizedTypeNode(type) && ts.isUnionTypeNode(type.type)) {
         return type.type.types;
       }
+      /* istanbul ignore next -- @preserve
+       * Member types are always expected to be a union type or a parenthesized union type. */
       return [type];
     });
 
@@ -156,6 +159,8 @@ function normalizeRequestBodyMember(
   context: TypeTransformContext,
   options: { questionToken: ts.QuestionToken | undefined },
 ) {
+  /* istanbul ignore if -- @preserve
+   * Request body members are always expected to be a request body. */
   if (!isRequestBodyMember(requestBodyMember)) {
     return undefined;
   }
@@ -188,9 +193,12 @@ function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformCon
     if (ts.isIndexSignatureDeclaration(header)) {
       return false;
     }
+    /* istanbul ignore else -- @preserve */
     if (ts.isPropertySignature(header)) {
       return header.type !== undefined && !isUnknownType(header.type);
     }
+    /* istanbul ignore next -- @preserve
+     * Headers are always expected to be property signatures or index signatures. */
     return true;
   });
 
@@ -352,18 +360,22 @@ export function normalizeResponse(
 ) {
   const { isComponent = false } = options;
 
+  /* istanbul ignore if -- @preserve
+   * Response members are always expected to be a response. */
   if (!ts.isPropertySignature(response) || !response.type) {
     return undefined;
   }
 
-  const isUnsupportedDefaultResponse =
-    !isComponent &&
-    (ts.isIdentifier(response.name) || ts.isStringLiteral(response.name)) &&
-    response.name.text === 'default';
+  const isNonNumericStatusCode =
+    (ts.isIdentifier(response.name) || ts.isStringLiteral(response.name)) && !/^\d+$/.test(response.name.text);
 
-  if (isUnsupportedDefaultResponse) {
-    logWithPrefix('Responses using `default` are not supported. Please use a numeric status code.', { method: 'warn' });
-    return undefined;
+  if (!isComponent && isNonNumericStatusCode) {
+    logWithPrefix(
+      `Warning: Response has non-numeric status code: ${response.name.text}. ` +
+        'Consider replacing it with a number, such as 200, 404, and 500. ' +
+        'Only numeric status codes can be used in interceptors.',
+      { method: 'warn' },
+    );
   }
 
   const newType = normalizeResponseType(response.type, context, {
@@ -381,39 +393,30 @@ export function normalizeResponse(
 }
 
 export function normalizeResponses(responses: MethodMember, context: TypeTransformContext) {
-  if (isNeverType(responses.type)) {
+  if (isNeverType(responses.type) || !ts.isTypeLiteralNode(responses.type)) {
     return undefined;
   }
 
   const newIdentifier = ts.factory.createIdentifier('response');
   const newQuestionToken = undefined;
 
-  if (ts.isTypeLiteralNode(responses.type)) {
-    const newMembers = responses.type.members
-      .map((response) => normalizeResponse(response, context), context)
-      .filter(isDefined);
+  const newMembers = responses.type.members
+    .map((response) => normalizeResponse(response, context), context)
+    .filter(isDefined);
 
-    const newType = ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers));
-
-    return ts.factory.updatePropertySignature(
-      responses,
-      responses.modifiers,
-      newIdentifier,
-      newQuestionToken,
-      renameComponentReferences(newType, context),
-    );
-  }
+  const newType = ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers));
 
   return ts.factory.updatePropertySignature(
     responses,
     responses.modifiers,
     newIdentifier,
     newQuestionToken,
-    responses.type,
+    renameComponentReferences(newType, context),
   );
 }
 
 function normalizeMethodMember(methodMember: ts.TypeElement, context: TypeTransformContext) {
+  /* istanbul ignore else -- @preserve */
   if (isMethodMember(methodMember)) {
     if (methodMember.name.text === 'requestBody') {
       return normalizeRequest(methodMember, context);
@@ -421,22 +424,18 @@ function normalizeMethodMember(methodMember: ts.TypeElement, context: TypeTransf
     if (methodMember.name.text === 'responses') {
       return normalizeResponses(methodMember, context);
     }
-    if (methodMember.name.text === 'parameters') {
-      return methodMember;
-    }
+    return methodMember;
   }
 
+  /* istanbul ignore next -- @preserve
+   * Method members are always expected as property signatures in methods. */
   return undefined;
 }
 
 function normalizeRequestMemberWithParameters(
-  methodRequestMember: ts.PropertySignature,
+  methodRequestMember: Override<ts.PropertySignature, { name: ts.Identifier }>,
   context: TypeTransformContext,
 ) {
-  if (!ts.isIdentifier(methodRequestMember.name)) {
-    return methodRequestMember;
-  }
-
   if (methodRequestMember.name.text === 'path' || !methodRequestMember.type || isNeverType(methodRequestMember.type)) {
     return undefined;
   }
@@ -502,12 +501,16 @@ function mergeRequestAndParameterTypes(
     },
   );
 
+  /* istanbul ignore if -- @preserve
+   * Parameters member is always expected to be found. */
   const parametersTypeMembers = parametersMember ? parametersMember.type.members : [];
 
   const orderedParameterTypeMembers = parametersTypeMembers.toSorted((member, otherMember) => {
     const memberHasName = member.name && ts.isIdentifier(member.name);
     const otherMemberHasName = otherMember.name && ts.isIdentifier(otherMember.name);
 
+    /* istanbul ignore else -- @preserve
+     * Parameter members are always expected to have a name. */
     if (memberHasName && otherMemberHasName) {
       return member.name.text.localeCompare(otherMember.name.text);
     }
@@ -515,7 +518,9 @@ function mergeRequestAndParameterTypes(
   });
 
   const newTypeMembers = [...orderedParameterTypeMembers, ...requestTypeMembers]
-    .filter((member) => ts.isPropertySignature(member))
+    .filter((member): member is Override<ts.PropertySignature, { name: ts.Identifier }> => {
+      return ts.isPropertySignature(member) && ts.isIdentifier(member.name);
+    })
     .map((member) => normalizeRequestMemberWithParameters(member, context))
     .filter(isDefined);
 
@@ -551,6 +556,8 @@ function normalizeMethodMemberWithParameters(
   methodMembers: ts.TypeElement[],
   context: TypeTransformContext,
 ) {
+  /* istanbul ignore if -- @preserve
+   * Method members are always expected to have a name and type at this point. */
   if (!ts.isIdentifier(methodMember.name) || !methodMember.type) {
     return undefined;
   }
@@ -574,6 +581,8 @@ function normalizeMethodMemberWithParameters(
   if (methodMember.name.text === 'response') {
     return methodMember;
   }
+
+  return undefined;
 }
 
 export function normalizeTypeLiteralMethodType(methodType: ts.TypeLiteralNode, context: TypeTransformContext) {
@@ -592,6 +601,8 @@ function normalizeIndexedAccessMethodType(methodType: ts.IndexedAccessTypeNode, 
     ts.isIdentifier(methodType.objectType.typeName) &&
     methodType.objectType.typeName.text === 'operations';
 
+  /* istanbul ignore if -- @preserve
+   * In indexed access method types, the reference is always expected to be an operation. */
   if (!isOperationsReference) {
     return methodType;
   }
@@ -603,6 +614,8 @@ function normalizeIndexedAccessMethodType(methodType: ts.IndexedAccessTypeNode, 
     ts.isLiteralTypeNode(methodType.indexType) &&
     (ts.isIdentifier(methodType.indexType.literal) || ts.isStringLiteral(methodType.indexType.literal));
 
+  /* istanbul ignore else -- @preserve
+   * In indexed access method types referencing operations, an index type name is always expected. */
   if (hasIndexTypeName) {
     const operationName = methodType.indexType.literal.text;
     context.referencedTypes.operations.add(operationName);
