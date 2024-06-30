@@ -45,6 +45,7 @@ const cliConfig = (['cjs'] as const).map<Options>((format) => ({
   entry: {
     cli: 'src/cli/index.ts',
     'scripts/postinstall': 'scripts/postinstall.ts',
+    'scripts/dev/typegen/fixtures': 'scripts/dev/typegen/fixtures.ts',
   },
 }));
 

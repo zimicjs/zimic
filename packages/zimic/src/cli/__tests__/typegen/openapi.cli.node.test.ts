@@ -42,6 +42,7 @@ describe('Type generation (OpenAPI)', () => {
     'responses',
     'combinations',
     'examples',
+    'filters',
   ] as const;
   type SchemaName = (typeof schemaNames)[number];
 
@@ -249,6 +250,421 @@ describe('Type generation (OpenAPI)', () => {
           normalizeGeneratedFileToCompare(expectedOutputContent),
         );
       });
+
+      if (schemaName === 'filters') {
+        describe('Filters', () => {
+          it('should support filtering by a literal method', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET /users',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.oneMethod.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by multiple literal methods', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET,PUT /users/:userId',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.multipleMethods.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a method wildcard pattern', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              '* /users/:userId',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.wildcardMethod.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a path wildcard pattern: *', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET *',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.pathWildcard.1.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a path wildcard pattern: **', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET **',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.pathWildcard.2.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a path wildcard pattern: ** in segment', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET /users**',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.pathWildcard.3.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a path wildcard pattern: ** after segment', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET /users/**',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.pathWildcard.4.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support filtering by a path wildcard pattern: **/* after segment', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'GET /users/**/*',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.pathWildcard.5.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support negative filters starting with !: literal method', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              '!GET /users',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.negative.1.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support negative filters starting with !: method wildcard pattern', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              '!* /users**',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.negative.2.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support negative filters starting with !: path wildcard pattern', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              '!GET /users/**/*',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.negative.3.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+
+          it('should support combining multiple filters', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter',
+              'POST /users',
+              '--filter',
+              '* /users/**/*',
+              '--filter',
+              '!PATCH /users/:userId',
+              '--filter',
+              'DELETE /notifications',
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.multiple.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+        });
+
+        describe('Filter file', () => {
+          it('should support reading filters from a file, ignoring comments and empty lines', async () => {
+            const filePaths = getSchemaFilePaths(schemaName, fileType);
+
+            processArgvSpy.mockReturnValue([
+              'node',
+              'cli.js',
+              'typegen',
+              'openapi',
+              filePaths.input,
+              '--output',
+              filePaths.output.generated,
+              '--service-name',
+              'my-service',
+              '--remove-comments',
+              '--filter-file',
+              path.join(typegenFixtures.openapi.directory, `${schemaName}.txt`),
+            ]);
+
+            await runCLI();
+
+            const rawOutputContent = await filesystem.readFile(filePaths.output.generated, 'utf-8');
+            const outputContent = await prettier.format(rawOutputContent, { ...prettierConfig, parser: 'typescript' });
+
+            const expectedFilePath = path.join(typegenFixtures.openapi.directory, `${schemaName}.multiple.ts`);
+
+            const expectedOutputContent = await filesystem.readFile(expectedFilePath, 'utf-8');
+            expect(normalizeGeneratedFileToCompare(outputContent)).toBe(
+              normalizeGeneratedFileToCompare(expectedOutputContent),
+            );
+          });
+        });
+      }
     });
   });
 });

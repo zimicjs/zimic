@@ -1,0 +1,8 @@
+# This is a comment
+
+POST /users
+* /users/**/*
+!PATCH /users/:userId
+
+DELETE /notifications # This is a comment too
+#Also a comment

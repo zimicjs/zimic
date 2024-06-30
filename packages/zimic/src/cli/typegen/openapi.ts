@@ -201,24 +201,24 @@ async function generateTypesFromOpenAPISchema({
 
   const supportedMethodsGroup = Array.from(SUPPORTED_HTTP_METHODS).join('|');
   const filterRegex = new RegExp(
-    `^(?<method>\\*|(?:${supportedMethodsGroup})(?:,\\s*(?:${supportedMethodsGroup}))*)\\s+(?<path>.+)$`,
+    `^(?<methods>!?(?:\\*|(?:${supportedMethodsGroup})(?:,\\s*(?:${supportedMethodsGroup}))*))\\s+(?<path>.+)$`,
     'i',
   );
 
   const filters = rawFilters.map((rawFilter) => {
     const filterMatch = rawFilter.trim().match(filterRegex);
-    const { method, path } = filterMatch?.groups ?? {};
+    const { methods, path } = filterMatch?.groups ?? {};
 
-    if (!method || !path) {
+    if (!methods || !path) {
       console.error(`Filter is not valid: ${rawFilter}`);
       return undefined;
     }
 
     return {
       expression: createRegexFromWildcardPath(path, {
-        prefix: `(?:${method.toUpperCase().replace(/^!/, '').replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
+        prefix: `(?:${methods.toUpperCase().replace(/^!/, '').replace(/,\s*/g, '|').replace(/\*/g, '.*')}) `,
       }),
-      isNegativeMatch: method.startsWith('!'),
+      isNegativeMatch: methods.startsWith('!'),
     };
   });
 

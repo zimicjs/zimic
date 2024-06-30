@@ -1,7 +1,7 @@
 import path from 'path';
 
 const typegenFixtures = {
-  directory: __dirname,
+  directory: path.join(process.cwd(), 'src', 'cli', '__tests__', 'typegen', 'fixtures'),
 
   openapi: {
     get directory() {
