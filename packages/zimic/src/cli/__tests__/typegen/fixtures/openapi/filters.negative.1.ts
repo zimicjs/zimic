@@ -4,7 +4,7 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
+  users: {
     POST: {
       request: {
         body: {
@@ -45,7 +45,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
-  '/users/:userId/friends': {
+  '/users/:userId/friends/': {
     GET: {
       response: {
         200: {

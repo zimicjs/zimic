@@ -13,7 +13,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
-  '/users/:userId/friends': {
+  '/users/:userId/friends/': {
     GET: {
       response: {
         200: {

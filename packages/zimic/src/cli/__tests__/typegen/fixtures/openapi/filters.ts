@@ -4,7 +4,7 @@
 import type { HttpSchema, HttpSearchParamsSerialized } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/users': {
+  users: {
     GET: {
       request: {
         searchParams: HttpSearchParamsSerialized<{
@@ -57,7 +57,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
-  '/users/:userId/friends': {
+  '/users/:userId/friends/': {
     GET: {
       response: {
         200: {
