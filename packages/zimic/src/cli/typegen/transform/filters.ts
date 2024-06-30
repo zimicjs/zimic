@@ -25,7 +25,7 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
 
   const isValidFilter = !filteredMethodsOrWildcard || !filteredPath;
   if (isValidFilter) {
-    logWithPrefix(`Filter could not be parsed and was ignored: ${rawFilter}`, { method: 'error' });
+    logWithPrefix(`Warning: Filter could not be parsed and was ignored: ${rawFilter}`, { method: 'error' });
     return undefined;
   }
 

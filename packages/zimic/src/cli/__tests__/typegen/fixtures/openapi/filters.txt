@@ -6,3 +6,5 @@ POST /users
 
 DELETE /notifications # This is a comment too
 #Also a comment
+
+invalid filter line

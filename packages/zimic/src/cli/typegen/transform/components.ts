@@ -80,12 +80,12 @@ function visitComponentReferences(
     partialComponentPath?: string[];
   },
   options: {
-    onComponentReference?: (node: ts.IndexedAccessTypeNode, referencedComponentPath: string) => void;
+    onComponentReference: (node: ts.IndexedAccessTypeNode, referencedComponentPath: string) => void;
     renameComponentReference?: (
       node: ts.IndexedAccessTypeNode,
       objectType: ts.TypeReferenceNode,
     ) => ts.IndexedAccessTypeNode;
-  } = {},
+  },
 ): ts.TypeNode {
   const { onComponentReference, renameComponentReference = unchangedIndexedAccessTypeNode } = options;
 
@@ -157,7 +157,7 @@ function visitComponentReferences(
 
         if (isRootIndexedAccess) {
           const referencedComponentPath = childContext.partialComponentPath.join('.');
-          onComponentReference?.(newNode, referencedComponentPath);
+          onComponentReference(newNode, referencedComponentPath);
         }
       }
 
@@ -407,9 +407,6 @@ export function removeComponentIfUnreferenced(
 function removeUnreferencedComponentsInGroup(componentGroup: ts.TypeElement, context: TypeTransformContext) {
   if (!isComponentGroup(componentGroup)) {
     return undefined;
-  }
-  if (!ts.isTypeLiteralNode(componentGroup.type)) {
-    return componentGroup;
   }
 
   const componentGroupName = componentGroup.name.text;

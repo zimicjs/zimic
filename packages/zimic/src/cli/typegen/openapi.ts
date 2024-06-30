@@ -14,13 +14,16 @@ import { convertTypesToString, importTypesFromOpenAPI, writeTypeOutput } from '.
 import { isOperationsDeclaration, normalizeOperations, removeUnreferencedOperations } from './transform/operations';
 import { isPathsDeclaration, normalizePaths } from './transform/paths';
 
+const RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED = ['paths', 'webhooks', 'operations', 'components', '$defs'];
+
 function removeUnknownResources(node: ts.Node | undefined) {
   const isUnknownResource =
-    node &&
-    ts.isTypeAliasDeclaration(node) &&
-    ['paths', 'webhooks', 'operations', 'components', '$defs'].includes(node.name.text);
+    node && ts.isTypeAliasDeclaration(node) && RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED.includes(node.name.text);
 
-  return isUnknownResource ? undefined : node;
+  if (isUnknownResource) {
+    return undefined;
+  }
+  return node;
 }
 
 function normalizeRawNodes(

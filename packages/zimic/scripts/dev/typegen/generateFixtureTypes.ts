@@ -7,9 +7,10 @@ import { version } from '@@/package.json';
 
 import typegenFixtures from '@/cli/__tests__/typegen/fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/__tests__/typegen/fixtures/types';
-import { usingConsoleTime } from '@/utils/console';
 import { runCommand } from '@/utils/processes';
-import { prefixLines } from '@tests/utils/strings';
+
+import { usingConsoleTime } from '../utils/console';
+import { prefixLines } from '../utils/strings';
 
 const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
 
@@ -20,11 +21,11 @@ async function normalizeOutputTypeImports(filePath: string) {
 }
 
 async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixtureCase: TypegenFixtureCase) {
-  const outputFileName = path.parse(fixtureCase.outputFileName).base;
+  const outputFileName = path.parse(fixtureCase.expectedOutputFileName).base;
   const typegenPrefix = `[typegen] [${fixtureType}] ${outputFileName}`;
 
   const inputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.inputFileName);
-  const outputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.outputFileName);
+  const outputFilePath = path.join(typegenFixtures[fixtureType].directory, fixtureCase.expectedOutputFileName);
 
   await usingConsoleTime(typegenPrefix, async () => {
     const commandArguments = [
@@ -73,7 +74,7 @@ interface FixtureTypegenOptions {
 async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureTypegenOptions) {
   const fixtureCases = fixtureNames
     .flatMap<TypegenFixtureCase>((fixtureName) => typegenFixtures[fixtureType].cases[fixtureName])
-    .filter((fixtureCase) => fixtureCase.outputFileName !== '-');
+    .filter((fixtureCase) => !fixtureCase.shouldWriteToStdout);
 
   const outputFilePaths: string[] = [];
 
