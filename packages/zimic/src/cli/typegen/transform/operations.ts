@@ -2,9 +2,9 @@ import ts from 'typescript';
 
 import { isDefined } from '@/utils/data';
 
+import { isNeverType } from '../utils/types';
 import { TypeTransformContext } from './context';
 import { normalizeMethodTypeLiteral } from './methods';
-import { isNeverType } from './types';
 
 export function createOperationsIdentifierText(serviceName: string) {
   return `${serviceName}Operations`;

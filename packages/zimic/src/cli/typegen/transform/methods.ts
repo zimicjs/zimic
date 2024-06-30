@@ -3,10 +3,10 @@ import ts from 'typescript';
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import { isDefined } from '@/utils/data';
 
+import { isUnknownType, isNeverTypeMember, isNeverType, isNullType } from '../utils/types';
 import { renameComponentReferences } from './components';
 import { TypeTransformContext } from './context';
 import { createOperationsIdentifier } from './operations';
-import { isUnknownType, isNeverTypeMember, isNeverType, isNullType } from './types';
 
 function normalizeRequestBodyMember(requestBodyMember: ts.TypeElement, context: TypeTransformContext) {
   if (ts.isPropertySignature(requestBodyMember) && ts.isStringLiteral(requestBodyMember.name)) {

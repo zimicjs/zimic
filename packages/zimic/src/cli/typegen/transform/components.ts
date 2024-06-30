@@ -2,10 +2,10 @@ import ts from 'typescript';
 
 import { isDefined } from '@/utils/data';
 
+import { isNeverType, isUnknownType } from '../utils/types';
 import { TypeTransformContext } from './context';
 import { normalizeMethodContentType, normalizeMethodResponsesMember } from './methods';
 import { normalizePath } from './paths';
-import { isNeverType, isUnknownType } from './types';
 
 export function createComponentsIdentifierText(serviceName: string) {
   return `${serviceName}Components`;

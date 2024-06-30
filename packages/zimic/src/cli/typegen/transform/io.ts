@@ -7,7 +7,7 @@ import { version } from '@@/package.json';
 
 import { createFileURL } from '@/utils/urls';
 
-import { createBlobType, createNullType, createUnionType } from '../utils/types';
+import { createBlobType, createNullType } from '../utils/types';
 
 function transformSchemaObject(schemaObject: SchemaObject) {
   if (schemaObject.format === 'binary') {
@@ -15,7 +15,7 @@ function transformSchemaObject(schemaObject: SchemaObject) {
 
     if (schemaObject.nullable) {
       const nullType = createNullType();
-      return createUnionType([blobType, nullType]);
+      return ts.factory.createUnionTypeNode([blobType, nullType]);
     }
 
     return blobType;
