@@ -116,7 +116,7 @@ importers:
         version: 10.2.0
       '@testing-library/jest-dom':
         specifier: ^6.4.6
-        version: 6.4.6(@jest/globals@29.7.0)(jest@29.7.0(@types/node@20.14.9))(vitest@1.6.0(@types/node@20.14.9))
+        version: 6.4.6(@jest/globals@29.7.0)(jest@29.7.0(@types/node@20.14.9))(vitest@1.6.0(@types/node@20.14.9)(@vitest/browser@1.6.0)(jsdom@20.0.3))
       '@testing-library/user-event':
         specifier: ^14.5.2
         version: 14.5.2(@testing-library/dom@10.2.0)
@@ -552,8 +552,8 @@ importers:
         specifier: ^8.1.0
         version: 8.1.0(@swc/core@1.6.6)(postcss@8.4.39)(typescript@5.5.2)
       tsx:
-        specifier: ^4.15.7
-        version: 4.15.7
+        specifier: ^4.16.0
+        version: 4.16.0
       typescript:
         specifier: ^5.5.2
         version: 5.5.2
@@ -1692,11 +1692,13 @@ packages:
       { integrity: sha512-9GWx27t7xWhDIR02PA18nzBdLcKQRgc46xNQvjFkrYk4UOmvKhJ/dawwiX0cCOeetN5LcaaiqQbVOWYK62SGHw== }
 
   '@redocly/config@0.6.0':
-    resolution: {integrity: sha512-hNVN3eTxFj2nHYX0gGzZxxXwdE0DXWeWou1TIK3HYf0S9VKVxTxjO9EZbMB7iVUqaHkeqy4PSjlBQcEgD0Ftjg==}
+    resolution:
+      { integrity: sha512-hNVN3eTxFj2nHYX0gGzZxxXwdE0DXWeWou1TIK3HYf0S9VKVxTxjO9EZbMB7iVUqaHkeqy4PSjlBQcEgD0Ftjg== }
 
   '@redocly/openapi-core@1.16.0':
-    resolution: {integrity: sha512-z06h+svyqbUcdAaePq8LPSwTPlm6Ig7j2VlL8skPBYnJvyaQ2IN7x/JkOvRL4ta+wcOCBdAex5JWnZbKaNktJg==}
-    engines: {node: '>=14.19.0', npm: '>=7.0.0'}
+    resolution:
+      { integrity: sha512-z06h+svyqbUcdAaePq8LPSwTPlm6Ig7j2VlL8skPBYnJvyaQ2IN7x/JkOvRL4ta+wcOCBdAex5JWnZbKaNktJg== }
+    engines: { node: '>=14.19.0', npm: '>=7.0.0' }
 
   '@rollup/rollup-android-arm-eabi@4.18.0':
     resolution:
@@ -2296,8 +2298,9 @@ packages:
     engines: { node: '>= 6.0.0' }
 
   agent-base@7.1.1:
-    resolution: {integrity: sha512-H0TSyFNDMomMNJQBn8wFV5YC/2eJ+VXECwOadZJT554xP6cODZHPX3H9QMQECxvrgiSOP1pHjy1sMWQVYJOUOA==}
-    engines: {node: '>= 14'}
+    resolution:
+      { integrity: sha512-H0TSyFNDMomMNJQBn8wFV5YC/2eJ+VXECwOadZJT554xP6cODZHPX3H9QMQECxvrgiSOP1pHjy1sMWQVYJOUOA== }
+    engines: { node: '>= 14' }
 
   ajv-formats@2.1.1:
     resolution:
@@ -3696,8 +3699,9 @@ packages:
     engines: { node: '>= 6' }
 
   https-proxy-agent@7.0.4:
-    resolution: {integrity: sha512-wlwpilI7YdjSkWaQ/7omYBMTliDcmCN8OLihO6I9B86g06lMyAoqgoDpV0XqoaPOKj+0DIdAvnsWfyAAhmimcg==}
-    engines: {node: '>= 14'}
+    resolution:
+      { integrity: sha512-wlwpilI7YdjSkWaQ/7omYBMTliDcmCN8OLihO6I9B86g06lMyAoqgoDpV0XqoaPOKj+0DIdAvnsWfyAAhmimcg== }
+    engines: { node: '>= 14' }
 
   human-signals@2.1.0:
     resolution:
@@ -4782,7 +4786,8 @@ packages:
     engines: { node: '>=12' }
 
   openapi-typescript@7.0.0:
-    resolution: {integrity: sha512-5NobO3pavTUVmErRVjnfiIIqCNjCrZeva4ElOA3nNKcSo4Jm5G7zv4WLcw6S+jDVnGGRkchxnJ2yIJBp9ULUAg==}
+    resolution:
+      { integrity: sha512-5NobO3pavTUVmErRVjnfiIIqCNjCrZeva4ElOA3nNKcSo4Jm5G7zv4WLcw6S+jDVnGGRkchxnJ2yIJBp9ULUAg== }
     hasBin: true
     peerDependencies:
       typescript: ^5.x
@@ -5821,8 +5826,9 @@ packages:
     engines: { node: '>=16' }
 
   type-fest@4.20.1:
-    resolution: {integrity: sha512-R6wDsVsoS9xYOpy8vgeBlqpdOyzJ12HNfQhC/aAKWM3YoCV9TtunJzh/QpkMgeDhkoynDcw5f1y+qF9yc/HHyg==}
-    engines: {node: '>=16'}
+    resolution:
+      { integrity: sha512-R6wDsVsoS9xYOpy8vgeBlqpdOyzJ12HNfQhC/aAKWM3YoCV9TtunJzh/QpkMgeDhkoynDcw5f1y+qF9yc/HHyg== }
+    engines: { node: '>=16' }
 
   typed-array-buffer@1.0.2:
     resolution:
@@ -7239,21 +7245,6 @@ snapshots:
       jest: 29.7.0(@types/node@20.14.9)
       vitest: 1.6.0(@types/node@20.14.9)(@vitest/browser@1.6.0)(jsdom@20.0.3)
 
-  '@testing-library/jest-dom@6.4.6(@jest/globals@29.7.0)(jest@29.7.0(@types/node@20.14.9))(vitest@1.6.0(@types/node@20.14.9))':
-    dependencies:
-      '@adobe/css-tools': 4.4.0
-      '@babel/runtime': 7.24.7
-      aria-query: 5.3.0
-      chalk: 3.0.0
-      css.escape: 1.5.1
-      dom-accessibility-api: 0.6.3
-      lodash: 4.17.21
-      redent: 3.0.0
-    optionalDependencies:
-      '@jest/globals': 29.7.0
-      jest: 29.7.0(@types/node@20.14.9)
-      vitest: 1.6.0(@types/node@20.14.9)(@vitest/browser@1.6.0)(jsdom@20.0.3(bufferutil@4.0.8))
-
   '@testing-library/user-event@14.5.2(@testing-library/dom@10.2.0)':
     dependencies:
       '@testing-library/dom': 10.2.0
@@ -7488,7 +7479,7 @@ snapshots:
       '@vitest/utils': 1.6.0
       magic-string: 0.30.10
       sirv: 2.0.4
-      vitest: 1.6.0(@types/node@20.14.9)(@vitest/browser@1.6.0)(jsdom@20.0.3)
+      vitest: 1.6.0(@types/node@20.14.9)(@vitest/browser@1.6.0)(jsdom@20.0.3(bufferutil@4.0.8))
     optionalDependencies:
       playwright: 1.45.0
 

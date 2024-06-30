@@ -1,16 +1,15 @@
 import path from 'path';
 
-import { baseTypegenFixturesDirectory } from './constants';
 import openapiTypegenFixtureCases from './openapiTypegenCases';
 
 export const typegenFixtures = {
   openapi: {
     get directory() {
-      return path.join(baseTypegenFixturesDirectory, 'openapi');
+      return path.join(__dirname, 'openapi');
     },
 
     get generatedDirectory() {
-      return path.join(typegenFixtures.openapi.directory, 'generated');
+      return path.join(this.directory, 'generated');
     },
 
     get cases() {

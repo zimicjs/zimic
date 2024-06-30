@@ -37,7 +37,7 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
       ...fixtureCase.additionalArguments,
     ];
 
-    await runCommand('bun', commandArguments, {
+    await runCommand('node', commandArguments, {
       stdio: 'pipe',
       onOutput(data, type) {
         process[type].write(prefixLines(`${typegenPrefix}: `, data.toString()));

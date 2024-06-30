@@ -1,6 +1,5 @@
 import path from 'path';
 
-import { baseTypegenFixturesDirectory } from './constants';
 import { TypegenFixtureCase } from './types';
 
 const openapiTypegenFixtureCases = {
@@ -256,11 +255,7 @@ const openapiTypegenFixtureCases = {
     {
       inputFileName: 'filters.yaml',
       outputFileName: 'filters.multipleFromFile.ts',
-      additionalArguments: [
-        '--remove-comments',
-        '--filter-file',
-        path.join(baseTypegenFixturesDirectory, 'openapi', 'filters.txt'),
-      ],
+      additionalArguments: ['--remove-comments', '--filter-file', path.join(__dirname, 'openapi', 'filters.txt')],
     },
 
     {
@@ -303,7 +298,7 @@ const openapiTypegenFixtureCases = {
         '--prune-unused',
         'false',
         '--filter-file',
-        path.join(baseTypegenFixturesDirectory, 'openapi', 'filters.txt'),
+        path.join(__dirname, 'openapi', 'filters.txt'),
       ],
     },
   ],
