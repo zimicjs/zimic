@@ -54,7 +54,8 @@ export function normalizePath(
 ) {
   const { isComponent = false } = options;
 
-  /* istanbul ignore if -- @preserve */
+  /* istanbul ignore if -- @preserve
+   * Path members are always expected to be a path. */
   if (!isPath(path)) {
     return undefined;
   }

@@ -46,7 +46,8 @@ function wrapOperationTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTr
 }
 
 function normalizeOperation(operation: ts.TypeElement, context: TypeTransformContext) {
-  /* istanbul ignore if -- @preserve */
+  /* istanbul ignore if -- @preserve
+   * Operation members are always expected to be an operation. */
   if (!isOperation(operation)) {
     return undefined;
   }
@@ -77,7 +78,8 @@ export function normalizeOperations(operations: ts.InterfaceDeclaration, context
 }
 
 function removeOperationIfUnreferenced(operation: ts.TypeElement, context: TypeTransformContext) {
-  /* istanbul ignore if -- @preserve */
+  /* istanbul ignore if -- @preserve
+   * Operation members are always expected to be an operation. */
   if (!isOperation(operation)) {
     return undefined;
   }

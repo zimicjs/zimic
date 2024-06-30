@@ -1,4 +1,3 @@
-import filesystem from 'fs/promises';
 import generateTypesFromOpenAPI, { SchemaObject, astToString as convertTypeASTToString } from 'openapi-typescript';
 import path from 'path';
 import ts from 'typescript';
@@ -53,7 +52,7 @@ export function convertTypesToString(nodes: ts.Node[], options: { removeComments
   return typeOutput;
 }
 
-function prepareTypeOutputToSave(output: string) {
+export function prepareTypeOutputToSave(output: string) {
   const formattedOutput = output
     .replace(/^export (\w+)/gm, '\nexport $1')
     .replace(/^( {4})+/gm, (match) => match.replace(/ {4}/g, '  '));
@@ -67,23 +66,8 @@ function prepareTypeOutputToSave(output: string) {
   return formattedOutputWithPrefix;
 }
 
-async function writeTypeOutputToFile(outputFilePath: string, formattedOutput: string) {
-  await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
-}
-
-async function writeTypeOutputToStandardOutput(formattedOutput: string) {
+export async function writeTypeOutputToStandardOutput(formattedOutput: string) {
   await new Promise((resolve) => {
     process.stdout.write(formattedOutput, 'utf-8', resolve);
   });
-}
-
-export async function writeTypeOutput(typeOutput: string, outputFilePath: string) {
-  const formattedOutput = prepareTypeOutputToSave(typeOutput);
-
-  const isFileOutput = outputFilePath !== '-';
-  if (isFileOutput) {
-    await writeTypeOutputToFile(outputFilePath, formattedOutput);
-  } else {
-    await writeTypeOutputToStandardOutput(formattedOutput);
-  }
 }

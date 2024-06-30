@@ -270,6 +270,8 @@ function normalizeComponent(
   componentGroupName: string,
   context: TypeTransformContext,
 ): ts.TypeElement | undefined {
+  /* istanbul ignore if -- @preserve
+   * Component group members are always expected the be components. */
   if (!isComponent(component)) {
     return undefined;
   }
@@ -305,10 +307,6 @@ function normalizeComponentGroup(componentGroup: ts.TypeElement, context: TypeTr
   const newComponents = componentGroup.type.members
     .map((component) => normalizeComponent(component, componentGroupName, context))
     .filter(isDefined);
-
-  if (newComponents.length === 0) {
-    return undefined;
-  }
 
   const newType = ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newComponents));
 
@@ -360,6 +358,8 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
       const componentGroupName = componentGroup.name.text;
 
       for (const component of componentGroup.type.members) {
+        /* istanbul ignore if -- @preserve
+         * Component group members are always expected the be components. */
         if (!isComponent(component)) {
           continue;
         }
@@ -392,6 +392,8 @@ export function removeComponentIfUnreferenced(
   componentGroupName: string,
   context: TypeTransformContext,
 ) {
+  /* istanbul ignore if -- @preserve
+   * Component group members are always expected the be components. */
   if (!isComponent(component)) {
     return undefined;
   }
@@ -408,6 +410,8 @@ export function removeComponentIfUnreferenced(
 }
 
 function removeUnreferencedComponentsInGroup(componentGroup: ts.TypeElement, context: TypeTransformContext) {
+  /* istanbul ignore if -- @preserve
+   * Component members are always expected the be component groups. */
   if (!isComponentGroup(componentGroup)) {
     return undefined;
   }
@@ -432,13 +436,13 @@ function removeUnreferencedComponentsInGroup(componentGroup: ts.TypeElement, con
 }
 
 export function removeUnreferencedComponents(components: ts.InterfaceDeclaration, context: TypeTransformContext) {
-  const newMembers = components.members
+  const newComponentGroups = components.members
     .map((componentGroup) => removeUnreferencedComponentsInGroup(componentGroup, context))
     .filter(isDefined);
 
   context.referencedTypes.components.clear();
 
-  if (newMembers.length === 0) {
+  if (newComponentGroups.length === 0) {
     return undefined;
   }
 
@@ -448,6 +452,6 @@ export function removeUnreferencedComponents(components: ts.InterfaceDeclaration
     components.name,
     components.typeParameters,
     components.heritageClauses,
-    newMembers,
+    newComponentGroups,
   );
 }

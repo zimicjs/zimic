@@ -295,7 +295,6 @@ export function normalizeContentType(
   if (newBodyMembers.length <= 1) {
     const newBodyMemberPropertySignatures = newBodyMembers.map((bodyMember) => bodyMember.propertySignature);
     const newMembers = [newHeader, ...newBodyMemberPropertySignatures].filter(isDefined);
-
     return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers));
   } else {
     const bodyMemberUnionTypes = newBodyMembers.map((bodyMember) => {
@@ -502,7 +501,7 @@ function mergeRequestAndParameterTypes(
     },
   );
 
-  /* istanbul ignore if -- @preserve
+  /* istanbul ignore next -- @preserve
    * Parameters member is always expected to be found. */
   const parametersTypeMembers = parametersMember ? parametersMember.type.members : [];
 
@@ -510,11 +509,12 @@ function mergeRequestAndParameterTypes(
     const memberHasName = member.name && ts.isIdentifier(member.name);
     const otherMemberHasName = otherMember.name && ts.isIdentifier(otherMember.name);
 
-    /* istanbul ignore else -- @preserve
-     * Parameter members are always expected to have a name. */
+    /* istanbul ignore else -- @preserve */
     if (memberHasName && otherMemberHasName) {
       return member.name.text.localeCompare(otherMember.name.text);
     }
+    /* istanbul ignore next -- @preserve
+     * Parameter members are always expected to have a name. */
     return 0;
   });
 
