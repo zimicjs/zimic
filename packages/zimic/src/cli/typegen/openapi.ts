@@ -5,6 +5,7 @@ import ts from 'typescript';
 
 import { logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
+import { formatElapsedTime, usingElapsedTime } from '@/utils/time';
 
 import {
   isComponentsDeclaration,
@@ -13,6 +14,7 @@ import {
   removeUnreferencedComponents,
 } from './transform/components';
 import { createTypeTransformationContext, TypeTransformContext } from './transform/context';
+import { readPathFiltersFromFile, ignoreEmptyFilters } from './transform/filters';
 import { createImportDeclarations } from './transform/imports';
 import {
   convertTypesToString,
@@ -115,6 +117,7 @@ interface OpenAPITypeGenerationOptions {
   removeComments: boolean;
   pruneUnused: boolean;
   filters: string[];
+  filterFile?: string;
 }
 
 async function generateTypesFromOpenAPISchema({
@@ -123,33 +126,35 @@ async function generateTypesFromOpenAPISchema({
   serviceName,
   removeComments,
   pruneUnused,
-  filters,
+  filters: filtersFromArguments,
+  filterFile,
 }: OpenAPITypeGenerationOptions) {
-  const startTimeInMilliseconds = performance.now();
-
-  const rawNodes = await importTypesFromOpenAPI(inputFilePath);
-
-  const context = createTypeTransformationContext(serviceName, filters);
-  const nodes = normalizeRawNodes(rawNodes, context, { pruneUnused });
-
-  const importDeclarations = createImportDeclarations(context);
-  nodes.unshift(...importDeclarations);
-
-  const typeOutput = convertTypesToString(nodes, { removeComments });
-  const formattedOutput = prepareTypeOutputToSave(typeOutput);
-
   const isFileOutput = outputFilePath !== '-';
 
-  if (isFileOutput) {
-    await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
-  } else {
-    await writeTypeOutputToStandardOutput(formattedOutput);
-  }
+  const executionSummary = await usingElapsedTime(async () => {
+    const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
+    const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
 
-  const endTimeInMilliseconds = performance.now();
-  const elapsedTimeInMilliseconds = (endTimeInMilliseconds - startTimeInMilliseconds).toFixed(0);
+    const rawNodes = await importTypesFromOpenAPI(inputFilePath);
+    const context = createTypeTransformationContext(serviceName, filters);
+    const nodes = normalizeRawNodes(rawNodes, context, { pruneUnused });
 
-  const successMessage = `${chalk.green.bold('✔')} Generated ${chalk.green(outputFilePath)} ${chalk.dim(`(${elapsedTimeInMilliseconds}ms)`)}`;
+    const importDeclarations = createImportDeclarations(context);
+    nodes.unshift(...importDeclarations);
+
+    const typeOutput = convertTypesToString(nodes, { removeComments });
+    const formattedOutput = prepareTypeOutputToSave(typeOutput);
+
+    if (isFileOutput) {
+      await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
+    } else {
+      await writeTypeOutputToStandardOutput(formattedOutput);
+    }
+  });
+
+  const successMessage =
+    `${chalk.green.bold('✔')} Generated ${chalk.green(outputFilePath)} ` +
+    `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
 
   if (isFileOutput) {
     logWithPrefix(successMessage, { method: 'log' });

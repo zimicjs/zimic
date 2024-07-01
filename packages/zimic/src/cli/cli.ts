@@ -6,7 +6,6 @@ import { version } from '@@/package.json';
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import generateTypesFromOpenAPISchema from './typegen/openapi';
-import { readPathFiltersFromFile, ignoreEmptyFilters } from './typegen/transform/filters';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -141,18 +140,14 @@ async function runCLI() {
                 'appended to the considered filters.',
             }),
         async (cliArguments) => {
-          const filtersFromFile = cliArguments.filterFile ? await readPathFiltersFromFile(cliArguments.filterFile) : [];
-          const filtersFromArguments = cliArguments.filter;
-
-          const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
-
           await generateTypesFromOpenAPISchema({
             inputFilePath: cliArguments.input,
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,
             removeComments: cliArguments.removeComments,
             pruneUnused: cliArguments.pruneUnused,
-            filters,
+            filters: cliArguments.filter,
+            filterFile: cliArguments.filterFile,
           });
         },
       ),
