@@ -25,11 +25,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-request-body-component-having-multiple-contents-and-parameters': {
     POST: {
       request: MyServiceComponents['requests']['requiredCreateUserMultiple'] & {
-        headers: HttpHeadersSerialized<{
-          'x-value'?: string;
-        }>;
         searchParams: HttpSearchParamsSerialized<{
           name?: string;
+        }>;
+        headers: HttpHeadersSerialized<{
+          'x-value'?: string;
         }>;
       };
       response: {
@@ -59,11 +59,11 @@ export type MyServiceSchema = HttpSchema.Paths<{
   '/users-with-request-body-component-and-parameters': {
     POST: {
       request: MyServiceComponents['requests']['optionalCreateUser'] & {
-        headers: HttpHeadersSerialized<{
-          'x-value'?: string;
-        }>;
         searchParams: HttpSearchParamsSerialized<{
           name?: string;
+        }>;
+        headers: HttpHeadersSerialized<{
+          'x-value'?: string;
         }>;
       };
       response: {
@@ -100,22 +100,22 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request:
         | {
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             headers: HttpHeadersSerialized<{
               'content-type': 'application/json';
               'x-value'?: string;
             }>;
-            searchParams: HttpSearchParamsSerialized<{
-              name?: string;
-            }>;
             body: MyServiceComponents['schemas']['CreateUserBody'];
           }
         | {
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             headers: HttpHeadersSerialized<{
               'content-type': 'application/xml';
               'x-value'?: string;
-            }>;
-            searchParams: HttpSearchParamsSerialized<{
-              name?: string;
             }>;
             body: MyServiceComponents['schemas']['CreateUserBody'];
           };
@@ -178,12 +178,12 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request:
         | {
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             headers: HttpHeadersSerialized<{
               'content-type': 'application/json';
               'x-value'?: string;
-            }>;
-            searchParams: HttpSearchParamsSerialized<{
-              name?: string;
             }>;
             body: {
               /** The email of the user */
@@ -193,12 +193,12 @@ export type MyServiceSchema = HttpSchema.Paths<{
             };
           }
         | {
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             headers: HttpHeadersSerialized<{
               'content-type': 'application/xml';
               'x-value'?: string;
-            }>;
-            searchParams: HttpSearchParamsSerialized<{
-              name?: string;
             }>;
             body: {
               /** The name of the user */

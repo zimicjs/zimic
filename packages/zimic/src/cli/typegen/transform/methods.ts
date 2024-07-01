@@ -554,27 +554,14 @@ function mergeRequestAndParameterTypes(
   context: TypeTransformContext,
 ) {
   const parameters = methodMembers.find(isRequestParameters);
-
   /* istanbul ignore next -- @preserve
    * Parameters member is always expected to be found. */
   const parametersMembers = parameters ? parameters.type.members : [];
 
-  const orderedParameterMembers = parametersMembers.toSorted((member, otherMember) => {
-    const memberHasName = member.name && ts.isIdentifier(member.name);
-    const otherMemberHasName = otherMember.name && ts.isIdentifier(otherMember.name);
-    /* istanbul ignore else -- @preserve */
-    if (memberHasName && otherMemberHasName) {
-      return member.name.text.localeCompare(otherMember.name.text);
-    }
-    /* istanbul ignore next -- @preserve
-     * Parameter members are always expected to have a name. */
-    return 0;
-  });
-
   const requestMembers = ts.isTypeLiteralNode(requestType) ? requestType.members : [];
 
   const newMembers = mergeRequestHeadersMembers(
-    [...orderedParameterMembers, ...requestMembers].map((member) => {
+    [...parametersMembers, ...requestMembers].map((member) => {
       return normalizeRequestMemberWithParameters(member, context);
     }),
   );
