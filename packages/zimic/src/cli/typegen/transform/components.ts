@@ -25,7 +25,7 @@ export function isComponentsDeclaration(
   return (
     node !== undefined &&
     ts.isInterfaceDeclaration(node) &&
-    (node.name.text === 'components' || node.name.text === createComponentsIdentifierText(context.serviceName))
+    ['components', createComponentsIdentifierText(context.serviceName)].includes(node.name.text)
   );
 }
 
@@ -238,7 +238,7 @@ function processPendingRequestComponentActions(component: RequestComponent, cont
   return { bodyQuestionToken };
 }
 
-function wrapRequestComponentTypeInHttpSchema(type: ts.TypeNode, context: TypeTransformContext) {
+function wrapRequestComponentType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
   const httpSchemaRequestWrapper = ts.factory.createQualifiedName(
@@ -249,6 +249,8 @@ function wrapRequestComponentTypeInHttpSchema(type: ts.TypeNode, context: TypeTr
 }
 
 function normalizeRequestComponent(component: Component, context: TypeTransformContext) {
+  /* istanbul ignore if -- @preserve
+   * Component group members in `requests` are always expected the be request components. */
   if (!isRequestComponent(component)) {
     return undefined;
   }
@@ -261,7 +263,7 @@ function normalizeRequestComponent(component: Component, context: TypeTransformC
     component.modifiers,
     component.name,
     component.questionToken,
-    wrapRequestComponentTypeInHttpSchema(newType, context),
+    wrapRequestComponentType(newType, context),
   );
 }
 

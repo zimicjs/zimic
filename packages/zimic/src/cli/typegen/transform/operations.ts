@@ -14,7 +14,9 @@ export function createOperationsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(createOperationsIdentifierText(serviceName));
 }
 
-export function isOperationsDeclaration(node: ts.Node | undefined): node is ts.InterfaceDeclaration {
+type OperationsDeclaration = ts.InterfaceDeclaration;
+
+export function isOperationsDeclaration(node: ts.Node | undefined): node is OperationsDeclaration {
   return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'operations';
 }
 
@@ -22,7 +24,7 @@ type Operation = Override<
   ts.PropertySignature,
   {
     type: ts.TypeLiteralNode;
-    name: ts.Identifier | ts.StringLiteral;
+    name: ts.Identifier;
   }
 >;
 
@@ -35,7 +37,7 @@ function isOperation(node: ts.Node): node is Operation {
   );
 }
 
-function wrapOperationTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTransformContext) {
+function wrapOperationType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
   const httpSchemaMethodWrapper = ts.factory.createQualifiedName(
@@ -59,12 +61,13 @@ function normalizeOperation(operation: ts.TypeElement, context: TypeTransformCon
     operation.modifiers,
     operation.name,
     operation.questionToken,
-    wrapOperationTypeInHttpSchema(newType, context),
+    wrapOperationType(newType, context),
   );
 }
 
-export function normalizeOperations(operations: ts.InterfaceDeclaration, context: TypeTransformContext) {
+export function normalizeOperations(operations: OperationsDeclaration, context: TypeTransformContext) {
   const newIdentifier = createOperationsIdentifier(context.serviceName);
+
   const newMembers = operations.members.map((operation) => normalizeOperation(operation, context)).filter(isDefined);
 
   return ts.factory.updateInterfaceDeclaration(
@@ -95,7 +98,7 @@ function removeOperationIfUnreferenced(operation: ts.TypeElement, context: TypeT
   return undefined;
 }
 
-export function removeUnreferencedOperations(operations: ts.InterfaceDeclaration, context: TypeTransformContext) {
+export function removeUnreferencedOperations(operations: OperationsDeclaration, context: TypeTransformContext) {
   const newMembers = operations.members
     .map((operation) => removeOperationIfUnreferenced(operation, context))
     .filter(isDefined);

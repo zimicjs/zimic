@@ -20,16 +20,16 @@ type Path = Override<
   ts.PropertySignature,
   {
     type: ts.TypeLiteralNode;
-    name: ts.StringLiteral;
+    name: ts.Identifier | ts.StringLiteral;
   }
 >;
 
 function isPath(node: ts.TypeElement): node is Path {
   return (
     ts.isPropertySignature(node) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
     node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type) &&
-    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name))
+    ts.isTypeLiteralNode(node.type)
   );
 }
 
@@ -37,7 +37,7 @@ function normalizePathNameWithParameters(pathName: string) {
   return pathName.replace(/{([^}]+)}/g, ':$1');
 }
 
-function wrapComponentPathTypeInHttpSchema(type: ts.TypeNode, context: TypeTransformContext) {
+function wrapComponentPathType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
   const httpSchemaMethodsWrapper = ts.factory.createQualifiedName(
@@ -77,11 +77,11 @@ export function normalizePath(
     path.modifiers,
     newIdentifier,
     path.questionToken,
-    isComponent ? wrapComponentPathTypeInHttpSchema(newType, context) : newType,
+    isComponent ? wrapComponentPathType(newType, context) : newType,
   );
 }
 
-function wrapPathsTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTransformContext) {
+function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
   const httpSchemaPathsWrapper = ts.factory.createQualifiedName(
@@ -91,8 +91,9 @@ function wrapPathsTypeInHttpSchema(type: ts.TypeLiteralNode, context: TypeTransf
   return ts.factory.createTypeReferenceNode(httpSchemaPathsWrapper, [type]);
 }
 
-export function normalizePaths(paths: ts.InterfaceDeclaration, context: TypeTransformContext) {
+export function normalizePaths(paths: PathsDeclaration, context: TypeTransformContext) {
   const newIdentifier = createPathsIdentifier(context.serviceName);
+
   const newMembers = paths.members.map((path) => normalizePath(path, context)).filter(isDefined);
   const newType = ts.factory.createTypeLiteralNode(newMembers);
 
@@ -100,6 +101,6 @@ export function normalizePaths(paths: ts.InterfaceDeclaration, context: TypeTran
     paths.modifiers,
     newIdentifier,
     paths.typeParameters,
-    wrapPathsTypeInHttpSchema(newType, context),
+    wrapPathsType(newType, context),
   );
 }

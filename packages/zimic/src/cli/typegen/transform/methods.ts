@@ -11,61 +11,62 @@ import { renameComponentReferences } from './components';
 import { TypeTransformContext } from './context';
 import { createOperationsIdentifier } from './operations';
 
-type RawMethod = Override<
+type Method = Override<
   ts.PropertySignature,
   {
     type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
-    name: ts.Identifier | ts.StringLiteral;
+    name: ts.Identifier;
   }
 >;
 
-function isRawMethod(node: ts.Node): node is RawMethod {
-  return (
-    ts.isPropertySignature(node) &&
-    node.type !== undefined &&
-    !isNeverType(node.type) &&
-    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type)) &&
-    ts.isIdentifier(node.name)
-  );
-}
-
-type RawMethodMember = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral;
-    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
-  }
->;
-
-function isRawMethodMember(node: ts.Node): node is RawMethodMember {
-  return (
-    ts.isPropertySignature(node) &&
-    node.type !== undefined &&
-    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type) || isNeverType(node.type)) &&
-    ts.isIdentifier(node.name)
-  );
-}
-
-type RawRequestHeaders = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral;
-    type: ts.TypeLiteralNode;
-  }
->;
-
-function isRawRequestHeaders(node: ts.Node): node is RawRequestHeaders {
+function isMethod(node: ts.Node): node is Method {
   return (
     ts.isPropertySignature(node) &&
     ts.isIdentifier(node.name) &&
-    node.name.text === 'headers' &&
     node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type)
+    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type))
   );
 }
 
+type MethodMember = Override<
+  ts.PropertySignature,
+  {
+    name: ts.Identifier | ts.StringLiteral;
+    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
+  }
+>;
+
+function isMethodMember(node: ts.Node): node is MethodMember {
+  return (
+    ts.isPropertySignature(node) &&
+    ts.isIdentifier(node.name) &&
+    node.type !== undefined &&
+    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type) || isNeverType(node.type))
+  );
+}
+
+type RequestMember = Override<
+  ts.PropertySignature,
+  {
+    name: ts.Identifier;
+    type: ts.TypeNode;
+  }
+>;
+
+function isRequestMember(node: ts.Node): node is RequestMember {
+  return (
+    ts.isPropertySignature(node) && ts.isIdentifier(node.name) && node.type !== undefined && !isNeverType(node.type)
+  );
+}
+
+type RequestHeaders = Override<RequestMember, { type: ts.TypeLiteralNode }>;
+
+function isRequestHeaders(node: ts.Node): node is RequestHeaders {
+  return isRequestMember(node) && node.name.text === 'headers' && ts.isTypeLiteralNode(node.type);
+}
+
 type NormalizedRequestHeaders = Override<
-  RawRequestHeaders,
+  RequestHeaders,
   {
     type: Override<ts.TypeReferenceNode, { typeArguments: ts.NodeArray<ts.TypeLiteralNode> }>;
   }
@@ -73,10 +74,8 @@ type NormalizedRequestHeaders = Override<
 
 function isNormalizedRequestHeaders(node: ts.Node): node is NormalizedRequestHeaders {
   return (
-    ts.isPropertySignature(node) &&
-    ts.isIdentifier(node.name) &&
+    isRequestMember(node) &&
     node.name.text === 'headers' &&
-    node.type !== undefined &&
     ts.isTypeReferenceNode(node.type) &&
     node.type.typeArguments !== undefined &&
     node.type.typeArguments.length === 1 &&
@@ -84,7 +83,19 @@ function isNormalizedRequestHeaders(node: ts.Node): node is NormalizedRequestHea
   );
 }
 
-type RawRequestBodyMember = Override<
+type RequestParameters = Override<RequestMember, { type: ts.TypeLiteralNode }>;
+
+function isRequestParameters(node: ts.Node): node is RequestParameters {
+  return isRequestMember(node) && node.name.text === 'parameters' && ts.isTypeLiteralNode(node.type);
+}
+
+type Content = Override<RequestMember, { type: ts.TypeLiteralNode }>;
+
+function isContentPropertySignature(node: ts.Node): node is Content {
+  return isRequestMember(node) && node.name.text === 'content' && ts.isTypeLiteralNode(node.type);
+}
+
+type ContentMember = Override<
   ts.PropertySignature,
   {
     name: ts.Identifier | ts.StringLiteral;
@@ -92,30 +103,12 @@ type RawRequestBodyMember = Override<
   }
 >;
 
-function isRawRequestBodyMember(node: ts.Node): node is RawRequestBodyMember {
+function isContentMember(node: ts.Node): node is ContentMember {
   return (
     ts.isPropertySignature(node) &&
     (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
     node.type !== undefined &&
     !isNeverType(node.type)
-  );
-}
-
-type RawContent = Override<
-  ts.PropertySignature,
-  {
-    name: ts.Identifier | ts.StringLiteral;
-    type: ts.TypeLiteralNode;
-  }
->;
-
-function isRawContentPropertySignature(node: ts.Node): node is RawContent {
-  return (
-    ts.isPropertySignature(node) &&
-    ts.isIdentifier(node.name) &&
-    node.name.text === 'content' &&
-    node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type)
   );
 }
 
@@ -182,7 +175,7 @@ function normalizeRequestBodyMember(
 ) {
   /* istanbul ignore if -- @preserve
    * Request body members are always expected to be a request body. */
-  if (!isRawRequestBodyMember(requestBodyMember)) {
+  if (!isContentMember(requestBodyMember)) {
     return undefined;
   }
 
@@ -209,10 +202,7 @@ function normalizeRequestBodyMember(
   };
 }
 
-function wrapHeadersInSerialized(
-  type: ts.TypeLiteralNode,
-  context: TypeTransformContext,
-): NormalizedRequestHeaders['type'] {
+function wrapHeadersType(type: ts.TypeLiteralNode, context: TypeTransformContext): NormalizedRequestHeaders['type'] {
   context.typeImports.root.add('HttpHeadersSerialized');
   const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
 
@@ -241,14 +231,14 @@ function normalizeHeaders(headers: ts.TypeLiteralNode, context: TypeTransformCon
   }
 
   const newHeaders = ts.factory.updateTypeLiteralNode(headers, ts.factory.createNodeArray(newHeaderMembers));
-  return wrapHeadersInSerialized(newHeaders, context);
+  return wrapHeadersType(newHeaders, context);
 }
 
 function normalizeRequestHeaders(
   requestHeader: ts.TypeElement,
   context: TypeTransformContext,
 ): NormalizedRequestHeaders | undefined {
-  if (!isRawRequestHeaders(requestHeader)) {
+  if (!isRequestHeaders(requestHeader)) {
     return undefined;
   }
 
@@ -277,7 +267,7 @@ function createHeaderForUnionByContentType(
   const contentTypeIdentifier = ts.factory.createIdentifier('"content-type"');
   const contentTypeValue = ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(contentTypeName));
 
-  const newHeaderType = wrapHeadersInSerialized(
+  const newHeaderType = wrapHeadersType(
     ts.factory.createTypeLiteralNode([
       ts.factory.createPropertySignature(undefined, contentTypeIdentifier, undefined, contentTypeValue),
       ...existingHeaderMembers,
@@ -311,7 +301,7 @@ export function normalizeContentType(
   const newHeader = contentType.members.map((member) => normalizeRequestHeaders(member, context)).find(isDefined);
 
   const newBodyMembers = contentType.members.flatMap((body) => {
-    if (isRawContentPropertySignature(body)) {
+    if (isContentPropertySignature(body)) {
       return body.type.members
         .map((member) => normalizeRequestBodyMember(member, context, { questionToken: bodyQuestionToken }))
         .filter(isDefined);
@@ -322,6 +312,7 @@ export function normalizeContentType(
   if (newBodyMembers.length <= 1) {
     const newBodyMemberPropertySignatures = newBodyMembers.map((bodyMember) => bodyMember.propertySignature);
     const newMembers = [newHeader, ...newBodyMemberPropertySignatures].filter(isDefined);
+
     return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers));
   } else {
     const bodyMemberUnionTypes = newBodyMembers.map((bodyMember) => {
@@ -333,8 +324,9 @@ export function normalizeContentType(
   }
 }
 
-function normalizeRequest(request: RawMethodMember, context: TypeTransformContext) {
+function normalizeRequest(request: MethodMember, context: TypeTransformContext) {
   const newIdentifier = ts.factory.createIdentifier('request');
+
   const newType = normalizeContentType(request.type, context, {
     bodyQuestionToken: request.questionToken,
   });
@@ -355,7 +347,7 @@ function normalizeRequest(request: RawMethodMember, context: TypeTransformContex
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);
 }
 
-function wrapResponseTypeInHttpSchema(type: ts.TypeNode, context: TypeTransformContext) {
+function wrapResponseType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.root.add('HttpSchema');
 
   const httpSchemaResponseWrapper = ts.factory.createQualifiedName(
@@ -377,7 +369,7 @@ function normalizeResponseType(
   }
 
   const newType = normalizeContentType(responseType, context, { bodyQuestionToken: questionToken });
-  return isComponent ? wrapResponseTypeInHttpSchema(newType, context) : newType;
+  return isComponent ? wrapResponseType(newType, context) : newType;
 }
 
 export function normalizeResponse(
@@ -419,7 +411,7 @@ export function normalizeResponse(
   );
 }
 
-export function normalizeResponses(responses: RawMethodMember, context: TypeTransformContext) {
+export function normalizeResponses(responses: MethodMember, context: TypeTransformContext) {
   if (isNeverType(responses.type) || !ts.isTypeLiteralNode(responses.type)) {
     return undefined;
   }
@@ -444,7 +436,7 @@ export function normalizeResponses(responses: RawMethodMember, context: TypeTran
 
 function normalizeMethodMember(methodMember: ts.TypeElement, context: TypeTransformContext) {
   /* istanbul ignore else -- @preserve */
-  if (isRawMethodMember(methodMember)) {
+  if (isMethodMember(methodMember)) {
     if (methodMember.name.text === 'requestBody') {
       return normalizeRequest(methodMember, context);
     }
@@ -459,53 +451,104 @@ function normalizeMethodMember(methodMember: ts.TypeElement, context: TypeTransf
   return undefined;
 }
 
-function normalizeRequestMemberWithParameters(
-  methodRequestMember: Override<ts.PropertySignature, { name: ts.Identifier }>,
-  context: TypeTransformContext,
-) {
-  if (methodRequestMember.name.text === 'path' || !methodRequestMember.type || isNeverType(methodRequestMember.type)) {
+function normalizeRequestQueryWithParameters(requestMember: RequestMember, context: TypeTransformContext) {
+  const newIdentifier = ts.factory.createIdentifier('searchParams');
+  const newQuestionToken = undefined;
+
+  const newType = renameComponentReferences(requestMember.type, context);
+
+  context.typeImports.root.add('HttpSearchParamsSerialized');
+  const serializedWrapper = ts.factory.createIdentifier('HttpSearchParamsSerialized');
+  const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
+
+  return ts.factory.updatePropertySignature(
+    requestMember,
+    requestMember.modifiers,
+    newIdentifier,
+    newQuestionToken,
+    wrappedNewType,
+  );
+}
+
+function normalizeRequestHeadersWithParameters(requestMember: RequestMember, context: TypeTransformContext) {
+  const newIdentifier = ts.factory.createIdentifier('headers');
+  const newQuestionToken = undefined;
+
+  const newType = renameComponentReferences(requestMember.type, context);
+
+  context.typeImports.root.add('HttpHeadersSerialized');
+  const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
+  const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
+
+  return ts.factory.updatePropertySignature(
+    requestMember,
+    requestMember.modifiers,
+    newIdentifier,
+    newQuestionToken,
+    wrappedNewType,
+  );
+}
+
+function normalizeRequestMemberWithParameters(requestMember: ts.TypeElement, context: TypeTransformContext) {
+  if (!isRequestMember(requestMember) || requestMember.name.text === 'path') {
     return undefined;
   }
 
-  const newQuestionToken = undefined;
-
-  if (methodRequestMember.name.text === 'query') {
-    const newIdentifier = ts.factory.createIdentifier('searchParams');
-
-    context.typeImports.root.add('HttpSearchParamsSerialized');
-
-    const newType = renameComponentReferences(methodRequestMember.type, context);
-    const serializedWrapper = ts.factory.createIdentifier('HttpSearchParamsSerialized');
-    const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
-
-    return ts.factory.updatePropertySignature(
-      methodRequestMember,
-      methodRequestMember.modifiers,
-      newIdentifier,
-      newQuestionToken,
-      wrappedNewType,
-    );
+  if (requestMember.name.text === 'query') {
+    return normalizeRequestQueryWithParameters(requestMember, context);
+  }
+  if (requestMember.name.text === 'header') {
+    return normalizeRequestHeadersWithParameters(requestMember, context);
   }
 
-  if (methodRequestMember.name.text === 'header') {
-    const newIdentifier = ts.factory.createIdentifier('headers');
+  return requestMember;
+}
 
-    context.typeImports.root.add('HttpHeadersSerialized');
+function mergeRequestHeadersMember(headers: NormalizedRequestHeaders, otherHeaders: NormalizedRequestHeaders) {
+  const headersTypeLiteral = headers.type.typeArguments[0];
+  const otherHeadersTypeLiteral = otherHeaders.type.typeArguments[0];
 
-    const newType = renameComponentReferences(methodRequestMember.type, context);
-    const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
-    const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
+  const newType = ts.factory.updateTypeReferenceNode(
+    headers.type,
+    headers.type.typeName,
+    ts.factory.createNodeArray([
+      ts.factory.createTypeLiteralNode([...otherHeadersTypeLiteral.members, ...headersTypeLiteral.members]),
+    ]) satisfies NormalizedRequestHeaders['type']['typeArguments'],
+  ) as NormalizedRequestHeaders['type'];
 
-    return ts.factory.updatePropertySignature(
-      methodRequestMember,
-      methodRequestMember.modifiers,
-      newIdentifier,
-      newQuestionToken,
-      wrappedNewType,
-    );
+  return ts.factory.updatePropertySignature(
+    headers,
+    headers.modifiers,
+    headers.name,
+    headers.questionToken,
+    newType satisfies NormalizedRequestHeaders['type'],
+  ) satisfies ts.PropertySignature as NormalizedRequestHeaders;
+}
+
+function mergeRequestHeadersMembers(members: (ts.PropertySignature | undefined)[]) {
+  let mergedHeaders: NormalizedRequestHeaders | undefined;
+  let firstHeadersIndex: number | undefined;
+
+  const mergedHeadersMembers = members.map((member, index) => {
+    if (!member || !isNormalizedRequestHeaders(member)) {
+      return member;
+    }
+
+    if (firstHeadersIndex === undefined || !mergedHeaders) {
+      firstHeadersIndex = index;
+      mergedHeaders = member;
+      return member;
+    }
+
+    mergedHeaders = mergeRequestHeadersMember(mergedHeaders, member);
+    return undefined;
+  });
+
+  if (firstHeadersIndex !== undefined) {
+    mergedHeadersMembers[firstHeadersIndex] = mergedHeaders;
   }
 
-  return methodRequestMember;
+  return mergedHeadersMembers.filter(isDefined);
 }
 
 function mergeRequestAndParameterTypes(
@@ -513,27 +556,15 @@ function mergeRequestAndParameterTypes(
   methodMembers: ts.TypeElement[],
   context: TypeTransformContext,
 ) {
-  const parametersMember = methodMembers.find(
-    (member): member is Override<ts.PropertySignature, { type: ts.TypeLiteralNode }> => {
-      const isParameters =
-        ts.isPropertySignature(member) &&
-        ts.isIdentifier(member.name) &&
-        member.name.text === 'parameters' &&
-        member.type !== undefined &&
-        ts.isTypeLiteralNode(member.type);
-
-      return isParameters;
-    },
-  );
+  const parameters = methodMembers.find(isRequestParameters);
 
   /* istanbul ignore next -- @preserve
    * Parameters member is always expected to be found. */
-  const parametersTypeMembers = parametersMember ? parametersMember.type.members : [];
+  const parametersMembers = parameters ? parameters.type.members : [];
 
-  const orderedParameterTypeMembers = parametersTypeMembers.toSorted((member, otherMember) => {
+  const orderedParameterMembers = parametersMembers.toSorted((member, otherMember) => {
     const memberHasName = member.name && ts.isIdentifier(member.name);
     const otherMemberHasName = otherMember.name && ts.isIdentifier(otherMember.name);
-
     /* istanbul ignore else -- @preserve */
     if (memberHasName && otherMemberHasName) {
       return member.name.text.localeCompare(otherMember.name.text);
@@ -543,58 +574,19 @@ function mergeRequestAndParameterTypes(
     return 0;
   });
 
-  const requestTypeMembers = ts.isTypeLiteralNode(requestType) ? requestType.members : [];
+  const requestMembers = ts.isTypeLiteralNode(requestType) ? requestType.members : [];
 
-  const partialNewTypeMembers = [...orderedParameterTypeMembers, ...requestTypeMembers]
-    .filter((member): member is Override<ts.PropertySignature, { name: ts.Identifier }> => {
-      return ts.isPropertySignature(member) && ts.isIdentifier(member.name);
-    })
-    .map((member) => normalizeRequestMemberWithParameters(member, context));
+  const newMembers = mergeRequestHeadersMembers(
+    [...orderedParameterMembers, ...requestMembers].map((member) => {
+      return normalizeRequestMemberWithParameters(member, context);
+    }),
+  );
 
-  let mergedHeaders: NormalizedRequestHeaders | undefined;
-  let mergedHeadersIndex: number | undefined;
-
-  for (const [index, member] of partialNewTypeMembers.entries()) {
-    if (!member || !isNormalizedRequestHeaders(member)) {
-      continue;
-    }
-
-    if (mergedHeadersIndex === undefined || !mergedHeaders) {
-      mergedHeadersIndex = index;
-      mergedHeaders = member;
-      continue;
-    }
-
-    const mergedTypeLiteral = mergedHeaders.type.typeArguments[0];
-    const memberTypeLiteral = member.type.typeArguments[0];
-
-    const newMergedType = ts.factory.updateTypeReferenceNode(
-      mergedHeaders.type,
-      mergedHeaders.type.typeName,
-      ts.factory.createNodeArray([
-        ts.factory.createTypeLiteralNode([...memberTypeLiteral.members, ...mergedTypeLiteral.members]),
-      ]) satisfies NormalizedRequestHeaders['type']['typeArguments'],
-    ) as NormalizedRequestHeaders['type'];
-
-    mergedHeaders = ts.factory.updatePropertySignature(
-      mergedHeaders,
-      mergedHeaders.modifiers,
-      mergedHeaders.name,
-      mergedHeaders.questionToken,
-      newMergedType satisfies NormalizedRequestHeaders['type'],
-    ) satisfies ts.PropertySignature as NormalizedRequestHeaders;
-
-    partialNewTypeMembers[mergedHeadersIndex] = mergedHeaders;
-    partialNewTypeMembers[index] = undefined;
-  }
-
-  const newTypeMembers = partialNewTypeMembers.filter(isDefined);
-
-  if (newTypeMembers.length === 0) {
+  if (newMembers.length === 0) {
     return undefined;
   }
 
-  return ts.factory.createTypeLiteralNode(newTypeMembers);
+  return ts.factory.createTypeLiteralNode(newMembers);
 }
 
 function normalizeRequestTypeWithParameters(
@@ -691,7 +683,7 @@ function normalizeIndexedAccessMethodType(methodType: ts.IndexedAccessTypeNode, 
 }
 
 export function normalizeMethod(method: ts.TypeElement, context: TypeTransformContext, options: { pathName: string }) {
-  if (!isRawMethod(method)) {
+  if (!isMethod(method)) {
     return undefined;
   }
 
