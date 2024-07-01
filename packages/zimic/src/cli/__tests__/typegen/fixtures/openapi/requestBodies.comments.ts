@@ -22,6 +22,22 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
+  '/users-with-request-body-component-having-multiple-contents-and-parameters': {
+    POST: {
+      request: MyServiceComponents['requests']['requiredCreateUserMultiple'] & {
+        headers: HttpHeadersSerialized<{
+          'x-value'?: string;
+        }>;
+        searchParams: HttpSearchParamsSerialized<{
+          name?: string;
+        }>;
+      };
+      response: {
+        /** Success */
+        200: {};
+      };
+    };
+  };
   '/users-with-optional-request-body-component': {
     POST: {
       request: MyServiceComponents['requests']['optionalCreateUser'];
@@ -63,19 +79,44 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
-  '/users-with-schema-component-in-multiple-request-bodies': {
+  '/users-with-schema-component-in-multiple-contents': {
     POST: {
       request:
         | {
-            headers: {
+            headers: HttpHeadersSerialized<{
               'content-type': 'application/json';
-            };
+            }>;
             body: MyServiceComponents['schemas']['CreateUserBody'];
           }
         | {
-            headers: {
+            headers: HttpHeadersSerialized<{
               'content-type': 'application/xml';
-            };
+            }>;
+            body: MyServiceComponents['schemas']['CreateUserBody'];
+          };
+    };
+  };
+  '/users-with-schema-component-in-multiple-contents-having-parameters': {
+    POST: {
+      request:
+        | {
+            headers: HttpHeadersSerialized<{
+              'content-type': 'application/json';
+              'x-value'?: string;
+            }>;
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
+            body: MyServiceComponents['schemas']['CreateUserBody'];
+          }
+        | {
+            headers: HttpHeadersSerialized<{
+              'content-type': 'application/xml';
+              'x-value'?: string;
+            }>;
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             body: MyServiceComponents['schemas']['CreateUserBody'];
           };
     };
@@ -106,13 +147,13 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
-  '/users-with-literal-multiple-request-bodies': {
+  '/users-with-literal-multiple-contents': {
     POST: {
       request:
         | {
-            headers: {
+            headers: HttpHeadersSerialized<{
               'content-type': 'application/json';
-            };
+            }>;
             body: {
               /** The email of the user */
               email: string;
@@ -121,9 +162,44 @@ export type MyServiceSchema = HttpSchema.Paths<{
             };
           }
         | {
-            headers: {
+            headers: HttpHeadersSerialized<{
               'content-type': 'application/xml';
+            }>;
+            body: {
+              /** The name of the user */
+              name: string;
+              /** The password of the user */
+              password: string;
             };
+          };
+    };
+  };
+  '/users-with-literal-multiple-contents-having-parameters': {
+    POST: {
+      request:
+        | {
+            headers: HttpHeadersSerialized<{
+              'content-type': 'application/json';
+              'x-value'?: string;
+            }>;
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
+            body: {
+              /** The email of the user */
+              email: string;
+              /** The password of the user */
+              password: string;
+            };
+          }
+        | {
+            headers: HttpHeadersSerialized<{
+              'content-type': 'application/xml';
+              'x-value'?: string;
+            }>;
+            searchParams: HttpSearchParamsSerialized<{
+              name?: string;
+            }>;
             body: {
               /** The name of the user */
               name: string;
@@ -194,9 +270,9 @@ export interface MyServiceComponents {
     }>;
     requiredCreateUserMultiple: HttpSchema.Request<
       | {
-          headers: {
+          headers: HttpHeadersSerialized<{
             'content-type': 'application/json';
-          };
+          }>;
           body: {
             /** The email of the user */
             email: string;
@@ -205,9 +281,9 @@ export interface MyServiceComponents {
           };
         }
       | {
-          headers: {
+          headers: HttpHeadersSerialized<{
             'content-type': 'application/xml';
-          };
+          }>;
           body: {
             /** The name of the user */
             name: string;

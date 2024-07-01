@@ -21,6 +21,25 @@ paths:
         '200':
           description: Success
 
+  /users-with-request-body-component-having-multiple-contents-and-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        $ref: '#/components/requestBodies/requiredCreateUserMultiple'
+      responses:
+        '200':
+          description: Success
+
   /users-with-optional-request-body-component:
     post:
       requestBody:
@@ -68,8 +87,34 @@ paths:
           '200':
             description: Success
 
-  /users-with-schema-component-in-multiple-request-bodies:
+  /users-with-schema-component-in-multiple-contents:
     post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-schema-component-in-multiple-contents-having-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
       requestBody:
         required: true
         content:
@@ -128,8 +173,54 @@ paths:
           '200':
             description: Success
 
-  /users-with-literal-multiple-request-bodies:
+  /users-with-literal-multiple-contents:
     post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+          application/xml:
+            schema:
+              type: object
+              required:
+                - name
+                - password
+              properties:
+                name:
+                  type: string
+                  description: The name of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-multiple-contents-having-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
       requestBody:
         required: true
         content:

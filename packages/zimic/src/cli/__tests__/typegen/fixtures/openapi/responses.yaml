@@ -67,6 +67,47 @@ paths:
         '400':
           $ref: '#/components/responses/error'
 
+  /users-with-multiple-literal-response-contents-having-headers:
+    post:
+      responses:
+        '200':
+          description: Success
+          headers:
+            x-value:
+              schema:
+                type: string
+              required: false
+          content:
+            application/json:
+              schema:
+                type: object
+                description: The created user
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-json]
+                  value:
+                    $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                type: object
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-xml]
+                  value:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/error'
+
   /users-with-no-response-content:
     post:
       responses:
