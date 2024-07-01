@@ -18,10 +18,6 @@ export type ReferencedOperationTypePath = string;
 export type ReferencedComponentTypePath = string;
 export type ComponentName = string;
 
-interface ComponentChangeAction {
-  type: 'markAsOptional' | 'unknown';
-}
-
 export interface TypeTransformContext {
   serviceName: string;
   filters: {
@@ -37,7 +33,7 @@ export interface TypeTransformContext {
   };
   pendingActions: {
     components: {
-      requests: Map<ComponentName, ComponentChangeAction[]>;
+      requests: { toMarkBodyAsOptional: Set<ComponentName> };
     };
   };
 }
@@ -60,7 +56,7 @@ export function createTypeTransformationContext(serviceName: string, rawFilters:
     },
     pendingActions: {
       components: {
-        requests: new Map(),
+        requests: { toMarkBodyAsOptional: new Set() },
       },
     },
   };

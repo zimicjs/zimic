@@ -338,10 +338,7 @@ function normalizeRequest(request: MethodMember, context: TypeTransformContext) 
     (ts.isIdentifier(request.type.indexType.literal) || ts.isStringLiteral(request.type.indexType.literal))
   ) {
     const referencedComponentName = request.type.indexType.literal.text;
-
-    const pendingComponentActions = context.pendingActions.components.requests.get(referencedComponentName) ?? [];
-    pendingComponentActions.push({ type: 'markAsOptional' });
-    context.pendingActions.components.requests.set(referencedComponentName, pendingComponentActions);
+    context.pendingActions.components.requests.toMarkBodyAsOptional.add(referencedComponentName);
   }
 
   return ts.factory.updatePropertySignature(request, request.modifiers, newIdentifier, undefined, newType);

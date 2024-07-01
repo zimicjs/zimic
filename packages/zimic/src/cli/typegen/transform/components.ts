@@ -22,11 +22,8 @@ export function isComponentsDeclaration(
   node: ts.Node | undefined,
   context: TypeTransformContext,
 ): node is ComponentsDeclaration {
-  return (
-    node !== undefined &&
-    ts.isInterfaceDeclaration(node) &&
-    ['components', createComponentsIdentifierText(context.serviceName)].includes(node.name.text)
-  );
+  const componentIdentifiers = ['components', createComponentsIdentifierText(context.serviceName)];
+  return node !== undefined && ts.isInterfaceDeclaration(node) && componentIdentifiers.includes(node.name.text);
 }
 
 type ComponentGroup = Override<
@@ -148,16 +145,22 @@ function visitComponentReferences(
 
       const newNode = ts.factory.updateIndexedAccessTypeNode(node, newObjectType, node.indexType);
 
+      /* istanbul ignore else -- @preserve
+       * Component indexed accesses are always expected to have child indexed accesses. */
       if (childContext.partialComponentPath) {
         const hasIndexTypeName =
           ts.isLiteralTypeNode(node.indexType) &&
           (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
 
+        /* istanbul ignore else -- @preserve
+         * Component indexed accesses are always expected to have child indexed accesses. */
         if (hasIndexTypeName) {
           const indexTypeName = node.indexType.literal.text;
           childContext.partialComponentPath.push(indexTypeName);
         }
 
+        /* istanbul ignore else -- @preserve
+         * Component indexed accesses are always expected to have child indexed accesses. */
         if (isRootIndexedAccess) {
           const referencedComponentPath = childContext.partialComponentPath.join('.');
           onComponentReference(newNode, referencedComponentPath);
@@ -174,6 +177,8 @@ function visitComponentReferences(
       ts.isIdentifier(node.objectType.typeName) &&
       componentIdentifiers.includes(node.objectType.typeName.text);
 
+    /* istanbul ignore else -- @preserve
+     * All indexed accesses are expected to point to components. */
     if (isComponentIndexedAccess) {
       const isRawComponent = node.objectType.typeName.text === 'components';
       const newNode = isRawComponent ? renameComponentReference(node, node.objectType) : node;
@@ -182,6 +187,8 @@ function visitComponentReferences(
         ts.isLiteralTypeNode(newNode.indexType) &&
         (ts.isIdentifier(newNode.indexType.literal) || ts.isStringLiteral(newNode.indexType.literal));
 
+      /* istanbul ignore else -- @preserve
+       * All indexed accesses are expected to have an index type name. */
       if (hasIndexTypeName) {
         const indexTypeName = newNode.indexType.literal.text;
         context.partialComponentPath = [indexTypeName];
@@ -223,17 +230,16 @@ export function renameComponentReferences(node: ts.TypeNode, context: TypeTransf
 }
 
 function processPendingRequestComponentActions(component: RequestComponent, context: TypeTransformContext) {
+  const pendingRequestActions = context.pendingActions.components.requests;
+
   const componentName = component.name.text;
-  const pendingActions = context.pendingActions.components.requests.get(componentName) ?? [];
+  const shouldBeMarkedAsOptional = pendingRequestActions.toMarkBodyAsOptional.has(componentName);
 
-  let bodyQuestionToken = component.questionToken;
+  const bodyQuestionToken = shouldBeMarkedAsOptional
+    ? ts.factory.createToken(ts.SyntaxKind.QuestionToken)
+    : component.questionToken;
 
-  for (const action of pendingActions) {
-    if (action.type === 'markAsOptional') {
-      bodyQuestionToken = ts.factory.createToken(ts.SyntaxKind.QuestionToken);
-    }
-  }
-  context.pendingActions.components.requests.delete(componentName);
+  pendingRequestActions.toMarkBodyAsOptional.delete(componentName);
 
   return { bodyQuestionToken };
 }
