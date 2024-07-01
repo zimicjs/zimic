@@ -24,16 +24,16 @@ type Operation = Override<
   ts.PropertySignature,
   {
     type: ts.TypeLiteralNode;
-    name: ts.Identifier;
+    name: ts.Identifier | ts.StringLiteral;
   }
 >;
 
 function isOperation(node: ts.Node): node is Operation {
   return (
     ts.isPropertySignature(node) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
     node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type) &&
-    ts.isIdentifier(node.name)
+    ts.isTypeLiteralNode(node.type)
   );
 }
 

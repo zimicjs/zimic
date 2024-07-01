@@ -5,8 +5,8 @@ import type { HttpHeadersSerialized, HttpSchema, HttpSearchParamsSerialized } fr
 
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users': {
-    GET: MyServiceOperations['listUsers'];
-    POST: MyServiceOperations['createUser'];
+    GET: MyServiceOperations['users/list'];
+    POST: MyServiceOperations['users/create'];
   };
 }>;
 
@@ -23,14 +23,14 @@ export interface MyServiceComponents {
 }
 
 export interface MyServiceOperations {
-  listUsers: HttpSchema.Method<{
+  'users/list': HttpSchema.Method<{
     request: {
-      headers: HttpHeadersSerialized<{
-        authorization: string;
-      }>;
       searchParams: HttpSearchParamsSerialized<{
         limit: number;
         utm_source?: string;
+      }>;
+      headers: HttpHeadersSerialized<{
+        authorization: string;
       }>;
     };
     response: {
@@ -44,13 +44,13 @@ export interface MyServiceOperations {
       };
     };
   }>;
-  createUser: HttpSchema.Method<{
+  'users/create': HttpSchema.Method<{
     request: {
-      headers: HttpHeadersSerialized<{
-        authorization: string;
-      }>;
       searchParams: HttpSearchParamsSerialized<{
         utm_source?: string;
+      }>;
+      headers: HttpHeadersSerialized<{
+        authorization: string;
       }>;
       body: {
         name?: string;

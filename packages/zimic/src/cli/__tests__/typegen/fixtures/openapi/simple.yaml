@@ -18,7 +18,7 @@ paths:
   /users:
     post:
       summary: Create user
-      operationId: createUser
+      operationId: users/create
       tags:
         - users
       parameters:
@@ -86,7 +86,7 @@ paths:
 
     get:
       summary: List users
-      operationId: listUsers
+      operationId: users/list
       tags:
         - users
       parameters:

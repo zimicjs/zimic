@@ -6,9 +6,9 @@ import type { HttpHeadersSerialized, HttpSchema, HttpSearchParamsSerialized } fr
 export type MyServiceSchema = HttpSchema.Paths<{
   '/users': {
     /** List users */
-    GET: MyServiceOperations['listUsers'];
+    GET: MyServiceOperations['users/list'];
     /** Create user */
-    POST: MyServiceOperations['createUser'];
+    POST: MyServiceOperations['users/create'];
   };
 }>;
 
@@ -55,17 +55,17 @@ export interface MyServiceComponents {
 }
 
 export interface MyServiceOperations {
-  listUsers: HttpSchema.Method<{
+  'users/list': HttpSchema.Method<{
     request: {
-      headers: HttpHeadersSerialized<{
-        /** The authorization token */
-        authorization: string;
-      }>;
       searchParams: HttpSearchParamsSerialized<{
         /** How many items to return */
         limit: number;
         /** The UTM source */
         utm_source?: string;
+      }>;
+      headers: HttpHeadersSerialized<{
+        /** The authorization token */
+        authorization: string;
       }>;
     };
     response: {
@@ -81,16 +81,16 @@ export interface MyServiceOperations {
       };
     };
   }>;
-  createUser: HttpSchema.Method<{
+  'users/create': HttpSchema.Method<{
     /** The user to create */
     request: {
-      headers: HttpHeadersSerialized<{
-        /** The authorization token */
-        authorization: string;
-      }>;
       searchParams: HttpSearchParamsSerialized<{
         /** The UTM source */
         utm_source?: string;
+      }>;
+      headers: HttpHeadersSerialized<{
+        /** The authorization token */
+        authorization: string;
       }>;
       body: {
         /**
