@@ -17,7 +17,7 @@ describe('Type generation', () => {
     'Type generation',
     '',
     'Commands:',
-    '  zimic typegen openapi <input>  Generate service types from an OpenAPI schema.',
+    '  zimic typegen openapi <input>  Generate types from an OpenAPI schema.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',

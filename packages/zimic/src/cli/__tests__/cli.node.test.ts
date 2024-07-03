@@ -11,7 +11,7 @@ describe('CLI', () => {
   const processOnSpy = vi.spyOn(process, 'on');
 
   const rootHelpOutput = [
-    'zimic <command>',
+    'zimic [command]',
     '',
     'Commands:',
     '  zimic browser  Browser',
@@ -30,14 +30,13 @@ describe('CLI', () => {
     processOnSpy.mockClear();
   });
 
-  it('should throw an error if no command is provided', async () => {
+  it('should not throw an error if no command is provided', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+      await runCLI();
 
-      expect(spies.error).toHaveBeenCalledTimes(1);
-      expect(spies.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+      expect(spies.error).toHaveBeenCalledTimes(0);
     });
   });
 

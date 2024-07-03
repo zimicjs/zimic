@@ -16,7 +16,7 @@ interface BrowserServiceWorkerInitOptions {
 async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
   const absolutePublicDirectory = path.resolve(publicDirectory);
 
-  logWithPrefix(`Copying the service worker script to ${chalk.green(absolutePublicDirectory)}...`);
+  logWithPrefix(`Copying the service worker script to ${chalk.cyan(absolutePublicDirectory)}...`);
 
   await filesystem.mkdir(absolutePublicDirectory, { recursive: true });
   const serviceWorkerDestinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);

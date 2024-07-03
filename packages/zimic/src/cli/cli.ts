@@ -3,6 +3,8 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
+import { convertToCamelCase } from '@/utils/strings';
+
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import generateTypesFromOpenAPISchema from './typegen/openapi';
@@ -12,7 +14,6 @@ async function runCLI() {
     .scriptName('zimic')
     .version(version)
     .showHelpOnFail(false)
-    .demandCommand()
     .strict()
 
     .command('browser', 'Browser', (yargs) =>
@@ -94,7 +95,7 @@ async function runCLI() {
     .command('typegen', 'Type generation', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
-        'Generate service types from an OpenAPI schema.',
+        'Generate types from an OpenAPI schema.',
         (yargs) =>
           yargs
             .positional('input', {
@@ -104,9 +105,10 @@ async function runCLI() {
             })
             .option('output', {
               type: 'string',
-              description: 'The path to write the generated types to. If `-`, the output will be written to stdout.',
+              description:
+                'The path to a TypeScript file to write the generated types to. Use `-` to write to stdout. If not ' +
+                'provided, `<serviceName>.ts` will be used, where `<serviceName>` is the value of `--service-name`.',
               alias: 'o',
-              demandOption: true,
             })
             .option('service-name', {
               type: 'string',
@@ -114,38 +116,51 @@ async function runCLI() {
               alias: 's',
               demandOption: true,
             })
-            .option('remove-comments', {
+            .option('comments', {
               type: 'boolean',
-              description: 'Whether to remove comments from the generated types.',
-              default: false,
+              description: 'Whether to include comments in the generated types.',
+              alias: 'c',
+              default: true,
             })
-            .option('prune-unused', {
+            .option('prune', {
               type: 'boolean',
               description:
                 'Whether to remove unused operations and components from the generated types. This is useful for ' +
                 'reducing the size of the output file.',
+              alias: 'p',
               default: true,
             })
             .option('filter', {
               type: 'string',
               array: true,
-              description: 'One or more expressions to filter paths to generate types for.',
+              description:
+                'One or more expressions to filter paths to generate types for.. Filters must follow the format ' +
+                '`<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal ' +
+                'path or a glob. For example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*` are ' +
+                'valid filters. If more than one filter is provided, they will be combined with OR. Negative filters ' +
+                'can be created by prefixing the expression with `!`. For example, `!GET /users` will exclude paths ' +
+                'matching `GET /users`. Paths in filters are case-sensitive.',
+              alias: 'f',
               default: [],
             })
             .option('filter-file', {
               type: 'string',
               description:
                 'A path to a file containing expressions to filter paths to generate types for. One expression is ' +
-                'expected per line. Comments are prefixed with `#`. Additional `--filter` expressions will be ' +
-                'appended to the considered filters.',
+                'expected per line and the format is the same as used in `--filter`. Comments are prefixed with `#`. ' +
+                'Additional `--filter` expressions will be appended to the considered filters.',
+              alias: 'F',
             }),
         async (cliArguments) => {
+          const serviceName = convertToCamelCase(cliArguments.serviceName);
+          const outputFilePath = cliArguments.output ?? `${serviceName}.ts`;
+
           await generateTypesFromOpenAPISchema({
             inputFilePath: cliArguments.input,
-            outputFilePath: cliArguments.output,
-            serviceName: cliArguments.serviceName,
-            removeComments: cliArguments.removeComments,
-            pruneUnused: cliArguments.pruneUnused,
+            outputFilePath,
+            serviceName,
+            includeComments: cliArguments.comments,
+            prune: cliArguments.prune,
             filters: cliArguments.filter,
             filterFile: cliArguments.filterFile,
           });

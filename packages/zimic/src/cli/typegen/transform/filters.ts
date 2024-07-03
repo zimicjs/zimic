@@ -11,9 +11,9 @@ import { TypePathFilters } from './context';
 
 const HTTP_METHOD_OPTIONS = HTTP_METHODS.join('|');
 const MODIFIER_GROUP = '(?<modifier>!?)';
-const METHOD_FILTER_GROUP = `(?<method>(?:\\*|(?:${HTTP_METHOD_OPTIONS})(?:,(?:${HTTP_METHOD_OPTIONS}))*))`;
+const METHOD_FILTER_GROUP = `(?<method>(?:\\*|(?:${HTTP_METHOD_OPTIONS})(?:,\\s*(?:${HTTP_METHOD_OPTIONS}))*))`;
 const PATH_FILTER_GROUP = '(?<path>.+)';
-const FILTER_REGEX = new RegExp(`^${MODIFIER_GROUP}${METHOD_FILTER_GROUP}\\s+${PATH_FILTER_GROUP}$`, 'i');
+const FILTER_REGEX = new RegExp(`^${MODIFIER_GROUP}\\s*${METHOD_FILTER_GROUP}\\s+${PATH_FILTER_GROUP}$`, 'i');
 
 interface ParsedTypePathFilter {
   expression: RegExp;

@@ -44,9 +44,9 @@ export async function importTypesFromOpenAPI(filePath: string) {
   return rawNodes;
 }
 
-export function convertTypesToString(nodes: ts.Node[], options: { removeComments: boolean }) {
+export function convertTypesToString(nodes: ts.Node[], options: { includeComments: boolean }) {
   const typeOutput = convertTypeASTToString(nodes, {
-    formatOptions: options,
+    formatOptions: { removeComments: !options.includeComments },
   });
 
   return typeOutput;

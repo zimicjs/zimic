@@ -38,16 +38,10 @@ function removeUnknownResources(node: ts.Node | undefined) {
   return node;
 }
 
-function normalizeRawNodes(
-  rawNodes: ts.Node[],
-  context: TypeTransformContext,
-  options: {
-    pruneUnused: boolean;
-  },
-) {
+function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, options: { prune: boolean }) {
   let normalizedNodes = rawNodes.map((node) => (isPathsDeclaration(node) ? normalizePaths(node, context) : node));
 
-  if (options.pruneUnused) {
+  if (options.prune) {
     normalizedNodes = normalizedNodes
       .map((node) => (isOperationsDeclaration(node) ? removeUnreferencedOperations(node, context) : node))
       .filter(isDefined);
@@ -57,7 +51,7 @@ function normalizeRawNodes(
     .map((node) => (isOperationsDeclaration(node) ? normalizeOperations(node, context) : node))
     .filter(isDefined);
 
-  if (options.pruneUnused) {
+  if (options.prune) {
     for (const node of normalizedNodes) {
       if (isComponentsDeclaration(node, context)) {
         populateReferencedComponents(node, context);
@@ -81,8 +75,8 @@ interface OpenAPITypeGenerationOptions {
   inputFilePath: string;
   outputFilePath: string;
   serviceName: string;
-  removeComments: boolean;
-  pruneUnused: boolean;
+  includeComments: boolean;
+  prune: boolean;
   filters: string[];
   filterFile?: string;
 }
@@ -91,8 +85,8 @@ async function generateTypesFromOpenAPISchema({
   inputFilePath,
   outputFilePath,
   serviceName,
-  removeComments,
-  pruneUnused,
+  includeComments,
+  prune,
   filters: filtersFromArguments,
   filterFile,
 }: OpenAPITypeGenerationOptions) {
@@ -104,12 +98,12 @@ async function generateTypesFromOpenAPISchema({
 
     const rawNodes = await importTypesFromOpenAPI(inputFilePath);
     const context = createTypeTransformationContext(serviceName, filters);
-    const nodes = normalizeRawNodes(rawNodes, context, { pruneUnused });
+    const nodes = normalizeRawNodes(rawNodes, context, { prune });
 
     const importDeclarations = createImportDeclarations(context);
     nodes.unshift(...importDeclarations);
 
-    const typeOutput = convertTypesToString(nodes, { removeComments });
+    const typeOutput = convertTypesToString(nodes, { includeComments });
     const formattedOutput = prepareTypeOutputToSave(typeOutput);
 
     if (isFileOutput) {
@@ -123,11 +117,7 @@ async function generateTypesFromOpenAPISchema({
     `${chalk.green.bold('✔')} Generated ${chalk.green(outputFilePath)} ` +
     `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
 
-  if (isFileOutput) {
-    logWithPrefix(successMessage, { method: 'log' });
-  } else {
-    logWithPrefix(successMessage, { method: 'warn' });
-  }
+  logWithPrefix(successMessage, { method: isFileOutput ? 'log' : 'warn' });
 }
 
 export default generateTypesFromOpenAPISchema;
