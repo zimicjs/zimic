@@ -29,11 +29,12 @@ const RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED = ['paths', 'webhooks', 'operations'
 
 function removeUnknownResources(node: ts.Node | undefined) {
   const isUnknownResource =
-    node && ts.isTypeAliasDeclaration(node) && RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED.includes(node.name.text);
+    !node || (ts.isTypeAliasDeclaration(node) && RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED.includes(node.name.text));
 
   if (isUnknownResource) {
     return undefined;
   }
+
   return node;
 }
 
@@ -44,67 +45,35 @@ function normalizeRawNodes(
     pruneUnused: boolean;
   },
 ) {
-  let partialNodes = rawNodes.map((node) => {
-    const normalizedNode = ts.isTypeAliasDeclaration(node)
-      ? ts.factory.createInterfaceDeclaration(node.modifiers, node.name, undefined, undefined, [])
-      : node;
-
-    if (isPathsDeclaration(normalizedNode)) {
-      return normalizePaths(normalizedNode, context);
-    }
-
-    return node;
-  });
+  let normalizedNodes = rawNodes.map((node) => (isPathsDeclaration(node) ? normalizePaths(node, context) : node));
 
   if (options.pruneUnused) {
-    partialNodes = partialNodes
-      .map((node) => {
-        if (isOperationsDeclaration(node)) {
-          return removeUnreferencedOperations(node, context);
-        }
-        return node;
-      })
+    normalizedNodes = normalizedNodes
+      .map((node) => (isOperationsDeclaration(node) ? removeUnreferencedOperations(node, context) : node))
       .filter(isDefined);
   }
 
-  partialNodes = partialNodes
-    .map((node) => {
-      if (isOperationsDeclaration(node)) {
-        return normalizeOperations(node, context);
-      }
-      return node;
-    })
+  normalizedNodes = normalizedNodes
+    .map((node) => (isOperationsDeclaration(node) ? normalizeOperations(node, context) : node))
     .filter(isDefined);
 
   if (options.pruneUnused) {
-    for (const node of partialNodes) {
+    for (const node of normalizedNodes) {
       if (isComponentsDeclaration(node, context)) {
         populateReferencedComponents(node, context);
       }
     }
-  }
 
-  if (options.pruneUnused) {
-    partialNodes = partialNodes
-      .map((node) => {
-        if (isComponentsDeclaration(node, context)) {
-          return removeUnreferencedComponents(node, context);
-        }
-        return node;
-      })
+    normalizedNodes = normalizedNodes
+      .map((node) => (isComponentsDeclaration(node, context) ? removeUnreferencedComponents(node, context) : node))
       .filter(isDefined);
   }
 
-  partialNodes = partialNodes
-    .map((node) => {
-      if (isComponentsDeclaration(node, context)) {
-        return normalizeComponents(node, context);
-      }
-      return node;
-    })
+  normalizedNodes = normalizedNodes
+    .map((node) => (isComponentsDeclaration(node, context) ? normalizeComponents(node, context) : node))
+    .map(removeUnknownResources)
     .filter(isDefined);
 
-  const normalizedNodes = partialNodes.map(removeUnknownResources).filter(isDefined);
   return normalizedNodes;
 }
 

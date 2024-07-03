@@ -10,10 +10,14 @@ export function createPathsIdentifier(serviceName: string) {
   return ts.factory.createIdentifier(`${serviceName}Schema`);
 }
 
-type PathsDeclaration = ts.InterfaceDeclaration;
+type PathsDeclaration = ts.InterfaceDeclaration | ts.TypeAliasDeclaration;
 
 export function isPathsDeclaration(node: ts.Node | undefined): node is PathsDeclaration {
-  return node !== undefined && ts.isInterfaceDeclaration(node) && node.name.text === 'paths';
+  return (
+    node !== undefined &&
+    (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) &&
+    node.name.text === 'paths'
+  );
 }
 
 type Path = Override<
@@ -91,8 +95,12 @@ function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) 
   return ts.factory.createTypeReferenceNode(httpSchemaPathsWrapper, [type]);
 }
 
-export function normalizePaths(paths: PathsDeclaration, context: TypeTransformContext) {
+export function normalizePaths(pathsOrTypeAlias: PathsDeclaration, context: TypeTransformContext) {
   const newIdentifier = createPathsIdentifier(context.serviceName);
+
+  const paths = ts.isTypeAliasDeclaration(pathsOrTypeAlias)
+    ? ts.factory.createInterfaceDeclaration(pathsOrTypeAlias.modifiers, pathsOrTypeAlias.name, undefined, undefined, [])
+    : pathsOrTypeAlias;
 
   const newMembers = paths.members.map((path) => normalizePath(path, context)).filter(isDefined);
   const newType = ts.factory.createTypeLiteralNode(newMembers);
