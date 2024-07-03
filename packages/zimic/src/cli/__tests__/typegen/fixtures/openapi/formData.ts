@@ -4,7 +4,7 @@
 import type { HttpFormData, HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{
-  '/upload': {
+  '/upload-with-literal-form-data': {
     POST: {
       request: {
         body: HttpFormData<{
@@ -22,4 +22,31 @@ export type MyServiceSchema = HttpSchema.Paths<{
       };
     };
   };
+  '/upload-with-component-form-data': {
+    POST: {
+      request: MyServiceComponents['requests']['formDataUpload'];
+      response: {
+        200: MyServiceComponents['responses']['Success'];
+      };
+    };
+  };
 }>;
+
+export interface MyServiceComponents {
+  responses: {
+    Success: HttpSchema.Response<{
+      body: HttpFormData<{
+        name?: string;
+        content: Blob | null;
+      }>;
+    }>;
+  };
+  requests: {
+    formDataUpload: HttpSchema.Request<{
+      body: HttpFormData<{
+        name: string;
+        content: Blob | null;
+      }>;
+    }>;
+  };
+}
