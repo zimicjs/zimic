@@ -45,12 +45,12 @@ function normalizeRawNodes(
   },
 ) {
   let partialNodes = rawNodes.map((node) => {
-    const nodeToUse = ts.isTypeAliasDeclaration(node)
+    const normalizedNode = ts.isTypeAliasDeclaration(node)
       ? ts.factory.createInterfaceDeclaration(node.modifiers, node.name, undefined, undefined, [])
       : node;
 
-    if (isPathsDeclaration(nodeToUse)) {
-      return normalizePaths(nodeToUse, context);
+    if (isPathsDeclaration(normalizedNode)) {
+      return normalizePaths(normalizedNode, context);
     }
 
     return node;
@@ -84,17 +84,6 @@ function normalizeRawNodes(
     }
   }
 
-  context.referencedTypes.shouldTrackReferences = false;
-
-  partialNodes = partialNodes
-    .map((node) => {
-      if (isComponentsDeclaration(node, context)) {
-        return normalizeComponents(node, context);
-      }
-      return node;
-    })
-    .filter(isDefined);
-
   if (options.pruneUnused) {
     partialNodes = partialNodes
       .map((node) => {
@@ -105,6 +94,15 @@ function normalizeRawNodes(
       })
       .filter(isDefined);
   }
+
+  partialNodes = partialNodes
+    .map((node) => {
+      if (isComponentsDeclaration(node, context)) {
+        return normalizeComponents(node, context);
+      }
+      return node;
+    })
+    .filter(isDefined);
 
   const normalizedNodes = partialNodes.map(removeUnknownResources).filter(isDefined);
   return normalizedNodes;

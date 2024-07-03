@@ -38,9 +38,7 @@ function normalizePathNameWithParameters(pathName: string) {
 }
 
 function wrapComponentPathType(type: ts.TypeNode, context: TypeTransformContext) {
-  if (context.referencedTypes.shouldTrackReferences) {
-    context.typeImports.root.add('HttpSchema');
-  }
+  context.typeImports.root.add('HttpSchema');
 
   const httpSchemaMethodsWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),
@@ -84,9 +82,7 @@ export function normalizePath(
 }
 
 function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
-  if (context.referencedTypes.shouldTrackReferences) {
-    context.typeImports.root.add('HttpSchema');
-  }
+  context.typeImports.root.add('HttpSchema');
 
   const httpSchemaPathsWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),

@@ -4,7 +4,7 @@ import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
 import { isNeverType, isUnknownType } from '../utils/types';
-import { TypeTransformContext } from './context';
+import { ComponentPath, TypeTransformContext } from './context';
 import { normalizeContentType, normalizeResponse } from './methods';
 import { normalizePath } from './paths';
 
@@ -77,7 +77,7 @@ function visitComponentReferences(
     partialComponentPath?: string[];
   },
   options: {
-    onComponentReference: (node: ts.IndexedAccessTypeNode, referencedComponentPath: string) => void;
+    onComponentReference: (node: ts.IndexedAccessTypeNode, componentPath: ComponentPath) => void;
     renameComponentReference?: (
       node: ts.IndexedAccessTypeNode,
       objectType: ts.TypeReferenceNode,
@@ -147,7 +147,7 @@ function visitComponentReferences(
 
       /* istanbul ignore else -- @preserve
        * Component indexed accesses are always expected to have child indexed accesses. */
-      if (childContext.partialComponentPath) {
+      if (childContext.partialComponentPath && childContext.partialComponentPath.length > 0) {
         const hasIndexTypeName =
           ts.isLiteralTypeNode(node.indexType) &&
           (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
@@ -155,15 +155,17 @@ function visitComponentReferences(
         /* istanbul ignore else -- @preserve
          * Component indexed accesses are always expected to have child indexed accesses. */
         if (hasIndexTypeName) {
-          const indexTypeName = node.indexType.literal.text;
-          childContext.partialComponentPath.push(indexTypeName);
+          const componentName = node.indexType.literal.text;
+          childContext.partialComponentPath.push(componentName);
         }
 
         /* istanbul ignore else -- @preserve
          * Component indexed accesses are always expected to have child indexed accesses. */
         if (isRootIndexedAccess) {
-          const referencedComponentPath = childContext.partialComponentPath.join('.');
-          onComponentReference(newNode, referencedComponentPath);
+          const componentGroupName = childContext.partialComponentPath[0];
+          const componentName = childContext.partialComponentPath.slice(1).join('.');
+          const componentPath = `${componentGroupName}.${componentName}` as const;
+          onComponentReference(newNode, componentPath);
         }
       }
 
@@ -201,12 +203,17 @@ function visitComponentReferences(
   return node;
 }
 
+export function normalizeComponentGroupName(rawComponentGroupName: string) {
+  if (rawComponentGroupName === 'requestBodies') {
+    return 'requests';
+  }
+  return rawComponentGroupName;
+}
+
 export function renameComponentReferences(node: ts.TypeNode, context: TypeTransformContext): ts.TypeNode {
   return visitComponentReferences(node, context, {
     onComponentReference(_node, referencedComponentPath) {
-      if (context.referencedTypes.shouldTrackReferences) {
-        context.referencedTypes.components.add(referencedComponentPath);
-      }
+      context.referencedTypes.components.add(referencedComponentPath);
     },
 
     renameComponentReference(node, objectType) {
@@ -215,13 +222,20 @@ export function renameComponentReferences(node: ts.TypeNode, context: TypeTransf
 
       let newIndexType = node.indexType;
 
-      const shouldRenameToRequests =
+      const hasComponentGroupName =
         ts.isLiteralTypeNode(node.indexType) &&
-        (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal)) &&
-        node.indexType.literal.text === 'requestBodies';
+        (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
 
-      if (shouldRenameToRequests) {
-        newIndexType = ts.factory.updateLiteralTypeNode(node.indexType, ts.factory.createStringLiteral('requests'));
+      if (hasComponentGroupName) {
+        const componentGroupName = node.indexType.literal.text;
+        const newComponentGroupName = normalizeComponentGroupName(componentGroupName);
+
+        if (newComponentGroupName !== componentGroupName) {
+          newIndexType = ts.factory.updateLiteralTypeNode(
+            node.indexType,
+            ts.factory.createStringLiteral(newComponentGroupName),
+          );
+        }
       }
 
       return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, newIndexType);
@@ -245,9 +259,7 @@ function processPendingRequestComponentActions(component: RequestComponent, cont
 }
 
 function wrapRequestComponentType(type: ts.TypeNode, context: TypeTransformContext) {
-  if (context.referencedTypes.shouldTrackReferences) {
-    context.typeImports.root.add('HttpSchema');
-  }
+  context.typeImports.root.add('HttpSchema');
 
   const httpSchemaRequestWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),
@@ -286,12 +298,12 @@ function normalizeComponent(
     return undefined;
   }
 
-  if (componentGroupName === 'responses') {
-    return normalizeResponse(component, context, { isComponent: true });
+  if (componentGroupName === 'requests') {
+    return normalizeRequestComponent(component, context);
   }
 
-  if (componentGroupName === 'requestBodies') {
-    return normalizeRequestComponent(component, context);
+  if (componentGroupName === 'responses') {
+    return normalizeResponse(component, context, { isComponent: true });
   }
 
   if (componentGroupName === 'pathItems') {
@@ -312,16 +324,14 @@ function normalizeComponentGroup(componentGroup: ts.TypeElement, context: TypeTr
     return undefined;
   }
 
-  const componentGroupName = componentGroup.name.text;
+  const componentGroupName = normalizeComponentGroupName(componentGroup.name.text);
+  const newIdentifier = ts.factory.createIdentifier(componentGroupName);
 
   const newComponents = componentGroup.type.members
     .map((component) => normalizeComponent(component, componentGroupName, context))
     .filter(isDefined);
 
   const newType = ts.factory.updateTypeLiteralNode(componentGroup.type, ts.factory.createNodeArray(newComponents));
-
-  const newIdentifier =
-    componentGroupName === 'requestBodies' ? ts.factory.createIdentifier('requests') : componentGroup.name;
 
   return ts.factory.updatePropertySignature(
     componentGroup,
@@ -365,7 +375,7 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
         continue;
       }
 
-      const componentGroupName = componentGroup.name.text;
+      const componentGroupName = normalizeComponentGroupName(componentGroup.name.text);
 
       for (const component of componentGroup.type.members) {
         /* istanbul ignore if -- @preserve
@@ -375,9 +385,9 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
         }
 
         const componentName = component.name.text;
-        const componentPath = [componentGroupName, componentName].join('.');
-
+        const componentPath = `${componentGroupName}.${componentName}` as const;
         const isComponentToVisit = previousPathsToVisit.has(componentPath);
+
         if (!isComponentToVisit) {
           continue;
         }
@@ -409,7 +419,7 @@ export function removeComponentIfUnreferenced(
   }
 
   const componentName = component.name.text;
-  const componentPath = [componentGroupName, componentName].join('.');
+  const componentPath = `${componentGroupName}.${componentName}` as const;
 
   if (context.referencedTypes.components.has(componentPath)) {
     context.referencedTypes.components.delete(componentPath);
@@ -426,7 +436,7 @@ function removeUnreferencedComponentsInGroup(componentGroup: ts.TypeElement, con
     return undefined;
   }
 
-  const componentGroupName = componentGroup.name.text;
+  const componentGroupName = normalizeComponentGroupName(componentGroup.name.text);
 
   const newComponents = componentGroup.type.members
     .map((component) => removeComponentIfUnreferenced(component, componentGroupName, context))

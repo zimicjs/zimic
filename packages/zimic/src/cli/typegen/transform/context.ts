@@ -14,9 +14,12 @@ type RootTypeImportName =
   | 'HttpSearchParamsSerialized'
   | 'HttpHeadersSerialized';
 
-export type ReferencedOperationTypePath = string;
-export type ReferencedComponentTypePath = string;
+type OperationName = string;
+export type OperationPath = `${OperationName}`;
+
+export type ComponentGroupName = string;
 export type ComponentName = string;
+export type ComponentPath = `${ComponentGroupName}.${ComponentName}`;
 
 export interface TypeTransformContext {
   serviceName: string;
@@ -27,9 +30,8 @@ export interface TypeTransformContext {
     root: Set<RootTypeImportName>;
   };
   referencedTypes: {
-    operations: Set<ReferencedOperationTypePath>;
-    components: Set<ReferencedComponentTypePath>;
-    shouldTrackReferences: boolean;
+    operations: Set<OperationPath>;
+    components: Set<ComponentPath>;
   };
   pendingActions: {
     components: {
@@ -52,7 +54,6 @@ export function createTypeTransformationContext(serviceName: string, rawFilters:
     referencedTypes: {
       operations: new Set(),
       components: new Set(),
-      shouldTrackReferences: true,
     },
     pendingActions: {
       components: {
