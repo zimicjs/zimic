@@ -300,40 +300,42 @@ describe('CLI (server)', async () => {
       });
     });
 
-    it('should not stop the server after the on-ready command finishes if ephemeral is false', async () => {
-      const temporarySaveFileContent = crypto.randomUUID();
+    it.each(['--no-ephemeral', '--ephemeral=false'])(
+      'should not stop the server after the on-ready command finishes if ephemeral is false: %s',
+      async (ephemeralFlag) => {
+        const temporarySaveFileContent = crypto.randomUUID();
 
-      processArgvSpy.mockReturnValue([
-        'node',
-        './dist/cli.js',
-        'server',
-        'start',
-        '--ephemeral',
-        'false',
-        '--',
-        'node',
-        '-e',
-        `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
-      ]);
+        processArgvSpy.mockReturnValue([
+          'node',
+          './dist/cli.js',
+          'server',
+          'start',
+          ephemeralFlag,
+          '--',
+          'node',
+          '-e',
+          `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
+        ]);
 
-      await usingIgnoredConsole(['log'], async (spies) => {
-        await runCLI();
+        await usingIgnoredConsole(['log'], async (spies) => {
+          await runCLI();
 
-        expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          `Server is running on http://localhost:${server!.port()}`,
-        );
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-        const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
-        expect(savedFile).toBe(temporarySaveFileContent);
-      });
-    });
+          const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
+          expect(savedFile).toBe(temporarySaveFileContent);
+        });
+      },
+    );
 
     it('should throw an error if the stop timeout is reached', async () => {
       vi.useFakeTimers();
