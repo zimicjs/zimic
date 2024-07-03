@@ -80,7 +80,11 @@ function visitComponentReferences(
     onComponentReference: (node: ts.IndexedAccessTypeNode, componentPath: ComponentPath) => void;
     renameComponentReference?: (
       node: ts.IndexedAccessTypeNode,
-      objectType: ts.TypeReferenceNode,
+      resources: {
+        objectType: ts.TypeReferenceNode;
+        indexType: ts.LiteralTypeNode;
+        componentGroupName: string;
+      },
     ) => ts.IndexedAccessTypeNode;
   },
 ): ts.TypeNode {
@@ -177,23 +181,33 @@ function visitComponentReferences(
     const isComponentIndexedAccess =
       ts.isTypeReferenceNode(node.objectType) &&
       ts.isIdentifier(node.objectType.typeName) &&
-      componentIdentifiers.includes(node.objectType.typeName.text);
+      componentIdentifiers.includes(node.objectType.typeName.text) &&
+      ts.isLiteralTypeNode(node.indexType) &&
+      (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
 
     /* istanbul ignore else -- @preserve
      * All indexed accesses are expected to point to components. */
     if (isComponentIndexedAccess) {
       const isRawComponent = node.objectType.typeName.text === 'components';
-      const newNode = isRawComponent ? renameComponentReference(node, node.objectType) : node;
+      const componentGroupName = node.indexType.literal.text;
 
-      const hasIndexTypeName =
+      const newNode = isRawComponent
+        ? renameComponentReference(node, {
+            objectType: node.objectType,
+            indexType: node.indexType,
+            componentGroupName,
+          })
+        : node;
+
+      const newNodeHasComponentGroupName =
         ts.isLiteralTypeNode(newNode.indexType) &&
         (ts.isIdentifier(newNode.indexType.literal) || ts.isStringLiteral(newNode.indexType.literal));
 
       /* istanbul ignore else -- @preserve
-       * All indexed accesses are expected to have an index type name. */
-      if (hasIndexTypeName) {
-        const indexTypeName = newNode.indexType.literal.text;
-        context.partialComponentPath = [indexTypeName];
+       * All component indexed accesses are expected to have an index type name. */
+      if (newNodeHasComponentGroupName) {
+        const newComponentGroupName = newNode.indexType.literal.text;
+        context.partialComponentPath = [newComponentGroupName];
       }
 
       return newNode;
@@ -212,31 +226,19 @@ export function normalizeComponentGroupName(rawComponentGroupName: string) {
 
 export function renameComponentReferences(node: ts.TypeNode, context: TypeTransformContext): ts.TypeNode {
   return visitComponentReferences(node, context, {
-    onComponentReference(_node, referencedComponentPath) {
-      context.referencedTypes.components.add(referencedComponentPath);
+    onComponentReference(_node, componentPath) {
+      context.referencedTypes.components.add(componentPath);
     },
 
-    renameComponentReference(node, objectType) {
+    renameComponentReference(node, { indexType, objectType, componentGroupName }) {
       const newIdentifier = createComponentsIdentifier(context.serviceName);
       const newObjectType = ts.factory.updateTypeReferenceNode(objectType, newIdentifier, objectType.typeArguments);
 
-      let newIndexType = node.indexType;
-
-      const hasComponentGroupName =
-        ts.isLiteralTypeNode(node.indexType) &&
-        (ts.isIdentifier(node.indexType.literal) || ts.isStringLiteral(node.indexType.literal));
-
-      if (hasComponentGroupName) {
-        const componentGroupName = node.indexType.literal.text;
-        const newComponentGroupName = normalizeComponentGroupName(componentGroupName);
-
-        if (newComponentGroupName !== componentGroupName) {
-          newIndexType = ts.factory.updateLiteralTypeNode(
-            node.indexType,
-            ts.factory.createStringLiteral(newComponentGroupName),
-          );
-        }
-      }
+      const newComponentGroupName = normalizeComponentGroupName(componentGroupName);
+      const newIndexType = ts.factory.updateLiteralTypeNode(
+        indexType,
+        ts.factory.createStringLiteral(newComponentGroupName),
+      );
 
       return ts.factory.updateIndexedAccessTypeNode(node, newObjectType, newIndexType);
     },
@@ -349,10 +351,6 @@ export function normalizeComponents(components: ts.InterfaceDeclaration, context
     .map((componentGroup) => normalizeComponentGroup(componentGroup, context))
     .filter(isDefined);
 
-  if (newMembers.length === 0) {
-    return undefined;
-  }
-
   return ts.factory.updateInterfaceDeclaration(
     components,
     components.modifiers,
@@ -395,10 +393,10 @@ export function populateReferencedComponents(components: ts.InterfaceDeclaration
         context.referencedTypes.components.add(componentPath);
 
         visitComponentReferences(component.type, context, {
-          onComponentReference(_node, referencedComponentPath) {
-            const isKnownReferencedComponent = context.referencedTypes.components.has(referencedComponentPath);
+          onComponentReference(_node, componentPath) {
+            const isKnownReferencedComponent = context.referencedTypes.components.has(componentPath);
             if (!isKnownReferencedComponent) {
-              pathsToVisit.add(referencedComponentPath);
+              pathsToVisit.add(componentPath);
             }
           },
         });
