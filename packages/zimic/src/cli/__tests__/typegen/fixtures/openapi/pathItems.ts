@@ -4,3 +4,25 @@
 import type { HttpSchema } from '@/index';
 
 export type MyServiceSchema = HttpSchema.Paths<{}>;
+
+export interface MyServiceComponents {
+  pathItems: {
+    users: HttpSchema.Methods<{
+      POST: {
+        request: {
+          body: {
+            name?: string;
+          };
+        };
+        response: {
+          200: {
+            body: {
+              id?: string;
+              name?: string;
+            };
+          };
+        };
+      };
+    }>;
+  };
+}
