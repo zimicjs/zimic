@@ -121,6 +121,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.5.2
         version: 14.5.2(@testing-library/dom@10.2.0)
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.14.9)
@@ -155,6 +158,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.2
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@20.14.9)
@@ -176,9 +182,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      dotenv-cli:
-        specifier: ^7.4.2
-        version: 7.4.2
       next:
         specifier: 14.2.4
         version: 14.2.4(@playwright/test@1.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -201,6 +204,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       postcss:
         specifier: ^8.4.39
         version: 8.4.39
@@ -225,9 +231,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      dotenv-cli:
-        specifier: ^7.4.2
-        version: 7.4.2
       next:
         specifier: 14.2.4
         version: 14.2.4(@playwright/test@1.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -250,6 +253,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       postcss:
         specifier: ^8.4.39
         version: 8.4.39
@@ -268,9 +274,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      dotenv-cli:
-        specifier: ^7.4.2
-        version: 7.4.2
       next:
         specifier: 14.2.4
         version: 14.2.4(@playwright/test@1.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -293,6 +296,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       postcss:
         specifier: ^8.4.39
         version: 8.4.39
@@ -323,6 +329,9 @@ importers:
       '@vitest/browser':
         specifier: 1.6.0
         version: 1.6.0(playwright@1.45.0)(vitest@1.6.0)
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       playwright:
         specifier: ^1.45.0
         version: 1.45.0
@@ -347,6 +356,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.5.2
         version: 14.5.2(@testing-library/dom@10.2.0)
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       typescript:
         specifier: ^5.5.2
         version: 5.5.2
@@ -369,6 +381,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.2
+      dotenv-cli:
+        specifier: ^7.4.2
+        version: 7.4.2
       supertest:
         specifier: ^7.0.0
         version: 7.0.0

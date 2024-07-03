@@ -7,7 +7,6 @@ export const defaultConfig: UserConfig = {
   publicDir: './public',
   test: {
     globals: false,
-    allowOnly: process.env.CI !== 'true',
     testTimeout: 5000,
     hookTimeout: 5000,
     setupFiles: ['./tests/setup/shared.ts'],

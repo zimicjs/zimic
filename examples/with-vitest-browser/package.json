@@ -4,7 +4,7 @@
   "private": false,
   "scripts": {
     "test": "vitest",
-    "test:turbo": "pnpm run test run",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
@@ -15,6 +15,7 @@
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/user-event": "^14.5.2",
     "@vitest/browser": "1.6.0",
+    "dotenv-cli": "^7.4.2",
     "playwright": "^1.45.0",
     "typescript": "^5.5.2",
     "vitest": "1.6.0",
