@@ -1,6 +1,6 @@
 {
   "name": "zimic",
-  "description": "TypeScript-first, statically inferred HTTP mocks",
+  "description": "TypeScript-first HTTP request mocking",
   "keywords": [
     "typescript",
     "validation",
