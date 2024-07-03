@@ -90,6 +90,8 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.14.9",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "1.6.0",
