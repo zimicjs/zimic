@@ -73,7 +73,7 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
 
 interface OpenAPITypeGenerationOptions {
   inputFilePath: string;
-  outputFilePath: string;
+  outputFilePath?: string;
   serviceName: string;
   includeComments: boolean;
   prune: boolean;
@@ -90,7 +90,7 @@ async function generateTypesFromOpenAPISchema({
   filters: filtersFromArguments,
   filterFile,
 }: OpenAPITypeGenerationOptions) {
-  const isFileOutput = outputFilePath !== '-';
+  const shouldWriteToStdout = outputFilePath === undefined;
 
   const executionSummary = await usingElapsedTime(async () => {
     const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
@@ -106,18 +106,18 @@ async function generateTypesFromOpenAPISchema({
     const typeOutput = convertTypesToString(nodes, { includeComments });
     const formattedOutput = prepareTypeOutputToSave(typeOutput);
 
-    if (isFileOutput) {
-      await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
-    } else {
+    if (shouldWriteToStdout) {
       await writeTypeOutputToStandardOutput(formattedOutput);
+    } else {
+      await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
     }
   });
 
   const successMessage =
-    `${chalk.green.bold('✔')} Generated ${chalk.green(outputFilePath)} ` +
+    `${chalk.green.bold('✔')} Generated ${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ` +
     `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
 
-  logWithPrefix(successMessage, { method: isFileOutput ? 'log' : 'warn' });
+  logWithPrefix(successMessage, { method: shouldWriteToStdout ? 'warn' : 'log' });
 }
 
 export default generateTypesFromOpenAPISchema;

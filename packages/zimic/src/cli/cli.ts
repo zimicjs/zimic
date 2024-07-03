@@ -3,8 +3,6 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { convertToCamelCase } from '@/utils/strings';
-
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import generateTypesFromOpenAPISchema from './typegen/openapi';
@@ -106,8 +104,7 @@ async function runCLI() {
             .option('output', {
               type: 'string',
               description:
-                'The path to a TypeScript file to write the generated types to. Use `-` to write to stdout. If not ' +
-                'provided, `<serviceName>.ts` will be used, where `<serviceName>` is the value of `--service-name`.',
+                'The path to write the generated types to. If not provided, the types will be written to stdout.',
               alias: 'o',
             })
             .option('service-name', {
@@ -152,13 +149,10 @@ async function runCLI() {
               alias: 'F',
             }),
         async (cliArguments) => {
-          const serviceName = convertToCamelCase(cliArguments.serviceName);
-          const outputFilePath = cliArguments.output ?? `${serviceName}.ts`;
-
           await generateTypesFromOpenAPISchema({
             inputFilePath: cliArguments.input,
-            outputFilePath,
-            serviceName,
+            outputFilePath: cliArguments.output,
+            serviceName: cliArguments.serviceName,
             includeComments: cliArguments.comments,
             prune: cliArguments.prune,
             filters: cliArguments.filter,

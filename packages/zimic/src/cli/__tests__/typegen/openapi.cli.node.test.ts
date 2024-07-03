@@ -8,6 +8,7 @@ import { beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'v
 import { version } from '@@/package.json';
 
 import runCLI from '@/cli/cli';
+import { isDefined } from '@/utils/data';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { convertYAMLToJSONFile } from '@tests/utils/json';
@@ -86,10 +87,8 @@ describe('Type generation (OpenAPI)', () => {
     'Options:',
     '      --help          Show help                                        [boolean]',
     '      --version       Show version number                              [boolean]',
-    '  -o, --output        The path to a TypeScript file to write the generated types',
-    '                       to. Use `-` to write to stdout. If not provided, `<servic',
-    '                      eName>.ts` will be used, where `<serviceName>` is the valu',
-    '                      e of `--service-name`.                            [string]',
+    '  -o, --output        The path to write the generated types to. If not provided,',
+    '                       the types will be written to stdout.             [string]',
     '  -s, --service-name  The name of the service to generate types for.',
     '                                                             [string] [required]',
     '  -c, --comments      Whether to include comments in the generated types.',
@@ -162,7 +161,7 @@ describe('Type generation (OpenAPI)', () => {
 
   function verifySuccessMessage(
     fixtureCase: TypegenFixtureCase,
-    outputFilePath: string,
+    outputLabel: string,
     spies: { log: MockInstance; warn: MockInstance },
   ) {
     let successMessage: string | undefined;
@@ -177,7 +176,7 @@ describe('Type generation (OpenAPI)', () => {
 
     expect(successMessage).toBeDefined();
     expect(successMessage).toMatch(/.*\[zimic\].* /);
-    expect(successMessage).toContain(`Generated ${chalk.green(outputFilePath)}`);
+    expect(successMessage).toContain(`Generated ${outputLabel}`);
     expect(successMessage).toMatch(/.*(\d+ms).*$/);
   }
 
@@ -203,29 +202,26 @@ describe('Type generation (OpenAPI)', () => {
           const inputDirectory =
             fileType === 'json' ? typegenFixtures.openapi.generatedDirectory : typegenFixtures.openapi.directory;
 
-          const expectedOutputDirectory = typegenFixtures.openapi.directory;
-          const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
-
           const inputFileNameWithoutExtension = path.parse(fixtureCase.inputFileName).name;
           const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
 
-          const outputFilePath = fixtureCase.shouldWriteToStdout
-            ? '-'
-            : path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
+          const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
+          const outputFilePath = path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
+          const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
 
-          const expectedOutputFilePath = path.join(expectedOutputDirectory, fixtureCase.expectedOutputFileName);
-
-          processArgvSpy.mockReturnValue([
-            'node',
-            './dist/cli.js',
-            'typegen',
-            'openapi',
-            inputFilePath,
-            `--output=${outputFilePath}`,
-            '--service-name',
-            'my-service',
-            ...fixtureCase.additionalArguments,
-          ]);
+          processArgvSpy.mockReturnValue(
+            [
+              'node',
+              './dist/cli.js',
+              'typegen',
+              'openapi',
+              inputFilePath,
+              outputOption,
+              '--service-name',
+              'my-service',
+              ...fixtureCase.additionalArguments,
+            ].filter(isDefined),
+          );
 
           let rawGeneratedOutputContent: string;
 
@@ -248,7 +244,11 @@ describe('Type generation (OpenAPI)', () => {
                 expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }
 
-              verifySuccessMessage(fixtureCase, outputFilePath, spies);
+              const successOutputLabel = fixtureCase.shouldWriteToStdout
+                ? `to ${chalk.yellow('stdout')}`
+                : chalk.green(outputFilePath);
+
+              verifySuccessMessage(fixtureCase, successOutputLabel, spies);
             });
 
             rawGeneratedOutputContent = await getGeneratedOutputContent(fixtureCase, outputFilePath, processWriteSpy);
@@ -259,6 +259,9 @@ describe('Type generation (OpenAPI)', () => {
           const generatedOutputContent = normalizeGeneratedFileToCompare(
             await prettier.format(rawGeneratedOutputContent, { ...prettierConfig, parser: 'typescript' }),
           );
+
+          const expectedOutputDirectory = typegenFixtures.openapi.directory;
+          const expectedOutputFilePath = path.join(expectedOutputDirectory, fixtureCase.expectedOutputFileName);
           const expectedOutputContent = normalizeGeneratedFileToCompare(
             await filesystem.readFile(expectedOutputFilePath, 'utf-8'),
           );
