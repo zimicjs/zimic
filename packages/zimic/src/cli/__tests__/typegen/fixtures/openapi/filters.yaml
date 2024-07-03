@@ -120,6 +120,37 @@ paths:
         '400':
           $ref: '#/components/responses/error'
 
+  /uploads:
+    post:
+      parameters:
+        - name: authorization
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/fileUpload'
+      responses:
+        '200':
+          description: Success
+          headers:
+            x-upload-id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+            x-www-form-urlencoded:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+
 components:
   schemas:
     User:
@@ -164,6 +195,27 @@ components:
       schema:
         type: string
         format: date-time
+
+  requestBodies:
+    fileUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: The file to upload
+            required:
+              - name
+              - content
+            properties:
+              name:
+                type: string
+                description: The name of the file
+              content:
+                type: string
+                description: The content of the file
+                format: binary
+                nullable: true
 
   responses:
     error:

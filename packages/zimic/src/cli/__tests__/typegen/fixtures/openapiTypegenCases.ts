@@ -249,7 +249,7 @@ const openapiTypegenFixtureCases = {
       additionalArguments: [
         '--remove-comments',
         '--filter',
-        'POST /users',
+        'POST /*',
         '--filter',
         '* /users/**/*',
         '--filter',

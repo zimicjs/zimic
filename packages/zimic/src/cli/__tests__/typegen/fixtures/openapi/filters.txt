@@ -1,6 +1,6 @@
 # This is a comment
 
-POST /users
+POST /*
 * /users/**/*
 !PATCH /users/:userId
 
