@@ -75,7 +75,7 @@ jobs:
         node-version:
           - 18
           - 20
-          - '22.2'
+          - 22
 
     env:
       NODE_VERSION: ${{ matrix.node-version }}
