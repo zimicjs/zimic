@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first HTTP request mocking
+  TypeScript-first HTTP request mocking
 </p>
 
 <div align="center">
