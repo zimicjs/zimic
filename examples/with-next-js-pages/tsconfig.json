@@ -5,6 +5,7 @@
     "module": "esnext",
     "jsx": "preserve",
     "incremental": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "allowJs": true,
     "noEmit": true,
     "moduleResolution": "node",

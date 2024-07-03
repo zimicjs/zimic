@@ -4,6 +4,7 @@
     "lib": ["esnext", "dom", "dom.iterable"],
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
