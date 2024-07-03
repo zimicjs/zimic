@@ -5,6 +5,7 @@ info:
   version: 1.0.0
 
 paths:
+  # Test aspect: path not started with a slash to test the typegen
   users:
     post:
       requestBody:
@@ -27,6 +28,7 @@ paths:
                 $ref: '#/components/schemas/User'
 
     get:
+      # Test aspect: search params
       parameters:
         - name: search
           in: query
@@ -41,6 +43,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Users'
 
+  # Test aspect: dynamic path params
   /users/{userId}:
     parameters:
       - name: userId
@@ -83,6 +86,7 @@ paths:
         '204':
           description: Success
 
+  # Test aspect: path ending with a trailing slash
   /users/{userId}/friends/:
     get:
       parameters:
@@ -114,16 +118,20 @@ paths:
 
     delete:
       operationId: deleteNotifications
+      parameters:
+        - $ref: '#/components/parameters/authorization'
       responses:
         '204':
           description: Success
         '400':
           $ref: '#/components/responses/error'
 
+  # Test aspect: form data and search param bodies
   /uploads:
     post:
+      # Test aspect: request headers
       parameters:
-        - name: authorization
+        - name: api-key
           in: header
           required: true
           schema:
@@ -133,10 +141,12 @@ paths:
       responses:
         '200':
           description: Success
+          # Test aspect: response headers
           headers:
             x-upload-id:
               schema:
                 type: string
+          # Test aspect: multiple content types
           content:
             application/json:
               schema:
@@ -152,6 +162,7 @@ paths:
                     type: string
 
 components:
+  # Test aspect: schema components
   schemas:
     User:
       type: object
@@ -187,6 +198,7 @@ components:
       items:
         $ref: '#/components/schemas/Notification'
 
+  # Test aspect: parameter components
   parameters:
     from:
       name: from
@@ -195,7 +207,14 @@ components:
       schema:
         type: string
         format: date-time
+    authorization:
+      name: authorization
+      in: header
+      required: true
+      schema:
+        type: string
 
+  # Test aspect: request body components
   requestBodies:
     fileUpload:
       required: true
@@ -217,6 +236,7 @@ components:
                 format: binary
                 nullable: true
 
+  # Test aspect: responses components
   responses:
     error:
       description: Error

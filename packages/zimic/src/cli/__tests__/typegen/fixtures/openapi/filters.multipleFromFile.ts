@@ -57,7 +57,7 @@ export type MyServiceSchema = HttpSchema.Paths<{
     POST: {
       request: MyServiceComponents['requests']['fileUpload'] & {
         headers: HttpHeadersSerialized<{
-          authorization: string;
+          'api-key': string;
         }>;
       };
       response: {
@@ -102,6 +102,9 @@ export interface MyServiceComponents {
       };
     }>;
   };
+  parameters: {
+    authorization: string;
+  };
   requests: {
     fileUpload: HttpSchema.Request<{
       body: HttpFormData<{
@@ -114,6 +117,11 @@ export interface MyServiceComponents {
 
 export interface MyServiceOperations {
   deleteNotifications: HttpSchema.Method<{
+    request: {
+      headers: HttpHeadersSerialized<{
+        authorization: MyServiceComponents['parameters']['authorization'];
+      }>;
+    };
     response: {
       204: {};
       400: MyServiceComponents['responses']['error'];
