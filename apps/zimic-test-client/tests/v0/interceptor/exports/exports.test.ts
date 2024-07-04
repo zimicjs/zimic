@@ -2,6 +2,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   type JSONValue,
   type JSONSerialized,
+  type HttpSearchParamsSerialized,
+  type HttpHeadersSerialized,
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
@@ -77,6 +79,8 @@ describe('Exports', () => {
     expectTypeOf<JSONValue>().not.toBeAny();
     expectTypeOf<JSONValue<never>>().not.toBeAny();
     expectTypeOf<JSONSerialized<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
 
     expectTypeOf<HttpBody>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
@@ -108,6 +112,7 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.ResponseByStatusCode<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Response<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.Body<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
