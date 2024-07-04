@@ -90,7 +90,7 @@ export function ensureUniquePathParams(url: string) {
 
 function prepareURLForRegex(url: string) {
   const encodedURL = encodeURI(url);
-  return encodedURL.replace(/([.()*?+$])/g, '\\$1');
+  return encodedURL.replace(/([.()*?+$\\])/g, '\\$1');
 }
 
 export function createRegexFromURL(url: string) {
