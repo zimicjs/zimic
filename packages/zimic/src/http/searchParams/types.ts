@@ -20,7 +20,7 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
   | HttpSearchParams<Schema>
   | HttpSearchParamsSchemaTuple<Schema>[];
 
-export type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
+type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
   ? Type
   : Type extends number
     ? `${number}`

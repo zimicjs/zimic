@@ -18,8 +18,6 @@ export class CommandError extends Error {
   }
 }
 
-export type CommandStreamType = 'stdout' | 'stderr';
-
 /**
  * Runs a command with the given arguments.
  *
