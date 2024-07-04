@@ -96,11 +96,7 @@ describe('CLI (browser)', () => {
         expect(copyFileSpy).toHaveBeenCalledTimes(1);
         expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
-        expect(spies.log).toHaveBeenCalledTimes(3);
-        expect(spies.log).toHaveBeenCalledWith(
-          expect.any(String) as string,
-          expect.stringContaining(absolutePublicDirectory),
-        );
+        expect(spies.log).toHaveBeenCalledTimes(2);
         expect(spies.log).toHaveBeenCalledWith(
           expect.any(String) as string,
           expect.stringContaining(serviceWorkerDestinationPath),
