@@ -1,0 +1,251 @@
+openapi: 3.1.0
+
+info:
+  title: Dynamic Paths
+  version: 1.0.0
+
+paths:
+  # Test aspect: path not started with a slash to test the typegen
+  users:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    get:
+      # Test aspect: search params
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users'
+
+  # Test aspect: dynamic path params
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '204':
+          description: Success
+
+    patch:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '204':
+          description: Success
+
+  # Test aspect: path ending with a trailing slash
+  /users/{userId}/friends/:
+    get:
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users'
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      parameters:
+        - $ref: '#/components/parameters/from'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notifications'
+
+    delete:
+      operationId: deleteNotifications
+      parameters:
+        - $ref: '#/components/parameters/authorization'
+      responses:
+        '204':
+          description: Success
+        '400':
+          $ref: '#/components/responses/error'
+
+  # Test aspect: form data and search param bodies
+  /uploads:
+    post:
+      # Test aspect: request headers
+      parameters:
+        - name: api-key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/fileUpload'
+      responses:
+        '200':
+          description: Success
+          # Test aspect: response headers
+          headers:
+            x-upload-id:
+              schema:
+                type: string
+          # Test aspect: multiple content types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+            x-www-form-urlencoded:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+
+components:
+  # Test aspect: schema components
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+
+    Users:
+      type: array
+      items:
+        $ref: '#/components/schemas/User'
+
+    Notification:
+      type: object
+      required:
+        - id
+        - message
+      properties:
+        id:
+          type: integer
+          format: int64
+        message:
+          type: string
+
+    Notifications:
+      type: array
+      items:
+        $ref: '#/components/schemas/Notification'
+
+  # Test aspect: parameter components
+  parameters:
+    from:
+      name: from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+    authorization:
+      name: authorization
+      in: header
+      required: true
+      schema:
+        type: string
+
+  # Test aspect: request body components
+  requestBodies:
+    fileUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: The file to upload
+            required:
+              - name
+              - content
+            properties:
+              name:
+                type: string
+                description: The name of the file
+              content:
+                type: string
+                description: The content of the file
+                format: binary
+                nullable: true
+
+  # Test aspect: responses components
+  responses:
+    error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string

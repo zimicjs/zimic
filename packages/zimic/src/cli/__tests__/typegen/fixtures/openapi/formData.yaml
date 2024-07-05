@@ -1,0 +1,97 @@
+openapi: 3.1.0
+
+info:
+  title: Form Data
+  version: 1.0.0
+
+paths:
+  /upload-with-literal-form-data:
+    post:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: The file to upload
+              required:
+                - name
+                - content
+              properties:
+                name:
+                  type: string
+                  description: The name of the file
+                content:
+                  type: string
+                  description: The content of the file
+                  format: binary
+                  nullable: true
+      responses:
+        '200':
+          description: Success
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                description: The file uploaded
+                required:
+                  - content
+                properties:
+                  name:
+                    type: string
+                    description: The name of the file
+                  content:
+                    type: string
+                    description: The content of the file
+                    format: binary
+                    nullable: true
+
+  /upload-with-component-form-data:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/formDataUpload'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+
+components:
+  requestBodies:
+    formDataUpload:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: The file to upload
+            required:
+              - name
+              - content
+            properties:
+              name:
+                type: string
+                description: The name of the file
+              content:
+                type: string
+                description: The content of the file
+                format: binary
+                nullable: true
+
+  responses:
+    Success:
+      description: Success
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: The file uploaded
+            required:
+              - content
+            properties:
+              name:
+                type: string
+                description: The name of the file
+              content:
+                type: string
+                description: The content of the file
+                format: binary
+                nullable: true

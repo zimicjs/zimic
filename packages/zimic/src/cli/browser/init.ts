@@ -16,13 +16,11 @@ interface BrowserServiceWorkerInitOptions {
 async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
   const absolutePublicDirectory = path.resolve(publicDirectory);
 
-  logWithPrefix(`Copying the service worker script to ${chalk.yellow(absolutePublicDirectory)}...`);
-
   await filesystem.mkdir(absolutePublicDirectory, { recursive: true });
   const serviceWorkerDestinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
   await filesystem.copyFile(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
-  logWithPrefix(`Service worker script saved to ${chalk.yellow(serviceWorkerDestinationPath)}!`);
+  logWithPrefix(`Service worker script saved to ${chalk.green(serviceWorkerDestinationPath)}!`);
   logWithPrefix('You can now use browser interceptors!');
 }
 

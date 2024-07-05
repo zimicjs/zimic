@@ -1,0 +1,407 @@
+openapi: 3.1.0
+
+info:
+  title: Request Bodies
+  version: 1.0.0
+
+paths:
+  /users-with-request-body-component:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/requiredCreateUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-request-body-component-having-multiple-contents:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/requiredCreateUserMultiple'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-request-body-component-having-multiple-contents-and-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        $ref: '#/components/requestBodies/requiredCreateUserMultiple'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-optional-request-body-component:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/optionalCreateUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-optional-by-default-request-body-component:
+    post:
+      requestBody:
+        $ref: '#/components/requestBodies/createUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-request-body-component-and-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        $ref: '#/components/requestBodies/optionalCreateUser'
+      responses:
+        '200':
+          description: Success
+
+  /users-with-schema-component-in-request-body:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-schema-component-in-multiple-contents:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-schema-component-in-multiple-contents-having-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-schema-request-body:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-by-default-schema-request-body:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserBody'
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-request-body:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-multiple-contents:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+          application/xml:
+            schema:
+              type: object
+              required:
+                - name
+                - password
+              properties:
+                name:
+                  type: string
+                  description: The name of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+  /users-with-literal-multiple-contents-having-parameters:
+    post:
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          required: false
+        - name: x-value
+          in: header
+          schema:
+            type: string
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+          application/xml:
+            schema:
+              type: object
+              required:
+                - name
+                - password
+              properties:
+                name:
+                  type: string
+                  description: The name of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-literal-request-body:
+    post:
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+  /users-with-optional-by-default-literal-request-body:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+        responses:
+          '200':
+            description: Success
+
+components:
+  schemas:
+    CreateUserBody:
+      type: object
+      description: A user to create
+      required:
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          description: The name of the user
+        email:
+          type: string
+          description: The email of the user
+        password:
+          type: string
+          description: The password of the user
+
+  requestBodies:
+    createUser:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+                description: The name of the user
+              email:
+                type: string
+                description: The email of the user
+              password:
+                type: string
+                description: The password of the user
+
+    requiredCreateUser:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+                description: The name of the user
+              email:
+                type: string
+                description: The email of the user
+              password:
+                type: string
+                description: The password of the user
+
+    requiredCreateUserMultiple:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                description: The email of the user
+              password:
+                type: string
+                description: The password of the user
+        application/xml:
+          schema:
+            type: object
+            required:
+              - name
+              - password
+            properties:
+              name:
+                type: string
+                description: The name of the user
+              password:
+                type: string
+                description: The password of the user
+
+    optionalCreateUser:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              name:
+                type: string
+                description: The name of the user
+              email:
+                type: string
+                description: The email of the user
+              password:
+                type: string
+                description: The password of the user

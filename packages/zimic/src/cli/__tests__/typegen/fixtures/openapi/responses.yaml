@@ -1,0 +1,194 @@
+openapi: 3.1.0
+
+info:
+  title: Responses
+  version: 1.0.0
+
+paths:
+  /users-with-non-numeric-status-codes:
+    post:
+      responses:
+        '2xx':
+          $ref: '#/components/responses/userCreated'
+        '4XX':
+          $ref: '#/components/responses/error'
+        default:
+          $ref: '#/components/responses/error'
+
+  /users-with-no-request:
+    post:
+      responses:
+        '200':
+          $ref: '#/components/responses/userCreated'
+        '400':
+          $ref: '#/components/responses/error'
+
+  /users-with-multiple-reference-response-contents:
+    post:
+      responses:
+        '200':
+          $ref: '#/components/responses/userCreatedMultipleContents'
+        '400':
+          $ref: '#/components/responses/error'
+
+  /users-with-multiple-literal-response-contents:
+    post:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                description: The created user
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-json]
+                  value:
+                    $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                type: object
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-xml]
+                  value:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/error'
+
+  /users-with-multiple-literal-response-contents-having-headers:
+    post:
+      responses:
+        '200':
+          description: Success
+          headers:
+            x-value:
+              schema:
+                type: string
+              required: false
+          content:
+            application/json:
+              schema:
+                type: object
+                description: The created user
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-json]
+                  value:
+                    $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                type: object
+                required:
+                  - type
+                  - value
+                properties:
+                  type:
+                    type: string
+                    description: The type of the response
+                    enum: [user-as-xml]
+                  value:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/error'
+
+  /users-with-no-response-content:
+    post:
+      responses:
+        '200':
+          description: Success
+
+  /users-with-no-request-or-response:
+    post:
+      summary: Empty
+
+components:
+  schemas:
+    User:
+      type: object
+      description: A user
+      required:
+        - id
+        - email
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: The user ID
+        name:
+          type: string
+          description: The user's name
+        email:
+          type: string
+          description: The user's email address
+        createdAt:
+          type: string
+          description: The date and time the user was created
+        updatedAt:
+          type: string
+          description: The date and time the user was last updated
+
+  responses:
+    userCreated:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+
+    userCreatedMultipleContents:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            description: The created user as JSON
+            properties:
+              type:
+                type: string
+                enum: [user-as-json]
+                description: The type of the response
+              value:
+                $ref: '#/components/schemas/User'
+        application/xml:
+          schema:
+            type: object
+            description: The created user as XML
+            properties:
+              type:
+                type: string
+                enum: [user-as-xml]
+                description: The type of the response
+              value:
+                $ref: '#/components/schemas/User'
+
+    error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: An error response
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: A message describing the error

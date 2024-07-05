@@ -20,7 +20,7 @@
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
     "test": "dotenv -v NODE_ENV=test -- vitest",
-    "test:turbo": "pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {

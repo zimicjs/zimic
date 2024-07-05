@@ -1,5 +1,6 @@
 import { Defined } from '@/types/utils';
 
+import { HttpSearchParamsSerialized } from '../searchParams/types';
 import HttpHeaders from './HttpHeaders';
 
 /** A schema for strict HTTP headers. */
@@ -18,3 +19,5 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | Schema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
+
+export type HttpHeadersSerialized<Type> = HttpSearchParamsSerialized<Type>;

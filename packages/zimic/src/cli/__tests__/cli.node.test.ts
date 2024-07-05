@@ -11,11 +11,12 @@ describe('CLI', () => {
   const processOnSpy = vi.spyOn(process, 'on');
 
   const rootHelpOutput = [
-    'zimic <command>',
+    'zimic [command]',
     '',
     'Commands:',
     '  zimic browser  Browser',
     '  zimic server   Interceptor server',
+    '  zimic typegen  Type generation',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -29,21 +30,20 @@ describe('CLI', () => {
     processOnSpy.mockClear();
   });
 
-  it('should throw an error if no command is provided', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js']);
+  it('should not throw an error if no command is provided', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
-      await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
+      await runCLI();
 
-      expect(spies.error).toHaveBeenCalledTimes(1);
-      expect(spies.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+      expect(spies.error).toHaveBeenCalledTimes(0);
     });
   });
 
   it('should throw an error if an unknown command is provided', async () => {
     const unknownCommand = 'unknown';
 
-    processArgvSpy.mockReturnValue(['node', 'cli.js', unknownCommand]);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', unknownCommand]);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -54,7 +54,7 @@ describe('CLI', () => {
   });
 
   it('should show a help message', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', '--help']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -64,7 +64,7 @@ describe('CLI', () => {
   });
 
   it('should show the CLI version', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', '--version']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', '--version']);
 
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');

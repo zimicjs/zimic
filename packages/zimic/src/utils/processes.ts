@@ -26,12 +26,25 @@ export class CommandError extends Error {
  * @param options The options to pass to the spawn function. By default, stdio is set to 'inherit'.
  * @throws {CommandError} When the command exits with a non-zero code.
  */
-export async function runCommand(command: string, commandArguments: string[], options: SpawnOptions = {}) {
+export async function runCommand(
+  command: string,
+  commandArguments: string[],
+  options: SpawnOptions & {
+    /**
+     * Can be set to 'pipe', 'inherit', 'overlapped', or 'ignore', or an array of these strings. If passed as an array,
+     * the first element is used for `stdin`, the second for `stdout`, and the third for `stderr`. A fourth element can
+     * be used to specify the `stdio` behavior beyond the standard streams. See {@link ChildProcess.stdio} for more
+     * information.
+     *
+     * @default 'inherit'
+     */
+    stdio?: SpawnOptions['stdio'];
+  } = {},
+) {
   await new Promise<void>((resolve, reject) => {
-    const childProcess = spawn(command, commandArguments, {
-      stdio: 'inherit',
-      ...options,
-    });
+    const { stdio = 'inherit', ...otherOptions } = options;
+
+    const childProcess = spawn(command, commandArguments, { stdio, ...otherOptions });
 
     childProcess.once('error', (error) => {
       childProcess.removeAllListeners();

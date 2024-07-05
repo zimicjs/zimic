@@ -19,6 +19,7 @@ node_modules
 /examples/*/tests/outputs
 /examples/*/tests/reports
 /examples/*/next-env.d.ts
+**/fixtures/**/generated/*
 
 # Environment variables
 .env*.local

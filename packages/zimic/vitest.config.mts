@@ -7,7 +7,6 @@ export const defaultConfig: UserConfig = {
   publicDir: './public',
   test: {
     globals: false,
-    allowOnly: process.env.CI !== 'true',
     testTimeout: 5000,
     hookTimeout: 5000,
     setupFiles: ['./tests/setup/shared.ts'],
@@ -24,7 +23,8 @@ export const defaultConfig: UserConfig = {
       exclude: [
         '**/local/**',
         '**/public/**',
-        '**/tests/setup/global/**',
+        'tests/setup/global/**',
+        'scripts/dev/**',
         '**/types/**',
         '**/types.ts',
         '**/typescript.ts',
@@ -36,6 +36,7 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': "'@/index'",
   },
   resolve: {
     alias: {

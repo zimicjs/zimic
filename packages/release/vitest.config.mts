@@ -8,7 +8,6 @@ export default defineConfig({
     globals: false,
     environment: 'node',
     include: ['./{src,tests}/**/*.test.ts'],
-    allowOnly: process.env.CI !== 'true',
     exclude: ['**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
     coverage: {
       provider: 'istanbul',

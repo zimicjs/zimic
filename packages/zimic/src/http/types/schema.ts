@@ -141,6 +141,8 @@ export namespace HttpSchema {
   export type ResponseByStatusCode<Schema extends HttpServiceResponseSchemaByStatusCode> = Schema;
   /** Validates that a type is a valid HTTP service response schema. */
   export type Response<Schema extends HttpServiceResponseSchema> = Schema;
+  /** Validates that a type is a valid HTTP body schema. */
+  export type Body<Schema extends HttpBody> = Schema;
   /** Validates that a type is a valid HTTP headers schema. */
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */
