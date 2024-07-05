@@ -109,7 +109,7 @@ async function runCLI() {
             })
             .option('service-name', {
               type: 'string',
-              description: 'The name of the service to generate types for.',
+              description: 'The name of the service to use in the generated types.',
               alias: 's',
               demandOption: true,
             })
@@ -131,21 +131,20 @@ async function runCLI() {
               type: 'string',
               array: true,
               description:
-                'One or more expressions to filter paths to generate types for.. Filters must follow the format ' +
-                '`<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal ' +
-                'path or a glob. For example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*` are ' +
-                'valid filters. If more than one filter is provided, they will be combined with OR. Negative filters ' +
-                'can be created by prefixing the expression with `!`. For example, `!GET /users` will exclude paths ' +
-                'matching `GET /users`. Paths in filters are case-sensitive.',
+                'One or more expressions to filter the types to generate. Filters must follow the format ' +
+                '`<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a ' +
+                'glob. Filters are case-sensitive regarding paths. If more than one filter is provided, they will be ' +
+                'combined with OR. For example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*` are ' +
+                'valid filters. Negative filters can be created by prefixing the expression with `!`. For example, ' +
+                '`!GET /users` will exclude paths matching `GET /users`.',
               alias: 'f',
-              default: [],
             })
             .option('filter-file', {
               type: 'string',
               description:
-                'A path to a file containing expressions to filter paths to generate types for. One expression is ' +
-                'expected per line and the format is the same as used in `--filter`. Comments are prefixed with `#`. ' +
-                'Additional `--filter` expressions will be appended to the considered filters.',
+                'A path to a file containing filter expressions. One expression is expected per line and the format ' +
+                'is the same as used in a `--filter` option. Comments are prefixed with `#`. A filter file can be ' +
+                'used alongside additional `--filter` expressions.',
               alias: 'F',
             }),
         async (cliArguments) => {
@@ -155,7 +154,7 @@ async function runCLI() {
             serviceName: cliArguments.serviceName,
             includeComments: cliArguments.comments,
             prune: cliArguments.prune,
-            filters: cliArguments.filter,
+            filters: cliArguments.filter ?? [],
             filterFile: cliArguments.filterFile,
           });
         },
