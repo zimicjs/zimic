@@ -308,6 +308,19 @@ const openapiTypegenFixtureCases = {
       ],
     },
   ],
+
+  empty: [
+    {
+      inputFileName: 'empty.yaml',
+      expectedOutputFileName: 'empty.ts',
+      additionalArguments: ['--no-comments'],
+    },
+    {
+      inputFileName: 'empty.yaml',
+      expectedOutputFileName: 'empty.comments.ts',
+      additionalArguments: [],
+    },
+  ],
 } satisfies Record<string, TypegenFixtureCase[]>;
 
 export default openapiTypegenFixtureCases;

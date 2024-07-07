@@ -29,7 +29,7 @@
     "zx": "^4.3.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.9",
+    "@types/node": "^20.14.10",
     "@types/yargs": "^17.0.32",
     "@vitest/coverage-istanbul": "1.6.0",
     "@zimic/eslint-config-node": "workspace:*",
@@ -37,7 +37,7 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "tsup": "^8.1.0",
-    "typescript": "^5.5.2",
+    "typescript": "^5.5.3",
     "vitest": "1.6.0"
   }
 }
