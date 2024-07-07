@@ -7,11 +7,9 @@ import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type HttpBodyValue = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
-
 /** The body type for HTTP requests and responses. */
-export type HttpBody<Type extends HttpBodyValue = HttpBodyValue> = Type;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in

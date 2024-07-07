@@ -68,13 +68,33 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
   return normalizedNodes;
 }
 
-/** The options to use when generating types from an OpenAPI schema. */
+/**
+ * The options to use when generating types from an OpenAPI schema.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
+ * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-openapi` `zimic typegen openapi` API reference}
+ */
 export interface OpenAPITypegenOptions {
-  /** The path to a local OpenAPI schema file. YAML and JSON are supported. */
+  /**
+   * The path to a local OpenAPI schema file. YAML and JSON are supported.
+   *
+   * @example
+   *   './schema.yaml';
+   */
   input: string;
-  /** The path to write the generated types to. If not provided, the types will be written to stdout. */
+  /**
+   * The path to write the generated types to. If not provided, the types will be written to stdout.
+   *
+   * @example
+   *   './schema.ts';
+   */
   output?: string;
-  /** The name of the service to use in the generated types. */
+  /**
+   * The name of the service to use in the generated types.
+   *
+   * @example
+   *   'MyService';
+   */
   serviceName: string;
   /** Whether to include comments in the generated types. */
   includeComments: boolean;
@@ -90,13 +110,16 @@ export interface OpenAPITypegenOptions {
    * provided, they will be combined with OR, while negative filters will be combined with AND.
    *
    * @example
-   *   `GET /users`, `* /users`, `GET /users/*`, `GET /users/**\/*`, `!GET /users`;
+   *   ['GET /users', '* /users', 'GET,POST /users/*', 'DELETE /users/**\\/*', '!GET /notifications'];
    */
   filters?: string[];
   /**
    * A path to a file containing filter expressions. One expression is expected per line and the format is the same as
    * used in a `--filter` option. Comments are prefixed with `#`. A filter file can be used alongside additional
    * `--filter` expressions.
+   *
+   * @example
+   *   './filters.txt';
    */
   filterFile?: string;
 }
@@ -105,6 +128,7 @@ export interface OpenAPITypegenOptions {
  * Generates TypeScript types from an OpenAPI schema.
  *
  * @param options The options to use when generating the types.
+ * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
  */
 async function generateTypesFromOpenAPI({
   input: inputFilePath,

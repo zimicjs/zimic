@@ -3,7 +3,7 @@ import { createInterceptorServer } from '../factory';
 /**
  * A namespace of interceptor server resources for handling HTTP requests.
  *
- * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
+ * @see {@link https://github.com/zimicjs/zimic#zimic-server-programmatic-usage `zimic server` programmatic usage}
  * @see {@link https://github.com/zimicjs/zimic#remote-http-interceptors Remote HTTP Interceptors} .
  */
 class InterceptorServerNamespace {
@@ -12,7 +12,7 @@ class InterceptorServerNamespace {
    *
    * @param options The options to create the server.
    * @returns The created server.
-   * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
+   * @see {@link https://github.com/zimicjs/zimic#zimic-server-programmatic-usage `zimic server` programmatic usage}
    * @see {@link https://github.com/zimicjs/zimic#remote-http-interceptors Remote HTTP Interceptors} .
    */
   create = createInterceptorServer;

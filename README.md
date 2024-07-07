@@ -106,7 +106,10 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`zimic browser init`](#zimic-browser-init)
   - [`zimic server`](#zimic-server)
     - [`zimic server start`](#zimic-server-start)
-    - [Programmatic usage](#programmatic-usage)
+    - [`zimic server` programmatic usage](#zimic-server-programmatic-usage)
+  - [`zimic typegen`](#zimic-typegen)
+    - [`zimic typegen openapi`](#zimic-typegen-openapi)
+    - [`zimic typegen` programmatic usage](#zimic-typegen-programmatic-usage)
 - [Changelog](#changelog)
 
 ## Getting started
@@ -2698,7 +2701,7 @@ zimic server start --port 4000 --ephemeral -- npm run test
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
 
-#### Programmatic usage
+#### `zimic server` programmatic usage
 
 The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
 using the CLI, this module is a valid alternative for more advanced use cases.
@@ -2826,6 +2829,26 @@ GET,POST,PUT /workspaces
 ```bash
 zimic typegen openapi ./schema.yaml -o schema.ts --service-name MyService --filter-file ./filters.txt
 ```
+
+#### `zimic typegen` programmatic usage
+
+The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the CLI, but this
+module is a valid alternative for more advanced use cases.
+
+```ts
+import { typegen } from 'zimic/typegen';
+
+await typegen.generateFromOpenAPI({
+  input: './schema.yaml',
+  output: './schema.ts',
+  serviceName: 'MyService',
+  filters: ['* /users**'],
+  includeComments: true,
+  prune: true,
+});
+```
+
+The parameters of `typegen.generateFromOpenAPI` are the same as the CLI options for the `zimic typegen openapi` command.
 
 ---
 
