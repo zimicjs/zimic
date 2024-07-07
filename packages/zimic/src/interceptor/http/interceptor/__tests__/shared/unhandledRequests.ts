@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
-import { http } from '@/interceptor';
+import { http } from '@/interceptor/http';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';

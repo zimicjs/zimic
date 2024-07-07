@@ -31,20 +31,21 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs',
   entry: {
     index: 'src/index.ts',
-    interceptor: 'src/interceptor/index.ts',
+    http: 'src/http/index.ts',
+    'http/interceptor': 'src/interceptor/http/index.ts',
   },
   external: ['util', 'buffer', 'crypto'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
   const entry = {
-    server: 'src/interceptor/server/index.ts',
+    'interceptor/server': 'src/interceptor/server/index.ts',
     typegen: 'src/typegen/index.ts',
     cli: 'src/cli/index.ts',
     'scripts/postinstall': 'scripts/postinstall.ts',
   };
 
-  const dtsEntry = pickKeys(entry, ['server', 'typegen']);
+  const dtsEntry = pickKeys(entry, ['interceptor/server', 'typegen']);
 
   return {
     ...sharedConfig,

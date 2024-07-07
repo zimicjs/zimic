@@ -46,17 +46,23 @@
       "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./interceptor": {
-      "import": "./dist/interceptor.mjs",
-      "require": "./dist/interceptor.js",
-      "default": "./dist/interceptor.js",
-      "types": "./dist/interceptor.d.ts"
+    "./http": {
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js",
+      "types": "./dist/http.d.ts"
     },
-    "./server": {
-      "import": "./dist/server.mjs",
-      "require": "./dist/server.js",
-      "default": "./dist/server.js",
-      "types": "./dist/server.d.ts"
+    "./http/interceptor": {
+      "import": "./dist/http/interceptor.mjs",
+      "require": "./dist/http/interceptor.js",
+      "default": "./dist/http/interceptor.js",
+      "types": "./dist/http/interceptor.d.ts"
+    },
+    "./interceptor/server": {
+      "import": "./dist/interceptor/server.mjs",
+      "require": "./dist/interceptor/server.js",
+      "default": "./dist/interceptor/server.js",
+      "types": "./dist/interceptor/server.d.ts"
     },
     "./typegen": {
       "import": "./dist/typegen.mjs",

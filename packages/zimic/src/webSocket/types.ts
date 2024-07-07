@@ -1,7 +1,6 @@
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
-import { JSONValue } from '..';
-
+import { JSONValue } from '@/types/json';
 import { PossiblePromise } from '@/types/utils';
 
 export namespace WebSocket {

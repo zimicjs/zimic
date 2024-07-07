@@ -15,7 +15,7 @@ const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
 
 async function normalizeOutputTypeImports(filePath: string) {
   const fileContent = await filesystem.readFile(filePath, 'utf-8');
-  const fileContentWithCorrectImports = fileContent.replace(/ from "zimic";/, " from '@/index';");
+  const fileContentWithCorrectImports = fileContent.replace(/ from "zimic";/, " from '@/http';");
   await filesystem.writeFile(filePath, fileContentWithCorrectImports);
 }
 

@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { http } from '@/interceptor';
+import { http } from '@/interceptor/http';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';

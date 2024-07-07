@@ -7,7 +7,7 @@ import type {
   HttpSchema,
   HttpSearchParams,
   HttpSearchParamsSerialized,
-} from '@/index';
+} from '@/http';
 
 export type MyServiceSchema = HttpSchema.Paths<{
   users: {
