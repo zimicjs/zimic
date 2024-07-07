@@ -1,7 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic0';
 import {
-  type JSONValue,
-  type JSONSerialized,
   type HttpSearchParamsSerialized,
   type HttpHeadersSerialized,
   type HttpBody,
@@ -34,7 +33,6 @@ import {
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
-  InvalidJSONError,
   InvalidFormDataError,
 } from 'zimic0/http';
 import {
@@ -72,7 +70,7 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
-} from 'zimic0/http/interceptor';
+} from 'zimic0/interceptor/http';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {

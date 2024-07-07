@@ -1,4 +1,4 @@
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 import environment from '../../src/config/environment';
 import { GitHubRepository } from '../../src/services/github';

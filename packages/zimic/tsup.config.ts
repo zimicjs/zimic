@@ -32,7 +32,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   entry: {
     index: 'src/index.ts',
     http: 'src/http/index.ts',
-    'http/interceptor': 'src/interceptor/http/index.ts',
+    'interceptor/http': 'src/interceptor/http/index.ts',
   },
   external: ['util', 'buffer', 'crypto'],
 }));

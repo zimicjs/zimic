@@ -1,10 +1,8 @@
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
-export { default as InvalidJSONError } from './errors/InvalidJSONError';
 export { default as HttpFormData } from './formData/HttpFormData';
 export { default as HttpHeaders } from './headers/HttpHeaders';
 export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
 
-export type { JSONValue, JSONSerialized } from '../types/json';
 export type { HttpSearchParamsSerialized } from './searchParams/types';
 export type { HttpHeadersSerialized } from './headers/types';
 

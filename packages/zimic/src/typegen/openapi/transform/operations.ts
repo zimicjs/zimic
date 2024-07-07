@@ -38,7 +38,7 @@ function isOperation(node: ts.Node): node is Operation {
 }
 
 function wrapOperationType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
-  context.typeImports.root.add('HttpSchema');
+  context.typeImports.http.add('HttpSchema');
 
   const httpSchemaMethodWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),

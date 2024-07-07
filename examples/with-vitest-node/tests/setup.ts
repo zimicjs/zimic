@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, afterEach } from 'vitest';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 import githubInterceptor from './interceptors/github';
 

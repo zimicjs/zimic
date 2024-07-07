@@ -1,4 +1,4 @@
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 import githubInterceptor, { githubFixtures } from './github';
 

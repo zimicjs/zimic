@@ -228,8 +228,8 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
    <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
    ```ts
-   import { JSONValue } from 'zimic/http';
-   import { http } from 'zimic/http/interceptor';
+   import { JSONValue } from 'zimic';
+   import { http } from 'zimic/interceptor/http';
 
    type User = JSONValue<{
      username: string;
@@ -252,8 +252,8 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
     </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Remote</b></summary>
 
    ```ts
-   import { JSONValue } from 'zimic/http';
-   import { http } from 'zimic/http/interceptor';
+   import { JSONValue } from 'zimic';
+   import { http } from 'zimic/interceptor/http';
 
    type User = JSONValue<{
      username: string;
@@ -640,8 +640,8 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -668,8 +668,8 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -730,7 +730,7 @@ through the interceptor and reach the real network. [Remote interceptors](#remot
 You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor()`.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<Schema>({
   type: 'local',
@@ -744,7 +744,7 @@ const interceptor = http.createInterceptor<Schema>({
 [Intercepted HTTP resources](#intercepted-http-resources).
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<Schema>({
   type: 'local',
@@ -765,7 +765,7 @@ URL, you can use `http.default.onUnhandledRequest`. Keep in mind that defining a
 interceptor will take precedence over `http.default.onUnhandledRequest`.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 // Example 1: Ignore all unhandled requests
 http.default.onUnhandledRequest({ log: false });
@@ -800,7 +800,7 @@ their intercepted requests in memory.
 > See [Testing](#testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<Schema>({
   type: 'local',
@@ -816,7 +816,7 @@ const interceptor = http.createInterceptor<Schema>({
 > mock servers.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<Schema>({
   type: 'local',
@@ -834,8 +834,9 @@ response bodies, and status codes. Based on the schema, interceptors will provid
   <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 // Declaring base types
 type User = JSONValue<{
@@ -901,8 +902,9 @@ const interceptor = http.createInterceptor<{
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 // Declaring the base types
 type User = JSONValue<{
@@ -983,7 +985,7 @@ const interceptor = http.createInterceptor<ServiceSchema>({
 At the root level, each key represents a path or route of the service:
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1008,7 +1010,7 @@ const interceptor = http.createInterceptor<{
 
 ```ts
 import { HttpSchema } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type UserPaths = HttpSchema.Paths<{
   '/users': {
@@ -1039,7 +1041,7 @@ Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`
 names are case-sensitive.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1065,7 +1067,7 @@ const interceptor = http.createInterceptor<{
 
 ```ts
 import { HttpSchema } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type UserMethods = HttpSchema.Methods<{
   GET: {
@@ -1098,8 +1100,9 @@ automatically inferred from dynamic paths, such as `/users/:id`.
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
@@ -1125,8 +1128,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
   username: string;
@@ -1180,7 +1184,7 @@ type SerializedUser = JSONSerialized<User>;
 
 ```ts
 import { HttpSchema, HttpFormData } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
@@ -1207,7 +1211,7 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1229,7 +1233,7 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1252,7 +1256,7 @@ const interceptor = http.createInterceptor<{
 
 ```ts
 import { HttpSchema, HttpSearchParams } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
@@ -1284,8 +1288,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
   username: string;
@@ -1323,8 +1328,8 @@ text.
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { http } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -1365,7 +1370,7 @@ const interceptor = http.createInterceptor<{
 
 ```ts
 import { HttpSchema, HttpFormData } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
@@ -1394,7 +1399,7 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1418,7 +1423,7 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1443,7 +1448,7 @@ const interceptor = http.createInterceptor<{
 
 ```ts
 import { HttpSchema, HttpSearchParams } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
@@ -1478,8 +1483,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic/http';
-import { http } from 'zimic/http/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { http } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -1572,7 +1578,7 @@ need to `await` it. You can also chain any number of operations and apply them b
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1596,7 +1602,7 @@ const listHandler = interceptor.get('/users').respond({
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users': {
@@ -1625,7 +1631,7 @@ Paths with dynamic path parameters are supported, such as `/users/:id`. Even whe
 `/users/1`), the original path is automatically inferred, guaranteeing type safety.
 
 ```ts
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 const interceptor = http.createInterceptor<{
   '/users/:id': {

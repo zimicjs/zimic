@@ -1,4 +1,4 @@
-import type { JSONValue } from 'zimic/http';
+import type { JSONValue } from 'zimic';
 
 import environment from '../config/environment';
 

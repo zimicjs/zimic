@@ -1,5 +1,5 @@
 import { beforeAll, afterEach, afterAll } from '@jest/globals';
-import { http } from 'zimic/http/interceptor';
+import { http } from 'zimic/interceptor/http';
 
 import githubInterceptor from './interceptors/github';
 

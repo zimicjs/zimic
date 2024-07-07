@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
+import InvalidJSONError from '@/errors/InvalidJSONError';
 import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
-import InvalidJSONError from '@/http/errors/InvalidJSONError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';

@@ -153,14 +153,14 @@ function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
 }
 
 function wrapFormDataContentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.root.add('HttpFormData');
+  context.typeImports.http.add('HttpFormData');
 
   return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [type]);
 }
 
 function wrapURLEncodedContentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.root.add('HttpSearchParams');
-  context.typeImports.root.add('HttpSearchParamsSerialized');
+  context.typeImports.http.add('HttpSearchParams');
+  context.typeImports.http.add('HttpSearchParamsSerialized');
 
   return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParams'), [
     ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpSearchParamsSerialized'), [
@@ -204,7 +204,7 @@ function normalizeRequestBodyMember(
 }
 
 function wrapHeadersType(type: ts.TypeLiteralNode, context: TypeTransformContext): NormalizedRequestHeaders['type'] {
-  context.typeImports.root.add('HttpHeadersSerialized');
+  context.typeImports.http.add('HttpHeadersSerialized');
 
   const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
 
@@ -347,7 +347,7 @@ function normalizeRequest(request: MethodMember, context: TypeTransformContext) 
 }
 
 function wrapResponseType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.root.add('HttpSchema');
+  context.typeImports.http.add('HttpSchema');
 
   const httpSchemaResponseWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),
@@ -456,7 +456,7 @@ function normalizeRequestQueryWithParameters(requestMember: RequestMember, conte
 
   const newType = renameComponentReferences(requestMember.type, context);
 
-  context.typeImports.root.add('HttpSearchParamsSerialized');
+  context.typeImports.http.add('HttpSearchParamsSerialized');
 
   const serializedWrapper = ts.factory.createIdentifier('HttpSearchParamsSerialized');
   const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
@@ -476,7 +476,7 @@ function normalizeRequestHeadersWithParameters(requestMember: RequestMember, con
 
   const newType = renameComponentReferences(requestMember.type, context);
 
-  context.typeImports.root.add('HttpHeadersSerialized');
+  context.typeImports.http.add('HttpHeadersSerialized');
 
   const serializedWrapper = ts.factory.createIdentifier('HttpHeadersSerialized');
   const wrappedNewType = ts.factory.createTypeReferenceNode(serializedWrapper, [newType]);
