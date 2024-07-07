@@ -1,4 +1,4 @@
-import { runCommand } from 'zimic/server';
+import { runCommand } from 'zimic/interceptor/server';
 
 import githubInterceptor, { githubFixtures } from '../github';
 

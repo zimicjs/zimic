@@ -1,4 +1,4 @@
-import { http } from 'zimic/interceptor';
+import { http } from 'zimic/http/interceptor';
 
 import { GITHUB_API_BASE_URL, GitHubRepository } from '../../src/app';
 

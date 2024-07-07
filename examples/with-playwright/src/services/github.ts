@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import type { JSONValue } from 'zimic';
+import type { JSONValue } from 'zimic/http';
 
 import environment from '../config/environment';
 
