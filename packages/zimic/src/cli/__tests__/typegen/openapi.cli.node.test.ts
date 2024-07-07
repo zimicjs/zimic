@@ -36,7 +36,9 @@ describe('Type generation (OpenAPI)', () => {
   const fixtureFileTypes = ['yaml', 'json'] as const;
 
   function normalizeGeneratedFileToCompare(fileContent: string) {
-    return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '').replace(/zimic@[\d.]+/g, `zimic@${version}`);
+    return fileContent
+      .replace(/^\s*\/\/ eslint-disable-.+$/gm, '')
+      .replace(/zimic@\d+\.\d+\.\d+(?:-.+\.\d+)?/g, `zimic@${version}`);
   }
 
   beforeAll(async () => {
@@ -260,8 +262,10 @@ describe('Type generation (OpenAPI)', () => {
             await prettier.format(rawGeneratedOutputContent, { ...prettierConfig, parser: 'typescript' }),
           );
 
-          const expectedOutputDirectory = typegenFixtures.openapi.directory;
-          const expectedOutputFilePath = path.join(expectedOutputDirectory, fixtureCase.expectedOutputFileName);
+          const expectedOutputFilePath = path.join(
+            typegenFixtures.openapi.directory,
+            fixtureCase.expectedOutputFileName,
+          );
           const expectedOutputContent = normalizeGeneratedFileToCompare(
             await filesystem.readFile(expectedOutputFilePath, 'utf-8'),
           );
