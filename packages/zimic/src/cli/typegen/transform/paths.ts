@@ -3,6 +3,7 @@ import ts from 'typescript';
 import { Override } from '@/types/utils';
 import { isDefined } from '@/utils/data';
 
+import { renameComponentReferences } from './components';
 import { TypeTransformContext } from './context';
 import { normalizeMethod } from './methods';
 
@@ -23,7 +24,7 @@ export function isPathsDeclaration(node: ts.Node | undefined): node is PathsDecl
 type Path = Override<
   ts.PropertySignature,
   {
-    type: ts.TypeLiteralNode;
+    type: ts.TypeLiteralNode | ts.IndexedAccessTypeNode;
     name: ts.Identifier | ts.StringLiteral;
   }
 >;
@@ -33,7 +34,7 @@ function isPath(node: ts.TypeElement): node is Path {
     ts.isPropertySignature(node) &&
     (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
     node.type !== undefined &&
-    ts.isTypeLiteralNode(node.type)
+    (ts.isTypeLiteralNode(node.type) || ts.isIndexedAccessTypeNode(node.type))
   );
 }
 
@@ -65,16 +66,23 @@ export function normalizePath(
   }
 
   const newPathName = isComponent ? path.name.text : normalizePathNameWithParameters(path.name.text);
-  const newMethods = path.type.members
-    .map((method) => normalizeMethod(method, context, { pathName: newPathName }))
-    .filter(isDefined);
-
-  if (newMethods.length === 0) {
-    return undefined;
-  }
-
   const newIdentifier = isComponent ? path.name : ts.factory.createStringLiteral(newPathName);
-  const newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newMethods));
+
+  let newType: ts.TypeNode;
+
+  if (ts.isTypeLiteralNode(path.type)) {
+    const newMethods = path.type.members
+      .map((method) => normalizeMethod(method, context, { pathName: newPathName }))
+      .filter(isDefined);
+
+    if (newMethods.length === 0) {
+      return undefined;
+    }
+
+    newType = ts.factory.updateTypeLiteralNode(path.type, ts.factory.createNodeArray(newMethods));
+  } else {
+    newType = renameComponentReferences(path.type, context);
+  }
 
   return ts.factory.updatePropertySignature(
     path,
