@@ -3,9 +3,10 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
+import generateTypesFromOpenAPI from '@/typegen/openapi/generate';
+
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
-import generateTypesFromOpenAPISchema from './typegen/openapi';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -148,13 +149,13 @@ async function runCLI() {
               alias: 'F',
             }),
         async (cliArguments) => {
-          await generateTypesFromOpenAPISchema({
+          await generateTypesFromOpenAPI({
             inputFilePath: cliArguments.input,
             outputFilePath: cliArguments.output,
             serviceName: cliArguments.serviceName,
             includeComments: cliArguments.comments,
             prune: cliArguments.prune,
-            filters: cliArguments.filter ?? [],
+            filters: cliArguments.filter,
             filterFile: cliArguments.filterFile,
           });
         },
