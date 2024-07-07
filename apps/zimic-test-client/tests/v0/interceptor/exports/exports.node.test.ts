@@ -8,7 +8,7 @@ import {
   CommandError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
-} from 'zimic0/server';
+} from 'zimic0/interceptor/server';
 import { generateTypesFromOpenAPI, type OpenAPITypegenOptions } from 'zimic0/typegen';
 
 describe('Exports (Node.js)', () => {

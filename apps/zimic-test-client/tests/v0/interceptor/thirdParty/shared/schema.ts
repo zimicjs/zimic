@@ -1,4 +1,4 @@
-import { HttpSchema, JSONValue, JSONSerialized } from 'zimic0';
+import { HttpSchema, JSONValue, JSONSerialized } from 'zimic0/http';
 
 export interface User {
   id: string;

@@ -36,7 +36,7 @@ import {
   type PathParamsSchemaFromPath,
   InvalidJSONError,
   InvalidFormDataError,
-} from 'zimic0';
+} from 'zimic0/http';
 import {
   http,
   type HttpInterceptorNamespace,
@@ -72,7 +72,7 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
-} from 'zimic0/interceptor';
+} from 'zimic0/http/interceptor';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
