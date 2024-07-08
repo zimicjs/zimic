@@ -48,4 +48,4 @@ export type { HttpInterceptorNamespaceDefault } from './namespace/HttpIntercepto
  *
  * @see {@link https://github.com/zimicjs/zimic#zimicinterceptor-api-reference `zimic/interceptor` API reference}
  */
-export const http = Object.freeze(new HttpInterceptorNamespace());
+export const httpInterceptor = Object.freeze(new HttpInterceptorNamespace());

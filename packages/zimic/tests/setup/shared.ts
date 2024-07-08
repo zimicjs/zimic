@@ -1,7 +1,7 @@
 import { beforeEach } from 'vitest';
 
-import { http } from '@/interceptor/http';
+import { httpInterceptor } from '@/interceptor/http';
 
 beforeEach(() => {
-  http.default.onUnhandledRequest({ log: false });
+  httpInterceptor.default.onUnhandledRequest({ log: false });
 });

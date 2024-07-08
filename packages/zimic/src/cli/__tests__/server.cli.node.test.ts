@@ -3,7 +3,7 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { http } from '@/interceptor/http';
+import { httpInterceptor } from '@/interceptor/http';
 import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
@@ -516,11 +516,11 @@ describe('CLI (server)', async () => {
         ]);
 
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: true });
+          httpInterceptor.default.onUnhandledRequest({ log: true });
         } else if (overrideDefault === 'static-empty') {
-          http.default.onUnhandledRequest({});
+          httpInterceptor.default.onUnhandledRequest({});
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(async (_request, context) => {
+          httpInterceptor.default.onUnhandledRequest(async (_request, context) => {
             await context.log();
           });
         }
@@ -580,9 +580,9 @@ describe('CLI (server)', async () => {
         ]);
 
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: false });
+          httpInterceptor.default.onUnhandledRequest({ log: false });
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(vi.fn());
+          httpInterceptor.default.onUnhandledRequest(vi.fn());
         }
 
         try {

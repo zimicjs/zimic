@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
-import { http } from '@/interceptor/http';
+import { httpInterceptor } from '@/interceptor/http';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
@@ -68,11 +68,11 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     ])('Logging enabled or disabled: override default $overrideDefault', ({ overrideDefault }) => {
       beforeEach(() => {
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: true });
+          httpInterceptor.default.onUnhandledRequest({ log: true });
         } else if (overrideDefault === 'static-empty') {
-          http.default.onUnhandledRequest({});
+          httpInterceptor.default.onUnhandledRequest({});
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(async (_request, context) => {
+          httpInterceptor.default.onUnhandledRequest(async (_request, context) => {
             await context.log();
           });
         }
@@ -381,9 +381,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       `should not show a warning or error when logging is disabled and an ${method} request is unhandled: override default $overrideDefault`,
       async ({ overrideDefault }) => {
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: false });
+          httpInterceptor.default.onUnhandledRequest({ log: false });
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(vi.fn());
+          httpInterceptor.default.onUnhandledRequest(vi.fn());
         }
 
         await usingHttpInterceptor<{
