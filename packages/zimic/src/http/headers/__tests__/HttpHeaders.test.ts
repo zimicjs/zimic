@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '../HttpHeaders';
+import { HttpHeadersSerialized } from '../types';
 
 describe('HttpHeaders', () => {
   it('should support being created from raw Headers', () => {
@@ -491,5 +492,54 @@ describe('HttpHeaders', () => {
 
     // @ts-expect-error
     new HttpHeaders<string>();
+  });
+
+  describe('Types', () => {
+    it('should correctly serialize a type to search params', () => {
+      expectTypeOf<HttpHeadersSerialized<string>>().toEqualTypeOf<string>();
+
+      expectTypeOf<HttpHeadersSerialized<string>>().toEqualTypeOf<string>();
+      expectTypeOf<HttpHeadersSerialized<number>>().toEqualTypeOf<`${number}`>();
+      expectTypeOf<HttpHeadersSerialized<boolean>>().toEqualTypeOf<`${boolean}`>();
+      expectTypeOf<HttpHeadersSerialized<null>>().toEqualTypeOf<undefined>();
+      expectTypeOf<HttpHeadersSerialized<undefined>>().toEqualTypeOf<undefined>();
+      expectTypeOf<HttpHeadersSerialized<string[]>>().toEqualTypeOf<string[]>();
+      expectTypeOf<HttpHeadersSerialized<{ a: string }>>().toEqualTypeOf<{ a: string }>();
+      expectTypeOf<HttpHeadersSerialized<{ a?: string }>>().toEqualTypeOf<{ a?: string }>();
+      expectTypeOf<HttpHeadersSerialized<{ a: string | undefined }>>().toEqualTypeOf<{ a: string | undefined }>();
+      expectTypeOf<HttpHeadersSerialized<{ a?: string | undefined }>>().toEqualTypeOf<{
+        a?: string | undefined;
+      }>();
+      expectTypeOf<HttpHeadersSerialized<{ a: string }[]>>().toEqualTypeOf<never[]>();
+      expectTypeOf<
+        HttpHeadersSerialized<{
+          a: string;
+          b: { c: { d: string[] } };
+        }>
+      >().toEqualTypeOf<{ a: string }>();
+      expectTypeOf<HttpHeadersSerialized<{ a: string | null }>>().toEqualTypeOf<{ a: string | undefined }>();
+
+      type NewType = HttpHeadersSerialized<Date>;
+
+      expectTypeOf<NewType>().toEqualTypeOf<never>();
+      expectTypeOf<HttpHeadersSerialized<{ a: Date }>>().toEqualTypeOf<{}>();
+      expectTypeOf<HttpHeadersSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpHeadersSerialized<() => void>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpHeadersSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
+      expectTypeOf<HttpHeadersSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<
+        HttpHeadersSerialized<{
+          a: (value: string, otherValue: Map<number, string>) => Error;
+          b: string;
+        }>
+      >().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpHeadersSerialized<{ a: symbol; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<
+        HttpHeadersSerialized<{
+          a: Error;
+          b: string;
+        }>
+      >().toEqualTypeOf<{ b: string }>();
+    });
   });
 });

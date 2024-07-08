@@ -30,12 +30,16 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
         ? undefined
         : never;
 
-export type HttpSearchParamsSerialized<Type> = Type extends (infer ArrayItem)[]
-  ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-  : Type extends object
-    ? {
-        [Key in keyof Type as [PrimitiveHttpSearchParamsSerialized<Type[Key]>] extends [never]
-          ? never
-          : Key]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
-      }
-    : PrimitiveHttpSearchParamsSerialized<Type>;
+export type HttpSearchParamsSerialized<Type> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Type extends Date | ((...parameters: any[]) => any)
+    ? never
+    : Type extends (infer ArrayItem)[]
+      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+      : Type extends object
+        ? {
+            [Key in keyof Type as [PrimitiveHttpSearchParamsSerialized<Type[Key]>] extends [never]
+              ? never
+              : Key]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+          }
+        : PrimitiveHttpSearchParamsSerialized<Type>;
