@@ -134,10 +134,11 @@ async function runCLI() {
               description:
                 'One or more expressions to filter the types to generate. Filters must follow the format ' +
                 '`<method> <path>`, where `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a ' +
-                'glob. Filters are case-sensitive regarding paths. If more than one filter is provided, they will be ' +
-                'combined with OR. For example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*` are ' +
-                'valid filters. Negative filters can be created by prefixing the expression with `!`. For example, ' +
-                '`!GET /users` will exclude paths matching `GET /users`.',
+                'glob. Filters are case-sensitive regarding paths. For example, `GET /users`, `* /users`, ' +
+                '`GET /users/*`, and `GET /users/**/*` are valid filters. Negative filters can be created by ' +
+                'prefixing the expression with `!`. For example, `!GET /users` will exclude paths matching ' +
+                '`GET /users`. If more than one positive filter is provided, they will be combined with OR, while ' +
+                'negative filters will be combined with AND.',
               alias: 'f',
             })
             .option('filter-file', {
@@ -150,8 +151,8 @@ async function runCLI() {
             }),
         async (cliArguments) => {
           await generateTypesFromOpenAPI({
-            inputFilePath: cliArguments.input,
-            outputFilePath: cliArguments.output,
+            input: cliArguments.input,
+            output: cliArguments.output,
             serviceName: cliArguments.serviceName,
             includeComments: cliArguments.comments,
             prune: cliArguments.prune,

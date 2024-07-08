@@ -73,9 +73,9 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
 
 export interface OpenAPITypegenOptions {
   /** The path to a local OpenAPI schema file. YAML and JSON are supported. */
-  inputFilePath: string;
+  input: string;
   /** The path to write the generated types to. If not provided, the types will be written to stdout. */
-  outputFilePath?: string;
+  output?: string;
   /** The name of the service to use in the generated types. */
   serviceName: string;
   /** Whether to include comments in the generated types. */
@@ -88,8 +88,8 @@ export interface OpenAPITypegenOptions {
   /**
    * One or more expressions to filter the types to generate. Filters must follow the format `<method> <path>`, where
    * `<method>` is an HTTP method or `*`, and `<path>` is a literal path or a glob. Filters are case-sensitive regarding
-   * paths. If more than one filter is provided, they will be combined with OR. Negative filters can be created by
-   * prefixing the expression with `!`
+   * paths. Negative filters can be created by prefixing the expression with `!`. If more than one positive filter is
+   * provided, they will be combined with OR, while negative filters will be combined with AND.
    *
    * @example
    *   `GET /users`, `* /users`, `GET /users/*`, `GET /users/**\/*`, `!GET /users`;
@@ -104,8 +104,8 @@ export interface OpenAPITypegenOptions {
 }
 
 async function generateTypesFromOpenAPI({
-  inputFilePath,
-  outputFilePath,
+  input: inputFilePath,
+  output: outputFilePath,
   serviceName,
   includeComments,
   prune,
