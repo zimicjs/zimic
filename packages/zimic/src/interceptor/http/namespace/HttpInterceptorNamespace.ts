@@ -4,7 +4,7 @@ import HttpInterceptorWorkerStore from '../interceptorWorker/HttpInterceptorWork
 
 /** Default HTTP interceptor settings. */
 export class HttpInterceptorNamespaceDefault {
-  private store = new HttpInterceptorWorkerStore();
+  private workerStore = new HttpInterceptorWorkerStore();
 
   /**
    * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
@@ -16,12 +16,12 @@ export class HttpInterceptorNamespaceDefault {
    * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest(strategy: UnhandledRequestStrategy) {
-    this.store.setDefaultUnhandledRequestStrategy(strategy);
+    this.workerStore.setDefaultUnhandledRequestStrategy(strategy);
   }
 }
 
 /**
- * A set of interceptor resources for mocking HTTP requests.
+ * A namespace of interceptor resources for mocking HTTP requests.
  *
  * @see {@link https://github.com/zimicjs/zimic#zimicinterceptor-api-reference `zimic/interceptor` API reference}
  */

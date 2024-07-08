@@ -4,7 +4,6 @@ export { default as NotStartedHttpInterceptorError } from './interceptor/errors/
 export { default as UnknownHttpInterceptorPlatformError } from './interceptor/errors/UnknownHttpInterceptorPlatformError';
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
-export { default as HttpInterceptorNamespace } from './namespace/HttpInterceptorNamespace';
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
 
 export type {
@@ -41,11 +40,12 @@ export type { ExtractHttpInterceptorSchema } from './interceptor/types/schema';
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './interceptor/types/public';
 
-export type { HttpInterceptorNamespaceDefault } from './namespace/HttpInterceptorNamespace';
-
 /**
- * A set of interceptor resources for mocking HTTP requests.
+ * A namespace of interceptor resources for mocking HTTP requests.
  *
  * @see {@link https://github.com/zimicjs/zimic#zimicinterceptor-api-reference `zimic/interceptor` API reference}
  */
 export const httpInterceptor = Object.freeze(new HttpInterceptorNamespace());
+
+export type { default as HttpInterceptorNamespace } from './namespace/HttpInterceptorNamespace';
+export type { HttpInterceptorNamespaceDefault } from './namespace/HttpInterceptorNamespace';
