@@ -1,14 +1,15 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   createInterceptorServer,
-  InterceptorServer,
-  InterceptorServerOptions,
+  type InterceptorServer,
+  type InterceptorServerOptions,
   NotStartedInterceptorServerError,
   runCommand,
   CommandError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
 } from 'zimic0/server';
+import { generateTypesFromOpenAPI, type OpenAPITypegenOptions } from 'zimic0/typegen';
 
 describe('Exports (Node.js)', () => {
   it('should export all expected resources', () => {
@@ -23,5 +24,8 @@ describe('Exports (Node.js)', () => {
 
     expect(DEFAULT_ACCESS_CONTROL_HEADERS).toEqual(expect.any(Object));
     expect(DEFAULT_PREFLIGHT_STATUS_CODE).toEqual(expect.any(Number));
+
+    expect(typeof generateTypesFromOpenAPI).toBe('function');
+    expectTypeOf<OpenAPITypegenOptions>().not.toBeAny();
   });
 });

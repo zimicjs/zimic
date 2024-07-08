@@ -33,6 +33,7 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs',
   entry: {
     server: 'src/interceptor/server/index.ts',
+    typegen: 'src/typegen/index.ts',
   },
 }));
 
