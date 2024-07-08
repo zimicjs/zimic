@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import generateTypesFromOpenAPI from '@/typegen/openapi/generate';
+import { typegen } from '@/typegen';
 import { logWithPrefix } from '@/utils/console';
 import { formatElapsedTime, usingElapsedTime } from '@/utils/time';
 
@@ -156,7 +156,7 @@ async function runCLI() {
           const outputFilePath = cliArguments.output;
 
           const executionSummary = await usingElapsedTime(async () => {
-            await generateTypesFromOpenAPI({
+            await typegen.generateFromOpenAPI({
               input: cliArguments.input,
               output: cliArguments.output,
               serviceName: cliArguments.serviceName,
