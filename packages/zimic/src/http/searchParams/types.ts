@@ -30,6 +30,11 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
         ? undefined
         : never;
 
+/**
+ * Recursively converts a type to its URLSearchParams-serialized version. Numbers and booleans are converted to
+ * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
+ * functions and dates.
+ */
 export type HttpSearchParamsSerialized<Type> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Type extends Date | ((...parameters: any[]) => any)
