@@ -68,6 +68,7 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
   return normalizedNodes;
 }
 
+/** The options to use when generating types from an OpenAPI schema. */
 export interface OpenAPITypegenOptions {
   /** The path to a local OpenAPI schema file. YAML and JSON are supported. */
   input: string;
@@ -100,6 +101,11 @@ export interface OpenAPITypegenOptions {
   filterFile?: string;
 }
 
+/**
+ * Generates TypeScript types from an OpenAPI schema.
+ *
+ * @param options The options to use when generating the types.
+ */
 async function generateTypesFromOpenAPI({
   input: inputFilePath,
   output: outputFilePath,
