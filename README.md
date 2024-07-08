@@ -69,7 +69,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [Comparing `HttpFormData`](#comparing-httpformdata)
 - [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
-    - [`httpInterceptor.create`](#httpcreateinterceptor)
+    - [`httpInterceptor.create`](#httpinterceptorcreate)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Unhandled requests](#unhandled-requests)
@@ -276,7 +276,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
     </details></td></tr></table>
 
-   In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
+   In this example, we're [creating an interceptor](#httpinterceptorcreate) for a service supporting `GET` requests to
    `/users`. A successful response contains an array of `User` objects. Learn more about
    [declaring HTTP service schemas](#declaring-http-service-schemas).
 
@@ -719,7 +719,7 @@ by default.
 > [!TIP]
 >
 > If you expected a request to be handled, but it was not, make sure that the interceptor
-> [base URL](#httpcreateinterceptor), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
+> [base URL](#httpinterceptorcreate), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
 > [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
