@@ -2610,8 +2610,8 @@ Commands:
   zimic typegen  Type generation
 
 Options:
-  --help     Show help                                                                     [boolean]
-  --version  Show version number                                                           [boolean]
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
 ```
 
 > [!TIP]
@@ -2671,19 +2671,23 @@ Start an interceptor server.
 zimic server start [-- onReady]
 
 Positionals:
-  onReady  A command to run when the server is ready to accept connections.                 [string]
+  onReady  A command to run when the server is ready to accept connections.
+                                                                        [string]
 
 Options:
-  -h, --hostname                The hostname to start the server on. [string] [default: "localhost"]
-  -p, --port                    The port to start the server on.                            [number]
-  -e, --ephemeral               Whether the server should stop automatically after the on-ready
-                                command finishes. If no on-ready command is provided and ephemeral
-                                is true, the server will stop immediately after starting.
-                                                                          [boolean] [default: false]
-  -l, --log-unhandled-requests  Whether to log a warning when no interceptors were found for the
-                                base URL of a request. If an interceptor was matched, the logging
-                                behavior for that base URL is configured in the interceptor itself.
-                                                                                           [boolean]
+  -h, --hostname                The hostname to start the server on.
+                                                 [string] [default: "localhost"]
+  -p, --port                    The port to start the server on.        [number]
+  -e, --ephemeral               Whether the server should stop automatically
+                                after the on-ready command finishes. If no
+                                on-ready command is provided and ephemeral is
+                                true, the server will stop immediately after
+                                starting.             [boolean] [default: false]
+  -l, --log-unhandled-requests  Whether to log a warning when no interceptors
+                                were found for the base URL of a request. If an
+                                interceptor was matched, the logging behavior
+                                for that base URL is configured in the
+                                interceptor itself.                    [boolean]
 ```
 
 You can use this command to start an independent server:
@@ -2733,30 +2737,38 @@ Generate types from an OpenAPI schema.
 zimic typegen openapi <input>
 
 Positionals:
-  input  The path to a local OpenAPI schema file. YAML and JSON are supported.   [string] [required]
+  input  The path to a local OpenAPI schema file. YAML and JSON are supported.
+                                                             [string] [required]
 
 Options:
-      --help          Show help                                                            [boolean]
-      --version       Show version number                                                  [boolean]
-  -o, --output        The path to write the generated types to. If not provided, the types will be
-                      written to stdout.                                                    [string]
-  -s, --service-name  The name of the service to use in the generated types.     [string] [required]
-  -c, --comments      Whether to include comments in the generated types.  [boolean] [default: true]
-  -p, --prune         Whether to remove unused operations and components from the generated types.
-                      This is useful for reducing the size of the output file.
-                                                                           [boolean] [default: true]
-  -f, --filter        One or more expressions to filter the types to generate. Filters must follow
-                      the format `<method> <path>`, where `<method>` is an HTTP method or `*`, and
-                      `<path>` is a literal path or a glob. Filters are case-sensitive regarding
-                      paths. If more than one filter is provided, they will be combined with OR. For
-                      example, `GET /users`, `* /users`, `GET /users/*`, and `GET /users/**/*` are
-                      valid filters. Negative filters can be created by prefixing the expression
-                      with `!`. For example, `!GET /users` will exclude paths matching `GET /users`.
-                                                                                             [array]
-  -F, --filter-file   A path to a file containing filter expressions. One expression is expected per
-                      line and the format is the same as used in a `--filter` option. Comments are
-                      prefixed with `#`. A filter file can be used alongside additional `--filter`
-                      expressions.                                                          [string]
+      --help          Show help                                        [boolean]
+      --version       Show version number                              [boolean]
+  -o, --output        The path to write the generated types to. If not provided,
+                      the types will be written to stdout.              [string]
+  -s, --service-name  The name of the service to use in the generated types.
+                                                             [string] [required]
+  -c, --comments      Whether to include comments in the generated types.
+                                                       [boolean] [default: true]
+  -p, --prune         Whether to remove unused operations and components from
+                      the generated types. This is useful for reducing the size
+                      of the output file.              [boolean] [default: true]
+  -f, --filter        One or more expressions to filter the types to generate.
+                      Filters must follow the format `<method> <path>`, where
+                      `<method>` is an HTTP method or `*`, and `<path>` is a
+                      literal path or a glob. Filters are case-sensitive
+                      regarding paths. For example, `GET /users`, `* /users`,
+                      `GET /users/*`, and `GET /users/**/*` are valid filters.
+                      Negative filters can be created by prefixing the
+                      expression with `!`. For example, `!GET /users` will
+                      exclude paths matching `GET /users`. If more than one
+                      positive filter is provided, they will be combined with
+                      OR, while negative filters will be combined with AND.
+                                                                         [array]
+  -F, --filter-file   A path to a file containing filter expressions. One
+                      expression is expected per line and the format is the same
+                      as used in a `--filter` option. Comments are prefixed with
+                      `#`. A filter file can be used alongside additional
+                      `--filter` expressions.                           [string]
 ```
 
 You can use this command to generate a service types from an OpenAPI schema file:
