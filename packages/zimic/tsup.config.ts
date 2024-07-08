@@ -2,6 +2,7 @@ import { Options, defineConfig } from 'tsup';
 
 const sharedConfig: Options = {
   bundle: true,
+  splitting: true,
   sourcemap: true,
   treeshake: true,
   minify: false,
@@ -25,28 +26,30 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   external: ['util', 'buffer', 'crypto'],
 }));
 
-const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
-  ...sharedConfig,
-  name: `node-${format}`,
-  platform: 'node',
-  format: [format],
-  dts: format === 'cjs',
-  entry: {
+const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
+  const entry = {
     server: 'src/interceptor/server/index.ts',
     typegen: 'src/typegen/index.ts',
-  },
-}));
-
-const cliConfig = (['cjs'] as const).map<Options>((format) => ({
-  ...sharedConfig,
-  name: 'cli',
-  platform: 'node',
-  format: [format],
-  dts: false,
-  entry: {
     cli: 'src/cli/index.ts',
     'scripts/postinstall': 'scripts/postinstall.ts',
-  },
-}));
+  };
 
-export default defineConfig([...neutralConfig, ...nodeConfig, ...cliConfig]);
+  const entriesToGenerateTypes: (keyof typeof entry)[] = ['server', 'typegen'];
+
+  const dtsEntry = entriesToGenerateTypes.reduce<Record<string, string>>((dtsEntry, key) => {
+    dtsEntry[key] = entry[key];
+    return dtsEntry;
+  }, {});
+
+  return {
+    ...sharedConfig,
+    name: `node-${format}`,
+    platform: 'node',
+    format: [format],
+    dts: format === 'cjs' ? { entry: dtsEntry } : false,
+    entry,
+    external: ['./index.mjs'],
+  };
+});
+
+export default defineConfig([...neutralConfig, ...nodeConfig]);
