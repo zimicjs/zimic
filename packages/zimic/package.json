@@ -31,8 +31,9 @@
     "LICENSE.md",
     "dist",
     "index.d.ts",
-    "interceptor.d.ts",
-    "server.d.ts",
+    "http.d.ts",
+    "interceptor/http.d.ts",
+    "interceptor/server.d.ts",
     "typegen.d.ts"
   ],
   "types": "index.d.ts",
