@@ -9,6 +9,7 @@ export const defaultConfig: UserConfig = {
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
+    retry: process.env.CI === 'true' ? 1 : 0,
     setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
