@@ -16,14 +16,17 @@ async function patchMSWExports() {
 
   const browserExports = mswPackageContent.exports['./browser'] as Override<
     MSWExports['./browser'],
-    { node: string | null }
+    { node: MSWExports['./browser']['node'] | string | null }
   >;
 
-  const nodeExports = mswPackageContent.exports['./node'] as Override<MSWExports['./node'], { browser: string | null }>;
+  const nodeExports = mswPackageContent.exports['./node'] as Override<
+    MSWExports['./node'],
+    { browser: MSWExports['./browser']['browser'] | string | null }
+  >;
 
   const nativeExports = mswPackageContent.exports['./native'] as Override<
     MSWExports['./native'],
-    { browser: string | null }
+    { browser: MSWExports['./native']['browser'] | string | null }
   >;
 
   browserExports.node = nodeExports.default;
