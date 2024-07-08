@@ -1,5 +1,15 @@
 import { Options, defineConfig } from 'tsup';
 
+export function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]): Pick<Type, Key> {
+  return keys.reduce(
+    (pickedObject, key) => {
+      pickedObject[key] = object[key];
+      return pickedObject;
+    },
+    {} as Pick<Type, Key>, // eslint-disable-line @typescript-eslint/prefer-reduce-type-parameter
+  );
+}
+
 const sharedConfig: Options = {
   bundle: true,
   splitting: true,
@@ -34,12 +44,7 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     'scripts/postinstall': 'scripts/postinstall.ts',
   };
 
-  const entriesToGenerateTypes: (keyof typeof entry)[] = ['server', 'typegen'];
-
-  const dtsEntry = entriesToGenerateTypes.reduce<Record<string, string>>((dtsEntry, key) => {
-    dtsEntry[key] = entry[key];
-    return dtsEntry;
-  }, {});
+  const dtsEntry = pickKeys(entry, ['server', 'typegen']);
 
   return {
     ...sharedConfig,
