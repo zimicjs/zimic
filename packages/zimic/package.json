@@ -32,7 +32,8 @@
     "dist",
     "index.d.ts",
     "interceptor.d.ts",
-    "server.d.ts"
+    "server.d.ts",
+    "typegen.d.ts"
   ],
   "types": "index.d.ts",
   "bin": {
