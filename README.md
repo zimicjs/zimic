@@ -2741,8 +2741,6 @@ Positionals:
                                                              [string] [required]
 
 Options:
-      --help          Show help                                        [boolean]
-      --version       Show version number                              [boolean]
   -o, --output        The path to write the generated types to. If not provided,
                       the types will be written to stdout.              [string]
   -s, --service-name  The name of the service to use in the generated types.
@@ -2771,13 +2769,13 @@ Options:
                       `--filter` expressions.                           [string]
 ```
 
-You can use this command to generate a service types from an OpenAPI schema file:
+You can use this command to generate the types of a service from an OpenAPI schema file:
 
 ```bash
 zimic typegen openapi ./schema.yaml -o schema.ts --service-name MyService
 ```
 
-Then, you can import and use the types in your interceptors:
+Then, you can use the types in your interceptors:
 
 ```ts
 import { http } from 'zimic/interceptor';
@@ -2796,6 +2794,7 @@ const interceptor = http.createInterceptor<MyServiceSchema>({
 >
 > ```bash
 > curl https://my-service.com/api/openapi/schema.yaml -o schema.yaml
+
 > zimic typegen openapi ./schema.yaml -o schema.ts --service-name MyService
 > ```
 
@@ -2819,7 +2818,7 @@ size of the output file and only generate the types you need.
 zimic typegen openapi ./schema.yaml -o schema.ts --service-name MyService --filter 'GET /users**'
 ```
 
-When many filters are used, a filter file can be provided, where each line represent a filter expression and comments
+When many filters are used, a filter file can be provided, where each line represents a filter expression and comments
 are marked with `#`:
 
 `filters.txt`
