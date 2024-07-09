@@ -9,6 +9,7 @@ export const defaultConfig: UserConfig = {
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
+    retry: process.env.CI === 'true' ? 1 : 0,
     setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
@@ -36,7 +37,7 @@ export const defaultConfig: UserConfig = {
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': "'@/index'",
+    'process.env.TYPEGEN_ROOT_IMPORT_MODULE': "'@/http'",
   },
   resolve: {
     alias: {

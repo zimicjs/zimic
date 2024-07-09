@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpSearchParams from '../HttpSearchParams';
+import { HttpSearchParamsSerialized } from '../types';
 
 describe('HttpSearchParams', () => {
   it('should support being created from raw URLSearchParams', () => {
@@ -481,5 +482,54 @@ describe('HttpSearchParams', () => {
 
     // @ts-expect-error
     new HttpSearchParams<string>();
+  });
+
+  describe('Types', () => {
+    it('should correctly serialize a type to search params', () => {
+      expectTypeOf<HttpSearchParamsSerialized<string>>().toEqualTypeOf<string>();
+
+      expectTypeOf<HttpSearchParamsSerialized<string>>().toEqualTypeOf<string>();
+      expectTypeOf<HttpSearchParamsSerialized<number>>().toEqualTypeOf<`${number}`>();
+      expectTypeOf<HttpSearchParamsSerialized<boolean>>().toEqualTypeOf<`${boolean}`>();
+      expectTypeOf<HttpSearchParamsSerialized<null>>().toEqualTypeOf<undefined>();
+      expectTypeOf<HttpSearchParamsSerialized<undefined>>().toEqualTypeOf<undefined>();
+      expectTypeOf<HttpSearchParamsSerialized<string[]>>().toEqualTypeOf<string[]>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: string }>>().toEqualTypeOf<{ a: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a?: string }>>().toEqualTypeOf<{ a?: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: string | undefined }>>().toEqualTypeOf<{ a: string | undefined }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a?: string | undefined }>>().toEqualTypeOf<{
+        a?: string | undefined;
+      }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: string }[]>>().toEqualTypeOf<never[]>();
+      expectTypeOf<
+        HttpSearchParamsSerialized<{
+          a: string;
+          b: { c: { d: string[] } };
+        }>
+      >().toEqualTypeOf<{ a: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: string | null }>>().toEqualTypeOf<{ a: string | undefined }>();
+
+      type NewType = HttpSearchParamsSerialized<Date>;
+
+      expectTypeOf<NewType>().toEqualTypeOf<never>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: Date }>>().toEqualTypeOf<{}>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<() => void>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<
+        HttpSearchParamsSerialized<{
+          a: (value: string, otherValue: Map<number, string>) => Error;
+          b: string;
+        }>
+      >().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: symbol; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<
+        HttpSearchParamsSerialized<{
+          a: Error;
+          b: string;
+        }>
+      >().toEqualTypeOf<{ b: string }>();
+    });
   });
 });

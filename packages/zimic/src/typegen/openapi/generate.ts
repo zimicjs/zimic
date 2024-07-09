@@ -1,11 +1,8 @@
-import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
 import ts from 'typescript';
 
-import { logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
-import { formatElapsedTime, usingElapsedTime } from '@/utils/time';
 
 import {
   isComponentsDeclaration,
@@ -112,34 +109,25 @@ async function generateTypesFromOpenAPI({
   filters: filtersFromArguments = [],
   filterFile,
 }: OpenAPITypegenOptions) {
+  const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
+  const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
+
+  const rawNodes = await importTypesFromOpenAPI(inputFilePath);
+  const context = createTypeTransformationContext(serviceName, filters);
+  const nodes = normalizeRawNodes(rawNodes, context, { prune });
+
+  const importDeclarations = createImportDeclarations(context);
+  nodes.unshift(...importDeclarations);
+
+  const typeOutput = convertTypesToString(nodes, { includeComments });
+  const formattedOutput = prepareTypeOutputToSave(typeOutput);
+
   const shouldWriteToStdout = outputFilePath === undefined;
-
-  const executionSummary = await usingElapsedTime(async () => {
-    const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
-    const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
-
-    const rawNodes = await importTypesFromOpenAPI(inputFilePath);
-    const context = createTypeTransformationContext(serviceName, filters);
-    const nodes = normalizeRawNodes(rawNodes, context, { prune });
-
-    const importDeclarations = createImportDeclarations(context);
-    nodes.unshift(...importDeclarations);
-
-    const typeOutput = convertTypesToString(nodes, { includeComments });
-    const formattedOutput = prepareTypeOutputToSave(typeOutput);
-
-    if (shouldWriteToStdout) {
-      await writeTypeOutputToStandardOutput(formattedOutput);
-    } else {
-      await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
-    }
-  });
-
-  const successMessage =
-    `${chalk.green.bold('✔')} Generated ${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ` +
-    `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
-
-  logWithPrefix(successMessage, { method: shouldWriteToStdout ? 'warn' : 'log' });
+  if (shouldWriteToStdout) {
+    await writeTypeOutputToStandardOutput(formattedOutput);
+  } else {
+    await filesystem.writeFile(path.resolve(outputFilePath), formattedOutput);
+  }
 }
 
 export default generateTypesFromOpenAPI;

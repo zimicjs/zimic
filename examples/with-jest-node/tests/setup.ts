@@ -1,9 +1,9 @@
 import { beforeAll, afterEach, afterAll } from '@jest/globals';
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 import githubInterceptor from './interceptors/github';
 
-http.default.onUnhandledRequest({ log: false });
+httpInterceptor.default.onUnhandledRequest({ log: false });
 
 beforeAll(async () => {
   await githubInterceptor.start();

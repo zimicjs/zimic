@@ -6,7 +6,7 @@ import { TypeTransformContext } from './context';
 export const TYPEGEN_ROOT_IMPORT_MODULE = process.env.TYPEGEN_ROOT_IMPORT_MODULE ?? 'zimic';
 
 export function createImportDeclarations(context: TypeTransformContext) {
-  const rootTypeImports = Array.from(context.typeImports.root).sort().map(createImportSpecifier);
+  const rootTypeImports = Array.from(context.typeImports.http).sort().map(createImportSpecifier);
   const rootImportDeclaration = createImportDeclaration(rootTypeImports, TYPEGEN_ROOT_IMPORT_MODULE, {
     typeOnly: true,
   });

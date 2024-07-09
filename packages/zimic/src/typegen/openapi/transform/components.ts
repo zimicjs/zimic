@@ -261,7 +261,7 @@ function processPendingRequestComponentActions(component: RequestComponent, cont
 }
 
 function wrapRequestComponentType(type: ts.TypeNode, context: TypeTransformContext) {
-  context.typeImports.root.add('HttpSchema');
+  context.typeImports.http.add('HttpSchema');
 
   const httpSchemaRequestWrapper = ts.factory.createQualifiedName(
     ts.factory.createIdentifier('HttpSchema'),

@@ -7,7 +7,7 @@ export interface TypePathFilters {
   negative: RegExp[];
 }
 
-type RootTypeImportName =
+type HttpTypeImportName =
   | 'HttpSchema'
   | 'HttpFormData'
   | 'HttpSearchParams'
@@ -27,7 +27,7 @@ export interface TypeTransformContext {
     paths: TypePathFilters;
   };
   typeImports: {
-    root: Set<RootTypeImportName>;
+    http: Set<HttpTypeImportName>;
   };
   referencedTypes: {
     operations: Set<OperationPath>;
@@ -49,7 +49,7 @@ export function createTypeTransformationContext(serviceName: string, rawFilters:
       paths: groupParsedFiltersByMatch(parsedFilters),
     },
     typeImports: {
-      root: new Set(),
+      http: new Set(),
     },
     referencedTypes: {
       operations: new Set(),

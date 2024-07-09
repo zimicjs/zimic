@@ -5,6 +5,7 @@ const sharedConfig: Options = {
   bundle: true,
   sourcemap: true,
   treeshake: true,
+  splitting: true,
   minify: false,
   clean: true,
 };

@@ -1,7 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic0';
 import {
-  type JSONValue,
-  type JSONSerialized,
   type HttpSearchParamsSerialized,
   type HttpHeadersSerialized,
   type HttpBody,
@@ -34,11 +33,10 @@ import {
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
-  InvalidJSONError,
   InvalidFormDataError,
-} from 'zimic0';
+} from 'zimic0/http';
 import {
-  http,
+  httpInterceptor,
   type HttpInterceptorNamespace,
   type HttpInterceptorNamespaceDefault,
   type HttpInterceptor,
@@ -72,7 +70,7 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
-} from 'zimic0/interceptor';
+} from 'zimic0/interceptor/http';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
@@ -139,11 +137,11 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
     expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();
 
-    expectTypeOf(http.createInterceptor).toEqualTypeOf<HttpInterceptorNamespace['createInterceptor']>();
-    expect(typeof http.createInterceptor).toBe('function');
+    expectTypeOf(httpInterceptor.create).toEqualTypeOf<HttpInterceptorNamespace['create']>();
+    expect(typeof httpInterceptor.create).toBe('function');
 
-    expectTypeOf(http.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
-    expect(typeof http.default.onUnhandledRequest).toBe('function');
+    expectTypeOf(httpInterceptor.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
+    expect(typeof httpInterceptor.default.onUnhandledRequest).toBe('function');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();

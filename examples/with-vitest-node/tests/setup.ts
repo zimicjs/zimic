@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, afterEach } from 'vitest';
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 import githubInterceptor from './interceptors/github';
 
-http.default.onUnhandledRequest({ log: false });
+httpInterceptor.default.onUnhandledRequest({ log: false });
 
 beforeAll(async () => {
   await githubInterceptor.start();
