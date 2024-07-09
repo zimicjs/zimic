@@ -76,10 +76,11 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
  */
 export interface OpenAPITypegenOptions {
   /**
-   * The path to a local OpenAPI schema file. YAML and JSON are supported.
+   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3.x is supported as YAML or JSON.
    *
    * @example
    *   './schema.yaml';
+   *   'https://example.com/openapi/schema.yaml';
    */
   input: string;
   /**
@@ -131,7 +132,7 @@ export interface OpenAPITypegenOptions {
  * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
  */
 async function generateTypesFromOpenAPI({
-  input: inputFilePath,
+  input: inputFilePathOrURL,
   output: outputFilePath,
   serviceName,
   includeComments,
@@ -142,7 +143,7 @@ async function generateTypesFromOpenAPI({
   const filtersFromFile = filterFile ? await readPathFiltersFromFile(filterFile) : [];
   const filters = ignoreEmptyFilters([...filtersFromFile, ...filtersFromArguments]);
 
-  const rawNodes = await importTypesFromOpenAPI(inputFilePath);
+  const rawNodes = await importTypesFromOpenAPI(inputFilePathOrURL);
   const context = createTypeTransformationContext(serviceName, filters);
   const nodes = normalizeRawNodes(rawNodes, context, { prune });
 

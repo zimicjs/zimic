@@ -3,18 +3,19 @@ import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
 import prettier, { Options } from 'prettier';
-import { beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { version } from '@@/package.json';
 
 import runCLI from '@/cli/cli';
+import { httpInterceptor } from '@/interceptor/http';
 import { isDefined } from '@/utils/data';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { convertYAMLToJSONFile } from '@tests/utils/json';
 
 import typegenFixtures from './fixtures/typegenFixtures';
-import { TypegenFixtureCase } from './fixtures/types';
+import { TypegenFixtureCase, TypegenFixtureCaseName } from './fixtures/types';
 
 describe('Type generation (OpenAPI)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
@@ -35,6 +36,23 @@ describe('Type generation (OpenAPI)', () => {
   const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
   const fixtureFileTypes = ['yaml', 'json'] as const;
 
+  const schemaInterceptor = httpInterceptor.create<{
+    [Path in `/spec/${TypegenFixtureCaseName}`]: {
+      GET: {
+        response: {
+          200: {
+            headers: { 'content-type': 'application/yaml' };
+            body: Blob;
+          };
+        };
+      };
+    };
+  }>({
+    type: 'local',
+    baseURL: 'http://localhost:3000',
+    saveRequests: true,
+  });
+
   function normalizeGeneratedFileToCompare(fileContent: string) {
     return fileContent
       .replace(/^\s*\/\/ eslint-disable-.+$/gm, '')
@@ -42,6 +60,8 @@ describe('Type generation (OpenAPI)', () => {
   }
 
   beforeAll(async () => {
+    await schemaInterceptor.start();
+
     await Promise.all([
       (async function loadPrettierConfig() {
         prettierConfig = await resolvedPrettierConfig(__filename);
@@ -75,6 +95,12 @@ describe('Type generation (OpenAPI)', () => {
   beforeEach(() => {
     processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
+
+    schemaInterceptor.clear();
+  });
+
+  afterAll(async () => {
+    await schemaInterceptor.stop();
   });
 
   const helpOutput = [
@@ -83,7 +109,8 @@ describe('Type generation (OpenAPI)', () => {
     'Generate types from an OpenAPI schema.',
     '',
     'Positionals:',
-    '  input  The path to a local OpenAPI schema file. YAML and JSON are supported.',
+    '  input  The path to a local OpenAPI schema file or an URL to fetch it. Version ',
+    '         3.x is supported as YAML or JSON.',
     '                                                             [string] [required]',
     '',
     'Options:',
@@ -208,6 +235,21 @@ describe('Type generation (OpenAPI)', () => {
           const inputFileNameWithoutExtension = path.parse(fixtureCase.inputFileName).name;
           const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
 
+          const inputFilePathOrURL = fixtureCase.shouldUseURLAsInput
+            ? `${schemaInterceptor.baseURL()}/spec/${fixtureName}`
+            : inputFilePath;
+
+          const inputFileContent = await filesystem.readFile(inputFilePath);
+
+          const getSchemaHandler = schemaInterceptor.get(`/spec/${fixtureName}`).respond({
+            status: 200,
+            headers: { 'content-type': 'application/yaml' },
+            body: new Blob([inputFileContent]),
+          });
+
+          let schemaRequests = getSchemaHandler.requests();
+          expect(schemaRequests).toHaveLength(0);
+
           const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
           const outputFilePath = path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
           const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
@@ -218,7 +260,7 @@ describe('Type generation (OpenAPI)', () => {
               './dist/cli.js',
               'typegen',
               'openapi',
-              inputFilePath,
+              inputFilePathOrURL,
               outputOption,
               '--service-name',
               'my-service',
@@ -272,6 +314,9 @@ describe('Type generation (OpenAPI)', () => {
           );
 
           expect(generatedOutputContent).toBe(expectedOutputContent);
+
+          schemaRequests = getSchemaHandler.requests();
+          expect(schemaRequests).toHaveLength(fixtureCase.shouldUseURLAsInput ? 1 : 0);
         });
       }
     });

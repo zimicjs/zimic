@@ -9,4 +9,5 @@ export interface TypegenFixtureCase {
   expectedOutputFileName: string;
   additionalArguments: string[];
   shouldWriteToStdout?: boolean;
+  shouldUseURLAsInput?: boolean;
 }
