@@ -26,7 +26,9 @@ const RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED = ['paths', 'webhooks', 'operations'
 
 function removeUnknownResources(node: ts.Node | undefined) {
   const isUnknownResource =
-    !node || (ts.isTypeAliasDeclaration(node) && RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED.includes(node.name.text));
+    !node ||
+    ((ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) &&
+      RESOURCES_TO_REMOVE_IF_NOT_NORMALIZED.includes(node.name.text));
 
   if (isUnknownResource) {
     return undefined;

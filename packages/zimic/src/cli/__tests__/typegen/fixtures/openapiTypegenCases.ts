@@ -180,6 +180,19 @@ const openapiTypegenFixtureCases = {
     },
   ],
 
+  webhooks: [
+    {
+      inputFileName: 'webhooks.yaml',
+      expectedOutputFileName: 'webhooks.ts',
+      additionalArguments: ['--no-comments'],
+    },
+    {
+      inputFileName: 'webhooks.yaml',
+      expectedOutputFileName: 'webhooks.comments.ts',
+      additionalArguments: [],
+    },
+  ],
+
   filters: [
     {
       inputFileName: 'filters.yaml',
