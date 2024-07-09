@@ -106,7 +106,10 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`zimic browser init`](#zimic-browser-init)
   - [`zimic server`](#zimic-server)
     - [`zimic server start`](#zimic-server-start)
-    - [Programmatic usage](#programmatic-usage)
+    - [`zimic server` programmatic usage](#zimic-server-programmatic-usage)
+  - [`zimic typegen`](#zimic-typegen)
+    - [`zimic typegen openapi`](#zimic-typegen-openapi)
+    - [`zimic typegen` programmatic usage](#zimic-typegen-programmatic-usage)
 - [Changelog](#changelog)
 
 ## Getting started
@@ -2599,16 +2602,37 @@ console.log(request.response.raw); // Response{}
 ### `zimic`
 
 ```
-zimic <command>
+zimic [command]
 
 Commands:
   zimic browser  Browser
   zimic server   Interceptor server
+  zimic typegen  Type generation
 
 Options:
   --help     Show help                                                 [boolean]
   --version  Show version number                                       [boolean]
 ```
+
+> [!TIP]
+>
+> All boolean options in Zimic's CLI can be prefixed with `--no-` to negate them.
+>
+> For example, all of the options below are equivalent and indicate that comments are **disabled**:
+>
+> ```bash
+> --no-comments
+> --comments false
+> --comments=false
+> ```
+>
+> On the other hand, all of the options below are also equivalent and indicate that comments are **enabled**:
+>
+> ```bash
+> --comments
+> --comments true
+> --comments=true
+> ```
 
 ### `zimic browser`
 
@@ -2651,8 +2675,6 @@ Positionals:
                                                                         [string]
 
 Options:
-      --help                    Show help                              [boolean]
-      --version                 Show version number                    [boolean]
   -h, --hostname                The hostname to start the server on.
                                                  [string] [default: "localhost"]
   -p, --port                    The port to start the server on.        [number]
@@ -2683,7 +2705,7 @@ zimic server start --port 4000 --ephemeral -- npm run test
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
 
-#### Programmatic usage
+#### `zimic server` programmatic usage
 
 The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
 using the CLI, this module is a valid alternative for more advanced use cases.
@@ -2704,6 +2726,140 @@ await server.stop();
 The helper function `runCommand` is useful to run a shell command in server scripts. The
 [Next.js App Router](./examples/README.md#nextjs) and the [Playwright](./examples/README.md#playwright) examples use
 this function to run the application after the interceptor server is ready and all mocks are set up.
+
+### `zimic typegen`
+
+#### `zimic typegen openapi`
+
+Generate types from an OpenAPI schema.
+
+```
+zimic typegen openapi <input>
+
+Positionals:
+  input  The path to a local OpenAPI schema file. YAML and JSON are supported.
+                                                             [string] [required]
+
+Options:
+  -o, --output        The path to write the generated types to. If not provided,
+                      the types will be written to stdout.              [string]
+  -s, --service-name  The name of the service to use in the generated types.
+                                                             [string] [required]
+  -c, --comments      Whether to include comments in the generated types.
+                                                       [boolean] [default: true]
+  -p, --prune         Whether to remove unused operations and components from
+                      the generated types. This is useful for reducing the size
+                      of the output file.              [boolean] [default: true]
+  -f, --filter        One or more expressions to filter the types to generate.
+                      Filters must follow the format `<method> <path>`, where
+                      `<method>` is an HTTP method or `*`, and `<path>` is a
+                      literal path or a glob. Filters are case-sensitive
+                      regarding paths. For example, `GET /users`, `* /users`,
+                      `GET /users/*`, and `GET /users/**/*` are valid filters.
+                      Negative filters can be created by prefixing the
+                      expression with `!`. For example, `!GET /users` will
+                      exclude paths matching `GET /users`. If more than one
+                      positive filter is provided, they will be combined with
+                      OR, while negative filters will be combined with AND.
+                                                                         [array]
+  -F, --filter-file   A path to a file containing filter expressions. One
+                      expression is expected per line and the format is the same
+                      as used in a `--filter` option. Comments are prefixed with
+                      `#`. A filter file can be used alongside additional
+                      `--filter` expressions.                           [string]
+```
+
+You can use this command to generate the types of a service from an OpenAPI schema file:
+
+```bash
+zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService
+```
+
+Then, you can use the types in your interceptors:
+
+```ts
+import { httpInterceptor } from 'zimic/interceptor/http';
+import { MyServiceSchema } from './schema';
+
+const interceptor = httpInterceptor.create<MyServiceSchema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+> [!IMPORTANT]
+>
+> Currently, Zimic only accepts file paths as inputs. If you need to fetch the OpenAPI schema from a URL, we recommend
+> first downloading it and then passing the file path to `zimic typegen`. An example using `curl`:
+>
+> ```bash
+> curl https://my-service.com/api/openapi/schema.yaml -o ./schema.yaml
+> 
+> zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService
+> ```
+
+You can generate the types ignoring comments by using `--no-comments` or `--comments false`.
+
+```bash
+zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService --no-comments
+```
+
+By default, pruning is enabled, meaning that unused types are not outputted. If you want all types declared in the
+schema to be generated, you can use `--no-prune` or `--prune false`.
+
+```bash
+zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService --no-prune
+```
+
+You can also filter a subset of paths to generate types for. In conjunction with pruning, this is useful to reduce the
+size of the output file and only generate the types you need.
+
+```bash
+zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService --filter 'GET /users**'
+```
+
+When many filters are used, a filter file can be provided, where each line represents a filter expression and comments
+are marked with `#`:
+
+`filters.txt`
+
+```
+# Include any endpoint starting with /users and having any HTTP method
+* /users**
+
+# Include any sub-endpoints of /posts with method GET.
+GET /posts/**/*
+
+# Include the endpoints /workspaces with methods GET, POST, or PUT.
+GET,POST,PUT /workspaces
+
+# Exclude endpoints to get user notifications
+!GET /users/*/notifications/**/*
+```
+
+```bash
+zimic typegen openapi ./schema.yaml -o ./schema.ts --service-name MyService --filter-file ./filters.txt
+```
+
+#### `zimic typegen` programmatic usage
+
+The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the CLI, but this
+module is a valid alternative for more advanced use cases.
+
+```ts
+import { typegen } from 'zimic/typegen';
+
+await typegen.generateFromOpenAPI({
+  input: './schema.yaml',
+  output: './schema.ts',
+  serviceName: 'MyService',
+  filters: ['* /users**'],
+  includeComments: true,
+  prune: true,
+});
+```
+
+The parameters of `typegen.generateFromOpenAPI` are the same as the CLI options for the `zimic typegen openapi` command.
 
 ---
 
