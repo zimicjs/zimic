@@ -7,6 +7,7 @@ import { version } from '@@/package.json';
 
 import typegenFixtures from '@/cli/__tests__/typegen/fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/__tests__/typegen/fixtures/types';
+import { TYPEGEN_HTTP_IMPORT_MODULE } from '@/typegen/openapi/transform/imports';
 import { runCommand } from '@/utils/processes';
 
 import { usingConsoleTime } from '../utils/console';
@@ -15,7 +16,10 @@ const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
 
 async function normalizeOutputTypeImports(filePath: string) {
   const fileContent = await filesystem.readFile(filePath, 'utf-8');
-  const fileContentWithCorrectImports = fileContent.replace(/ from "zimic";/, " from '@/http';");
+  const fileContentWithCorrectImports = fileContent.replace(
+    new RegExp(` from "${TYPEGEN_HTTP_IMPORT_MODULE}";`),
+    " from '@/http';",
+  );
   await filesystem.writeFile(filePath, fileContentWithCorrectImports);
 }
 

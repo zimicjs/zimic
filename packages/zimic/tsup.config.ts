@@ -19,7 +19,7 @@ const sharedConfig: Options = {
   clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
-    TYPEGEN_ROOT_IMPORT_MODULE: 'zimic',
+    TYPEGEN_HTTP_IMPORT_MODULE: 'zimic/http',
   },
 };
 
