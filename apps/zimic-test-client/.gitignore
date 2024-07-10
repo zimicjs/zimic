@@ -1,1 +1,2 @@
 /public/mockServiceWorker.js
+**/typegen/generated/**/*.ts

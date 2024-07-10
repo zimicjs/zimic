@@ -6,11 +6,15 @@ pnpm-lock.yaml
 /apps/*/dist
 /apps/*/build
 /apps/*/public/mockServiceWorker.js
+/apps/zimic-test-client/**/typegen/generated/**/*.ts
+
 /packages/*/dist
 /packages/*/build
+/packages/zimic/**/fixtures/**/generated/*
+
 /examples/*/.next
+
 **/public/mockServiceWorker.js
-**/fixtures/**/generated/*
 
 # Tests
 /apps/*/tests/coverage

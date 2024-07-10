@@ -1,5 +1,6 @@
 # Configuration
 /.eslintrc.js
+**/typegen/generated/.eslintrc.js
 /.lintstagedrc.js
 
 # Dependencies
@@ -11,7 +12,7 @@ node_modules
 
 # Tests
 /tests/coverage
-**/__tests__/fixtures/**/*.js
+**/typegen/generated/**/*.ts
 
 # Cache
 .turbo
