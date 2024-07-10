@@ -7,10 +7,7 @@ async function runOnReadyCommand() {
 
   if (commandDivisorIndex !== -1) {
     const [onReadyCommand, ...onReadyCommandArguments] = process.argv.slice(commandDivisorIndex + 1);
-
-    await $({
-      stdio: 'inherit',
-    })(onReadyCommand, onReadyCommandArguments);
+    await $(onReadyCommand, onReadyCommandArguments, { stdio: 'inherit' });
   }
 }
 

@@ -44,20 +44,13 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
 
   afterAll(async () => {
     await Promise.all([
-      $({
-        stdio: 'inherit',
-      })('pnpm', ['--silent', 'tsc', '--noEmit', '--project', tsconfigFilePath]),
+      $('pnpm', ['--silent', 'tsc', '--noEmit', '--project', tsconfigFilePath], { stdio: 'inherit' }),
 
-      $({
-        stdio: 'inherit',
-      })('pnpm', [
-        '--silent',
-        'lint',
-        '--no-ignore',
-        '--config',
-        eslintConfigFilePath,
-        path.join(generatedDirectory, '*.ts'),
-      ]),
+      $(
+        'pnpm',
+        ['--silent', 'lint', '--no-ignore', '--config', eslintConfigFilePath, path.join(generatedDirectory, '*.ts')],
+        { stdio: 'inherit' },
+      ),
     ]);
   });
 
@@ -85,18 +78,11 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
-        await $({
-          stdio: 'inherit',
-        })('pnpm', [
-          'zimic',
-          'typegen',
-          'openapi',
-          input,
-          '--output',
-          generatedFilePath,
-          '--service-name',
-          serviceName,
-        ]);
+        await $(
+          'pnpm',
+          ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
+          { stdio: 'inherit' },
+        );
 
         await normalizeImportsInGeneratedFile(generatedFilePath);
 
