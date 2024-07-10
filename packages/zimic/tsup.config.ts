@@ -10,6 +10,8 @@ export function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]
   );
 }
 
+const isDevelopment = process.env.npm_lifecycle_event === 'dev';
+
 const sharedConfig: Options = {
   bundle: true,
   splitting: true,
@@ -19,7 +21,7 @@ const sharedConfig: Options = {
   clean: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
-    TYPEGEN_HTTP_IMPORT_MODULE: 'zimic/http',
+    TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/http' : 'zimic/http',
   },
 };
 

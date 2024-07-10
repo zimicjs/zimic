@@ -74,7 +74,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "pnpm build --watch",
+    "dev": "tsup --watch",
     "cli": "node ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
