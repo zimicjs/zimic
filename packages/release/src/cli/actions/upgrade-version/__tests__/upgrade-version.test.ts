@@ -11,9 +11,9 @@ import { InvalidVersionFormatError, UnknownUpgradeModeError } from '../utils/ver
 
 const runCommandSpy = vi.hoisted(() => vi.fn());
 
-vi.mock('zx', async () => ({
-  ...(await vi.importActual<{}>('zx')),
-  $: runCommandSpy,
+vi.mock('execa', async () => ({
+  ...(await vi.importActual<{}>('execa')),
+  execa: runCommandSpy,
 }));
 
 describe('Upgrade version command', () => {
@@ -76,7 +76,7 @@ describe('Upgrade version command', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(metadataFilePath, JSON.stringify(upgradedMetadataFileContent, null, 2));
 
     expect(runCommandSpy).toHaveBeenCalledTimes(1);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
   }
 
   describe('Patch upgrade', () => {

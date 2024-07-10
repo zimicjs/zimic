@@ -1,7 +1,6 @@
-import { $ } from 'zx';
+import { execa as $ } from 'execa';
 
 import { ReleaseConfig } from '@/config/release-config';
-import { withCommandOutputs } from '@/utils/commands';
 import Logger from '@/utils/logger';
 
 import upgradeVersion, { UpgradeMode } from '../upgrade-version';
@@ -28,25 +27,25 @@ async function prepareRelease(parameters: CommandParameters, { config }: Command
 
   const releaseBranch = `release/${releaseTag}`;
   log.progress(`Creating branch '${releaseBranch}'...`);
-  await withCommandOutputs($`git checkout -b ${releaseBranch}`);
+  await $('git', ['checkout', '-b', releaseBranch], { stdio: 'inherit' });
 
   log.progress('Committing version updates...');
-  await withCommandOutputs($`git add .`);
+  await $('git', ['add', '.'], { stdio: 'inherit' });
   const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
-  await withCommandOutputs($`git commit -m ${releaseCommitMessage}`);
+  await $('git', ['commit', '-m', releaseCommitMessage], { stdio: 'inherit' });
 
   if (isPartialUpgrade) {
     log.progress(`Creating tag '${releaseTag}'...`);
-    await withCommandOutputs($`git tag ${releaseTag}`);
+    await $('git', ['tag', releaseTag], { stdio: 'inherit' });
 
     log.progress(`Pushing '${releaseTag}' to origin...`);
-    await withCommandOutputs($`git push origin ${releaseTag} --no-verify`);
+    await $('git', ['push', 'origin', releaseTag, '--no-verify'], { stdio: 'inherit' });
 
     log.progress(`Removing partial release branch '${releaseTag}'...`);
-    await withCommandOutputs($`git checkout -`);
-    await withCommandOutputs($`git merge ${releaseTag} --no-edit`);
-    await withCommandOutputs($`git push --set-upstream --no-verify`);
-    await withCommandOutputs($`git branch -D ${releaseBranch}`);
+    await $('git', ['checkout', '-'], { stdio: 'inherit' });
+    await $('git', ['merge', releaseTag, '--no-edit'], { stdio: 'inherit' });
+    await $('git', ['push', '--set-upstream', '--no-verify'], { stdio: 'inherit' });
+    await $('git', ['branch', '-D', releaseBranch], { stdio: 'inherit' });
 
     log.success('Partial release prepared!');
     log.info(`Tag created: ${releaseTag}`);
@@ -54,7 +53,7 @@ async function prepareRelease(parameters: CommandParameters, { config }: Command
     log.progress('Skipping partial tag creation...');
 
     log.progress(`Pushing '${releaseBranch}' to origin...`);
-    await withCommandOutputs($`git push origin ${releaseBranch} --set-upstream --no-verify`);
+    await $('git', ['push', 'origin', releaseBranch, '--set-upstream', '--no-verify'], { stdio: 'inherit' });
 
     log.progress(`Keeping release branch '${releaseTag}'...`);
 
