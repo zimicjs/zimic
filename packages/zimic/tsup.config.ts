@@ -19,6 +19,7 @@ const sharedConfig: Options = {
   treeshake: true,
   minify: false,
   clean: true,
+  keepNames: true,
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
     TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/http' : 'zimic/http',
