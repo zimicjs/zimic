@@ -1,4 +1,3 @@
-import filesystem from 'fs/promises';
 import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -12,12 +11,6 @@ import { runCommand } from '@/utils/processes';
 import { usingConsoleTime } from '../utils/console';
 
 const FIXTURE_TYPEGEN_BATCH_SIZE = 15;
-
-async function normalizeOutputTypeImports(filePath: string) {
-  const fileContent = await filesystem.readFile(filePath, 'utf-8');
-  const fileContentWithCorrectImports = fileContent.replace(/ from "zimic";/, " from '@/http';");
-  await filesystem.writeFile(filePath, fileContentWithCorrectImports);
-}
 
 async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixtureCase: TypegenFixtureCase) {
   const outputFileName = path.parse(fixtureCase.expectedOutputFileName).base;
@@ -42,8 +35,6 @@ async function generateFixtureCaseTypes(fixtureType: TypegenFixtureType, fixture
     await runCommand('node', commandArguments);
   });
 
-  await normalizeOutputTypeImports(outputFilePath);
-
   return outputFilePath;
 }
 
@@ -63,7 +54,7 @@ interface FixtureTypegenOptions {
 async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureTypegenOptions) {
   const fixtureCases = fixtureNames
     .flatMap<TypegenFixtureCase>((fixtureName) => typegenFixtures[fixtureType].cases[fixtureName])
-    .filter((fixtureCase) => !fixtureCase.shouldWriteToStdout);
+    .filter((fixtureCase) => !fixtureCase.shouldWriteToStdout && !fixtureCase.shouldUseURLAsInput);
 
   const outputFilePaths: string[] = [];
 

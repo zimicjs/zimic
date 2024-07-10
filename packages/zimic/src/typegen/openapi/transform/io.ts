@@ -2,7 +2,7 @@ import generateTypesFromOpenAPI, { SchemaObject, astToString as convertTypeASTTo
 import path from 'path';
 import ts from 'typescript';
 
-import { createFileURL } from '@/utils/urls';
+import { createFileURL, createURL } from '@/utils/urls';
 
 import { createBlobType, createNullType } from '../utils/types';
 
@@ -19,10 +19,18 @@ function transformSchemaObject(schemaObject: SchemaObject) {
   }
 }
 
-export async function importTypesFromOpenAPI(filePath: string) {
-  const fileURL = createFileURL(path.resolve(filePath));
+function convertFilePathOrURLToURL(filePathOrURL: string) {
+  try {
+    return createURL(filePathOrURL);
+  } catch {
+    return createFileURL(path.resolve(filePathOrURL));
+  }
+}
 
-  const rawNodes = await generateTypesFromOpenAPI(fileURL, {
+export async function importTypesFromOpenAPI(filePathOrURL: string) {
+  const schemaURL = convertFilePathOrURLToURL(filePathOrURL);
+
+  const rawNodes = await generateTypesFromOpenAPI(schemaURL, {
     alphabetize: false,
     additionalProperties: false,
     excludeDeprecated: false,
