@@ -52,7 +52,7 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
         { stdio: 'inherit' },
       ),
     ]);
-  });
+  }, 30 * 1000);
 
   describe('OpenAPI', () => {
     it.concurrent.each([
