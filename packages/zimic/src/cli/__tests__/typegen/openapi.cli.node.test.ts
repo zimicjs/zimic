@@ -5,8 +5,6 @@ import path from 'path';
 import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
-import { version } from '@@/package.json';
-
 import runCLI from '@/cli/cli';
 import { httpInterceptor } from '@/interceptor/http';
 import { isDefined } from '@/utils/data';
@@ -17,35 +15,59 @@ import { convertYAMLToJSONFile } from '@tests/utils/json';
 import typegenFixtures from './fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName } from './fixtures/types';
 
+const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name) => name !== 'all');
+const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
+const fixtureFileTypes = ['yaml', 'json'] as const;
+
+async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
+  const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
+    const yamlFileName = path.parse(yamlFilePath).name;
+    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileName}.json`);
+    await convertYAMLToJSONFile(yamlFilePath, jsonFilePath);
+  });
+
+  await Promise.all(generationPromises);
+}
+
+async function validateAndGenerateSchemas() {
+  await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
+
+  const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
+    glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
+    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
+    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
+  ]);
+
+  if (yamlSchemaFilePaths.length !== fixtureCaseNames.length) {
+    throw new Error(
+      'Some schemas are not being tested or were not found: ' +
+        `got [${yamlSchemaFilePaths.map((filePath) => path.parse(filePath).name).join(', ')}], ` +
+        `expected [${fixtureCaseNames.join(', ')}]`,
+    );
+  }
+
+  const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
+  await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
+
+  await generateJSONSchemas(yamlSchemaFilePaths);
+}
+
+function normalizeGeneratedFileToCompare(fileContent: string) {
+  return fileContent.replace(/^\s*\/\/ eslint-disable-.+$/gm, '');
+}
+
 describe('Type generation (OpenAPI)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   let prettierConfig: Options;
 
-  async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
-    const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
-      const yamlFileName = path.parse(yamlFilePath).name;
-      const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileName}.json`);
-      await convertYAMLToJSONFile(yamlFilePath, jsonFilePath);
-    });
-
-    await Promise.all(generationPromises);
+  async function loadPrettierConfig() {
+    prettierConfig = await resolvedPrettierConfig(__filename);
   }
-
-  const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name) => name !== 'all');
-  const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
-  const fixtureFileTypes = ['yaml', 'json'] as const;
 
   const schemaInterceptor = httpInterceptor.create<{
     [Path in `/spec/${TypegenFixtureCaseName}`]: {
-      GET: {
-        response: {
-          200: {
-            headers: { 'content-type': 'application/yaml' };
-            body: Blob;
-          };
-        };
-      };
+      GET: { response: { 200: { body: Blob } } };
     };
   }>({
     type: 'local',
@@ -53,43 +75,10 @@ describe('Type generation (OpenAPI)', () => {
     saveRequests: true,
   });
 
-  function normalizeGeneratedFileToCompare(fileContent: string) {
-    return fileContent
-      .replace(/^\s*\/\/ eslint-disable-.+$/gm, '')
-      .replace(/zimic@\d+\.\d+\.\d+(?:-.+\.\d+)?/g, `zimic@${version}`);
-  }
-
   beforeAll(async () => {
     await schemaInterceptor.start();
 
-    await Promise.all([
-      (async function loadPrettierConfig() {
-        prettierConfig = await resolvedPrettierConfig(__filename);
-      })(),
-
-      (async function validateAndGenerateSchemas() {
-        await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
-
-        const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
-          glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
-          glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
-          glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
-        ]);
-
-        if (yamlSchemaFilePaths.length !== fixtureCaseNames.length) {
-          throw new Error(
-            'Some schemas are not being tested or were not found: ' +
-              `got [${yamlSchemaFilePaths.map((filePath) => path.parse(filePath).name).join(', ')}], ` +
-              `expected [${fixtureCaseNames.join(', ')}]`,
-          );
-        }
-
-        const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
-        await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
-
-        await generateJSONSchemas(yamlSchemaFilePaths);
-      })(),
-    ]);
+    await Promise.all([loadPrettierConfig(), validateAndGenerateSchemas()]);
   });
 
   beforeEach(() => {
@@ -109,9 +98,8 @@ describe('Type generation (OpenAPI)', () => {
     'Generate types from an OpenAPI schema.',
     '',
     'Positionals:',
-    '  input  The path to a local OpenAPI schema file or an URL to fetch it. Version ',
-    '         3.x is supported as YAML or JSON.',
-    '                                                             [string] [required]',
+    '  input  The path to a local OpenAPI schema file or an URL to fetch it. Version',
+    '         3.x is supported as YAML or JSON.                   [string] [required]',
     '',
     'Options:',
     '      --help          Show help                                        [boolean]',
@@ -154,84 +142,86 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  function verifyFilterFileWarnings(fixtureCase: TypegenFixtureCase, consoleSpies: { warn: MockInstance }) {
-    expect(consoleSpies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 2 : 1);
+  describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
+    function verifyFilterFileWarnings(fixtureCase: TypegenFixtureCase, consoleSpies: { warn: MockInstance }) {
+      expect(consoleSpies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 2 : 1);
 
-    const message = consoleSpies.warn.mock.calls[0].join(' ');
-    expect(message).toMatch(/.*\[zimic\].* /);
-    expect(message).toContain(
-      `Warning: Filter could not be parsed and was ignored: ${chalk.yellow('invalid filter line')}`,
-    );
-  }
-
-  function verifyResponsesWarnings(fixtureCase: TypegenFixtureCase, spies: { log: MockInstance; warn: MockInstance }) {
-    const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
-
-    const expectedNumberOfWarnings = fixtureCase.shouldWriteToStdout
-      ? expectedNonNumericStatusCodes.length + 1
-      : expectedNonNumericStatusCodes.length;
-
-    expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
-
-    const messages = spies.warn.mock.calls
-      .slice(0, expectedNonNumericStatusCodes.length)
-      .map((argument) => argument.join(' '))
-      .sort();
-
-    for (const [index, nonNumericStatusCode] of expectedNonNumericStatusCodes.entries()) {
-      const message = messages[index];
+      const message = consoleSpies.warn.mock.calls[0].join(' ');
       expect(message).toMatch(/.*\[zimic\].* /);
       expect(message).toContain(
-        `Warning: Response has non-numeric status code: ${chalk.yellow(nonNumericStatusCode)}. ` +
-          'Consider replacing it with a number, such as 200, 404, and 500. Only numeric status codes can ' +
-          'be used in interceptors.',
+        `Warning: Filter could not be parsed and was ignored: ${chalk.yellow('invalid filter line')}`,
       );
     }
-  }
 
-  function verifySuccessMessage(
-    fixtureCase: TypegenFixtureCase,
-    outputLabel: string,
-    spies: { log: MockInstance; warn: MockInstance },
-  ) {
-    let successMessage: string | undefined;
+    function verifyResponsesWarnings(
+      fixtureCase: TypegenFixtureCase,
+      spies: { log: MockInstance; warn: MockInstance },
+    ) {
+      const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
 
-    if (fixtureCase.shouldWriteToStdout) {
-      expect(spies.log).not.toHaveBeenCalled();
-      successMessage = spies.warn.mock.calls.at(-1)?.join(' ');
-    } else {
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      successMessage = spies.log.mock.calls.at(-1)?.join(' ');
+      const expectedNumberOfWarnings = fixtureCase.shouldWriteToStdout
+        ? expectedNonNumericStatusCodes.length + 1
+        : expectedNonNumericStatusCodes.length;
+
+      expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+
+      const messages = spies.warn.mock.calls
+        .slice(0, expectedNonNumericStatusCodes.length)
+        .map((argument) => argument.join(' '))
+        .sort();
+
+      for (const [index, nonNumericStatusCode] of expectedNonNumericStatusCodes.entries()) {
+        const message = messages[index];
+        expect(message).toMatch(/.*\[zimic\].* /);
+        expect(message).toContain(
+          `Warning: Response has non-numeric status code: ${chalk.yellow(nonNumericStatusCode)}. ` +
+            'Consider replacing it with a number, such as 200, 404, and 500. Only numeric status codes can ' +
+            'be used in interceptors.',
+        );
+      }
     }
 
-    expect(successMessage).toBeDefined();
-    expect(successMessage).toMatch(/.*\[zimic\].* /);
-    expect(successMessage).toContain(`Generated ${outputLabel}`);
-    expect(successMessage).toMatch(/.*(\d+ms).*$/);
-  }
+    function verifySuccessMessage(
+      fixtureCase: TypegenFixtureCase,
+      outputLabel: string,
+      spies: { log: MockInstance; warn: MockInstance },
+    ) {
+      let successMessage: string | undefined;
 
-  async function getGeneratedOutputContent(
-    fixtureCase: TypegenFixtureCase,
-    outputFilePath: string,
-    processWriteSpy: MockInstance<Parameters<typeof process.stdout.write>>,
-  ) {
-    if (fixtureCase.shouldWriteToStdout) {
-      expect(processWriteSpy).toHaveBeenCalledTimes(1);
-      expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String), 'utf-8', expect.any(Function));
-      return processWriteSpy.mock.calls[0][0].toString();
-    } else {
-      expect(processWriteSpy).toHaveBeenCalledTimes(0);
-      return filesystem.readFile(outputFilePath, 'utf-8');
+      if (fixtureCase.shouldWriteToStdout) {
+        expect(spies.log).not.toHaveBeenCalled();
+        successMessage = spies.warn.mock.calls.at(-1)?.join(' ');
+      } else {
+        expect(spies.log).toHaveBeenCalledTimes(1);
+        successMessage = spies.log.mock.calls.at(-1)?.join(' ');
+      }
+
+      expect(successMessage).toBeDefined();
+      expect(successMessage).toMatch(/.*\[zimic\].* /);
+      expect(successMessage).toContain(`Generated ${outputLabel}`);
+      expect(successMessage).toMatch(/.*(\d+ms).*$/);
     }
-  }
 
-  describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
+    async function getGeneratedOutputContent(
+      fixtureCase: TypegenFixtureCase,
+      outputFilePath: string,
+      processWriteSpy: MockInstance<Parameters<typeof process.stdout.write>>,
+    ) {
+      if (fixtureCase.shouldWriteToStdout) {
+        expect(processWriteSpy).toHaveBeenCalledTimes(1);
+        expect(processWriteSpy).toHaveBeenCalledWith(expect.any(String), 'utf-8', expect.any(Function));
+        return processWriteSpy.mock.calls[0][0].toString();
+      } else {
+        expect(processWriteSpy).toHaveBeenCalledTimes(0);
+        return filesystem.readFile(outputFilePath, 'utf-8');
+      }
+    }
+
     describe.each(fixtureFileTypes)('Type: %s', (fileType) => {
       for (const fixtureCase of fixtureCases) {
         it(`should correctly generate types: ${fixtureCase.expectedOutputFileName}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`, async () => {
           const inputDirectory =
             fileType === 'json' ? typegenFixtures.openapi.generatedDirectory : typegenFixtures.openapi.directory;
-
           const inputFileNameWithoutExtension = path.parse(fixtureCase.inputFileName).name;
           const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
 
@@ -239,16 +229,12 @@ describe('Type generation (OpenAPI)', () => {
             ? `${schemaInterceptor.baseURL()}/spec/${fixtureName}`
             : inputFilePath;
 
-          const inputFileContent = await filesystem.readFile(inputFilePath);
+          const bufferedInputFileContent = await filesystem.readFile(inputFilePath);
 
           const getSchemaHandler = schemaInterceptor.get(`/spec/${fixtureName}`).respond({
             status: 200,
-            headers: { 'content-type': 'application/yaml' },
-            body: new Blob([inputFileContent]),
+            body: new Blob([bufferedInputFileContent], { type: 'application/yaml' }),
           });
-
-          let schemaRequests = getSchemaHandler.requests();
-          expect(schemaRequests).toHaveLength(0);
 
           const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
           const outputFilePath = path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
@@ -315,7 +301,7 @@ describe('Type generation (OpenAPI)', () => {
 
           expect(generatedOutputContent).toBe(expectedOutputContent);
 
-          schemaRequests = getSchemaHandler.requests();
+          const schemaRequests = getSchemaHandler.requests();
           expect(schemaRequests).toHaveLength(fixtureCase.shouldUseURLAsInput ? 1 : 0);
         });
       }
