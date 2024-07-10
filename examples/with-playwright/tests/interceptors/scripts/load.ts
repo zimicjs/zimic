@@ -16,15 +16,11 @@ async function runOnReadyCommand() {
 
 async function loadInterceptors() {
   await githubInterceptor.start();
+  await githubFixtures.apply();
 
-  try {
-    await githubFixtures.apply();
-    console.log('Interceptors loaded.');
+  console.log('Interceptors loaded.');
 
-    await runOnReadyCommand();
-  } finally {
-    await githubInterceptor.stop();
-  }
+  await runOnReadyCommand();
 }
 
 void loadInterceptors();
