@@ -310,6 +310,38 @@ describe('Upgrade version command', () => {
       expect(writeFileSpy).not.toHaveBeenCalled();
       expect(runCommandSpy).not.toHaveBeenCalled();
     });
+
+    it('should not append partial labels if not partial upgrade', async () => {
+      metadataFileContent.version = '1.2.1';
+      config.metadata[0].partialVersions.appendTo = ['description'];
+
+      let upgradeResult = await upgradeVersion({ upgradeMode: 'patch' }, { config });
+
+      let upgradedVersion = '1.2.2';
+      const initialDescription = metadataFileContent.description;
+
+      expect(upgradeResult.upgradedVersion).toBe(upgradedVersion);
+      expect(upgradeResult.isPartialUpgrade).toBe(false);
+      expectUpgradedMetadataFiles(upgradedVersion, {
+        description: initialDescription,
+      });
+
+      readFileSpy.mockClear();
+      writeFileSpy.mockClear();
+      runCommandSpy.mockClear();
+
+      metadataFileContent.version = upgradedVersion;
+      metadataFileContent.description = initialDescription;
+
+      upgradeResult = await upgradeVersion({ upgradeMode: 'patch' }, { config });
+
+      upgradedVersion = '1.2.3';
+      expect(upgradeResult.upgradedVersion).toBe(upgradedVersion);
+      expect(upgradeResult.isPartialUpgrade).toBe(false);
+      expectUpgradedMetadataFiles(upgradedVersion, {
+        description: initialDescription,
+      });
+    });
   });
 
   describe('Invalid scenarios', () => {
