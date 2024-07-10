@@ -370,7 +370,7 @@ describe('CLI (server)', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError(unknownCommand, null, null, `spawn ${unknownCommand} ENOENT`);
+        const error = new CommandError(unknownCommand, { originalMessage: `spawn ${unknownCommand} ENOENT` });
         await expect(runCLI()).rejects.toThrowError(error);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
@@ -394,7 +394,7 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', exitCode, null);
+        const error = new CommandError('node', { exitCode });
         await expect(runCLI()).rejects.toThrowError(error);
         expect(error.message).toBe(`Command 'node' exited with code ${exitCode}`);
 
@@ -419,7 +419,7 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', null, signal);
+        const error = new CommandError('node', { signal });
         await expect(runCLI()).rejects.toThrowError(error);
         expect(error.message).toBe(`Command 'node' exited after signal ${signal}`);
 

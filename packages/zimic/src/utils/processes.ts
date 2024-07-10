@@ -1,5 +1,3 @@
-import { execa as $, ExecaError } from 'execa';
-
 export const PROCESS_EXIT_EVENTS = Object.freeze([
   'beforeExit',
   'uncaughtExceptionMonitor',
@@ -9,25 +7,46 @@ export const PROCESS_EXIT_EVENTS = Object.freeze([
   'SIGBREAK',
 ] as const);
 
-export class CommandError extends Error {
-  constructor(
-    command: string,
-    exitCode: number | null,
-    signal: NodeJS.Signals | null,
-    originalMessage?: string | null,
-  ) {
-    const message =
-      exitCode !== null || signal !== null
-        ? `Command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}`
-        : `Command '${command}' failed: ${originalMessage}`;
+let execaSingleton: typeof import('execa') | undefined;
 
+async function importExeca() {
+  if (!execaSingleton) {
+    execaSingleton = await import('execa');
+  }
+  return execaSingleton;
+}
+
+interface CommandErrorOptions {
+  exitCode?: number;
+  signal?: NodeJS.Signals;
+  originalMessage?: string;
+}
+
+export class CommandError extends Error {
+  constructor(command: string, options: CommandErrorOptions) {
+    const message = CommandError.createMessage(command, options);
     super(message);
 
     this.name = 'CommandError';
   }
+
+  private static createMessage(command: string, options: CommandErrorOptions) {
+    const suffix = options.originalMessage ? `: ${options.originalMessage}` : '';
+
+    if (options.exitCode === undefined && options.signal === undefined) {
+      return `Command '${command}' failed${suffix}`;
+    }
+
+    const prefix = `Command '${command}' exited `;
+    const infix = options.exitCode === undefined ? `after signal ${options.signal}` : `with code ${options.exitCode}`;
+
+    return `${prefix}${infix}${suffix}`;
+  }
 }
 
 export async function runCommand(command: string, commandArguments: string[]) {
+  const { execa: $, ExecaError } = await importExeca();
+
   try {
     await $({
       stdio: 'inherit',
@@ -37,7 +56,12 @@ export async function runCommand(command: string, commandArguments: string[]) {
       throw error;
     }
 
-    const commandError = new CommandError(command, error.exitCode ?? null, error.signal ?? null, error.originalMessage);
+    const commandError = new CommandError(command, {
+      exitCode: error.exitCode,
+      signal: error.signal,
+      originalMessage: error.originalMessage,
+    });
+
     throw commandError;
   }
 }
