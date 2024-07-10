@@ -1,7 +1,7 @@
+import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
-import { runCommand } from 'zimic0/interceptor/server';
 
 async function normalizeImportsInGeneratedFile(generatedFilePath: string) {
   const output = await filesystem.readFile(generatedFilePath, 'utf-8');
@@ -44,8 +44,13 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
 
   afterAll(async () => {
     await Promise.all([
-      runCommand('pnpm', ['--silent', 'tsc', '--noEmit', '--project', tsconfigFilePath]),
-      runCommand('pnpm', [
+      $({
+        stdio: 'inherit',
+      })('pnpm', ['--silent', 'tsc', '--noEmit', '--project', tsconfigFilePath]),
+
+      $({
+        stdio: 'inherit',
+      })('pnpm', [
         '--silent',
         'lint',
         '--no-ignore',
@@ -80,7 +85,9 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
-        await runCommand('pnpm', [
+        await $({
+          stdio: 'inherit',
+        })('pnpm', [
           'zimic',
           'typegen',
           'openapi',
