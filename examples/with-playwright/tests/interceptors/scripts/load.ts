@@ -1,23 +1,30 @@
-import { runCommand } from 'zimic/interceptor/server';
+import { execa as $ } from 'execa';
 
 import githubInterceptor, { githubFixtures } from '../github';
 
 async function runOnReadyCommand() {
   const commandDivisorIndex = process.argv.indexOf('--');
+
   if (commandDivisorIndex !== -1) {
-    const [command, ...commandArguments] = process.argv.slice(commandDivisorIndex + 1);
-    await runCommand(command, commandArguments);
+    const [onReadyCommand, ...onReadyCommandArguments] = process.argv.slice(commandDivisorIndex + 1);
+
+    await $({
+      stdio: 'inherit',
+    })(onReadyCommand, onReadyCommandArguments);
   }
 }
 
 async function loadInterceptors() {
   await githubInterceptor.start();
-  await githubFixtures.apply();
-  console.log('Interceptors loaded.');
 
-  await runOnReadyCommand();
+  try {
+    await githubFixtures.apply();
+    console.log('Interceptors loaded.');
 
-  await githubInterceptor.stop();
+    await runOnReadyCommand();
+  } finally {
+    await githubInterceptor.stop();
+  }
 }
 
 void loadInterceptors();
