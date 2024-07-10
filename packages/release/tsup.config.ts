@@ -8,6 +8,7 @@ const sharedConfig: Options = {
   splitting: true,
   minify: false,
   clean: true,
+  keepNames: true,
 };
 
 const cliConfig = (['cjs'] as const).map<Options>((format) => ({
