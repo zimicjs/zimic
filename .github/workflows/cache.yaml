@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: cache
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
