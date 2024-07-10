@@ -7,7 +7,7 @@ export type { InterceptorServer } from './types/public';
 
 export { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
 
-export { runCommand, CommandError } from '@/utils/processes';
+export { runCommand, CommandError } from './deprecated/processes';
 
 /**
  * A namespace of interceptor server resources for handling HTTP requests.
