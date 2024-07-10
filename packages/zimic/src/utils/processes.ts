@@ -52,6 +52,8 @@ export async function runCommand(command: string, commandArguments: string[]) {
       stdio: 'inherit',
     })(command, commandArguments);
   } catch (error) {
+    /* istanbul ignore if -- @preserve
+     * This is a safeguard if the error is not an ExecaError. It is not expected to run. */
     if (!(error instanceof ExecaError)) {
       throw error;
     }
