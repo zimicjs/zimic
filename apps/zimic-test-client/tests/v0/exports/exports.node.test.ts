@@ -5,8 +5,6 @@ import {
   type InterceptorServerOptions,
   type InterceptorServerNamespace,
   NotStartedInterceptorServerError,
-  runCommand,
-  CommandError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
 } from 'zimic0/interceptor/server';
@@ -23,9 +21,6 @@ describe('Exports (Node.js)', () => {
     expectTypeOf<InterceptorServerOptions>().not.toBeAny();
     expectTypeOf<NotStartedInterceptorServerError>().not.toBeAny();
     expect(typeof NotStartedInterceptorServerError).toBe('function');
-    expect(typeof runCommand).toBe('function');
-    expectTypeOf<CommandError>().not.toBeAny();
-    expect(typeof CommandError).toBe('function');
 
     expect(DEFAULT_ACCESS_CONTROL_HEADERS).toEqual(expect.any(Object));
     expect(DEFAULT_PREFLIGHT_STATUS_CODE).toEqual(expect.any(Number));

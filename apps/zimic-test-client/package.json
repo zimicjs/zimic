@@ -27,6 +27,7 @@
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.2",
     "dotenv-cli": "^7.4.2",
+    "execa": "^9.3.0",
     "node-fetch": "^3.3.2",
     "playwright": "^1.45.1",
     "superagent": "^9.0.2",

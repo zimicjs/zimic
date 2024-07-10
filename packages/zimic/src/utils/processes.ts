@@ -1,6 +1,3 @@
-import { SpawnOptions } from 'child_process';
-import { spawn } from 'cross-spawn';
-
 export const PROCESS_EXIT_EVENTS = Object.freeze([
   'beforeExit',
   'uncaughtExceptionMonitor',
@@ -10,57 +7,61 @@ export const PROCESS_EXIT_EVENTS = Object.freeze([
   'SIGBREAK',
 ] as const);
 
-/** An error thrown when a command exits with a non-zero code. */
+let execaSingleton: typeof import('execa') | undefined;
+
+async function importExeca() {
+  if (!execaSingleton) {
+    execaSingleton = await import('execa');
+  }
+  return execaSingleton;
+}
+
+interface CommandErrorOptions {
+  exitCode?: number;
+  signal?: NodeJS.Signals;
+  originalMessage?: string;
+}
+
 export class CommandError extends Error {
-  constructor(command: string, exitCode: number | null, signal: NodeJS.Signals | null) {
-    super(`Command '${command}' exited ${exitCode === null ? `after signal ${signal}` : `with code ${exitCode}`}.`);
+  constructor(command: string, options: CommandErrorOptions) {
+    const message = CommandError.createMessage(command, options);
+    super(message);
+
     this.name = 'CommandError';
+  }
+
+  private static createMessage(command: string, options: CommandErrorOptions) {
+    const suffix = options.originalMessage ? `: ${options.originalMessage}` : '';
+
+    if (options.exitCode === undefined && options.signal === undefined) {
+      return `Command '${command}' failed${suffix}`;
+    }
+
+    const prefix = `Command '${command}' exited `;
+    const infix = options.exitCode === undefined ? `after signal ${options.signal}` : `with code ${options.exitCode}`;
+
+    return `${prefix}${infix}${suffix}`;
   }
 }
 
-/**
- * Runs a command with the given arguments.
- *
- * @param command The command to run.
- * @param commandArguments The arguments to pass to the command.
- * @param options The options to pass to the spawn function. By default, stdio is set to 'inherit'.
- * @throws {CommandError} When the command exits with a non-zero code.
- */
-export async function runCommand(
-  command: string,
-  commandArguments: string[],
-  options: SpawnOptions & {
-    /**
-     * Can be set to 'pipe', 'inherit', 'overlapped', or 'ignore', or an array of these strings. If passed as an array,
-     * the first element is used for `stdin`, the second for `stdout`, and the third for `stderr`. A fourth element can
-     * be used to specify the `stdio` behavior beyond the standard streams. See {@link ChildProcess.stdio} for more
-     * information.
-     *
-     * @default 'inherit'
-     */
-    stdio?: SpawnOptions['stdio'];
-  } = {},
-) {
-  await new Promise<void>((resolve, reject) => {
-    const { stdio = 'inherit', ...otherOptions } = options;
+export async function runCommand(command: string, commandArguments: string[]) {
+  const { execa: $, ExecaError } = await importExeca();
 
-    const childProcess = spawn(command, commandArguments, { stdio, ...otherOptions });
+  try {
+    await $(command, commandArguments, { stdio: 'inherit' });
+  } catch (error) {
+    /* istanbul ignore if -- @preserve
+     * This is a safeguard if the error is not an ExecaError. It is not expected to run. */
+    if (!(error instanceof ExecaError)) {
+      throw error;
+    }
 
-    childProcess.once('error', (error) => {
-      childProcess.removeAllListeners();
-      reject(error);
+    const commandError = new CommandError(command, {
+      exitCode: error.exitCode,
+      signal: error.signal,
+      originalMessage: error.originalMessage,
     });
 
-    childProcess.once('exit', (exitCode, signal) => {
-      childProcess.removeAllListeners();
-
-      if (exitCode === 0) {
-        resolve();
-        return;
-      }
-
-      const failureError = new CommandError(command, exitCode, signal);
-      reject(failureError);
-    });
-  });
+    throw commandError;
+  }
 }
