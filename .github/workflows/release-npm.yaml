@@ -152,7 +152,7 @@ jobs:
                     issue_number: issue.number,
                     body: [
                       `### Released in [${tag}](https://github.com/${owner}/${repository}/releases/tag/${tag}) :tada:\n`,
-                      `- [**:pushpin: Release notes**](https://github.com/${owner}/${repository}/releases/tag/${tag})\n`,
+                      `- [**:pushpin: Release notes**](https://github.com/${owner}/${repository}/releases/tag/${tag})`,
                       `- [**:package: NPM package**](https://www.npmjs.com/package/${repository}/v/${version})`,
                     ].join('\n'),
                   });
