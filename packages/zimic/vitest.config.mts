@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 
 import path from 'path';
-import { UserConfig, coverageConfigDefaults, defineConfig } from 'vitest/config';
+import { UserConfig, defineConfig } from 'vitest/config';
 
 export const defaultConfig: UserConfig = {
   publicDir: './public',
@@ -22,17 +22,18 @@ export const defaultConfig: UserConfig = {
         branches: 100,
       },
       exclude: [
-        ...coverageConfigDefaults.exclude,
-        '**/local/**',
-        '**/public/**',
+        '**/node_modules/**',
+        'local/**',
+        'public/**',
+        'dist/**',
+        'tests/coverage/**',
         'tests/setup/global/**',
         'scripts/dev/**',
         '**/types/**',
-        '**/types.ts',
-        '**/typescript.ts',
-        '.eslintrc.js',
-        '.lintstagedrc.js',
-        'vitest.*.mts',
+        '**/{*.d.ts,types,typescript}.ts',
+        '**/{.eslintrc,.lintstagedrc}.js',
+        '**/vitest.{config,workspace}.*',
+        '**/tsup.config.*',
       ],
     },
   },
