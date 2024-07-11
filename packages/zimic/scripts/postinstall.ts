@@ -8,15 +8,15 @@ type MSWPackage = typeof mswPackage;
 type MSWExports = MSWPackage['exports'];
 
 async function patchMSWExports() {
-  const mswRootPath = path.join(require.resolve('msw'), '..', '..', '..');
-  const mswPackagePath = path.join(mswRootPath, 'package.json');
+  const mswRootDirectory = path.join(require.resolve('msw'), '..', '..', '..');
+  const mswPackagePath = path.join(mswRootDirectory, 'package.json');
 
   const mswPackageContentAsString = await filesystem.readFile(mswPackagePath, 'utf-8');
   const mswPackageContent = JSON.parse(mswPackageContentAsString) as MSWPackage;
 
   const browserExports = mswPackageContent.exports['./browser'] as Override<
     MSWExports['./browser'],
-    { node: MSWExports['./browser']['node'] | string | null }
+    { node: MSWExports['./node']['node'] | string | null }
   >;
 
   const nodeExports = mswPackageContent.exports['./node'] as Override<
@@ -24,16 +24,11 @@ async function patchMSWExports() {
     { browser: MSWExports['./browser']['browser'] | string | null }
   >;
 
-  const nativeExports = mswPackageContent.exports['./native'] as Override<
-    MSWExports['./native'],
-    { browser: MSWExports['./native']['browser'] | string | null }
-  >;
+  browserExports.node = nodeExports.node;
+  nodeExports.browser = browserExports.browser;
 
-  browserExports.node = nodeExports.default;
-  nodeExports.browser = browserExports.default;
-  nativeExports.browser = browserExports.default;
-
-  await filesystem.writeFile(mswPackagePath, JSON.stringify(mswPackageContent, null, 2));
+  const patchedMSWPackageContentAsString = JSON.stringify(mswPackageContent, null, 2);
+  await filesystem.writeFile(mswPackagePath, patchedMSWPackageContentAsString);
 }
 
 async function postinstall() {
@@ -41,5 +36,3 @@ async function postinstall() {
 }
 
 void postinstall();
-
-export default postinstall;
