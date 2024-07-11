@@ -38,6 +38,8 @@ async function validateAndGenerateSchemas() {
     glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
   ]);
 
+  /* istanbul ignore if -- @preserve
+   * This is a safety check to ensure that all fixture schemas are being tested. It is not expected to run normally. */
   if (yamlSchemaFilePaths.length !== fixtureCaseNames.length) {
     throw new Error(
       'Some schemas are not being tested or were not found: ' +
@@ -143,8 +145,8 @@ describe('Type generation (OpenAPI)', () => {
   });
 
   describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
-    function verifyFilterFileWarnings(fixtureCase: TypegenFixtureCase, consoleSpies: { warn: MockInstance }) {
-      expect(consoleSpies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 2 : 1);
+    function verifyFilterFileWarnings(consoleSpies: { warn: MockInstance }) {
+      expect(consoleSpies.warn).toHaveBeenCalledTimes(1);
 
       const message = consoleSpies.warn.mock.calls[0].join(' ');
       expect(message).toMatch(/.*\[zimic\].* /);
@@ -153,15 +155,10 @@ describe('Type generation (OpenAPI)', () => {
       );
     }
 
-    function verifyResponsesWarnings(
-      fixtureCase: TypegenFixtureCase,
-      spies: { log: MockInstance; warn: MockInstance },
-    ) {
+    function verifyResponsesWarnings(spies: { log: MockInstance; warn: MockInstance }) {
       const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
 
-      const expectedNumberOfWarnings = fixtureCase.shouldWriteToStdout
-        ? expectedNonNumericStatusCodes.length + 1
-        : expectedNonNumericStatusCodes.length;
+      const expectedNumberOfWarnings = expectedNonNumericStatusCodes.length;
 
       expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
 
@@ -270,9 +267,9 @@ describe('Type generation (OpenAPI)', () => {
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
 
               if (hasFilterFile) {
-                verifyFilterFileWarnings(fixtureCase, spies);
+                verifyFilterFileWarnings(spies);
               } else if (fixtureName === 'responses') {
-                verifyResponsesWarnings(fixtureCase, spies);
+                verifyResponsesWarnings(spies);
               } else {
                 expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }
