@@ -36,4 +36,10 @@ export type {
   NonLiteralHttpServiceSchemaPath,
   HttpServiceSchemaPath,
   PathParamsSchemaFromPath,
+  HttpInformationStatusCode,
+  HttpSuccessStatusCode,
+  HttpRedirectionStatusCode,
+  HttpClientErrorStatusCode,
+  HttpServerErrorStatusCode,
+  HttpStatusCode,
 } from './types/schema';

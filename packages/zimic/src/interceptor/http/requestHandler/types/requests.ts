@@ -25,8 +25,8 @@ export type HttpRequestHandlerResponseDeclaration<
 > = StatusCode extends StatusCode
   ? {
       status: StatusCode;
-    } & HttpRequestHandlerResponseBodyAttribute<Default<MethodSchema['response']>[StatusCode]> &
-      HttpRequestHandlerResponseHeadersAttribute<Default<MethodSchema['response']>[StatusCode]>
+    } & HttpRequestHandlerResponseBodyAttribute<Default<Default<MethodSchema['response']>[StatusCode]>> &
+      HttpRequestHandlerResponseHeadersAttribute<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
 
 /**
@@ -80,13 +80,17 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> = IfNever<Default<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['headers']>>, {}>;
+> = IfNever<Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>, {}>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpServiceMethodSchema,
   StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['response']>[StatusCode]['body']>, null>, undefined, null>,
+  ReplaceBy<
+    IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
+    undefined,
+    null
+  >,
   ArrayBuffer,
   Blob
 >;

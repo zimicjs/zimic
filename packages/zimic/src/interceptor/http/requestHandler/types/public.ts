@@ -10,7 +10,7 @@ import {
   HttpServiceSchemaMethod,
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
-import { DeepPartial, Default, PossiblePromise } from '@/types/utils';
+import { DeepPartial, Default, IfAny, PossiblePromise } from '@/types/utils';
 
 import {
   HttpInterceptorRequest,
@@ -266,7 +266,11 @@ export interface LocalHttpRequestHandler<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  StatusCode extends IfAny<
+    Schema,
+    any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+  > = never,
 > extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type: 'local';
 
@@ -375,7 +379,11 @@ export interface RemoteHttpRequestHandler<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  StatusCode extends IfAny<
+    Schema,
+    any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+  > = never,
 > extends PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type: 'remote';
 }
