@@ -30,15 +30,18 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
   const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
 
   beforeAll(async () => {
-    const generatedFileNames = (await filesystem.readdir(generatedDirectory)).filter((fileName) => {
-      return fileName.endsWith('.ts');
-    });
+    const generatedFileNames = await filesystem.readdir(generatedDirectory);
+    const generatedTypeScriptFileNames = generatedFileNames.filter((fileName) => fileName.endsWith('.ts'));
 
     await Promise.all(
-      generatedFileNames.map(async (fileName) => {
-        const filePath = path.join(generatedDirectory, fileName);
-        await filesystem.unlink(filePath);
-      }),
+      generatedTypeScriptFileNames.map(
+        /* istanbul ignore next
+         * If there are no generated TypeScript files yet, this function won't run. */
+        async (fileName) => {
+          const filePath = path.join(generatedDirectory, fileName);
+          await filesystem.unlink(filePath);
+        },
+      ),
     );
   });
 
