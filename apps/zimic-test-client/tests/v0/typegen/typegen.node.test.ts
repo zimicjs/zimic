@@ -3,6 +3,8 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
+import { checkTypes, lint } from '@tests/utils/linting';
+
 async function normalizeImportsInGeneratedFile(generatedFilePath: string) {
   const output = await filesystem.readFile(generatedFilePath, 'utf-8');
   const normalizedOutput = output.replace(/from "zimic(.*)";$/gm, 'from "zimic0$1";');
@@ -46,15 +48,10 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
   });
 
   afterAll(async () => {
-    await Promise.all([
-      $('pnpm', ['--silent', 'tsc', '--noEmit', '--project', tsconfigFilePath], { stdio: 'inherit' }),
+    const typesCheckPromise = checkTypes(tsconfigFilePath);
+    const lintPromise = lint(path.join(generatedDirectory, '*.ts'), eslintConfigFilePath);
 
-      $(
-        'pnpm',
-        ['--silent', 'lint', '--no-ignore', '--config', eslintConfigFilePath, path.join(generatedDirectory, '*.ts')],
-        { stdio: 'inherit' },
-      ),
-    ]);
+    await Promise.all([typesCheckPromise, lintPromise]);
   }, 30 * 1000);
 
   describe('OpenAPI', () => {
