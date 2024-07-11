@@ -611,11 +611,11 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
       it(`should not intercept ${method} requests handled by a cleared interceptor`, async () => {
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
-          const okSpiedRequestHandler = vi.fn(spiedRequestHandler).mockImplementation(() => {
+          const okSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
             const response = new Response(null, { status: 200, headers: defaultHeaders });
             return { response };
           });
-          const noContentSpiedRequestHandler = vi.fn(spiedRequestHandler).mockImplementation(() => {
+          const noContentSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
             const response = new Response(null, { status: 204, headers: defaultHeaders });
             return { response };
           });

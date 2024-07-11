@@ -205,7 +205,9 @@ describe('Type generation (OpenAPI)', () => {
     async function getGeneratedOutputContent(
       fixtureCase: TypegenFixtureCase,
       outputFilePath: string,
-      processWriteSpy: MockInstance<Parameters<typeof process.stdout.write>>,
+      processWriteSpy: MockInstance<
+        (value: string | Uint8Array, encoding?: BufferEncoding, callback?: (error?: Error) => void) => boolean
+      >,
     ) {
       if (fixtureCase.shouldWriteToStdout) {
         expect(processWriteSpy).toHaveBeenCalledTimes(1);
