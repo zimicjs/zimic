@@ -166,29 +166,6 @@ describe('Type generation (OpenAPI)', () => {
       );
     }
 
-    function verifyResponsesWarnings(spies: { log: MockInstance; warn: MockInstance }) {
-      const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
-
-      const expectedNumberOfWarnings = expectedNonNumericStatusCodes.length;
-
-      expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
-
-      const messages = spies.warn.mock.calls
-        .slice(0, expectedNonNumericStatusCodes.length)
-        .map((argument) => argument.join(' '))
-        .sort();
-
-      for (const [index, nonNumericStatusCode] of expectedNonNumericStatusCodes.entries()) {
-        const message = messages[index];
-        expect(message).toMatch(/.*\[zimic\].* /);
-        expect(message).toContain(
-          `Warning: Response has non-numeric status code: ${chalk.yellow(nonNumericStatusCode)}. ` +
-            'Consider replacing it with a number, such as 200, 404, and 500. Only numeric status codes can ' +
-            'be used in interceptors.',
-        );
-      }
-    }
-
     function verifySuccessMessage(
       fixtureCase: TypegenFixtureCase,
       outputLabel: string,
@@ -282,8 +259,6 @@ describe('Type generation (OpenAPI)', () => {
 
               if (hasFilterFile) {
                 verifyFilterFileWarnings(spies);
-              } else if (fixtureName === 'responses') {
-                verifyResponsesWarnings(spies);
               } else {
                 expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }
