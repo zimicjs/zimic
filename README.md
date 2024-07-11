@@ -20,6 +20,18 @@
   <a href="https://github.com/zimicjs/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
+
+  <br>
+
+[![Latest](https://img.shields.io/github/v/release/zimicjs/zimic?label=Latest&color=0E69BE&labelColor=353C43)](https://github.com/zimicjs/zimic/releases)&nbsp;
+[![Canary](https://img.shields.io/github/v/release/zimicjs/zimic?include_prereleases&label=Canary&color=0E69BE&labelColor=353C43)](https://github.com/zimicjs/zimic/releases)&nbsp;
+[![NPM Downloads](https://img.shields.io/npm/dm/zimic?style=flat&logo=npm&color=0E69BE&label=Downloads&labelColor=353C43)](https://www.npmjs.com/package/zimic)&nbsp;
+[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+
+[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
+[![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
+[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)
+
 </div>
 
 ---
