@@ -24,7 +24,7 @@ async function normalizeStripeTypes(generatedFilePath: string) {
   await filesystem.writeFile(generatedFilePath, normalizedOutput);
 }
 
-describe('Typegen', { timeout: 1000 * 30 }, () => {
+describe('Typegen', { timeout: 30 * 1000 }, () => {
   const generatedDirectory = path.join(__dirname, 'generated');
   const tsconfigFilePath = path.join(generatedDirectory, 'tsconfig.json');
   const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
