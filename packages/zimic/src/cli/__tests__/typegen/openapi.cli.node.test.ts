@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
 import prettier, { Options } from 'prettier';
@@ -19,10 +18,13 @@ const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name
 const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
 const fixtureFileTypes = ['yaml', 'json'] as const;
 
-async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
-  const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
-    const yamlFileName = path.parse(yamlFilePath).name;
-    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileName}.json`);
+async function generateJSONSchemas(yamlSchemaFileNames: string[]) {
+  const generationPromises = yamlSchemaFileNames.map(async (yamlFileName) => {
+    const yamlFilePath = path.join(typegenFixtures.openapi.directory, yamlFileName);
+
+    const yamlFileNameWithoutExtension = path.parse(yamlFileName).name;
+    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileNameWithoutExtension}.json`);
+
     await convertYAMLToJSONFile(yamlFilePath, jsonFilePath);
   });
 
@@ -32,26 +34,35 @@ async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
 async function validateAndGenerateSchemas() {
   await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
 
-  const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
-    glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
-    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
-    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
+  const [directoryFileNames, generatedDirectoryFileNames] = await Promise.all([
+    filesystem.readdir(typegenFixtures.openapi.directory),
+    filesystem.readdir(typegenFixtures.openapi.generatedDirectory),
+  ]);
+
+  const [yamlSchemaFileNames, generatedJSONFileNames, generatedTypeScriptFileNames] = await Promise.all([
+    directoryFileNames.filter((fileName) => fileName.endsWith('.yaml')),
+    generatedDirectoryFileNames.filter((fileName) => fileName.endsWith('.json')),
+    generatedDirectoryFileNames.filter((fileName) => fileName.endsWith('.output.ts')),
   ]);
 
   /* istanbul ignore if -- @preserve
    * This is a safety check to ensure that all fixture schemas are being tested. It is not expected to run normally. */
-  if (yamlSchemaFilePaths.length !== fixtureCaseNames.length) {
+  if (yamlSchemaFileNames.length !== fixtureCaseNames.length) {
     throw new Error(
       'Some schemas are not being tested or were not found: ' +
-        `got [${yamlSchemaFilePaths.map((filePath) => path.parse(filePath).name).join(', ')}], ` +
+        `got [${yamlSchemaFileNames.join(', ')}], ` +
         `expected [${fixtureCaseNames.join(', ')}]`,
     );
   }
 
-  const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
-  await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
+  await Promise.all(
+    [...generatedJSONFileNames, ...generatedTypeScriptFileNames].map(async (fileName) => {
+      const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
+      await filesystem.unlink(filePath);
+    }),
+  );
 
-  await generateJSONSchemas(yamlSchemaFilePaths);
+  await generateJSONSchemas(yamlSchemaFileNames);
 }
 
 function normalizeGeneratedFileToCompare(fileContent: string) {
