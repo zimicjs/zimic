@@ -93,7 +93,7 @@ jobs:
   post-release-zimic-to-npm:
     name: Post release zimic to NPM
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: [release-zimic-to-npm]
 
     steps:
@@ -101,11 +101,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const DELAY_BETWEEN_COMMENTS = 1000;
+            const PER_PAGE = 100;
+
             const tag = context.ref.replace(/^refs\/tags\//, '');
             const version = tag.replace(/^v/, '');
 
             const { owner, repo: repository } = context.repo;
-            const perPage = 100;
 
             let milestone = undefined;
 
@@ -117,12 +119,12 @@ jobs:
                 repo: repository,
                 state: 'open',
                 page,
-                per_page: perPage,
+                per_page: PER_PAGE,
               });
 
               milestone = milestones.data.find((milestone) => milestone.title === tag);
 
-              if (milestones.data.length < perPage) {
+              if (milestones.data.length < PER_PAGE) {
                 break;
               }
             }
@@ -137,7 +139,7 @@ jobs:
                   milestone: milestone.number,
                   state: 'all',
                   page,
-                  per_page: perPage,
+                  per_page: PER_PAGE,
                 });
 
                 for (const issue of issues.data) {
@@ -153,9 +155,13 @@ jobs:
                       `- [**:package: NPM package**](https://www.npmjs.com/package/${repository}/v/${version})`,
                     ].join('\n'),
                   });
+
+                  console.log(`Release comment created on issue #${issue.number}.`);
+
+                  await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS));
                 }
 
-                if (issues.data.length < perPage) {
+                if (issues.data.length < PER_PAGE) {
                   break;
                 }
               }
