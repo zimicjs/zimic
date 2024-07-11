@@ -1,6 +1,5 @@
 import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProcessOutput, ProcessPromise } from 'zx';
 
 import { MetadataFileContent } from '@/cli/actions/upgrade-version';
 import Logger from '@/utils/logger';
@@ -8,22 +7,10 @@ import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/r
 
 import prepareRelease from '../prepare-release';
 
-const runCommandSpy = vi.hoisted(() =>
-  vi.fn().mockImplementation(() => {
-    const sourcePromise = Promise.resolve();
+const runCommandSpy = vi.hoisted(() => vi.fn());
 
-    const extendedPromise = Object.assign(sourcePromise, {
-      stdout: { pipe: vi.fn() },
-      stderr: { pipe: vi.fn() },
-    }) as unknown as ProcessPromise<ProcessOutput>;
-
-    return extendedPromise;
-  }),
-);
-
-vi.mock('zx', async () => ({
-  ...(await vi.importActual<{}>('zx')),
-  $: runCommandSpy,
+vi.mock('execa', () => ({
+  execa: runCommandSpy,
 }));
 
 describe('Prepare release command', () => {
@@ -93,16 +80,18 @@ describe('Prepare release command', () => {
     const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(10);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -b ', ''], releaseBranch);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git add .']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git commit -m ', ''], releaseCommitMessage);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git tag ', ''], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push origin ', ' --no-verify'], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git merge ', ' --no-edit'], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push --set-upstream --no-verify']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git branch -D ', ''], releaseBranch);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-b', releaseBranch], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['add', '.'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['commit', '-m', releaseCommitMessage], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['tag', releaseTag], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['push', 'origin', releaseTag, '--no-verify'], {
+      stdio: 'inherit',
+    });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['merge', releaseTag, '--no-edit'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['push', '--set-upstream', '--no-verify'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['branch', '-D', releaseBranch], { stdio: 'inherit' });
   });
 
   it('should prepare a partial release with tag suffix, pushing a partial release tag', async () => {
@@ -121,16 +110,18 @@ describe('Prepare release command', () => {
     const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(10);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -b ', ''], releaseBranch);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git add .']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git commit -m ', ''], releaseCommitMessage);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git tag ', ''], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push origin ', ' --no-verify'], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git merge ', ' --no-edit'], releaseTag);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push --set-upstream --no-verify']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git branch -D ', ''], releaseBranch);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-b', releaseBranch], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['add', '.'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['commit', '-m', releaseCommitMessage], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['tag', releaseTag], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['push', 'origin', releaseTag, '--no-verify'], {
+      stdio: 'inherit',
+    });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['merge', releaseTag, '--no-edit'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['push', '--set-upstream', '--no-verify'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['branch', '-D', releaseBranch], { stdio: 'inherit' });
   });
 
   it('should prepare a non-partial release, pushing a partial release branch', async () => {
@@ -147,11 +138,15 @@ describe('Prepare release command', () => {
     const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(5);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -b ', ''], releaseBranch);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git add .']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git commit -m ', ''], releaseCommitMessage);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push origin ', ' --set-upstream --no-verify'], releaseBranch);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-b', releaseBranch], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['add', '.'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['commit', '-m', releaseCommitMessage], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith(
+      'git',
+      ['push', 'origin', releaseBranch, '--set-upstream', '--no-verify'],
+      { stdio: 'inherit' },
+    );
   });
 
   it('should prepare a non-partial release with tag suffix, pushing a partial release branch', async () => {
@@ -170,10 +165,14 @@ describe('Prepare release command', () => {
     const releaseCommitMessage = `chore(release): upgrade version to ${releaseTag}`;
 
     expect(runCommandSpy).toHaveBeenCalledTimes(5);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git checkout -b ', ''], releaseBranch);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git add .']);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git commit -m ', ''], releaseCommitMessage);
-    expect(runCommandSpy).toHaveBeenCalledWith(['git push origin ', ' --set-upstream --no-verify'], releaseBranch);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['checkout', '-b', releaseBranch], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['add', '.'], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith('git', ['commit', '-m', releaseCommitMessage], { stdio: 'inherit' });
+    expect(runCommandSpy).toHaveBeenCalledWith(
+      'git',
+      ['push', 'origin', releaseBranch, '--set-upstream', '--no-verify'],
+      { stdio: 'inherit' },
+    );
   });
 });

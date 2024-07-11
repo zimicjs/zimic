@@ -11,9 +11,13 @@ export function withCLIErrorBoundary<Parameters extends readonly unknown[], Retu
     try {
       return await callback(...parameters);
     } catch (error) {
+      /* istanbul ignore else -- @preserve
+       * All errors are expected to be instances of Error. */
       if (error instanceof Error) {
         log.error(error.message);
       }
+
+      console.error(error);
       process.exit(1);
     }
   };

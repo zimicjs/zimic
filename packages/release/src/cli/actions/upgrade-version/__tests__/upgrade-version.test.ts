@@ -11,9 +11,8 @@ import { InvalidVersionFormatError, UnknownUpgradeModeError } from '../utils/ver
 
 const runCommandSpy = vi.hoisted(() => vi.fn());
 
-vi.mock('zx', async () => ({
-  ...(await vi.importActual<{}>('zx')),
-  $: runCommandSpy,
+vi.mock('execa', () => ({
+  execa: runCommandSpy,
 }));
 
 describe('Upgrade version command', () => {
@@ -76,7 +75,7 @@ describe('Upgrade version command', () => {
     expect(writeFileSpy).toHaveBeenCalledWith(metadataFilePath, JSON.stringify(upgradedMetadataFileContent, null, 2));
 
     expect(runCommandSpy).toHaveBeenCalledTimes(1);
-    expect(runCommandSpy).toHaveBeenCalledWith(['pnpm style:format ', ''], [metadataFilePath]);
+    expect(runCommandSpy).toHaveBeenCalledWith('pnpm', ['style:format', metadataFilePath], { stdio: 'inherit' });
   }
 
   describe('Patch upgrade', () => {
@@ -309,6 +308,38 @@ describe('Upgrade version command', () => {
       expect(readFileSpy).toHaveBeenCalledWith(metadataFilePath, 'utf8');
       expect(writeFileSpy).not.toHaveBeenCalled();
       expect(runCommandSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not append partial labels if not partial upgrade', async () => {
+      metadataFileContent.version = '1.2.1';
+      config.metadata[0].partialVersions.appendTo = ['description'];
+
+      let upgradeResult = await upgradeVersion({ upgradeMode: 'patch' }, { config });
+
+      let upgradedVersion = '1.2.2';
+      const initialDescription = metadataFileContent.description;
+
+      expect(upgradeResult.upgradedVersion).toBe(upgradedVersion);
+      expect(upgradeResult.isPartialUpgrade).toBe(false);
+      expectUpgradedMetadataFiles(upgradedVersion, {
+        description: initialDescription,
+      });
+
+      readFileSpy.mockClear();
+      writeFileSpy.mockClear();
+      runCommandSpy.mockClear();
+
+      metadataFileContent.version = upgradedVersion;
+      metadataFileContent.description = initialDescription;
+
+      upgradeResult = await upgradeVersion({ upgradeMode: 'patch' }, { config });
+
+      upgradedVersion = '1.2.3';
+      expect(upgradeResult.upgradedVersion).toBe(upgradedVersion);
+      expect(upgradeResult.isPartialUpgrade).toBe(false);
+      expectUpgradedMetadataFiles(upgradedVersion, {
+        description: initialDescription,
+      });
     });
   });
 

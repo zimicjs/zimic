@@ -10,9 +10,9 @@ export class MissingReleaseConfigError extends CLIError {
 
 export class InvalidReleaseConfigError extends CLIError {
   constructor(originalError: unknown) {
-    const originalErrorContainsMessage =
-      typeof originalError === 'object' && originalError !== null && 'message' in originalError;
-    const originalErrorMessage = originalErrorContainsMessage ? originalError.message : originalError;
+    /* istanbul ignore next -- @preserve
+     * All errors are expected to be instances of Error and have a message. */
+    const originalErrorMessage = originalError instanceof Error ? originalError.message : originalError;
 
     super(`The release config in '${CONFIG_FILENAME}' is invalid: ${originalErrorMessage}`);
   }

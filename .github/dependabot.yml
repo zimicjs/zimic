@@ -17,22 +17,16 @@ updates:
       npm:
         patterns:
           - '*'
-
     ignore:
       - dependency-name: zimic
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
           - version-update:semver-patch
-
-      - dependency-name: zx
-        update-types:
-          - version-update:semver-major
-
+      # Chalk v4 still supports CommonJS and is necessary for the Next.js and Playwright examples.
       - dependency-name: chalk
         update-types:
           - version-update:semver-major
-
       - dependency-name: eslint
         update-types:
           - version-update:semver-major

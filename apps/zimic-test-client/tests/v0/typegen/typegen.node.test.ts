@@ -24,7 +24,7 @@ async function normalizeStripeTypes(generatedFilePath: string) {
   await filesystem.writeFile(generatedFilePath, normalizedOutput);
 }
 
-describe('Typegen', { timeout: 1000 * 30 }, () => {
+describe('Typegen', { timeout: 30 * 1000 }, () => {
   const generatedDirectory = path.join(__dirname, 'generated');
   const tsconfigFilePath = path.join(generatedDirectory, 'tsconfig.json');
   const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
@@ -52,7 +52,7 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
         { stdio: 'inherit' },
       ),
     ]);
-  });
+  }, 30 * 1000);
 
   describe('OpenAPI', () => {
     it.concurrent.each([
@@ -78,11 +78,17 @@ describe('Typegen', { timeout: 1000 * 30 }, () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
-        await $(
+        const typegenResult = await $(
           'pnpm',
           ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
-          { stdio: 'inherit' },
+          { stdout: 'ignore', stderr: 'pipe' },
         );
+
+        const simplifiedStderr = typegenResult.stderr.replace(
+          /^.*Warning: Response has non-numeric status code: .*default.*$/gm,
+          '',
+        );
+        process.stderr.write(simplifiedStderr);
 
         await normalizeImportsInGeneratedFile(generatedFilePath);
 
