@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - prepare-github-release
-    timeout-minutes: 2
+    timeout-minutes: 3
 
     environment: GitHub
 

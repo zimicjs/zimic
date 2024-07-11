@@ -78,17 +78,11 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
-        const typegenResult = await $(
+        await $(
           'pnpm',
           ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
-          { stdout: 'ignore', stderr: 'pipe' },
+          { stdio: 'inherit' },
         );
-
-        const simplifiedStderr = typegenResult.stderr.replace(
-          /.*Warning: Response has non-numeric status code: .*default.*\n?/g,
-          '',
-        );
-        process.stderr.write(simplifiedStderr);
 
         await normalizeImportsInGeneratedFile(generatedFilePath);
 

@@ -104,6 +104,11 @@ function visitComponentReferences(
     return ts.factory.updateArrayTypeNode(node, newElementType);
   }
 
+  if (ts.isTupleTypeNode(node)) {
+    const newElements = node.elements.map((element) => visitComponentReferences(element, context, options));
+    return ts.factory.updateTupleTypeNode(node, ts.factory.createNodeArray(newElements));
+  }
+
   if (ts.isUnionTypeNode(node)) {
     const newTypes = node.types.map((type) => visitComponentReferences(type, context, options));
     return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(newTypes));
@@ -305,7 +310,8 @@ function normalizeComponent(
   }
 
   if (componentGroupName === 'responses') {
-    return normalizeResponse(component, context, { isComponent: true });
+    const responseComponent = normalizeResponse(component, context, { isComponent: true });
+    return responseComponent?.newSignature;
   }
 
   if (componentGroupName === 'pathItems') {

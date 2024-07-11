@@ -8,19 +8,35 @@ paths:
   /users-with-non-numeric-status-codes:
     post:
       responses:
-        '2xx':
+        '1xx':
+          description: Informational
+        '100':
+          description: Continue
+        '201':
           $ref: '#/components/responses/userCreated'
-        '4XX':
-          $ref: '#/components/responses/error'
+        '2Xx':
+          description: Success
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/notFoundError'
+        '4xX':
+          $ref: '#/components/responses/clientError'
+        '503':
+          description: Service Unavailable
+        '5XX':
+          $ref: '#/components/responses/serverError'
         default:
           $ref: '#/components/responses/error'
+        unknown:
+          description: Unknown status code
 
   /users-with-no-request:
     post:
       responses:
         '200':
           $ref: '#/components/responses/userCreated'
-        '400':
+        default:
           $ref: '#/components/responses/error'
 
   /users-with-multiple-reference-response-contents:
@@ -178,6 +194,78 @@ components:
                 description: The type of the response
               value:
                 $ref: '#/components/schemas/User'
+
+    notFoundError:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            description: A not found error response
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: A message describing the error
+              code:
+                type: string
+                enum:
+                  - NOT_FOUND
+
+    validationError:
+      description: Validation Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: A validation error response
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: A message describing the error
+              code:
+                type: string
+                enum:
+                  - VALIDATION_ERROR
+
+    clientError:
+      description: Client Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: A client error response
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: A message describing the error
+              code:
+                type: string
+                enum:
+                  - CLIENT_ERROR
+
+    serverError:
+      description: Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: A server error response
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: A message describing the error
+              code:
+                type: string
+                enum:
+                  - SERVER_ERROR
 
     error:
       description: Error

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpSchema } from '@/http/types/schema';
+import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http/types/schema';
 import { HttpRequestHandlerPath } from '@/interceptor/http/requestHandler/types/utils';
 import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
@@ -294,6 +294,127 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
         if (!name) {
           return { status: 400 };
+        }
+
+        if (name === 'not-found') {
+          return {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
+            body: users,
+          };
+        }
+
+        return {
+          status: 200,
+          body: { message: 'A name is required.' },
+        };
+      });
+
+      // @ts-expect-error The response declaration should match the schema
+      await interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return { status: 400, body: '' };
+        }
+
+        if (name === 'not-found') {
+          return { status: 404, body: '' };
+        }
+
+        return { status: 200, body: '' };
+      });
+    });
+  });
+
+  it('should correctly type responses with merged status codes', async () => {
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: { name?: string };
+          };
+          response: MergeHttpResponsesByStatusCode<
+            [
+              {
+                200: { headers: { 'content-type': string }; body: User[] };
+                204: { body: '204' };
+                400: { body: { message: string } };
+              },
+              {
+                [StatusCode in HttpStatusCode.Success]: { body: '2xx' };
+              },
+              {
+                201: { body: '201' };
+                400: { body: '400' };
+              },
+              { 401: {} },
+              {
+                [StatusCode in HttpStatusCode.ClientError]: { body: '4xx' };
+              },
+              {
+                [StatusCode in HttpStatusCode]: { body: 'default' };
+              },
+            ]
+          >;
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const handler = interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return {
+            status: 400,
+            body: { message: 'A name is required.' },
+          };
+        }
+
+        if (name === 'no-content') {
+          return { status: 204 };
+        }
+        if (name === 'created') {
+          return { status: 201, body: '2xx' };
+        }
+        if (name === 'unauthorized') {
+          return { status: 401 };
+        }
+        if (name === 'not-found') {
+          return { status: 404, body: '4xx' };
+        }
+        if (name === 'unknown') {
+          return { status: 500, body: 'default' };
+        }
+
+        return {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: users,
+        };
+      });
+
+      const requests = await handler.requests();
+      type ResponseBody = (typeof requests)[number]['response']['body'];
+      expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
+
+      type ResponseHeaders = (typeof requests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
+        HttpHeaders<{ 'content-type': string }> | HttpHeaders | HttpHeaders<{}>
+      >();
+
+      type ResponseStatus = (typeof requests)[number]['response']['status'];
+      expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
+
+      // @ts-expect-error Each response declaration should match the status code
+      await interceptor.get('/users').respond((request) => {
+        const name = request.searchParams.get('name');
+
+        if (!name) {
+          return { status: 400 };
+        }
+
+        if (name === 'unauthorized') {
+          return { status: 401, body: 'invalid' };
         }
 
         if (name === 'not-found') {

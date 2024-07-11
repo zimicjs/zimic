@@ -7,7 +7,7 @@ import {
   HttpServiceSchemaMethod,
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { Default, IfAny } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
@@ -31,7 +31,11 @@ class HttpRequestHandlerClient<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema>,
   Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  StatusCode extends IfAny<
+    Schema,
+    any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+  > = never,
 > {
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];

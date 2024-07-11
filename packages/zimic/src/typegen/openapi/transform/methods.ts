@@ -112,6 +112,22 @@ function isContentMember(node: ts.Node): node is ContentMember {
   );
 }
 
+type Response = Override<
+  ts.PropertySignature,
+  {
+    name: ts.Identifier | ts.StringLiteral | ts.NumericLiteral;
+    type: ts.TypeNode;
+  }
+>;
+
+function isResponse(node: ts.Node): node is Response {
+  return (
+    ts.isPropertySignature(node) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) || ts.isNumericLiteral(node.name)) &&
+    node.type !== undefined
+  );
+}
+
 function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
   const containsRedundantNullUnion =
     ts.isUnionTypeNode(type) &&
@@ -371,6 +387,15 @@ function normalizeResponseType(
   return isComponent ? wrapResponseType(newType, context) : newType;
 }
 
+const NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE: Record<string, string | undefined> = {
+  default: 'HttpStatusCode',
+  '1xx': 'HttpStatusCode.Information',
+  '2xx': 'HttpStatusCode.Success',
+  '3xx': 'HttpStatusCode.Redirection',
+  '4xx': 'HttpStatusCode.ClientError',
+  '5xx': 'HttpStatusCode.ServerError',
+};
+
 export function normalizeResponse(
   response: ts.TypeElement,
   context: TypeTransformContext,
@@ -380,20 +405,8 @@ export function normalizeResponse(
 
   /* istanbul ignore if -- @preserve
    * Response members are always expected to be a response. */
-  if (!ts.isPropertySignature(response) || !response.type) {
+  if (!isResponse(response)) {
     return undefined;
-  }
-
-  const isNonNumericStatusCode =
-    (ts.isIdentifier(response.name) || ts.isStringLiteral(response.name)) && !/^\d+$/.test(response.name.text);
-
-  if (!isComponent && isNonNumericStatusCode) {
-    logWithPrefix(
-      `Warning: Response has non-numeric status code: ${chalk.yellow(response.name.text)}. ` +
-        'Consider replacing it with a number, such as 200, 404, and 500. ' +
-        'Only numeric status codes can be used in interceptors.',
-      { method: 'warn' },
-    );
   }
 
   const newType = normalizeResponseType(response.type, context, {
@@ -401,13 +414,54 @@ export function normalizeResponse(
     questionToken: response.questionToken,
   });
 
-  return ts.factory.updatePropertySignature(
-    response,
-    response.modifiers,
-    response.name,
-    response.questionToken,
-    newType,
-  );
+  const statusCodeOrComponentName = response.name.text;
+  const isNumericStatusCode = /^\d+$/.test(statusCodeOrComponentName);
+  const shouldReuseIdentifier = isComponent || isNumericStatusCode;
+
+  let newSignature: ts.PropertySignature;
+
+  if (shouldReuseIdentifier) {
+    newSignature = ts.factory.updatePropertySignature(
+      response,
+      response.modifiers,
+      response.name,
+      response.questionToken,
+      newType,
+    );
+  } else {
+    const statusCode = statusCodeOrComponentName.toLowerCase();
+    const mappedType = NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE[statusCode];
+
+    if (!mappedType) {
+      logWithPrefix(
+        `Warning: Response has a non-standard status code: ${chalk.yellow(response.name.text)}. ` +
+          "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
+          "or 'default'.",
+        { method: 'warn' },
+      );
+
+      return undefined;
+    }
+
+    context.typeImports.http.add('HttpStatusCode');
+    const newIdentifier = ts.factory.createIdentifier(`[StatusCode in ${mappedType}]`);
+
+    newSignature = ts.factory.updatePropertySignature(
+      response,
+      response.modifiers,
+      newIdentifier,
+      response.questionToken,
+      newType,
+    );
+  }
+
+  return {
+    newSignature,
+    statusCode: {
+      value: statusCodeOrComponentName,
+      isNumeric: isNumericStatusCode,
+    },
+  };
 }
 
 export function normalizeResponses(responses: MethodMember, context: TypeTransformContext) {
@@ -422,7 +476,46 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
     .map((response) => normalizeResponse(response, context), context)
     .filter(isDefined);
 
-  const newType = ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers));
+  const sortedNewMembers = Array.from(newMembers).sort((response, otherResponse) => {
+    return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
+  });
+
+  const isEveryStatusCodeNumeric = sortedNewMembers.every((response) => response.statusCode.isNumeric);
+  let newType: ts.TypeLiteralNode | ts.TypeReferenceNode;
+
+  if (isEveryStatusCodeNumeric) {
+    newType = ts.factory.updateTypeLiteralNode(
+      responses.type,
+      ts.factory.createNodeArray(sortedNewMembers.map((response) => response.newSignature)),
+    );
+  } else {
+    context.typeImports.http.add('MergeHttpResponsesByStatusCode');
+
+    const typeMembersToMerge = sortedNewMembers.reduce<{
+      numeric: ts.PropertySignature[];
+      nonNumeric: ts.PropertySignature[];
+    }>(
+      (members, response) => {
+        if (response.statusCode.isNumeric) {
+          members.numeric.push(response.newSignature);
+        } else {
+          members.nonNumeric.push(response.newSignature);
+        }
+        return members;
+      },
+      { numeric: [], nonNumeric: [] },
+    );
+
+    const numericTypeLiteral = ts.factory.createTypeLiteralNode(typeMembersToMerge.numeric);
+    const nonNumericTypeLiterals = typeMembersToMerge.nonNumeric.map((response) =>
+      ts.factory.createTypeLiteralNode([response]),
+    );
+
+    const mergeWrapper = ts.factory.createIdentifier('MergeHttpResponsesByStatusCode');
+    newType = ts.factory.createTypeReferenceNode(mergeWrapper, [
+      ts.factory.createTupleTypeNode([numericTypeLiteral, ...nonNumericTypeLiterals]),
+    ]);
+  }
 
   return ts.factory.updatePropertySignature(
     responses,

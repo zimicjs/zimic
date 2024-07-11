@@ -1,4 +1,4 @@
-import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify } from '@/types/utils';
+import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify, NonEmptyArray } from '@/types/utils';
 
 import { HttpFormDataSchema } from '../formData/types';
 import { HttpHeadersSchema } from '../headers/types';
@@ -52,23 +52,110 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
+export namespace HttpStatusCode {
+  export type Information =
+    | 100 // Continue
+    | 101 // Switching Protocols
+    | 102 // Processing
+    | 103; // Early Hints
+
+  export type Success =
+    | 200 // OK
+    | 201 // Created
+    | 202 // Accepted
+    | 203 // Non-Authoritative Information
+    | 204 // No Content
+    | 205 // Reset Content
+    | 206 // Partial Content
+    | 207 // Multi-Status
+    | 208 // Already Reported
+    | 226; // IM Used
+
+  export type Redirection =
+    | 300 // Multiple Choices
+    | 301 // Moved Permanently
+    | 302 // Found
+    | 303 // See Other
+    | 304 // Not Modified
+    | 307 // Temporary Redirect
+    | 308; // Permanent Redirect
+
+  export type ClientError =
+    | 400 // Bad Request
+    | 401 // Unauthorized
+    | 402 // Payment Required
+    | 403 // Forbidden
+    | 404 // Not Found
+    | 405 // Method Not Allowed
+    | 406 // Not Acceptable
+    | 407 // Proxy Authentication Required
+    | 408 // Request Timeout
+    | 409 // Conflict
+    | 410 // Gone
+    | 411 // Length Required
+    | 412 // Precondition Failed
+    | 413 // Content Too Large
+    | 414 // URI Too Long
+    | 415 // Unsupported Media Type
+    | 416 // Range Not Satisfiable
+    | 417 // Expectation Failed
+    | 418 // I'm a teapot
+    | 421 // Misdirected Request
+    | 422 // Unprocessable Content
+    | 423 // Locked
+    | 424 // Failed Dependency
+    | 425 // Too Early
+    | 426 // Upgrade Required
+    | 428 // Precondition Required
+    | 429 // Too Many Requests
+    | 431 // Request Header Fields Too Large
+    | 451; // Unavailable For Legal Reasons
+
+  export type ServerError =
+    | 500 // Internal Server Error
+    | 501 // Not Implemented
+    | 502 // Bad Gateway
+    | 503 // Service Unavailable
+    | 504 // Gateway Timeout
+    | 505 // HTTP Version Not Supported
+    | 506 // Variant Also Negotiates
+    | 507 // Insufficient Storage
+    | 508 // Loop Detected
+    | 510 // Not Extended
+    | 511; // Network Authentication Required
+}
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type HttpStatusCode =
+  | HttpStatusCode.Information
+  | HttpStatusCode.Success
+  | HttpStatusCode.Redirection
+  | HttpStatusCode.ClientError
+  | HttpStatusCode.ServerError;
+
+export namespace HttpServiceResponseSchemaByStatusCode {
+  export type Loose = {
+    [StatusCode in HttpStatusCode]?: HttpServiceResponseSchema;
+  };
+
+  export type ConvertToStrict<Schema extends Loose> = {
+    [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpServiceResponseSchema.NoBody : Schema[StatusCode];
+  };
+
+  export type Strict = ConvertToStrict<Loose>;
+
+  export type NoBody = {
+    [StatusCode in HttpStatusCode]?: HttpServiceResponseSchema.NoBody;
+  };
+}
+
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
-export type HttpServiceResponseSchemaByStatusCode = {
-  [statusCode: number]: HttpServiceResponseSchema;
-} & {
-  204?: HttpServiceResponseSchema.NoBody;
-};
-
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export namespace HttpServiceResponseSchemaByStatusCode {
-  export type NoBody = HttpServiceResponseSchemaByStatusCode & {
-    [statusCode: number]: HttpServiceResponseSchema.NoBody;
-  };
-}
+export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByStatusCode.Strict;
 
 /**
  * Extracts the status codes used in a response schema by status code.
@@ -77,7 +164,7 @@ export namespace HttpServiceResponseSchemaByStatusCode {
  */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
-> = Extract<keyof ResponseSchemaByStatusCode, number>;
+> = Extract<keyof ResponseSchemaByStatusCode, HttpStatusCode>;
 
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
@@ -258,3 +345,31 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
  *   '/users/:userId/notifications' -> { userId: string }
  */
 export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
+
+type OmitPastHttpStatusCodes<
+  Schema extends HttpServiceResponseSchemaByStatusCode.Loose,
+  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+> =
+  PastSchemas extends NonEmptyArray<HttpServiceResponseSchemaByStatusCode.Loose>
+    ? Omit<Schema, keyof UnionToIntersection<PastSchemas[number]>>
+    : Schema;
+
+type RecursiveMergeHttpResponsesByStatusCode<
+  Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],
+> = Schemas extends [
+  infer FirstSchema extends HttpServiceResponseSchemaByStatusCode.Loose,
+  ...infer RestSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+]
+  ? RestSchemas extends NonEmptyArray<HttpServiceResponseSchemaByStatusCode.Loose>
+    ? OmitPastHttpStatusCodes<FirstSchema, PastSchemas> &
+        RecursiveMergeHttpResponsesByStatusCode<RestSchemas, [...PastSchemas, FirstSchema]>
+    : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
+  : never;
+
+export type MergeHttpResponsesByStatusCode<
+  Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],
+> = HttpServiceResponseSchemaByStatusCode.ConvertToStrict<
+  RecursiveMergeHttpResponsesByStatusCode<Schemas, PastSchemas>
+>;

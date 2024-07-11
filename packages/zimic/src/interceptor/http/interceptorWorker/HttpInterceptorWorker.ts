@@ -270,10 +270,10 @@ abstract class HttpInterceptorWorker {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
 
-    type BodySchema = Default<Default<MethodSchema['response']>[StatusCode]['body']>;
+    type BodySchema = Default<Default<Default<MethodSchema['response']>[StatusCode]>['body']>;
     const parsedBody = await this.parseRawBody<BodySchema>(rawResponse);
 
-    type HeadersSchema = Default<Default<MethodSchema['response']>[StatusCode]['headers']>;
+    type HeadersSchema = Default<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>;
     const headers = new HttpHeaders<HeadersSchema>(rawResponse.headers);
 
     const parsedRequest = new Proxy(rawResponse as unknown as HttpInterceptorResponse<MethodSchema, StatusCode>, {

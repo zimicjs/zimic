@@ -12,7 +12,9 @@ type HttpTypeImportName =
   | 'HttpFormData'
   | 'HttpSearchParams'
   | 'HttpSearchParamsSerialized'
-  | 'HttpHeadersSerialized';
+  | 'HttpHeadersSerialized'
+  | 'HttpStatusCode'
+  | 'MergeHttpResponsesByStatusCode';
 
 type OperationName = string;
 export type OperationPath = `${OperationName}`;

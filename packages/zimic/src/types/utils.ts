@@ -48,6 +48,8 @@ export type ArrayKey<Type> = keyof PickArrayProperties<Type>;
 export type NonArrayKey<Type> =
   string | number extends ArrayKey<Type> ? keyof Type : Exclude<keyof Type, ArrayKey<Type>>;
 
+export type NonEmptyArray<Type> = [Type, ...Type[]];
+
 export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
 
 export type Collection<Type> = Type[] | Set<Type>;
