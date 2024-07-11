@@ -16,7 +16,7 @@
     "dotenv-cli": "^7.4.2",
     "supertest": "^7.0.0",
     "typescript": "^5.5.3",
-    "vitest": "1.6.0",
+    "vitest": "2.0.2",
     "zimic": "latest"
   }
 }
