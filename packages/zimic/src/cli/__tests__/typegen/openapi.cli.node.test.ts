@@ -39,11 +39,7 @@ async function validateAndGenerateSchemas() {
     filesystem.readdir(typegenFixtures.openapi.generatedDirectory),
   ]);
 
-  const [yamlSchemaFileNames, generatedJSONFileNames, generatedTypeScriptFileNames] = await Promise.all([
-    directoryFileNames.filter((fileName) => fileName.endsWith('.yaml')),
-    generatedDirectoryFileNames.filter((fileName) => fileName.endsWith('.json')),
-    generatedDirectoryFileNames.filter((fileName) => fileName.endsWith('.output.ts')),
-  ]);
+  const yamlSchemaFileNames = directoryFileNames.filter((fileName) => fileName.endsWith('.yaml'));
 
   /* istanbul ignore if -- @preserve
    * This is a safety check to ensure that all fixture schemas are being tested. It is not expected to run normally. */
@@ -56,10 +52,14 @@ async function validateAndGenerateSchemas() {
   }
 
   await Promise.all(
-    [...generatedJSONFileNames, ...generatedTypeScriptFileNames].map(async (fileName) => {
-      const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
-      await filesystem.unlink(filePath);
-    }),
+    generatedDirectoryFileNames.map(
+      /* istanbul ignore next
+       * If there are no generated files yet, this function won't run. */
+      async (fileName) => {
+        const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
+        await filesystem.unlink(filePath);
+      },
+    ),
   );
 
   await generateJSONSchemas(yamlSchemaFileNames);
@@ -247,7 +247,10 @@ describe('Type generation (OpenAPI)', () => {
           });
 
           const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
-          const outputFilePath = path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
+          const outputFilePath = path.join(
+            generatedOutputDirectory,
+            `${path.parse(fixtureCase.expectedOutputFileName).name}.${fileType}.output.ts`,
+          );
           const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
 
           processArgvSpy.mockReturnValue(
