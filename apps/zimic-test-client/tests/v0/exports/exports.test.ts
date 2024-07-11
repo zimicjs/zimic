@@ -21,6 +21,7 @@ import {
   type StrictFormData,
   type HttpSchema,
   type HttpMethod,
+  type HttpStatusCode,
   type HttpServiceSchema,
   type HttpServiceMethodsSchema,
   type HttpServiceMethodSchema,
@@ -33,6 +34,7 @@ import {
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
+  type MergeHttpResponsesByStatusCode,
   InvalidFormDataError,
 } from 'zimic0/http';
 import {
@@ -115,6 +117,7 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpMethod>().not.toBeAny();
+    expectTypeOf<HttpStatusCode>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();
@@ -128,6 +131,7 @@ describe('Exports', () => {
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
+    expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<InvalidJSONError>().not.toBeAny();
     expect(typeof InvalidJSONError).toBe('function');
