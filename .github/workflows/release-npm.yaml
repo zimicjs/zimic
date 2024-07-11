@@ -109,7 +109,7 @@ jobs:
 
             let milestone = undefined;
 
-            for (let page = 1; milestone !== undefined; page++) {
+            for (let page = 1; milestone === undefined; page++) {
               console.log(`Fetching milestone ${tag}... (page ${page})`);
 
               const milestones = await github.rest.issues.listMilestones({
