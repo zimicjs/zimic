@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 
 import path from 'path';
-import { UserConfig, defineConfig } from 'vitest/config';
+import { UserConfig, coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export const defaultConfig: UserConfig = {
   publicDir: './public',
@@ -22,6 +22,7 @@ export const defaultConfig: UserConfig = {
         branches: 100,
       },
       exclude: [
+        ...coverageConfigDefaults.exclude,
         '**/local/**',
         '**/public/**',
         'tests/setup/global/**',
