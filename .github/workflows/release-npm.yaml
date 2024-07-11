@@ -104,7 +104,8 @@ jobs:
             const tag = context.ref.replace(/^refs\/tags\//, '');
             const version = tag.replace(/^v/, '');
 
-            const { owner, repo: repository } = context.repo.owner;
+            const { owner, repo: repository } = context.repo;
+            const perPage = 100;
 
             let milestone = undefined;
 
@@ -116,14 +117,14 @@ jobs:
                 repo: repository,
                 state: 'open',
                 page,
-                per_page: 100,
+                per_page: perPage,
               });
 
-              if (milestones.data.length === 0) {
+              milestone = milestones.data.find((milestone) => milestone.title === tag);
+
+              if (milestones.data.length < perPage) {
                 break;
               }
-
-              milestone = milestones.data.find((milestone) => milestone.title === tag);
             }
 
             if (milestone) {
@@ -136,12 +137,8 @@ jobs:
                   milestone: milestone.number,
                   state: 'all',
                   page,
-                  per_page: 100,
+                  per_page: perPage,
                 });
-
-                if (issues.data.length === 0) {
-                  break;
-                }
 
                 for (const issue of issues.data) {
                   console.log(`Creating release comment on issue #${issue.number}...`);
@@ -156,6 +153,10 @@ jobs:
                       `- [**:package: NPM package**](https://www.npmjs.com/package/${repository}/v/${version})`,
                     ].join('\n'),
                   });
+                }
+
+                if (issues.data.length < perPage) {
+                  break;
                 }
               }
 
