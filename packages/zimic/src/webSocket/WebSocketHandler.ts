@@ -322,10 +322,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     });
   }
 
-  onEvent<Channel extends WebSocket.ServiceChannel<Schema>>(
-    channel: Channel,
-    listener: WebSocket.EventMessageListener<Schema, Channel>,
-  ): WebSocket.EventMessageListener<Schema, Channel> {
+  onEvent<
+    Channel extends WebSocket.ServiceChannel<Schema>,
+    Listener extends WebSocket.EventMessageListener<Schema, Channel>,
+  >(channel: Channel, listener: Listener): Listener {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners.event.add(listener);
     return listener;
@@ -339,10 +339,10 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return listeners;
   }
 
-  onReply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
-    channel: Channel,
-    listener: WebSocket.ReplyMessageListener<Schema, Channel>,
-  ): WebSocket.ReplyMessageListener<Schema, Channel> {
+  onReply<
+    Channel extends WebSocket.EventWithReplyServiceChannel<Schema>,
+    Listener extends WebSocket.ReplyMessageListener<Schema, Channel>,
+  >(channel: Channel, listener: Listener): Listener {
     const listeners = this.getOrCreateChannelListeners<Channel>(channel);
     listeners.reply.add(listener);
     return listener;

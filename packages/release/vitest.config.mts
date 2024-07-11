@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'node',
     include: ['./{src,tests}/**/*.test.ts'],
     exclude: ['**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
+    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    minWorkers: 1,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -19,6 +21,17 @@ export default defineConfig({
         statements: 100,
         branches: 100,
       },
+      exclude: [
+        '**/node_modules/**',
+        'local/**',
+        'dist/**',
+        'tests/coverage/**',
+        '**/types/**',
+        '**/{*.d.ts,types}.ts',
+        '**/{.eslintrc,.lintstagedrc}.js',
+        '**/vitest.{config,workspace}.*',
+        '**/tsup.config.*',
+      ],
     },
   },
   resolve: {

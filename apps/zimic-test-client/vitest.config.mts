@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     globals: false,
     testTimeout: 5000,
+    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    minWorkers: 1,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -17,9 +19,17 @@ export default defineConfig({
         lines: 100,
         statements: 100,
         branches: 100,
-        autoUpdate: true,
       },
-      exclude: ['**/public/**', '**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
+      exclude: [
+        '**/node_modules/**',
+        'local/**',
+        'public/**',
+        'tests/coverage/**',
+        '**/types/**',
+        '**/{*.d.ts,types}.ts',
+        '**/{.eslintrc,.lintstagedrc}.js',
+        '**/vitest.{config,workspace}.*',
+      ],
     },
   },
   resolve: {

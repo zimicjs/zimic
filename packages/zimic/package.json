@@ -108,20 +108,19 @@
     "@types/node": "^20.14.10",
     "@types/ws": "^8.5.10",
     "@types/yargs": "^17.0.32",
-    "@vitest/browser": "1.6.0",
-    "@vitest/coverage-istanbul": "1.6.0",
+    "@vitest/browser": "2.0.2",
+    "@vitest/coverage-istanbul": "2.0.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
-    "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.0",
     "playwright": "^1.45.1",
     "prettier": "^3.3.2",
     "tsup": "^8.1.0",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
-    "vitest": "1.6.0"
+    "vitest": "2.0.2"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

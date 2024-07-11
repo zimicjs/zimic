@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import glob from 'fast-glob';
 import filesystem from 'fs/promises';
 import path from 'path';
 import prettier, { Options } from 'prettier';
@@ -19,10 +18,13 @@ const fixtureCaseNames = Object.keys(typegenFixtures.openapi.cases).filter((name
 const fixtureCaseEntries = Object.entries(typegenFixtures.openapi.cases).filter(([name]) => name !== 'all');
 const fixtureFileTypes = ['yaml', 'json'] as const;
 
-async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
-  const generationPromises = yamlSchemaFilePaths.map(async (yamlFilePath) => {
-    const yamlFileName = path.parse(yamlFilePath).name;
-    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileName}.json`);
+async function generateJSONSchemas(yamlSchemaFileNames: string[]) {
+  const generationPromises = yamlSchemaFileNames.map(async (yamlFileName) => {
+    const yamlFilePath = path.join(typegenFixtures.openapi.directory, yamlFileName);
+
+    const yamlFileNameWithoutExtension = path.parse(yamlFileName).name;
+    const jsonFilePath = path.join(typegenFixtures.openapi.generatedDirectory, `${yamlFileNameWithoutExtension}.json`);
+
     await convertYAMLToJSONFile(yamlFilePath, jsonFilePath);
   });
 
@@ -32,24 +34,35 @@ async function generateJSONSchemas(yamlSchemaFilePaths: string[]) {
 async function validateAndGenerateSchemas() {
   await filesystem.mkdir(typegenFixtures.openapi.generatedDirectory, { recursive: true });
 
-  const [yamlSchemaFilePaths, generatedJSONFilePaths, generatedTypeScriptFilePaths] = await Promise.all([
-    glob(path.join(typegenFixtures.openapi.directory, '*.yaml')),
-    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.json')),
-    glob(path.join(typegenFixtures.openapi.generatedDirectory, '*.output.ts')),
+  const [directoryFileNames, generatedDirectoryFileNames] = await Promise.all([
+    filesystem.readdir(typegenFixtures.openapi.directory),
+    filesystem.readdir(typegenFixtures.openapi.generatedDirectory),
   ]);
 
-  if (yamlSchemaFilePaths.length !== fixtureCaseNames.length) {
+  const yamlSchemaFileNames = directoryFileNames.filter((fileName) => fileName.endsWith('.yaml'));
+
+  /* istanbul ignore if -- @preserve
+   * This is a safety check to ensure that all fixture schemas are being tested. It is not expected to run normally. */
+  if (yamlSchemaFileNames.length !== fixtureCaseNames.length) {
     throw new Error(
       'Some schemas are not being tested or were not found: ' +
-        `got [${yamlSchemaFilePaths.map((filePath) => path.parse(filePath).name).join(', ')}], ` +
+        `got [${yamlSchemaFileNames.join(', ')}], ` +
         `expected [${fixtureCaseNames.join(', ')}]`,
     );
   }
 
-  const filePathsToRemove = [...generatedJSONFilePaths, ...generatedTypeScriptFilePaths];
-  await Promise.all(filePathsToRemove.map((filePath) => filesystem.unlink(filePath)));
+  await Promise.all(
+    generatedDirectoryFileNames.map(
+      /* istanbul ignore next
+       * If there are no generated files yet, this function won't run. */
+      async (fileName) => {
+        const filePath = path.join(typegenFixtures.openapi.generatedDirectory, fileName);
+        await filesystem.unlink(filePath);
+      },
+    ),
+  );
 
-  await generateJSONSchemas(yamlSchemaFilePaths);
+  await generateJSONSchemas(yamlSchemaFileNames);
 }
 
 function normalizeGeneratedFileToCompare(fileContent: string) {
@@ -143,8 +156,8 @@ describe('Type generation (OpenAPI)', () => {
   });
 
   describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
-    function verifyFilterFileWarnings(fixtureCase: TypegenFixtureCase, consoleSpies: { warn: MockInstance }) {
-      expect(consoleSpies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 2 : 1);
+    function verifyFilterFileWarnings(consoleSpies: { warn: MockInstance }) {
+      expect(consoleSpies.warn).toHaveBeenCalledTimes(1);
 
       const message = consoleSpies.warn.mock.calls[0].join(' ');
       expect(message).toMatch(/.*\[zimic\].* /);
@@ -153,15 +166,10 @@ describe('Type generation (OpenAPI)', () => {
       );
     }
 
-    function verifyResponsesWarnings(
-      fixtureCase: TypegenFixtureCase,
-      spies: { log: MockInstance; warn: MockInstance },
-    ) {
+    function verifyResponsesWarnings(spies: { log: MockInstance; warn: MockInstance }) {
       const expectedNonNumericStatusCodes = ['2xx', '4XX', 'default'];
 
-      const expectedNumberOfWarnings = fixtureCase.shouldWriteToStdout
-        ? expectedNonNumericStatusCodes.length + 1
-        : expectedNonNumericStatusCodes.length;
+      const expectedNumberOfWarnings = expectedNonNumericStatusCodes.length;
 
       expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
 
@@ -205,7 +213,9 @@ describe('Type generation (OpenAPI)', () => {
     async function getGeneratedOutputContent(
       fixtureCase: TypegenFixtureCase,
       outputFilePath: string,
-      processWriteSpy: MockInstance<Parameters<typeof process.stdout.write>>,
+      processWriteSpy: MockInstance<
+        (value: string | Uint8Array, encoding?: BufferEncoding, callback?: (error?: Error) => void) => boolean
+      >,
     ) {
       if (fixtureCase.shouldWriteToStdout) {
         expect(processWriteSpy).toHaveBeenCalledTimes(1);
@@ -237,7 +247,10 @@ describe('Type generation (OpenAPI)', () => {
           });
 
           const generatedOutputDirectory = typegenFixtures.openapi.generatedDirectory;
-          const outputFilePath = path.join(generatedOutputDirectory, fixtureCase.expectedOutputFileName);
+          const outputFilePath = path.join(
+            generatedOutputDirectory,
+            `${path.parse(fixtureCase.expectedOutputFileName).name}.${fileType}.output.ts`,
+          );
           const outputOption = fixtureCase.shouldWriteToStdout ? undefined : `--output=${outputFilePath}`;
 
           processArgvSpy.mockReturnValue(
@@ -268,9 +281,9 @@ describe('Type generation (OpenAPI)', () => {
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');
 
               if (hasFilterFile) {
-                verifyFilterFileWarnings(fixtureCase, spies);
+                verifyFilterFileWarnings(spies);
               } else if (fixtureName === 'responses') {
-                verifyResponsesWarnings(fixtureCase, spies);
+                verifyResponsesWarnings(spies);
               } else {
                 expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }

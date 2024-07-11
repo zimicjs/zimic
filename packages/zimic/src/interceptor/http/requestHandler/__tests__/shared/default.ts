@@ -177,8 +177,9 @@ export function declareDefaultHttpRequestHandlerTests(
     const responseBody = { success: true } as const;
 
     const responseFactory = vi.fn<
-      [HttpInterceptorRequest<'/users', MethodSchema>],
-      HttpRequestHandlerResponseDeclaration<MethodSchema, 200>
+      (
+        request: HttpInterceptorRequest<'/users', MethodSchema>,
+      ) => HttpRequestHandlerResponseDeclaration<MethodSchema, 200>
     >(() => ({
       status: responseStatus,
       body: responseBody,
