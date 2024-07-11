@@ -10,7 +10,7 @@
   TypeScript-first HTTP request mocking
 </p>
 
-<div align="center">
+<p align="center">
   <a href="https://www.npmjs.com/package/zimic">npm</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="#table-of-contents">Docs</a>
@@ -20,8 +20,9 @@
   <a href="https://github.com/zimicjs/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
+</p>
 
-<br/>
+<div align="center">
 
 [![Latest](https://img.shields.io/github/v/release/zimicjs/zimic?label=Latest&color=0E69BE&labelColor=353C43)](https://github.com/zimicjs/zimic/releases)&nbsp;
 [![Canary](https://img.shields.io/github/v/release/zimicjs/zimic?include_prereleases&label=Canary&color=0E69BE&labelColor=353C43)](https://github.com/zimicjs/zimic/releases)&nbsp;
