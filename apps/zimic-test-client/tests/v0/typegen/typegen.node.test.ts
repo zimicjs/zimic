@@ -85,7 +85,7 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
         );
 
         const simplifiedStderr = typegenResult.stderr.replace(
-          /^.*Warning: Response has non-numeric status code: .*default.*$/gm,
+          /.*Warning: Response has non-numeric status code: .*default.*\n?/g,
           '',
         );
         process.stderr.write(simplifiedStderr);
