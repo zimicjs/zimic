@@ -166,6 +166,29 @@ describe('Type generation (OpenAPI)', () => {
       );
     }
 
+    function verifyResponsesWarnings(spies: { log: MockInstance; warn: MockInstance }) {
+      const expectedUnknownStatusCodes = ['unknown'];
+
+      const expectedNumberOfWarnings = expectedUnknownStatusCodes.length;
+
+      expect(spies.warn).toHaveBeenCalledTimes(expectedNumberOfWarnings);
+
+      const messages = spies.warn.mock.calls
+        .slice(0, expectedUnknownStatusCodes.length)
+        .map((argument) => argument.join(' '))
+        .sort();
+
+      for (const [index, unknownStatusCode] of expectedUnknownStatusCodes.entries()) {
+        const message = messages[index];
+        expect(message).toMatch(/.*\[zimic\].* /);
+        expect(message).toContain(
+          `Warning: Response has a non-standard status code: ${chalk.yellow(unknownStatusCode)}. ` +
+            "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
+            "or 'default'.",
+        );
+      }
+    }
+
     function verifySuccessMessage(
       fixtureCase: TypegenFixtureCase,
       outputLabel: string,
@@ -259,6 +282,8 @@ describe('Type generation (OpenAPI)', () => {
 
               if (hasFilterFile) {
                 verifyFilterFileWarnings(spies);
+              } else if (fixtureName === 'responses') {
+                verifyResponsesWarnings(spies);
               } else {
                 expect(spies.warn).toHaveBeenCalledTimes(fixtureCase.shouldWriteToStdout ? 1 : 0);
               }

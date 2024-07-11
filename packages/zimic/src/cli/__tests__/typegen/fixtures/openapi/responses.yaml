@@ -28,6 +28,8 @@ paths:
           $ref: '#/components/responses/serverError'
         default:
           $ref: '#/components/responses/error'
+        unknown:
+          description: Unknown status code
 
   /users-with-no-request:
     post:

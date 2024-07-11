@@ -1,7 +1,9 @@
+import chalk from 'chalk';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import { Override } from '@/types/utils';
+import { logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 
 import { isUnknownType, isNeverType, isNullType } from '../utils/types';
@@ -431,6 +433,13 @@ export function normalizeResponse(
     const mappedType = NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE[statusCode];
 
     if (!mappedType) {
+      logWithPrefix(
+        `Warning: Response has a non-standard status code: ${chalk.yellow(response.name.text)}. ` +
+          "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
+          "or 'default'.",
+        { method: 'warn' },
+      );
+
       return undefined;
     }
 
