@@ -9,8 +9,7 @@ import prepareRelease from '../prepare-release';
 
 const runCommandSpy = vi.hoisted(() => vi.fn());
 
-vi.mock('execa', async () => ({
-  ...(await vi.importActual<{}>('execa')),
+vi.mock('execa', () => ({
   execa: runCommandSpy,
 }));
 

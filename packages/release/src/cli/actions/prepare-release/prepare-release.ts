@@ -1,7 +1,6 @@
-import { execa as $ } from 'execa';
-
 import { ReleaseConfig } from '@/config/release-config';
 import Logger from '@/utils/logger';
+import { importExeca } from '@/utils/processes';
 
 import upgradeVersion, { UpgradeMode } from '../upgrade-version';
 import { getGitHubPullRequestURL } from './utils/github';
@@ -16,6 +15,8 @@ interface CommandContext {
 }
 
 async function prepareRelease(parameters: CommandParameters, { config }: CommandContext) {
+  const { execa: $ } = await importExeca();
+
   const log = new Logger(6);
 
   log.progress('Upgrading version...');
