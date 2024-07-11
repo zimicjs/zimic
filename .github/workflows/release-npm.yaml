@@ -109,6 +109,8 @@ jobs:
             let milestone = undefined;
 
             for (let page = 1; milestone !== undefined; page++) {
+              console.log(`Fetching milestone ${tag}... (page ${page})`);
+
               const milestones = await github.rest.issues.listMilestones({
                 owner,
                 repo: repository,
@@ -126,6 +128,8 @@ jobs:
 
             if (milestone) {
               for (let page = 1; ; page++) {
+                console.log(`Fetching issues and pull requests with milestone ${tag}... (page ${page})`);
+
                 const issues = await github.rest.issues.listForRepo({
                   owner,
                   repo: repository,
@@ -140,6 +144,8 @@ jobs:
                 }
 
                 for (const issue of issues.data) {
+                  console.log(`Creating release comment on issue #${issue.number}...`);
+
                   await github.rest.issues.createComment({
                     owner,
                     repo: repository,
@@ -153,12 +159,16 @@ jobs:
                 }
               }
 
+              console.log(`Closing milestone ${tag}...`);
+
               await github.rest.issues.updateMilestone({
                 owner,
                 repo: repository,
                 milestone_number: milestone.number,
                 state: 'closed',
               });
+
+              console.log('All done!');
             } else {
-              console.warn(`No milestone found for tag: ${tag}`);
+              console.warn(`Milestone ${tag} not found.`);
             }
