@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 
 import path from 'path';
-import { defineConfig } from 'vitest/config';
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   publicDir: './public',
@@ -19,7 +19,14 @@ export default defineConfig({
         branches: 100,
         autoUpdate: true,
       },
-      exclude: ['**/public/**', '**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
+      exclude: [
+        ...coverageConfigDefaults.exclude,
+        '**/public/**',
+        '**/.eslintrc.js',
+        '**/.lintstagedrc.js',
+        '**/types/**',
+        '**/types.ts',
+      ],
     },
   },
   resolve: {
