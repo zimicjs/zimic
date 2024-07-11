@@ -24,6 +24,7 @@ export default defineWorkspace([
         provider: 'playwright',
         enabled: true,
         headless: true,
+        screenshotFailures: false,
       },
     },
   },
