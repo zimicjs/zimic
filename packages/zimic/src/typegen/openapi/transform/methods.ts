@@ -385,6 +385,15 @@ function normalizeResponseType(
   return isComponent ? wrapResponseType(newType, context) : newType;
 }
 
+const NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE: Record<string, string | undefined> = {
+  default: 'HttpStatusCode',
+  '1xx': 'HttpStatusCode.Information',
+  '2xx': 'HttpStatusCode.Success',
+  '3xx': 'HttpStatusCode.Redirection',
+  '4xx': 'HttpStatusCode.ClientError',
+  '5xx': 'HttpStatusCode.ServerError',
+};
+
 export function normalizeResponse(
   response: ts.TypeElement,
   context: TypeTransformContext,
@@ -419,27 +428,14 @@ export function normalizeResponse(
     );
   } else {
     const statusCode = statusCodeOrComponentName.toLowerCase();
-    let newIdentifier: ts.Identifier | undefined;
+    const mappedType = NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE[statusCode];
 
-    if (statusCode === 'default') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode]');
-    } else if (statusCode === '1xx') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Information]');
-    } else if (statusCode === '2xx') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Success]');
-    } else if (statusCode === '3xx') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Redirection]');
-    } else if (statusCode === '4xx') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.ClientError]');
-    } else if (statusCode === '5xx') {
-      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.ServerError]');
-    }
-
-    if (!newIdentifier) {
+    if (!mappedType) {
       return undefined;
     }
 
     context.typeImports.http.add('HttpStatusCode');
+    const newIdentifier = ts.factory.createIdentifier(`[StatusCode in ${mappedType}]`);
 
     newSignature = ts.factory.updatePropertySignature(
       response,
