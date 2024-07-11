@@ -1,9 +1,7 @@
-import chalk from 'chalk';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/http/types/schema';
 import { Override } from '@/types/utils';
-import { logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 
 import { isUnknownType, isNeverType, isNullType } from '../utils/types';
@@ -109,6 +107,22 @@ function isContentMember(node: ts.Node): node is ContentMember {
     (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
     node.type !== undefined &&
     !isNeverType(node.type)
+  );
+}
+
+type Response = Override<
+  ts.PropertySignature,
+  {
+    name: ts.Identifier | ts.StringLiteral | ts.NumericLiteral;
+    type: ts.TypeNode;
+  }
+>;
+
+function isResponse(node: ts.Node): node is Response {
+  return (
+    ts.isPropertySignature(node) &&
+    (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) || ts.isNumericLiteral(node.name)) &&
+    node.type !== undefined
   );
 }
 
@@ -380,20 +394,8 @@ export function normalizeResponse(
 
   /* istanbul ignore if -- @preserve
    * Response members are always expected to be a response. */
-  if (!ts.isPropertySignature(response) || !response.type) {
+  if (!isResponse(response)) {
     return undefined;
-  }
-
-  const isNonNumericStatusCode =
-    (ts.isIdentifier(response.name) || ts.isStringLiteral(response.name)) && !/^\d+$/.test(response.name.text);
-
-  if (!isComponent && isNonNumericStatusCode) {
-    logWithPrefix(
-      `Warning: Response has non-numeric status code: ${chalk.yellow(response.name.text)}. ` +
-        'Consider replacing it with a number, such as 200, 404, and 500. ' +
-        'Only numeric status codes can be used in interceptors.',
-      { method: 'warn' },
-    );
   }
 
   const newType = normalizeResponseType(response.type, context, {
@@ -401,13 +403,60 @@ export function normalizeResponse(
     questionToken: response.questionToken,
   });
 
-  return ts.factory.updatePropertySignature(
-    response,
-    response.modifiers,
-    response.name,
-    response.questionToken,
-    newType,
-  );
+  const statusCodeOrComponentName = response.name.text;
+  const isNumericStatusCode = /^\d+$/.test(statusCodeOrComponentName);
+  const shouldReuseIdentifier = isComponent || isNumericStatusCode;
+
+  let newSignature: ts.PropertySignature;
+
+  if (shouldReuseIdentifier) {
+    newSignature = ts.factory.updatePropertySignature(
+      response,
+      response.modifiers,
+      response.name,
+      response.questionToken,
+      newType,
+    );
+  } else {
+    const statusCode = statusCodeOrComponentName.toLowerCase();
+    let newIdentifier: ts.Identifier | undefined;
+
+    if (statusCode === 'default') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode]');
+    } else if (statusCode === '1xx') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Information]');
+    } else if (statusCode === '2xx') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Success]');
+    } else if (statusCode === '3xx') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.Redirection]');
+    } else if (statusCode === '4xx') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.ClientError]');
+    } else if (statusCode === '5xx') {
+      newIdentifier = ts.factory.createIdentifier('[StatusCode in HttpStatusCode.ServerError]');
+    }
+
+    if (!newIdentifier) {
+      return undefined;
+    }
+
+    context.typeImports.http.add('HttpStatusCode');
+
+    newSignature = ts.factory.updatePropertySignature(
+      response,
+      response.modifiers,
+      newIdentifier,
+      response.questionToken,
+      newType,
+    );
+  }
+
+  return {
+    newSignature,
+    statusCode: {
+      value: statusCodeOrComponentName,
+      isNumeric: isNumericStatusCode,
+    },
+  };
 }
 
 export function normalizeResponses(responses: MethodMember, context: TypeTransformContext) {
@@ -422,7 +471,46 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
     .map((response) => normalizeResponse(response, context), context)
     .filter(isDefined);
 
-  const newType = ts.factory.updateTypeLiteralNode(responses.type, ts.factory.createNodeArray(newMembers));
+  const sortedNewMembers = Array.from(newMembers).sort((response, otherResponse) => {
+    return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
+  });
+
+  const areAllStatusCodesNumeric = sortedNewMembers.every((response) => response.statusCode.isNumeric);
+
+  let newType: ts.TypeLiteralNode | ts.TypeReferenceNode;
+
+  if (areAllStatusCodesNumeric) {
+    newType = ts.factory.updateTypeLiteralNode(
+      responses.type,
+      ts.factory.createNodeArray(sortedNewMembers.map((response) => response.newSignature)),
+    );
+  } else {
+    context.typeImports.http.add('MergeHttpResponsesByStatusCode');
+
+    const intersectionTypeMembers = sortedNewMembers.reduce<{
+      numeric: ts.PropertySignature[];
+      nonNumeric: ts.PropertySignature[];
+    }>(
+      (members, response) => {
+        if (response.statusCode.isNumeric) {
+          members.numeric.push(response.newSignature);
+        } else {
+          members.nonNumeric.push(response.newSignature);
+        }
+        return members;
+      },
+      { numeric: [], nonNumeric: [] },
+    );
+
+    const numericTypeLiteral = ts.factory.createTypeLiteralNode(intersectionTypeMembers.numeric);
+    const nonNumericTypeLiterals = intersectionTypeMembers.nonNumeric.map((response) =>
+      ts.factory.createTypeLiteralNode([response]),
+    );
+
+    newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('MergeHttpResponsesByStatusCode'), [
+      ts.factory.createTupleTypeNode([numericTypeLiteral, ...nonNumericTypeLiterals]),
+    ]);
+  }
 
   return ts.factory.updatePropertySignature(
     responses,
