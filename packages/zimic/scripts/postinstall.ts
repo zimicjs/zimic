@@ -35,4 +35,4 @@ async function postinstall() {
   await patchMSWExports();
 }
 
-void postinstall();
+export const postinstallPromise = postinstall();

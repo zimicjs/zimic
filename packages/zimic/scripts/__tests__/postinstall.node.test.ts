@@ -1,9 +1,11 @@
 import mswPackageJSON from 'msw/package.json';
 import { describe, expect, it } from 'vitest';
 
+import { postinstallPromise } from '../postinstall';
+
 describe('Post-install script', () => {
   it('should remove the default MSW export limitations after installation', async () => {
-    await import('../postinstall');
+    await postinstallPromise;
 
     const { exports } = mswPackageJSON;
 
