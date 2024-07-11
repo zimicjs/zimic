@@ -107,12 +107,14 @@ jobs:
         env:
           PLAYWRIGHT_WORKERS: 100%
 
-      - name: Upload test reports
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
-          name: test-reports-node-${{ matrix.node-version }}
+          name: test-results-node-${{ matrix.node-version }}
           path: |
+            ./apps/*/tests/coverage
+            ./packages/*/tests/coverage
             ./examples/*/tests/reports
             ./examples/*/tests/outputs
           retention-days: 7
