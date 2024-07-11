@@ -57,7 +57,7 @@ export namespace HttpStatusCode {
     | 100 // Continue
     | 101 // Switching Protocols
     | 102 // Processing
-    | 103; // Early Hints;
+    | 103; // Early Hints
 
   export type Success =
     | 200 // OK
@@ -69,7 +69,7 @@ export namespace HttpStatusCode {
     | 206 // Partial Content
     | 207 // Multi-Status
     | 208 // Already Reported
-    | 226; // IM Used;
+    | 226; // IM Used
 
   export type Redirection =
     | 300 // Multiple Choices
@@ -78,7 +78,7 @@ export namespace HttpStatusCode {
     | 303 // See Other
     | 304 // Not Modified
     | 307 // Temporary Redirect
-    | 308; // Permanent Redirect;
+    | 308; // Permanent Redirect
 
   export type ClientError =
     | 400 // Bad Request

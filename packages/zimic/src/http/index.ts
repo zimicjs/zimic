@@ -24,6 +24,7 @@ export type {
 export type {
   HttpSchema,
   HttpMethod,
+  HttpStatusCode,
   HttpServiceRequestSchema,
   HttpServiceResponseSchema,
   HttpServiceResponseSchemaByStatusCode,
@@ -36,6 +37,5 @@ export type {
   NonLiteralHttpServiceSchemaPath,
   HttpServiceSchemaPath,
   PathParamsSchemaFromPath,
-  HttpStatusCode,
   MergeHttpResponsesByStatusCode,
 } from './types/schema';

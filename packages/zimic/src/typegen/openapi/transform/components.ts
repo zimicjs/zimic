@@ -310,7 +310,8 @@ function normalizeComponent(
   }
 
   if (componentGroupName === 'responses') {
-    return normalizeResponse(component, context, { isComponent: true })?.newSignature;
+    const responseComponent = normalizeResponse(component, context, { isComponent: true });
+    return responseComponent?.newSignature;
   }
 
   if (componentGroupName === 'pathItems') {

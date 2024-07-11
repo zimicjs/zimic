@@ -480,11 +480,10 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
     return response.statusCode.value.localeCompare(otherResponse.statusCode.value);
   });
 
-  const areAllStatusCodesNumeric = sortedNewMembers.every((response) => response.statusCode.isNumeric);
-
+  const isEveryStatusCodeNumeric = sortedNewMembers.every((response) => response.statusCode.isNumeric);
   let newType: ts.TypeLiteralNode | ts.TypeReferenceNode;
 
-  if (areAllStatusCodesNumeric) {
+  if (isEveryStatusCodeNumeric) {
     newType = ts.factory.updateTypeLiteralNode(
       responses.type,
       ts.factory.createNodeArray(sortedNewMembers.map((response) => response.newSignature)),
@@ -492,7 +491,7 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
   } else {
     context.typeImports.http.add('MergeHttpResponsesByStatusCode');
 
-    const intersectionTypeMembers = sortedNewMembers.reduce<{
+    const typeMembersToMerge = sortedNewMembers.reduce<{
       numeric: ts.PropertySignature[];
       nonNumeric: ts.PropertySignature[];
     }>(
@@ -507,12 +506,13 @@ export function normalizeResponses(responses: MethodMember, context: TypeTransfo
       { numeric: [], nonNumeric: [] },
     );
 
-    const numericTypeLiteral = ts.factory.createTypeLiteralNode(intersectionTypeMembers.numeric);
-    const nonNumericTypeLiterals = intersectionTypeMembers.nonNumeric.map((response) =>
+    const numericTypeLiteral = ts.factory.createTypeLiteralNode(typeMembersToMerge.numeric);
+    const nonNumericTypeLiterals = typeMembersToMerge.nonNumeric.map((response) =>
       ts.factory.createTypeLiteralNode([response]),
     );
 
-    newType = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('MergeHttpResponsesByStatusCode'), [
+    const mergeWrapper = ts.factory.createIdentifier('MergeHttpResponsesByStatusCode');
+    newType = ts.factory.createTypeReferenceNode(mergeWrapper, [
       ts.factory.createTupleTypeNode([numericTypeLiteral, ...nonNumericTypeLiterals]),
     ]);
   }

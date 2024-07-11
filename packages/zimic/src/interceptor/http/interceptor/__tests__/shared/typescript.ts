@@ -327,7 +327,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should correctly type responses with merged, mapped status codes', async () => {
+  it('should correctly type responses with merged status codes', async () => {
     await usingHttpInterceptor<{
       '/users': {
         GET: {
@@ -338,7 +338,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
             [
               {
                 200: { headers: { 'content-type': string }; body: User[] };
-                204: { body: '204' }; // 204 bodies should be ignored
+                204: { body: '204' };
                 400: { body: { message: string } };
               },
               {
@@ -373,15 +373,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
         if (name === 'no-content') {
           return { status: 204 };
         }
-
+        if (name === 'created') {
+          return { status: 201, body: '2xx' };
+        }
         if (name === 'unauthorized') {
           return { status: 401 };
         }
-
         if (name === 'not-found') {
           return { status: 404, body: '4xx' };
         }
-
         if (name === 'unknown') {
           return { status: 500, body: 'default' };
         }
@@ -395,7 +395,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
       const requests = await handler.requests();
       type ResponseBody = (typeof requests)[number]['response']['body'];
-      expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '4xx' | 'default' | null>();
+      expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
 
       type ResponseHeaders = (typeof requests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<
@@ -403,7 +403,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       >();
 
       type ResponseStatus = (typeof requests)[number]['response']['status'];
-      expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 204 | 400 | 401 | 404 | 500>();
+      expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
 
       // @ts-expect-error Each response declaration should match the status code
       await interceptor.get('/users').respond((request) => {
