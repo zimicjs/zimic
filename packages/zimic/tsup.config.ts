@@ -57,7 +57,6 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     format: [format],
     dts: format === 'cjs' ? { entry: dtsEntry } : false,
     entry,
-    external: ['./index.mjs'],
   };
 });
 

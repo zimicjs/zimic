@@ -4,9 +4,10 @@
   "tasks": {
     "build": {
       "inputs": [
-        "src/**/*.{ts,json}",
+        "{src,scripts}/**/*.{ts,json}",
         "{package,tsconfig}.json",
         "tsup.config.ts",
+        "!scripts/dev/**/*",
         "!*/**/tests/**/*",
         "!*/**/__tests__/**/*",
         "!*/**/*.test.ts"
