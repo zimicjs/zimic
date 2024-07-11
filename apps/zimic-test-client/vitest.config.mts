@@ -8,6 +8,8 @@ export default defineConfig({
   test: {
     globals: false,
     testTimeout: 5000,
+    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    minWorkers: 1,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],

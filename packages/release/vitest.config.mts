@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'node',
     include: ['./{src,tests}/**/*.test.ts'],
     exclude: ['**/.eslintrc.js', '**/.lintstagedrc.js', '**/types/**', '**/types.ts'],
+    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    minWorkers: 1,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
