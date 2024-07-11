@@ -1,3 +1,4 @@
+import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,11 +8,11 @@ import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/r
 
 import prepareRelease from '../prepare-release';
 
-const runCommandSpy = vi.hoisted(() => vi.fn());
-
 vi.mock('execa', () => ({
-  execa: runCommandSpy,
+  execa: vi.fn(),
 }));
+
+const runCommandSpy = vi.mocked($);
 
 describe('Prepare release command', () => {
   const metadataFilePath = 'package.json';
@@ -44,19 +45,25 @@ describe('Prepare release command', () => {
 
     readFileSpy.mockClear();
     readFileSpy.mockImplementation((filePath) => {
+      /* istanbul ignore else -- @preserve
+       * This is a safety check to ensure that the correct path is used. */
       if (filePath === metadataFilePath) {
         return Promise.resolve(JSON.stringify(metadataFileContent));
+      } else {
+        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
       }
-      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     writeFileSpy.mockClear();
     writeFileSpy.mockImplementation((filePath, newMetadataFileContent) => {
+      /* istanbul ignore else -- @preserve
+       * This is a safety check to ensure that the correct path is used. */
       if (filePath === metadataFilePath && typeof newMetadataFileContent === 'string') {
         Object.assign(metadataFileContent, JSON.parse(newMetadataFileContent));
         return Promise.resolve();
+      } else {
+        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
       }
-      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     runCommandSpy.mockClear();

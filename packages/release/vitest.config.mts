@@ -19,6 +19,17 @@ export default defineConfig({
         statements: 100,
         branches: 100,
       },
+      exclude: [
+        '**/node_modules/**',
+        'local/**',
+        'dist/**',
+        'tests/coverage/**',
+        '**/types/**',
+        '**/{*.d.ts,types}.ts',
+        '**/{.eslintrc,.lintstagedrc}.js',
+        '**/vitest.{config,workspace}.*',
+        '**/tsup.config.*',
+      ],
     },
   },
   resolve: {

@@ -1,3 +1,4 @@
+import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,11 +10,11 @@ import upgradeVersion from '../upgrade-version';
 import { IGNORED_PARTIAL_LABELS_MESSAGE } from '../utils/log';
 import { InvalidVersionFormatError, UnknownUpgradeModeError } from '../utils/version';
 
-const runCommandSpy = vi.hoisted(() => vi.fn());
-
 vi.mock('execa', () => ({
-  execa: runCommandSpy,
+  execa: vi.fn(),
 }));
+
+const runCommandSpy = vi.mocked($);
 
 describe('Upgrade version command', () => {
   const metadataFilePath = 'package.json';
@@ -44,18 +45,24 @@ describe('Upgrade version command', () => {
 
     readFileSpy.mockClear();
     readFileSpy.mockImplementation((filePath) => {
+      /* istanbul ignore else -- @preserve
+       * This is a safety check to ensure that the correct path is used. */
       if (filePath === metadataFilePath) {
         return Promise.resolve(JSON.stringify(metadataFileContent));
+      } else {
+        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
       }
-      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     writeFileSpy.mockClear();
     writeFileSpy.mockImplementation((filePath) => {
+      /* istanbul ignore else -- @preserve
+       * This is a safety check to ensure that the correct path is used. */
       if (filePath === metadataFilePath) {
         return Promise.resolve();
+      } else {
+        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
       }
-      return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
     });
 
     runCommandSpy.mockClear();

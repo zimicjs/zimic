@@ -1,6 +1,6 @@
 import { MetadataFileEntry, ReleaseConfig } from '@/config/release-config';
 
-export function createMetadataFileEntry(metadataFile: Partial<MetadataFileEntry> = {}): MetadataFileEntry {
+export function createMetadataFileEntry(metadataFile?: Partial<MetadataFileEntry>): MetadataFileEntry {
   return {
     path: 'package.json',
     versionKey: 'version',
@@ -12,7 +12,7 @@ export function createMetadataFileEntry(metadataFile: Partial<MetadataFileEntry>
   };
 }
 
-export function createReleaseConfig(partialConfig: Partial<ReleaseConfig>): ReleaseConfig {
+export function createReleaseConfig(partialConfig?: Partial<ReleaseConfig>): ReleaseConfig {
   return {
     metadata: [
       createMetadataFileEntry({
