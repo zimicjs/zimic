@@ -343,7 +343,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listHandler = authInterceptor
+        const listHandler = await authInterceptor
           .get('/users')
           .with({
             searchParams: { name: user.name },
@@ -389,7 +389,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           return -user.email.localeCompare(otherUser.email);
         });
 
-        const listHandler = authInterceptor
+        const listHandler = await authInterceptor
           .get('/users')
           .with({
             searchParams: { orderBy: ['email.desc'] },
