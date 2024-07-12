@@ -134,6 +134,14 @@ describe('Web socket client', async () => {
         delayedClientSocketClose.mockRestore();
       }
     });
+
+    it('should throw an error if started without a running server to connect to', async () => {
+      await stopHttpServer(httpServer);
+
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      await expect(client.start()).rejects.toThrowError(/^(connect ECONNREFUSED .+)?$/);
+    });
   });
 
   describe('Messages', () => {

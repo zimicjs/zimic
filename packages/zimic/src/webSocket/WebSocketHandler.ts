@@ -29,7 +29,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   } = {};
 
   private socketListeners = {
-    messageAbort: new Map<ClientSocket, Set<(reason: unknown) => void>>(),
+    messageAbort: new Map<ClientSocket, Set<(error: unknown) => void>>(),
   };
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
@@ -235,13 +235,13 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
         reject(timeoutError);
       }, this._messageTimeout);
 
-      const abortListener = this.onAbortSocketMessages(sockets, (reason) => {
+      const abortListener = this.onAbortSocketMessages(sockets, (error) => {
         clearTimeout(replyTimeout);
 
         this.offReply(channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
         this.offAbortSocketMessages(sockets, abortListener);
 
-        reject(reason);
+        reject(error);
       });
 
       const replyListener = this.onReply(channel, (message) => {
@@ -353,7 +353,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     this.channelListeners = {};
   }
 
-  private onAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (reason: unknown) => void) {
+  private onAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (error: unknown) => void) {
     for (const socket of sockets) {
       let listeners = this.socketListeners.messageAbort.get(socket);
       if (!listeners) {
@@ -366,7 +366,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return listener;
   }
 
-  private offAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (reason: unknown) => void) {
+  private offAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (error: unknown) => void) {
     for (const socket of sockets) {
       this.socketListeners.messageAbort.get(socket)?.delete(listener);
     }

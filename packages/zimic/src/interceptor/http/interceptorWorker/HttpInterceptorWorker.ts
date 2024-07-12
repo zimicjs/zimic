@@ -15,6 +15,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
 
@@ -67,14 +68,27 @@ abstract class HttpInterceptorWorker {
     if (this.isRunning()) {
       return;
     }
+
     if (this.startingPromise) {
       return this.startingPromise;
     }
 
-    this.startingPromise = internalStart();
-    await this.startingPromise;
+    try {
+      this.startingPromise = internalStart();
+      await this.startingPromise;
 
-    this.startingPromise = undefined;
+      this.startingPromise = undefined;
+    } catch (error) {
+      // In server side (e.g. Node.js), we need to manually log the error because this will be treated as an unhandled
+      // promise rejection. If we don't log it, the output won't contain details about the error. In the browser,
+      // uncaught promise rejections are automatically logged.
+      if (!isClientSide()) {
+        console.error(error);
+      }
+
+      await this.stop();
+      throw error;
+    }
   }
 
   abstract stop(): Promise<void>;

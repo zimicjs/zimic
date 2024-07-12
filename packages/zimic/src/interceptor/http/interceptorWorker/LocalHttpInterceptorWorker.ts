@@ -62,6 +62,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       const internalWorker = await this.internalWorkerOrLoad();
+
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: async (request) => {
           await super.handleUnhandledRequest(request);
