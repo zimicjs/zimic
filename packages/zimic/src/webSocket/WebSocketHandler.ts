@@ -2,7 +2,6 @@ import ClientSocket from 'isomorphic-ws';
 
 import { Collection } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
-import { isClientSide } from '@/utils/environment';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
@@ -205,7 +204,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     } = {},
   ) {
     const event = await this.createEventMessage(channel, eventData);
-    await this.sendMessage(event, options.sockets);
+    this.sendMessage(event, options.sockets);
   }
 
   async request<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
@@ -216,8 +215,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     } = {},
   ) {
     const request = await this.createEventMessage(channel, requestData);
+    this.sendMessage(request, options.sockets);
 
-    await this.sendMessage(request, options.sockets);
     const response = await this.waitForReply(channel, request.id, options.sockets);
     return response.data;
   }
@@ -272,7 +271,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     },
   ) {
     const reply = await this.createReplyMessage(request, replyData);
-    await this.sendMessage(reply, options.sockets);
+    this.sendMessage(reply, options.sockets);
   }
 
   private async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
@@ -290,7 +289,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return replyMessage;
   }
 
-  private async sendMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
+  private sendMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
     message: WebSocket.ServiceMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
@@ -298,53 +297,11 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       throw new NotStartedWebSocketHandlerError();
     }
 
-    const sendingPromises: Promise<void>[] = [];
     const stringifiedMessage = JSON.stringify(message);
 
     for (const socket of sockets) {
-      sendingPromises.push(this.sendSocketMessage(socket, stringifiedMessage));
+      socket.send(stringifiedMessage);
     }
-
-    await Promise.all(sendingPromises);
-  }
-
-  private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const messageTimeout = setTimeout(() => {
-        this.offAbortSocketMessages([socket], abortListener); // eslint-disable-line @typescript-eslint/no-use-before-define
-
-        const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
-        reject(timeoutError);
-      }, this._messageTimeout);
-
-      const abortListener = this.onAbortSocketMessages([socket], (reason) => {
-        clearTimeout(messageTimeout);
-        this.offAbortSocketMessages([socket], abortListener);
-        reject(reason);
-      });
-
-      if (isClientSide()) {
-        socket.send(stringifiedMessage);
-
-        clearTimeout(messageTimeout);
-        this.offAbortSocketMessages([socket], abortListener);
-
-        resolve();
-      } else {
-        socket.send(stringifiedMessage, (error) => {
-          clearTimeout(messageTimeout);
-          this.offAbortSocketMessages([socket], abortListener);
-
-          /* istanbul ignore if -- @preserve
-           * It is difficult to reliably simulate socket errors in tests. */
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        });
-      }
-    });
   }
 
   onEvent<
