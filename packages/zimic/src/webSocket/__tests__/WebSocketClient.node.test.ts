@@ -134,6 +134,12 @@ describe('Web socket client', async () => {
         delayedClientSocketClose.mockRestore();
       }
     });
+
+    it('should throw an error if started without a running server to connect to', async () => {
+      client = new WebSocketClient({ url: 'ws://localhost:0' });
+
+      await expect(client.start()).rejects.toThrowError('connect ECONNREFUSED 127.0.0.1');
+    });
   });
 
   describe('Messages', () => {
