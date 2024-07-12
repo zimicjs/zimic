@@ -44,7 +44,7 @@ where the repository is found and another where it is not.
 > JSDOM runs on Node.js, but uses browser imports when present. Therefore, this resolver is necessary to remove the
 > [browser condition of MSW-related imports](https://github.com/mswjs/msw/issues/1786) to prevent test runtime errors."
 
-### Running
+## Running
 
 1. Clone this example:
 
