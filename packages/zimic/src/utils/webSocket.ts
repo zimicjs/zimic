@@ -18,6 +18,13 @@ export class WebSocketMessageTimeoutError extends WebSocketTimeoutError {
   }
 }
 
+export class WebSocketMessageAbortError extends WebSocketTimeoutError {
+  constructor() {
+    super('Web socket message was aborted.');
+    this.name = 'WebSocketMessageAbortError';
+  }
+}
+
 export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket close timed out after ${reachedTimeout}ms.`);

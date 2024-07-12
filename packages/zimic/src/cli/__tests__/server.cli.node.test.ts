@@ -11,10 +11,12 @@ import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import { waitForDelay } from '@/utils/time';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
+import { waitFor } from '@tests/utils/time';
 
 import runCLI from '../cli';
 import { serverSingleton as server } from '../server/start';
@@ -458,8 +460,6 @@ describe('CLI (server)', async () => {
     });
 
     it('should stop the server even if a client is connected', async () => {
-      const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
@@ -484,11 +484,7 @@ describe('CLI (server)', async () => {
           await webSocketClient.start();
           expect(webSocketClient.isRunning()).toBe(true);
 
-          expect(exitEventListeners).toHaveLength(1);
-
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
+          await server?.stop();
 
           expect(server!.isRunning()).toBe(false);
           expect(webSocketClient.isRunning()).toBe(false);
@@ -506,8 +502,6 @@ describe('CLI (server)', async () => {
     ])(
       'should show an error if logging is enabled when a request is received and does not match any interceptors: override default $overrideDefault',
       async ({ overrideDefault }) => {
-        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-
         processArgvSpy.mockReturnValue([
           'node',
           './dist/cli.js',
@@ -526,52 +520,45 @@ describe('CLI (server)', async () => {
           });
         }
 
-        try {
-          await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-            await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-            expect(server).toBeDefined();
-            expect(server!.isRunning()).toBe(true);
-            expect(server!.hostname()).toBe('localhost');
-            expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.log).toHaveBeenCalledWith(
-              `${chalk.cyan('[zimic]')}`,
-              `Server is running on http://localhost:${server!.port()}`,
-            );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-            const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-            const response = fetch(request);
-            await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
 
-            const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform: 'node',
-              request,
-            });
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            type: 'error',
+            platform: 'node',
+            request,
           });
-        } finally {
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
-        }
+        });
       },
     );
 
     it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
       'should not show an error if logging is disabled when a request is received and does not match any interceptors: override default $overrideDefault',
       async ({ overrideDefault }) => {
-        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
         processArgvSpy.mockReturnValue([
           'node',
           './dist/cli.js',
@@ -586,44 +573,95 @@ describe('CLI (server)', async () => {
           httpInterceptor.default.onUnhandledRequest(vi.fn());
         }
 
-        try {
-          await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-            await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-            expect(server).toBeDefined();
-            expect(server!.isRunning()).toBe(true);
-            expect(server!.hostname()).toBe('localhost');
-            expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.log).toHaveBeenCalledWith(
-              `${chalk.cyan('[zimic]')}`,
-              `Server is running on http://localhost:${server!.port()}`,
-            );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-            const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-            const response = fetch(request);
-            await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-          });
-        } finally {
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
-        }
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
       },
     );
 
     it('should log an error and reject the request if it could not be handled due to an error', async () => {
-      const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--port',
+        '5001',
+        '--log-unhandled-requests',
+      ]);
 
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: 'http://localhost:5001',
+      });
+
+      const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
+
+      try {
+        await usingIgnoredConsole(['error', 'log'], async (spies) => {
+          await runCLI();
+
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBe(5001);
+
+          await interceptor.start();
+          await interceptor.get('/users').respond({ status: 204 });
+
+          const error = new Error('An error ocurred.');
+          webSocketServerRequestSpy.mockRejectedValueOnce(error);
+
+          const request = new Request('http://localhost:5001/users', { method: 'GET' });
+          const fetchPromise = fetch(request);
+          await expectFetchError(fetchPromise);
+
+          expect(server!.isRunning()).toBe(true);
+
+          expect(spies.error).toHaveBeenCalledTimes(2);
+          expect(spies.error.mock.calls[0]).toEqual([error]);
+
+          const errorMessage = spies.error.mock.calls[1].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            type: 'error',
+            platform: 'node',
+            request,
+          });
+        });
+      } finally {
+        webSocketServerRequestSpy.mockRestore();
+        await interceptor.stop();
+      }
+    });
+
+    it('should abort pending requests if a worker is reset while waiting for a response', async () => {
       processArgvSpy.mockReturnValue([
         'node',
         './dist/cli.js',
@@ -653,33 +691,42 @@ describe('CLI (server)', async () => {
           expect(server!.port()).toBe(5001);
 
           await interceptor.start();
-          await interceptor.get('/users').respond({ status: 204 });
+          expect(interceptor.isRunning()).toBe(true);
 
-          const error = new Error('An error ocurred.');
-          vi.spyOn(WebSocketServer.prototype, 'request').mockRejectedValue(error);
+          let wasResponseFactoryCalled = false;
 
-          const request = new Request('http://localhost:5001/users', { method: 'GET' });
-          const fetchPromise = fetch(request);
-          await expectFetchError(fetchPromise);
+          const responseFactory = vi.fn(async () => {
+            wasResponseFactoryCalled = true;
 
-          expect(server!.isRunning()).toBe(true);
+            await waitForDelay(5000);
 
-          expect(spies.error).toHaveBeenCalledTimes(2);
-          expect(spies.error.mock.calls[0]).toEqual([error]);
-
-          const errorMessage = spies.error.mock.calls[1].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, {
-            type: 'error',
-            platform: 'node',
-            request,
+            /* istanbul ignore next -- @preserve
+             * This code is unreachable because the request is aborted before the response is sent. */
+            return { status: 204 } as const;
           });
+
+          await interceptor.get('/users').respond(responseFactory);
+
+          const onFetchError = vi.fn();
+          const fetchPromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+
+          await waitFor(() => {
+            expect(wasResponseFactoryCalled).toBe(true);
+          });
+
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+
+          await fetchPromise;
+
+          await waitFor(() => {
+            expect(onFetchError).toHaveBeenCalled();
+          });
+
+          expect(spies.error).not.toHaveBeenCalled();
         });
       } finally {
         await interceptor.stop();
-
-        for (const listener of exitEventListeners) {
-          await listener();
-        }
       }
     });
   });
