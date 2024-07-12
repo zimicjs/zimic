@@ -191,6 +191,18 @@ jobs:
 
       - name: Check types
         run: |
+          filterOptionsOfPackagesUsingFastify=(
+            '--filter !zimic-example-with-jest-node'
+            '--filter !zimic-example-with-vitest-node'
+            '--filter !zimic-example-with-typegen'
+          )
+
+          filterOptionsOfPackagesUsingNext=(
+            '--filter !zimic-example-with-playwright'
+            '--filter !zimic-example-with-next-js-app'
+            '--filter !zimic-example-with-next-js-pages'
+          )
+
           pnpm turbo \
             types:check \
             --continue \
@@ -198,7 +210,5 @@ jobs:
             ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
             --filter !@zimic/* \
-            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && \
-              echo '--filter !zimic-example-with-jest-node --filter !zimic-example-with-vitest-node') \
-            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && \
-              echo '--filter !zimic-example-with-playwright --filter !zimic-example-with-next-js-app --filter !zimic-example-with-next-js-pages')
+            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo "${filterOptionsOfPackagesUsingFastify[@]}") \
+            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo "$filterOptionsOfPackagesUsingNext[@]")
