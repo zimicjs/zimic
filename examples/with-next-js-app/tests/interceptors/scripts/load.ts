@@ -6,8 +6,8 @@ async function runOnReadyCommand() {
   const commandDivisorIndex = process.argv.indexOf('--');
 
   if (commandDivisorIndex !== -1) {
-    const [onReadyCommand, ...onReadyCommandArguments] = process.argv.slice(commandDivisorIndex + 1);
-    await $(onReadyCommand, onReadyCommandArguments, { stdio: 'inherit' });
+    const [command, ...commandArguments] = process.argv.slice(commandDivisorIndex + 1);
+    await $(command, commandArguments, { stdio: 'inherit' });
   }
 }
 
@@ -18,6 +18,8 @@ async function loadInterceptors() {
   console.log('Interceptors loaded.');
 
   await runOnReadyCommand();
+
+  await githubInterceptor.stop();
 }
 
 void loadInterceptors();
