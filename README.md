@@ -2884,6 +2884,8 @@ GET,POST,PUT /workspaces
 !GET /users/*/notifications/**/*
 ```
 
+Then, you can use the filter file in the command:
+
 ```bash
 zimic typegen openapi ./schema.yaml \
   --output ./schema.ts \
