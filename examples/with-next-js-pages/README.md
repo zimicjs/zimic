@@ -34,7 +34,7 @@ GitHub API and simulate a test case where the repository is found and another wh
 - Test suite: [`src/__tests__/HomePage.e2e.test.ts`](./src/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
-### Running
+## Running
 
 1. Clone this example:
 

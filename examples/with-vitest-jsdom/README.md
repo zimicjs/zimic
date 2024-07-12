@@ -27,7 +27,7 @@ where the repository is found and another where it is not.
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
-### Running
+## Running
 
 1. Clone this example:
 

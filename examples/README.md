@@ -21,3 +21,7 @@
 
 - [With Next.js App Router](./with-next-js-app)
 - [With Next.js Pages Router](./with-next-js-pages)
+
+## Type generation
+
+- [With typegen](./with-typegen)

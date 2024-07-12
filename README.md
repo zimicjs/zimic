@@ -135,6 +135,9 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`zimic server` programmatic usage](#zimic-server-programmatic-usage)
   - [`zimic typegen`](#zimic-typegen)
     - [`zimic typegen openapi`](#zimic-typegen-openapi)
+      - [`zimic typegen openapi` comments](#zimic-typegen-openapi-comments)
+      - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
+      - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
     - [`zimic typegen` programmatic usage](#zimic-typegen-programmatic-usage)
 - [Changelog](#changelog)
 
@@ -2823,7 +2826,13 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
 });
 ```
 
-You can generate the types ignoring comments by using `--no-comments` or `--comments false`.
+Our [typegen example](./examples/with-typegen) demonstrates how to use `zimic typegen openapi` to generate types and use
+them in your application and interceptors.
+
+##### `zimic typegen openapi` comments
+
+By default, descriptions in the OpenAPI schema are included as comments in the generated types. You can omit them using
+`--no-comments` or `--comments false`.
 
 ```bash
 zimic typegen openapi ./schema.yaml \
@@ -2832,7 +2841,9 @@ zimic typegen openapi ./schema.yaml \
   --no-comments
 ```
 
-By default, pruning is enabled, meaning that unused types are not outputted. If you want all types declared in the
+##### `zimic typegen openapi` pruning
+
+By default, pruning is enabled, meaning that unused types are not generated. If you want all types declared in the
 schema to be generated, you can use `--no-prune` or `--prune false`.
 
 ```bash
@@ -2842,8 +2853,10 @@ zimic typegen openapi ./schema.yaml \
   --no-prune
 ```
 
-You can also filter a subset of paths to generate types for. In conjunction with pruning, this is useful to reduce the
-size of the output file and only generate the types you need.
+##### `zimic typegen openapi` filtering
+
+You can also filter a subset of paths to generate types for. Combined with [pruning](#zimic-typegen-openapi-pruning),
+this is useful to reduce the size of the output file and only generate the types you need.
 
 ```bash
 zimic typegen openapi ./schema.yaml \
@@ -2870,6 +2883,8 @@ GET,POST,PUT /workspaces
 # Exclude endpoints to get user notifications
 !GET /users/*/notifications/**/*
 ```
+
+Then, you can use the filter file in the command:
 
 ```bash
 zimic typegen openapi ./schema.yaml \

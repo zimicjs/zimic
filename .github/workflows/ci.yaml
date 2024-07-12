@@ -16,19 +16,15 @@ env:
   CI: true
   NODE_VERSION: 20
 
-  TURBO_TOKEN:
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
-    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
-  TURBO_TEAM:
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
-    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  TURBO_TOKEN: |
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM: |
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
-
-  INSTALL_OPTIONS:
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
-  BUILD_OPTIONS:
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..."
-    "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+  INSTALL_OPTIONS: |
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "...[HEAD^1]"' || '' }}
+  BUILD_OPTIONS: |
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "{./apps/*}[HEAD^1]^..." "{./packages/*} [HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci-general:
@@ -55,6 +51,28 @@ jobs:
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
+
+      - name: Check if auto-generated types are in sync
+        run: |
+          cp \
+            ./examples/with-typegen/src/types/github/typegen/generated.ts \
+            ./examples/with-typegen/src/types/github/typegen/generated.current.ts
+
+          pnpm --dir examples/with-typegen typegen:github
+          pnpm --dir examples style:format ./with-typegen/src/types/github/typegen/generated.ts
+
+          if ! diff -u \
+            ./examples/with-typegen/src/types/github/typegen/generated.ts \
+            ./examples/with-typegen/src/types/github/typegen/generated.current.ts
+          then
+            echo \
+              "[examples/with-typegen] Generated types are out of date." \
+              "Please run 'pnpm --dir examples/with-typegen typegen:github' and commit the changes." >&2
+            exit 1
+          else
+            rm ./examples/with-typegen/src/types/github/typegen/generated.current.ts
+            echo "[examples/with-typegen] Generated types are up to date."
+          fi
 
       - name: Lint code and check types
         run: |
@@ -169,6 +187,18 @@ jobs:
 
       - name: Check types
         run: |
+          filterOptionsOfPackagesUsingFastify=(
+            '--filter !zimic-example-with-jest-node'
+            '--filter !zimic-example-with-vitest-node'
+            '--filter !zimic-example-with-typegen'
+          )
+
+          filterOptionsOfPackagesUsingNext=(
+            '--filter !zimic-example-with-playwright'
+            '--filter !zimic-example-with-next-js-app'
+            '--filter !zimic-example-with-next-js-pages'
+          )
+
           pnpm turbo \
             types:check \
             --continue \
@@ -176,7 +206,5 @@ jobs:
             ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
             --filter !@zimic/* \
-            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && \
-              echo '--filter !zimic-example-with-jest-node --filter !zimic-example-with-vitest-node') \
-            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && \
-              echo '--filter !zimic-example-with-playwright --filter !zimic-example-with-next-js-app --filter !zimic-example-with-next-js-pages')
+            $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
+            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]})
