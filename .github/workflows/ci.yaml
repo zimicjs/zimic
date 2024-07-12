@@ -62,8 +62,8 @@ jobs:
             ./examples/with-typegen/src/types/github/typegen/generated.ts \
             ./examples/with-typegen/src/types/github/typegen/generated.current.ts
 
-          pnpm -C examples/with-typegen typegen:github
-          pnpm -C examples style:format ./with-typegen/src/types/github/typegen/generated.ts
+          pnpm --dir examples/with-typegen typegen:github
+          pnpm --dir examples style:format ./with-typegen/src/types/github/typegen/generated.ts
 
           if ! diff -u \
             ./examples/with-typegen/src/types/github/typegen/generated.ts \
@@ -71,7 +71,7 @@ jobs:
           then
             echo \
               "[examples/with-typegen] Generated types are out of date." \
-              "Please run 'pnpm -C examples/with-typegen typegen:github' and commit the changes." >&2
+              "Please run 'pnpm --dir examples/with-typegen typegen:github' and commit the changes." >&2
             exit 1
           else
             rm ./examples/with-typegen/src/types/github/typegen/generated.current.ts
