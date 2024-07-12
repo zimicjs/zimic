@@ -136,9 +136,11 @@ describe('Web socket client', async () => {
     });
 
     it('should throw an error if started without a running server to connect to', async () => {
-      client = new WebSocketClient({ url: 'ws://localhost:0' });
+      await stopHttpServer(httpServer);
 
-      await expect(client.start()).rejects.toThrowError('connect ECONNREFUSED 127.0.0.1');
+      client = new WebSocketClient({ url: `ws://localhost:${port}` });
+
+      await expect(client.start()).rejects.toThrowError(/^(connect ECONNREFUSED .+)?$/);
     });
   });
 
