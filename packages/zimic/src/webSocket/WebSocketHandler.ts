@@ -1,7 +1,7 @@
 import ClientSocket from 'isomorphic-ws';
 
 import { Collection } from '@/types/utils';
-import { IsomorphicCrypto, importCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { isClientSide } from '@/utils/environment';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
@@ -18,7 +18,6 @@ import { WebSocket } from './types';
 abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sockets = new Set<ClientSocket>();
 
-  private _crypto?: IsomorphicCrypto;
   private _socketTimeout: number;
   private _messageTimeout: number;
 
@@ -35,13 +34,6 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   abstract isRunning(): boolean;
-
-  private async crypto() {
-    if (!this._crypto) {
-      this._crypto = await importCrypto();
-    }
-    return this._crypto;
-  }
 
   socketTimeout() {
     return this._socketTimeout;
@@ -190,7 +182,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     channel: Channel,
     eventData: WebSocket.ServiceEventMessage<Schema, Channel>['data'],
   ) {
-    const crypto = await this.crypto();
+    const crypto = await importCrypto();
 
     const eventMessage: WebSocket.ServiceEventMessage<Schema, Channel> = {
       id: crypto.randomUUID(),
@@ -266,7 +258,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     request: WebSocket.ServiceEventMessage<Schema, Channel>,
     replyData: WebSocket.ServiceReplyMessage<Schema, Channel>['data'],
   ) {
-    const crypto = await this.crypto();
+    const crypto = await importCrypto();
 
     const replyMessage: WebSocket.ServiceReplyMessage<Schema, Channel> = {
       id: crypto.randomUUID(),

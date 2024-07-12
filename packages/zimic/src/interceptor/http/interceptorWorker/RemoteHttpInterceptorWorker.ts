@@ -1,7 +1,7 @@
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
-import { importCrypto, IsomorphicCrypto } from '@/utils/crypto';
+import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { importMSWBrowser, importMSWNode } from '@/utils/msw';
 import { createURL, ensureUniquePathParams, excludeNonPathParams, ExtendedURL } from '@/utils/urls';
@@ -27,8 +27,6 @@ interface HttpHandler {
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'remote';
 
-  private _crypto?: IsomorphicCrypto;
-
   private _webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
@@ -46,13 +44,6 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     const webSocketServerURL = createURL(serverURL);
     webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
     return webSocketServerURL;
-  }
-
-  private async crypto() {
-    if (!this._crypto) {
-      this._crypto = await importCrypto();
-    }
-    return this._crypto;
   }
 
   webSocketClient() {
@@ -132,7 +123,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       throw new NotStartedHttpInterceptorError();
     }
 
-    const crypto = await this.crypto();
+    const crypto = await importCrypto();
     const url = excludeNonPathParams(createURL(rawURL)).toString();
     ensureUniquePathParams(url);
 
