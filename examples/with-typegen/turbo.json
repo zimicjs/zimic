@@ -1,0 +1,15 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:turbo": {
+      "dependsOn": ["^build", "zimic#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build", "zimic#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}
