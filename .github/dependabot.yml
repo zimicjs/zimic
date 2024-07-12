@@ -32,7 +32,9 @@ updates:
           - version-update:semver-major
 
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /.github/workflows
+      - /.github/actions/*
     schedule:
       interval: weekly
       day: sunday
