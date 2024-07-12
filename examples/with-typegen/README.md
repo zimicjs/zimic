@@ -2,9 +2,9 @@
   Zimic + Typegen
 </h2>
 
-This example uses Zimic with `zimic typegen`. [Node.js](https://nodejs.org) and [Vitest](https://vitest.dev) are used in
-this example, but other frameworks and runtimes should be similar, such as [Deno](https://deno.com),
-[Bun](https://bun.sh), and [Jest](https://jestjs.io).
+This example uses Zimic and the `zimic typegen` CLI to generate types from the GitHub API. [Node.js](https://nodejs.org)
+and [Vitest](https://vitest.dev) are used in this example, but other frameworks and runtimes should be similar, such as
+[Deno](https://deno.com), [Bun](https://bun.sh), and [Jest](https://jestjs.io).
 
 ## Application
 
@@ -14,7 +14,7 @@ The application is a simple [Fastify](https://fastify.dev) server, fetching repo
 
 - Server: [`src/app.ts`](./src/app.ts)
 
-The types for the GitHub API are generated automatically using the `zimic typegen` CLI, based on
+The types of the GitHub API are generated automatically using the `zimic typegen` CLI, based on
 [their official spec](https://github.com/github/rest-api-description/tree/main/descriptions-next/api.github.com). A
 `typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
 
