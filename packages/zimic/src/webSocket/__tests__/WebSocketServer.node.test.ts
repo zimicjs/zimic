@@ -22,7 +22,6 @@ import WebSocketServer from '../WebSocketServer';
 import {
   delayClientSocketOpen,
   delayClientSocketClose,
-  delayClientSocketSend,
   delayServerSocketConnection,
   delayServerSocketClose,
 } from './utils';
@@ -217,26 +216,6 @@ describe('Web socket server', async () => {
         channel: 'no-reply',
         data: eventMessage,
       });
-    });
-
-    it('should throw an error if a socket message sending timeout is reached', async () => {
-      const delayedClientSocketSend = delayClientSocketSend(300);
-
-      try {
-        const messageTimeout = 100;
-        server = new WebSocketServer({ httpServer, messageTimeout });
-        expect(server.messageTimeout()).toBe(messageTimeout);
-        server.start();
-
-        rawClient = new ClientSocket(`ws://localhost:${port}`);
-        await waitForOpenClientSocket(rawClient);
-
-        await expect(server.send('no-reply', { message: 'test' })).rejects.toThrowError(
-          new WebSocketMessageTimeoutError(messageTimeout),
-        );
-      } finally {
-        delayedClientSocketSend.mockRestore();
-      }
     });
 
     it('should support receiving event messages from clients', async () => {

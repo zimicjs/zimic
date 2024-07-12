@@ -18,6 +18,13 @@ export class WebSocketMessageTimeoutError extends WebSocketTimeoutError {
   }
 }
 
+export class WebSocketMessageAbortError extends WebSocketTimeoutError {
+  constructor() {
+    super('Web socket message was aborted.');
+    this.name = 'WebSocketMessageAbortError';
+  }
+}
+
 export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket close timed out after ${reachedTimeout}ms.`);
@@ -26,7 +33,7 @@ export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
 }
 
 export const DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT = 60 * 1000;
-export const DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT = 5 * 60 * 1000;
+export const DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT = 3 * 60 * 1000;
 
 export async function waitForOpenClientSocket(
   socket: ClientSocket,

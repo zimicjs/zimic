@@ -46,22 +46,6 @@ export function delayServerSocketConnection() {
   return delayedServerSocketOnSpy;
 }
 
-export function delayClientSocketSend(delayDuration: number) {
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const originalClientSocketSend = ClientSocket.prototype.send;
-
-  const delayedClientSocketSend = vi.spyOn(ClientSocket.prototype, 'send').mockImplementationOnce(function (
-    this: void,
-    ...parameters
-  ) {
-    void waitForDelay(delayDuration).then(() => {
-      originalClientSocketSend.apply(this, parameters);
-    });
-  });
-
-  return delayedClientSocketSend;
-}
-
 export function delayClientSocketClose(delayDuration: number) {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalClientSocketClose = ClientSocket.prototype.close;

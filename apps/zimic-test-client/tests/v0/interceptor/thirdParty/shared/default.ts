@@ -3,7 +3,7 @@ import { JSONSerialized } from 'zimic0';
 import { HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
 import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
 
-import { importCrypto } from '@tests/utils/crypto';
+import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
 
 import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 import {
@@ -18,17 +18,13 @@ import {
   Notification,
 } from './schema';
 
-async function getAuthBaseURL(type: HttpInterceptorType) {
-  const crypto = await importCrypto();
-
+function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
   return type === 'local'
     ? 'http://localhost:3000'
     : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
 }
 
-async function getNotificationsBaseURL(type: HttpInterceptorType) {
-  const crypto = await importCrypto();
-
+function getNotificationsBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
   return type === 'local'
     ? 'http://localhost:3001'
     : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
@@ -37,15 +33,17 @@ async function getNotificationsBaseURL(type: HttpInterceptorType) {
 async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
   const { platform, type, fetch } = options;
 
+  const crypto = await importCrypto();
+
   const authInterceptor = httpInterceptor.create<AuthServiceSchema>({
     type,
-    baseURL: await getAuthBaseURL(type),
+    baseURL: getAuthBaseURL(type, crypto),
     saveRequests: true,
   });
 
   const notificationInterceptor = httpInterceptor.create<NotificationServiceSchema>({
     type,
-    baseURL: await getNotificationsBaseURL(type),
+    baseURL: getNotificationsBaseURL(type, crypto),
     saveRequests: true,
   });
 
@@ -88,9 +86,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     };
   }
 
-  describe('Users', async () => {
-    const crypto = await importCrypto();
-
+  describe('Users', () => {
     const user: User = {
       id: crypto.randomUUID(),
       name: 'Name',
@@ -599,9 +595,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     });
   });
 
-  describe('Notifications', async () => {
-    const crypto = await importCrypto();
-
+  describe('Notifications', () => {
     const notification: Notification = {
       id: crypto.randomUUID(),
       userId: crypto.randomUUID(),

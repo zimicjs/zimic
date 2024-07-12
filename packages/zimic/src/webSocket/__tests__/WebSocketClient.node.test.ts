@@ -18,7 +18,7 @@ import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketClient from '../WebSocketClient';
-import { delayClientSocketClose, delayClientSocketOpen, delayClientSocketSend } from './utils';
+import { delayClientSocketClose, delayClientSocketOpen } from './utils';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
@@ -170,23 +170,6 @@ describe('Web socket client', async () => {
         channel: 'no-reply',
         data: eventMessage,
       });
-    });
-
-    it('should log an error if a socket message sending timeout is reached', async () => {
-      const delayedClientSocketSend = delayClientSocketSend(300);
-
-      try {
-        const messageTimeout = 100;
-        client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
-        expect(client.messageTimeout()).toBe(messageTimeout);
-        await client.start();
-
-        await expect(client.send('no-reply', { message: 'test' })).rejects.toThrowError(
-          new WebSocketMessageTimeoutError(messageTimeout),
-        );
-      } finally {
-        delayedClientSocketSend.mockRestore();
-      }
     });
 
     it('should support receiving event messages from servers', async () => {

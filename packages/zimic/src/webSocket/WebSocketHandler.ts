@@ -2,10 +2,10 @@ import ClientSocket from 'isomorphic-ws';
 
 import { Collection } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
-import { isClientSide } from '@/utils/environment';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,
   DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT,
+  WebSocketMessageAbortError,
   WebSocketMessageTimeoutError,
   closeClientSocket,
   waitForOpenClientSocket,
@@ -21,12 +21,16 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private _socketTimeout: number;
   private _messageTimeout: number;
 
-  private listeners: {
+  private channelListeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: {
       event: Set<WebSocket.EventMessageListener<Schema, Channel>>;
       reply: Set<WebSocket.ReplyMessageListener<Schema, Channel>>;
     };
   } = {};
+
+  private socketListeners = {
+    messageAbort: new Map<ClientSocket, Set<(reason: unknown) => void>>(),
+  };
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
     this._socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
@@ -144,7 +148,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     /* istanbul ignore next -- @preserve
      * Reply listeners are always present when notified in normal conditions. If they were not present, the request
      * would reach a timeout and not be responded. The empty set serves as a fallback. */
-    const listeners = this.listeners[message.channel]?.reply ?? new Set();
+    const listeners = this.channelListeners[message.channel]?.reply ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
       await listener(message, socket);
@@ -157,7 +161,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, WebSocket.ServiceChannel<Schema>>,
     socket: ClientSocket,
   ) {
-    const listeners = this.listeners[message.channel]?.event ?? new Set();
+    const listeners = this.channelListeners[message.channel]?.event ?? new Set();
 
     const listenerPromises = Array.from(listeners, async (listener) => {
       const replyData = await listener(message, socket);
@@ -200,7 +204,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     } = {},
   ) {
     const event = await this.createEventMessage(channel, eventData);
-    await this.sendMessage(event, options.sockets);
+    this.sendMessage(event, options.sockets);
   }
 
   async request<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
@@ -211,27 +215,43 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     } = {},
   ) {
     const request = await this.createEventMessage(channel, requestData);
+    this.sendMessage(request, options.sockets);
 
-    await this.sendMessage(request, options.sockets);
-    const response = await this.waitForReply(channel, request.id);
+    const response = await this.waitForReply(channel, request.id, options.sockets);
     return response.data;
   }
 
   async waitForReply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     channel: Channel,
     requestId: WebSocket.ServiceEventMessage<Schema, Channel>['id'],
+    sockets: Collection<ClientSocket> = this.sockets,
   ) {
     return new Promise<WebSocket.ServiceReplyMessage<Schema, Channel>>((resolve, reject) => {
       const replyTimeout = setTimeout(() => {
+        this.offReply(channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
+        this.offAbortSocketMessages(sockets, abortListener); // eslint-disable-line @typescript-eslint/no-use-before-define
+
         const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
         reject(timeoutError);
       }, this._messageTimeout);
 
-      const listener = this.onReply(channel, (message) => {
+      const abortListener = this.onAbortSocketMessages(sockets, (reason) => {
+        clearTimeout(replyTimeout);
+
+        this.offReply(channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
+        this.offAbortSocketMessages(sockets, abortListener);
+
+        reject(reason);
+      });
+
+      const replyListener = this.onReply(channel, (message) => {
         if (message.requestId === requestId) {
           clearTimeout(replyTimeout);
+
+          this.offReply(channel, replyListener);
+          this.offAbortSocketMessages(sockets, abortListener);
+
           resolve(message);
-          this.offReply(channel, listener);
         }
       });
     });
@@ -251,7 +271,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     },
   ) {
     const reply = await this.createReplyMessage(request, replyData);
-    await this.sendMessage(reply, options.sockets);
+    this.sendMessage(reply, options.sockets);
   }
 
   private async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
@@ -269,7 +289,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     return replyMessage;
   }
 
-  private async sendMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
+  private sendMessage<Channel extends WebSocket.ServiceChannel<Schema>>(
     message: WebSocket.ServiceMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
@@ -277,41 +297,11 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
       throw new NotStartedWebSocketHandlerError();
     }
 
-    const sendingPromises: Promise<void>[] = [];
     const stringifiedMessage = JSON.stringify(message);
 
     for (const socket of sockets) {
-      sendingPromises.push(this.sendSocketMessage(socket, stringifiedMessage));
+      socket.send(stringifiedMessage);
     }
-
-    await Promise.all(sendingPromises);
-  }
-
-  private sendSocketMessage(socket: ClientSocket, stringifiedMessage: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const messageTimeout = setTimeout(() => {
-        const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
-        reject(timeoutError);
-      }, this._messageTimeout);
-
-      if (isClientSide()) {
-        socket.send(stringifiedMessage);
-        clearTimeout(messageTimeout);
-        resolve();
-      } else {
-        socket.send(stringifiedMessage, (error) => {
-          clearTimeout(messageTimeout);
-
-          /* istanbul ignore if -- @preserve
-           * It is difficult to reliably simulate socket errors in tests. */
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        });
-      }
-    });
   }
 
   onEvent<
@@ -324,10 +314,15 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private getOrCreateChannelListeners<Channel extends WebSocket.ServiceChannel<Schema>>(channel: Channel) {
-    const listeners = this.listeners[channel] ?? { event: new Set(), reply: new Set() };
-    if (!this.listeners[channel]) {
-      this.listeners[channel] = listeners;
+    const listeners = this.channelListeners[channel] ?? {
+      event: new Set(),
+      reply: new Set(),
+    };
+
+    if (!this.channelListeners[channel]) {
+      this.channelListeners[channel] = listeners;
     }
+
     return listeners;
   }
 
@@ -344,18 +339,48 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     channel: Channel,
     listener: WebSocket.EventMessageListener<Schema, Channel>,
   ) {
-    this.listeners[channel]?.event.delete(listener);
+    this.channelListeners[channel]?.event.delete(listener);
   }
 
   offReply<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
     channel: Channel,
     listener: WebSocket.ReplyMessageListener<Schema, Channel>,
   ) {
-    this.listeners[channel]?.reply.delete(listener);
+    this.channelListeners[channel]?.reply.delete(listener);
   }
 
-  removeAllListeners() {
-    this.listeners = {};
+  removeAllChannelListeners() {
+    this.channelListeners = {};
+  }
+
+  private onAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (reason: unknown) => void) {
+    for (const socket of sockets) {
+      let listeners = this.socketListeners.messageAbort.get(socket);
+      if (!listeners) {
+        listeners = new Set();
+        this.socketListeners.messageAbort.set(socket, listeners);
+      }
+      listeners.add(listener);
+    }
+
+    return listener;
+  }
+
+  private offAbortSocketMessages(sockets: Collection<ClientSocket>, listener: (reason: unknown) => void) {
+    for (const socket of sockets) {
+      this.socketListeners.messageAbort.get(socket)?.delete(listener);
+    }
+  }
+
+  abortSocketMessages(sockets: Collection<ClientSocket> = this.sockets) {
+    const abortError = new WebSocketMessageAbortError();
+
+    for (const socket of sockets) {
+      const listeners = this.socketListeners.messageAbort.get(socket) ?? [];
+      for (const listener of listeners) {
+        listener(abortError);
+      }
+    }
   }
 }
 
