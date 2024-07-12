@@ -16,19 +16,15 @@ env:
   CI: true
   NODE_VERSION: 20
 
-  TURBO_TOKEN:
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
-    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
-  TURBO_TEAM:
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') &&
-    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  TURBO_TOKEN: |
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM: |
+    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
-
-  INSTALL_OPTIONS:
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
-  BUILD_OPTIONS:
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..."
-    "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+  INSTALL_OPTIONS: |
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "...[HEAD^1]"' || '' }}
+  BUILD_OPTIONS: |
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "{./apps/*}[HEAD^1]^..." "{./packages/*} [HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci-general:
