@@ -622,17 +622,17 @@ describe('CLI (server)', async () => {
         baseURL: 'http://localhost:5001',
       });
 
-      const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        await runCLI();
 
-      try {
-        await usingIgnoredConsole(['error', 'log'], async (spies) => {
-          await runCLI();
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBe(5001);
 
-          expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBe(5001);
+        const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
 
+        try {
           await interceptor.start();
           await interceptor.get('/users').respond({ status: 204 });
 
@@ -654,14 +654,14 @@ describe('CLI (server)', async () => {
             platform: 'node',
             request,
           });
-        });
-      } finally {
-        webSocketServerRequestSpy.mockRestore();
-        await interceptor.stop();
-      }
+        } finally {
+          webSocketServerRequestSpy.mockRestore();
+          await interceptor.stop();
+        }
+      });
     });
 
-    it('should abort pending requests if a worker is reset while waiting for a response', async () => {
+    it('should abort waiting for a worker reply if it was uncommitted before responding', async () => {
       processArgvSpy.mockReturnValue([
         'node',
         './dist/cli.js',
@@ -681,15 +681,15 @@ describe('CLI (server)', async () => {
         baseURL: 'http://localhost:5001',
       });
 
-      try {
-        await usingIgnoredConsole(['error', 'log'], async (spies) => {
-          await runCLI();
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        await runCLI();
 
-          expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBe(5001);
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBe(5001);
 
+        try {
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
 
@@ -724,10 +724,10 @@ describe('CLI (server)', async () => {
           });
 
           expect(spies.error).not.toHaveBeenCalled();
-        });
-      } finally {
-        await interceptor.stop();
-      }
+        } finally {
+          await interceptor.stop();
+        }
+      });
     });
   });
 });

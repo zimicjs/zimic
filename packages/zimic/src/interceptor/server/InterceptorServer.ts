@@ -156,7 +156,7 @@ class InterceptorServer implements PublicInterceptorServer {
     if (isWorkerNoLongerCommitted) {
       // When a worker is no longer committed, we should abort all requests that were using it.
       // This ensures that we only wait for responses from committed worker sockets.
-      this.webSocketServer().abortRequests([socket]);
+      this.webSocketServer().abortSocketMessages([socket]);
     } else {
       for (const handler of handlersToResetTo) {
         this.registerHttpHandlerGroup(handler, socket);
@@ -193,9 +193,9 @@ class InterceptorServer implements PublicInterceptorServer {
     this.knownWorkerSockets.add(socket);
   }
 
-  private removeHttpHandlerGroupsBySocket(socketToRemove: Socket) {
+  private removeHttpHandlerGroupsBySocket(socket: Socket) {
     for (const [method, handlerGroups] of Object.entries(this.httpHandlerGroups)) {
-      this.httpHandlerGroups[method] = handlerGroups.filter((handlerGroup) => handlerGroup.socket !== socketToRemove);
+      this.httpHandlerGroups[method] = handlerGroups.filter((handlerGroup) => handlerGroup.socket !== socket);
     }
   }
 

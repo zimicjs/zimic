@@ -48,7 +48,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     super.removeAllChannelListeners();
 
     const sockets = this.socket ? [this.socket] : [];
-    super.abortRequests(sockets);
+    super.abortSocketMessages(sockets);
     await super.closeClientSockets(sockets);
 
     this.socket = undefined;
