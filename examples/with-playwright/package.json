@@ -3,31 +3,35 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- next dev --turbo --port 3002",
-    "dev:mock": "dotenv -c test -- zimic server start --port 3003 --ephemeral -- pnpm dev:load-interceptors -- pnpm dev",
-    "dev:load-interceptors": "tsx ./tests/interceptors/scripts/load.ts",
+    "dev": "dotenv -c development -- pnpm dev:no-env",
+    "dev:mock": "dotenv -c test -- dotenv -c development -- pnpm mock -- pnpm dev:no-env",
+    "dev:no-env": "next dev --turbo --port 3002",
+    "mock": "pnpm mock:start -- pnpm mock:load",
+    "mock:start": "zimic server start --port 3003 --ephemeral",
+    "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
-    "test:turbo": "pnpm run test",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
     "postinstall": "pnpm deps:install-playwright || echo 'Could not postinstall.'"
   },
   "dependencies": {
     "clsx": "^2.1.1",
-    "dotenv-cli": "^7.4.2",
-    "next": "14.2.4",
+    "next": "14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.1",
-    "@types/node": "^20.14.8",
+    "@playwright/test": "^1.45.1",
+    "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "postcss": "^8.4.38",
+    "dotenv-cli": "^7.4.2",
+    "execa": "^9.3.0",
+    "postcss": "^8.4.39",
     "tailwindcss": "^3.4.1",
-    "tsx": "^4.15.7",
-    "typescript": "^5.5.2",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
     "zimic": "latest"
   }
 }

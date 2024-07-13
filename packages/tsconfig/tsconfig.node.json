@@ -3,7 +3,6 @@
   "display": "Node.js",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["esnext", "webworker"],
-    "incremental": false
+    "lib": ["esnext", "webworker"]
   }
 }

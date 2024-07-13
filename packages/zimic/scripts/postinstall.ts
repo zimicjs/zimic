@@ -1,36 +1,38 @@
 import filesystem from 'fs/promises';
-import mswPackageJSON from 'msw/package.json';
+import type mswPackage from 'msw/package.json';
 import path from 'path';
 
-type MSWExports = typeof mswPackageJSON.exports;
+import { Override } from '@/types/utils';
 
-const browserExports = mswPackageJSON.exports['./browser'] as Omit<MSWExports['./browser'], 'node'> & {
-  node: string | null;
-};
+type MSWPackage = typeof mswPackage;
+type MSWExports = MSWPackage['exports'];
 
-const nodeExports = mswPackageJSON.exports['./node'] as Omit<MSWExports['./node'], 'browser'> & {
-  browser: string | null;
-};
+async function patchMSWExports() {
+  const mswRootDirectory = path.join(require.resolve('msw'), '..', '..', '..');
+  const mswPackagePath = path.join(mswRootDirectory, 'package.json');
 
-const nativeExports = mswPackageJSON.exports['./native'] as Omit<MSWExports['./native'], 'browser'> & {
-  browser: string | null;
-};
+  const mswPackageContentAsString = await filesystem.readFile(mswPackagePath, 'utf-8');
+  const mswPackageContent = JSON.parse(mswPackageContentAsString) as MSWPackage;
 
-const MSW_ROOT_PATH = path.join(require.resolve('msw'), '..', '..', '..');
-const MSW_PACKAGE_JSON_PATH = path.join(MSW_ROOT_PATH, 'package.json');
+  const browserExports = mswPackageContent.exports['./browser'] as Override<
+    MSWExports['./browser'],
+    { node: MSWExports['./node']['node'] | string | null }
+  >;
 
-async function patchMSWExportLimitations() {
-  browserExports.node = nodeExports.default;
-  nodeExports.browser = browserExports.default;
-  nativeExports.browser = browserExports.default;
+  const nodeExports = mswPackageContent.exports['./node'] as Override<
+    MSWExports['./node'],
+    { browser: MSWExports['./browser']['browser'] | string | null }
+  >;
 
-  await filesystem.writeFile(MSW_PACKAGE_JSON_PATH, JSON.stringify(mswPackageJSON, null, 2));
+  browserExports.node = nodeExports.node;
+  nodeExports.browser = browserExports.browser;
+
+  const patchedMSWPackageContentAsString = JSON.stringify(mswPackageContent, null, 2);
+  await filesystem.writeFile(mswPackagePath, patchedMSWPackageContentAsString);
 }
 
 async function postinstall() {
-  await patchMSWExportLimitations();
+  await patchMSWExports();
 }
 
-void postinstall();
-
-export default postinstall;
+export const postinstallPromise = postinstall();

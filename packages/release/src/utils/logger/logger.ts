@@ -1,4 +1,4 @@
-import { chalk } from 'zx';
+import chalk from 'chalk';
 
 class Logger {
   private nextStep = 1;

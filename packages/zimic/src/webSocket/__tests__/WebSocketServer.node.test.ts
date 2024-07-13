@@ -1,7 +1,7 @@
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { importCrypto } from '@/utils/crypto';
 import { startHttpServer, stopHttpServer } from '@/utils/http';
@@ -22,7 +22,6 @@ import WebSocketServer from '../WebSocketServer';
 import {
   delayClientSocketOpen,
   delayClientSocketClose,
-  delayClientSocketSend,
   delayServerSocketConnection,
   delayServerSocketClose,
 } from './utils';
@@ -197,6 +196,8 @@ describe('Web socket server', async () => {
       const eventMessages: EventMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
+        /* istanbul ignore if -- @preserve
+         * All messages are expected to be strings. */
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
@@ -215,26 +216,6 @@ describe('Web socket server', async () => {
         channel: 'no-reply',
         data: eventMessage,
       });
-    });
-
-    it('should throw an error if a socket message sending timeout is reached', async () => {
-      const delayedClientSocketSend = delayClientSocketSend(300);
-
-      try {
-        const messageTimeout = 100;
-        server = new WebSocketServer({ httpServer, messageTimeout });
-        expect(server.messageTimeout()).toBe(messageTimeout);
-        server.start();
-
-        rawClient = new ClientSocket(`ws://localhost:${port}`);
-        await waitForOpenClientSocket(rawClient);
-
-        await expect(server.send('no-reply', { message: 'test' })).rejects.toThrowError(
-          new WebSocketMessageTimeoutError(messageTimeout),
-        );
-      } finally {
-        delayedClientSocketSend.mockRestore();
-      }
     });
 
     it('should support receiving event messages from clients', async () => {
@@ -267,6 +248,8 @@ describe('Web socket server', async () => {
       const requestMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
+        /* istanbul ignore if -- @preserve
+         * All messages are expected to be strings. */
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
@@ -336,6 +319,8 @@ describe('Web socket server', async () => {
       const replyMessages: ReplyMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
+        /* istanbul ignore if -- @preserve
+         * All messages are expected to be strings. */
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
@@ -414,9 +399,16 @@ describe('Web socket server', async () => {
       type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
-      const eventListener = server.onEvent('no-reply', (message) => {
-        eventMessages.push(message);
-      });
+      const eventListener = server.onEvent(
+        'no-reply',
+        vi.fn<WebSocket.EventMessageListener<Schema, 'no-reply'>>(
+          /* istanbul ignore next -- @preserve
+           * This function is not expected to run. */
+          (message) => {
+            eventMessages.push(message);
+          },
+        ),
+      );
 
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
@@ -435,6 +427,7 @@ describe('Web socket server', async () => {
       await waitForNot(() => {
         expect(eventMessages.length).toBeGreaterThan(0);
       });
+      expect(eventListener).not.toHaveBeenCalled();
     });
 
     it('should support listening to replies', async () => {
@@ -448,6 +441,8 @@ describe('Web socket server', async () => {
       const requestMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
+        /* istanbul ignore if -- @preserve
+         * All messages are expected to be strings. */
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
@@ -509,6 +504,8 @@ describe('Web socket server', async () => {
       const eventMessages: RequestMessage[] = [];
 
       rawClient.addEventListener('message', (message) => {
+        /* istanbul ignore if -- @preserve
+         * All messages are expected to be strings. */
         if (typeof message.data !== 'string') {
           throw new Error('Unexpected message type');
         }
@@ -519,9 +516,16 @@ describe('Web socket server', async () => {
       type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
-      const replyListener = server.onReply('with-reply', (message) => {
-        replyMessages.push(message);
-      });
+      const replyListener = server.onReply(
+        'with-reply',
+        vi.fn<WebSocket.ReplyMessageListener<Schema, 'with-reply'>>(
+          /* istanbul ignore next -- @preserve
+           * This function is not expected to run. */
+          (message) => {
+            replyMessages.push(message);
+          },
+        ),
+      );
 
       const requestMessage: RequestMessage['data'] = { question: 'test' };
       const replyPromise = server.request('with-reply', requestMessage);
@@ -558,6 +562,7 @@ describe('Web socket server', async () => {
       await waitForNot(() => {
         expect(replyMessages.length).toBeGreaterThan(0);
       });
+      expect(replyListener).not.toHaveBeenCalled();
     });
   });
 

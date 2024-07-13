@@ -58,8 +58,9 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       return;
     }
 
+    super.removeAllChannelListeners();
+    super.abortSocketMessages();
     await super.closeClientSockets();
-    super.removeAllListeners();
 
     await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout() });
     this.webSocketServer.removeAllListeners();

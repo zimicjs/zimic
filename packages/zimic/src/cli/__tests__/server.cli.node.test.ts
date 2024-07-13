@@ -3,7 +3,7 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { http } from '@/interceptor';
+import { httpInterceptor } from '@/interceptor/http';
 import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
@@ -11,10 +11,12 @@ import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import { waitForDelay } from '@/utils/time';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
+import { waitFor } from '@tests/utils/time';
 
 import runCLI from '../cli';
 import { serverSingleton as server } from '../server/start';
@@ -60,7 +62,7 @@ describe('CLI (server)', async () => {
   ].join('\n');
 
   it('should show a help message', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', '--help']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', '--help']);
     await usingIgnoredConsole(['log'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
@@ -70,7 +72,7 @@ describe('CLI (server)', async () => {
   });
 
   it('should throw an error if no command is provided', async () => {
-    processArgvSpy.mockReturnValue(['node', 'cli.js', 'server']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server']);
 
     await usingIgnoredConsole(['error'], async (spies) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
@@ -121,7 +123,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should show a help message', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--help']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--help']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
@@ -132,7 +134,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on localhost if no hostname is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--port', '5000']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5000']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -151,7 +153,16 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on the provided hostname', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--hostname',
+        '0.0.0.0',
+        '--port',
+        '3000',
+      ]);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -167,7 +178,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on any available port if none is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -186,7 +197,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is not an integer, positive number', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--port', 'abc']);
 
       await usingIgnoredConsole(['error'], async (spies) => {
         await expect(runCLI()).rejects.toThrowError(
@@ -201,7 +212,16 @@ describe('CLI (server)', async () => {
     });
 
     it('should throw an error if the provided port is already in use', async () => {
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--hostname', '0.0.0.0', '--port', '3000']);
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--hostname',
+        '0.0.0.0',
+        '--port',
+        '3000',
+      ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         await runCLI();
@@ -230,7 +250,7 @@ describe('CLI (server)', async () => {
       const delayedListen = delayHttpServerListenIndefinitely();
 
       try {
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
         await usingIgnoredConsole(['error', 'log'], async (spies) => {
           const cliPromise = runCLI();
@@ -253,7 +273,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -282,40 +302,42 @@ describe('CLI (server)', async () => {
       });
     });
 
-    it('should not stop the server after the on-ready command finishes if ephemeral is false', async () => {
-      const temporarySaveFileContent = crypto.randomUUID();
+    it.each(['--no-ephemeral', '--ephemeral=false'])(
+      'should not stop the server after the on-ready command finishes if ephemeral is false: %s',
+      async (ephemeralFlag) => {
+        const temporarySaveFileContent = crypto.randomUUID();
 
-      processArgvSpy.mockReturnValue([
-        'node',
-        'cli.js',
-        'server',
-        'start',
-        '--ephemeral',
-        'false',
-        '--',
-        'node',
-        '-e',
-        `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
-      ]);
+        processArgvSpy.mockReturnValue([
+          'node',
+          './dist/cli.js',
+          'server',
+          'start',
+          ephemeralFlag,
+          '--',
+          'node',
+          '-e',
+          `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
+        ]);
 
-      await usingIgnoredConsole(['log'], async (spies) => {
-        await runCLI();
+        await usingIgnoredConsole(['log'], async (spies) => {
+          await runCLI();
 
-        expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          `Server is running on http://localhost:${server!.port()}`,
-        );
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-        const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
-        expect(savedFile).toBe(temporarySaveFileContent);
-      });
-    });
+          const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
+          expect(savedFile).toBe(temporarySaveFileContent);
+        });
+      },
+    );
 
     it('should throw an error if the stop timeout is reached', async () => {
       vi.useFakeTimers();
@@ -327,7 +349,7 @@ describe('CLI (server)', async () => {
       });
 
       try {
-        processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral']);
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral']);
 
         await usingIgnoredConsole(['error', 'log'], async (spies) => {
           const cliPromise = runCLI();
@@ -347,13 +369,14 @@ describe('CLI (server)', async () => {
     it('should throw an error if the on-ready command executable is not found', async () => {
       const unknownCommand = 'unknown';
 
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        await expect(runCLI()).rejects.toThrowError(`spawn ${unknownCommand} ENOENT`);
+        const error = new CommandError(unknownCommand, { originalMessage: `spawn ${unknownCommand} ENOENT` });
+        await expect(runCLI()).rejects.toThrowError(error);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(new Error(`spawn ${unknownCommand} ENOENT`));
+        expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
@@ -362,7 +385,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -373,9 +396,9 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', exitCode, null);
+        const error = new CommandError('node', { exitCode });
         await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`Command 'node' exited with code ${exitCode}.`);
+        expect(error.message).toBe(`Command 'node' exited with code ${exitCode}`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
@@ -387,7 +410,7 @@ describe('CLI (server)', async () => {
 
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--ephemeral',
@@ -398,9 +421,9 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', null, signal);
+        const error = new CommandError('node', { signal });
         await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`Command 'node' exited after signal ${signal}.`);
+        expect(error.message).toBe(`Command 'node' exited after signal ${signal}`);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
@@ -410,7 +433,7 @@ describe('CLI (server)', async () => {
     it.each(PROCESS_EXIT_EVENTS)('should stop the sever after a process exit event: %s', async (exitEvent) => {
       const exitEventListeners = watchExitEventListeners(exitEvent);
 
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -437,9 +460,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should stop the server even if a client is connected', async () => {
-      const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-
-      processArgvSpy.mockReturnValue(['node', 'cli.js', 'server', 'start']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -463,11 +484,7 @@ describe('CLI (server)', async () => {
           await webSocketClient.start();
           expect(webSocketClient.isRunning()).toBe(true);
 
-          expect(exitEventListeners).toHaveLength(1);
-
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
+          await server?.stop();
 
           expect(server!.isRunning()).toBe(false);
           expect(webSocketClient.isRunning()).toBe(false);
@@ -485,127 +502,110 @@ describe('CLI (server)', async () => {
     ])(
       'should show an error if logging is enabled when a request is received and does not match any interceptors: override default $overrideDefault',
       async ({ overrideDefault }) => {
-        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-
         processArgvSpy.mockReturnValue([
           'node',
-          'cli.js',
+          './dist/cli.js',
           'server',
           'start',
           ...(overrideDefault === false ? ['--log-unhandled-requests'] : []),
         ]);
 
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: true });
+          httpInterceptor.default.onUnhandledRequest({ log: true });
         } else if (overrideDefault === 'static-empty') {
-          http.default.onUnhandledRequest({});
+          httpInterceptor.default.onUnhandledRequest({});
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(async (_request, context) => {
+          httpInterceptor.default.onUnhandledRequest(async (_request, context) => {
             await context.log();
           });
         }
 
-        try {
-          await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-            await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-            expect(server).toBeDefined();
-            expect(server!.isRunning()).toBe(true);
-            expect(server!.hostname()).toBe('localhost');
-            expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.log).toHaveBeenCalledWith(
-              `${chalk.cyan('[zimic]')}`,
-              `Server is running on http://localhost:${server!.port()}`,
-            );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-            const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-            const response = fetch(request);
-            await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
 
-            const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform: 'node',
-              request,
-            });
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            type: 'error',
+            platform: 'node',
+            request,
           });
-        } finally {
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
-        }
+        });
       },
     );
 
     it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
       'should not show an error if logging is disabled when a request is received and does not match any interceptors: override default $overrideDefault',
       async ({ overrideDefault }) => {
-        const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
         processArgvSpy.mockReturnValue([
           'node',
-          'cli.js',
+          './dist/cli.js',
           'server',
           'start',
           ...(overrideDefault === false ? ['--log-unhandled-requests', 'false'] : []),
         ]);
 
         if (overrideDefault === 'static') {
-          http.default.onUnhandledRequest({ log: false });
+          httpInterceptor.default.onUnhandledRequest({ log: false });
         } else if (overrideDefault === 'function') {
-          http.default.onUnhandledRequest(vi.fn());
+          httpInterceptor.default.onUnhandledRequest(vi.fn());
         }
 
-        try {
-          await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-            await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-            expect(server).toBeDefined();
-            expect(server!.isRunning()).toBe(true);
-            expect(server!.hostname()).toBe('localhost');
-            expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.log).toHaveBeenCalledWith(
-              `${chalk.cyan('[zimic]')}`,
-              `Server is running on http://localhost:${server!.port()}`,
-            );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-            const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-            const response = fetch(request);
-            await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-            expect(spies.log).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(0);
-          });
-        } finally {
-          for (const listener of exitEventListeners) {
-            await listener();
-          }
-        }
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
       },
     );
 
     it('should log an error and reject the request if it could not be handled due to an error', async () => {
-      const exitEventListeners = watchExitEventListeners(PROCESS_EXIT_EVENTS[0]);
-
       processArgvSpy.mockReturnValue([
         'node',
-        'cli.js',
+        './dist/cli.js',
         'server',
         'start',
         '--port',
@@ -622,20 +622,22 @@ describe('CLI (server)', async () => {
         baseURL: 'http://localhost:5001',
       });
 
-      try {
-        await usingIgnoredConsole(['error', 'log'], async (spies) => {
-          await runCLI();
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        await runCLI();
 
-          expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBe(5001);
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBe(5001);
 
+        const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
+
+        try {
           await interceptor.start();
           await interceptor.get('/users').respond({ status: 204 });
 
           const error = new Error('An error ocurred.');
-          vi.spyOn(WebSocketServer.prototype, 'request').mockRejectedValue(error);
+          webSocketServerRequestSpy.mockRejectedValueOnce(error);
 
           const request = new Request('http://localhost:5001/users', { method: 'GET' });
           const fetchPromise = fetch(request);
@@ -652,14 +654,80 @@ describe('CLI (server)', async () => {
             platform: 'node',
             request,
           });
-        });
-      } finally {
-        await interceptor.stop();
-
-        for (const listener of exitEventListeners) {
-          await listener();
+        } finally {
+          webSocketServerRequestSpy.mockRestore();
+          await interceptor.stop();
         }
-      }
+      });
+    });
+
+    it('should abort waiting for a worker reply if it was uncommitted before responding', async () => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--port',
+        '5001',
+        '--log-unhandled-requests',
+      ]);
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: 'http://localhost:5001',
+      });
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBe(5001);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          let wasResponseFactoryCalled = false;
+
+          const responseFactory = vi.fn(async () => {
+            wasResponseFactoryCalled = true;
+
+            await waitForDelay(5000);
+
+            /* istanbul ignore next -- @preserve
+             * This code is unreachable because the request is aborted before the response is sent. */
+            return { status: 204 } as const;
+          });
+
+          await interceptor.get('/users').respond(responseFactory);
+
+          const onFetchError = vi.fn();
+          const fetchPromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+
+          await waitFor(() => {
+            expect(wasResponseFactoryCalled).toBe(true);
+          });
+
+          await interceptor.stop();
+          expect(interceptor.isRunning()).toBe(false);
+
+          await fetchPromise;
+
+          await waitFor(() => {
+            expect(onFetchError).toHaveBeenCalled();
+          });
+
+          expect(spies.error).not.toHaveBeenCalled();
+        } finally {
+          await interceptor.stop();
+        }
+      });
     });
   });
 });

@@ -4,6 +4,7 @@
     "lib": ["esnext", "dom", "dom.iterable"],
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
@@ -13,5 +14,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "**/fixtures/**/generated"]
 }

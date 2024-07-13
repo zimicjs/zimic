@@ -49,7 +49,7 @@ before the application is started in development. It is used by the command `dev
 - Test suite: [`src/app/__tests__/HomePage.e2e.test.ts`](./src/app/__tests__/HomePage.e2e.test.ts)
 - Playwright configuration: [`playwright.config.ts`](./playwright.config.ts)
 
-### Running
+## Running
 
 1. Clone this example:
 

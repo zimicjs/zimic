@@ -12,6 +12,7 @@ tsconfig.tsbuildinfo
 
 # Tests
 /tests/coverage
+**/typegen/generated/**/*.ts
 
 # Miscellaneous
 .vscode

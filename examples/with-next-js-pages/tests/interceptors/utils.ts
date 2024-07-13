@@ -1,8 +1,8 @@
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 import githubInterceptor, { githubFixtures } from './github';
 
-http.default.onUnhandledRequest(async (request, context) => {
+httpInterceptor.default.onUnhandledRequest(async (request, context) => {
   const url = new URL(request.url);
 
   // Ignore requests to the same host

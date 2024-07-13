@@ -3,11 +3,12 @@
   "compilerOptions": {
     "target": "es6",
     "baseUrl": ".",
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"]
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "**/typegen/generated/**/*.ts"]
 }

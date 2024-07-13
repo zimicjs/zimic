@@ -33,7 +33,7 @@ where the repository is found and another where it is not.
 > The flag `--experimental-vm-modules`, present in the command `test` in the [`package.json`](./package.json), is
 > required by Jest because Zimic uses dynamic imports internally.
 
-### Running
+## Running
 
 1. Clone this example:
 

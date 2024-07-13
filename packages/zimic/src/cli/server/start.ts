@@ -1,6 +1,5 @@
-import { createInterceptorServer } from '@/interceptor/server';
+import { InterceptorServer, interceptorServer } from '@/interceptor/server';
 import { InterceptorServerOptions } from '@/interceptor/server/types/options';
-import { InterceptorServer } from '@/interceptor/server/types/public';
 import { logWithPrefix } from '@/utils/console';
 import { runCommand } from '@/utils/processes';
 
@@ -21,7 +20,7 @@ async function startInterceptorServer({
   onUnhandledRequest,
   onReady,
 }: InterceptorServerStartOptions) {
-  const server = createInterceptorServer({
+  const server = interceptorServer.create({
     hostname,
     port,
     onUnhandledRequest,

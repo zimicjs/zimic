@@ -5,8 +5,10 @@ const sharedConfig: Options = {
   bundle: true,
   sourcemap: true,
   treeshake: true,
+  splitting: true,
   minify: false,
   clean: true,
+  keepNames: true,
 };
 
 const cliConfig = (['cjs'] as const).map<Options>((format) => ({

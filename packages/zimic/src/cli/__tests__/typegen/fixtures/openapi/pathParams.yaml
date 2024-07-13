@@ -1,0 +1,84 @@
+openapi: 3.1.0
+
+info:
+  title: Dynamic Paths
+  version: 1.0.0
+
+paths:
+  /users/{userId}:
+    get:
+      summary: Info for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of the user to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/{userId}/friends:
+    get:
+      summary: List of friends for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of the user to retrieve friends for
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Users'
+
+  /users/{userId}/friends/{friendId}:
+    get:
+      summary: Info for a specific friend of a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The id of the user to retrieve a friend for
+          schema:
+            type: string
+        - name: friendId
+          in: path
+          required: true
+          description: The id of the friend to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+    Users:
+      type: array
+      items:
+        $ref: '#/components/schemas/User'

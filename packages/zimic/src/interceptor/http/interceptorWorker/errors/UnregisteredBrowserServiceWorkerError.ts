@@ -10,7 +10,7 @@ class UnregisteredBrowserServiceWorkerError extends Error {
     super(
       `Failed to register the browser service worker: ` +
         `script '${window.location.origin}/${SERVICE_WORKER_FILE_NAME}' not found.\n\n` +
-        'Did you forget to run "npx zimic browser init <public-directory>"?\n\n' +
+        'Did you forget to run `zimic browser init <publicDirectory>`?\n\n' +
         'Learn more: https://github.com/zimicjs/zimic#browser-post-install',
     );
     this.name = 'UnregisteredBrowserServiceWorkerError';

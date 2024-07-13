@@ -1,5 +1,6 @@
 import { Defined } from '@/types/utils';
 
+import { HttpSearchParamsSerialized } from '../searchParams/types';
 import HttpHeaders from './HttpHeaders';
 
 /** A schema for strict HTTP headers. */
@@ -18,3 +19,10 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | Schema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
+
+/**
+ * Recursively converts a type to its HTTP headers-serialized version. Numbers and booleans are converted to `${number}`
+ * and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as functions and
+ * dates.
+ */
+export type HttpHeadersSerialized<Type> = HttpSearchParamsSerialized<Type>;

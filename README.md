@@ -7,10 +7,10 @@
 </h1>
 
 <p align="center">
-  Next-gen, TypeScript-first HTTP request mocking
+  TypeScript-first HTTP request mocking
 </p>
 
-<div align="center">
+<p align="center">
   <a href="https://www.npmjs.com/package/zimic">npm</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="#table-of-contents">Docs</a>
@@ -20,6 +20,16 @@
   <a href="https://github.com/zimicjs/zimic/issues/new">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/orgs/zimicjs/projects/1/views/5">Roadmap</a>
+</p>
+
+<div align="center">
+
+[![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
+[![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
+[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)
+[![NPM Downloads](https://img.shields.io/npm/dm/zimic?style=flat&logo=npm&color=0E69BE&label=Downloads&labelColor=353C43)](https://www.npmjs.com/package/zimic)&nbsp;
+[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)&nbsp;
+
 </div>
 
 ---
@@ -40,6 +50,22 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   specially useful in testing, making sure that the path your application takes is covered.
 - :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity, simplicity and developer experience in
   your mocks. Check our [getting started guide](#getting-started) and starting mocking!
+
+> [!NOTE]
+>
+> Zimic has gone a long way in v0, but we're not yet v1!
+>
+> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
+> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
+> release requires minimal to no refactoring. During v0, we will follow these guidelines:
+>
+> - Breaking changes, if any, will be delivered in the next **_minor_** version.
+> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
+>   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
+>
+> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
+> feel free to [open an issue](https://github.com/zimicjs/zimic/issues/new) or
+> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ---
 
@@ -69,7 +95,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [Comparing `HttpFormData`](#comparing-httpformdata)
 - [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
-    - [`http.createInterceptor`](#httpcreateinterceptor)
+    - [`httpInterceptor.create`](#httpinterceptorcreate)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Unhandled requests](#unhandled-requests)
@@ -106,7 +132,13 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
     - [`zimic browser init`](#zimic-browser-init)
   - [`zimic server`](#zimic-server)
     - [`zimic server start`](#zimic-server-start)
-    - [Programmatic usage](#programmatic-usage)
+    - [`zimic server` programmatic usage](#zimic-server-programmatic-usage)
+  - [`zimic typegen`](#zimic-typegen)
+    - [`zimic typegen openapi`](#zimic-typegen-openapi)
+      - [`zimic typegen openapi` comments](#zimic-typegen-openapi-comments)
+      - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
+      - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
+    - [`zimic typegen` programmatic usage](#zimic-typegen-programmatic-usage)
 - [Changelog](#changelog)
 
 ## Getting started
@@ -229,13 +261,13 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
    ```ts
    import { JSONValue } from 'zimic';
-   import { http } from 'zimic/interceptor';
+   import { httpInterceptor } from 'zimic/interceptor/http';
 
    type User = JSONValue<{
      username: string;
    }>;
 
-   const interceptor = http.createInterceptor<{
+   const interceptor = httpInterceptor.create<{
      '/users': {
        GET: {
          response: {
@@ -253,13 +285,13 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
    ```ts
    import { JSONValue } from 'zimic';
-   import { http } from 'zimic/interceptor';
+   import { httpInterceptor } from 'zimic/interceptor/http';
 
    type User = JSONValue<{
      username: string;
    }>;
 
-   const interceptor = http.createInterceptor<{
+   const interceptor = httpInterceptor.create<{
      '/users': {
        GET: {
          response: {
@@ -276,7 +308,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 
     </details></td></tr></table>
 
-   In this example, we're [creating an interceptor](#httpcreateinterceptor) for a service supporting `GET` requests to
+   In this example, we're [creating an interceptor](#httpinterceptorcreate) for a service supporting `GET` requests to
    `/users`. A successful response contains an array of `User` objects. Learn more about
    [declaring HTTP service schemas](#declaring-http-service-schemas).
 
@@ -412,7 +444,7 @@ headers.
   <summary><code>HttpHeaders</code> example:</summary>
 
 ```ts
-import { HttpHeaders } from 'zimic';
+import { HttpHeaders } from 'zimic/http';
 
 const headers = new HttpHeaders<{
   accept?: string;
@@ -437,7 +469,7 @@ other headers:
   <summary>Comparing <code>HttpHeaders</code> example:</summary>
 
 ```ts
-import { HttpSchema, HttpHeaders } from 'zimic';
+import { HttpSchema, HttpHeaders } from 'zimic/http';
 
 type HeaderSchema = HttpSchema.Headers<{
   accept?: string;
@@ -484,7 +516,7 @@ type safety when managing search parameters.
   <summary><code>HttpSearchParams</code> example:</summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic';
+import { HttpSearchParams } from 'zimic/http';
 
 const searchParams = new HttpSearchParams<{
   names?: string[];
@@ -512,7 +544,7 @@ comparisons with other search params:
   <summary>Comparing <code>HttpSearchParams</code> example:</summary>
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic';
+import { HttpSchema, HttpSearchParams } from 'zimic/http';
 
 type SearchParamsSchema = HttpSchema.SearchParams<{
   names?: string[];
@@ -559,7 +591,7 @@ when managing form data.
   <summary><code>HttpFormData</code> example:</summary>
 
 ```ts
-import { HttpFormData } from 'zimic';
+import { HttpFormData } from 'zimic/http';
 
 const formData = new HttpFormData<{
   files: File[];
@@ -587,7 +619,7 @@ with other form data:
   <summary>Comparing <code>HttpFormData</code> example:</summary>
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic';
+import { HttpSchema, HttpFormData } from 'zimic/http';
 
 type FormDataSchema = HttpSchema.FormData<{
   files: File[];
@@ -628,7 +660,7 @@ codes, parameters, and responses are statically-typed based on the service schem
 
 Each interceptor represents a service and can be used to mock its paths and methods.
 
-#### `http.createInterceptor`
+#### `httpInterceptor.create`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
 [declaring service schemas](#declaring-http-service-schemas).
@@ -641,13 +673,13 @@ exists.
 
 ```ts
 import { JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users/:id': {
     GET: {
       response: {
@@ -669,13 +701,13 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 
 ```ts
 import { JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users/:id': {
     GET: {
       response: {
@@ -699,7 +731,7 @@ important to keep the interceptor base URLs unique. Also, make sure that your ap
 when making requests.
 
 ```ts
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   // ...
 }>({
   type: 'remote',
@@ -719,7 +751,7 @@ by default.
 > [!TIP]
 >
 > If you expected a request to be handled, but it was not, make sure that the interceptor
-> [base URL](#httpcreateinterceptor), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
+> [base URL](#httpinterceptorcreate), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath), and
 > [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
@@ -727,12 +759,12 @@ In a [local interceptor](#local-http-interceptors), unhandled requests are alway
 through the interceptor and reach the real network. [Remote interceptors](#remote-http-interceptors) in pair with an
 [interceptor server](#zimic-server) always reject unhandled requests because they cannot be bypassed.
 
-You can override the default logging behavior per interceptor with `onUnhandledRequest` in `http.createInterceptor()`.
+You can override the default logging behavior per interceptor with `onUnhandledRequest` in `httpInterceptor.create()`.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<Schema>({
+const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: { log: false },
@@ -744,9 +776,9 @@ const interceptor = http.createInterceptor<Schema>({
 [Intercepted HTTP resources](#intercepted-http-resources).
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<Schema>({
+const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: async (request, context) => {
@@ -761,17 +793,17 @@ const interceptor = http.createInterceptor<Schema>({
 ```
 
 If you want to override the default logging behavior for all interceptors, or requests that did not match any known base
-URL, you can use `http.default.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when creating an
-interceptor will take precedence over `http.default.onUnhandledRequest`.
+URL, you can use `httpInterceptor.default.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when
+creating an interceptor will take precedence over `httpInterceptor.default.onUnhandledRequest`.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Example 1: Ignore all unhandled requests
-http.default.onUnhandledRequest({ log: false });
+httpInterceptor.default.onUnhandledRequest({ log: false });
 
 // Example 2: Ignore only unhandled requests to /assets
-http.default.onUnhandledRequest((request, context) => {
+httpInterceptor.default.onUnhandledRequest((request, context) => {
   const url = new URL(request.url);
 
   if (!url.pathname.startsWith('/assets')) {
@@ -800,9 +832,9 @@ their intercepted requests in memory.
 > See [Testing](#testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<Schema>({
+const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   saveRequests: true,
@@ -816,9 +848,9 @@ const interceptor = http.createInterceptor<Schema>({
 > mock servers.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<Schema>({
+const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   saveRequests: process.env.NODE_ENV === 'test',
@@ -834,8 +866,9 @@ response bodies, and status codes. Based on the schema, interceptors will provid
   <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring base types
 type User = JSONValue<{
@@ -856,7 +889,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 }>;
 
 // Creating the interceptor
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: {
@@ -901,8 +934,9 @@ const interceptor = http.createInterceptor<{
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring the base types
 type User = JSONValue<{
@@ -970,7 +1004,7 @@ type UserByIdPaths = HttpSchema.Paths<{
 type ServiceSchema = UserPaths & UserByIdPaths;
 
 // Creating the interceptor
-const interceptor = http.createInterceptor<ServiceSchema>({
+const interceptor = httpInterceptor.create<ServiceSchema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
@@ -983,9 +1017,9 @@ const interceptor = http.createInterceptor<ServiceSchema>({
 At the root level, each key represents a path or route of the service:
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     // Path schema
   };
@@ -1007,8 +1041,8 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserPaths = HttpSchema.Paths<{
   '/users': {
@@ -1025,7 +1059,7 @@ type PostPaths = HttpSchema.Paths<{
   };
 }>;
 
-const interceptor = http.createInterceptor<UserPaths & PostPaths>({
+const interceptor = httpInterceptor.create<UserPaths & PostPaths>({
   type: 'local',
   baseURL: 'http://localhost:3000',
 });
@@ -1039,9 +1073,9 @@ Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`
 names are case-sensitive.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     GET: {
       // Method schema
@@ -1064,8 +1098,8 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserMethods = HttpSchema.Methods<{
   GET: {
@@ -1076,7 +1110,7 @@ type UserMethods = HttpSchema.Methods<{
   };
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': UserMethods;
 }>({
   type: 'local',
@@ -1098,14 +1132,15 @@ automatically inferred from dynamic paths, such as `/users/:id`.
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     GET: {
       request: { searchParams: UserListSearchParams };
@@ -1125,14 +1160,15 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
   username: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: { body: UserCreationBody };
@@ -1158,7 +1194,7 @@ const interceptor = http.createInterceptor<{
 > converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
 
 ```ts
-import { JSONSerialized } from 'zimic';
+import { JSONSerialized } from 'zimic/http';
 
 class User {
   name: string;
@@ -1179,15 +1215,15 @@ type SerializedUser = JSONSerialized<User>;
   </summary>
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema, HttpFormData } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
   description?: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/files': {
     POST: {
       request: { body: HttpFormData<FileUploadData> };
@@ -1207,9 +1243,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: { body: Blob };
@@ -1229,9 +1265,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: { body: string };
@@ -1251,14 +1287,14 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema, HttpSearchParams } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: { body: HttpSearchParams<UserListSearchParams> };
@@ -1284,8 +1320,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
   username: string;
@@ -1295,7 +1332,7 @@ type UserCreationRequest = HttpSchema.Request<{
   body: UserCreationBody;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       request: UserCreationRequest;
@@ -1324,7 +1361,7 @@ text.
 
 ```ts
 import { JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -1334,7 +1371,7 @@ type NotFoundError = JSONValue<{
   message: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users/:id': {
     GET: {
       response: {
@@ -1364,15 +1401,15 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema, HttpFormData } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
   description?: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/files': {
     POST: {
       response: {
@@ -1394,9 +1431,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       response: {
@@ -1418,9 +1455,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       response: {
@@ -1442,14 +1479,14 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { HttpSchema, HttpSearchParams } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     POST: {
       response: {
@@ -1478,8 +1515,9 @@ const interceptor = http.createInterceptor<{
   </summary>
 
 ```ts
-import { HttpSchema, JSONValue } from 'zimic';
-import { http } from 'zimic/interceptor';
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
   username: string;
@@ -1502,7 +1540,7 @@ type UserGetResponses = HttpSchema.ResponseByStatusCode<{
   404: NotFoundUserGetResponse;
 }>;
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users/:id': {
     GET: {
       response: UserGetResponses;
@@ -1572,9 +1610,9 @@ need to `await` it. You can also chain any number of operations and apply them b
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     GET: {
       response: {
@@ -1596,9 +1634,9 @@ const listHandler = interceptor.get('/users').respond({
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users': {
     GET: {
       response: {
@@ -1625,9 +1663,9 @@ Paths with dynamic path parameters are supported, such as `/users/:id`. Even whe
 `/users/1`), the original path is automatically inferred, guaranteeing type safety.
 
 ```ts
-import { http } from 'zimic/interceptor';
+import { httpInterceptor } from 'zimic/interceptor/http';
 
-const interceptor = http.createInterceptor<{
+const interceptor = httpInterceptor.create<{
   '/users/:id': {
     PUT: {
       request: {
@@ -1955,7 +1993,7 @@ For JSON bodies to be correctly parsed, make sure that the intercepted requests 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic';
+import { HttpFormData } from 'zimic/http';
 
 const formData = new HttpFormData<Partial<UserCreationData>>();
 formData.append('username', 'diego-aquino');
@@ -1980,7 +2018,7 @@ const creationHandler = interceptor
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic';
+import { HttpFormData } from 'zimic/http';
 
 const formData = new HttpFormData<Partial<UserCreationData>>();
 formData.append('username', 'diego-aquino');
@@ -2216,7 +2254,7 @@ const listHandler = await interceptor.get('/users').respond({
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic';
+import { HttpFormData } from 'zimic/http';
 
 const formData = new HttpFormData<UserGetByIdData>();
 formData.append('username', 'diego-aquino');
@@ -2236,7 +2274,7 @@ const listHandler = interceptor.get('/users/:id').respond({
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic';
+import { HttpFormData } from 'zimic/http';
 
 const formData = new HttpFormData<UserGetByIdData>();
 formData.append('username', 'diego-aquino');
@@ -2320,7 +2358,7 @@ const listHandler = await interceptor.get('/users').respond({
 <table><tr><td width="900px" valign="top"><details open><summary><b>Local</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic';
+import { HttpSearchParams } from 'zimic/http';
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
@@ -2335,7 +2373,7 @@ const listHandler = interceptor.get('/users').respond({
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Remote</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic';
+import { HttpSearchParams } from 'zimic/http';
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
@@ -2593,16 +2631,37 @@ console.log(request.response.raw); // Response{}
 ### `zimic`
 
 ```
-zimic <command>
+zimic [command]
 
 Commands:
   zimic browser  Browser
   zimic server   Interceptor server
+  zimic typegen  Type generation
 
 Options:
   --help     Show help                                                 [boolean]
   --version  Show version number                                       [boolean]
 ```
+
+> [!TIP]
+>
+> All boolean options in Zimic's CLI can be prefixed with `--no-` to negate them.
+>
+> For example, all of the options below are equivalent and indicate that comments are **disabled**:
+>
+> ```bash
+> --no-comments
+> --comments false
+> --comments=false
+> ```
+>
+> On the other hand, all of the options below are also equivalent and indicate that comments are **enabled**:
+>
+> ```bash
+> --comments
+> --comments true
+> --comments=true
+> ```
 
 ### `zimic browser`
 
@@ -2645,8 +2704,6 @@ Positionals:
                                                                         [string]
 
 Options:
-      --help                    Show help                              [boolean]
-      --version                 Show version number                    [boolean]
   -h, --hostname                The hostname to start the server on.
                                                  [string] [default: "localhost"]
   -p, --port                    The port to start the server on.        [number]
@@ -2677,13 +2734,13 @@ zimic server start --port 4000 --ephemeral -- npm run test
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
 
-#### Programmatic usage
+#### `zimic server` programmatic usage
 
 The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
 using the CLI, this module is a valid alternative for more advanced use cases.
 
 ```ts
-import { createInterceptorServer, runCommand } from 'zimic/server';
+import { createInterceptorServer, runCommand } from 'zimic/interceptor/server';
 
 const server = createInterceptorServer({ hostname: 'localhost', port: 3000 });
 await server.start();
@@ -2698,6 +2755,163 @@ await server.stop();
 The helper function `runCommand` is useful to run a shell command in server scripts. The
 [Next.js App Router](./examples/README.md#nextjs) and the [Playwright](./examples/README.md#playwright) examples use
 this function to run the application after the interceptor server is ready and all mocks are set up.
+
+### `zimic typegen`
+
+#### `zimic typegen openapi`
+
+Generate types from an OpenAPI schema.
+
+```
+zimic typegen openapi <input>
+
+Positionals:
+  input  The path to a local OpenAPI schema file or an URL to fetch it. Version
+         3.x is supported as YAML or JSON.                   [string] [required]
+
+Options:
+  -o, --output        The path to write the generated types to. If not provided,
+                      the types will be written to stdout.              [string]
+  -s, --service-name  The name of the service to use in the generated types.
+                                                             [string] [required]
+  -c, --comments      Whether to include comments in the generated types.
+                                                       [boolean] [default: true]
+  -p, --prune         Whether to remove unused operations and components from
+                      the generated types. This is useful for reducing the size
+                      of the output file.              [boolean] [default: true]
+  -f, --filter        One or more expressions to filter the types to generate.
+                      Filters must follow the format `<method> <path>`, where
+                      `<method>` is an HTTP method or `*`, and `<path>` is a
+                      literal path or a glob. Filters are case-sensitive
+                      regarding paths. For example, `GET /users`, `* /users`,
+                      `GET /users/*`, and `GET /users/**/*` are valid filters.
+                      Negative filters can be created by prefixing the
+                      expression with `!`. For example, `!GET /users` will
+                      exclude paths matching `GET /users`. If more than one
+                      positive filter is provided, they will be combined with
+                      OR, while negative filters will be combined with AND.
+                                                                         [array]
+  -F, --filter-file   A path to a file containing filter expressions. One
+                      expression is expected per line and the format is the same
+                      as used in a `--filter` option. Comments are prefixed with
+                      `#`. A filter file can be used alongside additional
+                      `--filter` expressions.                           [string]
+```
+
+You can use this command to generate types from a local OpenAPI file:
+
+```bash
+zimic typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+Or an URL to fetch it:
+
+```bash
+zimic typegen openapi https://example.com/api/openapi.yaml \
+  --output ./schema.ts \
+  --service-name MyService
+```
+
+Then, you can use the types in your interceptors:
+
+```ts
+import { httpInterceptor } from 'zimic/interceptor/http';
+import { MyServiceSchema } from './schema';
+
+const interceptor = httpInterceptor.create<MyServiceSchema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+```
+
+Our [typegen example](./examples/with-typegen) demonstrates how to use `zimic typegen openapi` to generate types and use
+them in your application and interceptors.
+
+##### `zimic typegen openapi` comments
+
+By default, descriptions in the OpenAPI schema are included as comments in the generated types. You can omit them using
+`--no-comments` or `--comments false`.
+
+```bash
+zimic typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService \
+  --no-comments
+```
+
+##### `zimic typegen openapi` pruning
+
+By default, pruning is enabled, meaning that unused types are not generated. If you want all types declared in the
+schema to be generated, you can use `--no-prune` or `--prune false`.
+
+```bash
+zimic typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService \
+  --no-prune
+```
+
+##### `zimic typegen openapi` filtering
+
+You can also filter a subset of paths to generate types for. Combined with [pruning](#zimic-typegen-openapi-pruning),
+this is useful to reduce the size of the output file and only generate the types you need.
+
+```bash
+zimic typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService \
+  --filter 'GET /users**'
+```
+
+When many filters are used, a filter file can be provided, where each line represents a filter expression and comments
+are marked with `#`:
+
+`filters.txt`
+
+```
+# Include any endpoint starting with /users and having any HTTP method
+* /users**
+
+# Include any sub-endpoints of /posts with method GET.
+GET /posts/**/*
+
+# Include the endpoints /workspaces with methods GET, POST, or PUT.
+GET,POST,PUT /workspaces
+
+# Exclude endpoints to get user notifications
+!GET /users/*/notifications/**/*
+```
+
+Then, you can use the filter file in the command:
+
+```bash
+zimic typegen openapi ./schema.yaml \
+  --output ./schema.ts \
+  --service-name MyService \
+  --filter-file ./filters.txt
+```
+
+#### `zimic typegen` programmatic usage
+
+The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the CLI, but this
+module is a valid alternative for more advanced use cases.
+
+```ts
+import { typegen } from 'zimic/typegen';
+
+await typegen.generateFromOpenAPI({
+  input: './schema.yaml',
+  output: './schema.ts',
+  serviceName: 'MyService',
+  filters: ['* /users**'],
+  includeComments: true,
+  prune: true,
+});
+```
+
+The parameters of `typegen.generateFromOpenAPI` are the same as the CLI options for the `zimic typegen openapi` command.
 
 ---
 

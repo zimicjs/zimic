@@ -10,6 +10,7 @@ import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
+import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
@@ -147,11 +148,19 @@ class InterceptorServer implements PublicInterceptorServer {
     message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/reset'>,
     socket: Socket,
   ) => {
-    this.removeWorkerSocket(socket);
+    this.removeHttpHandlerGroupsBySocket(socket);
 
-    const resetCommits = message.data ?? [];
-    for (const commit of resetCommits) {
-      this.registerHttpHandlerGroup(commit, socket);
+    const handlersToResetTo = message.data;
+    const isWorkerNoLongerCommitted = handlersToResetTo === undefined;
+
+    if (isWorkerNoLongerCommitted) {
+      // When a worker is no longer committed, we should abort all requests that were using it.
+      // This ensures that we only wait for responses from committed worker sockets.
+      this.webSocketServer().abortSocketMessages([socket]);
+    } else {
+      for (const handler of handlersToResetTo) {
+        this.registerHttpHandlerGroup(handler, socket);
+      }
     }
 
     this.registerWorkerSocketIfUnknown(socket);
@@ -177,16 +186,16 @@ class InterceptorServer implements PublicInterceptorServer {
     }
 
     socket.addEventListener('close', () => {
-      this.removeWorkerSocket(socket);
+      this.removeHttpHandlerGroupsBySocket(socket);
       this.knownWorkerSockets.delete(socket);
     });
 
     this.knownWorkerSockets.add(socket);
   }
 
-  private removeWorkerSocket(socketToRemove: Socket) {
+  private removeHttpHandlerGroupsBySocket(socket: Socket) {
     for (const [method, handlerGroups] of Object.entries(this.httpHandlerGroups)) {
-      this.httpHandlerGroups[method] = handlerGroups.filter((handlerGroup) => handlerGroup.socket !== socketToRemove);
+      this.httpHandlerGroups[method] = handlerGroups.filter((handlerGroup) => handlerGroup.socket !== socket);
     }
   }
 
@@ -249,8 +258,12 @@ class InterceptorServer implements PublicInterceptorServer {
 
       nodeResponse.destroy();
     } catch (error) {
-      console.error(error);
-      await this.logUnhandledRequest(request);
+      const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+      if (!isMessageAbortError) {
+        console.error(error);
+        await this.logUnhandledRequest(request);
+      }
 
       nodeResponse.destroy();
     }

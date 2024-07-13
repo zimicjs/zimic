@@ -1,5 +1,5 @@
+import chalk from 'chalk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { chalk } from 'zx';
 
 import Logger from '../logger';
 

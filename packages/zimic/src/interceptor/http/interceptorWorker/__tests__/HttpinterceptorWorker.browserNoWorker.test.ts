@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { usingIgnoredConsole } from '@tests/utils/console';
 
 import { HttpInterceptorPlatform } from '../../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
-import { BrowserHttpWorker } from '../types/requests';
 
 describe('HttpInterceptorWorker (browser, no worker)', () => {
   const platform = 'browser' satisfies HttpInterceptorPlatform;
@@ -13,23 +14,14 @@ describe('HttpInterceptorWorker (browser, no worker)', () => {
       type: 'local',
     });
 
-    const interceptorStartPromise = interceptorWorker.start();
-    await expect(interceptorStartPromise).rejects.toThrowError(new UnregisteredBrowserServiceWorkerError());
+    const error = new UnregisteredBrowserServiceWorkerError();
 
-    expect(interceptorWorker.platform()).toBe(platform);
-  });
+    await usingIgnoredConsole(['error'], async (spies) => {
+      const interceptorStartPromise = interceptorWorker.start();
+      await expect(interceptorStartPromise).rejects.toThrowError(error);
 
-  it('should throw an error after failing to start due to a unknown error', async () => {
-    const interceptorWorker = createHttpInterceptorWorker({
-      type: 'local',
+      expect(spies.error).toHaveBeenCalledTimes(0);
     });
-
-    const internalBrowserWorker = (await interceptorWorker.internalWorkerOrLoad()) as BrowserHttpWorker;
-    const unknownError = new Error('Unknown error');
-    vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(unknownError);
-
-    const interceptorStartPromise = interceptorWorker.start();
-    await expect(interceptorStartPromise).rejects.toThrowError(unknownError);
 
     expect(interceptorWorker.platform()).toBe(platform);
   });

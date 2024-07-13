@@ -61,6 +61,10 @@ export async function startHttpServer(
 export async function stopHttpServer(server: HttpServer, options: { timeout?: number } = {}) {
   const { timeout: timeoutDuration = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } = options;
 
+  if (!server.listening) {
+    return;
+  }
+
   await new Promise<void>((resolve, reject) => {
     const stopTimeout = setTimeout(() => {
       const timeoutError = new HttpServerStopTimeoutError(timeoutDuration);

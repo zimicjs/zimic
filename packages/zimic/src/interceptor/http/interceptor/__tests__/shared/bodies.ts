@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
+import InvalidJSONError from '@/errors/InvalidJSONError';
 import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
-import InvalidJSONError from '@/http/errors/InvalidJSONError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';

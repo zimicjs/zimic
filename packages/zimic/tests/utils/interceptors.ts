@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
 import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
-import { http } from '@/interceptor';
+import { httpInterceptor } from '@/interceptor/http';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
@@ -62,7 +62,7 @@ export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
   options: HttpInterceptorOptions,
 ): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(options: HttpInterceptorOptions) {
-  return http.createInterceptor<Schema>({
+  return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;

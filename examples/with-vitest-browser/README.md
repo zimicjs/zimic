@@ -38,7 +38,7 @@ where the repository is found and another where it is not.
 > Vitest runs the setup file in a different process than the test files, so the worker started on
 > [`tests/setup.ts`](./tests/setup.ts) is not shared between them.
 
-### Running
+## Running
 
 1. Clone this example:
 

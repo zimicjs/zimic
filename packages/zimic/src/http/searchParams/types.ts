@@ -19,3 +19,32 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
   | Schema
   | HttpSearchParams<Schema>
   | HttpSearchParamsSchemaTuple<Schema>[];
+
+type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
+  ? Type
+  : Type extends number
+    ? `${number}`
+    : Type extends boolean
+      ? `${boolean}`
+      : Type extends null
+        ? undefined
+        : never;
+
+/**
+ * Recursively converts a type to its URLSearchParams-serialized version. Numbers and booleans are converted to
+ * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
+ * functions and dates.
+ */
+export type HttpSearchParamsSerialized<Type> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Type extends Date | ((...parameters: any[]) => any)
+    ? never
+    : Type extends (infer ArrayItem)[]
+      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+      : Type extends object
+        ? {
+            [Key in keyof Type as [PrimitiveHttpSearchParamsSerialized<Type[Key]>] extends [never]
+              ? never
+              : Key]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+          }
+        : PrimitiveHttpSearchParamsSerialized<Type>;

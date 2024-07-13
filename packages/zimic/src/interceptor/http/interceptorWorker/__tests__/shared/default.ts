@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { createURL } from '@/utils/urls';
+import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
+import { createHttpInterceptorWorker } from '../../factory';
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
@@ -12,6 +14,7 @@ import {
   LocalHttpInterceptorWorkerOptions,
   RemoteHttpInterceptorWorkerOptions,
 } from '../../types/options';
+import { BrowserHttpWorker, NodeHttpWorker } from '../../types/requests';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
 export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
@@ -134,7 +137,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       });
     });
 
-    it('should throw an error if trying to clear handler without a started worker', async () => {
+    it('should throw an error if trying to clear handlers without a running worker', async () => {
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
         expect(worker.isRunning()).toBe(false);
 
@@ -144,7 +147,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
       });
     });
 
-    it('should throw an error if trying to clear interceptor handlers without a started worker', async () => {
+    it('should throw an error if trying to clear interceptor handlers without a running worker', async () => {
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
         expect(worker.isRunning()).toBe(false);
 
@@ -155,5 +158,81 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
         }).rejects.toThrowError(new NotStartedHttpInterceptorError());
       });
     });
+
+    if (defaultWorkerOptions.type === 'remote') {
+      it('should not throw an error if trying to clear handlers without a running web socket client', async () => {
+        await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
+          expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+
+          const worker = rawWorker as RemoteHttpInterceptorWorker;
+          expect(worker.isRunning()).toBe(true);
+          expect(worker.webSocketClient().isRunning()).toBe(true);
+
+          // The websocket client automatically stops running if the interceptor server is closed.
+          // Let's stop the client manually to simulate that.
+          await worker.webSocketClient().stop();
+
+          expect(worker.isRunning()).toBe(true);
+          expect(worker.webSocketClient().isRunning()).toBe(false);
+
+          const clearPromise = worker.clearHandlers();
+          await expect(clearPromise).resolves.not.toThrowError();
+        });
+      });
+
+      it('should not throw an error if trying to clear interceptor handlers without a running web socket client', async () => {
+        await usingHttpInterceptorWorker(workerOptions, async (rawWorker) => {
+          expect(rawWorker).toBeInstanceOf(RemoteHttpInterceptorWorker);
+
+          const worker = rawWorker as RemoteHttpInterceptorWorker;
+          expect(worker.isRunning()).toBe(true);
+          expect(worker.webSocketClient().isRunning()).toBe(true);
+
+          // The websocket client automatically stops running if the interceptor server is closed.
+          // Let's stop the client manually to simulate that.
+          await worker.webSocketClient().stop();
+
+          expect(worker.isRunning()).toBe(true);
+          expect(worker.webSocketClient().isRunning()).toBe(false);
+
+          const interceptor = createDefaultHttpInterceptor();
+
+          const clearPromise = worker.clearInterceptorHandlers(interceptor.client());
+          await expect(clearPromise).resolves.not.toThrowError();
+        });
+      });
+    }
+
+    if (defaultWorkerOptions.type === 'local') {
+      it('should throw an error after failing to start due to a unknown error', async () => {
+        const interceptorWorker = createHttpInterceptorWorker(defaultWorkerOptions);
+
+        const error = new Error('Unknown error');
+
+        if (platform === 'browser') {
+          const internalBrowserWorker = (await interceptorWorker.internalWorkerOrLoad()) as BrowserHttpWorker;
+          vi.spyOn(internalBrowserWorker, 'start').mockRejectedValueOnce(error);
+        } else {
+          const internalNodeWorker = (await interceptorWorker.internalWorkerOrLoad()) as NodeHttpWorker;
+          vi.spyOn(internalNodeWorker, 'listen').mockImplementationOnce(() => {
+            throw error;
+          });
+        }
+
+        await usingIgnoredConsole(['error'], async (spies) => {
+          const interceptorStartPromise = interceptorWorker.start();
+          await expect(interceptorStartPromise).rejects.toThrowError(error);
+
+          if (platform === 'browser') {
+            expect(spies.error).toHaveBeenCalledTimes(0);
+          } else {
+            expect(spies.error).toHaveBeenCalledTimes(1);
+            expect(spies.error).toHaveBeenCalledWith(error);
+          }
+        });
+
+        expect(interceptorWorker.platform()).toBe(platform);
+      });
+    }
   });
 }

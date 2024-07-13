@@ -7,7 +7,7 @@ import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
 
-/** The default body type for HTTP requests and responses. */
+/** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
 
