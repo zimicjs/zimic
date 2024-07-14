@@ -38,6 +38,7 @@ async function startInterceptorServer({
 
   if (ephemeral) {
     await server.stop();
+    process.exit(0);
   }
 }
 
