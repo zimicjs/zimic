@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
+import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
 import { JSONSerialized } from 'zimic0';
 import { HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
 import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
@@ -62,7 +62,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     );
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.clear();
@@ -381,8 +381,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       });
 
       it('should list users with ordering', async () => {
-        const usersSortedByDescendingEmail = [...users].sort((user, otherUser) => {
-          return otherUser.email.localeCompare(user.email);
+        const orderedUsers = users.sort((user, otherUser) => {
+          return -user.email.localeCompare(otherUser.email);
         });
 
         const listHandler = await authInterceptor
@@ -392,7 +392,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           })
           .respond({
             status: 200,
-            body: usersSortedByDescendingEmail.map(serializeUser),
+            body: orderedUsers.map(serializeUser),
           });
 
         const response = await listUsers({
@@ -401,7 +401,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(response.status).toBe(200);
 
         const returnedUsers = (await response.json()) as User[];
-        expect(returnedUsers).toEqual(usersSortedByDescendingEmail.map(serializeUser));
+        expect(returnedUsers).toEqual(orderedUsers.map(serializeUser));
 
         const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
@@ -420,12 +420,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(await listRequests[0].raw.text()).toBe('');
 
         expectTypeOf(listRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listRequests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
+        expect(listRequests[0].response.body).toEqual(orderedUsers.map(serializeUser));
 
         expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
         expect(listRequests[0].response.raw).toBeInstanceOf(Response);
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listRequests[0].response.raw.json()).toEqual(usersSortedByDescendingEmail.map(serializeUser));
+        expect(await listRequests[0].response.raw.json()).toEqual(orderedUsers.map(serializeUser));
       });
     });
 

@@ -29,10 +29,10 @@ inputs:
 
 outputs:
   install-filters:
-    description: Filter flags of the packages included in the install step
+    description: Effective filter flags for installing dependencies
     value: ${{ steps.install-dependencies.outputs.install-filters }}
   build-filters:
-    description: Filter flags of the packages included in the build step
+    description: Effective filter flags for building dependencies
     value: ${{ steps.build-dependencies.outputs.build-filters }}
 
 runs:
@@ -77,27 +77,29 @@ runs:
         }
 
         if [[ '${{ inputs.install }}' == '' ]]; then
-          installFilters=''
-          fullInstallFilters=''
+          workspaceRootInstallFlag=''
+          partialInstallFlag=''
+          installFlag=''
         else
-          installFilters="$(composeFilterOptions ${{ inputs.install }})"
-          fullInstallFilters="--filter zimic-root --filter zimic $installFilters"
+          workspaceRootInstallFlag='--filter zimic-root'
+          partialInstallFlag="$(composeFilterOptions ${{ inputs.install }})"
+          installFlag="$workspaceRootInstallFlag $partialInstallFlag"
         fi
 
-        echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
-        pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $fullInstallFilters
+        echo "install-filters=$partialInstallFlag" >> $GITHUB_OUTPUT
+        pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $installFlag
 
         if [[ '${{ inputs.build }}' == '' ]]; then
-          buildFilters=''
+          buildFlag=''
         else
-          buildFilters="$(composeFilterOptions ${{ inputs.build }})"
+          buildFlag="$(composeFilterOptions ${{ inputs.build }})"
         fi
 
-        echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
-        pnpm turbo build $buildFilters
+        echo "build-filters=$buildFlag" >> $GITHUB_OUTPUT
+        pnpm turbo build $buildFlag
 
         # apply the build outputs of the internal packages
-        pnpm install --offline $fullInstallFilters
+        pnpm install --offline $installFlag
 
         if [[ '${{ inputs.install-playwright-browsers }}' == 'true' ]]; then
           pnpm --dir packages/zimic deps:install-playwright

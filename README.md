@@ -2739,23 +2739,17 @@ should automatically stop after the command finishes.
 The module `zimic/server` exports resources for managing interceptor servers programmatically. Even though we recommend
 using the CLI, this module is a valid alternative for more advanced use cases.
 
-An example using the programmatic API and [`execa`](https://www.npmjs.com/package/execa) to run a command when the
-server is ready:
-
 ```ts
-import { execa as $ } from 'execa';
-import { interceptorServer } from 'zimic/interceptor/server';
+import { createInterceptorServer, runCommand } from 'zimic/interceptor/server';
 
-const server = interceptorServer.create({ hostname: 'localhost', port: 3000 });
+const server = createInterceptorServer({ hostname: 'localhost', port: 3000 });
 await server.start();
 
-// Run a command when the server is ready, assuming the following format:
-// node <script> -- <command> [...commandArguments]
+// Run a command when the server is ready
 const [command, ...commandArguments] = process.argv.slice(3);
-await $(command, commandArguments, { stdio: 'inherit' });
+await runCommand(command, commandArguments);
 
 await server.stop();
-process.exit(0);
 ```
 
 The helper function `runCommand` is useful to run a shell command in server scripts. The
@@ -2903,8 +2897,6 @@ zimic typegen openapi ./schema.yaml \
 
 The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the CLI, but this
 module is a valid alternative for more advanced use cases.
-
-An example using the programmatic API to generate types from an OpenAPI schema:
 
 ```ts
 import { typegen } from 'zimic/typegen';
