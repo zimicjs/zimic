@@ -397,10 +397,10 @@ describe('CLI (server)', async () => {
 
         await runCLI();
 
-        // In these tests, the process does not exit after process.exit(), so it is being called twice.
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
         expect(processExitSpy).toHaveBeenCalledTimes(2);
-        expect(processExitSpy).toHaveBeenCalledWith(0);
-        expect(processExitSpy).toHaveBeenCalledWith(1);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, 1);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
@@ -427,17 +427,17 @@ describe('CLI (server)', async () => {
 
         await runCLI();
 
-        // In these tests, the process does not exit after process.exit(), so it is being called twice.
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
         expect(processExitSpy).toHaveBeenCalledTimes(2);
-        expect(processExitSpy).toHaveBeenCalledWith(0);
-        expect(processExitSpy).toHaveBeenCalledWith(exitCode);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, exitCode);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
-    it('should throw an error if the on-ready command is killed by a signal', async () => {
+    it('should throw an error if the on-ready command is killed by a signal with known exit code', async () => {
       const signal = 'SIGINT';
 
       processArgvSpy.mockReturnValue([
@@ -457,10 +457,44 @@ describe('CLI (server)', async () => {
 
         await runCLI();
 
-        // In these tests, the process does not exit after process.exit(), so it is being called twice.
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
         expect(processExitSpy).toHaveBeenCalledTimes(2);
-        expect(processExitSpy).toHaveBeenCalledWith(0);
-        expect(processExitSpy).toHaveBeenCalledWith(1);
+        const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[signal];
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, exitCode);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
+
+        expect(spies.error).toHaveBeenCalledTimes(1);
+        expect(spies.error).toHaveBeenCalledWith(error);
+      });
+    });
+
+    it('should throw an error if the on-ready command is killed by a signal with unknown exit code', async () => {
+      const signal = 'SIGKILL';
+
+      const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[signal];
+      expect(exitCode).not.toBeDefined();
+
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--ephemeral',
+        '--',
+        'node',
+        '-e',
+        `process.kill(process.pid, '${signal}')`,
+      ]);
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        const error = new CommandError('node', { signal });
+
+        await runCLI();
+
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
+        expect(processExitSpy).toHaveBeenCalledTimes(2);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, CommandError.DEFAULT_EXIT_CODE);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);

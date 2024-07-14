@@ -67,11 +67,13 @@ async function startInterceptorServer({
     } catch (error) {
       console.error(error);
 
-      if (error instanceof CommandError && error.exitCode !== undefined) {
-        process.exit(error.exitCode);
-      } else {
-        process.exit(1);
+      /* istanbul ignore if -- @preserve
+       * A CommandError is always expected here. */
+      if (!(error instanceof CommandError)) {
+        throw error;
       }
+
+      process.exit(error.exitCode);
     }
   }
 
