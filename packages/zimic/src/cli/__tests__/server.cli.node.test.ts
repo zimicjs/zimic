@@ -10,7 +10,7 @@ import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constant
 import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
-import { CommandError, PROCESS_EXIT_EVENTS } from '@/utils/processes';
+import { CommandError, PROCESS_EXIT_CODE_BY_EXIT_EVENT, PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { waitForDelay } from '@/utils/time';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
@@ -40,6 +40,7 @@ describe('CLI (server)', async () => {
 
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOnSpy = vi.spyOn(process, 'on');
+  const processOffSpy = vi.spyOn(process, 'off');
   const processExitSpy = vi.spyOn(process, 'exit').mockReturnValue(undefined as never);
 
   beforeEach(() => {
@@ -47,7 +48,14 @@ describe('CLI (server)', async () => {
     processArgvSpy.mockReturnValue([]);
 
     processOnSpy.mockClear();
+    processOffSpy.mockClear();
     processExitSpy.mockClear();
+  });
+
+  afterEach(() => {
+    for (const exitEvent of PROCESS_EXIT_EVENTS) {
+      process.removeAllListeners(exitEvent);
+    }
   });
 
   const serverHelpOutput = [
@@ -304,6 +312,11 @@ describe('CLI (server)', async () => {
 
         expect(processExitSpy).toHaveBeenCalledTimes(1);
         expect(processExitSpy).toHaveBeenCalledWith(0);
+
+        expect(processOffSpy).toHaveBeenCalledTimes(PROCESS_EXIT_EVENTS.length);
+        for (const exitEvent of PROCESS_EXIT_EVENTS) {
+          expect(processOffSpy).toHaveBeenCalledWith(exitEvent, expect.any(Function));
+        }
       });
     });
 
@@ -342,6 +355,7 @@ describe('CLI (server)', async () => {
           expect(savedFile).toBe(temporarySaveFileContent);
 
           expect(processExitSpy).not.toHaveBeenCalled();
+          expect(processOffSpy).toHaveBeenCalledTimes(0);
         });
       },
     );
@@ -380,7 +394,13 @@ describe('CLI (server)', async () => {
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         const error = new CommandError(unknownCommand, { originalMessage: `spawn ${unknownCommand} ENOENT` });
-        await expect(runCLI()).rejects.toThrowError(error);
+
+        await runCLI();
+
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
+        expect(processExitSpy).toHaveBeenCalledTimes(2);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, 1);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
@@ -404,15 +424,20 @@ describe('CLI (server)', async () => {
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         const error = new CommandError('node', { exitCode });
-        await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`Command 'node' exited with code ${exitCode}`);
+
+        await runCLI();
+
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
+        expect(processExitSpy).toHaveBeenCalledTimes(2);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, exitCode);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
-    it('should throw an error if the on-ready command is killed by a signal', async () => {
+    it('should throw an error if the on-ready command is killed by a signal with known exit code', async () => {
       const signal = 'SIGINT';
 
       processArgvSpy.mockReturnValue([
@@ -429,42 +454,97 @@ describe('CLI (server)', async () => {
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
         const error = new CommandError('node', { signal });
-        await expect(runCLI()).rejects.toThrowError(error);
-        expect(error.message).toBe(`Command 'node' exited after signal ${signal}`);
+
+        await runCLI();
+
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
+        expect(processExitSpy).toHaveBeenCalledTimes(2);
+        const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[signal];
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, exitCode);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
         expect(spies.error).toHaveBeenCalledTimes(1);
         expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
 
-    it.each(PROCESS_EXIT_EVENTS)('should stop the sever after a process exit event: %s', async (exitEvent) => {
-      const exitEventListeners = watchExitEventListeners(exitEvent);
+    it('should throw an error if the on-ready command is killed by a signal with unknown exit code', async () => {
+      const signal = 'SIGKILL';
 
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
+      const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[signal];
+      expect(exitCode).not.toBeDefined();
 
-      await usingIgnoredConsole(['log'], async (spies) => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--ephemeral',
+        '--',
+        'node',
+        '-e',
+        `process.kill(process.pid, '${signal}')`,
+      ]);
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        const error = new CommandError('node', { signal });
+
         await runCLI();
 
-        expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+        // In these tests, the process does not exit after process.exit(), so calling it twice is expected.
+        expect(processExitSpy).toHaveBeenCalledTimes(2);
+        expect(processExitSpy).toHaveBeenNthCalledWith(1, CommandError.DEFAULT_EXIT_CODE);
+        expect(processExitSpy).toHaveBeenNthCalledWith(2, 0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          `Server is running on http://localhost:${server!.port()}`,
-        );
-
-        expect(exitEventListeners).toHaveLength(1);
-
-        for (const listener of exitEventListeners) {
-          await listener();
-        }
-
-        expect(server!.isRunning()).toBe(false);
+        expect(spies.error).toHaveBeenCalledTimes(1);
+        expect(spies.error).toHaveBeenCalledWith(error);
       });
     });
+
+    it.each(PROCESS_EXIT_EVENTS)(
+      'should stop the server after a process exit event with the correct exit code: %s',
+      async (exitEvent) => {
+        const exitEventListeners = watchExitEventListeners(exitEvent);
+
+        processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
+
+        await usingIgnoredConsole(['log'], async (spies) => {
+          await runCLI();
+
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
+
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
+
+          expect(exitEventListeners).toHaveLength(1);
+
+          for (const listener of exitEventListeners) {
+            await listener();
+          }
+
+          expect(server!.isRunning()).toBe(false);
+
+          const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[exitEvent];
+          if (exitCode === undefined) {
+            expect(processExitSpy).not.toHaveBeenCalled();
+          } else {
+            expect(processExitSpy).toHaveBeenCalledTimes(1);
+            expect(processExitSpy).toHaveBeenCalledWith(exitCode);
+          }
+
+          expect(processOffSpy).toHaveBeenCalledTimes(PROCESS_EXIT_EVENTS.length);
+          for (const exitEvent of PROCESS_EXIT_EVENTS) {
+            expect(processOffSpy).toHaveBeenCalledWith(exitEvent, expect.any(Function));
+          }
+        });
+      },
+    );
 
     it('should stop the server even if a client is connected', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
