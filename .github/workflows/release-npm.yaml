@@ -170,6 +170,8 @@ jobs:
                   } catch (error) {
                     console.error(`Could not create release comment on #${issue.number}.`);
                     console.error(error);
+
+                    await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS * 5));
                   }
                 }
 
