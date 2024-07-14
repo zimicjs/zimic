@@ -6,8 +6,7 @@
     "test": "vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit",
-    "typegen:github": "dotenv -c development -- pnpm typegen:github-no-env",
-    "typegen:github-no-env": "zimic typegen openapi $GITHUB_OPENAPI_SPEC_URL --output ./src/types/github/typegen/generated.ts --service-name GitHub --filter-file ./src/types/github/typegen/filters.txt --no-comments"
+    "typegen:github": "dotenv -c development -- bash -c 'zimic typegen openapi $GITHUB_OPENAPI_SPEC_URL --output ./src/types/github/typegen/generated.ts --service-name GitHub --filter-file ./src/types/github/typegen/filters.txt --no-comments'"
   },
   "dependencies": {
     "fastify": "4.28.1",

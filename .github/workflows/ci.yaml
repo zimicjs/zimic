@@ -22,9 +22,9 @@ env:
     ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
   INSTALL_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "...[HEAD^1]"' || '' }}
   BUILD_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && 'zimic "{./apps/*}[HEAD^1]^..." "{./packages/*} [HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci-general:
@@ -45,8 +45,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS == '' && '' || format('zimic {0}', env.INSTALL_OPTIONS) }}
-          build: ${{ env.BUILD_OPTIONS == '' && '' || format('zimic {0}', env.BUILD_OPTIONS) }}
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
           install-playwright-browsers: true
 
       - name: Check formatting style
