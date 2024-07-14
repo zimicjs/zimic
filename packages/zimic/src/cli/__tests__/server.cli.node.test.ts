@@ -40,12 +40,14 @@ describe('CLI (server)', async () => {
 
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
   const processOnSpy = vi.spyOn(process, 'on');
+  const processExitSpy = vi.spyOn(process, 'exit').mockReturnValue(undefined as never);
 
   beforeEach(() => {
     processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
 
     processOnSpy.mockClear();
+    processExitSpy.mockClear();
   });
 
   const serverHelpOutput = [
@@ -299,6 +301,9 @@ describe('CLI (server)', async () => {
 
         const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
         expect(savedFile).toBe(temporarySaveFileContent);
+
+        expect(processExitSpy).toHaveBeenCalledTimes(1);
+        expect(processExitSpy).toHaveBeenCalledWith(0);
       });
     });
 
@@ -335,6 +340,8 @@ describe('CLI (server)', async () => {
 
           const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
           expect(savedFile).toBe(temporarySaveFileContent);
+
+          expect(processExitSpy).not.toHaveBeenCalled();
         });
       },
     );
