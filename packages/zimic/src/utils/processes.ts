@@ -7,6 +7,18 @@ export const PROCESS_EXIT_EVENTS = Object.freeze([
   'SIGBREAK',
 ] as const);
 
+export type ProcessExitEvent = (typeof PROCESS_EXIT_EVENTS)[number];
+
+// Having an undefined exit code means that the process will already exit with the default exit code.
+export const PROCESS_EXIT_CODE_BY_EXIT_EVENT: Record<ProcessExitEvent, number | undefined> = {
+  beforeExit: undefined,
+  uncaughtExceptionMonitor: undefined,
+  SIGINT: 130,
+  SIGTERM: 143,
+  SIGHUP: 129,
+  SIGBREAK: 131,
+};
+
 let execaSingleton: typeof import('execa') | undefined;
 
 async function importExeca() {
@@ -17,17 +29,25 @@ async function importExeca() {
 }
 
 interface CommandErrorOptions {
+  command?: string[];
   exitCode?: number;
   signal?: NodeJS.Signals;
   originalMessage?: string;
 }
 
 export class CommandError extends Error {
-  constructor(command: string, options: CommandErrorOptions) {
-    const message = CommandError.createMessage(command, options);
+  readonly command: string[];
+  readonly exitCode?: number;
+  readonly signal?: NodeJS.Signals;
+
+  constructor(executable: string, options: CommandErrorOptions) {
+    const message = CommandError.createMessage(executable, options);
     super(message);
 
     this.name = 'CommandError';
+    this.command = options.command ?? [executable];
+    this.exitCode = options.exitCode;
+    this.signal = options.signal;
   }
 
   private static createMessage(command: string, options: CommandErrorOptions) {
@@ -57,6 +77,7 @@ export async function runCommand(command: string, commandArguments: string[]) {
     }
 
     const commandError = new CommandError(command, {
+      command: [command, ...commandArguments],
       exitCode: error.exitCode,
       signal: error.signal,
       originalMessage: error.originalMessage,
