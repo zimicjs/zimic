@@ -106,7 +106,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const DELAY_BETWEEN_COMMENTS = 2000;
+            const DELAY_BETWEEN_COMMENTS = 1000;
             const PER_PAGE = 100;
 
             const tag = context.ref.replace(/^refs\/tags\//, '');
@@ -170,6 +170,8 @@ jobs:
                   } catch (error) {
                     console.error(`Could not create release comment on #${issue.number}.`);
                     console.error(error);
+
+                    await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS * 5));
                   }
                 }
 
