@@ -15,7 +15,7 @@ export default defineWorkspace([
   {
     extends: 'vitest.config.mts',
     test: {
-      name: 'browser',
+      name: 'browser-chromium',
       environment: undefined,
       include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
       exclude: ['**/*.node.test.ts'],
