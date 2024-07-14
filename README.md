@@ -2750,6 +2750,7 @@ const [command, ...commandArguments] = process.argv.slice(3);
 await runCommand(command, commandArguments);
 
 await server.stop();
+process.exit(0);
 ```
 
 The helper function `runCommand` is useful to run a shell command in server scripts. The
