@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.8.0",
+  "version": "0.8.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -106,7 +106,7 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.14.10",
-    "@types/ws": "^8.5.10",
+    "@types/ws": "^8.5.11",
     "@types/yargs": "^17.0.32",
     "@vitest/browser": "2.0.2",
     "@vitest/coverage-istanbul": "2.0.2",
@@ -116,7 +116,7 @@
     "dotenv-cli": "^7.4.2",
     "js-yaml": "^4.1.0",
     "playwright": "^1.45.1",
-    "prettier": "^3.3.2",
+    "prettier": "^3.3.3",
     "tsup": "^8.1.0",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",

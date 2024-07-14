@@ -152,20 +152,27 @@ jobs:
                 for (const issue of issues.data) {
                   console.log(`Creating release comment on #${issue.number}...`);
 
-                  await github.rest.issues.createComment({
-                    owner,
-                    repo: repository,
-                    issue_number: issue.number,
-                    body: [
-                      `### Released in [${tag}](https://github.com/${owner}/${repository}/releases/tag/${tag}) :tada:\n`,
-                      `- [**:pushpin: Release notes**](https://github.com/${owner}/${repository}/releases/tag/${tag})`,
-                      `- [**:package: NPM package**](https://www.npmjs.com/package/${repository}/v/${version})`,
-                    ].join('\n'),
-                  });
+                  try {
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo: repository,
+                      issue_number: issue.number,
+                      body: [
+                        `### Released in [${tag}](https://github.com/${owner}/${repository}/releases/tag/${tag}) :tada:\n`,
+                        `- [**:pushpin: Release notes**](https://github.com/${owner}/${repository}/releases/tag/${tag})`,
+                        `- [**:package: NPM package**](https://www.npmjs.com/package/${repository}/v/${version})`,
+                      ].join('\n'),
+                    });
 
-                  console.log(`Release comment created on #${issue.number}.`);
+                    console.log(`Release comment created on #${issue.number}.`);
 
-                  await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS));
+                    await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS));
+                  } catch (error) {
+                    console.error(`Could not create release comment on #${issue.number}.`);
+                    console.error(error);
+
+                    await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_COMMENTS * 5));
+                  }
                 }
 
                 if (issues.data.length < PER_PAGE) {
