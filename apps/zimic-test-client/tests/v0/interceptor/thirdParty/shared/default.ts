@@ -53,8 +53,6 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   const notificationBaseURL = notificationInterceptor.baseURL();
 
   beforeAll(async () => {
-    console.log();
-
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.start();
