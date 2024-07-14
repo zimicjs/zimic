@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf } from 'vitest';
+import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 import { JSONSerialized } from 'zimic0';
 import { HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
 import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
@@ -62,7 +62,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     );
   });
 
-  beforeEach(async () => {
+  afterEach(async () => {
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.clear();
