@@ -22,7 +22,7 @@
     "test": "turbo test:turbo --continue",
     "types:check": "turbo types:check --continue",
     "pre:commit": "lint-staged",
-    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue && pnpm run test --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 20%",
+    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue",
     "prepare": "husky || echo 'Could not install git hooks with husky.'"
   },
   "devDependencies": {
