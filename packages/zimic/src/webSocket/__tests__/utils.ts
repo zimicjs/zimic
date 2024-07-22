@@ -11,9 +11,9 @@ export function delayClientSocketOpen(delayDuration: number) {
 
   const delayedClientSocketAddEventListener = vi
     .spyOn(ClientSocket.prototype, 'addEventListener')
-    .mockImplementationOnce(function (this: void, type, listener) {
+    .mockImplementationOnce(function (this: ClientSocket, type, listener) {
       void waitForDelay(delayDuration).then(() => {
-        originalClientSocketAddEventListener.call(this, type, listener);
+        originalClientSocketAddEventListener.call(this, type, listener as () => void);
       });
 
       return this;
@@ -51,7 +51,7 @@ export function delayClientSocketClose(delayDuration: number) {
   const originalClientSocketClose = ClientSocket.prototype.close;
 
   const delayedClientSocketClose = vi.spyOn(ClientSocket.prototype, 'close').mockImplementationOnce(function (
-    this: void,
+    this: ClientSocket,
     ...parameters
   ) {
     void waitForDelay(delayDuration).then(() => {
@@ -67,7 +67,7 @@ export function delayServerSocketClose(delayDuration: number) {
   const originalServerSocketClose = ServerSocket.prototype.close;
 
   const delayedServerSocketClose = vi.spyOn(ServerSocket.prototype, 'close').mockImplementationOnce(function (
-    this: void,
+    this: ClientSocket,
     ...parameters
   ) {
     void waitForDelay(delayDuration).then(() => {

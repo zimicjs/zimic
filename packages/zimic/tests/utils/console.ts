@@ -2,9 +2,14 @@ import { MockInstance, vi } from 'vitest';
 
 import { PossiblePromise } from '@/types/utils';
 
-type SpyByConsoleMethod<Method extends keyof Console = keyof Console> = { [Key in Method]: MockInstance };
+const IGNORABLE_CONSOLE_METHODS = ['error', 'warn', 'info', 'log', 'debug'] satisfies (keyof Console)[];
+type IgnorableConsoleMethod = (typeof IGNORABLE_CONSOLE_METHODS)[number];
 
-export async function usingIgnoredConsole<Method extends keyof Console>(
+type SpyByConsoleMethod<Method extends IgnorableConsoleMethod = IgnorableConsoleMethod> = {
+  [Key in Method]: MockInstance;
+};
+
+export async function usingIgnoredConsole<Method extends IgnorableConsoleMethod>(
   ignoredMethods: Method[],
   callback: (spyByMethod: SpyByConsoleMethod<Method>) => PossiblePromise<void>,
 ) {

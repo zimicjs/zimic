@@ -27,7 +27,7 @@ function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]
 
   vi.spyOn(process, 'on').mockImplementation((event, listener) => {
     if (event === exitEvent) {
-      exitEventListeners.push(listener);
+      exitEventListeners.push(listener as () => void);
     }
     return process;
   });
