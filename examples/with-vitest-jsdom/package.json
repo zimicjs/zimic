@@ -8,12 +8,12 @@
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.3.1",
+    "@testing-library/dom": "^10.3.2",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/user-event": "^14.5.2",
     "dotenv-cli": "^7.4.2",
     "typescript": "^5.5.3",
-    "vitest": "2.0.2",
+    "vitest": "2.0.3",
     "zimic": "latest"
   }
 }

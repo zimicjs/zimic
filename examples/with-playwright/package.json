@@ -22,14 +22,14 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.45.1",
-    "@types/node": "^20.14.10",
+    "@playwright/test": "^1.45.2",
+    "@types/node": "^20.14.11",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "dotenv-cli": "^7.4.2",
     "execa": "^9.3.0",
     "postcss": "^8.4.39",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^3.4.6",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
     "zimic": "latest"
