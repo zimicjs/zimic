@@ -1,6 +1,7 @@
 import { execa as $ } from 'execa';
-import filesystem from 'fs/promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PathLike } from 'fs';
+import filesystem, { FileHandle } from 'fs/promises';
+import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { MetadataFileContent } from '@/cli/actions/upgrade-version';
 import Logger from '@/utils/logger';
@@ -32,7 +33,9 @@ describe('Prepare release command', () => {
     ],
   });
 
-  const readFileSpy = vi.spyOn(filesystem, 'readFile');
+  const readFileSpy = vi.spyOn(filesystem, 'readFile') as MockInstance<
+    (path: PathLike | FileHandle, encoding: BufferEncoding) => Promise<string>
+  >;
   const writeFileSpy = vi.spyOn(filesystem, 'writeFile');
 
   beforeEach(() => {
