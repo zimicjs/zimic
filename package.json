@@ -22,7 +22,7 @@
     "test": "turbo test:turbo --continue",
     "types:check": "turbo types:check --continue",
     "pre:commit": "lint-staged",
-    "pre:push": "pnpm style:check && turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue",
+    "pre:push": "concurrently --names style,lint 'pnpm style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
     "prepare": "husky || echo 'Could not install git hooks with husky.'"
   },
   "devDependencies": {
@@ -30,6 +30,7 @@
     "@commitlint/config-conventional": "^19.2.2",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/release": "workspace:*",
+    "concurrently": "^8.2.2",
     "husky": "^9.1.1",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.3",
