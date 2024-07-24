@@ -14,11 +14,11 @@
     "@testing-library/dom": "^10.3.2",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/user-event": "^14.5.2",
-    "@vitest/browser": "2.0.3",
+    "@vitest/browser": "2.0.4",
     "dotenv-cli": "^7.4.2",
     "playwright": "^1.45.2",
     "typescript": "^5.5.3",
-    "vitest": "2.0.3",
+    "vitest": "2.0.4",
     "zimic": "latest"
   }
 }
