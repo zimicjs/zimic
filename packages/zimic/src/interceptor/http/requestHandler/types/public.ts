@@ -10,7 +10,7 @@ import {
   HttpServiceSchemaMethod,
   HttpServiceSchemaPath,
 } from '@/http/types/schema';
-import { DeepPartial, Default, IfAny, PossiblePromise } from '@/types/utils';
+import { DeepPartial, Default, IfAny, IfNever, PossiblePromise } from '@/types/utils';
 
 import {
   HttpInterceptorRequest,
@@ -38,10 +38,11 @@ export type HttpRequestHandlerHeadersStaticRestriction<
   Method extends HttpServiceSchemaMethod<Schema>,
 > = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
-type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> =
-  | Partial<Schema>
-  | HttpSearchParams<Partial<Schema>>
-  | HttpSearchParams<Schema>;
+type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = IfNever<
+  Schema,
+  never,
+  Partial<Schema> | HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
+>;
 
 /**
  * A static search params restriction to match intercepted requests.

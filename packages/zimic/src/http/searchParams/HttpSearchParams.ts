@@ -1,6 +1,12 @@
-import { ReplaceBy, Defined, ArrayItemIfArray, NonArrayKey, ArrayKey } from '@/types/utils';
+import { ReplaceBy, Defined, ArrayItemIfArray } from '@/types/utils';
 
-import { HttpSearchParamsSchema, HttpSearchParamsInit } from './types';
+import {
+  HttpSearchParamsSchema,
+  HttpSearchParamsInit,
+  HttpSearchParamsSchemaName,
+  HttpSearchParamsSchemaNonArrayName,
+  HttpSearchParamsSchemaArrayName,
+} from './types';
 
 function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
@@ -42,12 +48,18 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
-  set<Name extends keyof Schema & string>(name: Name, value: ArrayItemIfArray<Defined<Schema[Name]>>): void {
+  set<Name extends HttpSearchParamsSchemaName<Schema>>(
+    name: Name,
+    value: ArrayItemIfArray<Defined<Schema[Name]>>,
+  ): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
-  append<Name extends keyof Schema & string>(name: Name, value: ArrayItemIfArray<Defined<Schema[Name]>>): void {
+  append<Name extends HttpSearchParamsSchemaName<Schema>>(
+    name: Name,
+    value: ArrayItemIfArray<Defined<Schema[Name]>>,
+  ): void {
     super.append(name, value);
   }
 
@@ -60,7 +72,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns The value associated with the key name, or `null` if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/get MDN Reference}
    */
-  get<Name extends NonArrayKey<Schema> & string>(
+  get<Name extends HttpSearchParamsSchemaNonArrayName<Schema>>(
     name: Name,
   ): ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null> {
     return super.get(name) as ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>;
@@ -75,22 +87,28 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
    */
-  getAll<Name extends ArrayKey<Schema> & string>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
+  getAll<Name extends HttpSearchParamsSchemaArrayName<Schema>>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
     return super.getAll(name) as ArrayItemIfArray<Defined<Schema[Name]>>[];
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
-  has<Name extends keyof Schema & string>(name: Name, value?: ArrayItemIfArray<Defined<Schema[Name]>>): boolean {
+  has<Name extends HttpSearchParamsSchemaName<Schema>>(
+    name: Name,
+    value?: ArrayItemIfArray<Defined<Schema[Name]>>,
+  ): boolean {
     return super.has(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
-  delete<Name extends keyof Schema & string>(name: Name, value?: ArrayItemIfArray<Defined<Schema[Name]>>): void {
+  delete<Name extends HttpSearchParamsSchemaName<Schema>>(
+    name: Name,
+    value?: ArrayItemIfArray<Defined<Schema[Name]>>,
+  ): void {
     super.delete(name, value);
   }
 
   forEach<This extends HttpSearchParams<Schema>>(
-    callback: <Key extends keyof Schema & string>(
+    callback: <Key extends HttpSearchParamsSchemaName<Schema>>(
       value: ArrayItemIfArray<Defined<Schema[Key]>>,
       key: Key,
       parent: HttpSearchParams<Schema>,
@@ -101,27 +119,29 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys MDN Reference} */
-  keys(): IterableIterator<keyof Schema & string> {
-    return super.keys() as IterableIterator<keyof Schema & string>;
+  keys(): IterableIterator<HttpSearchParamsSchemaName<Schema>> {
+    return super.keys() as IterableIterator<HttpSearchParamsSchemaName<Schema>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
-  values(): IterableIterator<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>> {
-    return super.values() as IterableIterator<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>>;
+  values(): IterableIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
+    return super.values() as IterableIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
-  entries(): IterableIterator<[keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]> {
+  entries(): IterableIterator<
+    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+  > {
     return super.entries() as IterableIterator<
-      [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]
+      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }
 
   [Symbol.iterator](): IterableIterator<
-    [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]
+    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
   > {
     return super[Symbol.iterator]() as IterableIterator<
-      [keyof Schema & string, ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>]
+      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }
 

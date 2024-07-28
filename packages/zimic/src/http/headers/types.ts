@@ -1,4 +1,4 @@
-import { Defined } from '@/types/utils';
+import { Defined, IfNever } from '@/types/utils';
 
 import { HttpSearchParamsSerialized } from '../searchParams/types';
 import HttpHeaders from './HttpHeaders';
@@ -19,6 +19,8 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | Schema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
+
+export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Schema, never, keyof Schema & string>;
 
 /**
  * Recursively converts a type to its HTTP headers-serialized version. Numbers and booleans are converted to `${number}`

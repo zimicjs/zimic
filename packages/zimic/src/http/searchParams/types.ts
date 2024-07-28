@@ -1,4 +1,4 @@
-import { Defined, ArrayItemIfArray } from '@/types/utils';
+import { Defined, ArrayItemIfArray, IfNever, NonArrayKey, ArrayKey } from '@/types/utils';
 
 import HttpSearchParams from './HttpSearchParams';
 
@@ -19,6 +19,24 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
   | Schema
   | HttpSearchParams<Schema>
   | HttpSearchParamsSchemaTuple<Schema>[];
+
+export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
+  Schema,
+  never,
+  keyof Schema & string
+>;
+
+export type HttpSearchParamsSchemaNonArrayName<Schema extends HttpSearchParamsSchema> = IfNever<
+  Schema,
+  never,
+  NonArrayKey<Schema> & string
+>;
+
+export type HttpSearchParamsSchemaArrayName<Schema extends HttpSearchParamsSchema> = IfNever<
+  Schema,
+  never,
+  ArrayKey<Schema> & string
+>;
 
 type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
   ? Type
