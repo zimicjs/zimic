@@ -154,7 +154,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
@@ -203,7 +203,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
@@ -248,7 +248,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
@@ -465,7 +465,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
@@ -507,7 +507,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
@@ -551,7 +551,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
@@ -593,7 +593,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
@@ -658,7 +658,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(listRequests[0].searchParams.size).toBe(0);
 
         expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
