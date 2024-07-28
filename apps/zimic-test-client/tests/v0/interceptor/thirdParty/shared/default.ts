@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 import { JSONSerialized } from 'zimic0';
-import { HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
+import { HttpHeaders, HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
 import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
 
 import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
@@ -152,6 +152,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
+
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
@@ -199,6 +201,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
+
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
@@ -241,6 +245,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         const creationRequests = await creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
+
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
@@ -315,6 +321,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
+        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listRequests[0].searchParams.get('name')).toBe(null);
         expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
@@ -357,6 +365,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
+
+        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listRequests[0].searchParams.size).toBe(1);
@@ -406,6 +416,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         const listRequests = await listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
+        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
         expect(listRequests[0].searchParams.size).toBe(1);
         expect(listRequests[0].searchParams.get('name')).toBe(null);
@@ -451,6 +463,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(getRequests).toHaveLength(1);
         expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
 
+        expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(getRequests[0].searchParams.size).toBe(0);
 
@@ -490,6 +504,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(getRequests[0].pathParams).toEqual({ id: user.id });
+
+        expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
         expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(getRequests[0].searchParams.size).toBe(0);
@@ -533,6 +549,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(deleteRequests[0].pathParams).toEqual({});
 
+        expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
 
@@ -572,6 +590,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
         expect(deleteRequests[0].pathParams).toEqual({ id: user.id });
+
+        expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
         expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(deleteRequests[0].searchParams.size).toBe(0);
@@ -635,6 +655,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(listRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listRequests[0].pathParams).toEqual({ userId: notification.userId });
+
+        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
         expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<{}>>();
         expect(listRequests[0].searchParams.size).toBe(0);
