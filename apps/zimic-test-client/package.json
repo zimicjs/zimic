@@ -19,9 +19,9 @@
     "zimic0": "workspace:zimic@*"
   },
   "devDependencies": {
-    "@types/superagent": "^8.1.7",
-    "@vitest/browser": "2.0.2",
-    "@vitest/coverage-istanbul": "2.0.2",
+    "@types/superagent": "^8.1.8",
+    "@vitest/browser": "2.0.4",
+    "@vitest/coverage-istanbul": "2.0.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -29,9 +29,9 @@
     "dotenv-cli": "^7.4.2",
     "execa": "^9.3.0",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.45.1",
+    "playwright": "^1.45.3",
     "superagent": "^9.0.2",
-    "typescript": "^5.5.3",
-    "vitest": "2.0.2"
+    "typescript": "^5.5.4",
+    "vitest": "2.0.4"
   }
 }

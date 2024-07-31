@@ -269,7 +269,8 @@ describe('Type generation (OpenAPI)', () => {
 
           let rawGeneratedOutputContent: string;
 
-          const processWriteSpy = vi.spyOn(process.stdout, 'write').mockImplementation((_data, _encoding, callback) => {
+          const processWriteSpy = vi.spyOn(process.stdout, 'write');
+          processWriteSpy.mockImplementation((_data, _encoding, callback) => {
             callback?.();
             return true;
           });
