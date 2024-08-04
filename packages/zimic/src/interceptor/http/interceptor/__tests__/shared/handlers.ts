@@ -353,9 +353,9 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         let requestsWithoutResponse = await promiseIfRemote(handlerWithoutResponse.requests(), interceptor);
         expect(requestsWithoutResponse).toHaveLength(0);
 
-        let requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight - 1];
-        expectTypeOf<typeof requestWithoutResponse.body>().toEqualTypeOf<null>();
-        expectTypeOf<typeof requestWithoutResponse.response>().toEqualTypeOf<never>();
+        let _requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight - 1];
+        expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
+        expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
         fetchPromise = fetch(joinURL(baseURL, '/users'), { method });
         await expectFetchErrorOrPreflightResponse(fetchPromise, {
@@ -365,9 +365,9 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         requestsWithoutResponse = await promiseIfRemote(handlerWithoutResponse.requests(), interceptor);
         expect(requestsWithoutResponse).toHaveLength(0);
 
-        requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight];
-        expectTypeOf<typeof requestWithoutResponse.body>().toEqualTypeOf<null>();
-        expectTypeOf<typeof requestWithoutResponse.response>().toEqualTypeOf<never>();
+        _requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight];
+        expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
+        expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
         const handlerWithResponse = handlerWithoutResponse.respond({
           status: 200,

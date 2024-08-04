@@ -10,8 +10,8 @@ import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInte
 import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
-import LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
+import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
+import type RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import { HeadersSchema, MethodSchema, Schema, SearchParamsSchema, SharedHttpRequestHandlerTestOptions } from './types';
 
 export function declareRestrictionHttpRequestHandlerTests(

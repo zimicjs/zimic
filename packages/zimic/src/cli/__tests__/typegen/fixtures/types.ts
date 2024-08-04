@@ -1,4 +1,4 @@
-import { typegenFixtures } from './typegenFixtures';
+import { type typegenFixtures } from './typegenFixtures';
 
 export type TypegenFixtureType = keyof typeof typegenFixtures;
 
