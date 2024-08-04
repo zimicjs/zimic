@@ -2,8 +2,7 @@ import { MockInstance, vi } from 'vitest';
 
 import { PossiblePromise } from '@/types/utils';
 
-const IGNORABLE_CONSOLE_METHODS = ['error', 'warn', 'info', 'log', 'debug'] satisfies (keyof Console)[];
-type IgnorableConsoleMethod = (typeof IGNORABLE_CONSOLE_METHODS)[number];
+type IgnorableConsoleMethod = 'error' | 'warn' | 'info' | 'log' | 'debug';
 
 type SpyByConsoleMethod<Method extends IgnorableConsoleMethod = IgnorableConsoleMethod> = {
   [Key in Method]: MockInstance;
