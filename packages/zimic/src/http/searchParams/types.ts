@@ -20,22 +20,23 @@ export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSea
   | HttpSearchParams<Schema>
   | HttpSearchParamsSchemaTuple<Schema>[];
 
+export namespace HttpSearchParamsSchemaName {
+  /** Extracts the names of the search params defined in a {@link HttpSearchParamsSchema} that are arrays. */
+  export type Array<Schema extends HttpSearchParamsSchema> = IfNever<Schema, never, ArrayKey<Schema> & string>;
+
+  /** Extracts the names of the search params defined in a {@link HttpSearchParamsSchema} that are not arrays. */
+  export type NonArray<Schema extends HttpSearchParamsSchema> = IfNever<Schema, never, NonArrayKey<Schema> & string>;
+}
+
+/**
+ * Extracts the names of the search params defined in a {@link HttpSearchParamsSchema}. Each key is considered a search
+ * param name.
+ */
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
   Schema,
   never,
   keyof Schema & string
->;
-
-export type HttpSearchParamsSchemaNonArrayName<Schema extends HttpSearchParamsSchema> = IfNever<
-  Schema,
-  never,
-  NonArrayKey<Schema> & string
->;
-
-export type HttpSearchParamsSchemaArrayName<Schema extends HttpSearchParamsSchema> = IfNever<
-  Schema,
-  never,
-  ArrayKey<Schema> & string
 >;
 
 type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]

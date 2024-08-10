@@ -6,9 +6,19 @@ export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
 export type { HttpSearchParamsSerialized } from './searchParams/types';
 export type { HttpHeadersSerialized } from './headers/types';
 
-export type { HttpHeadersInit, HttpHeadersSchema, HttpHeadersSchemaTuple } from './headers/types';
+export type {
+  HttpHeadersInit,
+  HttpHeadersSchema,
+  HttpHeadersSchemaTuple,
+  HttpHeadersSchemaName,
+} from './headers/types';
 
-export type { HttpSearchParamsInit, HttpSearchParamsSchema, HttpSearchParamsSchemaTuple } from './searchParams/types';
+export type {
+  HttpSearchParamsInit,
+  HttpSearchParamsSchema,
+  HttpSearchParamsSchemaTuple,
+  HttpSearchParamsSchemaName,
+} from './searchParams/types';
 
 export type { HttpFormDataSchema } from './formData/types';
 

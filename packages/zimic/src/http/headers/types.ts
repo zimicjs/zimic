@@ -20,6 +20,7 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
 
+/** Extracts the names of the headers defined in a {@link HttpHeadersSchema}. Each key is considered a header name. */
 export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Schema, never, keyof Schema & string>;
 
 /**

@@ -1,12 +1,6 @@
 import { ReplaceBy, Defined, ArrayItemIfArray } from '@/types/utils';
 
-import {
-  HttpSearchParamsSchema,
-  HttpSearchParamsInit,
-  HttpSearchParamsSchemaName,
-  HttpSearchParamsSchemaNonArrayName,
-  HttpSearchParamsSchemaArrayName,
-} from './types';
+import { HttpSearchParamsSchema, HttpSearchParamsInit, HttpSearchParamsSchemaName } from './types';
 
 function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: Schema) {
   const schemaWithPrimitiveProperties = Object.entries(schema).reduce<Record<string, string>>(
@@ -72,7 +66,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns The value associated with the key name, or `null` if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/get MDN Reference}
    */
-  get<Name extends HttpSearchParamsSchemaNonArrayName<Schema>>(
+  get<Name extends HttpSearchParamsSchemaName.NonArray<Schema>>(
     name: Name,
   ): ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null> {
     return super.get(name) as ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>;
@@ -87,7 +81,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
    */
-  getAll<Name extends HttpSearchParamsSchemaArrayName<Schema>>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
+  getAll<Name extends HttpSearchParamsSchemaName.Array<Schema>>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
     return super.getAll(name) as ArrayItemIfArray<Defined<Schema[Name]>>[];
   }
 
