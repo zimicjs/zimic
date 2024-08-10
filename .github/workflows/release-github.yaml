@@ -18,29 +18,9 @@ env:
   TURBO_LOG_ORDER: stream
 
 jobs:
-  prepare-github-release:
-    name: Prepare GitHub release
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get monorepo release version
-        id: get-version
-        run: |
-          version=v$(jq -r '.version' package.json)
-          echo "version=$version" >> $GITHUB_OUTPUT
-
   release-to-github:
     name: Release to GitHub
     runs-on: ubuntu-latest
-    needs:
-      - prepare-github-release
     timeout-minutes: 3
 
     environment: GitHub
@@ -49,11 +29,20 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get zimic release version
+        id: zimic-version
+        run: |
+          version=$(jq -r '.version' ./packages/zimic/package.json)
+          echo "value=$version" >> $GITHUB_OUTPUT
+
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
-          name: ${{ needs.prepare-github-release.outputs.version }}
-          tag: ${{ needs.prepare-github-release.outputs.version }}
+          name: v${{ steps.zimic-version.outputs.value }}
+          tag: v${{ steps.zimic-version.outputs.value }}
           commit: ${{ github.sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           makeLatest: ${{ startsWith(github.ref, 'refs/heads/') && github.ref_name == 'main' }}

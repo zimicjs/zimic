@@ -38,7 +38,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Zimic
+      - name: Set up zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
@@ -104,7 +104,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Zimic
+      - name: Set up zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
@@ -165,7 +165,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Zimic
+      - name: Set up zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
