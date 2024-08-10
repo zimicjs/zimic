@@ -490,6 +490,18 @@ describe('HttpHeaders', () => {
     // @ts-expect-error
     emptySchemaHeaders.delete('unknown');
 
+    const neverSchemaHeaders = new HttpHeaders<never>();
+    // @ts-expect-error
+    neverSchemaHeaders.set('unknown', '*/*');
+    // @ts-expect-error
+    neverSchemaHeaders.append('unknown', '*/*');
+    // @ts-expect-error
+    neverSchemaHeaders.get('unknown');
+    // @ts-expect-error
+    neverSchemaHeaders.has('unknown');
+    // @ts-expect-error
+    neverSchemaHeaders.delete('unknown');
+
     // @ts-expect-error
     new HttpHeaders<string>();
   });

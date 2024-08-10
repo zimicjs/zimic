@@ -480,6 +480,22 @@ describe('HttpSearchParams', () => {
     // @ts-expect-error
     emptySchemaSearchParams.delete('unknown');
 
+    const neverSchemaSearchParams = new HttpSearchParams<never>();
+    // @ts-expect-error
+    neverSchemaSearchParams.set('unknown', 'value');
+    // @ts-expect-error
+    neverSchemaSearchParams.append('unknown', 'value');
+    // @ts-expect-error
+    neverSchemaSearchParams.get('unknown');
+    // @ts-expect-error
+    neverSchemaSearchParams.getAll('unknown');
+    // @ts-expect-error
+    neverSchemaSearchParams.has('unknown');
+    // @ts-expect-error
+    neverSchemaSearchParams.has('unknown', 'value');
+    // @ts-expect-error
+    neverSchemaSearchParams.delete('unknown');
+
     // @ts-expect-error
     new HttpSearchParams<string>();
   });

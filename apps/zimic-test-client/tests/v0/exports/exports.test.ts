@@ -6,16 +6,18 @@ import {
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
-  HttpSearchParams,
-  type HttpSearchParamsInit,
-  type HttpSearchParamsSchema,
-  type HttpSearchParamsSchemaTuple,
-  type StrictURLSearchParams,
   HttpHeaders,
   type HttpHeadersInit,
   type HttpHeadersSchema,
   type HttpHeadersSchemaTuple,
+  type HttpHeadersSchemaName,
   type StrictHeaders,
+  HttpSearchParams,
+  type HttpSearchParamsInit,
+  type HttpSearchParamsSchema,
+  type HttpSearchParamsSchemaTuple,
+  type HttpSearchParamsSchemaName,
+  type StrictURLSearchParams,
   HttpFormData,
   type HttpFormDataSchema,
   type StrictFormData,
@@ -91,6 +93,7 @@ describe('Exports', () => {
     expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
     expectTypeOf<HttpHeadersSchema>().not.toBeAny();
     expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSchemaName<never>>().not.toBeAny();
     expectTypeOf<StrictHeaders<never>>().not.toBeAny();
 
     expectTypeOf<HttpSearchParams>().not.toBeAny();
@@ -98,6 +101,9 @@ describe('Exports', () => {
     expectTypeOf<HttpSearchParamsInit<never>>().not.toBeAny();
     expectTypeOf<HttpSearchParamsSchema>().not.toBeAny();
     expectTypeOf<HttpSearchParamsSchemaTuple<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaName<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaName.Array<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSchemaName.NonArray<never>>().not.toBeAny();
     expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
 
     expectTypeOf<HttpFormData>().not.toBeAny();
