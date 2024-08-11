@@ -29,8 +29,8 @@
     "dotenv-cli": "^7.4.2",
     "execa": "^9.3.0",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.45.3",
-    "superagent": "^9.0.2",
+    "playwright": "^1.46.0",
+    "superagent": "^10.0.0",
     "typescript": "^5.5.4",
     "vitest": "2.0.5"
   }
