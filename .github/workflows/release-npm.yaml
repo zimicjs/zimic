@@ -29,7 +29,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Zimic
+      - name: Set up zimic
         uses: ./.github/actions/zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -38,23 +38,34 @@ jobs:
           build: zimic^...
           install-playwright-browsers: true
 
+      - name: Get zimic release version
+        id: zimic-version
+        run: |
+          version=$(jq -r '.version' ./packages/zimic/package.json)
+          echo "value=$version" >> $GITHUB_OUTPUT
+
       - name: Build zimic
         run: pnpm turbo build --filter zimic
 
       - name: Prepare NPM tag
         id: npm-tag
         run: |
+          if [[ '${{ github.ref_name }}' != 'v${{ steps.zimic-version.outputs.value }}' ]]; then
+            echo 'The release tag does not match the package version.' >&2
+            exit 1
+          fi
+
           if [[ '${{ github.ref_name }}' == v*.*.*-canary.* ]]; then
-            echo "tag=canary" >> $GITHUB_OUTPUT
+            echo "value=canary" >> $GITHUB_OUTPUT
           elif [[ '${{ github.ref_name }}' == v*.*.* ]]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "value=latest" >> $GITHUB_OUTPUT
           else
-            echo "tag=next" >> $GITHUB_OUTPUT
+            echo "value=next" >> $GITHUB_OUTPUT
           fi
 
       - name: Release to NPM
         working-directory: packages/zimic
-        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.tag }}
+        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.value }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
@@ -65,12 +76,23 @@ jobs:
             's/link-workspace-packages = true/link-workspace-packages = false/' \
             .npmrc
 
-          for packageJSON in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
+          echo "Using zimic@${{ steps.zimic-version.outputs.value }} for testing..."
+
+          for file in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
             sed -E -i \
-              's/"zimic([0-9]?)": ".*"/"zimic\1": "npm:zimic@${{ steps.npm-tag.outputs.tag }}"/' \
-              $packageJSON
+              's/"zimic([0-9]?)": ".*"/"zimic\1": "npm:zimic@${{ steps.zimic-version.outputs.value }}"/' \
+              $file
           done
 
+          timeout 60s bash -c '
+            until pnpm view zimic versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
+              echo "zimic@${{ steps.zimic-version.outputs.value }} is not available on NPM yet..."
+              sleep 5
+              echo "Checking if zimic@${{ steps.zimic-version.outputs.value }} is available on NPM..."
+            done
+          '
+
+          echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
           pnpm install --no-frozen-lockfile
 

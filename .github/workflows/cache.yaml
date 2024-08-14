@@ -28,7 +28,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Zimic
+      - name: Set up zimic
         uses: ./.github/actions/zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}

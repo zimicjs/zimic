@@ -13,7 +13,7 @@ import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
-import LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
+import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
   HttpInterceptorRequest,

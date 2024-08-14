@@ -185,7 +185,7 @@ module.exports = {
     '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
     '@typescript-eslint/no-floating-promises': ['warn', { ignoreVoid: true }],
     '@typescript-eslint/adjacent-overload-signatures': 'error',
-    '@typescript-eslint/no-throw-literal': 'error',
+    '@typescript-eslint/only-throw-error': 'error',
     '@typescript-eslint/no-meaningless-void-operator': 'error',
     '@typescript-eslint/no-useless-empty-export': 'warn',
     '@typescript-eslint/non-nullable-type-assertion-style': 'warn',

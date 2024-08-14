@@ -43,14 +43,12 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
-  Default<DefaultNoExclude<Default<MethodSchema['request']>['headers']>>,
-  {}
+export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
+  DefaultNoExclude<Default<MethodSchema['request']>['headers']>
 >;
 
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = IfNever<
-  Default<DefaultNoExclude<Default<MethodSchema['request']>['searchParams']>>,
-  {}
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
+  DefaultNoExclude<Default<MethodSchema['request']>['searchParams']>
 >;
 
 export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> = ReplaceBy<

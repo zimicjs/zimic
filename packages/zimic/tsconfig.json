@@ -10,9 +10,9 @@
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"],
       "@scripts/*": ["./scripts/*"],
-      "@@/*": ["./*"]
+      "@@/package.json": ["./package.json"]
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", "dist", "**/fixtures/**/generated"]
+  "exclude": ["node_modules", "dist", "*.d.ts", "**/fixtures/**/generated"]
 }

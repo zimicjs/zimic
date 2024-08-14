@@ -1,6 +1,4 @@
-import ClientSocket from 'isomorphic-ws';
-
-const { WebSocketServer: ServerSocket } = ClientSocket;
+import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
 class WebSocketTimeoutError extends Error {}
 
