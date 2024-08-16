@@ -7,7 +7,7 @@
     - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
   - [`HttpFormData`](#httpformdata)
     - [Comparing `HttpFormData`](#comparing-httpformdata)
-  - [`HttpSchema` (type)](#httpschema-type)
+  - [`HttpSchema`](#httpschema)
 
 ---
 
@@ -234,6 +234,6 @@ console.log(formData3.contains(formData1)); // false
 
 </details>
 
-## `HttpSchema` (type)
+## `HttpSchema`
 
 @TODO
