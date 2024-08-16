@@ -11,12 +11,12 @@
 
 # `zimic typegen`
 
-This CLI module contains commands for generating types from data sources. This is great to save development time, avoid
-errors and keep your types consistent with specifications such as OpenAPI schemas.
+This CLI module contains commands to generate types from schema sources. This is useful to save development time, avoid
+errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
 ## `zimic typegen openapi`
 
-Generate types from an OpenAPI schema.
+Generate types from an [OpenAPI](https://swagger.io/specification) schema.
 
 ```
 zimic typegen openapi <input>

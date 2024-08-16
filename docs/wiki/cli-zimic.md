@@ -12,9 +12,9 @@ This CLI module contains root-level commands.
 zimic [command]
 
 Commands:
-  zimic browser  Browser configuration management
-  zimic server   Interceptor server management
-  zimic typegen  Type generation
+  zimic browser  Manage your browser mock configuration
+  zimic server   Manage interceptor servers
+  zimic typegen  Generate types from schema sources
 
 Options:
   --help     Show help                                                 [boolean]

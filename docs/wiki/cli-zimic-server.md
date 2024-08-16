@@ -2,13 +2,13 @@
 
 - [`zimic server`](#zimic-server)
   - [`zimic server start`](#zimic-server-start)
-- [Programmatic usage](#programmatic-usage)
+  - [Programmatic usage](#programmatic-usage)
 
 ---
 
 # `zimic server`
 
-This CLI module contains commands for managing interceptor servers.
+This CLI module contains commands to manage interceptor servers.
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
 in combination with [remote interceptors](./getting-started.md#remote-http-interceptors), which declare which responses
@@ -58,6 +58,6 @@ zimic server start --port 4000 --ephemeral -- npm run test
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server
 should automatically stop after the command finishes.
 
-# Programmatic usage
+## Programmatic usage
 
 See the [`zimic/interceptor/server` API reference](./api-zimic-interceptor-server.md).
