@@ -29,6 +29,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get zimic release version
+        id: zimic-version
+        run: |
+          version=$(jq -r '.version' ./packages/zimic/package.json)
+          echo "value=$version" >> $GITHUB_OUTPUT
+
+          if [[ '${{ github.ref_name }}' != "v$version" ]]; then
+            echo 'The release tag does not match the package version.' >&2
+            exit 1
+          fi
+
+      - name: Prepare NPM tag
+        id: npm-tag
+        run: |
+          # Check if the release tag is a valid semantic version.
+          if echo '${{ github.ref_name }}' | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9-]+\.[0-9]+)?$'; then
+            # Extract the pre-release tag or use 'latest' as the default.
+            value=$(echo '${{ github.ref_name }}' | grep -oP '(?<=-)[a-z0-9-]+(?=\.[0-9]+$)' || echo latest)
+            echo "value=$value" >> $GITHUB_OUTPUT
+          else
+            echo "The release tag '${{ github.ref_name }}' is not valid." >&2
+            exit 1
+          fi
+
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
         with:
@@ -38,30 +62,8 @@ jobs:
           build: zimic^...
           install-playwright-browsers: true
 
-      - name: Get zimic release version
-        id: zimic-version
-        run: |
-          version=$(jq -r '.version' ./packages/zimic/package.json)
-          echo "value=$version" >> $GITHUB_OUTPUT
-
       - name: Build zimic
         run: pnpm turbo build --filter zimic
-
-      - name: Prepare NPM tag
-        id: npm-tag
-        run: |
-          if [[ '${{ github.ref_name }}' != 'v${{ steps.zimic-version.outputs.value }}' ]]; then
-            echo 'The release tag does not match the package version.' >&2
-            exit 1
-          fi
-
-          if [[ '${{ github.ref_name }}' == v*.*.*-canary.* ]]; then
-            echo "value=canary" >> $GITHUB_OUTPUT
-          elif [[ '${{ github.ref_name }}' == v*.*.* ]]; then
-            echo "value=latest" >> $GITHUB_OUTPUT
-          else
-            echo "value=next" >> $GITHUB_OUTPUT
-          fi
 
       - name: Release to NPM
         working-directory: packages/zimic
