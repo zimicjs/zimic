@@ -114,9 +114,9 @@ examples use local interceptors.
 
 ### Remote HTTP interceptors
 
-When an interceptor is `remote`, Zimic uses a dedicated local [interceptor server](#zimic-server) to handle requests.
-This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also more
-robust because it uses a regular HTTP server and does not depend on local interception algorithms.
+When an interceptor is `remote`, Zimic uses a dedicated local [interceptor server](./cli-zimic-server.md#zimic-server)
+to handle requests. This opens up more possibilities for mocking, such as handling requests from multiple applications.
+It is also more robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
 Our [Playwright](../../examples#playwright) and [Next.js App Router](../../examples#nextjs) examples use remote
 interceptors.
@@ -197,9 +197,9 @@ interceptors.
 
    </details></td></tr></table>
 
-   In this example, we're [creating an interceptor](./api-zimic-interceptor-http.md#httpinterceptorcreate) for a service
-   supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more about
-   [declaring HTTP service schemas](./api-zimic-http.md#declaring-http-service-schemas).
+   In this example, we're [creating an interceptor](./api-zimic-interceptor-http.md#httpinterceptorcreateoptions) for a
+   service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
+   about [declaring HTTP service schemas](./api-zimic-interceptor-http.md#declaring-interceptor-schemas).
 
 2. Then, start the interceptor:
 
