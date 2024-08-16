@@ -18,7 +18,7 @@ async function runCLI() {
     .showHelpOnFail(false)
     .strict()
 
-    .command('browser', 'Browser', (yargs) =>
+    .command('browser', 'Manage your browser mock configuration', (yargs) =>
       yargs.demandCommand().command(
         'init <publicDirectory>',
         'Initialize the browser service worker configuration.',
@@ -34,7 +34,7 @@ async function runCLI() {
       ),
     )
 
-    .command('server', 'Interceptor server', (yargs) =>
+    .command('server', 'Manage interceptor servers', (yargs) =>
       yargs.demandCommand().command(
         'start [-- onReady]',
         'Start an interceptor server.',
@@ -94,7 +94,7 @@ async function runCLI() {
       ),
     )
 
-    .command('typegen', 'Type generation', (yargs) =>
+    .command('typegen', 'Generate types from schema sources', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
         'Generate types from an OpenAPI schema.',
