@@ -1,0 +1,60 @@
+name: Release Wiki
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: release-wiki-${{ github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-zimic-wiki:
+    name: Release zimic to NPM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    environment: Wiki
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get zimic release version
+        id: zimic-version
+        run: |
+          version=$(jq -r '.version' ./packages/zimic/package.json)
+          echo "value=$version" >> $GITHUB_OUTPUT
+
+          if [[ '${{ github.ref_name }}' != "v$version" ]]; then
+            echo 'The release tag does not match the package version.' >&2
+            exit 1
+          fi
+
+          isProduction=$(echo "$version" | grep -vq '-' && echo true || echo false)
+          echo "is-production=$isProductionVersion" >> $GITHUB_OUTPUT
+
+          echo "Zimic version: $version (production: $isProduction)"
+
+      - name: Checkout wiki
+        uses: actions/checkout@v4
+        # if: ${{ steps.zimic-version.outputs.is-production == 'true' }}
+        with:
+          repository: zimicjs/zimic.wiki
+
+      - name: Sync wiki with markdown docs
+        # if: ${{ steps.zimic-version.outputs.is-production == 'true' }}
+        working-directory: zimic.wiki
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+          rsync --archive --verbose --delete ../docs/wiki/ .
+          git add .
+          git commit -m "docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}"
+          git push
