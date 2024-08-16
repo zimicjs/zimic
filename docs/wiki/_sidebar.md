@@ -13,7 +13,7 @@
   - [With Next.js](../../examples/README.md#nextjs)
   - [With type generation](../../examples/README.md#type-generation)
 - Guides
-  - [Testing](./testing.md)
+  - [Testing](./guides-testing.md)
 - [API reference](./api.md)
   - [`zimic`](./api-zimic.md)
   - [`zimic/http`](./api-zimic-http.md)
