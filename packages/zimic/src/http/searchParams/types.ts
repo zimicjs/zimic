@@ -30,7 +30,32 @@ export namespace HttpSearchParamsSchemaName {
 
 /**
  * Extracts the names of the search params defined in a {@link HttpSearchParamsSchema}. Each key is considered a search
- * param name.
+ * param name. `HttpSearchParamsSchemaName.Array` can be used to extract the names of array search params, whereas
+ * `HttpSearchParamsSchemaName.NonArray` extracts the names of non-array search params.
+ *
+ * @example
+ *   import { type HttpSearchParamsSchemaName } from 'zimic/http';
+ *
+ *   type SearchParamsName = HttpSearchParamsSchemaName<{
+ *     query?: string[];
+ *     page?: `${number}`;
+ *     perPage?: `${number}`;
+ *   }>;
+ *   // "query" | "page" | "perPage"
+ *
+ *   type ArraySearchParamsName = HttpSearchParamsSchemaName.Array<{
+ *     query?: string[];
+ *     page?: `${number}`;
+ *     perPage?: `${number}`;
+ *   }>;
+ *   // "query"
+ *
+ *   type NonArraySearchParamsName = HttpSearchParamsSchemaName.NonArray<{
+ *     query?: string[];
+ *     page?: `${number}`;
+ *     perPage?: `${number}`;
+ *   }>;
+ *   // "page" | "perPage"
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
@@ -50,9 +75,26 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
         : never;
 
 /**
- * Recursively converts a type to its URLSearchParams-serialized version. Numbers and booleans are converted to
- * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
- * functions and dates.
+ * Recursively converts a type to its
+ * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams}-serialized version. Numbers and
+ * booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable
+ * values are excluded, such as functions and dates.
+ *
+ * @example
+ *   import { type HttpSearchParamsSerialized } from 'zimic/http';
+ *
+ *   type Params = HttpSearchParamsSerialized<{
+ *     query: string | null;
+ *     page?: number;
+ *     full?: boolean;
+ *     date?: Date;
+ *     method(): void;
+ *   }>;
+ *   // {
+ *   //   query: string | undefined;
+ *   //   page?: `${number}`;
+ *   //   full?: "false" | "true";
+ *   // }
  */
 export type HttpSearchParamsSerialized<Type> =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

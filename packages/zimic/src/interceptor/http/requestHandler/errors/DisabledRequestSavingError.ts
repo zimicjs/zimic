@@ -1,3 +1,8 @@
+/**
+ * Error thrown when trying to access requests when the interceptor is not configured to do so.
+ *
+ * @see {@link https://github.com/zimicjs/zimic#saving-intercepted-requests Saving intercepted requests}
+ */
 class DisabledRequestSavingError extends TypeError {
   constructor() {
     super(

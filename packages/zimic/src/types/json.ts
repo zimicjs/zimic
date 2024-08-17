@@ -1,11 +1,53 @@
 type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null | undefined;
 
-/** Value that is compatible and can be represented in JSON. */
+/**
+ * Represents or validates a type that is compatible and can be represented in JSON.
+ *
+ * @example
+ *   import { JSONValue } from 'zimic';
+ *
+ *   // Can be used as a standalone type:
+ *   function doSomething(value: JSONValue): string {
+ *     // ...
+ *   }
+ *
+ *   // Can be used with a type argument to validate a JSON value:
+ *   type ValidJSON = JSONValue<{
+ *     id: string;
+ *     email: string;
+ *     createdAt: string;
+ *   }>;
+ *
+ *   type InvalidJSON = JSONValue<{
+ *     id: string;
+ *     email: string;
+ *     createdAt: Date; // `Date` is not a valid JSON value.
+ *     save(): Promise<void>; // Functions are not valid JSON values.
+ *   }>;
+ */
 export type JSONValue<Type extends JSON = JSON> = Type;
 
 /**
  * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON
  * values are excluded.
+ *
+ * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON
+ * values are excluded.
+ *
+ * @example
+ *   import { JSONSerialized } from 'zimic';
+ *
+ *   type SerializedUser = JSONSerialized<{
+ *     id: string;
+ *     email: string;
+ *     createdAt: Date;
+ *     save(): Promise<void>;
+ *   }>;
+ *   // {
+ *   //   id: string;
+ *   //   email: string;
+ *   //   createdAt: string;
+ *   // }
  */
 export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
   ? Type

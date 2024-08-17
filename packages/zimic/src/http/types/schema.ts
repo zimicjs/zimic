@@ -52,6 +52,20 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
+/**
+ * The status codes used in HTTP responses, as defined by
+ * {@link https://httpwg.org/specs/rfc9110.html#overview.of.status.codes RFC-9110}.
+ *
+ * - `HttpStatusCode.Information`:
+ *   {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses `1XX`}
+ * - `HttpStatusCode.Success`: {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#successful_responses `2XX`}
+ * - `HttpStatusCode.Redirection`:
+ *   {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#redirection_messages `3XX`}
+ * - `HttpStatusCode.ClientError`:
+ *   {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#client_error_responses `4XX`}
+ * - `HttpStatusCode.ServerError`:
+ *   {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#server_error_responses `5XX`}
+ */
 export namespace HttpStatusCode {
   export type Information =
     | 100 // Continue
@@ -253,6 +267,21 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
  * schema are allowed.
  *
+ * @example
+ *   type LiteralPath = LiteralHttpServiceSchemaPath<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *   // "/users" | "/users/:userId"
+ *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
@@ -280,6 +309,21 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
 
 /**
  * Extracts the non-literal paths from an HTTP service schema containing certain methods.
+ *
+ * @example
+ *   type NonLiteralPath = NonLiteralHttpServiceSchemaPath<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *   // "/users" | "/users/${string}"
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
@@ -324,6 +368,21 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
 /**
  * Extracts the paths from an HTTP service schema containing certain methods.
  *
+ * @example
+ *   type Path = NonLiteralHttpServiceSchemaPath<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *   // "/users" | "/users/:userId" | "/users/${string}"
+ *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaPath<
@@ -342,7 +401,8 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
  * Infers the path parameters schema from a path string.
  *
  * @example
- *   '/users/:userId/notifications' -> { userId: string }
+ *   type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
+ *   // { userId: string }
  */
 export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
 
@@ -367,6 +427,36 @@ type RecursiveMergeHttpResponsesByStatusCode<
     : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
   : never;
 
+/**
+ * Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
+ * first declaration takes precedence.
+ *
+ * @example
+ *   // Overriding the 400 status code with a more specific schema and using a generic schema for all other client errors.
+ *   type MergedResponses = MergeHttpResponsesByStatusCode<
+ *     [
+ *       {
+ *         400: { body: { message: string; issues: string[] } };
+ *       },
+ *       {
+ *         [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
+ *       },
+ *     ]
+ *   >;
+ *   // {
+ *   //   400: { body: { message: string; issues: string[] } };
+ *   //   401: { body: { message: string}; };
+ *   //   402: { body: { message: string}; };
+ *   //   403: { body: { message: string}; };
+ *   //   ...
+ *   // }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users': {
+ *       GET: { response: MergedResponses };
+ *     };
+ *   }>;
+ */
 export type MergeHttpResponsesByStatusCode<
   Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
   PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],
