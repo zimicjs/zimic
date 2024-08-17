@@ -16,13 +16,10 @@
   - [Testing](guides-testing)
 - API reference
   - [`zimic`](api-zimic)
-    - [`JSONValue`](api-zimic#jsonvalue)
-    - [`JSONSerialized`](api-zimic#jsonserialized)
   - [`zimic/http`](api-zimic-http)
     - [`HttpHeaders`](api-zimic-http#httpheaders)
     - [`HttpSearchParams`](api-zimic-http#httpsearchparams)
     - [`HttpFormData`](api-zimic-http#httpformdata)
-    - [`HttpSchema`](api-zimic-http#httpschema-type)
   - [`zimic/interceptor/http`](api-zimic-interceptor-http)
     - [`HttpInterceptor`](api-zimic-interceptor-http#httpinterceptor)
     - [`HttpRequestHandler`](api-zimic-interceptor-http#httprequesthandler)
@@ -32,7 +29,7 @@
 - CLI reference
   - [`zimic`](cli-zimic)
   - [`zimic browser`](cli-zimic-browser)
-    - [`zimic browser init`](cli-zimic-server#zimic-browser-init)
+    - [`zimic browser init`](cli-zimic-browser#zimic-browser-init)
   - [`zimic server`](cli-zimic-server)
     - [`zimic server start`](cli-zimic-server#zimic-server-start)
     - [Programmatic usage](cli-zimic-server#programmatic-usage)

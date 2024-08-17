@@ -13,7 +13,7 @@
       - [When to use local HTTP interceptors](#when-to-use-local-http-interceptors)
     - [Remote HTTP interceptors](#remote-http-interceptors)
       - [When to use remote HTTP interceptors](#when-to-use-remote-http-interceptors)
-    - [5. Create your first interceptor](#5-create-your-first-interceptor)
+  - [5. Create your first interceptor](#5-create-your-first-interceptor)
 
 ---
 
@@ -142,7 +142,7 @@ interceptors.
 > [`@typescript-eslint/no-floating-promises`](https://typescript-eslint.io/rules/no-floating-promises). It checks
 > promises appearing to be unhandled, which is helpful to indicate missing `await`'s in remote interceptor operations.
 
-### 5. Create your first interceptor
+## 5. Create your first interceptor
 
 1. To start using Zimic, create your first [HTTP interceptor](../wiki/api-zimic-interceptor-http.md#httpinterceptor):
 
@@ -248,4 +248,5 @@ interceptors.
 
    </details></td></tr></table>
 
-More usage examples and recommendations are available in our [examples](../../examples/README.md), [API reference](api).
+More usage examples and recommendations are available in our [examples](../../examples/README.md),
+[API reference](api-zimic), and [CLI reference](cli-zimic).

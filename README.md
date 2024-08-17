@@ -121,8 +121,7 @@ console.log(users); // [{ username: 'diego-aquino' }]
 
 ## Examples
 
-Visit our [examples](../../examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use
-cases!
+Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use cases!
 
 ## Changelog
 
@@ -411,7 +410,7 @@ If you plan to use [local interceptors](#local-http-interceptors) and run Zimic 
    </details></td></tr></table>
 
 More usage examples and recommendations are available in our [examples](#examples) and the
-[`zimic/interceptor` API reference](#zimicinterceptor-api-reference).
+[`zimic/interceptor` API reference](#zimicinterceptorhttp-api-reference).
 
 ### Testing
 
