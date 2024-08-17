@@ -31,27 +31,9 @@ jobs:
 
       - name: Get zimic release version
         id: zimic-version
-        run: |
-          version=$(jq -r '.version' ./packages/zimic/package.json)
-          echo "value=$version" >> $GITHUB_OUTPUT
-
-          if [[ '${{ github.ref_name }}' != "v$version" ]]; then
-            echo 'The release tag does not match the package version.' >&2
-            exit 1
-          fi
-
-      - name: Prepare NPM tag
-        id: npm-tag
-        run: |
-          # Check if the release tag is a valid semantic version.
-          if echo '${{ github.ref_name }}' | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9-]+\.[0-9]+)?$'; then
-            # Extract the pre-release tag or use 'latest' as the default.
-            value=$(echo '${{ github.ref_name }}' | grep -oP '(?<=-)[a-z0-9-]+(?=\.[0-9]+$)' || echo latest)
-            echo "value=$value" >> $GITHUB_OUTPUT
-          else
-            echo "The release tag '${{ github.ref_name }}' is not valid." >&2
-            exit 1
-          fi
+        uses: ./.github/actions/zimic-version
+        with:
+          ref-name: ${{ github.ref_name }}
 
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
@@ -67,7 +49,7 @@ jobs:
 
       - name: Release to NPM
         working-directory: packages/zimic
-        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.value }}
+        run: pnpm publish --no-git-checks --tag ${{ steps.zimic-version.outputs.label }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

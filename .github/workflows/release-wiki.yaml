@@ -6,8 +6,8 @@ on:
       - published
 
 concurrency:
-  group: release-wiki-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: release-wiki
+  cancel-in-progress: false
 
 env:
   NODE_VERSION: 20
@@ -27,34 +27,32 @@ jobs:
 
       - name: Get zimic release version
         id: zimic-version
-        run: |
-          version=$(jq -r '.version' ./packages/zimic/package.json)
-          echo "value=$version" >> $GITHUB_OUTPUT
-
-          if [[ '${{ github.ref_name }}' != "v$version" ]]; then
-            echo 'The release tag does not match the package version.' >&2
-            exit 1
-          fi
-
-          isProduction=$(echo "$version" | grep -vq '-' && echo true || echo false)
-          echo "is-production=$isProductionVersion" >> $GITHUB_OUTPUT
-
-          echo "Zimic version: $version (production: $isProduction)"
+        uses: ./.github/actions/zimic-version
+        with:
+          ref-name: ${{ github.ref_name }}
 
       - name: Checkout wiki
         uses: actions/checkout@v4
-        # if: ${{ steps.zimic-version.outputs.is-production == 'true' }}
+        # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         with:
           repository: zimicjs/zimic.wiki
 
       - name: Sync wiki with markdown docs
-        # if: ${{ steps.zimic-version.outputs.is-production == 'true' }}
+        # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         working-directory: zimic.wiki
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
 
-          rsync --archive --verbose --delete ../docs/wiki/ .
+          rsync --archive --verbose --delete ../../docs/wiki/ .
+
+          # Point "../../examples*" links to the current ref on  GitHub
+          sed -E -i "s/\\]\\(\\.\\.\\/\\.\\.\\/examples([^\\)]+)\\)/](https:\\/\\/github.com\\/zimicjs\\/zimic\\/tree\\/${{ github.ref_name }}\\/examples\\1)/g" *.md
+
+          # Copy all images to the wiki
+          find ../docs -type f -name '*.png' -exec cp {} . \;
+          sed -E -i "s/\\]\\(.+\\/([^.]+)\\.png/](.\\/\\1.png/g" *.md
+
           git add .
           git commit -m "docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}"
           git push

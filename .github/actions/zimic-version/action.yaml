@@ -1,0 +1,44 @@
+name: Get zimic version
+description: Get zimic version
+
+inputs:
+  ref-name:
+    description: The tag name that triggered the workflow
+    required: true
+
+outputs:
+  value:
+    description: The version of the zimic package
+    value: ${{ steps.zimic-version.outputs.value }}
+  label:
+    description: The label of the zimic package version
+    value: ${{ steps.zimic-label.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get zimic version
+      id: zimic-version
+      shell: bash
+      run: |
+        version=$(jq -r '.version' ./packages/zimic/package.json)
+        echo "value=$version" >> $GITHUB_OUTPUT
+
+        if [[ '${{ inputs.ref-name }}' != "v$version" ]]; then
+          echo 'The ref name does not match the package version.' >&2
+          exit 1
+        fi
+
+    - name: Get zimic label
+      id: zimic-label
+      shell: bash
+      run: |
+        # Check if the ref name is a valid semantic version.
+        if echo '${{ inputs.ref-name }}' | grep -qP '^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9-]+\.[0-9]+)?$'; then
+          # Extract the label of the ref name or use 'latest' as the default.
+          value=$(echo '${{ inputs.ref-name }}' | grep -oP '(?<=-)[a-z0-9-]+(?=\.[0-9]+$)' || echo latest)
+          echo "value=$value" >> $GITHUB_OUTPUT
+        else
+          echo "The ref name '${{ inputs.ref-name }}' is not valid." >&2
+          exit 1
+        fi
