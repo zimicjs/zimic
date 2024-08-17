@@ -6,11 +6,6 @@
 
 # Testing
 
-@TODO Improve description about concurrency management
-
-- Local interceptors work in single and multi-threaded environments, but not `it.concurrent`
-- Remote interceptors work in single and multi-threaded environments, using path discriminators
-
 There are many ways to configure Zimic in a testing environment. Usually, the best approach is dependent on your
 [method of intercepting requests](./getting-started.md#4-choose-your-method-to-intercept-requests) and how you are
 applying your mocks.
