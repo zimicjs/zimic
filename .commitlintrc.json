@@ -12,6 +12,7 @@
       [
         "root",
         "ci",
+        "wiki",
         "release",
         "zimic-test-client",
         "#zimic",
