@@ -1,8 +1,6 @@
 # Contents <!-- omit from toc -->
 
 - [`zimic` API reference](#zimic-api-reference)
-  - [`JSONValue`](#jsonvalue)
-  - [`JSONSerialized`](#jsonserialized)
 
 ---
 
@@ -19,11 +17,3 @@ This module provides general resources.
 > [!TIP]
 >
 > All APIs are documented using [JSDoc](https://jsdoc.app) and visible directly in your IDE.
-
-## `JSONValue`
-
-@TODO
-
-## `JSONSerialized`
-
-@TODO

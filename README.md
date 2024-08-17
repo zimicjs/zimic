@@ -35,21 +35,63 @@
 ---
 
 Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking library, inspired by
-[Zod](https://github.com/colinhacks/zod)'s type inference.
+[Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
 
 ## Features
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**. Declare your HTTP endpoints and get full static type inference and validation when
-  applying mocks.
-- :link: **Network-level intercepts**. Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](#zimic-server) to act on real HTTP requests. This means that no parts of your code are stubbed
-  or skipped. From you application's point of view, the mocked requests are indistinguishable from the real ones.
-- :wrench: **Flexibility**. You can simulate real application workflows by mocking any number of endpoints. This is
-  specially useful in testing, making sure that the path your application takes is covered.
-- :bulb: **Simplicity**. Zimic was designed from scratch to encourage clarity, simplicity and developer experience in
-  your mocks. Check our [getting started guide](#getting-started) and starting mocking!
+- :zap: **Statically-typed mocks**: Declare the
+  [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#declaring-interceptor-schemas) of your HTTP
+  endpoints and get full type inference and validation for your mocks.
+- :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
+  requests From you application's point of view, mocked responses are indistinguishable from real ones.
+- :wrench: **Flexibility**: Mock external services and simulate real application workflows. This is specially useful in
+  testing, helping you to cover the paths your application takes in predictable tests.
+- :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and developer experience in
+  your mocks, relying on official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
+  [getting started guide](https://github.com/zimicjs/zimic/wiki/getting-started) and starting mocking!
+
+```ts
+import { JSONValue } from 'zimic';
+import { HttpSchema } from 'zimic/http';
+import { httpInterceptor } from 'zimic/interceptor/http';
+
+type User = JSONValue<{
+  username: string;
+}>;
+
+// Declare your service schema
+type MyServiceSchema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+// Create and start your interceptor
+const myInterceptor = httpInterceptor.create<MyServiceSchema>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+
+await myInterceptor.start();
+
+// Declare your mocks
+const listHandler = myInterceptor.get('/users').respond({
+  status: 200,
+  body: [{ username: 'diego-aquino' }],
+});
+
+// Enjoy!
+const response = await fetch('http://localhost:3000/users');
+const users = await response.json();
+console.log(users); // [{ username: 'diego-aquino' }]
+```
 
 > [!NOTE]
 >
@@ -67,11 +109,33 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 > feel free to [open an issue](https://github.com/zimicjs/zimic/issues/new) or
 > [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
+## Documentation
+
+- [Introduction](https://github.com/zimicjs/zimic/wiki)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/getting-started)
+- [API reference](https://github.com/zimicjs/zimic/wiki/api-zimic)
+- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli-zimic)
+- [Examples](./examples/README.md)
+- Guides
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides-testing)
+
+## Examples
+
+Visit our [examples](../../examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use
+cases!
+
+## Changelog
+
+The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.
+
 ---
 
 ## Table of contents <!-- omit from toc -->
 
 - [Features](#features)
+- [Documentation](#documentation)
+- [Examples](#examples)
+- [Changelog](#changelog)
 - [Getting started](#getting-started)
   - [1. Requirements](#1-requirements)
   - [2. Install from `npm`](#2-install-from-npm)
@@ -81,22 +145,22 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   - [4. Post-install](#4-post-install)
     - [Node.js post-install](#nodejs-post-install)
     - [Browser post-install](#browser-post-install)
-- [Examples](#examples)
 - [Usage](#usage)
   - [Basic usage](#basic-usage)
   - [Testing](#testing)
-- [`zimic` API reference](#zimic-api-reference)
+- [`zimic/http` API reference](#zimichttp-api-reference)
   - [`HttpHeaders`](#httpheaders)
     - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpSearchParams`](#httpsearchparams)
     - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
   - [`HttpFormData`](#httpformdata)
     - [Comparing `HttpFormData`](#comparing-httpformdata)
-- [`zimic/interceptor` API reference](#zimicinterceptor-api-reference)
+- [`zimic/interceptor/http` API reference](#zimicinterceptorhttp-api-reference)
   - [`HttpInterceptor`](#httpinterceptor)
     - [`httpInterceptor.create`](#httpinterceptorcreate)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
+      - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
       - [Unhandled requests](#unhandled-requests)
       - [Saving intercepted requests](#saving-intercepted-requests)
     - [Declaring HTTP service schemas](#declaring-http-service-schemas)
@@ -138,7 +202,6 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
       - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
       - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
     - [`zimic typegen` programmatic usage](#zimic-typegen-programmatic-usage)
-- [Changelog](#changelog)
 
 ## Getting started
 
@@ -245,10 +308,6 @@ No additional configuration is necessary for Node.js. Check out the [usage guide
 If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
 [initialize a mock service worker](#zimic-browser-init) in your public directory. After that, check out the
 [usage guide](#usage) and start mocking!
-
-## Examples
-
-Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks and libraries!
 
 ## Usage
 
@@ -422,7 +481,7 @@ the application. See [Next.js App Router - Loading mocks](./examples/with-next-j
 
 ---
 
-## `zimic` API reference
+## `zimic/http` API reference
 
 This module provides general resources, such as HTTP classes and types.
 
@@ -645,9 +704,9 @@ console.log(formData3.contains(formData1)); // false
 
 </details>
 
-## `zimic/interceptor` API reference
+## `zimic/interceptor/http` API reference
 
-This module provides resources to create HTTP interceptors for both Node.js and browser environments.
+This module provides resources to create HTTP interceptors for both client-sid and server-side environments.
 
 ### `HttpInterceptor`
 
@@ -719,6 +778,8 @@ const interceptor = httpInterceptor.create<{
   baseURL: 'http://localhost:4000/my-service',
 });
 ```
+
+##### Path discriminators in remote HTTP interceptors
 
 A single [interceptor server](#zimic-server) is perfectly capable of handling multiple interceptors and requests. Thus,
 additional paths are supported and might be necessary to differentiate between conflicting interceptors. If you may have
@@ -2916,9 +2977,3 @@ await typegen.generateFromOpenAPI({
 ```
 
 The parameters of `typegen.generateFromOpenAPI` are the same as the CLI options for the `zimic typegen openapi` command.
-
----
-
-## Changelog
-
-The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.
