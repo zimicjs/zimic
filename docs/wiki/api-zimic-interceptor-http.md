@@ -21,6 +21,13 @@
     - [HTTP `interceptor.<method>(path)`](#http-interceptormethodpath)
       - [Dynamic path parameters](#dynamic-path-parameters)
     - [HTTP `interceptor.clear()`](#http-interceptorclear)
+    - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
+      - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
+      - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
+      - [`HttpServiceSchemaPath`](#httpserviceschemapath)
+      - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
+      - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
+      - [`ExtractHttpInterceptorSchema`](#extracthttpinterceptorschema)
   - [`HttpRequestHandler`](#httprequesthandler)
     - [HTTP `handler.method()`](#http-handlermethod)
     - [HTTP `handler.path()`](#http-handlerpath)
@@ -1134,6 +1141,138 @@ await interceptor.clear();
 ```
 
 </details></td></tr></table>
+
+### `HttpInterceptor` utility types
+
+#### `LiteralHttpServiceSchemaPath`
+
+Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
+schema are allowed.
+
+```ts
+type LiteralPath = LiteralHttpServiceSchemaPath<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    GET: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+// "/users" | "/users/:userId"
+```
+
+#### `NonLiteralHttpServiceSchemaPath`
+
+Extracts the non-literal paths from an HTTP service schema containing certain methods.
+
+```ts
+type NonLiteralPath = NonLiteralHttpServiceSchemaPath<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    GET: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+// "/users" | "/users/${string}"
+```
+
+#### `HttpServiceSchemaPath`
+
+Extracts the paths from an HTTP service schema containing certain methods.
+
+```ts
+type Path = NonLiteralHttpServiceSchemaPath<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    GET: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+// "/users" | "/users/:userId" | "/users/${string}"
+```
+
+#### `PathParamsSchemaFromPath`
+
+Infers the path parameters schema from a path string.
+
+```ts
+type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
+// { userId: string }
+```
+
+#### `MergeHttpResponsesByStatusCode`
+
+Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
+first declaration takes precedence.
+
+```ts
+// Overriding the 400 status code with a more specific schema and using a generic schema for all other client errors.
+type MergedResponses = MergeHttpResponsesByStatusCode<
+  [
+    {
+      400: { body: { message: string; issues: string[] } };
+    },
+    {
+      [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
+    },
+  ]
+>;
+// {
+//   400: { body: { message: string; issues: string[] } };
+//   401: { body: { message: string}; };
+//   402: { body: { message: string}; };
+//   403: { body: { message: string}; };
+//   ...
+// }
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: { response: MergedResponses };
+  };
+}>;
+```
+
+#### `ExtractHttpInterceptorSchema`
+
+Extracts the schema of an [HTTP interceptor](#httpinterceptor).
+
+```ts
+import { httpInterceptor, type ExtractHttpInterceptorSchema } from 'zimic/interceptor/http';
+
+const interceptor = httpInterceptor.create<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+}>({
+  type: 'local',
+  baseURL: 'http://localhost:3000',
+});
+
+type Schema = ExtractHttpInterceptorSchema<typeof interceptor>;
+// {
+//   '/users': {
+//     GET: {
+//       response: { 200: { body: User[] } };
+//     };
+//   };
+// }
+```
 
 ## `HttpRequestHandler`
 

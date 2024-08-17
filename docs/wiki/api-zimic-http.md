@@ -3,11 +3,16 @@
 - [`zimic/http` API reference](#zimichttp-api-reference)
   - [`HttpHeaders`](#httpheaders)
     - [Comparing `HttpHeaders`](#comparing-httpheaders)
+    - [`HttpHeaders` utility types](#httpheaders-utility-types)
+      - [`HttpHeadersSerialized`](#httpheadersserialized)
+      - [`HttpHeadersSchemaName`](#httpheadersschemaname)
   - [`HttpSearchParams`](#httpsearchparams)
     - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
+    - [`HttpSearchParams` utility types](#httpsearchparams-utility-types)
+      - [`HttpSearchParamsSerialized`](#httpsearchparamsserialized)
+      - [`HttpSearchParamsSchemaName`](#httpsearchparamsschemaname)
   - [`HttpFormData`](#httpformdata)
     - [Comparing `HttpFormData`](#comparing-httpformdata)
-  - [`HttpSchema`](#httpschema)
 
 ---
 
@@ -25,9 +30,6 @@ A superset of the built-in [`Headers`](https://developer.mozilla.org/docs/Web/AP
 schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to provide type safety when managing
 headers.
 
-<details>
-  <summary><code>HttpHeaders</code> example:</summary>
-
 ```ts
 import { HttpHeaders } from 'zimic/http';
 
@@ -43,15 +45,10 @@ const contentType = headers.get('content-type');
 console.log(contentType); // 'application/json'
 ```
 
-</details>
-
 ### Comparing `HttpHeaders`
 
 `HttpHeaders` also provides the utility methods `headers.equals()` and `headers.contains()`, useful in comparisons with
 other headers:
-
-<details>
-  <summary>Comparing <code>HttpHeaders</code> example:</summary>
 
 ```ts
 import { HttpSchema, HttpHeaders } from 'zimic/http';
@@ -89,16 +86,50 @@ console.log(headers1.contains(headers3)); // false
 console.log(headers3.contains(headers1)); // true
 ```
 
-</details>
+### `HttpHeaders` utility types
+
+#### `HttpHeadersSerialized`
+
+Recursively converts a type to its [HTTP headers](https://developer.mozilla.org/docs/Web/API/Headers)-serialized
+version. Numbers and booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not
+serializable values are excluded, such as functions and dates.
+
+```ts
+import { type HttpSearchParamsSerialized } from 'zimic/http';
+
+type Params = HttpSearchParamsSerialized<{
+  'content-type': string;
+  'x-remaining-tries': number;
+  'x-full'?: boolean;
+  'x-date'?: Date;
+  method(): void;
+}>;
+// {
+//   'content-type': string;
+//   'x-remaining-tries': `${number}`;
+//   'x-full'?: "false" | "true";
+// }
+```
+
+#### `HttpHeadersSchemaName`
+
+Extracts the names of the headers defined in a `HttpHeadersSchema`. Each key is considered a header name.
+
+```ts
+import { type HttpSearchParamsSerialized } from 'zimic/http';
+
+type HeaderName = HttpHeadersSchemaName<{
+  'content-type': string;
+  'content-length'?: string;
+}>;
+// "content-type" | "content-length"
+```
 
 ## `HttpSearchParams`
 
 A superset of the built-in [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) class, with a
 strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchParams` and is used by Zimic to provide
 type safety when managing search parameters.
-
-<details>
-  <summary><code>HttpSearchParams</code> example:</summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic/http';
@@ -118,15 +149,10 @@ const page = searchParams.get('page');
 console.log(page); // '1'
 ```
 
-</details>
-
 ### Comparing `HttpSearchParams`
 
 `HttpSearchParams` also provides the utility methods `searchParams.equals()` and `searchParams.contains()`, useful in
 comparisons with other search params:
-
-<details>
-  <summary>Comparing <code>HttpSearchParams</code> example:</summary>
 
 ```ts
 import { HttpSchema, HttpSearchParams } from 'zimic/http';
@@ -164,16 +190,68 @@ console.log(searchParams1.contains(searchParams3)); // false
 console.log(searchParams3.contains(searchParams1)); // true
 ```
 
-</details>
+### `HttpSearchParams` utility types
+
+#### `HttpSearchParamsSerialized`
+
+Recursively converts a type to its
+[URLSearchParams](https://developer.mozilla.org/docs/Web/API/URLSearchParams)-serialized version. Numbers and booleans
+are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are
+excluded, such as functions and dates.
+
+```ts
+import { type HttpSearchParamsSerialized } from 'zimic/http';
+
+type Params = HttpSearchParamsSerialized<{
+  query: string | null;
+  page?: number;
+  full?: boolean;
+  date?: Date;
+  method(): void;
+}>;
+// {
+//   query: string | undefined;
+//   page?: `${number}`;
+//   full?: "false" | "true";
+// }
+```
+
+#### `HttpSearchParamsSchemaName`
+
+Extracts the names of the search params defined in a `HttpSearchParamsSchema`. Each key is considered a search param
+name. `HttpSearchParamsSchemaName.Array` can be used to extract the names of array search params, whereas
+`HttpSearchParamsSchemaName.NonArray` extracts the names of non-array search params.
+
+```ts
+import { type HttpSearchParamsSchemaName } from 'zimic/http';
+
+type SearchParamsName = HttpSearchParamsSchemaName<{
+  query?: string[];
+  page?: `${number}`;
+  perPage?: `${number}`;
+}>;
+// "query" | "page" | "perPage"
+
+type ArraySearchParamsName = HttpSearchParamsSchemaName.Array<{
+  query?: string[];
+  page?: `${number}`;
+  perPage?: `${number}`;
+}>;
+// "query"
+
+type NonArraySearchParamsName = HttpSearchParamsSchemaName.NonArray<{
+  query?: string[];
+  page?: `${number}`;
+  perPage?: `${number}`;
+}>;
+// "page" | "perPage"
+```
 
 ## `HttpFormData`
 
 A superset of the built-in [`FormData`](https://developer.mozilla.org/docs/Web/API/FormData) class, with a
 strictly-typed schema. `HttpFormData` is fully compatible with `FormData` and is used by Zimic to provide type safety
 when managing form data.
-
-<details>
-  <summary><code>HttpFormData</code> example:</summary>
 
 ```ts
 import { HttpFormData } from 'zimic/http';
@@ -193,15 +271,10 @@ const description = formData.get('description');
 console.log(description); // 'My file'
 ```
 
-</details>
-
 ### Comparing `HttpFormData`
 
 `HttpFormData` also provides the utility methods `formData.equals()` and `formData.contains()`, useful in comparisons
 with other form data:
-
-<details>
-  <summary>Comparing <code>HttpFormData</code> example:</summary>
 
 ```ts
 import { HttpSchema, HttpFormData } from 'zimic/http';
@@ -231,9 +304,3 @@ console.log(formData1.contains(formData2)); // true
 console.log(formData1.contains(formData3)); // true
 console.log(formData3.contains(formData1)); // false
 ```
-
-</details>
-
-## `HttpSchema`
-
-@TODO
