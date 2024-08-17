@@ -64,15 +64,20 @@ export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = 
   keyof Schema & string
 >;
 
-type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
-  ? Type
-  : Type extends number
-    ? `${number}`
-    : Type extends boolean
-      ? `${boolean}`
-      : Type extends null
-        ? undefined
-        : never;
+type PrimitiveHttpSearchParamsSerialized<Type> =
+  Type extends Exclude<HttpSearchParamsSchema[string], undefined>
+    ? Type
+    : Type extends (infer ArrayItem)[]
+      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+      : Type extends number
+        ? `${number}`
+        : Type extends boolean
+          ? `${boolean}`
+          : Type extends null
+            ? undefined
+            : Type extends undefined
+              ? undefined
+              : never;
 
 /**
  * Recursively converts a type to its
@@ -96,16 +101,18 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpSearchParamsSerialized<Type> =
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Type extends Date | ((...parameters: any[]) => any)
+export type HttpSearchParamsSerialized<Type> = Type extends Date
+  ? never
+  : Type extends Function
     ? never
     : Type extends (infer ArrayItem)[]
       ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
       : Type extends object
         ? {
-            [Key in keyof Type as [PrimitiveHttpSearchParamsSerialized<Type[Key]>] extends [never]
-              ? never
-              : Key]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+            [Key in keyof Type as IfNever<
+              PrimitiveHttpSearchParamsSerialized<Type[Key]>,
+              never,
+              Key
+            >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
           }
         : PrimitiveHttpSearchParamsSerialized<Type>;
