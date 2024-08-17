@@ -13,7 +13,7 @@
 # Introduction
 
 <p align="center">
-  <img src="./zimic.png" align="center" width="100px" height="100px">
+  <img src="../zimic.png" align="center" width="100px" height="100px">
 </p>
 
 <h1 align="center">
@@ -144,8 +144,8 @@ Zimic allows you to intercept HTTP requests and return mock responses. In
 [local HTTP interceptors](getting-started#local-http-interceptors), Zimic uses [MSW](https://github.com/mswjs/msw) to
 intercept requests in the same process as your application. Zimic uses a dedicated local
 [interceptor server](cli-zimic-server#zimic-server) to handle requests. This opens up more possibilities for mocking,
-such as handling requests from multiple applications. Both of these strategies act on real HTTP requests, meaning that
-no code of your application needs to be mocked or stubbed.
+such as handling requests from multiple applications. Both of these strategies act on real HTTP requests _after_ they
+leave your application, meaning that no parts of your code are skipped and giving you more confidence in your tests.
 
 ## Documentation
 
