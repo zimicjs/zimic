@@ -10,11 +10,11 @@
 
 This module provides general resources.
 
-- [`zimic/http`](./api-zimic-http.md): HTTP resources.
+- [`zimic/http`](api-zimic-http): HTTP resources.
 - `zimic/interceptor`: API mocking and interceptor resources.
-  - [`zimic/interceptor/http`](./api-zimic-interceptor-http.md): HTTP interceptor resources.
-  - [`zimic/interceptor/server`](./api-zimic-interceptor-server.md): interceptor server programmatic resources.
-- [`zimic/typegen`](./api-zimic-typegen.md): type generation programmatic resources.
+  - [`zimic/interceptor/http`](api-zimic-interceptor-http): HTTP interceptor resources.
+  - [`zimic/interceptor/server`](api-zimic-interceptor-server): interceptor server programmatic resources.
+- [`zimic/typegen`](api-zimic-typegen): type generation programmatic resources.
 
 > [!TIP]
 >

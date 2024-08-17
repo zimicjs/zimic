@@ -29,4 +29,4 @@ The parameters of `typegen.generateFromOpenAPI` are the same as the CLI options 
 
 ## CLI usage
 
-See the [`zimic typegen` CLI reference](./cli-zimic-typegen.md).
+See the [`zimic typegen` CLI reference](cli-zimic-typegen).

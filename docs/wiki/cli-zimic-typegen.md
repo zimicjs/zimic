@@ -151,4 +151,4 @@ zimic typegen openapi ./schema.yaml \
 
 ## Programmatic usage
 
-See the [`zimic/typegen` API reference](./api-zimic-typegen.md).
+See the [`zimic/typegen` API reference](api-zimic-typegen).

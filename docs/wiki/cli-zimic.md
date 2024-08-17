@@ -8,9 +8,9 @@
 
 This CLI module contains root-level commands.
 
-- [`zimic browser`](./cli-zimic-browser.md)
-- [`zimic server`](./cli-zimic-server.md)
-- [`zimic typegen`](./cli-zimic-typegen.md)
+- [`zimic browser`](cli-zimic-browser)
+- [`zimic server`](cli-zimic-server)
+- [`zimic typegen`](cli-zimic-typegen)
 
 ```
 zimic [command]

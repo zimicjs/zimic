@@ -84,8 +84,8 @@ const interceptor = httpInterceptor.create<{
 #### Creating a remote HTTP interceptor
 
 A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
-[interceptor server](./cli-zimic-server.md#zimic-server). Any request starting with the `baseURL` will be intercepted if
-a matching [handler](#httprequesthandler) exists.
+[interceptor server](cli-zimic-server#zimic-server). Any request starting with the `baseURL` will be intercepted if a
+matching [handler](#httprequesthandler) exists.
 
 ```ts
 import { JSONValue } from 'zimic';
@@ -114,11 +114,11 @@ const interceptor = httpInterceptor.create<{
 
 #### Path discriminators in remote HTTP interceptors
 
-A single [interceptor server](./cli-zimic-server.md#zimic-server) is perfectly capable of handling multiple interceptors
-and requests. Thus, additional paths are supported and might be necessary to differentiate between conflicting
-interceptors. If you may have multiple threads or processes applying mocks concurrently to the same
-[interceptor server](./cli-zimic-server.md#zimic-server), it's important to keep the interceptor base URLs unique. Also,
-make sure that your application is considering the correct URL when making requests.
+A single [interceptor server](cli-zimic-server#zimic-server) is perfectly capable of handling multiple interceptors and
+requests. Thus, additional paths are supported and might be necessary to differentiate between conflicting interceptors.
+If you may have multiple threads or processes applying mocks concurrently to the same
+[interceptor server](cli-zimic-server#zimic-server), it's important to keep the interceptor base URLs unique. Also, make
+sure that your application is considering the correct URL when making requests.
 
 ```ts
 const interceptor = httpInterceptor.create<{
@@ -145,11 +145,10 @@ by default.
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
-In a [local interceptor](./getting-started.md#local-http-interceptors), unhandled requests are always bypassed, meaning
-that they pass through the interceptor and reach the real network.
-[Remote interceptors](./getting-started.md#remote-http-interceptors) in pair with an
-[interceptor server](./cli-zimic-server.md#zimic-server) always reject unhandled requests because they cannot be
-bypassed.
+In a [local interceptor](getting-started#local-http-interceptors), unhandled requests are always bypassed, meaning that
+they pass through the interceptor and reach the real network.
+[Remote interceptors](getting-started#remote-http-interceptors) in pair with an
+[interceptor server](cli-zimic-server#zimic-server) always reject unhandled requests because they cannot be bypassed.
 
 You can override the default logging behavior per interceptor with `onUnhandledRequest` in `httpInterceptor.create()`.
 
@@ -221,8 +220,7 @@ their intercepted requests in memory.
 > sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
 > after each test.
 >
-> See [Testing](./guides-testing.md#testing) for an example of how to manage the lifecycle of interceptors in your
-> tests.
+> See [Testing](guides-testing#testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
@@ -744,8 +742,8 @@ const interceptor = httpInterceptor.create<{
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
-Bodies can be a JSON object, [`HttpFormData`](./api-zimic-http.md#httpformdata),
-[`HttpSearchParams`](./api-zimic-http.md#httpsearchparams), `Blob`, or plain text.
+Bodies can be a JSON object, [`HttpFormData`](api-zimic-http#httpformdata),
+[`HttpSearchParams`](api-zimic-http#httpsearchparams), `Blob`, or plain text.
 
 <details open>
   <summary>
@@ -956,7 +954,7 @@ await interceptor.start();
 ```
 
 When targeting a browser environment with a local interceptor, make sure to follow the
-[client-side post-install guide](./getting-started.md#client-side-post-install) before starting your interceptors.
+[client-side post-install guide](getting-started#client-side-post-install) before starting your interceptors.
 
 ### HTTP `interceptor.stop()`
 
@@ -997,7 +995,7 @@ declared in the interceptor schema.
 
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
 
-When using a [remote interceptor](./getting-started.md#remote-http-interceptors), creating a handler is an asynchronous
+When using a [remote interceptor](getting-started#remote-http-interceptors), creating a handler is an asynchronous
 operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
 handler.
 
@@ -1234,7 +1232,7 @@ const creationHandler = await interceptor
 
 </details></td></tr></table>
 
-An equivalent alternative using [`HttpHeaders`](./api-zimic-http.md#httpheaders):
+An equivalent alternative using [`HttpHeaders`](api-zimic-http#httpheaders):
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1304,7 +1302,7 @@ const creationHandler = await interceptor
 
 </details></td></tr></table>
 
-An equivalent alternative using [`HttpSearchParams`](./api-zimic-http.md#httpsearchparams):
+An equivalent alternative using [`HttpSearchParams`](api-zimic-http#httpsearchparams):
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1995,20 +1993,20 @@ typed headers, path params and search params are in `headers`, `pathParams`, and
 The body is automatically parsed based on the header `content-type` of the request or response. The following table
 shows how each type is parsed, where `*` indicates any other resource that does not match the previous types:
 
-| `content-type`                      | Parsed to                                                  |
-| ----------------------------------- | ---------------------------------------------------------- |
-| `application/json`                  | `JSON`                                                     |
-| `application/xml`                   | `String`                                                   |
-| `application/x-www-form-urlencoded` | [`HttpSearchParams`](./api-zimic-http.md#httpsearchparams) |
-| `application/*` (others)            | `Blob`                                                     |
-| `multipart/form-data`               | [`HttpFormData`](./api-zimic-http.md#httpformdata)         |
-| `multipart/*` (others)              | `Blob`                                                     |
-| `text/*`                            | `String`                                                   |
-| `image/*`                           | `Blob`                                                     |
-| `audio/*`                           | `Blob`                                                     |
-| `font/*`                            | `Blob`                                                     |
-| `video/*`                           | `Blob`                                                     |
-| `*/*` (others)                      | `JSON` if possible, otherwise `String`                     |
+| `content-type`                      | Parsed to                                             |
+| ----------------------------------- | ----------------------------------------------------- |
+| `application/json`                  | `JSON`                                                |
+| `application/xml`                   | `String`                                              |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](api-zimic-http#httpsearchparams) |
+| `application/*` (others)            | `Blob`                                                |
+| `multipart/form-data`               | [`HttpFormData`](api-zimic-http#httpformdata)         |
+| `multipart/*` (others)              | `Blob`                                                |
+| `text/*`                            | `String`                                              |
+| `image/*`                           | `Blob`                                                |
+| `audio/*`                           | `Blob`                                                |
+| `font/*`                            | `Blob`                                                |
+| `video/*`                           | `Blob`                                                |
+| `*/*` (others)                      | `JSON` if possible, otherwise `String`                |
 
 If no `content-type` exists or it is unknown, Zimic tries to parse the body as JSON and falls back to plain text if it
 fails.
