@@ -55,16 +55,17 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**: Declare the [schema](api-zimic-interceptor-http-schemas) of your HTTP endpoints and
-  get full type inference and validation for your mocks.
+- :zap: **Statically-typed mocks**: Declare the
+  [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http-schemas) of your HTTP endpoints and create
+  fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](cli-zimic-server#zimic-server) to act on real HTTP requests From you application's point of
-  view, mocked responses are indistinguishable from real ones.
-- :wrench: **Flexibility**: Mock external services and simulate real application workflows. This is specially useful in
-  testing, helping you to cover the paths your application takes in predictable tests.
-- :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and developer experience in
-  your mocks, relying on official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
-  [getting started guide](getting-started) and starting mocking!
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
+  requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
+- :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
+  loading, and error states with ease.
+- :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and robustness in your
+  mocks, using official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
+  [getting started guide](https://github.com/zimicjs/zimic/wiki/getting-started) and starting mocking!
 
 ```ts
 import { JSONValue } from 'zimic';
