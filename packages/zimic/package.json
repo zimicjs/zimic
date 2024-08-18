@@ -93,9 +93,9 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@whatwg-node/server": "^0.9.46",
+    "@whatwg-node/server": "^0.9.47",
     "chalk": "^4.1.2",
-    "execa": "^9.3.0",
+    "execa": "^9.3.1",
     "isomorphic-ws": "^5.0.0",
     "msw": "^2.3.5",
     "openapi-typescript": "7.3.0",
@@ -105,7 +105,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.2.0",
+    "@types/node": "^22.4.0",
     "@types/ws": "^8.5.12",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "2.0.5",
@@ -115,7 +115,7 @@
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "js-yaml": "^4.1.0",
-    "playwright": "^1.46.0",
+    "playwright": "^1.46.1",
     "prettier": "^3.3.3",
     "tsup": "^8.2.4",
     "tsx": "^4.17.0",
