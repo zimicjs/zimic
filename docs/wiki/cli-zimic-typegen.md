@@ -82,8 +82,8 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
 });
 ```
 
-Our [typegen example](../../examples/with-typegen) demonstrates how to use `zimic typegen openapi` to generate types and
-use them in your application and interceptors.
+Our [OpenAPI typegen example](../../examples/with-openapi-typegen) demonstrates how to use `zimic typegen openapi` to
+generate types and use them in your application and interceptors.
 
 ### `zimic typegen openapi` comments
 

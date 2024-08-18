@@ -24,4 +24,4 @@
 
 ## Type generation
 
-- [With typegen](./with-typegen)
+- [With OpenAPI typegen](./with-openapi-typegen)

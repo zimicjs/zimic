@@ -57,9 +57,9 @@ where the repository is found and another where it is not.
    git init
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
-   git sparse-checkout set examples/with-typegen
+   git sparse-checkout set examples/with-openapi-typegen
    git pull origin main
-   cd examples/with-typegen
+   cd examples/with-openapi-typegen
    ```
 
 2. Install the dependencies:
