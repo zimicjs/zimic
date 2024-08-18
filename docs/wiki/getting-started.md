@@ -54,7 +54,7 @@ If you are using TypeScript, we recommend enabling `strict` in your `tsconfig.js
 
 ## 2. Installation
 
-Zimic is available on npm at https://www.npmjs.com/package/zimic.
+Zimic is available on [npm](https://www.npmjs.com/package/zimic).
 
 | Manager | Command                        |
 | :-----: | ------------------------------ |
@@ -82,7 +82,7 @@ ready to start mocking!
 
 ### Server-side post-install
 
-No additional configuration is required for Node.js!
+No additional configuration is required for server-side applications!
 
 ## 4. Choose your method to intercept requests
 
@@ -90,8 +90,8 @@ Zimic interceptors support two types of execution: `local` and `remote`.
 
 > [!TIP]
 >
-> The type is an individual interceptor setting. Multiple interceptors with different types in the same application are
-> perfectly possible! However, keep in mind that local interceptors have precedence over remote interceptors.
+> Multiple interceptors with different types are perfectly possible in the same application. However, keep in mind that
+> local interceptors have precedence over remote interceptors.
 
 ### Local HTTP interceptors
 
@@ -231,7 +231,7 @@ interceptors.
    console.log(users); // [{ username: 'diego-aquino' }]
 
    const requests = listHandler.requests();
-   console.log(requests.length); // 1 intercepted request
+   console.log(requests.length); // 1
    ```
 
    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
@@ -247,17 +247,14 @@ interceptors.
    console.log(users); // [{ username: 'diego-aquino' }]
 
    const requests = await listHandler.requests();
-   console.log(requests.length); // 1 intercepted request
+   console.log(requests.length); // 1
    ```
 
    </details></td></tr></table>
 
-More usage examples and recommendations are available in our [examples](../../examples/README.md),
-[API reference](api-zimic), and [CLI reference](cli-zimic).
-
 ## 6. Next steps
 
-- Take a look at our [examples](../../examples/README.md).
+- Take a look at our [examples](../../examples/README.md) and [testing guide](guides-testing).
 
 - Check out the [API reference](api-zimic):
 
