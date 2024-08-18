@@ -203,7 +203,7 @@ interceptors.
    about declaring [HTTP service schemas](api-zimic-interceptor-http-schemas).
 
    You can also use [`zimic typegen`](cli-zimic-typegen) to automatically generate these types from an
-   [OpenAPI](https://swagger.io/specification) 3.x schema.
+   [OpenAPI 3](https://swagger.io/specification) schema.
 
 2. Then, start the interceptor:
 

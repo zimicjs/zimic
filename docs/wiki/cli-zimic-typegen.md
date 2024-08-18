@@ -16,14 +16,14 @@ errors and keep your types consistent with specifications, such as [OpenAPI](htt
 
 ## `zimic typegen openapi`
 
-Generate types from an [OpenAPI](https://swagger.io/specification) schema.
+Generate types from an [OpenAPI 3](https://swagger.io/specification) schema.
 
 ```
 zimic typegen openapi <input>
 
 Positionals:
   input  The path to a local OpenAPI schema file or an URL to fetch it. Version
-         3.x is supported as YAML or JSON.                   [string] [required]
+         3 is supported as YAML or JSON.                   [string] [required]
 
 Options:
   -o, --output        The path to write the generated types to. If not provided,

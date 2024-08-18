@@ -7,8 +7,8 @@
 
 ## `zimic/typegen`
 
-This module exports resources for generating types programmatically. We recommend using the CLI, but this is still a
-valid alternative for more advanced use cases.
+This module exports resources for generating types programmatically. We recommend using the
+[`zimic typegen` CLI](cli-zimic-typegen), but this is still a valid alternative for more advanced use cases.
 
 An example using the programmatic API to generate types from an OpenAPI schema:
 

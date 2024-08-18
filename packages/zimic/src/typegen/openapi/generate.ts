@@ -78,7 +78,7 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
  */
 export interface OpenAPITypegenOptions {
   /**
-   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3.x is supported as YAML or JSON.
+   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3 is supported as YAML or JSON.
    *
    * @example
    *   './schema.yaml';
