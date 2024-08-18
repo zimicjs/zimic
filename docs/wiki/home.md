@@ -1,17 +1,3 @@
-# Contents <!-- omit from toc -->
-
-- [Introduction](#introduction)
-  - [Features](#features)
-  - [What is Zimic for?](#what-is-zimic-for)
-  - [How does Zimic work?](#how-does-zimic-work)
-  - [Documentation](#documentation)
-  - [Examples](#examples)
-  - [Changelog](#changelog)
-
----
-
-# Introduction
-
 <p align="center">
   <img src="../zimic.png" align="center" width="100px" height="100px">
 </p>
@@ -47,6 +33,20 @@
 </div>
 
 ---
+
+# Contents <!-- omit from toc -->
+
+- [Introduction](#introduction)
+  - [Features](#features)
+  - [What is Zimic for?](#what-is-zimic-for)
+  - [How does Zimic work?](#how-does-zimic-work)
+  - [Documentation](#documentation)
+  - [Examples](#examples)
+  - [Changelog](#changelog)
+
+---
+
+# Introduction
 
 Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking library, inspired by
 [Zod](https://github.com/colinhacks/zod)'s type inference and using [MSW](https://github.com/mswjs/msw) under the hood.
@@ -162,7 +162,7 @@ leave your application, meaning that no parts of your code are skipped and givin
 > You can search the wiki with the GitHub search. To do so, press `/` or click on the GitHub search bar, prefix your
 > query `repo:zimicjs/zimic type:wiki` and type your search terms.
 >
-> ![GitHub search bar on the repository header](../zimic.png)
+> ![GitHub search bar on the repository header](./home-wiki-search.png)
 
 ## Examples
 

@@ -29,8 +29,8 @@
     [Chrome](https://www.google.com/chrome) or [Edge](https://www.microsoft.com/edge))
 - If you are on **server-side**:
   - [Node](https://nodejs.org) >= 18.13.0
-  - [Bun](https://bun.sh) ([:construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
-  - [Deno](https://deno.com) ([ :construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
+  - ~Bun~ ([:construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
+  - ~Deno~ ([ :construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
 
 ### Supported languages
 
@@ -266,20 +266,18 @@ More usage examples and recommendations are available in our [examples](../../ex
     - [Creating a remote HTTP interceptor](api-zimic-interceptor-http#creating-a-remote-http-interceptor)
     - [Managing unhandled requests](api-zimic-interceptor-http#unhandled-requests)
     - [Saving intercepted requests](api-zimic-interceptor-http#saving-intercepted-requests)
-    - [Using path parameters](api-zimic-interceptor-http#path-parameters)
+    - [`HttpInterceptor` utility types](api-zimic-interceptor-http#httpinterceptor-utility-types)
   - [`HttpRequestHandler`](api-zimic-interceptor-http#httprequesthandler)
-    - [Declaring HTTP request restrictions](api-zimic-interceptor-http#http-handlerwithrestriction)
+    - [Declaring restrictions](api-zimic-interceptor-http#http-handlerwithrestriction)
       - [Static restrictions](api-zimic-interceptor-http#static-restrictions)
       - [Computed restrictions](api-zimic-interceptor-http#computed-restrictions)
-    - [Declaring HTTP responses](api-zimic-interceptor-http#http-handlerresponddeclaration)
+    - [Declaring responses](api-zimic-interceptor-http#http-handlerresponddeclaration)
       - [Static responses](api-zimic-interceptor-http#static-responses)
       - [Computed responses](api-zimic-interceptor-http#computed-responses)
   - [Intercepted HTTP resources](api-zimic-interceptor-http#intercepted-http-resources)
-  - [`HttpInterceptor` utility types](api-zimic-interceptor-http#httpinterceptor-utility-types)
+  - [Declaring HTTP service schemas](api-zimic-interceptor-http-schemas)
 
-- Learn more about declaring [HTTP service schemas](api-zimic-interceptor-http-schemas).
-
-- Explore the [`zimic` CLI commands](cli-zimic).
+- Explore the [`zimic` CLI](cli-zimic):
 
   - [`zimic browser`](cli-zimic-browser)
   - [`zimic server`](cli-zimic-server)
