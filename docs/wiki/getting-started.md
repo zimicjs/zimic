@@ -14,6 +14,7 @@
     - [Remote HTTP interceptors](#remote-http-interceptors)
       - [When to use remote HTTP interceptors](#when-to-use-remote-http-interceptors)
   - [5. Create your first interceptor](#5-create-your-first-interceptor)
+  - [6. Next steps](#6-next-steps)
 
 ---
 
@@ -199,7 +200,10 @@ interceptors.
 
    In this example, we're [creating an interceptor](api-zimic-interceptor-http#httpinterceptorcreateoptions) for a
    service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
-   about [declaring HTTP service schemas](api-zimic-interceptor-http-schemas).
+   about declaring [HTTP service schemas](api-zimic-interceptor-http-schemas).
+
+   You can also use [`zimic typegen`](cli-zimic-typegen) to automatically generate these types from an
+   [OpenAPI](https://swagger.io/specification) 3.x schema.
 
 2. Then, start the interceptor:
 
@@ -250,3 +254,33 @@ interceptors.
 
 More usage examples and recommendations are available in our [examples](../../examples/README.md),
 [API reference](api-zimic), and [CLI reference](cli-zimic).
+
+## 6. Next steps
+
+- Take a look at our [examples](../../examples/README.md).
+
+- Check out the [API reference](api-zimic):
+
+  - [`HttpInterceptor`](api-zimic-interceptor-http#httpinterceptor)
+    - [Creating a local HTTP interceptor](api-zimic-interceptor-http#creating-a-local-http-interceptor)
+    - [Creating a remote HTTP interceptor](api-zimic-interceptor-http#creating-a-remote-http-interceptor)
+    - [Managing unhandled requests](api-zimic-interceptor-http#unhandled-requests)
+    - [Saving intercepted requests](api-zimic-interceptor-http#saving-intercepted-requests)
+    - [Using path parameters](api-zimic-interceptor-http#path-parameters)
+  - [`HttpRequestHandler`](api-zimic-interceptor-http#httprequesthandler)
+    - [Declaring HTTP request restrictions](api-zimic-interceptor-http#http-handlerwithrestriction)
+      - [Static restrictions](api-zimic-interceptor-http#static-restrictions)
+      - [Computed restrictions](api-zimic-interceptor-http#computed-restrictions)
+    - [Declaring HTTP responses](api-zimic-interceptor-http#http-handlerresponddeclaration)
+      - [Static responses](api-zimic-interceptor-http#static-responses)
+      - [Computed responses](api-zimic-interceptor-http#computed-responses)
+  - [Intercepted HTTP resources](api-zimic-interceptor-http#intercepted-http-resources)
+  - [`HttpInterceptor` utility types](api-zimic-interceptor-http#httpinterceptor-utility-types)
+
+- Learn more about declaring [HTTP service schemas](api-zimic-interceptor-http-schemas).
+
+- Explore the [`zimic` CLI commands](cli-zimic).
+
+  - [`zimic browser`](cli-zimic-browser)
+  - [`zimic server`](cli-zimic-server)
+  - [`zimic typegen`](cli-zimic-typegen)

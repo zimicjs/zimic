@@ -5,7 +5,7 @@
     - [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions)
       - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
-      - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
+        - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
       - [Unhandled requests](#unhandled-requests)
       - [Saving intercepted requests](#saving-intercepted-requests)
     - [HTTP `interceptor.start()`](#http-interceptorstart)
@@ -114,7 +114,7 @@ const interceptor = httpInterceptor.create<{
 });
 ```
 
-#### Path discriminators in remote HTTP interceptors
+##### Path discriminators in remote HTTP interceptors
 
 A single [interceptor server](cli-zimic-server#zimic-server) is perfectly capable of handling multiple interceptors and
 requests. Thus, additional paths are supported and might be necessary to differentiate between conflicting interceptors.
