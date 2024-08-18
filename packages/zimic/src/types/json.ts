@@ -4,7 +4,7 @@ type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null 
  * Represents or validates a type that is compatible and can be represented in JSON.
  *
  * @example
- *   import { JSONValue } from 'zimic';
+ *   import { type JSONValue } from 'zimic';
  *
  *   // Can be used as a standalone type:
  *   function doSomething(value: JSONValue): string {
@@ -35,7 +35,7 @@ export type JSONValue<Type extends JSON = JSON> = Type;
  * values are excluded.
  *
  * @example
- *   import { JSONSerialized } from 'zimic';
+ *   import { type JSONSerialized } from 'zimic';
  *
  *   type SerializedUser = JSONSerialized<{
  *     id: string;

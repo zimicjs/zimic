@@ -13,6 +13,12 @@
       - [`HttpSearchParamsSchemaName`](#httpsearchparamsschemaname)
   - [`HttpFormData`](#httpformdata)
     - [Comparing `HttpFormData`](#comparing-httpformdata)
+  - [Utility types](#utility-types)
+    - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
+    - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
+    - [`HttpServiceSchemaPath`](#httpserviceschemapath)
+    - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
+    - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
 
 ---
 
@@ -51,7 +57,7 @@ console.log(contentType); // 'application/json'
 other headers:
 
 ```ts
-import { HttpSchema, HttpHeaders } from 'zimic/http';
+import { type HttpSchema, HttpHeaders } from 'zimic/http';
 
 type HeaderSchema = HttpSchema.Headers<{
   accept?: string;
@@ -155,7 +161,7 @@ console.log(page); // '1'
 comparisons with other search params:
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
 
 type SearchParamsSchema = HttpSchema.SearchParams<{
   names?: string[];
@@ -277,7 +283,7 @@ console.log(description); // 'My file'
 with other form data:
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from 'zimic/http';
 
 type FormDataSchema = HttpSchema.FormData<{
   files: File[];
@@ -303,4 +309,137 @@ console.log(formData1.equals(formData3)); // false
 console.log(formData1.contains(formData2)); // true
 console.log(formData1.contains(formData3)); // true
 console.log(formData3.contains(formData1)); // false
+```
+
+## Utility types
+
+### `LiteralHttpServiceSchemaPath`
+
+Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods
+to filter the paths with. Only the methods defined in the schema are allowed.
+
+```ts
+import { type HttpSchema, type LiteralHttpServiceSchemaPath } from 'zimic/http';
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type LiteralPath = LiteralHttpServiceSchemaPath<Schema>;
+// "/users" | "/users/:userId"
+
+type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+### `NonLiteralHttpServiceSchemaPath`
+
+Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+methods to filter the paths with. Only the methods defined in the schema are allowed.
+
+```ts
+import { type HttpSchema, type NonLiteralHttpServiceSchemaPath } from 'zimic/http';
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type NonLiteralPath = NonLiteralHttpServiceSchemaPath<Schema>;
+// "/users" | "/users/${string}"
+
+type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+### `HttpServiceSchemaPath`
+
+Extracts the [literal](#literalhttpserviceschemapath) and [non-literal](#nonliteralhttpserviceschemapath) paths from an
+HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the
+methods defined in the schema are allowed.
+
+```ts
+import { type HttpSchema, type HttpServiceSchemaPath } from 'zimic/http';
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type Path = NonLiteralHttpServiceSchemaPath<Schema>;
+// "/users" | "/users/:userId" | "/users/${string}"
+
+type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+### `PathParamsSchemaFromPath`
+
+Infers the path parameters schema from a path string.
+
+```ts
+import { type PathParamsSchemaFromPath } from 'zimic/http';
+
+type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
+// { userId: string }
+```
+
+### `MergeHttpResponsesByStatusCode`
+
+Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
+first declaration takes precedence.
+
+```ts
+import { type HttpSchema, type HttpStatusCode, type MergeHttpResponsesByStatusCode } from 'zimic/http';
+
+// Overriding the 400 status code with a more specific schema
+// and using a generic schema for all other client errors.
+type MergedResponses = MergeHttpResponsesByStatusCode<
+  [
+    {
+      400: { body: { message: string; issues: string[] } };
+    },
+    {
+      [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
+    },
+  ]
+>;
+// {
+//   400: { body: { message: string; issues: string[] } };
+//   401: { body: { message: string}; };
+//   402: { body: { message: string}; };
+//   403: { body: { message: string}; };
+//   ...
+// }
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: { response: MergedResponses };
+  };
+}>;
 ```

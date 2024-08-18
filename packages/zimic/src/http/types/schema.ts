@@ -264,23 +264,30 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
 >;
 
 /**
- * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
- * schema are allowed.
+ * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+ * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   type LiteralPath = LiteralHttpServiceSchemaPath<{
+ *   import { type HttpSchema, type LiteralHttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
  *     '/users': {
  *       GET: {
  *         response: { 200: { body: User[] } };
  *       };
  *     };
  *     '/users/:userId': {
- *       GET: {
+ *       DELETE: {
  *         response: { 200: { body: User } };
  *       };
  *     };
  *   }>;
+ *
+ *   type LiteralPath = LiteralHttpServiceSchemaPath<Schema>;
  *   // "/users" | "/users/:userId"
+ *
+ *   type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
@@ -289,11 +296,6 @@ export type LiteralHttpServiceSchemaPath<
   Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
 > = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
 
-/**
- * Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed.
- *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
- */
 export type LooseLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpMethod = HttpMethod,
@@ -308,22 +310,30 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
     : Path;
 
 /**
- * Extracts the non-literal paths from an HTTP service schema containing certain methods.
+ * Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+ * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   type NonLiteralPath = NonLiteralHttpServiceSchemaPath<{
+ *   import { type HttpSchema, type NonLiteralHttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
  *     '/users': {
  *       GET: {
  *         response: { 200: { body: User[] } };
  *       };
  *     };
  *     '/users/:userId': {
- *       GET: {
+ *       DELETE: {
  *         response: { 200: { body: User } };
  *       };
  *     };
  *   }>;
+ *
+ *   type NonLiteralPath = NonLiteralHttpServiceSchemaPath<Schema>;
  *   // "/users" | "/users/${string}"
+ *
+ *   type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
@@ -366,22 +376,30 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
 >;
 
 /**
- * Extracts the paths from an HTTP service schema containing certain methods.
+ * Extracts the paths from an HTTP service schema. Optionally receives a second argument with one or more methods to
+ * filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   type Path = NonLiteralHttpServiceSchemaPath<{
+ *   import { type HttpSchema, type HttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
  *     '/users': {
  *       GET: {
  *         response: { 200: { body: User[] } };
  *       };
  *     };
  *     '/users/:userId': {
- *       GET: {
+ *       DELETE: {
  *         response: { 200: { body: User } };
  *       };
  *     };
  *   }>;
+ *
+ *   type Path = NonLiteralHttpServiceSchemaPath<Schema>;
  *   // "/users" | "/users/:userId" | "/users/${string}"
+ *
+ *   type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
  */
@@ -401,6 +419,8 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
  * Infers the path parameters schema from a path string.
  *
  * @example
+ *   import { PathParamsSchemaFromPath } from 'zimic/http';
+ *
  *   type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
  *   // { userId: string }
  */
@@ -432,7 +452,10 @@ type RecursiveMergeHttpResponsesByStatusCode<
  * first declaration takes precedence.
  *
  * @example
- *   // Overriding the 400 status code with a more specific schema and using a generic schema for all other client errors.
+ *   import { type HttpSchema, type HttpStatusCode, MergeHttpResponsesByStatusCode } from 'zimic/http';
+ *
+ *   // Overriding the 400 status code with a more specific schema
+ *   // and using a generic schema for all other client errors.
  *   type MergedResponses = MergeHttpResponsesByStatusCode<
  *     [
  *       {
@@ -451,7 +474,7 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *   //   ...
  *   // }
  *
- *   type Schema = HttpSchema<{
+ *   type Schema = HttpSchema.Paths<{
  *     '/users': {
  *       GET: { response: MergedResponses };
  *     };

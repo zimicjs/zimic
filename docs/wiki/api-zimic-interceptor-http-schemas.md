@@ -17,8 +17,8 @@ response bodies, and status codes. Based on the schema, interceptors will provid
   <summary>An example of a complete interceptor schema:</summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring base types
@@ -85,8 +85,8 @@ const interceptor = httpInterceptor.create<{
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring the base types
@@ -192,7 +192,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { HttpSchema } from 'zimic/http';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserPaths = HttpSchema.Paths<{
@@ -249,7 +249,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { HttpSchema } from 'zimic/http';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserMethods = HttpSchema.Methods<{
@@ -284,8 +284,8 @@ Each method can have a `request`, which defines the schema of the accepted reque
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
@@ -312,8 +312,8 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
@@ -342,24 +342,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!TIP]
 >
-> The utility type `JSONSerialized`, exported from `zimic`, can be handy to infer the serialized type of an object. It
-> converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
-
-```ts
-import { JSONSerialized } from 'zimic/http';
-
-class User {
-  name: string;
-  age: number;
-  createdAt: Date;
-  method() {
-    // ...
-  }
-}
-
-type SerializedUser = JSONSerialized<User>;
-// { name: string, age: number, createdAt: string }
-```
+> The utility type [`JSONSerialized`](api-zimic#jsonserialized) can be handy to infer the serialized type of an object.
+> It converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
 
 <details open>
   <summary>
@@ -367,7 +351,7 @@ type SerializedUser = JSONSerialized<User>;
   </summary>
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic/http';
+import { type HttpSchema, type HttpFormData } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
@@ -439,7 +423,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, type HttpSearchParams } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
@@ -472,8 +456,8 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserCreationBody = JSONValue<{
@@ -512,7 +496,7 @@ Bodies can be a JSON object, [`HttpFormData`](api-zimic-http#httpformdata),
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic';
+import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{
@@ -553,7 +537,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpFormData } from 'zimic/http';
+import { type HttpSchema, type HttpFormData } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
@@ -631,7 +615,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { HttpSchema, HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, type HttpSearchParams } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
@@ -667,8 +651,8 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { JSONValue } from 'zimic';
-import { HttpSchema } from 'zimic/http';
+import { type JSONValue } from 'zimic';
+import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 type User = JSONValue<{

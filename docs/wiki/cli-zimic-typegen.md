@@ -74,7 +74,7 @@ Then, you can use the types in your interceptors:
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
-import { MyServiceSchema } from './schema';
+import { type MyServiceSchema } from './schema';
 
 const interceptor = httpInterceptor.create<MyServiceSchema>({
   type: 'local',
