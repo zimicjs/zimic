@@ -199,7 +199,7 @@ interceptors.
 
    In this example, we're [creating an interceptor](api-zimic-interceptor-http#httpinterceptorcreateoptions) for a
    service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
-   about [declaring HTTP service schemas](api-zimic-interceptor-http#declaring-interceptor-schemas).
+   about [declaring HTTP service schemas](api-zimic-interceptor-http-schemas).
 
 2. Then, start the interceptor:
 
