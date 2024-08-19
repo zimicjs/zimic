@@ -402,10 +402,10 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
  *     };
  *   }>;
  *
- *   type Path = NonLiteralHttpServiceSchemaPath<Schema>;
+ *   type Path = HttpServiceSchemaPath<Schema>;
  *   // "/users" | "/users/:userId" | "/users/${string}"
  *
- *   type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   type GetPath = HttpServiceSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
@@ -504,7 +504,7 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *
  *   // Overriding the 400 status code with a more specific schema
  *   // and using a generic schema for all other client errors.
- *   type MergedResponses = MergeHttpResponsesByStatusCode<
+ *   type MergedResponseByStatusCode = MergeHttpResponsesByStatusCode<
  *     [
  *       {
  *         400: { body: { message: string; issues: string[] } };
@@ -524,7 +524,7 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *
  *   type Schema = HttpSchema.Paths<{
  *     '/users': {
- *       GET: { response: MergedResponses };
+ *       GET: { response: MergedResponseByStatusCode };
  *     };
  *   }>;
  */
