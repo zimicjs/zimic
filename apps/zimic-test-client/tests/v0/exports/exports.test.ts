@@ -42,9 +42,7 @@ import {
   type HttpServiceSchemaPath,
   type HttpSchemaPath,
   type LiteralHttpServiceSchemaPath,
-  type LiteralHttpSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
-  type NonLiteralHttpSchemaPath,
   type PathParamsSchemaFromPath,
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
@@ -157,9 +155,9 @@ describe('Exports', () => {
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<LiteralHttpSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<NonLiteralHttpSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
     expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();

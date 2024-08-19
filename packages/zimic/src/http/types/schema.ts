@@ -271,112 +271,11 @@ export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Extract<keyof UnionToIntersection<Schema[keyof Schema]>, HttpMethod>
 >;
 
-/**
- * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more
- * methods to filter the paths with. Only the methods defined in the schema are allowed.
- *
- * @example
- *   import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
- *
- *   type Schema = HttpSchema.Paths<{
- *     '/users': {
- *       GET: {
- *         response: { 200: { body: User[] } };
- *       };
- *     };
- *     '/users/:userId': {
- *       DELETE: {
- *         response: { 200: { body: User } };
- *       };
- *     };
- *   }>;
- *
- *   type LiteralPath = LiteralHttpSchemaPath<Schema>;
- *   // "/users" | "/users/:userId"
- *
- *   type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
- *   // "/users"
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
- */
-export type LiteralHttpSchemaPath<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-> = LooseLiteralHttpSchemaPath<Schema, Method>;
-
-export type LooseLiteralHttpSchemaPath<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
-  [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
-}[Extract<keyof Schema, string>];
-
 type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
   ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
   : Path extends `${infer Prefix}:${string}`
     ? `${Prefix}${string}`
     : Path;
-
-/**
- * Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
- * methods to filter the paths with. Only the methods defined in the schema are allowed.
- *
- * @example
- *   import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
- *
- *   type Schema = HttpSchema.Paths<{
- *     '/users': {
- *       GET: {
- *         response: { 200: { body: User[] } };
- *       };
- *     };
- *     '/users/:userId': {
- *       DELETE: {
- *         response: { 200: { body: User } };
- *       };
- *     };
- *   }>;
- *
- *   type NonLiteralPath = NonLiteralHttpSchemaPath<Schema>;
- *   // "/users" | "/users/${string}"
- *
- *   type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
- *   // "/users"
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
- */
-export type NonLiteralHttpSchemaPath<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-> = AllowAnyStringInPathParams<LiteralHttpSchemaPath<Schema, Method>>;
-
-type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
-  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
-  : Path;
-
-type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
-  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
-
-export type PreferMostStaticLiteralPath<Path extends string> =
-  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
-
-type RecursiveInferHttpSchemaPath<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  NonLiteralPath extends string,
-  LiteralPath extends LiteralHttpSchemaPath<Schema, Method>,
-> =
-  NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
-    ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
-      ? never
-      : LiteralPath
-    : never;
-
-export type LiteralHttpSchemaPathFromNonLiteral<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  NonLiteralPath extends string,
-  LiteralPath extends LiteralHttpSchemaPath<Schema, Method> = LiteralHttpSchemaPath<Schema, Method>,
-> = PreferMostStaticLiteralPath<
-  LiteralPath extends LiteralPath ? RecursiveInferHttpSchemaPath<Schema, Method, NonLiteralPath, LiteralPath> : never
->;
 
 /**
  * Extracts the paths from an HTTP service schema. Optionally receives a second argument with one or more methods to
@@ -406,10 +305,114 @@ export type LiteralHttpSchemaPathFromNonLiteral<
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
+export namespace HttpSchemaPath {
+  type LooseLiteral<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
+    [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
+  }[Extract<keyof Schema, string>];
+
+  /**
+   * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+   * methods to filter the paths with. Only the methods defined in the schema are allowed.
+   *
+   * @example
+   *   import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
+   *
+   *   type Schema = HttpSchema.Paths<{
+   *     '/users': {
+   *       GET: {
+   *         response: { 200: { body: User[] } };
+   *       };
+   *     };
+   *     '/users/:userId': {
+   *       DELETE: {
+   *         response: { 200: { body: User } };
+   *       };
+   *     };
+   *   }>;
+   *
+   *   type LiteralPath = LiteralHttpSchemaPath<Schema>;
+   *   // "/users" | "/users/:userId"
+   *
+   *   type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
+   *   // "/users"
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
+   */
+  export type Literal<
+    Schema extends HttpSchema,
+    Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+  > = LooseLiteral<Schema, Method>;
+
+  /**
+   * Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+   * methods to filter the paths with. Only the methods defined in the schema are allowed.
+   *
+   * @example
+   *   import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
+   *
+   *   type Schema = HttpSchema.Paths<{
+   *     '/users': {
+   *       GET: {
+   *         response: { 200: { body: User[] } };
+   *       };
+   *     };
+   *     '/users/:userId': {
+   *       DELETE: {
+   *         response: { 200: { body: User } };
+   *       };
+   *     };
+   *   }>;
+   *
+   *   type NonLiteralPath = NonLiteralHttpSchemaPath<Schema>;
+   *   // "/users" | "/users/${string}"
+   *
+   *   type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
+   *   // "/users"
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
+   */
+  export type NonLiteral<
+    Schema extends HttpSchema,
+    Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+  > = AllowAnyStringInPathParams<Literal<Schema, Method>>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-> = LiteralHttpSchemaPath<Schema, Method> | NonLiteralHttpSchemaPath<Schema, Method>;
+> = HttpSchemaPath.Literal<Schema, Method> | HttpSchemaPath.NonLiteral<Schema, Method>;
+
+type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
+  ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
+  : Path;
+
+type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
+  Path extends `${LargestPathPrefix<Path>}:${string}` ? never : Path;
+
+export type PreferMostStaticLiteralPath<Path extends string> =
+  UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
+
+type RecursiveInferHttpSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends HttpSchemaPath.Literal<Schema, Method>,
+> =
+  NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
+    ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
+      ? never
+      : LiteralPath
+    : never;
+
+export type LiteralHttpSchemaPathFromNonLiteral<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  NonLiteralPath extends string,
+  LiteralPath extends HttpSchemaPath.Literal<Schema, Method> = HttpSchemaPath.Literal<Schema, Method>,
+> = PreferMostStaticLiteralPath<
+  LiteralPath extends LiteralPath ? RecursiveInferHttpSchemaPath<Schema, Method, NonLiteralPath, LiteralPath> : never
+>;
 
 type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
   ? { [Name in ParamName]: string } & RecursiveInferPathParams<Suffix>
@@ -447,7 +450,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  */
 export type InferPathParams<
   PathOrSchema extends string | HttpSchema,
-  OptionalPath extends PathOrSchema extends HttpSchema ? LiteralHttpSchemaPath<PathOrSchema> : never = never,
+  OptionalPath extends PathOrSchema extends HttpSchema ? HttpSchemaPath.Literal<PathOrSchema> : never = never,
 > = Prettify<
   RecursiveInferPathParams<
     PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never

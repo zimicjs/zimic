@@ -9,8 +9,6 @@ import {
   HttpSchemaMethod,
   HttpSchemaPath,
   InferPathParams,
-  LiteralHttpSchemaPath,
-  NonLiteralHttpSchemaPath,
 } from './types/schema';
 
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
@@ -75,13 +73,13 @@ export type HttpServiceSchemaMethod<Schema extends HttpSchema> = HttpSchemaMetho
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-> = LiteralHttpSchemaPath<Schema, Method>;
+> = HttpSchemaPath.Literal<Schema, Method>;
 
 /** @deprecated Use `NonLiteralHttpSchemaPath` instead, which works as a drop-in replacement. */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
-> = NonLiteralHttpSchemaPath<Schema, Method>;
+> = HttpSchemaPath.NonLiteral<Schema, Method>;
 
 /** @deprecated Use `HttpSchemaPath` instead, which works as a drop-in replacement. */
 export type HttpServiceSchemaPath<
@@ -107,8 +105,6 @@ export type {
   HttpMethodSchema,
   HttpMethodsSchema,
   HttpSchemaMethod,
-  LiteralHttpSchemaPath,
-  NonLiteralHttpSchemaPath,
   HttpSchemaPath,
   InferPathParams,
   MergeHttpResponsesByStatusCode,
