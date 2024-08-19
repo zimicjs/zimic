@@ -70,15 +70,20 @@ jobs:
 
           timeout 60s bash -c '
             until pnpm view zimic versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
-              echo "zimic@${{ steps.zimic-version.outputs.value }} is not available on NPM yet..."
+              echo "zimic@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
               sleep 5
-              echo "Checking if zimic@${{ steps.zimic-version.outputs.value }} is available on NPM..."
+              echo "Checking again..."
             done
           '
 
           echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
-          pnpm install --no-frozen-lockfile
+          timeout 180s bash -c '
+            until pnpm install --no-frozen-lockfile; do
+              sleep 5
+              echo "Retrying..."
+            done
+          '
 
           pnpm turbo \
             types:check lint:turbo \
