@@ -48,9 +48,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to act on real HTTP requests. From you
   application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
-  loading, and error states with ease.
-- :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and robustness in your
-  mocks, using official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
+  loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
+- :bulb: **Simplicity**: Zimic was designed to encourage clarity, simplicity, and robustness in your mocks. Check our
   [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
 ```ts

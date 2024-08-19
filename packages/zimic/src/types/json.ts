@@ -1,7 +1,7 @@
 type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null | undefined;
 
 /**
- * Represents or validates a type that is compatible and can be represented in JSON.
+ * Represents or validates a type that is compatible with JSON.
  *
  * @example
  *   import { type JSONValue } from 'zimic';

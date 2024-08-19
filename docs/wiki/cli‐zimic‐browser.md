@@ -6,7 +6,7 @@
 
 ---
 
-The CLI module `zimic browser` contains commands to manage client-side mock settings.
+The CLI module `zimic browser` contains commands to manage browser mock configuration.
 
 ## `zimic browser init`
 

@@ -24,7 +24,7 @@ The module `zimic` exports general resources and utility types used by Zimic.
 
 ### `JSONValue`
 
-Represents or validates a type that is compatible and can be represented in JSON.
+Represents or validates a type that is compatible with JSON.
 
 ```ts
 import { type JSONValue } from 'zimic';

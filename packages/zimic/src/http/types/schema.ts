@@ -63,12 +63,14 @@ export namespace HttpServiceResponseSchema {
  * - `HttpStatusCode.ServerError`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`}
  */
 export namespace HttpStatusCode {
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses `1XX`} */
   export type Information =
     | 100 // Continue
     | 101 // Switching Protocols
     | 102 // Processing
     | 103; // Early Hints
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses `2XX`} */
   export type Success =
     | 200 // OK
     | 201 // Created
@@ -81,6 +83,7 @@ export namespace HttpStatusCode {
     | 208 // Already Reported
     | 226; // IM Used
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages `3XX`} */
   export type Redirection =
     | 300 // Multiple Choices
     | 301 // Moved Permanently
@@ -90,6 +93,7 @@ export namespace HttpStatusCode {
     | 307 // Temporary Redirect
     | 308; // Permanent Redirect
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses `4XX`} */
   export type ClientError =
     | 400 // Bad Request
     | 401 // Unauthorized
@@ -121,6 +125,7 @@ export namespace HttpStatusCode {
     | 431 // Request Header Fields Too Large
     | 451; // Unavailable For Legal Reasons
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`} */
   export type ServerError =
     | 500 // Internal Server Error
     | 501 // Not Implemented
