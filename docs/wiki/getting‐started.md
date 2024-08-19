@@ -28,15 +28,16 @@
     [Chrome](https://www.google.com/chrome) or [Edge](https://www.microsoft.com/edge))
 - If you are on **server-side**:
   - [Node](https://nodejs.org) >= 18.13.0
-  - ~Bun~ ([:construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
-  - ~Deno~ ([ :construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
+  - ~[Bun](https://bun.sh)~ ([:construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
+  - ~[Deno](https://deno.com)~
+    ([ :construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/327))
 
 ### Supported languages
 
 - [TypeScript](https://www.typescriptlang.org) >= 4.7
   - If you plan on using [`zimic typegen`](cli‐zimic‐typegen), we recommend
     [TypeScript](https://www.typescriptlang.org) >= 5.0.
-- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) >= ES6
+- [JavaScript](https://developer.mozilla.org/docs/Web/JavaScript) >= ES6
   - Zimic is fully functional on JavaScript, but consider using TypeScript for improved type safety and editor support.
 
 If you are using TypeScript, we recommend enabling `strict` in your `tsconfig.json`:
@@ -97,8 +98,8 @@ Zimic interceptors support two types of execution: `local` and `remote`.
 When an interceptor is `local`, Zimic uses [MSW](https://github.com/mswjs/msw) to intercept requests _in the same
 process_ as your application. This is the simplest way to start mocking requests and does not require any server setup.
 
-Our [Vitest](../../examples#vitest), [Jest](../../examples#jest), and [Next.js Pages Router](../../examples#nextjs)
-examples use local interceptors.
+Our [Vitest](../../examples/README.md#vitest), [Jest](../../examples/README.md#jest), and
+[Next.js Pages Router](../../examples/README.md#nextjs) examples use local interceptors.
 
 #### When to use local HTTP interceptors
 
@@ -118,8 +119,8 @@ When an interceptor is `remote`, Zimic uses a dedicated local [interceptor serve
 This opens up more possibilities for mocking, such as handling requests from multiple applications. It is also more
 robust because it uses a regular HTTP server and does not depend on local interception algorithms.
 
-Our [Playwright](../../examples#playwright) and [Next.js App Router](../../examples#nextjs) examples use remote
-interceptors.
+Our [Playwright](../../examples/README.md#playwright) and [Next.js App Router](../../examples/README.md#nextjs) examples
+use remote interceptors.
 
 #### When to use remote HTTP interceptors
 

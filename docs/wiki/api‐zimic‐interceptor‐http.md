@@ -1365,9 +1365,9 @@ expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 
 The intercepted requests and responses are typed based on their
 [interceptor schema](api‐zimic‐interceptor‐http‐schemas). They are available as simplified objects based on the
-[`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
-[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
-typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
+[`Request`](https://developer.mozilla.org/docs/Web/API/Request) and
+[`Response`](https://developer.mozilla.org/docs/Web/API/Response) web APIs. `body` contains the parsed body, while typed
+headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
 
 The body is automatically parsed based on the header `content-type` of the request or response. The following table
 shows how each type is parsed, where `*` indicates any other resource that does not match the previous types:

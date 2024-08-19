@@ -13,7 +13,7 @@ An interceptor server is a standalone server that can be used to handle requests
 in combination with [remote interceptors](getting‐started#remote-http-interceptors), which declare which responses the
 server should return for a given request. Interceptor servers and remote interceptors communicate with
 [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
-[WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API).
+[WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
 
 ## `zimic server start`
 

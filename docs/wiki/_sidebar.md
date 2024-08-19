@@ -21,7 +21,7 @@
     - [`HttpHeaders`](api‐zimic‐http#httpheaders)
     - [`HttpSearchParams`](api‐zimic‐http#httpsearchparams)
     - [`HttpFormData`](api‐zimic‐http#httpformdata)
-  - [`zimic/interceptor/http`](api‐zimic‐http.md)
+  - [`zimic/interceptor/http`](api‐zimic‐interceptor‐http)
     - [`HttpInterceptor`](api‐zimic‐interceptor‐http#httpinterceptor)
     - [`HttpRequestHandler`](api‐zimic‐interceptor‐http#httprequesthandler)
     - [Intercepted HTTP resources](api‐zimic‐interceptor‐http#intercepted-http-resources)
