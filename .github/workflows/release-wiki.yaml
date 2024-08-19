@@ -48,18 +48,7 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
 
-          rsync ../zimic/docs/wiki/ . --archive --verbose --delete --exclude .git
-
-          # Point links starting with '../../examples' to the released ref on GitHub
-          sed -E -i \
-            "s/\\]\\(\\.\\.\\/\\.\\.\\/examples([^\\)]*)\\)/](https:\\/\\/github.com\\/zimicjs\\/zimic\\/tree\\/${{ github.ref_name }}\\/examples\\1)/g" \
-            *.md
-
-          # Copy all images to the wiki repository
-          find ../zimic/docs -type f -name '*.png' -exec cp {} . \;
-          sed -E -i \
-            "s/\\..*\\/([^.]+)\\.png/.\\/\\1.png/g" \
-            *.md
+          bash scripts/sync.sh '${{ github.ref_name }}'
 
           git add .
           git commit -m "docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}"
