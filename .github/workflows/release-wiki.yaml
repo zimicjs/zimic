@@ -15,7 +15,7 @@ env:
 
 jobs:
   release-zimic-wiki:
-    name: Release zimic to NPM
+    name: Release zimic to GitHub Wiki
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -29,7 +29,7 @@ jobs:
 
       - name: Get zimic release version
         id: zimic-version
-        uses: ./.github/actions/zimic-version
+        uses: ./zimic/.github/actions/zimic-version
         with:
           ref-name: ${{ github.ref_name }}
           working-directory: zimic
