@@ -565,7 +565,7 @@ const creationHandler = await interceptor
 
 An equivalent alternative using [`HttpHeaders`](api-zimic-http#httpheaders):
 
-<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+<table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
 ```ts
 const headers = new HttpHeaders<Partial<UserListHeaders>>();
@@ -580,7 +580,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const headers = new HttpHeaders<Partial<UserListHeaders>>();
@@ -635,7 +635,7 @@ const creationHandler = await interceptor
 
 An equivalent alternative using [`HttpSearchParams`](api-zimic-http#httpsearchparams):
 
-<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+<table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
 ```ts
 const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
@@ -650,7 +650,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
@@ -940,6 +940,8 @@ const creationHandler = await interceptor
 ```
 
 </details></td></tr></table>
+
+</details>
 
 #### Computed restrictions
 
