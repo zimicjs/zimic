@@ -24,18 +24,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: zimic
 
       - name: Get zimic release version
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
           ref-name: ${{ github.ref_name }}
+          working-directory: zimic
 
       - name: Checkout wiki
         uses: actions/checkout@v4
         # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         with:
           repository: zimicjs/zimic.wiki
+          path: zimic.wiki
 
       - name: Sync wiki with markdown docs
         # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
@@ -44,14 +48,14 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
 
-          rsync --archive --verbose --delete ../../docs/wiki/ .
+          rsync --archive --verbose --delete ../zimic/docs/wiki/ .
 
           # Point "../../examples*" links to the current ref on  GitHub
           sed -E -i "s/\\]\\(\\.\\.\\/\\.\\.\\/examples([^\\)]+)\\)/](https:\\/\\/github.com\\/zimicjs\\/zimic\\/tree\\/${{ github.ref_name }}\\/examples\\1)/g" *.md
 
-          # Copy all images to the wiki
+          # Copy all images to the wiki repository
           find ../docs -type f -name '*.png' -exec cp {} . \;
-          sed -E -i "s/\\]\\(.+\\/([^.]+)\\.png/](.\\/\\1.png/g" *.md
+          sed -E -i "s/\\..*\\/([^.]+)\\.png/.\\/\\1.png/g" *.md
 
           git add .
           git commit -m "docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}"
