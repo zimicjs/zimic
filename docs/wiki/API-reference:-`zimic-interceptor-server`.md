@@ -1,14 +1,12 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic/interceptor/server`](#zimicinterceptorserver)
-  - [CLI usage](#cli-usage)
+- [CLI usage](#cli-usage)
 
 ---
 
-# `zimic/interceptor/server`
-
-This module exports resources for managing interceptor servers programmatically. Even though we recommend using the
-[`zimic server` CLI](CLI:-`zimic-server`), this is still a valid alternative for more advanced use cases.
+The module `zimic/interceptor/server` exports resources for managing interceptor servers programmatically. Even though
+we recommend using the [`zimic server` CLI](CLI:-`zimic-server`), this is still a valid alternative for more advanced
+use cases.
 
 An example using the programmatic API and [`execa`](https://www.npmjs.com/package/execa) to run a command when the
 server is ready:

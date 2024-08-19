@@ -1,14 +1,11 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic server`](#zimic-server)
-  - [`zimic server start`](#zimic-server-start)
-  - [Programmatic usage](#programmatic-usage)
+- [`zimic server start`](#zimic-server-start)
+- [Programmatic usage](#programmatic-usage)
 
 ---
 
-# `zimic server`
-
-This CLI module contains commands to manage interceptor servers.
+The CLI module `zimic server` contains commands to manage interceptor servers.
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
 in combination with [remote interceptors](Getting-Started#remote-http-interceptors), which declare which responses the

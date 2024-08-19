@@ -1,18 +1,16 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic typegen`](#zimic-typegen)
-  - [`zimic typegen openapi`](#zimic-typegen-openapi)
-    - [`zimic typegen openapi` comments](#zimic-typegen-openapi-comments)
-    - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
-    - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
-  - [Programmatic usage](#programmatic-usage)
+- [`zimic typegen openapi`](#zimic-typegen-openapi)
+  - [`zimic typegen openapi` comments](#zimic-typegen-openapi-comments)
+  - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
+  - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
+- [Programmatic usage](#programmatic-usage)
 
 ---
 
-# `zimic typegen`
-
-This CLI module contains commands to generate types from schema sources. This is useful to save development time, avoid
-errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
+The CLI module `zimic typegen` contains commands to generate types from schema sources. This is useful to save
+development time, avoid errors and keep your types consistent with specifications, such as
+[OpenAPI](https://swagger.io/specification).
 
 ## `zimic typegen openapi`
 

@@ -1,15 +1,12 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic` API reference](#zimic-api-reference)
-  - [`zimic` utility types](#zimic-utility-types)
-    - [`JSONValue`](#jsonvalue)
-    - [`JSONSerialized`](#jsonserialized)
+- [`zimic` utility types](#zimic-utility-types)
+  - [`JSONValue`](#jsonvalue)
+  - [`JSONSerialized`](#jsonserialized)
 
 ---
 
-# `zimic` API reference
-
-This module provides general resources.
+The module `zimic` provides general resources.
 
 - [`zimic/http`](API-reference:-`zimic`-http): HTTP resources.
 - `zimic/interceptor`: API mocking and interceptor resources.

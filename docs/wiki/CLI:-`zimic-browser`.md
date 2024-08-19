@@ -1,13 +1,10 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic browser`](#zimic-browser)
-  - [`zimic browser init`](#zimic-browser-init)
+- [`zimic browser init`](#zimic-browser-init)
 
 ---
 
-# `zimic browser`
-
-This CLI module contains commands to manage your configuration of client-side mocks.
+The CLI module `zimic browser` contains commands to manage your configuration of client-side mocks.
 
 ## `zimic browser init`
 

@@ -1,17 +1,14 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic/typegen`](#zimictypegen)
-  - [`typegen.generateFromOpenAPI(options)`](#typegengeneratefromopenapioptions)
+- [`typegen.generateFromOpenAPI(options)`](#typegengeneratefromopenapioptions)
 - [CLI usage](#cli-usage)
 
 ---
 
-## `zimic/typegen`
-
-This module exports resources for generating types programmatically. We recommend using the
+The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the
 [`zimic typegen` CLI](CLI:-`zimic-typegen`), but this is still a valid alternative for more advanced use cases.
 
-### `typegen.generateFromOpenAPI(options)`
+## `typegen.generateFromOpenAPI(options)`
 
 An example using the programmatic API to generate types from an OpenAPI schema:
 

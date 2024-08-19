@@ -1,14 +1,11 @@
 ## Contents <!-- omit from toc -->
 
-- [Declaring HTTP service schemas](#declaring-http-service-schemas)
-  - [Declaring HTTP paths](#declaring-http-paths)
-  - [Declaring HTTP methods](#declaring-http-methods)
-  - [Declaring HTTP requests](#declaring-http-requests)
-  - [Declaring HTTP responses](#declaring-http-responses)
+- [Declaring HTTP paths](#declaring-http-paths)
+- [Declaring HTTP methods](#declaring-http-methods)
+- [Declaring HTTP requests](#declaring-http-requests)
+- [Declaring HTTP responses](#declaring-http-responses)
 
 ---
-
-# Declaring HTTP service schemas
 
 HTTP service schemas define the structure of the real services being mocked. This includes paths, methods, request and
 response bodies, and status codes. Based on the schema, interceptors will provide type validation when applying mocks.

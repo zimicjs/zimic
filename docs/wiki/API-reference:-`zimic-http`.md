@@ -1,30 +1,27 @@
 ## Contents <!-- omit from toc -->
 
-- [`zimic/http` API reference](#zimichttp-api-reference)
-  - [`HttpHeaders`](#httpheaders)
-    - [Comparing `HttpHeaders`](#comparing-httpheaders)
-    - [`HttpHeaders` utility types](#httpheaders-utility-types)
-      - [`HttpHeadersSerialized`](#httpheadersserialized)
-      - [`HttpHeadersSchemaName`](#httpheadersschemaname)
-  - [`HttpSearchParams`](#httpsearchparams)
-    - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
-    - [`HttpSearchParams` utility types](#httpsearchparams-utility-types)
-      - [`HttpSearchParamsSerialized`](#httpsearchparamsserialized)
-      - [`HttpSearchParamsSchemaName`](#httpsearchparamsschemaname)
-  - [`HttpFormData`](#httpformdata)
-    - [Comparing `HttpFormData`](#comparing-httpformdata)
-  - [Utility types](#utility-types)
-    - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
-    - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
-    - [`HttpServiceSchemaPath`](#httpserviceschemapath)
-    - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
-    - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
+- [`HttpHeaders`](#httpheaders)
+  - [Comparing `HttpHeaders`](#comparing-httpheaders)
+  - [`HttpHeaders` utility types](#httpheaders-utility-types)
+    - [`HttpHeadersSerialized`](#httpheadersserialized)
+    - [`HttpHeadersSchemaName`](#httpheadersschemaname)
+- [`HttpSearchParams`](#httpsearchparams)
+  - [Comparing `HttpSearchParams`](#comparing-httpsearchparams)
+  - [`HttpSearchParams` utility types](#httpsearchparams-utility-types)
+    - [`HttpSearchParamsSerialized`](#httpsearchparamsserialized)
+    - [`HttpSearchParamsSchemaName`](#httpsearchparamsschemaname)
+- [`HttpFormData`](#httpformdata)
+  - [Comparing `HttpFormData`](#comparing-httpformdata)
+- [Utility types](#utility-types)
+  - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
+  - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
+  - [`HttpServiceSchemaPath`](#httpserviceschemapath)
+  - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
+  - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
 
 ---
 
-# `zimic/http` API reference
-
-This module provides general HTTP resources.
+The module `zimic/http` provides general HTTP resources.
 
 > [!TIP]
 >

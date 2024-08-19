@@ -28,7 +28,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 /**
  * A schema representing the structure of an HTTP request.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas Declaring HTTP service schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP service schemas}
  */
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
@@ -39,7 +39,7 @@ export interface HttpServiceRequestSchema {
 /**
  * A schema representing the structure of an HTTP response.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
@@ -166,7 +166,7 @@ export namespace HttpServiceResponseSchemaByStatusCode {
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByStatusCode.Strict;
@@ -174,7 +174,7 @@ export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByS
 /**
  * Extracts the status codes used in a response schema by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
@@ -183,7 +183,7 @@ export type HttpServiceResponseSchemaStatusCode<
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
@@ -203,7 +203,7 @@ export namespace HttpServiceMethodSchema {
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
@@ -218,7 +218,7 @@ export interface HttpServiceMethodsSchema {
 /**
  * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
@@ -227,7 +227,7 @@ export interface HttpServiceSchema {
 /**
  * A namespace containing utility types for validating HTTP type schemas.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
@@ -255,7 +255,7 @@ export namespace HttpSchema {
 /**
  * Extracts the methods from an HTTP service schema.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
   Schema,
@@ -289,7 +289,7 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  *   type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -335,7 +335,7 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  *   type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -401,7 +401,7 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
  *   type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas#declaring-http-interceptor-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
