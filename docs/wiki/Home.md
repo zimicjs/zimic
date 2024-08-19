@@ -161,7 +161,7 @@ skipped and you can get more confidence in your tests.
 > To search resources in this wiki, click on the GitHub search bar (or press `/`), prefix your query
 > `repo:zimicjs/zimic type:wiki` and type your search terms.
 >
-> ![GitHub search bar on the repository header](./Home-Wiki-Search.png)
+> ![GitHub search bar on the repository header](./home-wiki-search.png)
 
 ## Examples
 
