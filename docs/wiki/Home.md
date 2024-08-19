@@ -127,7 +127,7 @@ cases:
 
 - **Testing**: If your application relies on external services over HTTP, you can mock them with Zimic to make your
   tests simpler, faster and more predictable. Each interceptor references a
-  [schema declaration](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas) to provide type
+  [schema declaration](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http-schemas`) to provide type
   inference and validation for your mocks. After breaking changes, adapting the interceptor schema will help you to
   quickly identify all of the affected mocks and keep your test scenarios consistent with the real-life API.
 - **Development**: If you are developing a feature that depends on an external service that is unreliable, unavailable,

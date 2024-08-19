@@ -46,7 +46,7 @@ Each interceptor represents a service and can be used to mock its paths and meth
 ### `httpInterceptor.create(options)`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
-[declaring interceptor schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas).
+[declaring interceptor schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http-schemas`).
 
 #### Creating a local HTTP interceptor
 
@@ -566,7 +566,7 @@ const creationHandler = await interceptor
 </details></td></tr></table>
 
 An equivalent alternative using
-[`HttpHeaders`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpheaders):
+[`HttpHeaders`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpheaders):
 
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
@@ -637,7 +637,7 @@ const creationHandler = await interceptor
 </details></td></tr></table>
 
 An equivalent alternative using
-[`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpsearchparams):
+[`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpsearchparams):
 
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
@@ -1369,7 +1369,7 @@ expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 ## Intercepted HTTP resources
 
 The intercepted requests and responses are typed based on their
-[interceptor schema](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas). They are available as
+[interceptor schema](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http-schemas`). They are available as
 simplified objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
 typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
@@ -1381,9 +1381,9 @@ shows how each type is parsed, where `*` indicates any other resource that does 
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `application/json`                  | `JSON`                                                                                                   |
 | `application/xml`                   | `String`                                                                                                 |
-| `application/x-www-form-urlencoded` | [`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpsearchparams) |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpsearchparams) |
 | `application/*` (others)            | `Blob`                                                                                                   |
-| `multipart/form-data`               | [`HttpFormData`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpformdata)         |
+| `multipart/form-data`               | [`HttpFormData`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpformdata)         |
 | `multipart/*` (others)              | `Blob`                                                                                                   |
 | `text/*`                            | `String`                                                                                                 |
 | `image/*`                           | `Blob`                                                                                                   |

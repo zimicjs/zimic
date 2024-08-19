@@ -15,7 +15,7 @@ and how you are applying your mocks.
      [Next.js App Router - Loading mocks](../../examples/with-next-js-app/README.md#loading-mocks) and
      [Playwright - Loading mocks](../../examples/with-playwright/README.md#loading-mocks) as examples.
   2. Using a
-     [path discriminator](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#path-discriminators-in-remote-http-interceptors)
+     [path discriminator](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#path-discriminators-in-remote-http-interceptors)
      when creating interceptors in your test workers.
 
 If you are creating mocks **during** your tests, you can manage the lifecycle of your interceptors in your test setup

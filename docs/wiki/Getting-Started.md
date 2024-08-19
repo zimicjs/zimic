@@ -198,10 +198,10 @@ interceptors.
    </details></td></tr></table>
 
    In this example, we're
-   [creating an interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#httpinterceptorcreateoptions)
+   [creating an interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#httpinterceptorcreateoptions)
    for a service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn
    more about declaring
-   [HTTP service schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas).
+   [HTTP service schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http-schemas`).
 
    You can also use [`zimic typegen`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-typegen`) to automatically
    generate these types from an [OpenAPI 3](https://swagger.io/specification) schema.
@@ -213,7 +213,7 @@ interceptors.
    ```
 
    If you are
-   [creating a remote interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#creating-a-remote-http-interceptor),
+   [creating a remote interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#creating-a-remote-http-interceptor),
    it's necessary to have a running
    [interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server-start) before starting
    it. The base URL of the remote interceptor should point to the server, optionally including a path to differentiate
@@ -262,21 +262,21 @@ interceptors.
 
 - Check out the [API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`):
 
-  - [`HttpInterceptor`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#httpinterceptor)
-    - [Creating a local HTTP interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#creating-a-local-http-interceptor)
-    - [Creating a remote HTTP interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#creating-a-remote-http-interceptor)
-    - [Managing unhandled requests](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#unhandled-requests)
-    - [Saving intercepted requests](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#saving-requests)
-    - [`HttpInterceptor` utility types](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#httpinterceptor-utility-types)
-  - [`HttpRequestHandler`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#httprequesthandler)
-    - [Declaring restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#http-handlerwithrestriction)
-      - [Static restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#static-restrictions)
-      - [Computed restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#computed-restrictions)
-    - [Declaring responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#http-handlerresponddeclaration)
-      - [Static responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#static-responses)
-      - [Computed responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#computed-responses)
-  - [Intercepted HTTP resources](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#intercepted-http-resources)
-  - [Declaring HTTP service schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas)
+  - [`HttpInterceptor`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#httpinterceptor)
+    - [Creating a local HTTP interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#creating-a-local-http-interceptor)
+    - [Creating a remote HTTP interceptor](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#creating-a-remote-http-interceptor)
+    - [Managing unhandled requests](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#unhandled-requests)
+    - [Saving intercepted requests](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#saving-requests)
+    - [`HttpInterceptor` utility types](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#httpinterceptor-utility-types)
+  - [`HttpRequestHandler`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#httprequesthandler)
+    - [Declaring restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#http-handlerwithrestriction)
+      - [Static restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#static-restrictions)
+      - [Computed restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#computed-restrictions)
+    - [Declaring responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#http-handlerresponddeclaration)
+      - [Static responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#static-responses)
+      - [Computed responses](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#computed-responses)
+  - [Intercepted HTTP resources](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#intercepted-http-resources)
+  - [Declaring HTTP service schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http-schemas`)
 
 - Explore the [`zimic` CLI](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic`):
 

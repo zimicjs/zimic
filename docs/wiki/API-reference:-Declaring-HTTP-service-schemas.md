@@ -272,7 +272,7 @@ const interceptor = httpInterceptor.create<{
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
-[Path parameters](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#path-parameters) are
+[Path parameters](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-http`#path-parameters) are
 automatically inferred from the path string, such as `/users/:id`.
 
 <details open>
@@ -486,8 +486,8 @@ Each method can also have a `response`, which defines the schema of the returned
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
 Bodies can be a JSON object,
-[`HttpFormData`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpformdata),
-[`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpsearchparams), `Blob`, or
+[`HttpFormData`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpformdata),
+[`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-http`#httpsearchparams), `Blob`, or
 plain text.
 
 <details open>

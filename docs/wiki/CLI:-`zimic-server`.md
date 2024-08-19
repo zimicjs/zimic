@@ -59,4 +59,4 @@ should automatically stop after the command finishes.
 ## Programmatic usage
 
 See the
-[`zimic/interceptor/server` API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-server).
+[`zimic/interceptor/server` API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-server`).
