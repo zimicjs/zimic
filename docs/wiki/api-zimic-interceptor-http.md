@@ -7,7 +7,7 @@
       - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
         - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
       - [Unhandled requests](#unhandled-requests)
-      - [Saving intercepted requests](#saving-intercepted-requests)
+      - [Saving requests](#saving-requests)
     - [HTTP `interceptor.start()`](#http-interceptorstart)
     - [HTTP `interceptor.stop()`](#http-interceptorstop)
     - [HTTP `interceptor.isRunning()`](#http-interceptorisrunning)
@@ -48,7 +48,7 @@ Each interceptor represents a service and can be used to mock its paths and meth
 ### `httpInterceptor.create(options)`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
-[declaring interceptor schemas](api-zimic-interceptor-http-schemas).
+[declaring interceptor schemas](api-zimic-http-schemas).
 
 #### Creating a local HTTP interceptor
 
@@ -147,7 +147,8 @@ they pass through the interceptor and reach the real network.
 [Remote interceptors](getting-started#remote-http-interceptors) in pair with an
 [interceptor server](cli-zimic-server#zimic-server) always reject unhandled requests because they cannot be bypassed.
 
-You can override the default logging behavior per interceptor with `onUnhandledRequest` in `httpInterceptor.create()`.
+You can override the default logging behavior per interceptor with `onUnhandledRequest` in
+[`httpInterceptor.create(options)`](#httpinterceptorcreateoptions).
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
@@ -200,7 +201,7 @@ httpInterceptor.default.onUnhandledRequest((request, context) => {
 });
 ```
 
-#### Saving intercepted requests
+#### Saving requests
 
 The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
 requests in memory and make them accessible through [`handler.requests()`](#http-handlerrequests).
@@ -1307,7 +1308,7 @@ useful for testing that the correct requests were made by your application. Lear
 > [!IMPORTANT]
 >
 > This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
-> [Saving intercepted requests](#saving-intercepted-requests) for more information.
+> [Saving intercepted requests](#saving-requests) for more information.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1361,9 +1362,8 @@ expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 
 ## Intercepted HTTP resources
 
-The intercepted requests and responses are typed based on their
-[interceptor schema](api-zimic-interceptor-http-schemas). They are available as simplified objects based on the
-[`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
+The intercepted requests and responses are typed based on their [interceptor schema](api-zimic-http-schemas). They are
+available as simplified objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
 typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
 

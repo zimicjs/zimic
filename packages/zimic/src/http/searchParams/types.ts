@@ -12,7 +12,10 @@ export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = 
   [Key in keyof Schema & string]: [Key, ArrayItemIfArray<Defined<Schema[Key]>>];
 }[keyof Schema & string];
 
-/** An initialization value for {@link https://github.com/zimicjs/zimic#httpsearchparams `HttpSearchParams`}. */
+/**
+ * An initialization value for
+ * {@link https://github.com/zimicjs/zimic/wiki/api-zimic-http#httpsearchparams `HttpSearchParams`}.
+ */
 export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> =
   | string
   | URLSearchParams

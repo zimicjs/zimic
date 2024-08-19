@@ -3,14 +3,14 @@ import generateTypesFromOpenAPI from '../openapi/generate';
 /**
  * A namespace of type generation resources.
  *
- * @see {@link https://github.com/zimicjs/zimic#zimic-typegen `zimic typegen` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-typegen `zimic/typegen` API reference}
  */
 class TypegenNamespace {
   /**
    * Generates TypeScript types from an OpenAPI schema.
    *
    * @param options The options to use when generating the types.
-   * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-typegen#typegengeneratefromopenapioptions `typegen.generateFromOpenAPI(options)` API reference}
    */
   generateFromOpenAPI = generateTypesFromOpenAPI;
 }

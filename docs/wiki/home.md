@@ -15,7 +15,7 @@
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/wiki">Docs</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://github.com/zimicjs/zimic/wiki/examples">Examples</a>
+  <a href="#examples">Examples</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
   <a href="https://github.com/zimicjs/zimic/issues">Issues</a>
   <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
@@ -55,9 +55,8 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**: Declare the
-  [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http-schemas) of your HTTP endpoints and create
-  fully typed mocks.
+- :zap: **Statically-typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-http-schemas)
+  of your HTTP endpoints and create fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
   requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
@@ -129,10 +128,9 @@ Zimic is a development and testing tool that helps you mock HTTP responses in a 
 cases:
 
 - **Testing**: If your application relies on external services over HTTP, you can mock them with Zimic to make your
-  tests simpler, faster and more predictable. Each interceptor references a
-  [schema declaration](api-zimic-interceptor-http-schemas) to provide type inference and validation for your mocks.
-  After breaking changes, adapting the interceptor schema will help you to quickly identify all of the affected mocks
-  and keep your test scenarios consistent with the real-life API.
+  tests simpler, faster and more predictable. Each interceptor references a [schema declaration](api-zimic-http-schemas)
+  to provide type inference and validation for your mocks. After breaking changes, adapting the interceptor schema will
+  help you to quickly identify all of the affected mocks and keep your test scenarios consistent with the real-life API.
 - **Development**: If you are developing a feature that depends on an external service that is unreliable, unavailable,
   or costly, you can use Zimic to mock it and continue your development without interruptions. Zimic can also be used to
   create mock servers, using [remote interceptors](getting-started#remote-http-interceptors) and

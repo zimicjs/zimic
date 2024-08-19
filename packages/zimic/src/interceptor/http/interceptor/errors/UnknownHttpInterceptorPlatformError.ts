@@ -2,7 +2,7 @@
  * An error thrown when an unknown interceptor platform is detected. Currently, the platforms `node` and `browser` are
  * supported.
  *
- * @see {@link https://github.com/zimicjs/zimic#http-interceptorplatform `interceptor.platform()` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#http-interceptorplatform `interceptor.platform()` API reference}
  */
 class UnknownHttpInterceptorPlatformError extends Error {
   /* istanbul ignore next -- @preserve

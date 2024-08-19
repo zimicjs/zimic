@@ -200,7 +200,7 @@ interceptors.
 
    In this example, we're [creating an interceptor](api-zimic-interceptor-http#httpinterceptorcreateoptions) for a
    service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
-   about declaring [HTTP service schemas](api-zimic-interceptor-http-schemas).
+   about declaring [HTTP service schemas](api-zimic-http-schemas).
 
    You can also use [`zimic typegen`](cli-zimic-typegen) to automatically generate these types from an
    [OpenAPI 3](https://swagger.io/specification) schema.
@@ -262,7 +262,7 @@ interceptors.
     - [Creating a local HTTP interceptor](api-zimic-interceptor-http#creating-a-local-http-interceptor)
     - [Creating a remote HTTP interceptor](api-zimic-interceptor-http#creating-a-remote-http-interceptor)
     - [Managing unhandled requests](api-zimic-interceptor-http#unhandled-requests)
-    - [Saving intercepted requests](api-zimic-interceptor-http#saving-intercepted-requests)
+    - [Saving intercepted requests](api-zimic-interceptor-http#saving-requests)
     - [`HttpInterceptor` utility types](api-zimic-interceptor-http#httpinterceptor-utility-types)
   - [`HttpRequestHandler`](api-zimic-interceptor-http#httprequesthandler)
     - [Declaring restrictions](api-zimic-interceptor-http#http-handlerwithrestriction)
@@ -272,7 +272,7 @@ interceptors.
       - [Static responses](api-zimic-interceptor-http#static-responses)
       - [Computed responses](api-zimic-interceptor-http#computed-responses)
   - [Intercepted HTTP resources](api-zimic-interceptor-http#intercepted-http-resources)
-  - [Declaring HTTP service schemas](api-zimic-interceptor-http-schemas)
+  - [Declaring HTTP service schemas](api-zimic-http-schemas)
 
 - Explore the [`zimic` CLI](cli-zimic):
 

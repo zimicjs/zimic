@@ -41,9 +41,8 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**: Declare the
-  [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http-schemas) of your HTTP endpoints and create
-  fully typed mocks.
+- :zap: **Statically-typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-http-schemas)
+  of your HTTP endpoints and create fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
   requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
