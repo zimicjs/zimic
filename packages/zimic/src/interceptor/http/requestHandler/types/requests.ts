@@ -123,8 +123,8 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
 );
 
 /**
- * A strict representation of a tracked, intercepted HTTP request, along with its response. The body, search params and
- * path params are already parsed by default.
+ * A strict representation of an intercepted HTTP request, along with its response. The body, search params and path
+ * params are already parsed by default.
  */
 export interface TrackedHttpInterceptorRequest<
   Path extends string,
