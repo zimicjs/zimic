@@ -1,21 +1,22 @@
 There are many ways to configure Zimic in a testing environment. Usually, the best approach is dependent on your
-[method of intercepting requests](Getting-Started#4-choose-your-method-to-intercept-requests) and how you are applying
-your mocks.
+[method of intercepting requests](https://github.com/zimicjs/zimic/wiki/Getting-Started#4-choose-your-method-to-intercept-requests)
+and how you are applying your mocks.
 
-- [Local HTTP interceptors](Getting-Started#local-http-interceptors) are the simplest to use in tests, as they do not
-  require any server setup and apply mocks to the process they are running in. Because of that, you generally **do not
-  need** to worry about concurrency problems and racing conditions between test workers. This is valid in both
-  client-side and server-side environments.
-- [Remote HTTP interceptors](Getting-Started#remote-http-interceptors) are more complex to set up and require an
-  [interceptor server](CLI:-`zimic-server`#zimic-server) to handle requests. They are generally used in end-to-end
-  tests, where the test runner and the application run in separate processes. In this case, you **do need** to manage
-  concurrency and racing conditions between test workers. This can be done by either:
+- [Local HTTP interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#local-http-interceptors) are the
+  simplest to use in tests, as they do not require any server setup and apply mocks to the process they are running in.
+  Because of that, you generally **do not need** to worry about concurrency problems and racing conditions between test
+  workers. This is valid in both client-side and server-side environments.
+- [Remote HTTP interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors) are more
+  complex to set up and require an
+  [interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server) to handle requests. They
+  are generally used in end-to-end tests, where the test runner and the application run in separate processes. In this
+  case, you **do need** to manage concurrency and racing conditions between test workers. This can be done by either:
   1. Applying your mocks to the interceptor server before your application and tests start. See
      [Next.js App Router - Loading mocks](../../examples/with-next-js-app/README.md#loading-mocks) and
      [Playwright - Loading mocks](../../examples/with-playwright/README.md#loading-mocks) as examples.
   2. Using a
-     [path discriminator](API-reference:-`zimic`-interceptor-http#path-discriminators-in-remote-http-interceptors) when
-     creating interceptors in your test workers.
+     [path discriminator](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http#path-discriminators-in-remote-http-interceptors)
+     when creating interceptors in your test workers.
 
 If you are creating mocks **during** your tests, you can manage the lifecycle of your interceptors in your test setup
 file, using `beforeAll`/`beforeEach`/`afterEach`/`afterAll` or equivalent hooks.

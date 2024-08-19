@@ -46,7 +46,7 @@ Each interceptor represents a service and can be used to mock its paths and meth
 ### `httpInterceptor.create(options)`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
-[declaring interceptor schemas](API-reference:-`zimic`-http-schemas).
+[declaring interceptor schemas](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas).
 
 #### Creating a local HTTP interceptor
 
@@ -79,8 +79,8 @@ const interceptor = httpInterceptor.create<{
 #### Creating a remote HTTP interceptor
 
 A remote interceptor is configured with `type: 'remote'`. The `baseURL` points to an
-[interceptor server](CLI:-`zimic-server`#zimic-server). Any request starting with the `baseURL` will be intercepted if a
-matching [handler](#httprequesthandler) exists.
+[interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server). Any request starting with
+the `baseURL` will be intercepted if a matching [handler](#httprequesthandler) exists.
 
 ```ts
 import { type JSONValue } from 'zimic';
@@ -109,11 +109,12 @@ const interceptor = httpInterceptor.create<{
 
 ##### Path discriminators in remote HTTP interceptors
 
-A single [interceptor server](CLI:-`zimic-server`#zimic-server) is perfectly capable of handling multiple interceptors
-and requests. Thus, additional paths are supported and might be necessary to differentiate between conflicting
-interceptors. If you may have multiple threads or processes applying mocks concurrently to the same
-[interceptor server](CLI:-`zimic-server`#zimic-server), it's important to keep the interceptor base URLs unique. Also,
-make sure that your application is considering the correct URL when making requests.
+A single [interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server) is perfectly
+capable of handling multiple interceptors and requests. Thus, additional paths are supported and might be necessary to
+differentiate between conflicting interceptors. If you may have multiple threads or processes applying mocks
+concurrently to the same [interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server),
+it's important to keep the interceptor base URLs unique. Also, make sure that your application is considering the
+correct URL when making requests.
 
 ```ts
 const interceptor = httpInterceptor.create<{
@@ -140,10 +141,11 @@ by default.
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
-In a [local interceptor](Getting-Started#local-http-interceptors), unhandled requests are always bypassed, meaning that
-they pass through the interceptor and reach the real network.
-[Remote interceptors](Getting-Started#remote-http-interceptors) in pair with an
-[interceptor server](CLI:-`zimic-server`#zimic-server) always reject unhandled requests because they cannot be bypassed.
+In a [local interceptor](https://github.com/zimicjs/zimic/wiki/Getting-Started#local-http-interceptors), unhandled
+requests are always bypassed, meaning that they pass through the interceptor and reach the real network.
+[Remote interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors) in pair with an
+[interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server) always reject unhandled
+requests because they cannot be bypassed.
 
 You can override the default logging behavior per interceptor with `onUnhandledRequest` in
 [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions).
@@ -216,7 +218,8 @@ their intercepted requests in memory.
 > sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
 > after each test.
 >
-> See [Testing](Guides:-Testing#testing) for an example of how to manage the lifecycle of interceptors in your tests.
+> See [Testing](https://github.com/zimicjs/zimic/wiki/Guides:-Testing#testing) for an example of how to manage the
+> lifecycle of interceptors in your tests.
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
@@ -253,7 +256,8 @@ await interceptor.start();
 ```
 
 When targeting a browser environment with a local interceptor, make sure to follow the
-[client-side post-install guide](Getting-Started#client-side-post-install) before starting your interceptors.
+[client-side post-install guide](https://github.com/zimicjs/zimic/wiki/Getting-Started#client-side-post-install) before
+starting your interceptors.
 
 ### HTTP `interceptor.stop()`
 
@@ -294,9 +298,9 @@ declared in the interceptor schema.
 
 The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
 
-When using a [remote interceptor](Getting-Started#remote-http-interceptors), creating a handler is an asynchronous
-operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
-handler.
+When using a [remote interceptor](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors),
+creating a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations
+and apply them by awaiting the handler.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -561,7 +565,8 @@ const creationHandler = await interceptor
 
 </details></td></tr></table>
 
-An equivalent alternative using [`HttpHeaders`](API-reference:-`zimic`-http#httpheaders):
+An equivalent alternative using
+[`HttpHeaders`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpheaders):
 
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
@@ -631,7 +636,8 @@ const creationHandler = await interceptor
 
 </details></td></tr></table>
 
-An equivalent alternative using [`HttpSearchParams`](API-reference:-`zimic`-http#httpsearchparams):
+An equivalent alternative using
+[`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpsearchparams):
 
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
@@ -1363,28 +1369,28 @@ expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 ## Intercepted HTTP resources
 
 The intercepted requests and responses are typed based on their
-[interceptor schema](API-reference:-`zimic`-http-schemas). They are available as simplified objects based on the
-[`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
+[interceptor schema](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas). They are available as
+simplified objects based on the [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and
 [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) web APIs. `body` contains the parsed body, while
 typed headers, path params and search params are in `headers`, `pathParams`, and `searchParams`, respectively.
 
 The body is automatically parsed based on the header `content-type` of the request or response. The following table
 shows how each type is parsed, where `*` indicates any other resource that does not match the previous types:
 
-| `content-type`                      | Parsed to                                                          |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `application/json`                  | `JSON`                                                             |
-| `application/xml`                   | `String`                                                           |
-| `application/x-www-form-urlencoded` | [`HttpSearchParams`](API-reference:-`zimic`-http#httpsearchparams) |
-| `application/*` (others)            | `Blob`                                                             |
-| `multipart/form-data`               | [`HttpFormData`](API-reference:-`zimic`-http#httpformdata)         |
-| `multipart/*` (others)              | `Blob`                                                             |
-| `text/*`                            | `String`                                                           |
-| `image/*`                           | `Blob`                                                             |
-| `audio/*`                           | `Blob`                                                             |
-| `font/*`                            | `Blob`                                                             |
-| `video/*`                           | `Blob`                                                             |
-| `*/*` (others)                      | `JSON` if possible, otherwise `String`                             |
+| `content-type`                      | Parsed to                                                                                                |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `application/json`                  | `JSON`                                                                                                   |
+| `application/xml`                   | `String`                                                                                                 |
+| `application/x-www-form-urlencoded` | [`HttpSearchParams`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpsearchparams) |
+| `application/*` (others)            | `Blob`                                                                                                   |
+| `multipart/form-data`               | [`HttpFormData`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http#httpformdata)         |
+| `multipart/*` (others)              | `Blob`                                                                                                   |
+| `text/*`                            | `String`                                                                                                 |
+| `image/*`                           | `Blob`                                                                                                   |
+| `audio/*`                           | `Blob`                                                                                                   |
+| `font/*`                            | `Blob`                                                                                                   |
+| `video/*`                           | `Blob`                                                                                                   |
+| `*/*` (others)                      | `JSON` if possible, otherwise `String`                                                                   |
 
 If no `content-type` exists or it is unknown, Zimic tries to parse the body as JSON and falls back to plain text if it
 fails.

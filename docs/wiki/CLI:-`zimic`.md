@@ -6,9 +6,9 @@
 
 The CLI module `zimic` contains root-level commands.
 
-- [`zimic browser`](CLI:-`zimic-browser`)
-- [`zimic server`](CLI:-`zimic-server`)
-- [`zimic typegen`](CLI:-`zimic-typegen`)
+- [`zimic browser`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-browser`)
+- [`zimic server`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`)
+- [`zimic typegen`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-typegen`)
 
 ```
 zimic [command]

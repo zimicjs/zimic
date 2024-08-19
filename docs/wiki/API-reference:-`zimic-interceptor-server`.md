@@ -5,8 +5,8 @@
 ---
 
 The module `zimic/interceptor/server` exports resources for managing interceptor servers programmatically. Even though
-we recommend using the [`zimic server` CLI](CLI:-`zimic-server`), this is still a valid alternative for more advanced
-use cases.
+we recommend using the [`zimic server` CLI](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`), this is still a
+valid alternative for more advanced use cases.
 
 An example using the programmatic API and [`execa`](https://www.npmjs.com/package/execa) to run a command when the
 server is ready:
@@ -33,4 +33,4 @@ use this function to run the application after the interceptor server is ready a
 
 ## CLI usage
 
-See the [`zimic server` CLI reference](CLI:-`zimic-server`).
+See the [`zimic server` CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`).

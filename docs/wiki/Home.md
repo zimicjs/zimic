@@ -127,30 +127,32 @@ cases:
 
 - **Testing**: If your application relies on external services over HTTP, you can mock them with Zimic to make your
   tests simpler, faster and more predictable. Each interceptor references a
-  [schema declaration](API-reference:-`zimic`-http-schemas) to provide type inference and validation for your mocks.
-  After breaking changes, adapting the interceptor schema will help you to quickly identify all of the affected mocks
-  and keep your test scenarios consistent with the real-life API.
+  [schema declaration](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http-schemas) to provide type
+  inference and validation for your mocks. After breaking changes, adapting the interceptor schema will help you to
+  quickly identify all of the affected mocks and keep your test scenarios consistent with the real-life API.
 - **Development**: If you are developing a feature that depends on an external service that is unreliable, unavailable,
   or costly, you can use Zimic to mock it and continue your development without interruptions. Zimic can also be used to
-  create mock servers, using [remote interceptors](Getting-Started#remote-http-interceptors) and
-  [interceptor servers](CLI:-`zimic-server`#zimic-server), which can be accessible by multiple applications in your
-  development workflow and even be containerized.
+  create mock servers, using
+  [remote interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors) and
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server), which can be accessible
+  by multiple applications in your development workflow and even be containerized.
 
 ## How does Zimic work?
 
 Zimic allows you to intercept HTTP requests and return mock responses. In
-[local HTTP interceptors](Getting-Started#local-http-interceptors), Zimic uses [MSW](https://github.com/mswjs/msw) to
-intercept requests in the same process as your application. In
-[remote HTTP interceptors](Getting-Started#remote-http-interceptors), Zimic uses a dedicated local
-[interceptor server](CLI:-`zimic-server`#zimic-server) to handle requests. This opens up more possibilities for mocking,
-such as handling requests from multiple applications. Both of those strategies act on real HTTP requests _after_ they
-leave your application, so no parts of your application code are skipped and you can get more confidence in your tests.
+[local HTTP interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#local-http-interceptors), Zimic uses
+[MSW](https://github.com/mswjs/msw) to intercept requests in the same process as your application. In
+[remote HTTP interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors), Zimic uses a
+dedicated local [interceptor server](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`#zimic-server) to handle
+requests. This opens up more possibilities for mocking, such as handling requests from multiple applications. Both of
+those strategies act on real HTTP requests _after_ they leave your application, so no parts of your application code are
+skipped and you can get more confidence in your tests.
 
 ## Documentation
 
-- [Getting started](Getting-Started)
-- [API reference](API-reference:-`zimic`)
-- [CLI reference](CLI:-`zimic`)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/Getting-Started)
+- [API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`)
+- [CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic`)
 
 > [!TIP]
 >

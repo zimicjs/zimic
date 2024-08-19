@@ -6,7 +6,8 @@
 ---
 
 The module `zimic/typegen` exports resources for generating types programmatically. We recommend using the
-[`zimic typegen` CLI](CLI:-`zimic-typegen`), but this is still a valid alternative for more advanced use cases.
+[`zimic typegen` CLI](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-typegen`), but this is still a valid alternative
+for more advanced use cases.
 
 ## `typegen.generateFromOpenAPI(options)`
 
@@ -30,4 +31,4 @@ command.
 
 ## CLI usage
 
-See the [`zimic typegen` CLI reference](CLI:-`zimic-typegen`).
+See the [`zimic typegen` CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-typegen`).

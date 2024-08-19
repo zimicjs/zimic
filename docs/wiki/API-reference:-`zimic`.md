@@ -8,11 +8,14 @@
 
 The module `zimic` provides general resources.
 
-- [`zimic/http`](API-reference:-`zimic`-http): HTTP resources.
+- [`zimic/http`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-http): HTTP resources.
 - `zimic/interceptor`: API mocking and interceptor resources.
-  - [`zimic/interceptor/http`](API-reference:-`zimic`-interceptor-http): HTTP interceptor resources.
-  - [`zimic/interceptor/server`](API-reference:-`zimic`-interceptor-server): interceptor server programmatic resources.
-- [`zimic/typegen`](API-reference:-`zimic`-typegen): type generation programmatic resources.
+  - [`zimic/interceptor/http`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-http): HTTP
+    interceptor resources.
+  - [`zimic/interceptor/server`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-interceptor-server):
+    interceptor server programmatic resources.
+- [`zimic/typegen`](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic`-typegen): type generation programmatic
+  resources.
 
 > [!TIP]
 >
