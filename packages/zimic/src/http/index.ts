@@ -35,6 +35,7 @@ export type {
   HttpSchema,
   HttpMethod,
   HttpStatusCode,
+  HttpPathParamsSchema,
   HttpServiceRequestSchema,
   HttpServiceResponseSchema,
   HttpServiceResponseSchemaByStatusCode,

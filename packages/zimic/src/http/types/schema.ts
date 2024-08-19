@@ -445,7 +445,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  * @example
  *   import { InferPathParams } from 'zimic/http';
  *
- *   // Without using a schema to validate the path:
+ *   // Without using a schema to validate the path (works as `PathParamsSchemaFromPath`):
  *   type PathParams = InferPathParams<'/users/:userId'>;
  *   // { userId: string }
  */
