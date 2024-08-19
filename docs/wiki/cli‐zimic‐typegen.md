@@ -1,3 +1,5 @@
+# CLI: `zimic typegen` <!-- omit from toc -->
+
 ## Contents <!-- omit from toc -->
 
 - [`zimic typegen openapi`](#zimic-typegen-openapi)
@@ -149,4 +151,4 @@ zimic typegen openapi ./schema.yaml \
 
 ## Programmatic usage
 
-See the [`zimic/typegen` API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-typegen`).
+See the [`zimic/typegen` API reference](api‐zimic‐typegen).

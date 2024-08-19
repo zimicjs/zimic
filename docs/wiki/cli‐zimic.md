@@ -1,14 +1,4 @@
-## Contents <!-- omit from toc -->
-
-- [`zimic`](#zimic)
-
----
-
-The CLI module `zimic` contains root-level commands.
-
-- [`zimic browser`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-browser`)
-- [`zimic server`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`)
-- [`zimic typegen`](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-typegen`)
+# CLI: `zimic`
 
 ```
 zimic [command]
@@ -22,6 +12,12 @@ Options:
   --help     Show help                                                 [boolean]
   --version  Show version number                                       [boolean]
 ```
+
+See also:
+
+- [`zimic browser`](cli‐zimic‐browser)
+- [`zimic server`](cli‐zimic‐server)
+- [`zimic typegen`](cli‐zimic‐typegen)
 
 > [!TIP]
 >

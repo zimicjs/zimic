@@ -1,12 +1,16 @@
+# API reference: `zimic/interceptor/server` <!-- omit from toc -->
+
 ## Contents <!-- omit from toc -->
 
+- [`interceptorServer.create(options)`](#interceptorservercreateoptions)
 - [CLI usage](#cli-usage)
 
 ---
 
-The module `zimic/interceptor/server` exports resources for managing interceptor servers programmatically. Even though
-we recommend using the [`zimic server` CLI](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`), this is still a
-valid alternative for more advanced use cases.
+This module exports resources to manage interceptor servers programmatically. Even though we recommend using the
+[`zimic server` CLI](cli‐zimic‐server), this is still a valid alternative for more advanced use cases.
+
+## `interceptorServer.create(options)`
 
 An example using the programmatic API and [`execa`](https://www.npmjs.com/package/execa) to run a command when the
 server is ready:
@@ -15,7 +19,11 @@ server is ready:
 import { execa as $ } from 'execa';
 import { interceptorServer } from 'zimic/interceptor/server';
 
-const server = interceptorServer.create({ hostname: 'localhost', port: 3000 });
+const server = interceptorServer.create({
+  hostname: 'localhost',
+  port: 3000,
+});
+
 await server.start();
 
 // Run a command when the server is ready, assuming the following format:
@@ -33,4 +41,4 @@ use this function to run the application after the interceptor server is ready a
 
 ## CLI usage
 
-See the [`zimic server` CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-`zimic-server`).
+See the [`zimic server` CLI reference](cli‐zimic‐server).

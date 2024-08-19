@@ -2,7 +2,7 @@ import { LocalHttpInterceptor, RemoteHttpInterceptor } from './public';
 
 /**
  * Extracts the schema of an
- * {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#httpinterceptor `HttpInterceptor`}.
+ * {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#httpinterceptor `HttpInterceptor`}.
  *
  * @example
  *   const interceptor = httpInterceptor.create<{
@@ -25,7 +25,7 @@ import { LocalHttpInterceptor, RemoteHttpInterceptor } from './public';
  *   //   };
  *   // }
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas Declaring service schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http-schemas Declaring service schemas}
  */
 export type ExtractHttpInterceptorSchema<Interceptor> =
   Interceptor extends LocalHttpInterceptor<infer Schema>

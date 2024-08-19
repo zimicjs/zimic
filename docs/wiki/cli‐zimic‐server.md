@@ -1,3 +1,5 @@
+# CLI: `zimic server` <!-- omit from toc -->
+
 ## Contents <!-- omit from toc -->
 
 - [`zimic server start`](#zimic-server-start)
@@ -8,10 +10,9 @@
 The CLI module `zimic server` contains commands to manage interceptor servers.
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
-in combination with
-[remote interceptors](https://github.com/zimicjs/zimic/wiki/Getting-Started#remote-http-interceptors), which declare
-which responses the server should return for a given request. Interceptor servers and remote interceptors communicate
-with [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
+in combination with [remote interceptors](getting‐started#remote-http-interceptors), which declare which responses the
+server should return for a given request. Interceptor servers and remote interceptors communicate with
+[remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
 [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API).
 
 ## `zimic server start`
@@ -58,5 +59,4 @@ should automatically stop after the command finishes.
 
 ## Programmatic usage
 
-See the
-[`zimic/interceptor/server` API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-`zimic-interceptor-server`).
+See the [`zimic/interceptor/server` API reference](api‐zimic‐interceptor‐server).

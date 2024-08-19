@@ -10,10 +10,10 @@ export class HttpInterceptorNamespaceDefault {
    * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
    * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled request.
    * You can override this default for specific interceptors by using `onUnhandledRequest` in
-   * {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
+   * {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
    *
    * @param strategy The default strategy to be set.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest(strategy: UnhandledRequestStrategy) {
     this.workerStore.setDefaultUnhandledRequestStrategy(strategy);
@@ -23,7 +23,7 @@ export class HttpInterceptorNamespaceDefault {
 /**
  * A namespace of interceptor resources for mocking HTTP requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#httpinterceptor `HttpInterceptor` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#httpinterceptor `HttpInterceptor` API reference}
  */
 class HttpInterceptorNamespace {
   /**
@@ -33,7 +33,7 @@ class HttpInterceptorNamespace {
    * @returns The created HTTP interceptor.
    * @throws {InvalidURLError} If the base URL is invalid.
    * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#httpinterceptorcreateoptions `httpInterceptor.create(options)` API reference}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#httpinterceptorcreateoptions `httpInterceptor.create(options)` API reference}
    */
   create = createHttpInterceptor;
 

@@ -42,16 +42,16 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 - :zap: **Statically-typed mocks**: Declare the
-  [schema](https://github.com/zimicjs/zimic/wiki/API-reference:-Declaring-HTTP-service-schemas) of your HTTP endpoints
-  and create fully typed mocks.
+  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) of your HTTP endpoints and create
+  fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://github.com/zimicjs/zimic/wiki/CLI:-%60zimic-server%60#zimic-server) to act on real HTTP
-  requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to act on real HTTP requests. From you
+  application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease.
 - :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and robustness in your
   mocks, using official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
-  [getting started guide](https://github.com/zimicjs/zimic/wiki/Getting-Started) and starting mocking!
+  [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
 ```ts
 import { type JSONValue } from 'zimic';
@@ -106,17 +106,17 @@ console.log(users); // [{ username: 'diego-aquino' }]
 >   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
 >
 > From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
-> feel free to [open an issue](https://github.com/zimicjs/zimic/issues/new) or
+> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
 > [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ## Documentation
 
 - [Introduction](https://github.com/zimicjs/zimic/wiki)
-- [Getting started](https://github.com/zimicjs/zimic/wiki/Getting-Started)
-- [API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic%60)
-- [CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-%60zimic%60)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started)
+- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic)
+- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic)
 - Guides
-  - [Testing](https://github.com/zimicjs/zimic/wiki/Guides:-Testing)
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
 
 ## Examples
 

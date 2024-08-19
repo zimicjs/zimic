@@ -1,3 +1,5 @@
+# API reference: `zimic/http` <!-- omit from toc -->
+
 ## Contents <!-- omit from toc -->
 
 - [`HttpHeaders`](#httpheaders)
@@ -21,7 +23,7 @@
 
 ---
 
-The module `zimic/http` provides general HTTP resources.
+This module exports general HTTP resources.
 
 > [!TIP]
 >
