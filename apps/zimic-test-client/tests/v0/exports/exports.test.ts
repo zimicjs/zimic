@@ -137,8 +137,8 @@ describe('Exports', () => {
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpStatusCode>().not.toBeAny();
-    expectTypeOf<HttpSchema>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
+    expectTypeOf<HttpSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();

@@ -1,3 +1,18 @@
+import {
+  HttpMethodSchema,
+  HttpMethodsSchema,
+  HttpRequestSchema,
+  HttpResponseSchema,
+  HttpResponseSchemaByStatusCode,
+  HttpResponseSchemaStatusCode,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  InferPathParams,
+  LiteralHttpSchemaPath,
+  NonLiteralHttpSchemaPath,
+} from './types/schema';
+
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
 export { default as HttpFormData } from './formData/HttpFormData';
 export { default as HttpHeaders } from './headers/HttpHeaders';
@@ -31,59 +46,70 @@ export type {
   StrictFormData,
 } from './types/requests';
 
+/** @deprecated Use `HttpSchema` instead, which works as a drop-in replacement. */
+export type HttpServiceSchema = HttpSchema;
+
+/** @deprecated Use `HttpRequestSchema` instead, which works as a drop-in replacement. */
+export type HttpServiceRequestSchema = HttpRequestSchema;
+
+/** @deprecated Use `HttpResponseSchema` instead, which works as a drop-in replacement. */
+export type HttpServiceResponseSchema = HttpResponseSchema;
+
+/** @deprecated Use `HttpResponseSchemaByStatusCode` instead, which works as a drop-in replacement. */
+export type HttpServiceResponseSchemaByStatusCode = HttpResponseSchemaByStatusCode;
+
+/** @deprecated Use `HttpResponseSchemaStatusCode` instead, which works as a drop-in replacement. */
+export type HttpServiceResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> =
+  HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode>;
+
+/** @deprecated Use `HttpMethodSchema` instead, which works as a drop-in replacement. */
+export type HttpServiceMethodSchema = HttpMethodSchema;
+
+/** @deprecated Use `HttpMethodsSchema` instead, which works as a drop-in replacement. */
+export type HttpServiceMethodsSchema = HttpMethodsSchema;
+
+/** @deprecated Use `HttpSchemaMethod` instead, which works as a drop-in replacement. */
+export type HttpServiceSchemaMethod<Schema extends HttpSchema> = HttpSchemaMethod<Schema>;
+
+/** @deprecated Use `LiteralHttpSchemaPath` instead, which works as a drop-in replacement. */
+export type LiteralHttpServiceSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = LiteralHttpSchemaPath<Schema, Method>;
+
+/** @deprecated Use `NonLiteralHttpSchemaPath` instead, which works as a drop-in replacement. */
+export type NonLiteralHttpServiceSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = NonLiteralHttpSchemaPath<Schema, Method>;
+
+/** @deprecated Use `HttpSchemaPath` instead, which works as a drop-in replacement. */
+export type HttpServiceSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = HttpSchemaPath<Schema, Method>;
+
+/**
+ * @deprecated Use {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#inferpathparams `InferPathParams` }
+ *   instead, which works as a drop-in replacement with additional validation.
+ */
+export type PathParamsSchemaFromPath<Path extends string> = InferPathParams<Path>;
+
 export type {
-  /** @deprecated Use `HttpSchema` instead, which works as a drop-in replacement. */
-  HttpSchema as HttpServiceSchema,
   HttpSchema,
   HttpMethod,
   HttpStatusCode,
   HttpPathParamsSchema,
-
-  /** @deprecated Use `HttpRequestSchema` instead, which works as a drop-in replacement. */
-  HttpRequestSchema as HttpServiceRequestSchema,
   HttpRequestSchema,
-
-  /** @deprecated Use `HttpResponseSchema` instead, which works as a drop-in replacement. */
-  HttpResponseSchema as HttpServiceResponseSchema,
   HttpResponseSchema,
-
-  /** @deprecated Use `HttpResponseSchemaByStatusCode` instead, which works as a drop-in replacement. */
-  HttpResponseSchemaByStatusCode as HttpServiceResponseSchemaByStatusCode,
   HttpResponseSchemaByStatusCode,
-
-  /** @deprecated Use `HttpResponseSchemaStatusCode` instead, which works as a drop-in replacement. */
-  HttpResponseSchemaStatusCode as HttpServiceResponseSchemaStatusCode,
   HttpResponseSchemaStatusCode,
-
-  /** @deprecated Use `HttpMethodSchema` instead, which works as a drop-in replacement. */
-  HttpMethodSchema as HttpServiceMethodSchema,
   HttpMethodSchema,
-
-  /** @deprecated Use `HttpMethodsSchema` instead, which works as a drop-in replacement. */
-  HttpMethodsSchema as HttpServiceMethodsSchema,
   HttpMethodsSchema,
-
-  /** @deprecated Use `HttpSchemaMethod` instead, which works as a drop-in replacement. */
-  HttpSchemaMethod as HttpServiceSchemaMethod,
   HttpSchemaMethod,
-
-  /** @deprecated Use `LiteralHttpSchemaPath` instead, which works as a drop-in replacement. */
-  LiteralHttpSchemaPath as LiteralHttpServiceSchemaPath,
   LiteralHttpSchemaPath,
-
-  /** @deprecated Use `NonLiteralHttpSchemaPath` instead, which works as a drop-in replacement. */
-  NonLiteralHttpSchemaPath as NonLiteralHttpServiceSchemaPath,
   NonLiteralHttpSchemaPath,
-
-  /** @deprecated Use `HttpSchemaPath` instead, which works as a drop-in replacement. */
-  HttpSchemaPath as HttpServiceSchemaPath,
   HttpSchemaPath,
-
-  /**
-   * @deprecated Use {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#inferpathparams `InferPathParams` }
-   *   instead, which works as a drop-in replacement with additional validation.
-   */
-  InferPathParams as PathParamsSchemaFromPath,
   InferPathParams,
   MergeHttpResponsesByStatusCode,
 } from './types/schema';
