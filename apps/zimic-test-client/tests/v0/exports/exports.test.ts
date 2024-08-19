@@ -36,6 +36,7 @@ import {
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
+  type InferPathParams,
   type MergeHttpResponsesByStatusCode,
   InvalidFormDataError,
 } from 'zimic0/http';
@@ -53,6 +54,7 @@ import {
   type RemoteHttpInterceptorOptions,
   type UnhandledRequestStrategy,
   type ExtractHttpInterceptorSchema,
+  type InferHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
   type TrackedHttpInterceptorRequest,
@@ -137,6 +139,7 @@ describe('Exports', () => {
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
+    expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<InvalidJSONError>().not.toBeAny();
@@ -168,6 +171,7 @@ describe('Exports', () => {
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny();
+    expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();

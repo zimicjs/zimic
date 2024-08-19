@@ -47,5 +47,6 @@ export type {
   NonLiteralHttpServiceSchemaPath,
   HttpServiceSchemaPath,
   PathParamsSchemaFromPath,
+  InferPathParams,
   MergeHttpResponsesByStatusCode,
 } from './types/schema';

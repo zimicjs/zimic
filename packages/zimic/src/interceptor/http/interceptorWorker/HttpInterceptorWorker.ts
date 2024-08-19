@@ -11,7 +11,7 @@ import {
   HttpServiceMethodSchema,
   HttpServiceResponseSchemaStatusCode,
   HttpServiceSchema,
-  PathParamsSchemaFromPath,
+  InferPathParams,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
@@ -322,13 +322,10 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
   }
 
-  static parseRawPathParams<Path extends string>(
-    matchedURLRegex: RegExp,
-    request: HttpRequest,
-  ): PathParamsSchemaFromPath<Path> {
+  static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: HttpRequest): InferPathParams<Path> {
     const match = request.url.match(matchedURLRegex);
     const pathParams = { ...match?.groups };
-    return pathParams as PathParamsSchemaFromPath<Path>;
+    return pathParams as InferPathParams<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {

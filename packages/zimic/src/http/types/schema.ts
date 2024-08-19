@@ -25,6 +25,10 @@ export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELET
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
+export interface HttpPathParamsSchema {
+  [paramName: string]: string | undefined;
+}
+
 /**
  * A schema representing the structure of an HTTP request.
  *
@@ -249,6 +253,8 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
   /** Validates that a type is a valid HTTP search params schema. */
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
+  /** Validates that a type is a valid HTTP path params schema. */
+  export type PathParams<Schema extends HttpPathParamsSchema> = Schema;
   /** Validates that a type is a valid HTTP form data schema. */
   export type FormData<Schema extends HttpFormDataSchema> = Schema;
 }
@@ -409,23 +415,64 @@ export type HttpServiceSchemaPath<
   Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
 > = LiteralHttpServiceSchemaPath<Schema, Method> | NonLiteralHttpServiceSchemaPath<Schema, Method>;
 
-type RecursivePathParamsSchemaFromPath<Path extends string> =
-  Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
-    ? { [Name in ParamName]: string } & RecursivePathParamsSchemaFromPath<Suffix>
-    : Path extends `${infer _Prefix}:${infer ParamName}`
-      ? { [Name in ParamName]: string }
-      : {};
+type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
+  ? { [Name in ParamName]: string } & RecursiveInferPathParams<Suffix>
+  : Path extends `${infer _Prefix}:${infer ParamName}`
+    ? { [Name in ParamName]: string }
+    : {};
+
+/**
+ * Infers the path parameters schema from a path string, optionally validating it against an {@link HttpServiceSchema}.
+ *
+ * If the first argument is a {@link HttpServiceSchema} (recommended), the second argument is checked to be a valid path
+ * in that schema.
+ *
+ * @example
+ *   import { HttpSchema, InferPathParams } from 'zimic/http';
+ *
+ *   type MySchema = HttpSchema.Paths<{
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *
+ *   // Using a schema to validate the path (recommended):
+ *   type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+ *   // { userId: string }
+ *
+ * @example
+ *   import { InferPathParams } from 'zimic/http';
+ *
+ *   // Without using a schema to validate the path:
+ *   type PathParams = InferPathParams<'/users/:userId'>;
+ *   // { userId: string }
+ */
+export type InferPathParams<
+  PathOrSchema extends string | HttpServiceSchema,
+  OptionalPath extends PathOrSchema extends HttpServiceSchema
+    ? LiteralHttpServiceSchemaPath<PathOrSchema>
+    : never = never,
+> = Prettify<
+  RecursiveInferPathParams<
+    PathOrSchema extends HttpServiceSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
+  >
+>;
 
 /**
  * Infers the path parameters schema from a path string.
  *
+ * @deprecated Use {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#inferpathparams InferPathParams} instead,
+ *   which works as a drop-in replacement with additional validation.
  * @example
  *   import { PathParamsSchemaFromPath } from 'zimic/http';
  *
- *   type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
+ *   // Without using a schema to validate the path:
+ *   type PathParams = PathParamsSchemaFromPath<'/users/:userId'>;
  *   // { userId: string }
  */
-export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
+export type PathParamsSchemaFromPath<Path extends string> = InferPathParams<Path>;
 
 type OmitPastHttpStatusCodes<
   Schema extends HttpServiceResponseSchemaByStatusCode.Loose,

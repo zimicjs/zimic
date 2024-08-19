@@ -36,7 +36,7 @@ export type {
   HttpInterceptorOptions,
   UnhandledRequestStrategy,
 } from './interceptor/types/options';
-export type { ExtractHttpInterceptorSchema } from './interceptor/types/schema';
+export type { ExtractHttpInterceptorSchema, InferHttpInterceptorSchema } from './interceptor/types/schema';
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './interceptor/types/public';
 
