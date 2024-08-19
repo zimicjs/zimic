@@ -26,8 +26,8 @@ A `postinstall` script in [`package.json`](./package.json) is used to install Pl
 > If using a single test worker is not a problem for your project, applying the mocks inside your tests or hooks is
 > perfectly possible. On the other hand, if you need parallelism, you can still simulate dynamic behavior by creating
 > all of the mocks you need beforehand in a load script like in this example. Using
-> [restrictions](https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#http-handlerwithrestriction) is a good
-> way to narrow down the scope of those mocks.
+> [restrictions](https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#http-handlerwithrestriction)
+> is a good way to narrow down the scope of those mocks.
 
 ## Testing
 

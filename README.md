@@ -41,16 +41,17 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-http-schemas)
-  of your HTTP endpoints and create fully typed mocks.
+- :zap: **Statically-typed mocks**: Declare the
+  [schema](https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas) of your HTTP endpoints and
+  create fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/CLI:-%60zimic-server%60#zimic-server) to act on real HTTP
   requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease.
 - :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and robustness in your
   mocks, using official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
-  [getting started guide](https://github.com/zimicjs/zimic/wiki/getting-started) and starting mocking!
+  [getting started guide](https://github.com/zimicjs/zimic/wiki/Getting-Started) and starting mocking!
 
 ```ts
 import { type JSONValue } from 'zimic';
@@ -111,11 +112,11 @@ console.log(users); // [{ username: 'diego-aquino' }]
 ## Documentation
 
 - [Introduction](https://github.com/zimicjs/zimic/wiki)
-- [Getting started](https://github.com/zimicjs/zimic/wiki/getting-started)
-- [API reference](https://github.com/zimicjs/zimic/wiki/api-zimic)
-- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli-zimic)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/Getting-Started)
+- [API reference](https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic%60)
+- [CLI reference](https://github.com/zimicjs/zimic/wiki/CLI:-%60zimic%60)
 - Guides
-  - [Testing](https://github.com/zimicjs/zimic/wiki/guides-testing)
+  - [Testing](https://github.com/zimicjs/zimic/wiki/Guides:-Testing)
 
 ## Examples
 

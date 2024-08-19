@@ -43,7 +43,7 @@ export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } fro
 /**
  * A namespace of interceptor resources for mocking HTTP requests.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api-zimic-interceptor-http#httpinterceptor `HttpInterceptor` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-interceptor-http%60#httpinterceptor `HttpInterceptor` API reference}
  */
 export const httpInterceptor = Object.freeze(new HttpInterceptorNamespace());
 

@@ -14,7 +14,7 @@ export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = 
 
 /**
  * An initialization value for
- * {@link https://github.com/zimicjs/zimic/wiki/api-zimic-http#httpsearchparams `HttpSearchParams`}.
+ * {@link https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60#httpsearchparams `HttpSearchParams`}.
  */
 export type HttpSearchParamsInit<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> =
   | string

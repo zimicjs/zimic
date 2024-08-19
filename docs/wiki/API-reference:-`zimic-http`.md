@@ -1,4 +1,4 @@
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [`zimic/http` API reference](#zimichttp-api-reference)
   - [`HttpHeaders`](#httpheaders)

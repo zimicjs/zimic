@@ -1,4 +1,4 @@
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [`zimic typegen`](#zimic-typegen)
   - [`zimic typegen openapi`](#zimic-typegen-openapi)
@@ -151,4 +151,4 @@ zimic typegen openapi ./schema.yaml \
 
 ## Programmatic usage
 
-See the [`zimic/typegen` API reference](api-zimic-typegen).
+See the [`zimic/typegen` API reference](API-reference:-`zimic`-typegen).

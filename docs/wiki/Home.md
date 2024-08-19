@@ -34,7 +34,7 @@
 
 ---
 
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [Introduction](#introduction)
   - [Features](#features)
@@ -55,16 +55,17 @@ Zimic is a lightweight, thoroughly tested, TypeScript-first HTTP request mocking
 
 Zimic provides a flexible and type-safe way to mock HTTP requests.
 
-- :zap: **Statically-typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api-zimic-http-schemas)
-  of your HTTP endpoints and create fully typed mocks.
+- :zap: **Statically-typed mocks**: Declare the
+  [schema](https://github.com/zimicjs/zimic/wiki/API-reference:-%60zimic-http%60-schemas) of your HTTP endpoints and
+  create fully typed mocks.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
-  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli-zimic-server#zimic-server) to act on real HTTP
+  [interceptor servers](https://github.com/zimicjs/zimic/wiki/CLI:-%60zimic-server%60#zimic-server) to act on real HTTP
   requests. From you application's point of view, the mocked responses are indistinguishable from the real ones.
 - :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease.
 - :bulb: **Simplicity**: Zimic was designed from the start to encourage clarity, simplicity, and robustness in your
   mocks, using official [web APIs](https://developer.mozilla.org/docs/Web/API). Check our
-  [getting started guide](https://github.com/zimicjs/zimic/wiki/getting-started) and starting mocking!
+  [getting started guide](https://github.com/zimicjs/zimic/wiki/Getting-Started) and starting mocking!
 
 ```ts
 import { type JSONValue } from 'zimic';
@@ -128,30 +129,31 @@ Zimic is a development and testing tool that helps you mock HTTP responses in a 
 cases:
 
 - **Testing**: If your application relies on external services over HTTP, you can mock them with Zimic to make your
-  tests simpler, faster and more predictable. Each interceptor references a [schema declaration](api-zimic-http-schemas)
-  to provide type inference and validation for your mocks. After breaking changes, adapting the interceptor schema will
-  help you to quickly identify all of the affected mocks and keep your test scenarios consistent with the real-life API.
+  tests simpler, faster and more predictable. Each interceptor references a
+  [schema declaration](API-reference:-`zimic`-http-schemas) to provide type inference and validation for your mocks.
+  After breaking changes, adapting the interceptor schema will help you to quickly identify all of the affected mocks
+  and keep your test scenarios consistent with the real-life API.
 - **Development**: If you are developing a feature that depends on an external service that is unreliable, unavailable,
   or costly, you can use Zimic to mock it and continue your development without interruptions. Zimic can also be used to
-  create mock servers, using [remote interceptors](getting-started#remote-http-interceptors) and
-  [interceptor servers](cli-zimic-server#zimic-server), which can be accessible by multiple applications in your
+  create mock servers, using [remote interceptors](Getting-Started#remote-http-interceptors) and
+  [interceptor servers](CLI:-`zimic-server`#zimic-server), which can be accessible by multiple applications in your
   development workflow and even be containerized.
 
 ## How does Zimic work?
 
 Zimic allows you to intercept HTTP requests and return mock responses. In
-[local HTTP interceptors](getting-started#local-http-interceptors), Zimic uses [MSW](https://github.com/mswjs/msw) to
+[local HTTP interceptors](Getting-Started#local-http-interceptors), Zimic uses [MSW](https://github.com/mswjs/msw) to
 intercept requests in the same process as your application. In
-[remote HTTP interceptors](getting-started#remote-http-interceptors), Zimic uses a dedicated local
-[interceptor server](cli-zimic-server#zimic-server) to handle requests. This opens up more possibilities for mocking,
+[remote HTTP interceptors](Getting-Started#remote-http-interceptors), Zimic uses a dedicated local
+[interceptor server](CLI:-`zimic-server`#zimic-server) to handle requests. This opens up more possibilities for mocking,
 such as handling requests from multiple applications. Both of those strategies act on real HTTP requests _after_ they
 leave your application, so no parts of your application code are skipped and you can get more confidence in your tests.
 
 ## Documentation
 
-- [Getting started](getting-started)
-- [API reference](api-zimic)
-- [CLI reference](cli-zimic)
+- [Getting started](Getting-Started)
+- [API reference](API-reference:-`zimic`)
+- [CLI reference](CLI:-`zimic`)
 
 > [!TIP]
 >
@@ -160,7 +162,7 @@ leave your application, so no parts of your application code are skipped and you
 > To search resources in this wiki, click on the GitHub search bar (or press `/`), prefix your query
 > `repo:zimicjs/zimic type:wiki` and type your search terms.
 >
-> ![GitHub search bar on the repository header](./home-wiki-search.png)
+> ![GitHub search bar on the repository header](./Home-Wiki-Search.png)
 
 ## Examples
 

@@ -1,4 +1,4 @@
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [`zimic`](#zimic)
 
@@ -8,9 +8,9 @@
 
 This CLI module contains root-level commands.
 
-- [`zimic browser`](cli-zimic-browser)
-- [`zimic server`](cli-zimic-server)
-- [`zimic typegen`](cli-zimic-typegen)
+- [`zimic browser`](CLI:-`zimic-browser`)
+- [`zimic server`](CLI:-`zimic-server`)
+- [`zimic typegen`](CLI:-`zimic-typegen`)
 
 ```
 zimic [command]

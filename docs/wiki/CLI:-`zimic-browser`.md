@@ -1,4 +1,4 @@
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [`zimic browser`](#zimic-browser)
   - [`zimic browser init`](#zimic-browser-init)

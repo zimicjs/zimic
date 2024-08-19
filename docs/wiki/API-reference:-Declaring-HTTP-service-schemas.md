@@ -1,4 +1,4 @@
-# Contents <!-- omit from toc -->
+## Contents <!-- omit from toc -->
 
 - [Declaring HTTP service schemas](#declaring-http-service-schemas)
   - [Declaring HTTP paths](#declaring-http-paths)
@@ -275,8 +275,8 @@ const interceptor = httpInterceptor.create<{
 
 Each method can have a `request`, which defines the schema of the accepted requests. `headers`, `searchParams`, and
 `body` are supported to provide type safety when applying mocks.
-[Path parameters](api-zimic-interceptor-http#path-parameters) are automatically inferred from the path string, such as
-`/users/:id`.
+[Path parameters](API-reference:-`zimic`-interceptor-http#path-parameters) are automatically inferred from the path
+string, such as `/users/:id`.
 
 <details open>
   <summary>
@@ -342,8 +342,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!TIP]
 >
-> The utility type [`JSONSerialized`](api-zimic#jsonserialized) can be handy to infer the serialized type of an object.
-> It converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
+> The utility type [`JSONSerialized`](API-reference:-`zimic`#jsonserialized) can be handy to infer the serialized type
+> of an object. It converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
 
 <details open>
   <summary>
@@ -487,8 +487,8 @@ const interceptor = httpInterceptor.create<{
 Each method can also have a `response`, which defines the schema of the returned responses. The status codes are used as
 keys. `headers` and `body` are supported to provide type safety when applying mocks.
 
-Bodies can be a JSON object, [`HttpFormData`](api-zimic-http#httpformdata),
-[`HttpSearchParams`](api-zimic-http#httpsearchparams), `Blob`, or plain text.
+Bodies can be a JSON object, [`HttpFormData`](API-reference:-`zimic`-http#httpformdata),
+[`HttpSearchParams`](API-reference:-`zimic`-http#httpsearchparams), `Blob`, or plain text.
 
 <details open>
   <summary>
