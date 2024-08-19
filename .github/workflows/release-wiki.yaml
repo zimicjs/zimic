@@ -45,11 +45,11 @@ jobs:
         # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         working-directory: zimic.wiki
         run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
+          git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
+          git config user.email '${{ vars.ZIMIC_WIKI_COMMIT_USER_EMAIL }}'
 
           bash scripts/sync.sh '${{ github.ref_name }}'
 
           git add .
-          git commit -m "docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}"
+          git commit -m 'docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}'
           git push
