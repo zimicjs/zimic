@@ -1,4 +1,4 @@
-import { HttpServiceSchema } from '@/http/types/schema';
+import { HttpSchema } from '@/http/types/schema';
 
 import {
   HttpInterceptorMethodHandler,
@@ -13,7 +13,7 @@ import { HttpInterceptorPlatform } from './options';
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface HttpInterceptor<Schema extends HttpServiceSchema> {
+export interface HttpInterceptor<Schema extends HttpSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
@@ -151,7 +151,7 @@ export interface HttpInterceptor<Schema extends HttpServiceSchema> {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends HttpInterceptor<Schema> {
+export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
   readonly type: 'local';
 
   get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -176,7 +176,7 @@ export interface LocalHttpInterceptor<Schema extends HttpServiceSchema> extends 
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface RemoteHttpInterceptor<Schema extends HttpServiceSchema> extends HttpInterceptor<Schema> {
+export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
   readonly type: 'remote';
 
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;

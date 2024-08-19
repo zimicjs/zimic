@@ -3,25 +3,25 @@ import { HttpHeadersInit } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import {
-  HttpServiceMethodSchema,
-  HttpServiceResponseSchema,
-  HttpServiceResponseSchemaStatusCode,
+  HttpMethodSchema,
+  HttpResponseSchema,
+  HttpResponseSchemaStatusCode,
   InferPathParams,
 } from '@/http/types/schema';
 import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
-export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpServiceResponseSchema> =
+export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
 
-export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends HttpServiceResponseSchema> =
+export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
     ? { headers?: undefined }
     : { headers: HttpHeadersInit<Default<ResponseSchema['headers']>> };
 
 /** A declaration of an HTTP response for an intercepted request. */
 export type HttpRequestHandlerResponseDeclaration<
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = StatusCode extends StatusCode
   ? {
       status: StatusCode;
@@ -37,21 +37,21 @@ export type HttpRequestHandlerResponseDeclaration<
  */
 export type HttpRequestHandlerResponseDeclarationFactory<
   Path extends string,
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = (
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
+export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> = Default<
   DefaultNoExclude<Default<MethodSchema['request']>['headers']>
 >;
 
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpServiceMethodSchema> = Default<
+export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> = Default<
   DefaultNoExclude<Default<MethodSchema['request']>['searchParams']>
 >;
 
-export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> = ReplaceBy<
+export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
   ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
   ArrayBuffer,
   Blob
@@ -61,7 +61,7 @@ export type HttpRequestBodySchema<MethodSchema extends HttpServiceMethodSchema> 
  * A strict representation of an intercepted HTTP request. The body, search params and path params are already parsed by
  * default.
  */
-export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>
+export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
   extends Omit<HttpRequest, keyof Body | 'headers'> {
   /** The headers of the request. */
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
@@ -76,13 +76,13 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 }
 
 export type HttpResponseHeadersSchema<
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = IfNever<Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>, {}>;
 
 export type HttpResponseBodySchema<
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > = ReplaceBy<
   ReplaceBy<
     IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
@@ -98,8 +98,8 @@ export type HttpResponseBodySchema<
  * by default.
  */
 export interface HttpInterceptorResponse<
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
 > extends Omit<HttpResponse, keyof Body | 'headers'> {
   /** The headers of the response. */
   headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
@@ -128,8 +128,8 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
  */
 export interface TrackedHttpInterceptorRequest<
   Path extends string,
-  MethodSchema extends HttpServiceMethodSchema,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
+  MethodSchema extends HttpMethodSchema,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>> = never,
 > extends HttpInterceptorRequest<Path, MethodSchema> {
   /** The response that was returned for the intercepted request. */
   response: StatusCode extends [never] ? never : HttpInterceptorResponse<MethodSchema, StatusCode>;

@@ -1,4 +1,4 @@
-import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
@@ -8,7 +8,7 @@ import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
-class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicRemoteHttpInterceptor<Schema> {
+class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
   readonly type: 'remote';
 
   private store = new HttpInterceptorStore();
@@ -72,31 +72,31 @@ class RemoteHttpInterceptor<Schema extends HttpServiceSchema> implements PublicR
     await this._client.stop();
   }
 
-  get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.get(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  post = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.post(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  patch = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.patch(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  put = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.put(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  delete = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.delete(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  head = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.head(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  options = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.options(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 

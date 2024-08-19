@@ -4,12 +4,7 @@ import { HttpHeadersSchema } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '@/http/searchParams/types';
 import { HttpBody } from '@/http/types/requests';
-import {
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-  HttpServiceSchemaMethod,
-  HttpServiceSchemaPath,
-} from '@/http/types/schema';
+import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { DeepPartial, Default, IfAny, IfNever, PossiblePromise } from '@/types/utils';
 
 import {
@@ -33,9 +28,9 @@ type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> =
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerHeadersStaticRestriction<
-  Schema extends HttpServiceSchema,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Schema extends HttpSchema,
+  Path extends HttpSchemaPath<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
 > = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
 type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = IfNever<
@@ -50,9 +45,9 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = If
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
-  Schema extends HttpServiceSchema,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Schema extends HttpSchema,
+  Path extends HttpSchemaPath<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
 > = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
 type PartialBodyOrSchema<Body extends HttpBody> =
@@ -70,9 +65,9 @@ type PartialBodyOrSchema<Body extends HttpBody> =
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerBodyStaticRestriction<
-  Schema extends HttpServiceSchema,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Schema extends HttpSchema,
+  Path extends HttpSchemaPath<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
 > = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
 /**
@@ -81,9 +76,9 @@ export type HttpRequestHandlerBodyStaticRestriction<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export interface HttpRequestHandlerStaticRestriction<
-  Schema extends HttpServiceSchema,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  Method extends HttpServiceSchemaMethod<Schema>,
+  Schema extends HttpSchema,
+  Path extends HttpSchemaPath<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
 > {
   /**
    * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
@@ -116,9 +111,9 @@ export interface HttpRequestHandlerStaticRestriction<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerComputedRestriction<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
 
 /**
@@ -127,9 +122,9 @@ export type HttpRequestHandlerComputedRestriction<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
  */
 export type HttpRequestHandlerRestriction<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > =
   | HttpRequestHandlerStaticRestriction<Schema, Path, Method>
   | HttpRequestHandlerComputedRestriction<Schema, Method, Path>;
@@ -144,10 +139,10 @@ export type HttpRequestHandlerRestriction<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
 export interface HttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > {
   /**
    * @returns The method that matches this handler.
@@ -194,7 +189,7 @@ export interface HttpRequestHandler<
    *   status code.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
    */
-  respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
@@ -267,13 +262,13 @@ export interface HttpRequestHandler<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
 export interface LocalHttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends IfAny<
     Schema,
     any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
   > = never,
 > extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type: 'local';
@@ -282,7 +277,7 @@ export interface LocalHttpRequestHandler<
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
-  respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
@@ -303,16 +298,16 @@ export interface LocalHttpRequestHandler<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
 export interface SyncedRemoteHttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
-  respond: <StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
@@ -336,10 +331,10 @@ export interface SyncedRemoteHttpRequestHandler<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
 export interface PendingRemoteHttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   /**
    * Waits for the remote handler to be synced with the connected
@@ -383,13 +378,13 @@ export interface PendingRemoteHttpRequestHandler<
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
 export interface RemoteHttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends IfAny<
     Schema,
     any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
   > = never,
 > extends PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   readonly type: 'remote';

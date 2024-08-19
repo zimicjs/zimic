@@ -34,7 +34,7 @@ export interface HttpPathParamsSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP service schemas}
  */
-export interface HttpServiceRequestSchema {
+export interface HttpRequestSchema {
   headers?: HttpHeadersSchema;
   searchParams?: HttpSearchParamsSchema;
   body?: HttpBody;
@@ -45,13 +45,13 @@ export interface HttpServiceRequestSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export interface HttpServiceResponseSchema {
+export interface HttpResponseSchema {
   headers?: HttpHeadersSchema;
   body?: HttpBody;
 }
 
-export namespace HttpServiceResponseSchema {
-  export interface NoBody extends Omit<HttpServiceResponseSchema, 'body'> {
+export namespace HttpResponseSchema {
+  export interface NoBody extends Omit<HttpResponseSchema, 'body'> {
     body?: null;
   }
 }
@@ -152,19 +152,19 @@ export type HttpStatusCode =
   | HttpStatusCode.ClientError
   | HttpStatusCode.ServerError;
 
-export namespace HttpServiceResponseSchemaByStatusCode {
+export namespace HttpResponseSchemaByStatusCode {
   export type Loose = {
-    [StatusCode in HttpStatusCode]?: HttpServiceResponseSchema;
+    [StatusCode in HttpStatusCode]?: HttpResponseSchema;
   };
 
   export type ConvertToStrict<Schema extends Loose> = {
-    [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpServiceResponseSchema.NoBody : Schema[StatusCode];
+    [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpResponseSchema.NoBody : Schema[StatusCode];
   };
 
   export type Strict = ConvertToStrict<Loose>;
 
   export type NoBody = {
-    [StatusCode in HttpStatusCode]?: HttpServiceResponseSchema.NoBody;
+    [StatusCode in HttpStatusCode]?: HttpResponseSchema.NoBody;
   };
 }
 
@@ -174,34 +174,35 @@ export namespace HttpServiceResponseSchemaByStatusCode {
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByStatusCode.Strict;
+export type HttpResponseSchemaByStatusCode = HttpResponseSchemaByStatusCode.Strict;
 
 /**
  * Extracts the status codes used in a response schema by status code.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export type HttpServiceResponseSchemaStatusCode<
-  ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
-> = Extract<keyof ResponseSchemaByStatusCode, HttpStatusCode>;
+export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> = Extract<
+  keyof ResponseSchemaByStatusCode,
+  HttpStatusCode
+>;
 
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export interface HttpServiceMethodSchema {
-  request?: HttpServiceRequestSchema;
-  response?: HttpServiceResponseSchemaByStatusCode;
+export interface HttpMethodSchema {
+  request?: HttpRequestSchema;
+  response?: HttpResponseSchemaByStatusCode;
 }
 
-export namespace HttpServiceMethodSchema {
-  export interface NoRequestBody extends Omit<HttpServiceMethodSchema, 'request'> {
-    request?: Omit<HttpServiceRequestSchema, 'body'> & { body?: null };
+export namespace HttpMethodSchema {
+  export interface NoRequestBody extends Omit<HttpMethodSchema, 'request'> {
+    request?: Omit<HttpRequestSchema, 'body'> & { body?: null };
   }
 
   export interface NoBody extends Omit<NoRequestBody, 'response'> {
-    response?: HttpServiceResponseSchemaByStatusCode.NoBody;
+    response?: HttpResponseSchemaByStatusCode.NoBody;
   }
 }
 
@@ -210,14 +211,14 @@ export namespace HttpServiceMethodSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export interface HttpServiceMethodsSchema {
-  GET?: HttpServiceMethodSchema.NoRequestBody;
-  POST?: HttpServiceMethodSchema;
-  PUT?: HttpServiceMethodSchema;
-  PATCH?: HttpServiceMethodSchema;
-  DELETE?: HttpServiceMethodSchema;
-  HEAD?: HttpServiceMethodSchema.NoBody;
-  OPTIONS?: HttpServiceMethodSchema.NoRequestBody;
+export interface HttpMethodsSchema {
+  GET?: HttpMethodSchema.NoRequestBody;
+  POST?: HttpMethodSchema;
+  PUT?: HttpMethodSchema;
+  PATCH?: HttpMethodSchema;
+  DELETE?: HttpMethodSchema;
+  HEAD?: HttpMethodSchema.NoBody;
+  OPTIONS?: HttpMethodSchema.NoRequestBody;
 }
 
 /**
@@ -225,8 +226,8 @@ export interface HttpServiceMethodsSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export interface HttpServiceSchema {
-  [path: string]: HttpServiceMethodsSchema;
+export interface HttpSchema {
+  [path: string]: HttpMethodsSchema;
 }
 
 /**
@@ -236,17 +237,17 @@ export interface HttpServiceSchema {
  */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
-  export type Paths<Schema extends HttpServiceSchema> = Schema;
+  export type Paths<Schema extends HttpSchema> = Schema;
   /** Validates that a type is a valid HTTP service methods schema. */
-  export type Methods<Schema extends HttpServiceMethodsSchema> = Schema;
+  export type Methods<Schema extends HttpMethodsSchema> = Schema;
   /** Validates that a type is a valid HTTP service method schema. */
-  export type Method<Schema extends HttpServiceMethodSchema> = Schema;
+  export type Method<Schema extends HttpMethodSchema> = Schema;
   /** Validates that a type is a valid HTTP service request schema. */
-  export type Request<Schema extends HttpServiceRequestSchema> = Schema;
+  export type Request<Schema extends HttpRequestSchema> = Schema;
   /** Validates that a type is a valid HTTP service response schema by status code. */
-  export type ResponseByStatusCode<Schema extends HttpServiceResponseSchemaByStatusCode> = Schema;
+  export type ResponseByStatusCode<Schema extends HttpResponseSchemaByStatusCode> = Schema;
   /** Validates that a type is a valid HTTP service response schema. */
-  export type Response<Schema extends HttpServiceResponseSchema> = Schema;
+  export type Response<Schema extends HttpResponseSchema> = Schema;
   /** Validates that a type is a valid HTTP body schema. */
   export type Body<Schema extends HttpBody> = Schema;
   /** Validates that a type is a valid HTTP headers schema. */
@@ -264,7 +265,7 @@ export namespace HttpSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
+export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Schema,
   any, // eslint-disable-line @typescript-eslint/no-explicit-any
   Extract<keyof UnionToIntersection<Schema[keyof Schema]>, HttpMethod>
@@ -275,7 +276,7 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   import { type HttpSchema, type LiteralHttpServiceSchemaPath } from 'zimic/http';
+ *   import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
  *
  *   type Schema = HttpSchema.Paths<{
  *     '/users': {
@@ -290,23 +291,20 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
  *     };
  *   }>;
  *
- *   type LiteralPath = LiteralHttpServiceSchemaPath<Schema>;
+ *   type LiteralPath = LiteralHttpSchemaPath<Schema>;
  *   // "/users" | "/users/:userId"
  *
- *   type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export type LiteralHttpServiceSchemaPath<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
-> = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
+export type LiteralHttpSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = LooseLiteralHttpSchemaPath<Schema, Method>;
 
-export type LooseLiteralHttpServiceSchemaPath<
-  Schema extends HttpServiceSchema,
-  Method extends HttpMethod = HttpMethod,
-> = {
+export type LooseLiteralHttpSchemaPath<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
   [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
 }[Extract<keyof Schema, string>];
 
@@ -321,7 +319,7 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   import { type HttpSchema, type NonLiteralHttpServiceSchemaPath } from 'zimic/http';
+ *   import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
  *
  *   type Schema = HttpSchema.Paths<{
  *     '/users': {
@@ -336,18 +334,18 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  *     };
  *   }>;
  *
- *   type NonLiteralPath = NonLiteralHttpServiceSchemaPath<Schema>;
+ *   type NonLiteralPath = NonLiteralHttpSchemaPath<Schema>;
  *   // "/users" | "/users/${string}"
  *
- *   type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export type NonLiteralHttpServiceSchemaPath<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
-> = AllowAnyStringInPathParams<LiteralHttpServiceSchemaPath<Schema, Method>>;
+export type NonLiteralHttpSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = AllowAnyStringInPathParams<LiteralHttpSchemaPath<Schema, Method>>;
 
 type LargestPathPrefix<Path extends string> = Path extends `${infer Prefix}/${infer Suffix}`
   ? `${Prefix}/${Suffix extends `${string}/${string}` ? LargestPathPrefix<Suffix> : ''}`
@@ -359,11 +357,11 @@ type ExcludeNonLiteralPathsSupersededByLiteralPath<Path extends string> =
 export type PreferMostStaticLiteralPath<Path extends string> =
   UnionHasMoreThanOneType<Path> extends true ? ExcludeNonLiteralPathsSupersededByLiteralPath<Path> : Path;
 
-type RecursiveInferHttpServiceSchemaPath<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
+type RecursiveInferHttpSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
   NonLiteralPath extends string,
-  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method>,
+  LiteralPath extends LiteralHttpSchemaPath<Schema, Method>,
 > =
   NonLiteralPath extends AllowAnyStringInPathParams<LiteralPath>
     ? NonLiteralPath extends `${AllowAnyStringInPathParams<LiteralPath>}/${string}`
@@ -371,15 +369,13 @@ type RecursiveInferHttpServiceSchemaPath<
       : LiteralPath
     : never;
 
-export type LiteralHttpServiceSchemaPathFromNonLiteral<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
+export type LiteralHttpSchemaPathFromNonLiteral<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
   NonLiteralPath extends string,
-  LiteralPath extends LiteralHttpServiceSchemaPath<Schema, Method> = LiteralHttpServiceSchemaPath<Schema, Method>,
+  LiteralPath extends LiteralHttpSchemaPath<Schema, Method> = LiteralHttpSchemaPath<Schema, Method>,
 > = PreferMostStaticLiteralPath<
-  LiteralPath extends LiteralPath
-    ? RecursiveInferHttpServiceSchemaPath<Schema, Method, NonLiteralPath, LiteralPath>
-    : never
+  LiteralPath extends LiteralPath ? RecursiveInferHttpSchemaPath<Schema, Method, NonLiteralPath, LiteralPath> : never
 >;
 
 /**
@@ -387,7 +383,7 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
  * filter the paths with. Only the methods defined in the schema are allowed.
  *
  * @example
- *   import { type HttpSchema, type HttpServiceSchemaPath } from 'zimic/http';
+ *   import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
  *
  *   type Schema = HttpSchema.Paths<{
  *     '/users': {
@@ -402,18 +398,18 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
  *     };
  *   }>;
  *
- *   type Path = HttpServiceSchemaPath<Schema>;
+ *   type Path = HttpSchemaPath<Schema>;
  *   // "/users" | "/users/:userId" | "/users/${string}"
  *
- *   type GetPath = HttpServiceSchemaPath<Schema, 'GET'>;
+ *   type GetPath = HttpSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-export type HttpServiceSchemaPath<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
-> = LiteralHttpServiceSchemaPath<Schema, Method> | NonLiteralHttpServiceSchemaPath<Schema, Method>;
+export type HttpSchemaPath<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
+> = LiteralHttpSchemaPath<Schema, Method> | NonLiteralHttpSchemaPath<Schema, Method>;
 
 type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Prefix}:${infer ParamName}/${infer Suffix}`
   ? { [Name in ParamName]: string } & RecursiveInferPathParams<Suffix>
@@ -422,10 +418,10 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
     : {};
 
 /**
- * Infers the path parameters schema from a path string, optionally validating it against an {@link HttpServiceSchema}.
+ * Infers the path parameters schema from a path string, optionally validating it against an {@link HttpSchema}.
  *
- * If the first argument is a {@link HttpServiceSchema} (recommended), the second argument is checked to be a valid path
- * in that schema.
+ * If the first argument is a {@link HttpSchema} (recommended), the second argument is checked to be a valid path in that
+ * schema.
  *
  * @example
  *   import { HttpSchema, InferPathParams } from 'zimic/http';
@@ -450,46 +446,30 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  *   // { userId: string }
  */
 export type InferPathParams<
-  PathOrSchema extends string | HttpServiceSchema,
-  OptionalPath extends PathOrSchema extends HttpServiceSchema
-    ? LiteralHttpServiceSchemaPath<PathOrSchema>
-    : never = never,
+  PathOrSchema extends string | HttpSchema,
+  OptionalPath extends PathOrSchema extends HttpSchema ? LiteralHttpSchemaPath<PathOrSchema> : never = never,
 > = Prettify<
   RecursiveInferPathParams<
-    PathOrSchema extends HttpServiceSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
+    PathOrSchema extends HttpSchema ? OptionalPath : PathOrSchema extends string ? PathOrSchema : never
   >
 >;
 
-/**
- * Infers the path parameters schema from a path string.
- *
- * @deprecated Use {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#inferpathparams InferPathParams} instead,
- *   which works as a drop-in replacement with additional validation.
- * @example
- *   import { PathParamsSchemaFromPath } from 'zimic/http';
- *
- *   // Without using a schema to validate the path:
- *   type PathParams = PathParamsSchemaFromPath<'/users/:userId'>;
- *   // { userId: string }
- */
-export type PathParamsSchemaFromPath<Path extends string> = InferPathParams<Path>;
-
 type OmitPastHttpStatusCodes<
-  Schema extends HttpServiceResponseSchemaByStatusCode.Loose,
-  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+  Schema extends HttpResponseSchemaByStatusCode.Loose,
+  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[],
 > =
-  PastSchemas extends NonEmptyArray<HttpServiceResponseSchemaByStatusCode.Loose>
+  PastSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode.Loose>
     ? Omit<Schema, keyof UnionToIntersection<PastSchemas[number]>>
     : Schema;
 
 type RecursiveMergeHttpResponsesByStatusCode<
-  Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
-  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],
+  Schemas extends HttpResponseSchemaByStatusCode.Loose[],
+  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[] = [],
 > = Schemas extends [
-  infer FirstSchema extends HttpServiceResponseSchemaByStatusCode.Loose,
-  ...infer RestSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
+  infer FirstSchema extends HttpResponseSchemaByStatusCode.Loose,
+  ...infer RestSchemas extends HttpResponseSchemaByStatusCode.Loose[],
 ]
-  ? RestSchemas extends NonEmptyArray<HttpServiceResponseSchemaByStatusCode.Loose>
+  ? RestSchemas extends NonEmptyArray<HttpResponseSchemaByStatusCode.Loose>
     ? OmitPastHttpStatusCodes<FirstSchema, PastSchemas> &
         RecursiveMergeHttpResponsesByStatusCode<RestSchemas, [...PastSchemas, FirstSchema]>
     : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
@@ -529,8 +509,6 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *   }>;
  */
 export type MergeHttpResponsesByStatusCode<
-  Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
-  PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],
-> = HttpServiceResponseSchemaByStatusCode.ConvertToStrict<
-  RecursiveMergeHttpResponsesByStatusCode<Schemas, PastSchemas>
->;
+  Schemas extends HttpResponseSchemaByStatusCode.Loose[],
+  PastSchemas extends HttpResponseSchemaByStatusCode.Loose[] = [],
+> = HttpResponseSchemaByStatusCode.ConvertToStrict<RecursiveMergeHttpResponsesByStatusCode<Schemas, PastSchemas>>;

@@ -1,9 +1,4 @@
-import {
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-  HttpServiceSchemaMethod,
-  HttpServiceSchemaPath,
-} from '@/http/types/schema';
+import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { Default } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
@@ -21,10 +16,10 @@ import {
 } from './types/requests';
 
 class LocalHttpRequestHandler<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
-  StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > implements PublicLocalHttpRequestHandler<Schema, Method, Path, StatusCode>
 {
   readonly type = 'local';
@@ -54,9 +49,7 @@ class LocalHttpRequestHandler<
     return this;
   }
 
-  respond<
-    NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
-  >(
+  respond<NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,

@@ -1,10 +1,10 @@
 import {
   HTTP_METHODS,
   HttpMethod,
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-  HttpServiceSchemaMethod,
-  HttpServiceSchemaPath,
+  HttpResponseSchemaStatusCode,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
@@ -25,7 +25,7 @@ import { HttpInterceptorRequestContext } from './types/requests';
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
 class HttpInterceptorClient<
-  Schema extends HttpServiceSchema,
+  Schema extends HttpSchema,
   HandlerConstructor extends HttpRequestHandlerConstructor = HttpRequestHandlerConstructor,
 > {
   private worker: HttpInterceptorWorker;
@@ -117,37 +117,37 @@ class HttpInterceptorClient<
     }
   }
 
-  get(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('GET' as HttpServiceSchemaMethod<Schema>, path);
+  get(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('GET' as HttpSchemaMethod<Schema>, path);
   }
 
-  post(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('POST' as HttpServiceSchemaMethod<Schema>, path);
+  post(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('POST' as HttpSchemaMethod<Schema>, path);
   }
 
-  patch(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('PATCH' as HttpServiceSchemaMethod<Schema>, path);
+  patch(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('PATCH' as HttpSchemaMethod<Schema>, path);
   }
 
-  put(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('PUT' as HttpServiceSchemaMethod<Schema>, path);
+  put(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('PUT' as HttpSchemaMethod<Schema>, path);
   }
 
-  delete(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('DELETE' as HttpServiceSchemaMethod<Schema>, path);
+  delete(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('DELETE' as HttpSchemaMethod<Schema>, path);
   }
 
-  head(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('HEAD' as HttpServiceSchemaMethod<Schema>, path);
+  head(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('HEAD' as HttpSchemaMethod<Schema>, path);
   }
 
-  options(path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) {
-    return this.createHttpRequestHandler('OPTIONS' as HttpServiceSchemaMethod<Schema>, path);
+  options(path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) {
+    return this.createHttpRequestHandler('OPTIONS' as HttpSchemaMethod<Schema>, path);
   }
 
   private createHttpRequestHandler<
-    Method extends HttpServiceSchemaMethod<Schema>,
-    Path extends HttpServiceSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
   >(method: Method, path: Path): HttpRequestHandler<Schema, Method, Path> {
     if (!this.isRunning()) {
       throw new NotStartedHttpInterceptorError();
@@ -158,9 +158,9 @@ class HttpInterceptorClient<
   }
 
   registerRequestHandler<
-    Method extends HttpServiceSchemaMethod<Schema>,
-    Path extends HttpServiceSchemaPath<Schema, Method>,
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
+    StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
   >(
     handler:
       | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
@@ -197,8 +197,8 @@ class HttpInterceptorClient<
   }
 
   private async handleInterceptedRequest<
-    Method extends HttpServiceSchemaMethod<Schema>,
-    Path extends HttpServiceSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
   >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
@@ -229,8 +229,8 @@ class HttpInterceptorClient<
   }
 
   private async findMatchedHandler<
-    Method extends HttpServiceSchemaMethod<Schema>,
-    Path extends HttpServiceSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath<Schema, Method>,
   >(
     method: Method,
     path: Path,
@@ -289,7 +289,7 @@ export type AnyHttpInterceptorClient = HttpInterceptorClient<any>;
 
 export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
-export type SharedHttpInterceptorClient<Schema extends HttpServiceSchema> = HttpInterceptorClient<
+export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorClient<
   Schema,
   typeof LocalHttpRequestHandler
 > &
