@@ -24,7 +24,7 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
  * @returns The created HTTP interceptor.
  * @throws {InvalidURLError} If the base URL is invalid.
  * @throws {UnsupportedURLProtocolError} If the base URL protocol is not either `http` or `https`.
- * @see {@link https://github.com/zimicjs/zimic#httpinterceptorcreate `httpInterceptor.create()` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)` API reference}
  */
 export function createHttpInterceptor<Schema extends HttpServiceSchema>(
   options: LocalHttpInterceptorOptions,

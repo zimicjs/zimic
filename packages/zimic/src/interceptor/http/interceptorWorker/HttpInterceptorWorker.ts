@@ -446,7 +446,7 @@ abstract class HttpInterceptorWorker {
         await formatObjectToLog(Object.fromEntries(request.searchParams)),
         '\n    Body:',
         await formatObjectToLog(request.body),
-        '\n\nLearn more: https://github.com/zimicjs/zimic#unhandled-requests',
+        '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },
     );

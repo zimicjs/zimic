@@ -73,12 +73,11 @@ function normalizeRawNodes(rawNodes: ts.Node[], context: TypeTransformContext, o
 /**
  * The options to use when generating types from an OpenAPI schema.
  *
- * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
- * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-openapi` `zimic typegen openapi` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐typegen#typegengeneratefromopenapioptions `typegen.generateFromOpenAPI(options)` API reference}
  */
 export interface OpenAPITypegenOptions {
   /**
-   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3.x is supported as YAML or JSON.
+   * The path to a local OpenAPI schema file or an URL to fetch it. Version 3 is supported as YAML or JSON.
    *
    * @example
    *   './schema.yaml';
@@ -131,7 +130,7 @@ export interface OpenAPITypegenOptions {
  * Generates TypeScript types from an OpenAPI schema.
  *
  * @param options The options to use when generating the types.
- * @see {@link https://github.com/zimicjs/zimic#zimic-typegen-programmatic-usage `zimic typegen` programmatic usage}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐typegen#typegengeneratefromopenapioptions `typegen.generateFromOpenAPI(options)` API reference}
  */
 async function generateTypesFromOpenAPI({
   input: inputFilePathOrURL,

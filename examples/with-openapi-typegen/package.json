@@ -1,5 +1,5 @@
 {
-  "name": "zimic-example-with-typegen",
+  "name": "zimic-example-with-openapi-typegen",
   "version": "0.0.0",
   "private": false,
   "scripts": {

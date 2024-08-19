@@ -529,7 +529,7 @@ describe('HttpSearchParams', () => {
 
       expectTypeOf<NewType>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<{ a: Date }>>().toEqualTypeOf<{}>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ a: never[]; b: string }>();
       expectTypeOf<HttpSearchParamsSerialized<() => void>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
       expectTypeOf<HttpSearchParamsSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();

@@ -21,14 +21,14 @@ export type HttpMethodWithResponseBody = (typeof HTTP_METHODS_WITH_RESPONSE_BODY
 export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const);
 /**
  * A type representing the currently supported
- * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods `HTTP methods`}.
+ * {@link https://developer.mozilla.org/docs/Web/HTTP/Methods `HTTP methods`}.
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 /**
  * A schema representing the structure of an HTTP request.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP service schemas}
  */
 export interface HttpServiceRequestSchema {
   headers?: HttpHeadersSchema;
@@ -39,7 +39,7 @@ export interface HttpServiceRequestSchema {
 /**
  * A schema representing the structure of an HTTP response.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceResponseSchema {
   headers?: HttpHeadersSchema;
@@ -52,13 +52,25 @@ export namespace HttpServiceResponseSchema {
   }
 }
 
+/**
+ * The status codes used in HTTP responses, as defined by
+ * {@link https://httpwg.org/specs/rfc9110.html#overview.of.status.codes RFC-9110}.
+ *
+ * - `HttpStatusCode.Information`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses `1XX`}
+ * - `HttpStatusCode.Success`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses `2XX`}
+ * - `HttpStatusCode.Redirection`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages `3XX`}
+ * - `HttpStatusCode.ClientError`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses `4XX`}
+ * - `HttpStatusCode.ServerError`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`}
+ */
 export namespace HttpStatusCode {
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses `1XX`} */
   export type Information =
     | 100 // Continue
     | 101 // Switching Protocols
     | 102 // Processing
     | 103; // Early Hints
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses `2XX`} */
   export type Success =
     | 200 // OK
     | 201 // Created
@@ -71,6 +83,7 @@ export namespace HttpStatusCode {
     | 208 // Already Reported
     | 226; // IM Used
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages `3XX`} */
   export type Redirection =
     | 300 // Multiple Choices
     | 301 // Moved Permanently
@@ -80,6 +93,7 @@ export namespace HttpStatusCode {
     | 307 // Temporary Redirect
     | 308; // Permanent Redirect
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses `4XX`} */
   export type ClientError =
     | 400 // Bad Request
     | 401 // Unauthorized
@@ -111,6 +125,7 @@ export namespace HttpStatusCode {
     | 431 // Request Header Fields Too Large
     | 451; // Unavailable For Legal Reasons
 
+  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`} */
   export type ServerError =
     | 500 // Internal Server Error
     | 501 // Not Implemented
@@ -152,7 +167,7 @@ export namespace HttpServiceResponseSchemaByStatusCode {
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByStatusCode.Strict;
@@ -160,7 +175,7 @@ export type HttpServiceResponseSchemaByStatusCode = HttpServiceResponseSchemaByS
 /**
  * Extracts the status codes used in a response schema by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceResponseSchemaStatusCode<
   ResponseSchemaByStatusCode extends HttpServiceResponseSchemaByStatusCode,
@@ -169,7 +184,7 @@ export type HttpServiceResponseSchemaStatusCode<
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodSchema {
   request?: HttpServiceRequestSchema;
@@ -189,7 +204,7 @@ export namespace HttpServiceMethodSchema {
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceMethodsSchema {
   GET?: HttpServiceMethodSchema.NoRequestBody;
@@ -204,7 +219,7 @@ export interface HttpServiceMethodsSchema {
 /**
  * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export interface HttpServiceSchema {
   [path: string]: HttpServiceMethodsSchema;
@@ -213,7 +228,7 @@ export interface HttpServiceSchema {
 /**
  * A namespace containing utility types for validating HTTP type schemas.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export namespace HttpSchema {
   /** Validates that a type is a valid HTTP service schema. */
@@ -241,7 +256,7 @@ export namespace HttpSchema {
 /**
  * Extracts the methods from an HTTP service schema.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
   Schema,
@@ -250,21 +265,38 @@ export type HttpServiceSchemaMethod<Schema extends HttpServiceSchema> = IfAny<
 >;
 
 /**
- * Extracts the literal paths from an HTTP service schema containing certain methods. Only the methods defined in the
- * schema are allowed.
+ * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+ * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @example
+ *   import { type HttpSchema, type LiteralHttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       DELETE: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *
+ *   type LiteralPath = LiteralHttpServiceSchemaPath<Schema>;
+ *   // "/users" | "/users/:userId"
+ *
+ *   type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export type LiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpServiceSchemaMethod<Schema> = HttpServiceSchemaMethod<Schema>,
 > = LooseLiteralHttpServiceSchemaPath<Schema, Method>;
 
-/**
- * Extracts the literal paths from an HTTP service schema containing certain methods. Any method is allowed.
- *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
- */
 export type LooseLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
   Method extends HttpMethod = HttpMethod,
@@ -279,9 +311,32 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
     : Path;
 
 /**
- * Extracts the non-literal paths from an HTTP service schema containing certain methods.
+ * Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
+ * methods to filter the paths with. Only the methods defined in the schema are allowed.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @example
+ *   import { type HttpSchema, type NonLiteralHttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       DELETE: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *
+ *   type NonLiteralPath = NonLiteralHttpServiceSchemaPath<Schema>;
+ *   // "/users" | "/users/${string}"
+ *
+ *   type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export type NonLiteralHttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -322,9 +377,32 @@ export type LiteralHttpServiceSchemaPathFromNonLiteral<
 >;
 
 /**
- * Extracts the paths from an HTTP service schema containing certain methods.
+ * Extracts the paths from an HTTP service schema. Optionally receives a second argument with one or more methods to
+ * filter the paths with. Only the methods defined in the schema are allowed.
  *
- * @see {@link https://github.com/zimicjs/zimic#declaring-http-service-schemas Declaring HTTP Service Schemas}
+ * @example
+ *   import { type HttpSchema, type HttpServiceSchemaPath } from 'zimic/http';
+ *
+ *   type Schema = HttpSchema.Paths<{
+ *     '/users': {
+ *       GET: {
+ *         response: { 200: { body: User[] } };
+ *       };
+ *     };
+ *     '/users/:userId': {
+ *       DELETE: {
+ *         response: { 200: { body: User } };
+ *       };
+ *     };
+ *   }>;
+ *
+ *   type Path = NonLiteralHttpServiceSchemaPath<Schema>;
+ *   // "/users" | "/users/:userId" | "/users/${string}"
+ *
+ *   type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+ *   // "/users"
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
 export type HttpServiceSchemaPath<
   Schema extends HttpServiceSchema,
@@ -342,7 +420,10 @@ type RecursivePathParamsSchemaFromPath<Path extends string> =
  * Infers the path parameters schema from a path string.
  *
  * @example
- *   '/users/:userId/notifications' -> { userId: string }
+ *   import { PathParamsSchemaFromPath } from 'zimic/http';
+ *
+ *   type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
+ *   // { userId: string }
  */
 export type PathParamsSchemaFromPath<Path extends string> = Prettify<RecursivePathParamsSchemaFromPath<Path>>;
 
@@ -367,6 +448,39 @@ type RecursiveMergeHttpResponsesByStatusCode<
     : OmitPastHttpStatusCodes<FirstSchema, PastSchemas>
   : never;
 
+/**
+ * Merges multiple HTTP response schemas by status code into a single schema. When there are duplicate status codes, the
+ * first declaration takes precedence.
+ *
+ * @example
+ *   import { type HttpSchema, type HttpStatusCode, MergeHttpResponsesByStatusCode } from 'zimic/http';
+ *
+ *   // Overriding the 400 status code with a more specific schema
+ *   // and using a generic schema for all other client errors.
+ *   type MergedResponses = MergeHttpResponsesByStatusCode<
+ *     [
+ *       {
+ *         400: { body: { message: string; issues: string[] } };
+ *       },
+ *       {
+ *         [StatusCode in HttpStatusCode.ClientError]: { body: { message: string } };
+ *       },
+ *     ]
+ *   >;
+ *   // {
+ *   //   400: { body: { message: string; issues: string[] } };
+ *   //   401: { body: { message: string}; };
+ *   //   402: { body: { message: string}; };
+ *   //   403: { body: { message: string}; };
+ *   //   ...
+ *   // }
+ *
+ *   type Schema = HttpSchema.Paths<{
+ *     '/users': {
+ *       GET: { response: MergedResponses };
+ *     };
+ *   }>;
+ */
 export type MergeHttpResponsesByStatusCode<
   Schemas extends HttpServiceResponseSchemaByStatusCode.Loose[],
   PastSchemas extends HttpServiceResponseSchemaByStatusCode.Loose[] = [],

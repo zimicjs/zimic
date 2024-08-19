@@ -1,7 +1,8 @@
 /**
- * The options to create an {@link https://github.com/zimicjs/zimic#zimic-server interceptor server}.
+ * The options to create an
+ * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
  *
- * @see {@link https://github.com/zimicjs/zimic#zimic-server `zimic server` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic server` API reference}
  */
 export interface InterceptorServerOptions {
   /**
@@ -17,7 +18,7 @@ export interface InterceptorServerOptions {
   /**
    * The strategy to use for unhandled requests.
    *
-   * @see {@link https://github.com/zimicjs/zimic#unhandled-requests Unhandled requests}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
   onUnhandledRequest?: {
     /**

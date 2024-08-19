@@ -13,19 +13,46 @@ export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema = HttpHeader
   [Key in keyof Schema & string]: [Key, Defined<Schema[Key]>];
 }[keyof Schema & string];
 
-/** An initialization value for {@link https://github.com/zimicjs/zimic#httpheaders `HttpHeaders`}. */
+/** An initialization value for {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders`}. */
 export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema> =
   | Headers
   | Schema
   | HttpHeaders<Schema>
   | HttpHeadersSchemaTuple<Schema>[];
 
-/** Extracts the names of the headers defined in a {@link HttpHeadersSchema}. Each key is considered a header name. */
+/**
+ * Extracts the names of the headers defined in a {@link HttpHeadersSchema}. Each key is considered a header name.
+ *
+ * @example
+ *   import { type HttpSearchParamsSerialized } from 'zimic/http';
+ *
+ *   type HeaderName = HttpHeadersSchemaName<{
+ *     'content-type': string;
+ *     'content-length'?: string;
+ *   }>;
+ *   // "content-type" | "content-length"
+ */
 export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Schema, never, keyof Schema & string>;
 
 /**
- * Recursively converts a type to its HTTP headers-serialized version. Numbers and booleans are converted to `${number}`
- * and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as functions and
- * dates.
+ * Recursively converts a type to its {@link https://developer.mozilla.org/docs/Web/API/Headers HTTP headers}-serialized
+ * version. Numbers and booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and
+ * not serializable values are excluded, such as functions and dates.
+ *
+ * @example
+ *   import { type HttpSearchParamsSerialized } from 'zimic/http';
+ *
+ *   type Params = HttpSearchParamsSerialized<{
+ *     'content-type': string;
+ *     'x-remaining-tries': number;
+ *     'x-full'?: boolean;
+ *     'x-date'?: Date;
+ *     method(): void;
+ *   }>;
+ *   // {
+ *   //   'content-type': string;
+ *   //   'x-remaining-tries': `${number}`;
+ *   //   'x-full'?: "false" | "true";
+ *   // }
  */
 export type HttpHeadersSerialized<Type> = HttpSearchParamsSerialized<Type>;
