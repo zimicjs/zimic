@@ -18,8 +18,8 @@
     - [Path parameters](#path-parameters)
   - [HTTP `interceptor.clear()`](#http-interceptorclear)
   - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
-    - [`ExtractHttpInterceptorSchema`](#extracthttpinterceptorschema)
     - [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema)
+    - [`ExtractHttpInterceptorSchema`](#extracthttpinterceptorschema)
 - [`HttpRequestHandler`](#httprequesthandler)
   - [HTTP `handler.method()`](#http-handlermethod)
   - [HTTP `handler.path()`](#http-handlerpath)
@@ -471,7 +471,7 @@ type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 > [!WARNING]
 >
 > This type is **deprecated** and was renamed to [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) with no
-> behavior change. Please use [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) instead.
+> changes in behavior. Please use [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) instead.
 
 ## `HttpRequestHandler`
 
