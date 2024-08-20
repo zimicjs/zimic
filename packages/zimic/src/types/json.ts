@@ -31,9 +31,6 @@ export type JSONValue<Type extends JSON = JSON> = Type;
  * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON
  * values are excluded.
  *
- * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON
- * values are excluded.
- *
  * @example
  *   import { type JSONSerialized } from 'zimic';
  *
