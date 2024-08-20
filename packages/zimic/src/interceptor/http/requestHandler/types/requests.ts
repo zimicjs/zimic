@@ -111,7 +111,7 @@ export interface HttpInterceptorResponse<
   raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }
 
-export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES = Object.freeze(
+export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES = Object.freeze(
   new Set<Exclude<keyof HttpRequest, keyof HttpInterceptorRequest<string, never>>>([
     'bodyUsed',
     'arrayBuffer',
@@ -123,9 +123,9 @@ export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES = Object.freeze(
   ]),
 );
 
-export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_REQUEST_PROPERTIES = Object.freeze(
+export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES = Object.freeze(
   new Set<Exclude<keyof HttpResponse, keyof HttpInterceptorResponse<never, never>>>(
-    HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES,
+    HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   ),
 );
 
