@@ -29,6 +29,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get zimic release version
+        id: zimic-version
+        uses: ./.github/actions/zimic-version
+        with:
+          ref-name: ${{ github.ref_name }}
+
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
         with:
@@ -38,34 +44,12 @@ jobs:
           build: zimic^...
           install-playwright-browsers: true
 
-      - name: Get zimic release version
-        id: zimic-version
-        run: |
-          version=$(jq -r '.version' ./packages/zimic/package.json)
-          echo "value=$version" >> $GITHUB_OUTPUT
-
       - name: Build zimic
         run: pnpm turbo build --filter zimic
 
-      - name: Prepare NPM tag
-        id: npm-tag
-        run: |
-          if [[ '${{ github.ref_name }}' != 'v${{ steps.zimic-version.outputs.value }}' ]]; then
-            echo 'The release tag does not match the package version.' >&2
-            exit 1
-          fi
-
-          if [[ '${{ github.ref_name }}' == v*.*.*-canary.* ]]; then
-            echo "value=canary" >> $GITHUB_OUTPUT
-          elif [[ '${{ github.ref_name }}' == v*.*.* ]]; then
-            echo "value=latest" >> $GITHUB_OUTPUT
-          else
-            echo "value=next" >> $GITHUB_OUTPUT
-          fi
-
       - name: Release to NPM
         working-directory: packages/zimic
-        run: pnpm publish --no-git-checks --tag ${{ steps.npm-tag.outputs.value }}
+        run: pnpm publish --no-git-checks --tag ${{ steps.zimic-version.outputs.label }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
@@ -86,15 +70,20 @@ jobs:
 
           timeout 60s bash -c '
             until pnpm view zimic versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
-              echo "zimic@${{ steps.zimic-version.outputs.value }} is not available on NPM yet..."
+              echo "zimic@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
               sleep 5
-              echo "Checking if zimic@${{ steps.zimic-version.outputs.value }} is available on NPM..."
+              echo "Checking again..."
             done
           '
 
           echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
-          pnpm install --no-frozen-lockfile
+          timeout 180s bash -c '
+            until pnpm install --no-frozen-lockfile; do
+              sleep 5
+              echo "Retrying..."
+            done
+          '
 
           pnpm turbo \
             types:check lint:turbo \

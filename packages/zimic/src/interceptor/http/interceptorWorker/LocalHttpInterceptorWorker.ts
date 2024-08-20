@@ -1,7 +1,7 @@
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 
 import { HttpRequest } from '@/http/types/requests';
-import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { importMSWBrowser, importMSWNode } from '@/utils/msw';
 import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
@@ -136,7 +136,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return !this.hasInternalBrowserWorker();
   }
 
-  use<Schema extends HttpServiceSchema>(
+  use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     rawURL: string | URL,
@@ -180,7 +180,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     this.httpHandlerGroups = [];
   }
 
-  clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
+  clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const internalWorker = this.internalWorkerOrThrow();
 
     const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);

@@ -30,7 +30,7 @@ pnpm typegen:github
 > Typegen filters are useful to select only a subset of the available endpoints. The GitHub's API is large and we only
 > need to generate the types used by this project.
 >
-> Learn more: https://github.com/zimicjs/zimic#zimic-typegen-openapi-filtering
+> Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen#zimic-typegen-openapi-filtering
 
 ## Testing
 
@@ -57,9 +57,9 @@ where the repository is found and another where it is not.
    git init
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
-   git sparse-checkout set examples/with-typegen
+   git sparse-checkout set examples/with-openapi-typegen
    git pull origin main
-   cd examples/with-typegen
+   cd examples/with-openapi-typegen
    ```
 
 2. Install the dependencies:

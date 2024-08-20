@@ -19,7 +19,7 @@ describe('CLI (browser)', () => {
   const browserHelpOutput = [
     'zimic browser',
     '',
-    'Browser',
+    'Manage your browser mock configuration',
     '',
     'Commands:',
     '  zimic browser init <publicDirectory>  Initialize the browser service worker co',

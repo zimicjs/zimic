@@ -8,10 +8,10 @@ import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
 import {
   HttpMethod,
-  HttpServiceMethodSchema,
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-  PathParamsSchemaFromPath,
+  HttpMethodSchema,
+  HttpResponseSchemaStatusCode,
+  HttpSchema,
+  InferPathParams,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
@@ -23,8 +23,8 @@ import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
-  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
@@ -107,7 +107,7 @@ abstract class HttpInterceptorWorker {
     this.stoppingPromise = undefined;
   }
 
-  abstract use<Schema extends HttpServiceSchema>(
+  abstract use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
@@ -183,7 +183,7 @@ abstract class HttpInterceptorWorker {
 
   abstract clearHandlers(): PossiblePromise<void>;
 
-  abstract clearInterceptorHandlers<Schema extends HttpServiceSchema>(
+  abstract clearInterceptorHandlers<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
   ): PossiblePromise<void>;
 
@@ -220,7 +220,7 @@ abstract class HttpInterceptorWorker {
     return Response.json(declaration.body, { headers, status });
   }
 
-  static async parseRawRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>(
+  static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: HttpRequest,
     options: { urlRegex?: RegExp } = {},
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
@@ -274,12 +274,12 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenRequestProperty(property: string) {
-    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES.has(property);
+    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES.has(property as never);
   }
 
   static async parseRawResponse<
-    MethodSchema extends HttpServiceMethodSchema,
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+    MethodSchema extends HttpMethodSchema,
+    StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
@@ -319,16 +319,13 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenResponseProperty(property: string) {
-    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
+    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static parseRawPathParams<Path extends string>(
-    matchedURLRegex: RegExp,
-    request: HttpRequest,
-  ): PathParamsSchemaFromPath<Path> {
+  static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: HttpRequest): InferPathParams<Path> {
     const match = request.url.match(matchedURLRegex);
     const pathParams = { ...match?.groups };
-    return pathParams as PathParamsSchemaFromPath<Path>;
+    return pathParams as InferPathParams<Path>;
   }
 
   static async parseRawBody<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
@@ -446,7 +443,7 @@ abstract class HttpInterceptorWorker {
         await formatObjectToLog(Object.fromEntries(request.searchParams)),
         '\n    Body:',
         await formatObjectToLog(request.body),
-        '\n\nLearn more: https://github.com/zimicjs/zimic#unhandled-requests',
+        '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },
     );

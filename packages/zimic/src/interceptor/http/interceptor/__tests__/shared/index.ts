@@ -10,9 +10,9 @@ import { declareBodyHttpInterceptorTests } from './bodies';
 import { declareBypassHttpInterceptorTests } from './bypass';
 import { declareClearHttpInterceptorTests } from './clear';
 import { declareDeclareHttpInterceptorTests } from './default';
-import { declareDynamicPathsHttpInterceptorTests } from './dynamicPaths';
 import { declareHandlerHttpInterceptorTests } from './handlers';
 import { declareLifeCycleHttpInterceptorTests } from './lifeCycle';
+import { declarePathParamsHttpInterceptorTests } from './pathParams';
 import { declareRestrictionsHttpInterceptorTests } from './restrictions';
 import { SharedHttpInterceptorTestsOptions, RuntimeSharedHttpInterceptorTestsOptions } from './types';
 import { declareTypeHttpInterceptorTests } from './typescript';
@@ -77,8 +77,8 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       declareHandlerHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Dynamic paths', async () => {
-      await declareDynamicPathsHttpInterceptorTests(runtimeOptions);
+    describe('Paths params', async () => {
+      await declarePathParamsHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Bodies', async () => {

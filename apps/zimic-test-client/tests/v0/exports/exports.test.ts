@@ -26,16 +26,25 @@ import {
   type HttpStatusCode,
   type HttpServiceSchema,
   type HttpServiceMethodsSchema,
+  type HttpMethodsSchema,
   type HttpServiceMethodSchema,
+  type HttpMethodSchema,
   type HttpServiceRequestSchema,
+  type HttpRequestSchema,
   type HttpServiceResponseSchemaByStatusCode,
+  type HttpResponseSchemaByStatusCode,
   type HttpServiceResponseSchema,
+  type HttpResponseSchema,
   type HttpServiceResponseSchemaStatusCode,
+  type HttpResponseSchemaStatusCode,
   type HttpServiceSchemaMethod,
+  type HttpSchemaMethod,
   type HttpServiceSchemaPath,
+  type HttpSchemaPath,
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
+  type InferPathParams,
   type MergeHttpResponsesByStatusCode,
   InvalidFormDataError,
 } from 'zimic0/http';
@@ -53,6 +62,7 @@ import {
   type RemoteHttpInterceptorOptions,
   type UnhandledRequestStrategy,
   type ExtractHttpInterceptorSchema,
+  type InferHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
   type TrackedHttpInterceptorRequest,
@@ -120,23 +130,36 @@ describe('Exports', () => {
     expectTypeOf<HttpSchema.Headers<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Body<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.SearchParams<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.PathParams<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.FormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpStatusCode>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
+    expectTypeOf<HttpSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodSchema>().not.toBeAny();
     expectTypeOf<HttpServiceRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpRequestSchema>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchema>().not.toBeAny();
+    expectTypeOf<HttpResponseSchema>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
+    expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<InvalidJSONError>().not.toBeAny();
@@ -168,6 +191,7 @@ describe('Exports', () => {
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny();
+    expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();

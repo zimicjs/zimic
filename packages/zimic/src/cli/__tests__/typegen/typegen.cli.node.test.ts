@@ -14,7 +14,7 @@ describe('Type generation', () => {
   const helpOutput = [
     'zimic typegen',
     '',
-    'Type generation',
+    'Generate types from schema sources',
     '',
     'Commands:',
     '  zimic typegen openapi <input>  Generate types from an OpenAPI schema.',

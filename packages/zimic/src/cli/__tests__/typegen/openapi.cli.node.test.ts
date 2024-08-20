@@ -112,7 +112,7 @@ describe('Type generation (OpenAPI)', () => {
     '',
     'Positionals:',
     '  input  The path to a local OpenAPI schema file or an URL to fetch it. Version',
-    '         3.x is supported as YAML or JSON.                   [string] [required]',
+    '         3 is supported as YAML or JSON.                     [string] [required]',
     '',
     'Options:',
     '      --help          Show help                                        [boolean]',

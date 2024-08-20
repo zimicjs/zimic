@@ -535,7 +535,7 @@ describe('HttpHeaders', () => {
 
       expectTypeOf<NewType>().toEqualTypeOf<never>();
       expectTypeOf<HttpHeadersSerialized<{ a: Date }>>().toEqualTypeOf<{}>();
-      expectTypeOf<HttpHeadersSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpHeadersSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ a: never[]; b: string }>();
       expectTypeOf<HttpHeadersSerialized<() => void>>().toEqualTypeOf<never>();
       expectTypeOf<HttpHeadersSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
       expectTypeOf<HttpHeadersSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();

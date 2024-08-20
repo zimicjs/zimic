@@ -18,7 +18,7 @@ async function runCLI() {
     .showHelpOnFail(false)
     .strict()
 
-    .command('browser', 'Browser', (yargs) =>
+    .command('browser', 'Manage your browser mock configuration', (yargs) =>
       yargs.demandCommand().command(
         'init <publicDirectory>',
         'Initialize the browser service worker configuration.',
@@ -34,7 +34,7 @@ async function runCLI() {
       ),
     )
 
-    .command('server', 'Interceptor server', (yargs) =>
+    .command('server', 'Manage interceptor servers', (yargs) =>
       yargs.demandCommand().command(
         'start [-- onReady]',
         'Start an interceptor server.',
@@ -94,7 +94,7 @@ async function runCLI() {
       ),
     )
 
-    .command('typegen', 'Type generation', (yargs) =>
+    .command('typegen', 'Generate types from schema sources', (yargs) =>
       yargs.demandCommand().command(
         'openapi <input>',
         'Generate types from an OpenAPI schema.',
@@ -104,7 +104,7 @@ async function runCLI() {
               type: 'string',
               description:
                 'The path to a local OpenAPI schema file or an URL to fetch it. ' +
-                'Version 3.x is supported as YAML or JSON.',
+                'Version 3 is supported as YAML or JSON.',
               demandOption: true,
             })
             .option('output', {

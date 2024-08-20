@@ -61,7 +61,7 @@ describe('CLI (server)', async () => {
   const serverHelpOutput = [
     'zimic server',
     '',
-    'Interceptor server',
+    'Manage interceptor servers',
     '',
     'Commands:',
     '  zimic server start [-- onReady]  Start an interceptor server.',

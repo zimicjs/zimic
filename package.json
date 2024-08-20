@@ -1,7 +1,7 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "version": "0.8.4",
+  "version": "0.9.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git"
@@ -32,10 +32,10 @@
     "@zimic/release": "workspace:*",
     "concurrently": "^8.2.2",
     "husky": "^9.1.4",
-    "lint-staged": "^15.2.8",
+    "lint-staged": "^15.2.9",
     "prettier": "^3.3.3",
     "prettier-plugin-jsdoc": "^1.3.0",
     "prettier-plugin-sh": "^0.14.0",
-    "turbo": "^2.0.12"
+    "turbo": "^2.0.14"
   }
 }
