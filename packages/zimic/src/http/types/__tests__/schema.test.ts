@@ -98,11 +98,16 @@ describe('Schema types', () => {
       expectTypeOf<InferPathParams<Schema, '/users'>>().toEqualTypeOf<HttpSchema.PathParams<{}>>();
 
       expectTypeOf<InferPathParams<Schema, '/users/:userId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{ userId: string }>
+        HttpSchema.PathParams<{
+          userId: string;
+        }>
       >();
 
       expectTypeOf<InferPathParams<Schema, '/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{ userId: string; notificationId: string }>
+        HttpSchema.PathParams<{
+          userId: string;
+          notificationId: string;
+        }>
       >();
 
       // @ts-expect-error

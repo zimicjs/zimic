@@ -15,9 +15,9 @@
 - [`HttpFormData`](#httpformdata)
   - [Comparing `HttpFormData`](#comparing-httpformdata)
 - [Utility types](#utility-types)
-  - [`LiteralHttpSchemaPath`](#literalhttpserviceschemapath)
-  - [`NonLiteralHttpSchemaPath`](#nonliteralhttpserviceschemapath)
-  - [`HttpSchemaPath`](#httpserviceschemapath)
+  - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
+  - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
+  - [`HttpServiceSchemaPath`](#httpserviceschemapath)
   - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
   - [`InferPathParams`](#inferpathparams)
   - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
@@ -313,7 +313,36 @@ console.log(formData3.contains(formData1)); // false
 
 ## Utility types
 
-### `LiteralHttpSchemaPath`
+### `HttpSchemaPath`
+
+Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
+schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods
+defined in the schema are allowed.
+
+```ts
+import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type Path = HttpSchemaPath<Schema>;
+// "/users" | "/users/:userId" | "/users/${string}"
+
+type GetPath = HttpSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+#### `HttpSchemaPath.Literal`
 
 Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods
 to filter the paths with. Only the methods defined in the schema are allowed.
@@ -341,13 +370,7 @@ type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
 // "/users"
 ```
 
-### `LiteralHttpServiceSchemaPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`LiteralHttpSchemaPath`](#literalhttpschemapath) instead.
-
-### `NonLiteralHttpSchemaPath`
+#### `HttpSchemaPath.NonLiteral`
 
 Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
 methods to filter the paths with. Only the methods defined in the schema are allowed.
@@ -375,46 +398,23 @@ type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 // "/users"
 ```
 
-### `NonLiteralHttpServiceSchemaPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`NonLiteralHttpSchemaPath`](#nonliteralhttpschemapath) instead.
-
-### `HttpSchemaPath`
-
-Extracts the [literal](#literalhttpserviceschemapath) and [non-literal](#nonliteralhttpserviceschemapath) paths from an
-HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the
-methods defined in the schema are allowed.
-
-```ts
-import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
-
-type Schema = HttpSchema.Paths<{
-  '/users': {
-    GET: {
-      response: { 200: { body: User[] } };
-    };
-  };
-  '/users/:userId': {
-    DELETE: {
-      response: { 200: { body: User } };
-    };
-  };
-}>;
-
-type Path = HttpSchemaPath<Schema>;
-// "/users" | "/users/:userId" | "/users/${string}"
-
-type GetPath = HttpSchemaPath<Schema, 'GET'>;
-// "/users"
-```
-
 ### `HttpServiceSchemaPath`
 
 > [!WARNING]
 >
 > This type is **deprecated**. Please use [`HttpSchemaPath`](#httpschemapath) instead.
+
+### `LiteralHttpServiceSchemaPath`
+
+> [!WARNING]
+>
+> This type is **deprecated**. Please use [`HttpSchemaPath.Literal`](#httpschemapathliteral) instead.
+
+### `NonLiteralHttpServiceSchemaPath`
+
+> [!WARNING]
+>
+> This type is **deprecated**. Please use [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral) instead.
 
 ### `InferPathParams`
 
