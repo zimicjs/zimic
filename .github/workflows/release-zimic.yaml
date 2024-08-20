@@ -1,4 +1,4 @@
-name: Release to NPM
+name: Release zimic
 
 on:
   release:
@@ -6,8 +6,8 @@ on:
       - published
 
 concurrency:
-  group: release-npm-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: release-zimic-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
   NODE_VERSION: 20
@@ -17,7 +17,7 @@ jobs:
   release-zimic-to-npm:
     name: Release zimic to NPM
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 7
 
     environment: NPM
 
@@ -42,7 +42,6 @@ jobs:
           node-registry-url: https://registry.npmjs.org
           install: zimic...
           build: zimic^...
-          install-playwright-browsers: true
 
       - name: Build zimic
         run: pnpm turbo build --filter zimic
@@ -53,6 +52,31 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+
+  test-zimic-released-to-npm:
+    name: Test zimic released to NPM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - release-zimic-to-npm
+
+    environment: NPM
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get zimic release version
+        id: zimic-version
+        uses: ./.github/actions/zimic-version
+        with:
+          ref-name: ${{ github.ref_name }}
+
+      - name: Set up zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          install-playwright-browsers: true
 
       - name: Test released package
         run: |
@@ -78,7 +102,7 @@ jobs:
 
           echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
-          timeout 180s bash -c '
+          timeout 90s bash -c '
             until pnpm install --no-frozen-lockfile; do
               sleep 5
               echo "Retrying..."
@@ -101,19 +125,64 @@ jobs:
             --filter zimic-examples \
             --filter 'zimic-example-*'
 
-  post-release-zimic-to-npm:
-    name: Post release zimic to NPM
+  release-zimic-docs:
+    name: Release zimic documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    environment: Wiki
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: zimic
+
+      - name: Get zimic release version
+        id: zimic-version
+        uses: ./zimic/.github/actions/zimic-version
+        with:
+          ref-name: ${{ github.ref_name }}
+          working-directory: zimic
+
+      - name: Checkout wiki
+        uses: actions/checkout@v4
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
+        with:
+          repository: zimicjs/zimic.wiki
+          path: zimic.wiki
+
+      - name: Sync wiki with markdown docs
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
+        working-directory: zimic.wiki
+        run: |
+          git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
+          git config user.email '${{ vars.ZIMIC_WIKI_COMMIT_USER_EMAIL }}'
+
+          bash scripts/sync.sh '${{ github.ref_name }}'
+
+          git add .
+          git commit -m 'docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}'
+          git push
+
+  publish-zimic-release-comments:
+    name: Publish zimic release comments
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs:
       - release-zimic-to-npm
+      - test-zimic-released-to-npm
+      - release-zimic-docs
 
     permissions:
       issues: write
       pull-requests: write
 
     steps:
-      - name: Create release comments on related issues and pull requests
+      - name: Create release comments and close milestone
         uses: actions/github-script@v7
         with:
           script: |
