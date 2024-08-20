@@ -62,7 +62,7 @@ export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Repla
  * default.
  */
 export interface HttpInterceptorRequest<Path extends string, MethodSchema extends HttpMethodSchema>
-  extends Omit<HttpRequest, keyof Body | 'headers'> {
+  extends Omit<HttpRequest, keyof Body | 'headers' | 'clone'> {
   /** The headers of the request. */
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
@@ -100,7 +100,7 @@ export type HttpResponseBodySchema<
 export interface HttpInterceptorResponse<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-> extends Omit<HttpResponse, keyof Body | 'headers'> {
+> extends Omit<HttpResponse, keyof Body | 'headers' | 'clone'> {
   /** The headers of the response. */
   headers: HttpHeaders<HttpResponseHeadersSchema<MethodSchema, StatusCode>>;
   /** The status code of the response. */
@@ -111,15 +111,22 @@ export interface HttpInterceptorResponse<
   raw: HttpResponse<HttpResponseBodySchema<MethodSchema, StatusCode>, StatusCode>;
 }
 
-export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES = Object.freeze(
-  new Set<string>(['bodyUsed', 'arrayBuffer', 'blob', 'formData', 'json', 'text'] satisfies Exclude<
-    keyof Body,
-    keyof HttpInterceptorRequest<string, never>
-  >[]),
+export const HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES = Object.freeze(
+  new Set<Exclude<keyof HttpRequest, keyof HttpInterceptorRequest<string, never>>>([
+    'bodyUsed',
+    'arrayBuffer',
+    'blob',
+    'formData',
+    'json',
+    'text',
+    'clone',
+  ]),
 );
 
-export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
-  new Set(HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES),
+export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES = Object.freeze(
+  new Set<Exclude<keyof HttpResponse, keyof HttpInterceptorResponse<never, never>>>(
+    HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
+  ),
 );
 
 /**
