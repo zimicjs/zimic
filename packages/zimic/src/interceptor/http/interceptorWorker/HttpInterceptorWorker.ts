@@ -23,8 +23,8 @@ import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
-  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_REQUEST_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
@@ -274,7 +274,7 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenRequestProperty(property: string) {
-    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES.has(property);
+    return HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES.has(property as never);
   }
 
   static async parseRawResponse<
@@ -319,7 +319,7 @@ abstract class HttpInterceptorWorker {
   }
 
   private static isHiddenResponseProperty(property: string) {
-    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES.has(property);
+    return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_REQUEST_PROPERTIES.has(property as never);
   }
 
   static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: HttpRequest): InferPathParams<Path> {

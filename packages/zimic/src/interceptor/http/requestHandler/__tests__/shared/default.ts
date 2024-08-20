@@ -18,8 +18,8 @@ import RemoteHttpRequestHandler from '../../RemoteHttpRequestHandler';
 import {
   HttpInterceptorRequest,
   HttpRequestHandlerResponseDeclaration,
-  HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES,
-  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES,
+  HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES,
+  HTTP_INTERCEPTOR_RESPONSE_HIDDEN_REQUEST_PROPERTIES,
 } from '../../types/requests';
 import { SharedHttpRequestHandlerTestOptions, Schema, MethodSchema } from './types';
 
@@ -364,7 +364,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0]).toEqual(parsedRequest);
 
-    for (const hiddenProperty of HTTP_INTERCEPTOR_REQUEST_HIDDEN_BODY_PROPERTIES) {
+    for (const hiddenProperty of HTTP_INTERCEPTOR_REQUEST_HIDDEN_REQUEST_PROPERTIES) {
       expect(interceptedRequests[0]).not.toHaveProperty(hiddenProperty);
       // @ts-expect-error Trying to access the hidden property.
       expect(interceptedRequests[0][hiddenProperty]).toBe(undefined);
@@ -372,7 +372,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
     expect(interceptedRequests[0].response).toEqual(parsedResponse);
 
-    for (const hiddenProperty of HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES) {
+    for (const hiddenProperty of HTTP_INTERCEPTOR_RESPONSE_HIDDEN_REQUEST_PROPERTIES) {
       expect(interceptedRequests[0].response).not.toHaveProperty(hiddenProperty);
       // @ts-expect-error Trying to access the hidden property.
       expect(interceptedRequests[0].response[hiddenProperty]).toBe(undefined);
