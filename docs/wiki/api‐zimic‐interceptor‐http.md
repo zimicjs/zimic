@@ -19,6 +19,7 @@
   - [HTTP `interceptor.clear()`](#http-interceptorclear)
   - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
     - [`ExtractHttpInterceptorSchema`](#extracthttpinterceptorschema)
+    - [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema)
 - [`HttpRequestHandler`](#httprequesthandler)
   - [HTTP `handler.method()`](#http-handlermethod)
   - [HTTP `handler.path()`](#http-handlerpath)
@@ -437,12 +438,12 @@ await interceptor.clear();
 
 ### `HttpInterceptor` utility types
 
-#### `ExtractHttpInterceptorSchema`
+#### `InferHttpInterceptorSchema`
 
-Extracts the schema of an [HTTP interceptor](#httpinterceptor).
+Infers the schema of an [HTTP interceptor](#httpinterceptor).
 
 ```ts
-import { httpInterceptor, type ExtractHttpInterceptorSchema } from 'zimic/interceptor/http';
+import { httpInterceptor, type InferHttpInterceptorSchema } from 'zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -455,7 +456,7 @@ const interceptor = httpInterceptor.create<{
   baseURL: 'http://localhost:3000',
 });
 
-type Schema = ExtractHttpInterceptorSchema<typeof interceptor>;
+type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 // {
 //   '/users': {
 //     GET: {
@@ -464,6 +465,15 @@ type Schema = ExtractHttpInterceptorSchema<typeof interceptor>;
 //   };
 // }
 ```
+
+#### `ExtractHttpInterceptorSchema`
+
+Infers the schema of an [HTTP interceptor](#httpinterceptor).
+
+> [!WARNING]
+>
+> This type is **deprecated** and was renamed to [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) with no
+> behavior change. Please use [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) instead.
 
 ## `HttpRequestHandler`
 

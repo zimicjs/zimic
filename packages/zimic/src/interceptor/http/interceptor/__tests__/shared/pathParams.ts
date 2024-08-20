@@ -14,7 +14,7 @@ import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
-export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export async function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
@@ -54,7 +54,7 @@ export async function declareDynamicPathsHttpInterceptorTests(options: RuntimeSh
       response: { 200: { headers: AccessControlHeaders } };
     }>;
 
-    it(`should support intercepting ${method} requests with a dynamic path`, async () => {
+    it(`should support intercepting ${method} requests with a path parameter`, async () => {
       await usingHttpInterceptor<{
         '/users/:id': {
           GET: MethodSchema;

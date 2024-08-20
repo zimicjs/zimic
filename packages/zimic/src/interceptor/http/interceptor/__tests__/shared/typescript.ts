@@ -9,7 +9,7 @@ import { Prettify } from '@/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { createHttpInterceptor } from '../../factory';
-import { ExtractHttpInterceptorSchema } from '../../types/schema';
+import { InferHttpInterceptorSchema } from '../../types/schema';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 
 export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -913,8 +913,8 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
 
     const _compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
 
-    type CompositeInterceptorSchema = ExtractHttpInterceptorSchema<typeof _compositeInterceptor>;
-    type InlineInterceptorSchema = ExtractHttpInterceptorSchema<typeof _inlineInterceptor>;
+    type CompositeInterceptorSchema = InferHttpInterceptorSchema<typeof _compositeInterceptor>;
+    type InlineInterceptorSchema = InferHttpInterceptorSchema<typeof _inlineInterceptor>;
     expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
   });
 

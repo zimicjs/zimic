@@ -6,7 +6,7 @@ import {
   HttpServiceMethodSchema,
   HttpServiceResponseSchema,
   HttpServiceResponseSchemaStatusCode,
-  PathParamsSchemaFromPath,
+  InferPathParams,
 } from '@/http/types/schema';
 import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
@@ -66,7 +66,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
   /** The headers of the request. */
   headers: HttpHeaders<HttpRequestHeadersSchema<MethodSchema>>;
   /** The path parameters of the request. They are parsed from the path string when using dynamic paths. */
-  pathParams: PathParamsSchemaFromPath<Path>;
+  pathParams: InferPathParams<Path>;
   /** The search parameters of the request. */
   searchParams: HttpSearchParams<HttpRequestSearchParamsSchema<MethodSchema>>;
   /** The body of the request. It is already parsed by default. */
@@ -123,8 +123,8 @@ export const HTTP_INTERCEPTOR_RESPONSE_HIDDEN_BODY_PROPERTIES = Object.freeze(
 );
 
 /**
- * A strict representation of a tracked, intercepted HTTP request, along with its response. The body, search params and
- * path params are already parsed by default.
+ * A strict representation of an intercepted HTTP request, along with its response. The body, search params and path
+ * params are already parsed by default.
  */
 export interface TrackedHttpInterceptorRequest<
   Path extends string,

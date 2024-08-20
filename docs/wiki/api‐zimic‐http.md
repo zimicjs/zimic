@@ -19,6 +19,7 @@
   - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
   - [`HttpServiceSchemaPath`](#httpserviceschemapath)
   - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
+  - [`InferPathParams`](#inferpathparams)
   - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
 
 ---
@@ -390,16 +391,53 @@ type Schema = HttpSchema.Paths<{
   };
 }>;
 
-type Path = NonLiteralHttpServiceSchemaPath<Schema>;
+type Path = HttpServiceSchemaPath<Schema>;
 // "/users" | "/users/:userId" | "/users/${string}"
 
-type GetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+type GetPath = HttpServiceSchemaPath<Schema, 'GET'>;
 // "/users"
+```
+
+### `InferPathParams`
+
+Infers the path parameters schema from a path string, optionally validating it against an
+[HttpServiceSchema](api‐zimic‐interceptor‐http‐schemas).
+
+If the first argument is a [HttpServiceSchema](api‐zimic‐interceptor‐http‐schemas) (recommended), the second argument is
+checked to be a valid path in that schema.
+
+```ts
+import { HttpSchema, InferPathParams } from 'zimic/http';
+
+type MySchema = HttpSchema.Paths<{
+  '/users/:userId': {
+    GET: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+// Using a schema to validate the path (recommended):
+type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+// { userId: string }
+```
+
+```ts
+import { InferPathParams } from 'zimic/http';
+
+// Without using a schema to validate the path (works as `PathParamsSchemaFromPath`):
+type PathParams = InferPathParams<'/users/:userId'>;
+// { userId: string }
 ```
 
 ### `PathParamsSchemaFromPath`
 
 Infers the path parameters schema from a path string.
+
+> [!WARNING]
+>
+> This type is **deprecated** and will be removed in a future release. Please use [`InferPathParams`](#inferpathparams)
+> instead.
 
 ```ts
 import { type PathParamsSchemaFromPath } from 'zimic/http';
@@ -418,7 +456,7 @@ import { type HttpSchema, type HttpStatusCode, type MergeHttpResponsesByStatusCo
 
 // Overriding the 400 status code with a more specific schema
 // and using a generic schema for all other client errors.
-type MergedResponses = MergeHttpResponsesByStatusCode<
+type MergedResponseByStatusCode = MergeHttpResponsesByStatusCode<
   [
     {
       400: { body: { message: string; issues: string[] } };
@@ -438,7 +476,7 @@ type MergedResponses = MergeHttpResponsesByStatusCode<
 
 type Schema = HttpSchema.Paths<{
   '/users': {
-    GET: { response: MergedResponses };
+    GET: { response: MergedResponseByStatusCode };
   };
 }>;
 ```
