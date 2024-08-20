@@ -39,13 +39,13 @@ jobs:
 
       - name: Checkout wiki
         uses: actions/checkout@v4
-        # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         with:
           repository: zimicjs/zimic.wiki
           path: zimic.wiki
 
       - name: Sync wiki with markdown docs
-        # if: ${{ steps.zimic-version.outputs.label == 'latest' }}
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         working-directory: zimic.wiki
         run: |
           git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
