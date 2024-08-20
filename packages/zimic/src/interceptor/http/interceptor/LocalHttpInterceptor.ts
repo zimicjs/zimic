@@ -1,4 +1,4 @@
-import { HttpServiceSchema, HttpServiceSchemaMethod, HttpServiceSchemaPath } from '@/http/types/schema';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
@@ -8,7 +8,7 @@ import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
 import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
-class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLocalHttpInterceptor<Schema> {
+class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
   readonly type: 'local';
 
   private store = new HttpInterceptorStore();
@@ -67,31 +67,31 @@ class LocalHttpInterceptor<Schema extends HttpServiceSchema> implements PublicLo
     await this._client.stop();
   }
 
-  get = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.get(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
-  post = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  post = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.post(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
-  patch = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  patch = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.patch(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
-  put = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  put = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.put(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
-  delete = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  delete = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.delete(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
-  head = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  head = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.head(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
-  options = ((path: HttpServiceSchemaPath<Schema, HttpServiceSchemaMethod<Schema>>) => {
+  options = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
     return this._client.options(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 

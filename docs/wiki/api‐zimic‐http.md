@@ -313,13 +313,42 @@ console.log(formData3.contains(formData1)); // false
 
 ## Utility types
 
-### `LiteralHttpServiceSchemaPath`
+### `HttpSchemaPath`
+
+Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
+schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the methods
+defined in the schema are allowed.
+
+```ts
+import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
+
+type Schema = HttpSchema.Paths<{
+  '/users': {
+    GET: {
+      response: { 200: { body: User[] } };
+    };
+  };
+  '/users/:userId': {
+    DELETE: {
+      response: { 200: { body: User } };
+    };
+  };
+}>;
+
+type Path = HttpSchemaPath<Schema>;
+// "/users" | "/users/:userId" | "/users/${string}"
+
+type GetPath = HttpSchemaPath<Schema, 'GET'>;
+// "/users"
+```
+
+#### `HttpSchemaPath.Literal`
 
 Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more methods
 to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
-import { type HttpSchema, type LiteralHttpServiceSchemaPath } from 'zimic/http';
+import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
 
 type Schema = HttpSchema.Paths<{
   '/users': {
@@ -334,20 +363,20 @@ type Schema = HttpSchema.Paths<{
   };
 }>;
 
-type LiteralPath = LiteralHttpServiceSchemaPath<Schema>;
+type LiteralPath = LiteralHttpSchemaPath<Schema>;
 // "/users" | "/users/:userId"
 
-type LiteralGetPath = LiteralHttpServiceSchemaPath<Schema, 'GET'>;
+type LiteralGetPath = LiteralHttpSchemaPath<Schema, 'GET'>;
 // "/users"
 ```
 
-### `NonLiteralHttpServiceSchemaPath`
+#### `HttpSchemaPath.NonLiteral`
 
 Extracts the non-literal paths from an HTTP service schema. Optionally receives a second argument with one or more
 methods to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
-import { type HttpSchema, type NonLiteralHttpServiceSchemaPath } from 'zimic/http';
+import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
 
 type Schema = HttpSchema.Paths<{
   '/users': {
@@ -362,48 +391,37 @@ type Schema = HttpSchema.Paths<{
   };
 }>;
 
-type NonLiteralPath = NonLiteralHttpServiceSchemaPath<Schema>;
+type NonLiteralPath = NonLiteralHttpSchemaPath<Schema>;
 // "/users" | "/users/${string}"
 
-type NonLiteralGetPath = NonLiteralHttpServiceSchemaPath<Schema, 'GET'>;
+type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 // "/users"
 ```
 
 ### `HttpServiceSchemaPath`
 
-Extracts the [literal](#literalhttpserviceschemapath) and [non-literal](#nonliteralhttpserviceschemapath) paths from an
-HTTP service schema. Optionally receives a second argument with one or more methods to filter the paths with. Only the
-methods defined in the schema are allowed.
+> [!WARNING]
+>
+> This type is **deprecated**. Please use [`HttpSchemaPath`](#httpschemapath) instead.
 
-```ts
-import { type HttpSchema, type HttpServiceSchemaPath } from 'zimic/http';
+### `LiteralHttpServiceSchemaPath`
 
-type Schema = HttpSchema.Paths<{
-  '/users': {
-    GET: {
-      response: { 200: { body: User[] } };
-    };
-  };
-  '/users/:userId': {
-    DELETE: {
-      response: { 200: { body: User } };
-    };
-  };
-}>;
+> [!WARNING]
+>
+> This type is **deprecated**. Please use [`HttpSchemaPath.Literal`](#httpschemapathliteral) instead.
 
-type Path = HttpServiceSchemaPath<Schema>;
-// "/users" | "/users/:userId" | "/users/${string}"
+### `NonLiteralHttpServiceSchemaPath`
 
-type GetPath = HttpServiceSchemaPath<Schema, 'GET'>;
-// "/users"
-```
+> [!WARNING]
+>
+> This type is **deprecated**. Please use [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral) instead.
 
 ### `InferPathParams`
 
 Infers the path parameters schema from a path string, optionally validating it against an
-[HttpServiceSchema](api‐zimic‐interceptor‐http‐schemas).
+[HttpSchema](api‐zimic‐interceptor‐http‐schemas).
 
-If the first argument is a [HttpServiceSchema](api‐zimic‐interceptor‐http‐schemas) (recommended), the second argument is
+If the first argument is a [HttpSchema](api‐zimic‐interceptor‐http‐schemas) (recommended), the second argument is
 checked to be a valid path in that schema.
 
 ```ts
@@ -432,19 +450,9 @@ type PathParams = InferPathParams<'/users/:userId'>;
 
 ### `PathParamsSchemaFromPath`
 
-Infers the path parameters schema from a path string.
-
 > [!WARNING]
 >
-> This type is **deprecated** and will be removed in a future release. Please use [`InferPathParams`](#inferpathparams)
-> instead.
-
-```ts
-import { type PathParamsSchemaFromPath } from 'zimic/http';
-
-type PathParams = PathParamsSchemaFromPath<'/users/:userId/notifications'>;
-// { userId: string }
-```
+> This type is **deprecated**. Please use [`InferPathParams`](#inferpathparams) instead.
 
 ### `MergeHttpResponsesByStatusCode`
 

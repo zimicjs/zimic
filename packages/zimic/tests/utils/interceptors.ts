@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { httpInterceptor } from '@/interceptor/http';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
@@ -52,23 +52,23 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
   return createURL(baseURL);
 }
 
-export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
 ): LocalHttpInterceptor<Schema>;
-export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
 ): RemoteHttpInterceptor<Schema>;
-export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(
+export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
-export function createInternalHttpInterceptor<Schema extends HttpServiceSchema>(options: HttpInterceptorOptions) {
+export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 }
 
-type UsingInterceptorCallback<Schema extends HttpServiceSchema> = (
+type UsingInterceptorCallback<Schema extends HttpSchema> = (
   interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>,
 ) => PossiblePromise<void>;
 
@@ -76,16 +76,16 @@ interface UsingInterceptorOptions {
   start?: boolean;
 }
 
-export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   callback: UsingInterceptorCallback<Schema>,
 ): Promise<void>;
-export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   options: UsingInterceptorOptions,
   callback: UsingInterceptorCallback<Schema>,
 ): Promise<void>;
-export async function usingHttpInterceptor<Schema extends HttpServiceSchema>(
+export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   callbackOrOptions: UsingInterceptorCallback<Schema> | UsingInterceptorOptions,
   optionalCallback?: UsingInterceptorCallback<Schema>,

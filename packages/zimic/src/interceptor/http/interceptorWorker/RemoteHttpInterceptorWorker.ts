@@ -1,5 +1,5 @@
 import { HttpResponse } from '@/http/types/requests';
-import { HttpMethod, HttpServiceSchema } from '@/http/types/schema';
+import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
@@ -113,7 +113,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  async use<Schema extends HttpServiceSchema>(
+  async use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     rawURL: string | URL,
@@ -159,7 +159,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
   }
 
-  async clearInterceptorHandlers<Schema extends HttpServiceSchema>(interceptor: HttpInterceptorClient<Schema>) {
+  async clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     if (!super.isRunning()) {
       throw new NotStartedHttpInterceptorError();
     }

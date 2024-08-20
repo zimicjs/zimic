@@ -468,8 +468,6 @@ type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 
 #### `ExtractHttpInterceptorSchema`
 
-Infers the schema of an [HTTP interceptor](#httpinterceptor).
-
 > [!WARNING]
 >
 > This type is **deprecated** and was renamed to [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) with no

@@ -2,16 +2,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import { JSONValue } from '@/types/json';
 
-import {
-  HttpSchema,
-  HttpServiceSchemaPath,
-  HttpStatusCode,
-  InferPathParams,
-  LiteralHttpServiceSchemaPath,
-  MergeHttpResponsesByStatusCode,
-  NonLiteralHttpServiceSchemaPath,
-  PathParamsSchemaFromPath,
-} from '../schema';
+import { HttpSchema, HttpSchemaPath, HttpStatusCode, InferPathParams, MergeHttpResponsesByStatusCode } from '../schema';
 
 describe('Schema types', () => {
   type User = JSONValue<{
@@ -40,29 +31,9 @@ describe('Schema types', () => {
     };
   }>;
 
-  describe('LiteralHttpServiceSchemaPath', () => {
-    it('should extract the literal paths from a service schema', () => {
-      expectTypeOf<LiteralHttpServiceSchemaPath<Schema>>().toEqualTypeOf<
-        '/users' | '/users/:userId' | '/users/:userId/notifications/:notificationId'
-      >();
-
-      expectTypeOf<LiteralHttpServiceSchemaPath<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId'>();
-    });
-  });
-
-  describe('NonLiteralHttpServiceSchemaPath', () => {
-    it('should extract the nonLiteral paths from a service schema', () => {
-      expectTypeOf<NonLiteralHttpServiceSchemaPath<Schema>>().toEqualTypeOf<
-        '/users' | `/users/${string}` | `/users/${string}/notifications/${string}`
-      >();
-
-      expectTypeOf<NonLiteralHttpServiceSchemaPath<Schema, 'GET'>>().toEqualTypeOf<`/users/${string}`>();
-    });
-  });
-
-  describe('HttpServiceSchemaPath', () => {
-    it('should extract the nonLiteral paths from a service schema', () => {
-      expectTypeOf<HttpServiceSchemaPath<Schema>>().toEqualTypeOf<
+  describe('HttpSchemaPath', () => {
+    it('should extract the literal and non-literal paths from a service schema', () => {
+      expectTypeOf<HttpSchemaPath<Schema>>().toEqualTypeOf<
         | '/users'
         | '/users/:userId'
         | `/users/${string}`
@@ -70,41 +41,23 @@ describe('Schema types', () => {
         | `/users/${string}/notifications/${string}`
       >();
 
-      expectTypeOf<HttpServiceSchemaPath<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId' | `/users/${string}`>();
+      expectTypeOf<HttpSchemaPath<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId' | `/users/${string}`>();
     });
-  });
 
-  describe('PathParamsSchemaFromPath', () => {
-    it('should infer path param schemas from path strings', () => {
-      expectTypeOf<PathParamsSchemaFromPath<'/users'>>().toEqualTypeOf<HttpSchema.PathParams<{}>>();
-
-      expectTypeOf<PathParamsSchemaFromPath<'/users/:userId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-        }>
+    it('should extract the literal paths from a service schema', () => {
+      expectTypeOf<HttpSchemaPath.Literal<Schema>>().toEqualTypeOf<
+        '/users' | '/users/:userId' | '/users/:userId/notifications/:notificationId'
       >();
 
-      expectTypeOf<PathParamsSchemaFromPath<'/users/:userId/:otherId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          otherId: string;
-        }>
+      expectTypeOf<HttpSchemaPath.Literal<Schema, 'GET'>>().toEqualTypeOf<'/users/:userId'>();
+    });
+
+    it('should extract the non-literal paths from a service schema', () => {
+      expectTypeOf<HttpSchemaPath.NonLiteral<Schema>>().toEqualTypeOf<
+        '/users' | `/users/${string}` | `/users/${string}/notifications/${string}`
       >();
 
-      expectTypeOf<PathParamsSchemaFromPath<'/users/:userId/:otherId/:anotherId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          otherId: string;
-          anotherId: string;
-        }>
-      >();
-
-      expectTypeOf<PathParamsSchemaFromPath<'/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{
-          userId: string;
-          notificationId: string;
-        }>
-      >();
+      expectTypeOf<HttpSchemaPath.NonLiteral<Schema, 'GET'>>().toEqualTypeOf<`/users/${string}`>();
     });
   });
 
@@ -145,11 +98,16 @@ describe('Schema types', () => {
       expectTypeOf<InferPathParams<Schema, '/users'>>().toEqualTypeOf<HttpSchema.PathParams<{}>>();
 
       expectTypeOf<InferPathParams<Schema, '/users/:userId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{ userId: string }>
+        HttpSchema.PathParams<{
+          userId: string;
+        }>
       >();
 
       expectTypeOf<InferPathParams<Schema, '/users/:userId/notifications/:notificationId'>>().toEqualTypeOf<
-        HttpSchema.PathParams<{ userId: string; notificationId: string }>
+        HttpSchema.PathParams<{
+          userId: string;
+          notificationId: string;
+        }>
       >();
 
       // @ts-expect-error

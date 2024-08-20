@@ -8,9 +8,9 @@ import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
 import {
   HttpMethod,
-  HttpServiceMethodSchema,
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
+  HttpMethodSchema,
+  HttpResponseSchemaStatusCode,
+  HttpSchema,
   InferPathParams,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
@@ -107,7 +107,7 @@ abstract class HttpInterceptorWorker {
     this.stoppingPromise = undefined;
   }
 
-  abstract use<Schema extends HttpServiceSchema>(
+  abstract use<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
     method: HttpMethod,
     url: string,
@@ -183,7 +183,7 @@ abstract class HttpInterceptorWorker {
 
   abstract clearHandlers(): PossiblePromise<void>;
 
-  abstract clearInterceptorHandlers<Schema extends HttpServiceSchema>(
+  abstract clearInterceptorHandlers<Schema extends HttpSchema>(
     interceptor: HttpInterceptorClient<Schema>,
   ): PossiblePromise<void>;
 
@@ -220,7 +220,7 @@ abstract class HttpInterceptorWorker {
     return Response.json(declaration.body, { headers, status });
   }
 
-  static async parseRawRequest<Path extends string, MethodSchema extends HttpServiceMethodSchema>(
+  static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
     originalRawRequest: HttpRequest,
     options: { urlRegex?: RegExp } = {},
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
@@ -278,8 +278,8 @@ abstract class HttpInterceptorWorker {
   }
 
   static async parseRawResponse<
-    MethodSchema extends HttpServiceMethodSchema,
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<MethodSchema['response']>>,
+    MethodSchema extends HttpMethodSchema,
+    StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
   >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();

@@ -1,12 +1,7 @@
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import {
-  HttpServiceResponseSchemaStatusCode,
-  HttpServiceSchema,
-  HttpServiceSchemaMethod,
-  HttpServiceSchemaPath,
-} from '@/http/types/schema';
+import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { Default, IfAny } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
@@ -28,13 +23,13 @@ import {
 } from './types/requests';
 
 class HttpRequestHandlerClient<
-  Schema extends HttpServiceSchema,
-  Method extends HttpServiceSchemaMethod<Schema>,
-  Path extends HttpServiceSchemaPath<Schema, Method>,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends IfAny<
     Schema,
     any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
+    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
   > = never,
 > {
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
@@ -70,9 +65,7 @@ class HttpRequestHandlerClient<
     return this;
   }
 
-  respond<
-    NewStatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
-  >(
+  respond<NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
@@ -90,7 +83,7 @@ class HttpRequestHandlerClient<
   }
 
   private isResponseDeclarationFactory<
-    StatusCode extends HttpServiceResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
+    StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
   >(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>

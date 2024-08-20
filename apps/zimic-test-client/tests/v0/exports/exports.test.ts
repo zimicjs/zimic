@@ -26,13 +26,21 @@ import {
   type HttpStatusCode,
   type HttpServiceSchema,
   type HttpServiceMethodsSchema,
+  type HttpMethodsSchema,
   type HttpServiceMethodSchema,
+  type HttpMethodSchema,
   type HttpServiceRequestSchema,
+  type HttpRequestSchema,
   type HttpServiceResponseSchemaByStatusCode,
+  type HttpResponseSchemaByStatusCode,
   type HttpServiceResponseSchema,
+  type HttpResponseSchema,
   type HttpServiceResponseSchemaStatusCode,
+  type HttpResponseSchemaStatusCode,
   type HttpServiceSchemaMethod,
+  type HttpSchemaMethod,
   type HttpServiceSchemaPath,
+  type HttpSchemaPath,
   type LiteralHttpServiceSchemaPath,
   type NonLiteralHttpServiceSchemaPath,
   type PathParamsSchemaFromPath,
@@ -128,17 +136,28 @@ describe('Exports', () => {
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpStatusCode>().not.toBeAny();
     expectTypeOf<HttpServiceSchema>().not.toBeAny();
+    expectTypeOf<HttpSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodsSchema>().not.toBeAny();
     expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodSchema>().not.toBeAny();
     expectTypeOf<HttpServiceRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpRequestSchema>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchema>().not.toBeAny();
+    expectTypeOf<HttpResponseSchema>().not.toBeAny();
     expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();
     expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
     expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
     expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
     expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
     expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
