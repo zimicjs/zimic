@@ -155,14 +155,18 @@ jobs:
           repository: zimicjs/zimic.wiki
           path: zimic.wiki
 
-      - name: Sync wiki with markdown docs
+      - name: Sync wiki content
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
+        working-directory: zimic
+        run: |
+          bash scripts/docs/sync-wiki.sh '${{ github.ref_name }}'
+
+      - name: Commit and push wiki changes
         if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         working-directory: zimic.wiki
         run: |
           git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
           git config user.email '${{ vars.ZIMIC_WIKI_COMMIT_USER_EMAIL }}'
-
-          bash scripts/sync.sh '${{ github.ref_name }}'
 
           git add .
           git commit -m 'docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}'
