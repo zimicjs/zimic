@@ -50,6 +50,11 @@ Each interceptor represents a service and can be used to mock its paths and meth
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
 [declaring interceptor schemas](api‐zimic‐interceptor‐http‐schemas).
 
+> [!TIP]
+>
+> If you are using TypeScript and have an [OpenAPI 3](https://swagger.io/specification) specification, you can use
+> [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
+
 #### Creating a local HTTP interceptor
 
 A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this

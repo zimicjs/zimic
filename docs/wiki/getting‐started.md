@@ -202,8 +202,7 @@ use remote interceptors.
    service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
    about declaring [HTTP service schemas](api‐zimic‐interceptor‐http‐schemas).
 
-   You can also use [`zimic typegen`](cli‐zimic‐typegen) to automatically generate these types from an
-   [OpenAPI 3](https://swagger.io/specification) schema.
+   You can also use [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema.
 
 2. Then, start the interceptor:
 
