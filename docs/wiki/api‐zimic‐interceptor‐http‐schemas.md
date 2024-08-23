@@ -12,6 +12,11 @@
 HTTP interceptor schemas define the structure of the real services being mocked. This includes paths, methods, request
 and response bodies, and status codes. Interceptors use this schema to type your mocks.
 
+> [!TIP]
+>
+> If you are using TypeScript and have an [OpenAPI 3](https://swagger.io/specification) specification, you can use
+> [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
+
 <details open>
   <summary>An example of a complete HTTP interceptor schema:</summary>
 
