@@ -160,6 +160,7 @@ export namespace HttpResponseSchemaByStatusCode {
     [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpResponseSchema.NoBody : Schema[StatusCode];
   };
 
+  /** @deprecated Use {@link HttpResponseSchemaByStatusCode} directly instead. */
   export type Strict = ConvertToStrict<Loose>;
 
   export type NoBody = {
@@ -172,7 +173,8 @@ export namespace HttpResponseSchemaByStatusCode {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Interceptor Schemas}
  */
-export type HttpResponseSchemaByStatusCode = HttpResponseSchemaByStatusCode.Strict;
+export type HttpResponseSchemaByStatusCode =
+  HttpResponseSchemaByStatusCode.ConvertToStrict<HttpResponseSchemaByStatusCode.Loose>;
 
 /**
  * Extracts the status codes used in a response schema by status code.
