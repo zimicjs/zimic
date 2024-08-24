@@ -13,8 +13,10 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
 
 export namespace HttpBody {
+  /** A loose version of the HTTP body type. JSON values are not strictly typed. */
   export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
 
+  /** Convert a possibly loose HTTP body to be strictly typed. JSON values are serialized to their strict form. */
   export type ConvertToStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
 }
 

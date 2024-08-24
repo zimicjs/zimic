@@ -33,6 +33,7 @@ namespace JSON {
 export type JSONValue<Type extends JSON = JSON> = Type;
 
 export namespace JSONValue {
+  /** A loose version of the JSON value type. JSON objects are not strictly typed. */
   export type Loose<Type extends JSON.Loose = JSON.Loose> = Type;
 }
 

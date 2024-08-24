@@ -51,6 +51,7 @@ export interface HttpResponseSchema {
 }
 
 export namespace HttpResponseSchema {
+  /** A schema representing the structure of an HTTP response with no body. */
   export interface NoBody extends Omit<HttpResponseSchema, 'body'> {
     body?: null;
   }
@@ -67,14 +68,22 @@ export namespace HttpResponseSchema {
  * - `HttpStatusCode.ServerError`: {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`}
  */
 export namespace HttpStatusCode {
-  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses `1XX`} */
+  /**
+   * An HTTP status code in the `1XX` range, representing an informational response.
+   *
+   * @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#information_responses `1XX`}
+   */
   export type Information =
     | 100 // Continue
     | 101 // Switching Protocols
     | 102 // Processing
     | 103; // Early Hints
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses `2XX`} */
+  /**
+   * An HTTP status code in the `2XX` range, representing a successful response.
+   *
+   * @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#successful_responses `2XX`}
+   */
   export type Success =
     | 200 // OK
     | 201 // Created
@@ -87,7 +96,11 @@ export namespace HttpStatusCode {
     | 208 // Already Reported
     | 226; // IM Used
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages `3XX`} */
+  /**
+   * An HTTP status code in the `3XX` range, representing a redirection response.
+   *
+   * @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#redirection_messages `3XX`}
+   */
   export type Redirection =
     | 300 // Multiple Choices
     | 301 // Moved Permanently
@@ -97,7 +110,11 @@ export namespace HttpStatusCode {
     | 307 // Temporary Redirect
     | 308; // Permanent Redirect
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses `4XX`} */
+  /**
+   * An HTTP status code in the `4XX` range, representing a client error response.
+   *
+   * @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#client_error_responses `4XX`}
+   */
   export type ClientError =
     | 400 // Bad Request
     | 401 // Unauthorized
@@ -129,7 +146,11 @@ export namespace HttpStatusCode {
     | 431 // Request Header Fields Too Large
     | 451; // Unavailable For Legal Reasons
 
-  /** @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`} */
+  /**
+   * An HTTP status code in the `5XX` range, representing a server error response.
+   *
+   * @see {@link https://developer.mozilla.org/docs/Web/HTTP/Status#server_error_responses `5XX`}
+   */
   export type ServerError =
     | 500 // Internal Server Error
     | 501 // Not Implemented
@@ -152,17 +173,27 @@ export type HttpStatusCode =
   | HttpStatusCode.ServerError;
 
 export namespace HttpResponseSchemaByStatusCode {
+  /** A loose version of the HTTP response schema by status code. JSON values are not strictly typed. */
   export type Loose = {
     [StatusCode in HttpStatusCode]?: HttpResponseSchema;
   };
 
+  /**
+   * Converts a possibly loose HTTP response schema by status code to be strictly typed. JSON values are serialized to
+   * their strict form.
+   */
   export type ConvertToStrict<Schema extends Loose> = {
     [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpResponseSchema.NoBody : Schema[StatusCode];
   };
 
-  /** @deprecated Use {@link HttpResponseSchemaByStatusCode} directly instead. */
+  /**
+   * A schema representing the strict structure of HTTP responses by status code.
+   *
+   * @deprecated Use {@link HttpResponseSchemaByStatusCode} directly instead.
+   */
   export type Strict = ConvertToStrict<Loose>;
 
+  /** A schema representing the structure of HTTP responses by status code with no body. */
   export type NoBody = {
     [StatusCode in HttpStatusCode]?: HttpResponseSchema.NoBody;
   };
@@ -197,10 +228,15 @@ export interface HttpMethodSchema {
 }
 
 export namespace HttpMethodSchema {
+  /** A schema representing the structure of an HTTP request and response for a given method, having no request body. */
   export interface NoRequestBody extends Omit<HttpMethodSchema, 'request'> {
     request?: Omit<HttpRequestSchema, 'body'> & { body?: null };
   }
 
+  /**
+   * A schema representing the structure of an HTTP request and response for a given method, having no request and
+   * response bodies.
+   */
   export interface NoBody extends Omit<NoRequestBody, 'response'> {
     response?: HttpResponseSchemaByStatusCode.NoBody;
   }
