@@ -52,11 +52,11 @@ export type StrictFormData<Schema extends HttpFormDataSchema = HttpFormDataSchem
  * {@link https://developer.mozilla.org/docs/Web/API/Request `Request`} class.
  */
 export interface HttpRequest<
-  StrictBody extends HttpBody = HttpBody,
+  StrictBody extends HttpBody.Loose = HttpBody,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }
 
@@ -65,12 +65,12 @@ export interface HttpRequest<
  * {@link https://developer.mozilla.org/docs/Web/API/Response `Response`} class.
  */
 export interface HttpResponse<
-  StrictBody extends HttpBody = HttpBody,
+  StrictBody extends HttpBody.Loose = HttpBody,
   StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }
