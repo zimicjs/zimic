@@ -173,7 +173,7 @@ export type HttpStatusCode =
   | HttpStatusCode.ServerError;
 
 export namespace HttpResponseSchemaByStatusCode {
-  /** A loose version of the HTTP response schema by status code. JSON values are not strictly typed. */
+  /** A loose version of HTTP responses by status code. JSON values are not strictly typed. */
   export type Loose = {
     [StatusCode in HttpStatusCode]?: HttpResponseSchema;
   };
@@ -277,7 +277,7 @@ export namespace HttpSchema {
   };
 
   /**
-   * Validates that a type is a valid HTTP service schema.
+   * Declares an HTTP service schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -298,12 +298,8 @@ export namespace HttpSchema {
     [Method in keyof Schema]: ConvertToStrictMethod<Schema[Method]>;
   };
 
-  type ConvertToStrictRequestOrResponse<Schema> = {
-    [Key in keyof Schema]: Key extends 'body' ? HttpBody.ConvertToStrict<Schema[Key]> : Schema[Key];
-  };
-
   /**
-   * Validates that a type is a valid HTTP service methods schema.
+   * Declares an HTTP service methods schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -322,6 +318,10 @@ export namespace HttpSchema {
    */
   export type Methods<Schema extends HttpMethodsSchema> = ConvertToStrictMethods<Schema>;
 
+  type ConvertToStrictRequestOrResponse<Schema> = {
+    [Key in keyof Schema]: Key extends 'body' ? HttpBody.ConvertToStrict<Schema[Key]> : Schema[Key];
+  };
+
   type ConvertToStrictMethod<Schema> = {
     [Key in keyof Schema]: Key extends 'request'
       ? ConvertToStrictRequestOrResponse<Schema[Key]>
@@ -331,7 +331,7 @@ export namespace HttpSchema {
   };
 
   /**
-   * Validates that a type is a valid HTTP service method schema.
+   * Declares an HTTP service method schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -351,7 +351,7 @@ export namespace HttpSchema {
   export type Method<Schema extends HttpMethodSchema> = ConvertToStrictMethod<Schema>;
 
   /**
-   * Validates that a type is a valid HTTP service request schema.
+   * Declares an HTTP service request schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -379,7 +379,7 @@ export namespace HttpSchema {
   };
 
   /**
-   * Validates that a type is a valid HTTP service response schema by status code.
+   * Declares an HTTP service response schema by status code.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -401,7 +401,7 @@ export namespace HttpSchema {
     ConvertToStrictResponseByStatusCode<Schema>;
 
   /**
-   * Validates that a type is a valid HTTP service response schema.
+   * Declares an HTTP service response schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -423,7 +423,7 @@ export namespace HttpSchema {
   export type Response<Schema extends HttpResponseSchema> = ConvertToStrictRequestOrResponse<Schema>;
 
   /**
-   * Validates that a type is a valid HTTP body schema.
+   * Declares an HTTP body schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -443,7 +443,7 @@ export namespace HttpSchema {
   export type Body<Schema extends HttpBody.Loose> = HttpBody.ConvertToStrict<Schema>;
 
   /**
-   * Validates that a type is a valid HTTP headers schema.
+   * Declares an HTTP headers schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -468,7 +468,7 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema> = Schema;
 
   /**
-   * Validates that a type is a valid HTTP search params schema.
+   * Declares an HTTP search params schema.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -494,7 +494,7 @@ export namespace HttpSchema {
   export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
 
   /**
-   * Validates that a type is a valid HTTP path params schema.
+   * Declares an HTTP path params schema.
    *
    * @example
    *   import { type HttpSchema, InferPathParams } from 'zimic/http';
@@ -519,7 +519,7 @@ export namespace HttpSchema {
   export type PathParams<Schema extends HttpPathParamsSchema> = Schema;
 
   /**
-   * Validates that a type is a valid HTTP form data schema.
+   * Declares an HTTP form data schema.
    *
    * @example
    *   import { HttpFormData, type HttpSchema } from 'zimic/http';
