@@ -62,15 +62,20 @@ export type JSONSerialized<Type> = Type extends JSONValue
     ? Type
     : Type extends Date
       ? string
-      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        Type extends (...parameters: any[]) => any
+      : Type extends Function
         ? never
-        : Type extends (infer ArrayItem)[]
-          ? JSONSerialized<ArrayItem>[]
-          : Type extends object
-            ? {
-                [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
-                  Type[Key]
-                >;
-              }
-            : never;
+        : Type extends symbol
+          ? never
+          : Type extends Map<infer _Key, infer _Value>
+            ? Record<string, never>
+            : Type extends Set<infer _Value>
+              ? Record<string, never>
+              : Type extends (infer ArrayItem)[]
+                ? JSONSerialized<ArrayItem>[]
+                : Type extends object
+                  ? {
+                      [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
+                        Type[Key]
+                      >;
+                    }
+                  : never;

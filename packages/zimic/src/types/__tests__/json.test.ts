@@ -102,6 +102,9 @@ describe('JSON types', () => {
     expectTypeOf<JSONSerialized<{ a: string | null }>>().toEqualTypeOf<{ a: string | null }>();
 
     expectTypeOf<JSONSerialized<Date>>().toEqualTypeOf<string>();
+    expectTypeOf<JSONSerialized<symbol>>().toEqualTypeOf<never>();
+    expectTypeOf<JSONSerialized<Map<never, never>>>().toEqualTypeOf<Record<string, never>>();
+    expectTypeOf<JSONSerialized<Set<never>>>().toEqualTypeOf<Record<string, never>>();
     expectTypeOf<JSONSerialized<{ a: Date }>>().toEqualTypeOf<{ a: string }>();
     expectTypeOf<JSONSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ a: string[]; b: string }>();
     expectTypeOf<JSONSerialized<() => void>>().toEqualTypeOf<never>();
