@@ -62,12 +62,11 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
@@ -90,12 +89,11 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
