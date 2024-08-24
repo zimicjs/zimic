@@ -60,7 +60,6 @@ export namespace HttpSearchParamsSchemaName {
  *   }>;
  *   // "page" | "perPage"
  */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
   Schema,
   never,

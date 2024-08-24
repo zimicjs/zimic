@@ -144,7 +144,6 @@ export namespace HttpStatusCode {
     | 511; // Network Authentication Required
 }
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpStatusCode =
   | HttpStatusCode.Information
   | HttpStatusCode.Success
@@ -173,7 +172,6 @@ export namespace HttpResponseSchemaByStatusCode {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Service Schemas}
  */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpResponseSchemaByStatusCode = HttpResponseSchemaByStatusCode.Strict;
 
 /**
@@ -603,7 +601,6 @@ export namespace HttpSchemaPath {
   > = AllowAnyStringInPathParams<Literal<Schema, Method>>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSchemaPath<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema> = HttpSchemaMethod<Schema>,
