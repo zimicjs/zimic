@@ -4,7 +4,6 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http/types/schema';
 import { HttpRequestHandlerPath } from '@/interceptor/http/requestHandler/types/utils';
-import { JSONValue } from '@/types/json';
 import { Prettify } from '@/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -15,9 +14,9 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
 export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL } = options;
 
-  type User = JSONValue<{
+  interface User {
     name: string;
-  }>;
+  }
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
