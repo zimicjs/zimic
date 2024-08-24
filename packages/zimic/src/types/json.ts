@@ -2,7 +2,7 @@ type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null 
 
 namespace JSON {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export type Loose = Record<string, any> | JSON[] | string | number | boolean | null | undefined;
+  export type Loose = Record<string, any> | Loose[] | string | number | boolean | null | undefined;
 }
 
 /**
