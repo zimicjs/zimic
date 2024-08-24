@@ -9,7 +9,7 @@ import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@/http/types/schema'
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import { JSONValue } from '@/types/json';
+import { JSONSerialized, JSONValue } from '@/types/json';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
@@ -264,6 +264,107 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
           );
           expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<UserAsInterface>>();
           expect(await request.response.raw.json()).toEqual<UserAsInterface>(users[0]);
+          expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        });
+      });
+
+      it(`should support intercepting ${method} requests having a JSON body declared as type or interface not strictly compatible with JSON`, async () => {
+        interface UserAsNonJSONInterface extends UserAsInterface {
+          date: Date;
+          method: () => void;
+        }
+
+        type UserAsNonJSONType = UserAsType & {
+          date: Date;
+          method: () => void;
+        };
+
+        type MethodSchema = HttpSchema.Method<{
+          request: {
+            headers: { 'content-type': string };
+            body: UserAsNonJSONInterface;
+          };
+          response: {
+            200: {
+              headers?: { 'content-type'?: string };
+              body: UserAsNonJSONType;
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<{
+          '/users/:id': {
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const date = new Date().toISOString();
+
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users/:id').respond((request) => {
+              expectTypeOf(request.body).not.toEqualTypeOf<UserAsNonJSONInterface>();
+              expectTypeOf(request.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONInterface>>();
+              expect(request.body).toEqual(users[0]);
+
+              return { status: 200, body: { ...users[0], date } };
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+            method,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(users[0]),
+          });
+          expect(response.status).toBe(200);
+
+          const fetchedUser = (await response.json()) as UserAsInterface;
+          expect(fetchedUser).toEqual(users[0]);
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(1);
+          const [request] = requests;
+
+          expect(request).toBeInstanceOf(Request);
+          expect(request.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.body).not.toEqualTypeOf<UserAsNonJSONInterface>();
+          expectTypeOf(request.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONInterface>>();
+          expect(request.body).toEqual(users[0]);
+
+          expect(request.response).toBeInstanceOf(Response);
+          expect(request.response.headers.get('content-type')).toBe('application/json');
+          expectTypeOf(request.response.body).not.toEqualTypeOf<UserAsNonJSONType>();
+          expectTypeOf(request.response.body).toEqualTypeOf<JSONSerialized<UserAsNonJSONType>>();
+          expect(request.response.body).toEqual(users[0]);
+
+          expectTypeOf(request.raw).not.toEqualTypeOf<HttpRequest<UserAsNonJSONInterface>>();
+          expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<JSONSerialized<UserAsNonJSONInterface>>>();
+          expect(request.raw).toBeInstanceOf(Request);
+          expect(request.raw.url).toBe(request.url);
+          expect(request.raw.method).toBe(method);
+          expect(Object.fromEntries(request.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.raw.headers)),
+          );
+          expectTypeOf(request.raw.json).not.toEqualTypeOf<() => Promise<UserAsNonJSONInterface>>();
+          expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<UserAsNonJSONInterface>>>();
+          expect(await request.raw.json()).toEqual<JSONSerialized<UserAsNonJSONInterface>>({ ...users[0], date });
+          expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+
+          expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<UserAsNonJSONType>, 200>>();
+          expect(request.response.raw).toBeInstanceOf(Response);
+          expectTypeOf(request.response.raw.status).toEqualTypeOf<200>();
+          expect(request.response.raw.status).toBe(200);
+          expect(Object.fromEntries(response.headers)).toEqual(
+            expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
+          );
+          expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<UserAsNonJSONType>>>();
+          expect(await request.response.raw.json()).toEqual<JSONSerialized<UserAsNonJSONType>>({ ...users[0], date });
           expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
         });
       });

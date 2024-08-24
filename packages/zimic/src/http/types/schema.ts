@@ -323,9 +323,11 @@ export namespace HttpSchema {
   export type Methods<Schema extends HttpMethodsSchema> = ConvertToStrictMethods<Schema>;
 
   type ConvertToStrictMethod<Schema> = {
-    [Key in keyof Schema]: Key extends 'request' | 'response'
+    [Key in keyof Schema]: Key extends 'request'
       ? ConvertToStrictRequestOrResponse<Schema[Key]>
-      : Schema[Key];
+      : Key extends 'response'
+        ? ConvertToStrictResponseByStatusCode<Schema[Key]>
+        : Schema[Key];
   };
 
   /**
