@@ -1,5 +1,10 @@
 type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null | undefined;
 
+namespace JSON {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any> | JSON[] | string | number | boolean | null | undefined;
+}
+
 /**
  * Represents or validates a type that is compatible with JSON.
  *
@@ -26,6 +31,10 @@ type JSON = { [key: string]: JSON } | JSON[] | string | number | boolean | null 
  *   }>;
  */
 export type JSONValue<Type extends JSON = JSON> = Type;
+
+export namespace JSONValue {
+  export type Loose<Type extends JSON.Loose = JSON.Loose> = Type;
+}
 
 /**
  * Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON

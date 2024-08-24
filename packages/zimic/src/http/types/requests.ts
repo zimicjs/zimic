@@ -1,4 +1,5 @@
-import { JSONValue } from '@/types/json';
+import { JSONSerialized, JSONValue } from '@/types/json';
+import { ReplaceBy } from '@/types/utils';
 
 import HttpFormData from '../formData/HttpFormData';
 import { HttpFormDataSchema } from '../formData/types';
@@ -10,6 +11,12 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
+
+export namespace HttpBody {
+  export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
+
+  export type ConvertToStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
+}
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
