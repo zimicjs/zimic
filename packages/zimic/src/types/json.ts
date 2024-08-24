@@ -56,19 +56,21 @@ export namespace JSONValue {
  *   //   createdAt: string;
  *   // }
  */
-export type JSONSerialized<Type> = Type extends string | number | boolean | null | undefined
+export type JSONSerialized<Type> = Type extends JSONValue
   ? Type
-  : Type extends Date
-    ? string
-    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Type extends (...parameters: any[]) => any
-      ? never
-      : Type extends (infer ArrayItem)[]
-        ? JSONSerialized<ArrayItem>[]
-        : Type extends object
-          ? {
-              [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
-                Type[Key]
-              >;
-            }
-          : never;
+  : Type extends string | number | boolean | null | undefined
+    ? Type
+    : Type extends Date
+      ? string
+      : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Type extends (...parameters: any[]) => any
+        ? never
+        : Type extends (infer ArrayItem)[]
+          ? JSONSerialized<ArrayItem>[]
+          : Type extends object
+            ? {
+                [Key in keyof Type as [JSONSerialized<Type[Key]>] extends [never] ? never : Key]: JSONSerialized<
+                  Type[Key]
+                >;
+              }
+            : never;
