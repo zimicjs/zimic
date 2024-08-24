@@ -103,18 +103,20 @@ type PrimitiveHttpSearchParamsSerialized<Type> =
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpSearchParamsSerialized<Type> = Type extends Date
-  ? never
-  : Type extends Function
+export type HttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema
+  ? Type
+  : Type extends Date
     ? never
-    : Type extends (infer ArrayItem)[]
-      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-      : Type extends object
-        ? {
-            [Key in keyof Type as IfNever<
-              PrimitiveHttpSearchParamsSerialized<Type[Key]>,
-              never,
-              Key
-            >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
-          }
-        : PrimitiveHttpSearchParamsSerialized<Type>;
+    : Type extends Function
+      ? never
+      : Type extends (infer ArrayItem)[]
+        ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+        : Type extends object
+          ? {
+              [Key in keyof Type as IfNever<
+                PrimitiveHttpSearchParamsSerialized<Type[Key]>,
+                never,
+                Key
+              >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+            }
+          : PrimitiveHttpSearchParamsSerialized<Type>;
