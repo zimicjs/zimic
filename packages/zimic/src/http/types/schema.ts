@@ -440,7 +440,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Body<Schema extends HttpBody.Loose> = HttpBody.ConvertToStrict<Schema>;
+  export type Body<Schema extends HttpBody> = Schema;
 
   /**
    * Declares an HTTP headers schema.
