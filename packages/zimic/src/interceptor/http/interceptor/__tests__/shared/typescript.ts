@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
+import { HttpHeadersSerialized, HttpSearchParamsSerialized } from '@/http';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http/types/schema';
@@ -10,7 +11,6 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { createHttpInterceptor } from '../../factory';
 import { InferHttpInterceptorSchema } from '../../types/schema';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
-import { HttpHeadersSerialized, HttpSearchParamsSerialized } from '@/http';
 
 export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL } = options;
@@ -87,7 +87,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should correctly type requests with search params not strictly following a search params schema', async () => {
+  it('should correctly type requests with search params containing invalid types', async () => {
     interface UserListSearchParams {
       name: string;
       usernames: string[];
@@ -195,7 +195,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should correctly type requests with headers not strictly following a headers schema', async () => {
+  it('should correctly type requests with headers containing invalid types', async () => {
     interface UserListHeaders {
       accept: string;
       'content-language': string;
@@ -552,7 +552,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
-  it('should correctly type responses with headers not strictly following a headers schema', async () => {
+  it('should correctly type responses with headers containing invalid types', async () => {
     interface UserListHeaders {
       accept: string;
       date: Date; // Forcing an invalid type
