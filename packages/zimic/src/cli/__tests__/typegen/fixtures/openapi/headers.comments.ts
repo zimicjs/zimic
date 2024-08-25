@@ -3,7 +3,7 @@
 
 import type { HttpHeadersSerialized, HttpSchema } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/users-with-literal-component-headers': {
     GET: {
       request: {

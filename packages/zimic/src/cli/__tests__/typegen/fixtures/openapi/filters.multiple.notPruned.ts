@@ -9,7 +9,7 @@ import type {
   HttpSearchParamsSerialized,
 } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   users: {
     POST: {
       request: {

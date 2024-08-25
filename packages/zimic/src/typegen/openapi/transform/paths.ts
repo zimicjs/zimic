@@ -96,10 +96,7 @@ export function normalizePath(
 function wrapPathsType(type: ts.TypeLiteralNode, context: TypeTransformContext) {
   context.typeImports.http.add('HttpSchema');
 
-  const httpSchemaPathsWrapper = ts.factory.createQualifiedName(
-    ts.factory.createIdentifier('HttpSchema'),
-    ts.factory.createIdentifier('Paths'),
-  );
+  const httpSchemaPathsWrapper = ts.factory.createIdentifier('HttpSchema');
   return ts.factory.createTypeReferenceNode(httpSchemaPathsWrapper, [type]);
 }
 

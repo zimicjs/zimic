@@ -3,7 +3,7 @@
 
 import type { HttpHeadersSerialized, HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/users-with-non-numeric-status-codes': {
     POST: {
       response: MergeHttpResponsesByStatusCode<
