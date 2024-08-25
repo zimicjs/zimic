@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "pretty": true,
     "strict": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["@testing-library/jest-dom"]
   },
   "include": ["**/*.ts", "**/*.mts"],
   "exclude": ["node_modules"]
