@@ -3,6 +3,7 @@
 
 import type {
   HttpFormData,
+  HttpFormDataSerialized,
   HttpHeadersSerialized,
   HttpSchema,
   HttpSearchParams,
@@ -136,10 +137,12 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
-      body: HttpFormData<{
-        name: string;
-        content: Blob | null;
-      }>;
+      body: HttpFormData<
+        HttpFormDataSerialized<{
+          name: string;
+          content: Blob | null;
+        }>
+      >;
     }>;
   };
 }

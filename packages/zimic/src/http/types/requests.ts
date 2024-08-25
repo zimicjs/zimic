@@ -1,4 +1,5 @@
-import { JSONValue } from '@/types/json';
+import { JSONSerialized, JSONValue } from '@/types/json';
+import { ReplaceBy } from '@/types/utils';
 
 import HttpFormData from '../formData/HttpFormData';
 import { HttpFormDataSchema } from '../formData/types';
@@ -10,6 +11,14 @@ import { HttpSearchParamsSchema } from '../searchParams/types';
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HttpBody = JSONValue | HttpFormData<any> | HttpSearchParams<any> | Blob | ArrayBuffer;
+
+export namespace HttpBody {
+  /** A loose version of the HTTP body type. JSON values are not strictly typed. */
+  export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
+
+  /** Convert a possibly loose HTTP body to be strictly typed. JSON values are serialized to their strict form. */
+  export type ConvertToStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
+}
 
 /**
  * An HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
@@ -43,11 +52,11 @@ export type StrictFormData<Schema extends HttpFormDataSchema = HttpFormDataSchem
  * {@link https://developer.mozilla.org/docs/Web/API/Request `Request`} class.
  */
 export interface HttpRequest<
-  StrictBody extends HttpBody = HttpBody,
+  StrictBody extends HttpBody.Loose = HttpBody,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }
 
@@ -56,12 +65,12 @@ export interface HttpRequest<
  * {@link https://developer.mozilla.org/docs/Web/API/Response `Response`} class.
  */
 export interface HttpResponse<
-  StrictBody extends HttpBody = HttpBody,
+  StrictBody extends HttpBody.Loose = HttpBody,
   StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
-  json: () => Promise<StrictBody extends Exclude<JSONValue, string> ? StrictBody : never>;
+  json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
 }

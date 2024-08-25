@@ -60,27 +60,25 @@ export namespace HttpSearchParamsSchemaName {
  *   }>;
  *   // "page" | "perPage"
  */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
   Schema,
   never,
   keyof Schema & string
 >;
 
-type PrimitiveHttpSearchParamsSerialized<Type> =
-  Type extends Exclude<HttpSearchParamsSchema[string], undefined>
-    ? Type
-    : Type extends (infer ArrayItem)[]
-      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-      : Type extends number
-        ? `${number}`
-        : Type extends boolean
-          ? `${boolean}`
-          : Type extends null
-            ? undefined
-            : Type extends undefined
-              ? undefined
-              : never;
+type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
+  ? Type
+  : Type extends (infer ArrayItem)[]
+    ? ArrayItem extends (infer _InternalArrayItem)[]
+      ? never
+      : PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+    : Type extends number
+      ? `${number}`
+      : Type extends boolean
+        ? `${boolean}`
+        : Type extends null
+          ? undefined
+          : never;
 
 /**
  * Recursively converts a type to its
@@ -104,18 +102,26 @@ type PrimitiveHttpSearchParamsSerialized<Type> =
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpSearchParamsSerialized<Type> = Type extends Date
-  ? never
-  : Type extends Function
+export type HttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema
+  ? Type
+  : Type extends (infer _ArrayItem)[]
     ? never
-    : Type extends (infer ArrayItem)[]
-      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-      : Type extends object
-        ? {
-            [Key in keyof Type as IfNever<
-              PrimitiveHttpSearchParamsSerialized<Type[Key]>,
-              never,
-              Key
-            >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
-          }
-        : PrimitiveHttpSearchParamsSerialized<Type>;
+    : Type extends Date
+      ? never
+      : Type extends Function
+        ? never
+        : Type extends symbol
+          ? never
+          : Type extends Map<infer _Key, infer _Value>
+            ? never
+            : Type extends Set<infer _Value>
+              ? never
+              : Type extends object
+                ? {
+                    [Key in keyof Type as IfNever<
+                      PrimitiveHttpSearchParamsSerialized<Type[Key]>,
+                      never,
+                      Key
+                    >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+                  }
+                : never;

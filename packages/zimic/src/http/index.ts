@@ -16,14 +16,14 @@ export { default as HttpFormData } from './formData/HttpFormData';
 export { default as HttpHeaders } from './headers/HttpHeaders';
 export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
 
-export type { HttpSearchParamsSerialized } from './searchParams/types';
-export type { HttpHeadersSerialized } from './headers/types';
+export type { HttpPathParamsSchema, HttpPathParamsSerialized } from './pathParams/types';
 
 export type {
   HttpHeadersInit,
   HttpHeadersSchema,
   HttpHeadersSchemaTuple,
   HttpHeadersSchemaName,
+  HttpHeadersSerialized,
 } from './headers/types';
 
 export type {
@@ -31,9 +31,10 @@ export type {
   HttpSearchParamsSchema,
   HttpSearchParamsSchemaTuple,
   HttpSearchParamsSchemaName,
+  HttpSearchParamsSerialized,
 } from './searchParams/types';
 
-export type { HttpFormDataSchema } from './formData/types';
+export type { HttpFormDataSchema, HttpFormDataSerialized } from './formData/types';
 
 export type {
   HttpBody,
@@ -97,7 +98,6 @@ export type {
   HttpSchema,
   HttpMethod,
   HttpStatusCode,
-  HttpPathParamsSchema,
   HttpRequestSchema,
   HttpResponseSchema,
   HttpResponseSchemaByStatusCode,

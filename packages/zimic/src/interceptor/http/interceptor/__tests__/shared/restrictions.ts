@@ -9,7 +9,6 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
-import { JSONValue } from '@/types/json';
 import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -48,11 +47,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     optional?: string;
   }>;
 
-  type RequestJSONSchema = JSONValue<{
+  interface RequestJSONSchema {
     message: string;
     required: string;
     optional?: string;
-  }>;
+  }
 
   type RequestFormDataSchema = HttpSchema.FormData<{
     tag: File;

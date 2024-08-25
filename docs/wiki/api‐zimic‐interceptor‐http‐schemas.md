@@ -21,22 +21,21 @@ and response bodies, and status codes. Interceptors use this schema to type your
   <summary>An example of a complete HTTP interceptor schema:</summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring base types
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
-type UserCreationBody = JSONValue<{
+interface UserCreationBody {
   username: string;
-}>;
+}
 
-type NotFoundError = JSONValue<{
+interface NotFoundError {
   message: string;
-}>;
+}
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   name?: string;
@@ -92,22 +91,21 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
   <summary>Alternatively, you can compose the schema using utility types:</summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 // Declaring the base types
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
-type UserCreationBody = JSONValue<{
+interface UserCreationBody {
   username: string;
-}>;
+}
 
-type NotFoundError = JSONValue<{
+interface NotFoundError {
   message: string;
-}>;
+}
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   name?: string;
@@ -195,7 +193,7 @@ const interceptor = httpInterceptor.create<{
 
 <details>
   <summary>
-    Alternatively, you can also compose paths using the utility type <code>HttpSchema.Paths</code>:
+    Alternatively, you can also compose paths using <code>HttpSchema.Paths</code>:
   </summary>
 
 ```ts
@@ -251,8 +249,7 @@ const interceptor = httpInterceptor.create<{
 
 <details>
   <summary>
-    Similarly to <a href="#declaring-http-paths">paths</a>, you can also compose methods using the utility type
-    <code>HttpSchema.Methods</code>:
+    You can also compose methods using <code>HttpSchema.Methods</code>:
   </summary>
 
 ```ts
@@ -291,7 +288,6 @@ Each method can have a `request`, which defines the schema of the accepted reque
   </summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
@@ -315,17 +311,16 @@ const interceptor = httpInterceptor.create<{
 
 <details open>
   <summary>
-    Declaring a request type with <b>JSON</b> body:
+    Declaring a request type with a <b>JSON</b> body:
   </summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type UserCreationBody = JSONValue<{
+interface UserCreationBody {
   username: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -341,20 +336,18 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!IMPORTANT]
+> [!TIP]
 >
-> JSON body types cannot be declared using TypeScript interfaces, because they do not have implicit index signatures as
-> types do. Part of Zimic's JSON validation relies on index signatures. To workaround this, you can declare JSON bodies
-> using `type`. As an extra step to make sure the type is a valid JSON, you can use the utility type `JSONValue`.
+> The utility type [`JSONValue`](api‐zimic#jsonvalue) is useful to check if your types are compatible with JSON.
 
 > [!TIP]
 >
-> The utility type [`JSONSerialized`](api‐zimic#jsonserialized) can be handy to infer the serialized type of an object.
-> It converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
+> The utility type [`JSONSerialized`](api‐zimic#jsonserialized) is handy to infer the serialized type of an object. It
+> converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
 
 <details open>
   <summary>
-    Declaring a request type with <b>form data</b> body:
+    Declaring a request type with a <b>form data</b> body:
   </summary>
 
 ```ts
@@ -380,9 +373,14 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
+> [!IMPORTANT]
+>
+> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or using `type`. They cannot
+> be interfaces.
+
 <details open>
   <summary>
-    Declaring a request type with <b>blob</b> body:
+    Declaring a request type with a <b>blob</b> body:
   </summary>
 
 ```ts
@@ -404,7 +402,7 @@ const interceptor = httpInterceptor.create<{
 
 <details open>
   <summary>
-    Declaring a request type with <b>plain text</b> body:
+    Declaring a request type with a <b>plain text</b> body:
   </summary>
 
 ```ts
@@ -426,7 +424,7 @@ const interceptor = httpInterceptor.create<{
 
 <details open>
   <summary>
-    Declaring a request type with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
+    Declaring a request type with a <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
 ```ts
@@ -451,25 +449,23 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!TIP]
+> [!IMPORTANT]
 >
-> You only need to include in the schema the properties you want to use in your mocks. Headers, search params, or body
-> fields that are not used do not need to be declared, keeping your type definitions clean and concise.
+> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or using `type`. They
+> cannot be interfaces.
 
 <details>
   <summary>
-    You can also compose requests using the utility type <code>HttpSchema.Request</code>, similarly to
-    <a href="#declaring-http-methods">methods</a>:
+    You can also compose requests using <code>HttpSchema.Request</code>:
   </summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type UserCreationBody = JSONValue<{
+interface UserCreationBody {
   username: string;
-}>;
+}
 
 type UserCreationRequest = HttpSchema.Request<{
   body: UserCreationBody;
@@ -499,20 +495,19 @@ Bodies can be a JSON object, [`HttpFormData`](api‐zimic‐http#httpformdata),
 
 <details open>
   <summary>
-    Declaring a response type with <b>JSON</b> body:
+    Declaring a response type with a <b>JSON</b> body:
   </summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
-type NotFoundError = JSONValue<{
+interface NotFoundError {
   message: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
@@ -531,16 +526,18 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!IMPORTANT]
+> [!TIP]
 >
-> Also similarly to [declaring HTTP requests](#declaring-http-requests), JSON body types cannot be declared using
-> TypeScript interfaces, because they do not have implicit index signatures as types do. Part of Zimic's JSON validation
-> relies on index signatures. To workaround this, you can declare bodies using `type`. As an extra step to make sure the
-> type is a valid JSON, you can use the utility type `JSONValue`.
+> The utility type [`JSONValue`](api‐zimic#jsonvalue) is useful to check if your types are compatible with JSON.
+
+> [!TIP]
+>
+> The utility type [`JSONSerialized`](api‐zimic#jsonserialized) is handy to infer the serialized type of an object. It
+> converts `Date`'s to strings, removes function properties and serializes nested objects and arrays.
 
 <details open>
   <summary>
-    Declaring a response type with <b>form data</b> body:
+    Declaring a response type with a <b>form data</b> body:
   </summary>
 
 ```ts
@@ -568,9 +565,14 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
+> [!IMPORTANT]
+>
+> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or using `type`. They cannot
+> be interfaces.
+
 <details open>
   <summary>
-    Declaring a response type with <b>blob</b> body:
+    Declaring a response type with a <b>blob</b> body:
   </summary>
 
 ```ts
@@ -594,7 +596,7 @@ const interceptor = httpInterceptor.create<{
 
 <details open>
   <summary>
-    Declaring a response type with <b>plain text</b> body:
+    Declaring a response type with a <b>plain text</b> body:
   </summary>
 
 ```ts
@@ -618,7 +620,7 @@ const interceptor = httpInterceptor.create<{
 
 <details>
   <summary>
-    Declaring a response type with <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
+    Declaring a response type with a <b>search params</b> (<code>x-www-form-urlencoded</code>) body:
   </summary>
 
 ```ts
@@ -645,30 +647,28 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!TIP]
+> [!IMPORTANT]
 >
-> Similarly to [declaring HTTP requests](#declaring-http-requests), you only need to include in the schema the
-> properties you want to use in your mocks. Headers, search params, or body fields that are not used do not need to be
-> declared, keeping your type definitions clean and concise.
+> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or using `type`. They
+> cannot be interfaces.
 
 <details>
   <summary>
-    You can also compose responses using the utility types <code>HttpSchema.ResponseByStatusCode</code> and
-    <code>HttpSchema.Response</code>, similarly to <a href="#declaring-http-requests">requests</a>:
+    You can also compose responses using <code>HttpSchema.ResponseByStatusCode</code> and
+    <code>HttpSchema.Response</code>:
   </summary>
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
-type NotFoundError = JSONValue<{
+interface NotFoundError {
   message: string;
-}>;
+}
 
 type SuccessUserGetResponse = HttpSchema.Response<{
   body: User;

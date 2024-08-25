@@ -41,6 +41,7 @@ type ValidJSON = JSONValue<{
   createdAt: string;
 }>;
 
+// This results in a type error:
 type InvalidJSON = JSONValue<{
   id: string;
   email: string;
@@ -48,6 +49,11 @@ type InvalidJSON = JSONValue<{
   save(): Promise<void>; // Functions are not valid JSON values.
 }>;
 ```
+
+> [!IMPORTANT]
+>
+> The input of `JSONValue` and all of its internal types must be declared inline or using `type`. They cannot be
+> interfaces.
 
 ### `JSONSerialized`
 

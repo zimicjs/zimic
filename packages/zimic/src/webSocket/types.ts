@@ -1,29 +1,36 @@
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
-import { JSONValue } from '@/types/json';
+import { JSONSerialized, JSONValue } from '@/types/json';
 import { PossiblePromise } from '@/types/utils';
 
 export namespace WebSocket {
-  export interface EventMessage<Data extends JSONValue = JSONValue> {
+  export interface EventMessage<Data extends JSONValue.Loose = JSONValue> {
     id: string;
     channel: string;
     data: Data;
   }
 
-  export interface ReplyMessage<Data extends JSONValue = JSONValue> extends EventMessage<Data> {
+  export interface ReplyMessage<Data extends JSONValue.Loose = JSONValue> extends EventMessage<Data> {
     requestId: string;
   }
 
-  export type Message<Data extends JSONValue = JSONValue> = EventMessage<Data> | ReplyMessage<Data>;
+  export type Message<Data extends JSONValue.Loose = JSONValue> = EventMessage<Data> | ReplyMessage<Data>;
 
   interface ServiceSchemaDefinition {
     [channel: string]: {
-      event?: JSONValue;
-      reply?: JSONValue;
+      event?: JSONValue.Loose;
+      reply?: JSONValue.Loose;
     };
   }
 
-  export type ServiceSchema<Schema extends ServiceSchemaDefinition = ServiceSchemaDefinition> = Schema;
+  type ConvertToStrictServiceSchema<Schema extends ServiceSchemaDefinition> = {
+    [Channel in keyof Schema]: {
+      [Key in keyof Schema[Channel]]: JSONSerialized<Schema[Channel][Key]>;
+    };
+  };
+
+  export type ServiceSchema<Schema extends ServiceSchemaDefinition = ServiceSchemaDefinition> =
+    ConvertToStrictServiceSchema<Schema>;
 
   export type ServiceChannel<Schema extends ServiceSchema> = keyof Schema & string;
 
