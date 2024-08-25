@@ -69,39 +69,111 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
+// 1. Declare your types
 interface User {
   username: string;
 }
 
-// Declare your service schema
-type MyServiceSchema = HttpSchema<{
+interface RequestError {
+  message: string;
+}
+
+// 2. Declare your HTTP schema
+// https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas
+type MySchema = HttpSchema<{
   '/users': {
-    GET: {
+    POST: {
+      request: { body: User };
       response: {
-        200: { body: User[] };
+        201: { body: User }; // User create
+        400: { body: RequestError }; // Bad request
+        409: { body: RequestError }; // Conflict
+      };
+    };
+    GET: {
+      request: {
+        headers: { authorization?: string };
+        searchParams: { username?: string; limit?: `${number}` };
+      };
+      response: {
+        200: { body: User[] }; // Users listed
+        400: { body: RequestError }; // Bad request
+        401: { body: RequestError }; // Unauthorized
       };
     };
   };
 }>;
 
-// Create and start your interceptor
-const myInterceptor = httpInterceptor.create<MyServiceSchema>({
+// 3. Create your interceptor
+// https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions
+const myInterceptor = httpInterceptor.create<MySchema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
+  saveRequests: true, // Allow access to `handler.requests()`
 });
 
-await myInterceptor.start();
-
-// Declare your mocks
-const listHandler = myInterceptor.get('/users').respond({
-  status: 200,
-  body: [{ username: 'diego-aquino' }],
+// 4. Manage your interceptor lifecycle
+// https://github.com/zimicjs/zimic/wiki/guides‐testing
+beforeAll(async () => {
+  // 4.1. Start intercepting requests
+  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart
+  await myInterceptor.start();
 });
 
-// Enjoy!
-const response = await fetch('http://localhost:3000/users');
-const users = await response.json();
-console.log(users); // [{ username: 'diego-aquino' }]
+afterEach(() => {
+  // 4.2. Clear interceptors so that no tests affect each other
+  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear
+  myInterceptor.clear();
+});
+
+afterAll(async () => {
+  // 4.3. Stop intercepting requests
+  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop
+  await myInterceptor.stop();
+});
+
+// Enjoy mocking!
+test('should list users', async () => {
+  const users: User[] = [{ username: 'diego-aquino' }];
+  const token = 'my-token';
+
+  // 7. Declare your mocks
+  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath
+  const listHandler = myInterceptor
+    .get('/users')
+    // 7.1. Use restrictions to narrow down your mocks and make declarative assertions
+    // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction
+    .with({
+      headers: { authorization: `Bearer ${token}` },
+    })
+    .with({
+      searchParams: { username: 'diego' },
+      exact: true,
+    })
+    // 7.2. Respond with your mock data
+    // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration
+    .respond({ status: 200, body: users });
+
+  // 8. Run your application and make requests (`fetchUsers` is a fictional function)
+  const fetchedUsers = await fetchUsers({
+    token,
+    filters: { username: 'diego' },
+  });
+  expect(fetchedUsers).toEqual(users);
+
+  // 9. Assert yours requests
+  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests
+  const listRequests = listHandler.requests();
+  expect(listRequests).toHaveLength(1);
+
+  // The following assertions are automatically checked by the restrictions declared in step 7.1.
+  // If the request does not match the restrictions, the mock response will not be returned.
+  // If you are not using restrictions, you can assert the requests manually:
+  expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+
+  expect(listRequests[0].searchParams.size).toBe(1);
+  expect(listRequests[0].searchParams.get('username')).toBe('diego');
+});
 ```
 
 > [!NOTE]
