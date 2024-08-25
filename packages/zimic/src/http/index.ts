@@ -12,12 +12,13 @@ import {
 } from './types/schema';
 
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
+
 export { default as HttpFormData } from './formData/HttpFormData';
-export { default as HttpHeaders } from './headers/HttpHeaders';
-export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
+export type { HttpFormDataSchema, HttpFormDataSerialized } from './formData/types';
 
 export type { HttpPathParamsSchema, HttpPathParamsSerialized } from './pathParams/types';
 
+export { default as HttpHeaders } from './headers/HttpHeaders';
 export type {
   HttpHeadersInit,
   HttpHeadersSchema,
@@ -26,6 +27,7 @@ export type {
   HttpHeadersSerialized,
 } from './headers/types';
 
+export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
 export type {
   HttpSearchParamsInit,
   HttpSearchParamsSchema,
@@ -33,8 +35,6 @@ export type {
   HttpSearchParamsSchemaName,
   HttpSearchParamsSerialized,
 } from './searchParams/types';
-
-export type { HttpFormDataSchema, HttpFormDataSerialized } from './formData/types';
 
 export type {
   HttpBody,

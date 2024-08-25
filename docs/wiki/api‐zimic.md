@@ -30,9 +30,14 @@ Represents or validates a type that is compatible with JSON.
 import { type JSONValue } from 'zimic';
 
 // Can be used as a standalone type:
-function doSomething(value: JSONValue): string {
-  // ...
-}
+const value: JSONValue = {
+  name: 'example',
+  tags: ['one', 'two'],
+};
+```
+
+```ts
+import { type JSONValue } from 'zimic';
 
 // Can be used with a type argument to validate a JSON value:
 type ValidJSON = JSONValue<{
@@ -52,8 +57,8 @@ type InvalidJSON = JSONValue<{
 
 > [!IMPORTANT]
 >
-> The input of `JSONValue` and all of its internal types must be declared inline or using `type`. They cannot be
-> interfaces.
+> The input of `JSONValue` and all of its internal types must be declared inline or as a type aliases (`type`). They
+> cannot be interfaces.
 
 ### `JSONSerialized`
 

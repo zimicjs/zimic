@@ -270,13 +270,13 @@ export async function declareBodyHttpInterceptorTests(options: RuntimeSharedHttp
 
       it(`should support intercepting ${method} requests having a JSON body declared as type or interface not strictly compatible with JSON`, async () => {
         interface UserAsNonJSONInterface extends UserAsInterface {
-          date: Date;
-          method: () => void;
+          date: Date; // Forcing an invalid type
+          method: () => void; // Forcing an invalid type
         }
 
         type UserAsNonJSONType = UserAsType & {
-          date: Date;
-          method: () => void;
+          date: Date; // Forcing an invalid type
+          method: () => void; // Forcing an invalid type
         };
 
         type MethodSchema = HttpSchema.Method<{

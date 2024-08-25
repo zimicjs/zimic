@@ -4,22 +4,25 @@ export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;
 }
 
-type PrimitiveHttpPathParamsSerialized<Type> =
-  Type extends Exclude<HttpPathParamsSchema[string], undefined>
-    ? Type
-    : Type extends (infer _ArrayItem)[]
-      ? never
-      : Type extends number
-        ? `${number}`
-        : Type extends boolean
-          ? `${boolean}`
-          : Type extends null
-            ? undefined
-            : Type extends undefined
-              ? undefined
-              : never;
+export namespace HttpPathParamsSchema {
+  /** A schema for loose HTTP path parameters. Parameter values are not strictly typed. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any>;
+}
+
+type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema[string]
+  ? Type
+  : Type extends (infer _ArrayItem)[]
+    ? never
+    : Type extends number
+      ? `${number}`
+      : Type extends boolean
+        ? `${boolean}`
+        : Type extends null
+          ? undefined
+          : never;
 /**
- * Recursively converts a type to its path parameters-serialized version. Numbers and booleans are converted to
+ * Recursively converts a schema to its path parameters-serialized version. Numbers and booleans are converted to
  * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
  * functions and dates.
  *
@@ -31,7 +34,7 @@ type PrimitiveHttpPathParamsSerialized<Type> =
  *     notificationId: number | null;
  *     full?: boolean;
  *     from?: Date;
- *     method(): void;
+ *     method: () => void;
  *   }>;
  *   // {
  *   //   userId: string;

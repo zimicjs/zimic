@@ -15,6 +15,9 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
  * An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
  *
+ * **IMPORTANT**: the input of `HttpHeaders` and all of its internal types must be declared inline or as a type aliases
+ * (`type`). They cannot be interfaces.
+ *
  * @example
  *   import { HttpHeaders } from 'zimic/http';
  *

@@ -551,10 +551,6 @@ describe('HttpHeaders', () => {
         requiredEnum: 'value1' | 'value2';
         optionalEnum?: 'value1' | 'value2';
         nullableString: string | undefined;
-
-        stringArray: string[];
-        numberArray: `${number}`[];
-        booleanArray: `${boolean}`[];
       }>();
 
       expectTypeOf<HttpHeadersSerialized<string[]>>().toEqualTypeOf<never>();
