@@ -68,7 +68,7 @@ interface RequestError {
 }
 
 // 2. Declare your HTTP schema
-// https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas
+// https://bit.ly/zimic-interceptor-http-schemas
 type MySchema = HttpSchema<{
   '/users': {
     POST: {
@@ -94,7 +94,7 @@ type MySchema = HttpSchema<{
 }>;
 
 // 3. Create your interceptor
-// https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions
+// https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
 const myInterceptor = httpInterceptor.create<MySchema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
@@ -102,22 +102,22 @@ const myInterceptor = httpInterceptor.create<MySchema>({
 });
 
 // 4. Manage your interceptor lifecycle
-// https://github.com/zimicjs/zimic/wiki/guides‐testing
+// https://bit.ly/zimic-guides-testing
 beforeAll(async () => {
   // 4.1. Start intercepting requests
-  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart
+  // https://bit.ly/zimic-interceptor-http#http-interceptorstart
   await myInterceptor.start();
 });
 
 afterEach(() => {
   // 4.2. Clear interceptors so that no tests affect each other
-  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear
+  // https://bit.ly/zimic-interceptor-http#http-interceptorclear
   myInterceptor.clear();
 });
 
 afterAll(async () => {
   // 4.3. Stop intercepting requests
-  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop
+  // https://bit.ly/zimic-interceptor-http#http-interceptorstop
   await myInterceptor.stop();
 });
 
@@ -127,11 +127,11 @@ test('should list users', async () => {
   const token = 'my-token';
 
   // 7. Declare your mocks
-  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath
+  // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
   const listHandler = myInterceptor
     .get('/users')
-    // 7.1. Use restrictions to narrow down your mocks and make declarative assertions
-    // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction
+    // 7.1. Use restrictions to narrow down your mocks
+    // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
       headers: { authorization: `Bearer ${token}` },
     })
@@ -140,24 +140,25 @@ test('should list users', async () => {
       exact: true,
     })
     // 7.2. Respond with your mock data
-    // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration
+    // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
     .respond({ status: 200, body: users });
 
-  // 8. Run your application and make requests (`fetchUsers` is a fictional function)
-  const fetchedUsers = await fetchUsers({
+  // 8. Run your application and make requests
+  const fetchedUsers = await myApplication.fetchUsers({
     token,
     filters: { username: 'diego' },
   });
   expect(fetchedUsers).toEqual(users);
 
   // 9. Assert yours requests
-  // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests
+  // https://bit.ly/zimic-interceptor-http#http-handlerrequests
   const listRequests = listHandler.requests();
   expect(listRequests).toHaveLength(1);
 
-  // The following assertions are automatically checked by the restrictions declared in step 7.1.
-  // If the request does not match the restrictions, the mock response will not be returned.
-  // If you are not using restrictions, you can assert the requests manually:
+  // The following assertions are automatically enforced by the restrictions
+  // declared in step 7.1. Requests not matching them will cause warnings and
+  // not be intercepted. If you are not using restrictions, you can assert
+  // the requests manually:
   expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
 
   expect(listRequests[0].searchParams.size).toBe(1);
