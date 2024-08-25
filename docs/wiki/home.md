@@ -179,22 +179,6 @@ test('should list users', async () => {
 });
 ```
 
-> [!NOTE]
->
-> Zimic has gone a long way in v0, but we're not yet v1!
->
-> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
-> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
-> release requires minimal to no refactoring. During v0, we will follow these guidelines:
->
-> - Breaking changes, if any, will be delivered in the next **_minor_** version.
-> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
->   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
->
-> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
-> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
-> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
-
 ## What is Zimic for?
 
 Zimic is a development and testing tool that helps you mock HTTP responses in a type-safe way. Some of our best use
@@ -233,6 +217,22 @@ application, so no parts of your application code are skipped and you can get mo
 > the sidebar. Then, type your query in the search bar at the top of the page:
 >
 > ![Using the GitHub search bar](./home-wiki-search.png)
+
+> [!NOTE]
+>
+> Zimic has gone a long way in v0, but we're not yet v1!
+>
+> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
+> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
+> release requires minimal to no refactoring. During v0, we will follow these guidelines:
+>
+> - Breaking changes, if any, will be delivered in the next **_minor_** version.
+> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
+>   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
+>
+> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
+> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
+> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ## Examples
 

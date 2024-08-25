@@ -168,6 +168,15 @@ test('should list users', async () => {
 });
 ```
 
+## Documentation
+
+- [Introduction](https://github.com/zimicjs/zimic/wiki)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started)
+- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic)
+- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic)
+- Guides
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
+
 > [!NOTE]
 >
 > Zimic has gone a long way in v0, but we're not yet v1!
@@ -183,15 +192,6 @@ test('should list users', async () => {
 > From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
 > feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
 > [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
-
-## Documentation
-
-- [Introduction](https://github.com/zimicjs/zimic/wiki)
-- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started)
-- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic)
-- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic)
-- Guides
-  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
 
 ## Examples
 
