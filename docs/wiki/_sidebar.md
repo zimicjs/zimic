@@ -1,3 +1,7 @@
+- [🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic+with&type=wikis)
+
+---
+
 - [Introduction](home)
 - [Getting started](getting‐started)
   - [Requirements](getting‐started#1-requirements)
@@ -16,6 +20,9 @@
   - [With type generation](../../examples/README.md#type-generation)
 - Guides
   - [Testing](guides‐testing)
+
+---
+
 - [API reference](api‐zimic)
   - [`zimic/http`](api‐zimic‐http)
     - [`HttpHeaders`](api‐zimic‐http#httpheaders)
