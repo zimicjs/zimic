@@ -257,20 +257,49 @@ export interface HttpMethodsSchema {
   OPTIONS?: HttpMethodSchema.NoRequestBody;
 }
 
-/**
- * A schema representing the structure of paths, methods, requests, and responses for an HTTP service.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Interceptor Schemas}
- */
-export interface HttpSchema {
+interface BaseHttpSchema {
   [path: string]: HttpMethodsSchema;
 }
 
 /**
- * A namespace containing utility types for validating HTTP type schemas.
+ * Declares an HTTP service schema.
+ *
+ * @example
+ *   import { type HttpSchema } from 'zimic/http';
+ *
+ *   // Type header declaration
+ *   type UserListHeaders = HttpSchema.Headers<{
+ *     accept: string;
+ *   }>;
+ *
+ *   // Type search params declaration
+ *   type UserListSearchParams = HttpSchema.SearchParams<{
+ *     name?: string;
+ *     limit?: `${number}`;
+ *   }>;
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users': {
+ *       GET: {
+ *         request: {
+ *           headers: UserListHeaders;
+ *           searchParams: UserListSearchParams;
+ *         };
+ *         response: {
+ *           200: {
+ *             // Inline header declaration
+ *             headers: { 'content-type': string };
+ *             body: User[];
+ *           };
+ *         };
+ *       };
+ *     };
+ *   }>;
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Interceptor Schemas}
  */
+export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = Schema;
+
 export namespace HttpSchema {
   export type ConvertToStrict<Schema extends HttpSchema> = {
     [Path in keyof Schema]: ConvertToStrictMethods<Schema[Path]>;
@@ -279,10 +308,11 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service schema.
    *
+   * @deprecated Use {@link HttpSchema} directly instead.
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: {
@@ -312,7 +342,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': UserMethods;
    *   }>;
    */
@@ -342,7 +372,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: UserListMethod;
    *     };
@@ -361,7 +391,7 @@ export namespace HttpSchema {
    *     body: User;
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       POST: {
    *         request: UserCreationRequest;
@@ -389,7 +419,7 @@ export namespace HttpSchema {
    *     400: { body: { message: string } };
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: UserListResponseByStatusCode;
@@ -410,7 +440,7 @@ export namespace HttpSchema {
    *     body: User[];
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: {
@@ -430,7 +460,7 @@ export namespace HttpSchema {
    *
    *   type UserListSuccessResponseBody = HttpSchema.Body<User[]>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: {
@@ -452,7 +482,7 @@ export namespace HttpSchema {
    *     accept: 'application/json';
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         request: {
@@ -478,7 +508,7 @@ export namespace HttpSchema {
    *     offset: `${number}`;
    *   }>;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         request: {
@@ -499,7 +529,7 @@ export namespace HttpSchema {
    * @example
    *   import { type HttpSchema, InferPathParams } from 'zimic/http';
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users/:userId': {
    *       GET: {
    *         response: {
@@ -531,7 +561,7 @@ export namespace HttpSchema {
    *     }>
    *   >;
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       POST: {
    *         request: {
@@ -571,7 +601,7 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  * @example
  *   import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
  *
- *   type Schema = HttpSchema.Paths<{
+ *   type Schema = HttpSchema<{
  *     '/users': {
  *       GET: {
  *         response: { 200: { body: User[] } };
@@ -604,7 +634,7 @@ export namespace HttpSchemaPath {
    * @example
    *   import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: { 200: { body: User[] } };
@@ -637,7 +667,7 @@ export namespace HttpSchemaPath {
    * @example
    *   import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
    *
-   *   type Schema = HttpSchema.Paths<{
+   *   type Schema = HttpSchema<{
    *     '/users': {
    *       GET: {
    *         response: { 200: { body: User[] } };
@@ -715,7 +745,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  * @example
  *   import { HttpSchema, InferPathParams } from 'zimic/http';
  *
- *   type MySchema = HttpSchema.Paths<{
+ *   type MySchema = HttpSchema<{
  *     '/users/:userId': {
  *       GET: {
  *         response: { 200: { body: User } };
@@ -791,7 +821,7 @@ type RecursiveMergeHttpResponsesByStatusCode<
  *   //   ...
  *   // }
  *
- *   type Schema = HttpSchema.Paths<{
+ *   type Schema = HttpSchema<{
  *     '/users': {
  *       GET: { response: MergedResponseByStatusCode };
  *     };
