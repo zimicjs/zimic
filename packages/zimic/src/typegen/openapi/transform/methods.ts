@@ -170,8 +170,13 @@ function removeRedundantNullUnionIfNecessary(type: ts.TypeNode) {
 
 function wrapFormDataContentType(type: ts.TypeNode, context: TypeTransformContext) {
   context.typeImports.http.add('HttpFormData');
+  context.typeImports.http.add('HttpFormDataSerialized');
 
-  return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [type]);
+  return ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormData'), [
+    ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('HttpFormDataSerialized'), [
+      renameComponentReferences(type, context),
+    ]),
+  ]);
 }
 
 function wrapURLEncodedContentType(type: ts.TypeNode, context: TypeTransformContext) {
