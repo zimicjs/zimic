@@ -43,7 +43,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 }>;
 
 // Declaring the schema
-type MyServiceSchema = HttpSchema.Paths<{
+type MyServiceSchema = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -148,11 +148,11 @@ type UserByIdMethods = HttpSchema.Methods<{
 }>;
 
 // Declaring user paths
-type UserPaths = HttpSchema.Paths<{
+type UserPaths = HttpSchema<{
   '/users': UserMethods;
 }>;
 
-type UserByIdPaths = HttpSchema.Paths<{
+type UserByIdPaths = HttpSchema<{
   '/users/:id': UserByIdMethods;
 }>;
 
@@ -193,14 +193,14 @@ const interceptor = httpInterceptor.create<{
 
 <details>
   <summary>
-    Alternatively, you can also compose paths using <code>HttpSchema.Paths</code>:
+    Alternatively, you can also compose paths using <code>HttpSchema</code>:
   </summary>
 
 ```ts
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type UserPaths = HttpSchema.Paths<{
+type UserPaths = HttpSchema<{
   '/users': {
     // Path schema
   };
@@ -209,7 +209,7 @@ type UserPaths = HttpSchema.Paths<{
   };
 }>;
 
-type PostPaths = HttpSchema.Paths<{
+type PostPaths = HttpSchema<{
   '/posts': {
     // Path schema
   };

@@ -322,7 +322,7 @@ defined in the schema are allowed.
 ```ts
 import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
 
-type Schema = HttpSchema.Paths<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: { 200: { body: User[] } };
@@ -350,7 +350,7 @@ to filter the paths with. Only the methods defined in the schema are allowed.
 ```ts
 import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
 
-type Schema = HttpSchema.Paths<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: { 200: { body: User[] } };
@@ -378,7 +378,7 @@ methods to filter the paths with. Only the methods defined in the schema are all
 ```ts
 import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
 
-type Schema = HttpSchema.Paths<{
+type Schema = HttpSchema<{
   '/users': {
     GET: {
       response: { 200: { body: User[] } };
@@ -427,7 +427,7 @@ checked to be a valid path in that schema.
 ```ts
 import { HttpSchema, InferPathParams } from 'zimic/http';
 
-type MySchema = HttpSchema.Paths<{
+type MySchema = HttpSchema<{
   '/users/:userId': {
     GET: {
       response: { 200: { body: User } };
@@ -482,7 +482,7 @@ type MergedResponseByStatusCode = MergeHttpResponsesByStatusCode<
 //   ...
 // }
 
-type Schema = HttpSchema.Paths<{
+type Schema = HttpSchema<{
   '/users': {
     GET: { response: MergedResponseByStatusCode };
   };
