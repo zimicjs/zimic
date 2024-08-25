@@ -3,7 +3,7 @@
 
 import type { HttpSchema } from 'zimic/http';
 
-export type GitHubSchema = HttpSchema.Paths<{
+export type GitHubSchema = HttpSchema<{
   '/repos/:owner/:repo': {
     GET: GitHubOperations['repos/get'];
   };
