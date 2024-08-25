@@ -578,8 +578,15 @@ An equivalent alternative using [`HttpHeaders`](api‐zimic‐http#httpheaders):
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const headers = new HttpHeaders<Partial<UserListHeaders>>();
-headers.set('authorization', `Bearer ${token}`);
+import { type HttpSchema, HttpHeaders } from 'zimic/http';
+
+type UserListHeaders = HttpSchema.Headers<{
+  authorization: string;
+}>;
+
+const headers = new HttpHeaders<UserListHeaders>({
+  authorization: `Bearer ${token}`,
+});
 
 const creationHandler = interceptor
   .get('/users')
@@ -593,8 +600,15 @@ const creationHandler = interceptor
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-const headers = new HttpHeaders<Partial<UserListHeaders>>();
-headers.set('authorization', `Bearer ${token}`);
+import { type HttpSchema, HttpHeaders } from 'zimic/http';
+
+type UserListHeaders = HttpSchema.Headers<{
+  authorization: string;
+}>;
+
+const headers = new HttpHeaders<UserListHeaders>({
+  authorization: `Bearer ${token}`,
+});
 
 const creationHandler = await interceptor
   .get('/users')
@@ -648,8 +662,15 @@ An equivalent alternative using [`HttpSearchParams`](api‐zimic‐http#httpsear
 <table><tr><td width="900px" valign="top"><details><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
-searchParams.set('username', 'diego-aquino');
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const searchParams = new HttpSearchParams<UserListSearchParams>({
+  username: 'diego-aquino',
+});
 
 const creationHandler = interceptor
   .get('/users')
@@ -663,8 +684,15 @@ const creationHandler = interceptor
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-const searchParams = new HttpSearchParams<Partial<UserListSearchParams>>();
-searchParams.set('username', 'diego-aquino');
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserListSearchParams = HttpSchema.SearchParams<{
+  username?: string;
+}>;
+
+const searchParams = new HttpSearchParams<UserListSearchParams>({
+  username: 'diego-aquino',
+});
 
 const creationHandler = await interceptor
   .get('/users')
@@ -726,9 +754,14 @@ For JSON bodies to be correctly parsed, make sure that the intercepted requests 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from 'zimic/http';
 
-const formData = new HttpFormData<Partial<UserCreationData>>();
+type UserCreationData = HttpSchema.FormData<{
+  username: string;
+  profilePicture: Blob;
+}>;
+
+const formData = new HttpFormData<UserCreationData>();
 formData.append('username', 'diego-aquino');
 formData.append(
   'profilePicture',
@@ -751,9 +784,14 @@ const creationHandler = interceptor
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from 'zimic/http';
 
-const formData = new HttpFormData<Partial<UserCreationData>>();
+type UserCreationData = HttpSchema.FormData<{
+  username: string;
+  profilePicture: Blob;
+}>;
+
+const formData = new HttpFormData<UserCreationData>();
 formData.append('username', 'diego-aquino');
 formData.append(
   'profilePicture',
@@ -867,7 +905,11 @@ const creationHandler = await interceptor
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserGetByIdSearchParams = HttpSchema.SearchParams<{
+  username: string;
+}>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
@@ -887,7 +929,11 @@ const creationHandler = interceptor
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserGetByIdSearchParams = HttpSchema.SearchParams<{
+  username: string;
+}>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
@@ -1036,7 +1082,12 @@ const listHandler = await interceptor.get('/users').respond({
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from 'zimic/http';
+
+type UserGetByIdData = HttpSchema.FormData<{
+  username: string;
+  profilePicture: Blob;
+}>;
 
 const formData = new HttpFormData<UserGetByIdData>();
 formData.append('username', 'diego-aquino');
@@ -1056,7 +1107,12 @@ const listHandler = interceptor.get('/users/:id').respond({
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from 'zimic/http';
+
+type UserGetByIdData = HttpSchema.FormData<{
+  username: string;
+  profilePicture: Blob;
+}>;
 
 const formData = new HttpFormData<UserGetByIdData>();
 formData.append('username', 'diego-aquino');
@@ -1140,7 +1196,11 @@ const listHandler = await interceptor.get('/users').respond({
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserGetByIdSearchParams = HttpSchema.SearchParams<{
+  username: string;
+}>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
@@ -1155,7 +1215,11 @@ const listHandler = interceptor.get('/users').respond({
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+
+type UserGetByIdSearchParams = HttpSchema.SearchParams<{
+  username: string;
+}>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
   username: 'diego-aquino',
