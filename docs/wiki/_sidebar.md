@@ -1,4 +1,8 @@
-- [Home](home)
+[🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic&type=wikis)
+
+---
+
+- [Introduction](home)
 - [Getting started](getting‐started)
   - [Requirements](getting‐started#1-requirements)
   - [Installation](getting‐started#2-installation)
@@ -8,6 +12,9 @@
     - [Remote HTTP interceptors](getting‐started#remote-http-interceptors)
   - [Create your first interceptor](getting‐started#5-create-your-first-interceptor)
   - [Next steps](getting‐started#6-next-steps)
+
+---
+
 - [Examples](../../examples/README.md)
   - [With Vitest](../../examples/README.md#vitest)
   - [With Jest](../../examples/README.md#jest)
@@ -16,6 +23,9 @@
   - [With type generation](../../examples/README.md#type-generation)
 - Guides
   - [Testing](guides‐testing)
+
+---
+
 - [API reference](api‐zimic)
   - [`zimic/http`](api‐zimic‐http)
     - [`HttpHeaders`](api‐zimic‐http#httpheaders)
@@ -25,7 +35,7 @@
     - [`HttpInterceptor`](api‐zimic‐interceptor‐http#httpinterceptor)
     - [`HttpRequestHandler`](api‐zimic‐interceptor‐http#httprequesthandler)
     - [Intercepted HTTP resources](api‐zimic‐interceptor‐http#intercepted-http-resources)
-    - [Declaring HTTP service schemas](api‐zimic‐interceptor‐http‐schemas)
+    - [Declaring HTTP interceptor schemas](api‐zimic‐interceptor‐http‐schemas)
   - [`zimic/interceptor/server`](api‐zimic‐interceptor‐server)
   - [`zimic/typegen`](api‐zimic‐typegen)
 - [CLI reference](cli‐zimic)

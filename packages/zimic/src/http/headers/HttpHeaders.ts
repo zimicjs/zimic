@@ -15,6 +15,23 @@ function pickPrimitiveProperties<Schema extends HttpHeadersSchema>(schema: Schem
  * An extended HTTP headers object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/Headers `Headers`} class.
  *
+ * **IMPORTANT**: the input of `HttpHeaders` and all of its internal types must be declared inline or as a type aliases
+ * (`type`). They cannot be interfaces.
+ *
+ * @example
+ *   import { HttpHeaders } from 'zimic/http';
+ *
+ *   const headers = new HttpHeaders<{
+ *     accept?: string;
+ *     'content-type'?: string;
+ *   }>({
+ *     accept: '*',
+ *     'content-type': 'application/json',
+ *   });
+ *
+ *   const contentType = headers.get('content-type');
+ *   console.log(contentType); // 'application/json'
+ *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders` API reference}
  */
 class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends Headers {
@@ -134,7 +151,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
 
   /**
    * Checks if this headers object contains another set of headers. This method is less strict than
-   * {@link HttpHeaders.equals} and only requires that all keys and values in the other headers are present in these
+   * {@link HttpHeaders#equals} and only requires that all keys and values in the other headers are present in these
    * headers.
    *
    * @param otherHeaders The other headers object to compare against.

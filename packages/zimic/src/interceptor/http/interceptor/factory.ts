@@ -1,4 +1,4 @@
-import { HttpSchema } from '@/http/types/schema';
+import { ConvertToStrictHttpSchema, HttpSchema } from '@/http/types/schema';
 
 import UnknownHttpInterceptorTypeError from './errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptor from './LocalHttpInterceptor';
@@ -28,22 +28,26 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
  */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): PublicLocalHttpInterceptor<Schema>;
+): PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): PublicRemoteHttpInterceptor<Schema>;
+): PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema>;
+):
+  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
+  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
+):
+  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
+  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>> {
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
-    return new LocalHttpInterceptor<Schema>(options);
+    return new LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
   } else if (isRemoteHttpInterceptorOptions(options)) {
-    return new RemoteHttpInterceptor<Schema>(options);
+    return new RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
   }
 
   throw new UnknownHttpInterceptorTypeError(type);

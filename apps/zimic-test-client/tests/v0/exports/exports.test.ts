@@ -1,25 +1,28 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic0';
 import {
-  type HttpSearchParamsSerialized,
-  type HttpHeadersSerialized,
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
+  type HttpPathParamsSchema,
+  type HttpPathParamsSerialized,
   HttpHeaders,
   type HttpHeadersInit,
   type HttpHeadersSchema,
   type HttpHeadersSchemaTuple,
   type HttpHeadersSchemaName,
+  type HttpHeadersSerialized,
   type StrictHeaders,
   HttpSearchParams,
   type HttpSearchParamsInit,
   type HttpSearchParamsSchema,
   type HttpSearchParamsSchemaTuple,
   type HttpSearchParamsSchemaName,
+  type HttpSearchParamsSerialized,
   type StrictURLSearchParams,
   HttpFormData,
   type HttpFormDataSchema,
+  type HttpFormDataSerialized,
   type StrictFormData,
   type HttpSchema,
   type HttpMethod,
@@ -98,12 +101,16 @@ describe('Exports', () => {
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
 
+    expectTypeOf<HttpPathParamsSchema>().not.toBeAny();
+    expectTypeOf<HttpPathParamsSerialized<never>>().not.toBeAny();
+
     expectTypeOf<HttpHeaders>().not.toBeAny();
     expect(new HttpHeaders()).toBeInstanceOf(Headers);
     expectTypeOf<HttpHeadersInit<never>>().not.toBeAny();
     expectTypeOf<HttpHeadersSchema>().not.toBeAny();
     expectTypeOf<HttpHeadersSchemaTuple<never>>().not.toBeAny();
     expectTypeOf<HttpHeadersSchemaName<never>>().not.toBeAny();
+    expectTypeOf<HttpHeadersSerialized<never>>().not.toBeAny();
     expectTypeOf<StrictHeaders<never>>().not.toBeAny();
 
     expectTypeOf<HttpSearchParams>().not.toBeAny();
@@ -114,13 +121,16 @@ describe('Exports', () => {
     expectTypeOf<HttpSearchParamsSchemaName<never>>().not.toBeAny();
     expectTypeOf<HttpSearchParamsSchemaName.Array<never>>().not.toBeAny();
     expectTypeOf<HttpSearchParamsSchemaName.NonArray<never>>().not.toBeAny();
+    expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
     expectTypeOf<StrictURLSearchParams<never>>().not.toBeAny();
 
     expectTypeOf<HttpFormData>().not.toBeAny();
     expect(new HttpFormData()).toBeInstanceOf(FormData);
     expectTypeOf<HttpFormDataSchema>().not.toBeAny();
+    expectTypeOf<HttpFormDataSerialized<never>>().not.toBeAny();
     expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
+    expectTypeOf<HttpSchema<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();

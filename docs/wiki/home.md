@@ -54,7 +54,9 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 - :zap: **Statically-typed mocks**: Declare the
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) of your HTTP endpoints and create
-  fully typed mocks.
+  fully typed mocks. If you have an [OpenAPI v3](https://swagger.io/specification) schema, use
+  [`zimic typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) to automatically generate types and keep
+  your mocks in sync with your API.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to act on real HTTP requests. From you
   application's point of view, the mocked responses are indistinguishable from the real ones.
@@ -64,60 +66,118 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+// 1. Declare your types
+interface User {
   username: string;
-}>;
+}
 
-// Declare your service schema
-type MyServiceSchema = HttpSchema.Paths<{
+interface RequestError {
+  message: string;
+}
+
+// 2. Declare your HTTP schema
+// https://bit.ly/zimic-interceptor-http-schemas
+type MySchema = HttpSchema<{
   '/users': {
-    GET: {
+    POST: {
+      request: { body: User };
       response: {
-        200: { body: User[] };
+        201: { body: User }; // User create
+        400: { body: RequestError }; // Bad request
+        409: { body: RequestError }; // Conflict
+      };
+    };
+    GET: {
+      request: {
+        headers: { authorization?: string };
+        searchParams: { username?: string; limit?: `${number}` };
+      };
+      response: {
+        200: { body: User[] }; // Users listed
+        400: { body: RequestError }; // Bad request
+        401: { body: RequestError }; // Unauthorized
       };
     };
   };
 }>;
 
-// Create and start your interceptor
-const myInterceptor = httpInterceptor.create<MyServiceSchema>({
+// 3. Create your interceptor
+// https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
+const myInterceptor = httpInterceptor.create<MySchema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
+  saveRequests: true, // Allow access to `handler.requests()`
 });
 
-await myInterceptor.start();
-
-// Declare your mocks
-const listHandler = myInterceptor.get('/users').respond({
-  status: 200,
-  body: [{ username: 'diego-aquino' }],
+// 4. Manage your interceptor lifecycle
+// https://bit.ly/zimic-guides-testing
+beforeAll(async () => {
+  // 4.1. Start intercepting requests
+  // https://bit.ly/zimic-interceptor-http#http-interceptorstart
+  await myInterceptor.start();
 });
 
-// Enjoy!
-const response = await fetch('http://localhost:3000/users');
-const users = await response.json();
-console.log(users); // [{ username: 'diego-aquino' }]
+afterEach(() => {
+  // 4.2. Clear interceptors so that no tests affect each other
+  // https://bit.ly/zimic-interceptor-http#http-interceptorclear
+  myInterceptor.clear();
+});
+
+afterAll(async () => {
+  // 4.3. Stop intercepting requests
+  // https://bit.ly/zimic-interceptor-http#http-interceptorstop
+  await myInterceptor.stop();
+});
+
+// Enjoy mocking!
+test('should list users', async () => {
+  const users: User[] = [{ username: 'diego-aquino' }];
+  const token = 'my-token';
+
+  // 7. Declare your mocks
+  // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
+  const listHandler = myInterceptor
+    .get('/users')
+    // 7.1. Use restrictions to make declarative assertions and narrow down your mocks
+    // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
+    .with({
+      headers: { authorization: `Bearer ${token}` },
+    })
+    .with({
+      searchParams: { username: 'diego' },
+      exact: true,
+    })
+    // 7.2. Respond with your mock data
+    // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
+    .respond({ status: 200, body: users });
+
+  // 8. Run your application and make requests
+  const fetchedUsers = await myApplication.fetchUsers({
+    token,
+    filters: { username: 'diego' },
+  });
+  expect(fetchedUsers).toEqual(users);
+
+  // 9. Assert yours requests
+  // https://bit.ly/zimic-interceptor-http#http-handlerrequests
+  const listRequests = listHandler.requests();
+  expect(listRequests).toHaveLength(1);
+
+  // The following assertions are automatically checked by the declared
+  // restrictions and thus are not necessary. Requests not matching them will
+  // cause warnings and not be intercepted by default.
+
+  // If you are not using restrictions, asserting the requests manually is
+  // a good practice:
+  expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+
+  expect(listRequests[0].searchParams.size).toBe(1);
+  expect(listRequests[0].searchParams.get('username')).toBe('diego');
+});
 ```
-
-> [!NOTE]
->
-> Zimic has gone a long way in v0, but we're not yet v1!
->
-> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
-> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
-> release requires minimal to no refactoring. During v0, we will follow these guidelines:
->
-> - Breaking changes, if any, will be delivered in the next **_minor_** version.
-> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
->   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
->
-> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
-> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
-> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ## What is Zimic for?
 
@@ -153,12 +213,26 @@ application, so no parts of your application code are skipped and you can get mo
 
 > [!TIP]
 >
-> **How do I search the wiki?**
+> You can search these docs by clicking on [🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic&type=wikis) on
+> the sidebar. Then, type your query in the search bar at the top of the page:
 >
-> To search resources in this wiki, click on the GitHub search bar (or press `/`), prefix your query
-> `repo:zimicjs/zimic type:wiki` and type your search terms.
+> ![Using the GitHub search bar](./home-wiki-search.png)
+
+> [!NOTE]
 >
-> ![GitHub search bar on the repository header](./home-wiki-search.png)
+> Zimic has gone a long way in v0, but we're not yet v1!
+>
+> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
+> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
+> release requires minimal to no refactoring. During v0, we will follow these guidelines:
+>
+> - Breaking changes, if any, will be delivered in the next **_minor_** version.
+> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
+>   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
+>
+> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
+> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
+> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ## Examples
 

@@ -12,7 +12,11 @@ interface UserWithPassword extends User {
   password: string;
 }
 
-export type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
+interface UserCreationRequestHeaders {
+  'content-type'?: string;
+}
+
+export type UserCreationRequestBody = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
 type LoginResult = JSONValue<{
   accessToken: string;
@@ -24,46 +28,42 @@ type RequestError = JSONValue<{
   message: string;
 }>;
 
-export type ValidationError = JSONValue<
-  RequestError & {
-    code: 'validation_error';
-  }
->;
+export interface ValidationError extends RequestError {
+  code: 'validation_error';
+  message: string;
+}
 
-type UnauthorizedError = JSONValue<
-  RequestError & {
-    code: 'unauthorized';
-  }
->;
+export interface UnauthorizedError extends RequestError {
+  code: 'unauthorized';
+  message: string;
+}
 
-export type NotFoundError = JSONValue<
-  RequestError & {
-    code: 'not_found';
-  }
->;
+export interface NotFoundError extends RequestError {
+  code: 'not_found';
+  message: string;
+}
 
-export type ConflictError = JSONValue<
-  RequestError & {
-    code: 'conflict';
-  }
->;
+export interface ConflictError extends RequestError {
+  code: 'conflict';
+  message: string;
+}
 
-export type UserListSearchParams = HttpSchema.SearchParams<{
+export interface UserListSearchParams {
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
+}
 
-type UserPaths = HttpSchema.Paths<{
+type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        headers: { 'content-type'?: string };
-        body: UserCreationPayload;
+        headers: UserCreationRequestHeaders;
+        body: UserCreationRequestBody;
       };
       response: {
         201: {
           headers: { 'x-user-id': User['id'] };
-          body: JSONSerialized<User>;
+          body: User;
         };
         400: { body: ValidationError };
         409: { body: ConflictError };
@@ -74,26 +74,26 @@ type UserPaths = HttpSchema.Paths<{
         searchParams: UserListSearchParams;
       };
       response: {
-        200: { body: JSONSerialized<User>[] };
+        200: { body: User[] };
       };
     };
   };
 }>;
 
-type UserByIdPaths = HttpSchema.Paths<{
+type UserByIdPaths = HttpSchema<{
   '/users/:id': {
     GET: {
       response: {
-        200: { body: JSONSerialized<User> };
+        200: { body: User };
         404: { body: NotFoundError };
       };
     };
     PATCH: {
       request: {
-        body: Partial<JSONSerialized<User>>;
+        body: Partial<User>;
       };
       response: {
-        200: { body: JSONSerialized<User> };
+        200: { body: User };
         404: { body: NotFoundError };
       };
     };
@@ -106,7 +106,7 @@ type UserByIdPaths = HttpSchema.Paths<{
   };
 }>;
 
-type SessionPaths = HttpSchema.Paths<{
+type SessionPaths = HttpSchema<{
   '/session/login': {
     POST: {
       request: {
@@ -153,7 +153,7 @@ export type Notification = JSONValue<{
   content: string;
 }>;
 
-export type NotificationServiceSchema = HttpSchema.Paths<{
+export type NotificationServiceSchema = HttpSchema<{
   '/notifications/:userId': {
     GET: {
       response: {

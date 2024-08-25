@@ -7,6 +7,12 @@ export interface HttpSearchParamsSchema {
   [paramName: string]: string | string[] | undefined;
 }
 
+export namespace HttpSearchParamsSchema {
+  /** A schema for loose HTTP URL search parameters. Parameter values are not strictly typed. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any>;
+}
+
 /** A strict tuple representation of a {@link HttpSearchParamsSchema}. */
 export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = {
   [Key in keyof Schema & string]: [Key, ArrayItemIfArray<Defined<Schema[Key]>>];
@@ -60,30 +66,28 @@ export namespace HttpSearchParamsSchemaName {
  *   }>;
  *   // "page" | "perPage"
  */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type HttpSearchParamsSchemaName<Schema extends HttpSearchParamsSchema> = IfNever<
   Schema,
   never,
   keyof Schema & string
 >;
 
-type PrimitiveHttpSearchParamsSerialized<Type> =
-  Type extends Exclude<HttpSearchParamsSchema[string], undefined>
-    ? Type
-    : Type extends (infer ArrayItem)[]
-      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-      : Type extends number
-        ? `${number}`
-        : Type extends boolean
-          ? `${boolean}`
-          : Type extends null
-            ? undefined
-            : Type extends undefined
-              ? undefined
-              : never;
+type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema[string]
+  ? Type
+  : Type extends (infer ArrayItem)[]
+    ? ArrayItem extends (infer _InternalArrayItem)[]
+      ? never
+      : PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
+    : Type extends number
+      ? `${number}`
+      : Type extends boolean
+        ? `${boolean}`
+        : Type extends null
+          ? undefined
+          : never;
 
 /**
- * Recursively converts a type to its
+ * Recursively converts a schema to its
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams}-serialized version. Numbers and
  * booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable
  * values are excluded, such as functions and dates.
@@ -95,8 +99,8 @@ type PrimitiveHttpSearchParamsSerialized<Type> =
  *     query: string | null;
  *     page?: number;
  *     full?: boolean;
- *     date?: Date;
- *     method(): void;
+ *     date: Date;
+ *     method: () => void;
  *   }>;
  *   // {
  *   //   query: string | undefined;
@@ -104,18 +108,26 @@ type PrimitiveHttpSearchParamsSerialized<Type> =
  *   //   full?: "false" | "true";
  *   // }
  */
-export type HttpSearchParamsSerialized<Type> = Type extends Date
-  ? never
-  : Type extends Function
+export type HttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSchema
+  ? Type
+  : Type extends (infer _ArrayItem)[]
     ? never
-    : Type extends (infer ArrayItem)[]
-      ? PrimitiveHttpSearchParamsSerialized<ArrayItem>[]
-      : Type extends object
-        ? {
-            [Key in keyof Type as IfNever<
-              PrimitiveHttpSearchParamsSerialized<Type[Key]>,
-              never,
-              Key
-            >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
-          }
-        : PrimitiveHttpSearchParamsSerialized<Type>;
+    : Type extends Date
+      ? never
+      : Type extends Function
+        ? never
+        : Type extends symbol
+          ? never
+          : Type extends Map<infer _Key, infer _Value>
+            ? never
+            : Type extends Set<infer _Value>
+              ? never
+              : Type extends object
+                ? {
+                    [Key in keyof Type as IfNever<
+                      PrimitiveHttpSearchParamsSerialized<Type[Key]>,
+                      never,
+                      Key
+                    >]: PrimitiveHttpSearchParamsSerialized<Type[Key]>;
+                  }
+                : never;

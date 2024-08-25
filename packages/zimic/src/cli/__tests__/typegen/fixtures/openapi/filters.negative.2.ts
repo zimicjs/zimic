@@ -3,13 +3,14 @@
 
 import type {
   HttpFormData,
+  HttpFormDataSerialized,
   HttpHeadersSerialized,
   HttpSchema,
   HttpSearchParams,
   HttpSearchParamsSerialized,
 } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/notifications': {
     GET: MyServiceOperations['getNotifications'];
     DELETE: MyServiceOperations['deleteNotifications'];
@@ -69,10 +70,12 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
-      body: HttpFormData<{
-        name: string;
-        content: Blob | null;
-      }>;
+      body: HttpFormData<
+        HttpFormDataSerialized<{
+          name: string;
+          content: Blob | null;
+        }>
+      >;
     }>;
   };
 }

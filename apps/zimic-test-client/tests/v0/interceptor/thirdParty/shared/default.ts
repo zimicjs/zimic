@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 import { JSONSerialized } from 'zimic0';
-import { HttpHeaders, HttpRequest, HttpResponse, HttpSearchParams } from 'zimic0/http';
+import { HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from 'zimic0/http';
 import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
 
 import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
@@ -10,7 +10,7 @@ import {
   AuthServiceSchema,
   NotificationServiceSchema,
   User,
-  UserCreationPayload,
+  UserCreationRequestBody,
   ValidationError,
   ConflictError,
   UserListSearchParams,
@@ -95,14 +95,14 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     };
 
     describe('User creation', () => {
-      const creationPayload: UserCreationPayload = {
+      const creationPayload: UserCreationRequestBody = {
         name: user.name,
         email: user.email,
         password: crypto.randomUUID(),
         birthDate: new Date().toISOString(),
       };
 
-      async function createUser(payload: UserCreationPayload) {
+      async function createUser(payload: UserCreationRequestBody) {
         const request = new Request(`${authBaseURL}/users`, {
           method: 'POST',
           headers: {
@@ -160,12 +160,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
         expect(creationRequests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
+        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationRequests[0].body).toEqual(creationPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
         expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
 
         expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
@@ -179,7 +179,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
       it('should return an error if the payload is not valid', async () => {
         // @ts-expect-error Forcing an invalid payload
-        const invalidPayload: UserCreationPayload = {};
+        const invalidPayload: UserCreationRequestBody = {};
 
         const validationError: ValidationError = {
           code: 'validation_error',
@@ -206,12 +206,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
+        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationRequests[0].body).toEqual(invalidPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
         expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationRequests[0].raw.json()).toEqual(invalidPayload);
 
         expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ValidationError>();
@@ -224,7 +224,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       });
 
       it('should return an error if the payload is not valid', async () => {
-        const conflictingPayload: UserCreationPayload = creationPayload;
+        const conflictingPayload: UserCreationRequestBody = creationPayload;
 
         const conflictError: ConflictError = {
           code: 'conflict',
@@ -251,12 +251,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationPayload>();
+        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
         expect(creationRequests[0].body).toEqual(conflictingPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
         expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationPayload>>();
+        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
         expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
 
         expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ConflictError>();
@@ -299,7 +299,7 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const searchParams = new HttpSearchParams(filters);
+        const searchParams = new HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>(filters);
         const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
           method: 'GET',
         });
@@ -323,7 +323,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
+        >();
         expect(listRequests[0].searchParams.get('name')).toBe(null);
         expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
 
@@ -368,7 +370,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
+        >();
         expect(listRequests[0].searchParams.size).toBe(1);
         expect(listRequests[0].searchParams.get('name')).toBe(user.name);
         expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
@@ -418,7 +422,9 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<UserListSearchParams>>();
+        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+          HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
+        >();
         expect(listRequests[0].searchParams.size).toBe(1);
         expect(listRequests[0].searchParams.get('name')).toBe(null);
         expect(listRequests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);

@@ -68,7 +68,7 @@ export namespace UnhandledRequestStrategy {
    */
   export type Action = 'bypass' | 'reject';
 }
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+
 export type UnhandledRequestStrategy = UnhandledRequestStrategy.Declaration | UnhandledRequestStrategy.Handler;
 
 export interface SharedHttpInterceptorOptions {

@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { importFile } from '@/utils/files';
 
 import HttpFormData from '../HttpFormData';
+import { HttpFormDataSerialized } from '../types';
 
 describe('HttpFormData', async () => {
   const File = await importFile();
@@ -493,5 +494,71 @@ describe('HttpFormData', async () => {
 
     formData.delete('description');
     expect(await formData.contains(otherFormData)).toBe(false);
+  });
+
+  describe('Types', () => {
+    it('should correctly serialize a type to search params', () => {
+      type SerializedFormData = HttpFormDataSerialized<{
+        requiredString: string;
+        requiredUndefinedString: string | undefined;
+        optionalString?: string;
+        requiredNumber: number;
+        requiredUndefinedNumber: number | undefined;
+        optionalNumber?: number;
+        requiredBoolean: boolean;
+        requiredUndefinedBoolean: boolean | undefined;
+        optionalBoolean?: boolean;
+
+        requiredEnum: 'value1' | 'value2';
+        optionalEnum?: 'value1' | 'value2';
+        nullableString: string | null;
+
+        blob: Blob;
+        blobArray: Blob[];
+
+        stringArray: string[];
+        numberArray: number[];
+        booleanArray: boolean[];
+
+        object: { property: string };
+
+        date: Date;
+        method: () => void;
+        symbol: symbol;
+        map: Map<number, string>;
+        set: Set<string>;
+        error: Error;
+      }>;
+
+      expectTypeOf<SerializedFormData>().branded.toEqualTypeOf<{
+        requiredString: string;
+        requiredUndefinedString: string | undefined;
+        optionalString?: string;
+        requiredNumber: `${number}`;
+        requiredUndefinedNumber: `${number}` | undefined;
+        optionalNumber?: `${number}`;
+        requiredBoolean: `${boolean}`;
+        requiredUndefinedBoolean: `${boolean}` | undefined;
+        optionalBoolean?: `${boolean}`;
+
+        requiredEnum: 'value1' | 'value2';
+        optionalEnum?: 'value1' | 'value2';
+        nullableString: string | null;
+
+        blob: Blob;
+        blobArray: Blob[];
+
+        stringArray: string[];
+        numberArray: `${number}`[];
+        booleanArray: `${boolean}`[];
+      }>();
+
+      expectTypeOf<HttpFormDataSerialized<string[]>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpFormDataSerialized<Date>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpFormDataSerialized<() => void>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpFormDataSerialized<symbol>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpFormDataSerialized<Map<never, never>>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpFormDataSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
   });
 });

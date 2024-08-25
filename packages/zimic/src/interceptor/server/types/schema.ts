@@ -1,13 +1,12 @@
 import { HttpMethod } from '@/http/types/schema';
-import { JSONValue } from '@/types/json';
 import { SerializedHttpRequest, SerializedResponse } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 
-export type HttpHandlerCommit = JSONValue<{
+export interface HttpHandlerCommit {
   id: string;
   url: string;
   method: HttpMethod;
-}>;
+}
 
 export type InterceptorServerWebSocketSchema = WebSocket.ServiceSchema<{
   'interceptors/workers/use/commit': {

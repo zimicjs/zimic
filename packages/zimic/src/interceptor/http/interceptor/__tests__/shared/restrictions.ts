@@ -9,7 +9,6 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
-import { JSONValue } from '@/types/json';
 import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -36,34 +35,36 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  type RequestHeadersSchema = HttpSchema.Headers<{
+  interface RequestHeadersSchema {
     'content-language': string;
     accept: string;
     optional?: string;
-  }>;
+  }
 
-  type RequestSearchParamsSchema = HttpSchema.SearchParams<{
+  interface RequestSearchParamsSchema {
     tag: string;
     other: string;
     optional?: string;
-  }>;
+  }
 
-  type RequestJSONSchema = JSONValue<{
+  interface RequestJSONSchema {
     message: string;
     required: string;
     optional?: string;
-  }>;
+  }
 
-  type RequestFormDataSchema = HttpSchema.FormData<{
+  interface RequestFormDataSchema {
     tag: File;
-  }>;
+  }
 
   type MethodSchema = HttpSchema.Method<{
     request: {
       headers: RequestHeadersSchema;
       searchParams: RequestSearchParamsSchema;
     };
-    response: { 200: { headers: AccessControlHeaders } };
+    response: {
+      200: { headers: AccessControlHeaders };
+    };
   }>;
 
   describe.each(HTTP_METHODS)('Method: %s', (method) => {
@@ -96,17 +97,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               headers: new HttpHeaders<Partial<RequestHeadersSchema>>({ 'content-language': 'en' }),
             })
             .with({
-              headers: new HttpHeaders<RequestHeadersSchema>(),
+              headers: new HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>(),
             })
             .with((request) => {
-              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<RequestHeadersSchema>>();
+              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>>();
               expect(request.headers).toBeInstanceOf(HttpHeaders);
 
               const acceptHeader = request.headers.get('accept');
               return acceptHeader ? acceptHeader.includes('application/json') : false;
             })
             .respond((request) => {
-              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<RequestHeadersSchema>>();
+              expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>>();
               expect(request.headers).toBeInstanceOf(HttpHeaders);
 
               return {
@@ -121,7 +122,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const headers = new HttpHeaders<RequestHeadersSchema>({
+        const headers = new HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>({
           'content-language': 'en',
           accept: 'application/json',
         });
@@ -189,13 +190,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               searchParams: { tag: 'admin' },
             })
             .with({
-              searchParams: new HttpSearchParams<Partial<RequestSearchParamsSchema>>({ tag: 'admin' }),
+              searchParams: new HttpSearchParams<Partial<RequestSearchParamsSchema>>({
+                tag: 'admin',
+              }),
             })
             .with({
-              searchParams: new HttpSearchParams<RequestSearchParamsSchema>(),
+              searchParams: new HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>(),
             })
             .respond((request) => {
-              expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<RequestSearchParamsSchema>>();
+              expectTypeOf(request.searchParams).toEqualTypeOf<
+                HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>
+              >();
               expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
 
               return {
@@ -210,7 +215,10 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const searchParams = new HttpSearchParams<RequestSearchParamsSchema>({ tag: 'admin', other: 'value' });
+        const searchParams = new HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>({
+          tag: 'admin',
+          other: 'value',
+        });
 
         const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
           method,
@@ -363,7 +371,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
     it(`should support intercepting ${method} requests having partial, exact body form data restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
-        request: { body: HttpFormData<RequestFormDataSchema> };
+        request: { body: HttpFormData<HttpSchema.FormData<RequestFormDataSchema>> };
         response: { 200: {} };
       }>;
 
@@ -375,7 +383,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const restrictedFormData = new HttpFormData<RequestFormDataSchema>();
+        const restrictedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
 
@@ -386,7 +394,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               exact: true,
             })
             .respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<RequestFormDataSchema>>();
+              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>>();
               expect(request.body).toEqual(restrictedFormData);
 
               return { status: 200 };
@@ -409,17 +417,17 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         const differentTagFile = new File(['more-content'], 'tag.txt', { type: 'text/plain' });
 
-        const extendedFormData = new HttpFormData<RequestFormDataSchema>();
+        const extendedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
-        const differentFormData = new HttpFormData<RequestFormDataSchema>();
+        const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         differentFormData.append('tag', differentTagFile);
 
         for (const body of [
           extendedFormData,
           differentFormData,
-          new HttpFormData<RequestFormDataSchema>(),
+          new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
@@ -445,7 +453,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
     it(`should support intercepting ${method} requests having partial, non-exact body form data restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
-        request: { body: HttpFormData<RequestFormDataSchema> };
+        request: { body: HttpFormData<HttpSchema.FormData<RequestFormDataSchema>> };
         response: { 200: {} };
       }>;
 
@@ -457,7 +465,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           DELETE: MethodSchemaWithBody;
         };
       }>(interceptorOptions, async (interceptor) => {
-        const restrictedFormData = new HttpFormData<RequestFormDataSchema>();
+        const restrictedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         const tagFile = new File(['content'], 'tag.txt', { type: 'text/plain' });
         restrictedFormData.append('tag', tagFile);
 
@@ -472,7 +480,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               exact: false,
             })
             .respond((request) => {
-              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<RequestFormDataSchema>>();
+              expectTypeOf(request.body).toEqualTypeOf<HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>>();
               expect(request.body.has('tag')).toBe(true);
 
               return { status: 200 };
@@ -495,7 +503,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         const differentTagFile = new File(['other'], 'tag.txt', { type: 'text/plain' });
 
-        const extendedFormData = new HttpFormData<RequestFormDataSchema>();
+        const extendedFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
@@ -508,10 +516,14 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(2);
 
-        const differentFormData = new HttpFormData<RequestFormDataSchema>();
+        const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         differentFormData.append('tag', differentTagFile);
 
-        for (const body of [differentFormData, new HttpFormData<RequestFormDataSchema>(), undefined]) {
+        for (const body of [
+          differentFormData,
+          new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>(),
+          undefined,
+        ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
             const promise = fetch(joinURL(baseURL, '/users'), {
               method,

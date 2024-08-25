@@ -50,6 +50,11 @@ Each interceptor represents a service and can be used to mock its paths and meth
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
 [declaring interceptor schemas](api‐zimic‐interceptor‐http‐schemas).
 
+> [!TIP]
+>
+> If you are using TypeScript and have an [OpenAPI v3](https://swagger.io/specification) schema, you can use
+> [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
+
 #### Creating a local HTTP interceptor
 
 A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
@@ -57,12 +62,11 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
@@ -85,12 +89,11 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { type JSONValue } from 'zimic';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type User = JSONValue<{
+interface User {
   username: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
@@ -324,7 +327,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
@@ -397,7 +400,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -428,7 +431,7 @@ This method is useful to reset the interceptor mocks between tests.
 interceptor.clear();
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 await interceptor.clear();
@@ -489,12 +492,12 @@ Returns the method that matches a handler.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const handler = interceptor.post('/users');
-const method = handler.method();
+const creationHandler = interceptor.post('/users');
+const method = creationHandler.method();
 console.log(method); // 'POST'
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const handler = await interceptor.post('/users');
@@ -512,12 +515,12 @@ requests.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const handler = interceptor.get('/users');
-const path = handler.path();
+const listHandler = interceptor.get('/users');
+const path = listHandler.path();
 console.log(path); // '/users'
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const handler = await interceptor.get('/users');
@@ -554,7 +557,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -624,7 +627,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -694,7 +697,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -745,7 +748,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic/http';
@@ -798,7 +801,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -840,7 +843,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -881,7 +884,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic/http';
@@ -930,7 +933,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -970,7 +973,7 @@ const creationHandler = interceptor
   });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const creationHandler = await interceptor
@@ -1013,7 +1016,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1050,7 +1053,7 @@ const listHandler = interceptor.get('/users/:id').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 import { HttpFormData } from 'zimic/http';
@@ -1089,7 +1092,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1117,7 +1120,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1149,7 +1152,7 @@ const listHandler = interceptor.get('/users').respond({
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 import { HttpSearchParams } from 'zimic/http';
@@ -1189,7 +1192,7 @@ const listHandler = interceptor.get('/users').respond((request) => {
 });
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond((request) => {
@@ -1237,7 +1240,7 @@ otherListHandler.bypass();
 // Now, requests GET /users will match `listHandler` and receive an empty array
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1287,7 +1290,7 @@ otherListHandler.clear();
 otherListHandler.requests(); // Now empty
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const listHandler = await interceptor.get('/users').respond({
@@ -1332,6 +1335,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 
 await fetch(`http://localhost:3000/users/${1}`, {
   method: 'PUT',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'new' }),
 });
 
@@ -1343,7 +1347,7 @@ expect(updateRequests[0].response.status).toBe(200);
 expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
 ```
 
-</details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const updateHandler = await interceptor.put('/users/:id').respond((request) => {
@@ -1356,6 +1360,7 @@ const updateHandler = await interceptor.put('/users/:id').respond((request) => {
 
 await fetch(`http://localhost:3000/users/${1}`, {
   method: 'PUT',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'new' }),
 });
 

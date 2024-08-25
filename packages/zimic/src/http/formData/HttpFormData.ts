@@ -7,6 +7,26 @@ import { HttpFormDataSchema } from './types';
  * An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
  *
+ * **IMPORTANT**: the input of `HttpFormData` and all of its internal types must be declared inline or as a type aliases
+ * (`type`). They cannot be interfaces.
+ *
+ * @example
+ *   import { HttpFormData } from 'zimic/http';
+ *
+ *   const formData = new HttpFormData<{
+ *     files: File[];
+ *     description?: string;
+ *   }>();
+ *
+ *   formData.append('file', new File(['content'], 'file.txt', { type: 'text/plain' }));
+ *   formData.append('description', 'My file');
+ *
+ *   const files = formData.getAll('file');
+ *   console.log(files); // [File { name: 'file.txt', type: 'text/plain' }]
+ *
+ *   const description = formData.get('description');
+ *   console.log(description); // 'My file'
+ *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata `HttpFormData` API reference}
  */
 class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> extends FormData {
@@ -57,7 +77,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   /**
    * Get the value of the entry associated to a key name.
    *
-   * If the key might have multiple values, use {@link HttpFormData.getAll} instead.
+   * If the key might have multiple values, use {@link HttpFormData#getAll} instead.
    *
    * @param name The name of the key to get the value of.
    * @returns The value associated with the key name, or `null` if the key does not exist.
@@ -72,7 +92,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   /**
    * Get all the values of the entry associated with a key name.
    *
-   * If the key has at most a single value, use {@link HttpFormData.get} instead.
+   * If the key has at most a single value, use {@link HttpFormData#get} instead.
    *
    * @param name The name of the key to get the values of.
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
@@ -179,7 +199,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   }
 
   /**
-   * Checks if the data contains the other data. This method is less strict than {@link HttpFormData.equals} and only
+   * Checks if the data contains the other data. This method is less strict than {@link HttpFormData#equals} and only
    * requires that all keys and values in the other data are present in this data.
    *
    * @param otherData The other data to compare.

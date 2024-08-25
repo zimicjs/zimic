@@ -3,13 +3,14 @@
 
 import type {
   HttpFormData,
+  HttpFormDataSerialized,
   HttpHeadersSerialized,
   HttpSchema,
   HttpSearchParams,
   HttpSearchParamsSerialized,
 } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   users: {
     GET: {
       request: {
@@ -146,16 +147,18 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
-      body: HttpFormData<{
-        /** The name of the file */
-        name: string;
-        /**
-         * Format: binary
-         *
-         * The content of the file
-         */
-        content: Blob | null;
-      }>;
+      body: HttpFormData<
+        HttpFormDataSerialized<{
+          /** The name of the file */
+          name: string;
+          /**
+           * Format: binary
+           *
+           * The content of the file
+           */
+          content: Blob | null;
+        }>
+      >;
     }>;
   };
 }

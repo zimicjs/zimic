@@ -3,7 +3,7 @@
 
 import type { HttpSchema } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/users-with-path-item-component': MyServiceComponents['pathItems']['users'];
 }>;
 

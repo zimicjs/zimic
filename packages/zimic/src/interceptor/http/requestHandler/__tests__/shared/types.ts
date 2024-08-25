@@ -36,7 +36,7 @@ export type MethodSchema = HttpSchema.Method<{
   };
 }>;
 
-export type Schema = HttpSchema.Paths<{
+export type Schema = HttpSchema<{
   '/users': {
     POST: MethodSchema;
   };

@@ -12,28 +12,29 @@ import {
 } from './types/schema';
 
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
+
 export { default as HttpFormData } from './formData/HttpFormData';
+export type { HttpFormDataSchema, HttpFormDataSerialized } from './formData/types';
+
+export type { HttpPathParamsSchema, HttpPathParamsSerialized } from './pathParams/types';
+
 export { default as HttpHeaders } from './headers/HttpHeaders';
-export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
-
-export type { HttpSearchParamsSerialized } from './searchParams/types';
-export type { HttpHeadersSerialized } from './headers/types';
-
 export type {
   HttpHeadersInit,
   HttpHeadersSchema,
   HttpHeadersSchemaTuple,
   HttpHeadersSchemaName,
+  HttpHeadersSerialized,
 } from './headers/types';
 
+export { default as HttpSearchParams } from './searchParams/HttpSearchParams';
 export type {
   HttpSearchParamsInit,
   HttpSearchParamsSchema,
   HttpSearchParamsSchemaTuple,
   HttpSearchParamsSchemaName,
+  HttpSearchParamsSerialized,
 } from './searchParams/types';
-
-export type { HttpFormDataSchema } from './formData/types';
 
 export type {
   HttpBody,
@@ -97,7 +98,6 @@ export type {
   HttpSchema,
   HttpMethod,
   HttpStatusCode,
-  HttpPathParamsSchema,
   HttpRequestSchema,
   HttpResponseSchema,
   HttpResponseSchemaByStatusCode,

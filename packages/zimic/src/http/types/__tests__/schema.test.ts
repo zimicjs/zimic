@@ -1,15 +1,14 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { JSONValue } from '@/types/json';
-
 import { HttpSchema, HttpSchemaPath, HttpStatusCode, InferPathParams, MergeHttpResponsesByStatusCode } from '../schema';
 
 describe('Schema types', () => {
-  type User = JSONValue<{
+  interface User {
     name: string;
-  }>;
+    date: Date;
+  }
 
-  type Schema = HttpSchema.Paths<{
+  type Schema = HttpSchema<{
     '/users': {
       POST: {
         request: { body: User };

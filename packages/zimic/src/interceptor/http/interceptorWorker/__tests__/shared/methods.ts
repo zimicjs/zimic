@@ -132,6 +132,38 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
       it.each([
         {
+          use: ':param',
+          fetch: `${param1}`,
+          params: { param: param1 },
+        },
+        {
+          use: ':param',
+          fetch: `${param2}`,
+          params: { param: param2 },
+        },
+        {
+          use: `${param1}`,
+          fetch: `${param1}`,
+          params: {},
+        },
+
+        {
+          use: ':param',
+          fetch: `/${param1}`,
+          params: { param: param1 },
+        },
+        {
+          use: ':param',
+          fetch: `/${param2}`,
+          params: { param: param2 },
+        },
+        {
+          use: `${param1}`,
+          fetch: `/${param1}`,
+          params: {},
+        },
+
+        {
           use: '/:param',
           fetch: `/${param1}`,
           params: { param: param1 },
@@ -144,6 +176,22 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         {
           use: `/${param1}`,
           fetch: `/${param1}`,
+          params: {},
+        },
+
+        {
+          use: '/:param',
+          fetch: `${param1}`,
+          params: { param: param1 },
+        },
+        {
+          use: '/:param',
+          fetch: `${param2}`,
+          params: { param: param2 },
+        },
+        {
+          use: `/${param1}`,
+          fetch: `${param1}`,
           params: {},
         },
 
@@ -242,8 +290,8 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           fetch: `/${param1}/path/${param2}/${param3}/path`,
           params: {},
         },
-      ])(`should intercept ${method} requests with matching dynamic paths (use $use; fetch $fetch)`, async (paths) => {
-        const url = joinURL(baseURL, paths.use);
+      ])(`should intercept ${method} requests with matching dynamic paths (use $use; fetch $fetch)`, async (path) => {
+        const url = joinURL(baseURL, path.use);
 
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
           const interceptor = createDefaultHttpInterceptor();
@@ -251,7 +299,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-          const urlExpectedToSucceed = joinURL(baseURL, paths.fetch);
+          const urlExpectedToSucceed = joinURL(baseURL, path.fetch);
           const response = await fetch(urlExpectedToSucceed, { method });
 
           expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -262,7 +310,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           const urlRegex = createRegexFromURL(url);
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, { urlRegex });
-          expect(parsedRequest.pathParams).toEqual(paths.params);
+          expect(parsedRequest.pathParams).toEqual(path.params);
 
           expect(response.status).toBe(200);
           await expectMatchedBodyIfNotHead(response);
@@ -418,8 +466,8 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         },
       ])(
         `should not intercept ${method} requests with non-matching dynamic paths (use $use; fetch $fetch)`,
-        async (paths) => {
-          const url = joinURL(baseURL, paths.use);
+        async (path) => {
+          const url = joinURL(baseURL, path.use);
 
           await usingHttpInterceptorWorker(workerOptions, async (worker) => {
             const interceptor = createDefaultHttpInterceptor();
@@ -427,7 +475,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
             expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-            const urlExpectedToFail = joinURL(baseURL, paths.fetch);
+            const urlExpectedToFail = joinURL(baseURL, path.fetch);
 
             const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
             await expectFetchErrorOrPreflightResponse(fetchPromise, {

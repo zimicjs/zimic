@@ -19,6 +19,26 @@ function pickPrimitiveProperties<Schema extends HttpSearchParamsSchema>(schema: 
  * An extended HTTP search params object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams `URLSearchParams`} class.
  *
+ * **IMPORTANT**: the input of `HttpSearchParams` and all of its internal types must be declared inline or as a type
+ * aliases (`type`). They cannot be interfaces.
+ *
+ * @example
+ *   import { HttpSearchParams } from 'zimic/http';
+ *
+ *   const searchParams = new HttpSearchParams<{
+ *     names?: string[];
+ *     page?: `${number}`;
+ *   }>({
+ *     names: ['user 1', 'user 2'],
+ *     page: '1',
+ *   });
+ *
+ *   const names = searchParams.getAll('names');
+ *   console.log(names); // ['user 1', 'user 2']
+ *
+ *   const page = searchParams.get('page');
+ *   console.log(page); // '1'
+ *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams `HttpSearchParams` API reference}
  */
 class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> extends URLSearchParams {
@@ -60,7 +80,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /**
    * Get the value of the entry associated to a key name.
    *
-   * If the key might have multiple values, use {@link HttpSearchParams.getAll} instead.
+   * If the key might have multiple values, use {@link HttpSearchParams#getAll} instead.
    *
    * @param name The name of the key to get the value of.
    * @returns The value associated with the key name, or `null` if the key does not exist.
@@ -75,7 +95,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /**
    * Get all the values of the entry associated with a key name.
    *
-   * If the key has at most one value, use {@link HttpSearchParams.get} instead.
+   * If the key has at most one value, use {@link HttpSearchParams#get} instead.
    *
    * @param name The name of the key to get the values of.
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
@@ -166,7 +186,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
 
   /**
    * Checks if the current search parameters contain another set of search parameters. This method is less strict than
-   * {@link HttpSearchParams.equals} and only requires that all keys and values in the other search parameters are
+   * {@link HttpSearchParams#equals} and only requires that all keys and values in the other search parameters are
    * present in these search parameters.
    *
    * @param otherParams The other search parameters to check for containment.
