@@ -12,6 +12,9 @@
     - [Remote HTTP interceptors](getting‐started#remote-http-interceptors)
   - [Create your first interceptor](getting‐started#5-create-your-first-interceptor)
   - [Next steps](getting‐started#6-next-steps)
+
+---
+
 - [Examples](../../examples/README.md)
   - [With Vitest](../../examples/README.md#vitest)
   - [With Jest](../../examples/README.md#jest)
