@@ -152,12 +152,11 @@ application, so no parts of your application code are skipped and you can get mo
 
 > [!TIP]
 >
-> **How do I search the wiki?**
+> You can search these docs by clicking on
+> [🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic+with&type=wikis) on the sidebar. Then, type your query
+> in the search bar at the top of the page:
 >
-> To search resources in this wiki, click on the GitHub search bar (or press `/`), prefix your query
-> `repo:zimicjs/zimic type:wiki` and type your search terms.
->
-> ![GitHub search bar on the repository header](./home-wiki-search.png)
+> ![Using the GitHub search bar](./home-wiki-search.png)
 
 ## Examples
 
