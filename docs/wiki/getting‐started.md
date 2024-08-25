@@ -170,7 +170,7 @@ use remote interceptors.
    });
    ```
 
-   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+   </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
    import { httpInterceptor } from 'zimic/interceptor/http';
@@ -231,7 +231,7 @@ use remote interceptors.
    console.log(requests.length); // 1
    ```
 
-   </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+   </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
    const listHandler = await interceptor.get('/users').respond({
