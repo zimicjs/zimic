@@ -4,20 +4,17 @@ export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;
 }
 
-type PrimitiveHttpPathParamsSerialized<Type> =
-  Type extends Exclude<HttpPathParamsSchema[string], undefined>
-    ? Type
-    : Type extends (infer _ArrayItem)[]
-      ? never
-      : Type extends number
-        ? `${number}`
-        : Type extends boolean
-          ? `${boolean}`
-          : Type extends null
-            ? undefined
-            : Type extends undefined
-              ? undefined
-              : never;
+type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema[string]
+  ? Type
+  : Type extends (infer _ArrayItem)[]
+    ? never
+    : Type extends number
+      ? `${number}`
+      : Type extends boolean
+        ? `${boolean}`
+        : Type extends null
+          ? undefined
+          : never;
 /**
  * Recursively converts a type to its path parameters-serialized version. Numbers and booleans are converted to
  * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as

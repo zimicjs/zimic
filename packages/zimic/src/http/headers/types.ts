@@ -1,6 +1,6 @@
 import { Defined, IfNever } from '@/types/utils';
 
-import { HttpSearchParamsSerialized } from '../searchParams/types';
+import { HttpPathParamsSerialized } from '../pathParams/types';
 import HttpHeaders from './HttpHeaders';
 
 /** A schema for strict HTTP headers. */
@@ -55,4 +55,4 @@ export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Sc
  *   //   'x-full'?: "false" | "true";
  *   // }
  */
-export type HttpHeadersSerialized<Type> = HttpSearchParamsSerialized<Type>;
+export type HttpHeadersSerialized<Type> = HttpPathParamsSerialized<Type>;
