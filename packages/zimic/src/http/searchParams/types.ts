@@ -87,7 +87,7 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
           : never;
 
 /**
- * Recursively converts a type to its
+ * Recursively converts a schema to its
  * {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams URLSearchParams}-serialized version. Numbers and
  * booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable
  * values are excluded, such as functions and dates.

@@ -24,7 +24,7 @@ type PrimitiveHttpFormDataSerialized<Type> = Type extends HttpFormDataSchema[str
         : never;
 
 /**
- * Recursively converts a type to its {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}-serialized
+ * Recursively converts a schema to its {@link https://developer.mozilla.org/docs/Web/API/FormData FormData}-serialized
  * version. Numbers and booleans are converted to `${number}` and `${boolean}` respectively, and not serializable values
  * are excluded, such as functions and dates.
  *
@@ -33,14 +33,16 @@ type PrimitiveHttpFormDataSerialized<Type> = Type extends HttpFormDataSchema[str
  *
  *   type Schema = HttpFormDataSerialized<{
  *     contentTitle: string | null;
- *     contentSize?: number;
+ *     contentSize: number;
+ *     content: Blob;
  *     full?: boolean;
- *     date?: Date;
+ *     date: Date;
  *     method: () => void;
  *   }>;
  *   // {
- *   //   contentTitle: string | undefined;
- *   //   contentSize?: `${number}`;
+ *   //   contentTitle: string | null;
+ *   //   contentSize? `${number}`;
+ *   //   content: Blob;
  *   //   full?: "false" | "true";
  *   // }
  */

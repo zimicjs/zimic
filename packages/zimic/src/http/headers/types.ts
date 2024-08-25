@@ -30,7 +30,7 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
  * Extracts the names of the headers defined in a {@link HttpHeadersSchema}. Each key is considered a header name.
  *
  * @example
- *   import { type HttpSearchParamsSerialized } from 'zimic/http';
+ *   import { type HttpHeadersSchemaName } from 'zimic/http';
  *
  *   type HeaderName = HttpHeadersSchemaName<{
  *     'content-type': string;
@@ -41,14 +41,15 @@ export type HttpHeadersInit<Schema extends HttpHeadersSchema = HttpHeadersSchema
 export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Schema, never, keyof Schema & string>;
 
 /**
- * Recursively converts a type to its {@link https://developer.mozilla.org/docs/Web/API/Headers HTTP headers}-serialized
- * version. Numbers and booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and
- * not serializable values are excluded, such as functions and dates.
+ * Recursively converts a schema to its
+ * {@link https://developer.mozilla.org/docs/Web/API/Headers HTTP headers}-serialized version. Numbers and booleans are
+ * converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are
+ * excluded, such as functions and dates.
  *
  * @example
- *   import { type HttpSearchParamsSerialized } from 'zimic/http';
+ *   import { type HttpHeadersSerialized } from 'zimic/http';
  *
- *   type Params = HttpSearchParamsSerialized<{
+ *   type Params = HttpHeadersSerialized<{
  *     'content-type': string;
  *     'x-remaining-tries': number;
  *     'x-full'?: boolean;

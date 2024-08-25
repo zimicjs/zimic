@@ -37,10 +37,14 @@ interface NotFoundError {
   message: string;
 }
 
-type UserListSearchParams = HttpSchema.SearchParams<{
+interface UserCreationResponseHeaders {
+  'content-type': string;
+}
+
+interface UserListSearchParams {
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
+}
 
 // Declaring the schema
 type MyServiceSchema = HttpSchema<{
@@ -52,7 +56,7 @@ type MyServiceSchema = HttpSchema<{
       };
       response: {
         201: {
-          headers: { 'content-type': string };
+          headers: UserCreationResponseHeaders;
           body: User;
         };
       };
@@ -107,10 +111,14 @@ interface NotFoundError {
   message: string;
 }
 
-type UserListSearchParams = HttpSchema.SearchParams<{
+interface UserCreationResponseHeaders {
+  'content-type': string;
+}
+
+interface UserListSearchParams {
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
+}
 
 // Declaring user methods
 type UserMethods = HttpSchema.Methods<{
@@ -121,7 +129,7 @@ type UserMethods = HttpSchema.Methods<{
     };
     response: {
       201: {
-        headers: { 'content-type': string };
+        headers: UserCreationResponseHeaders;
         body: User;
       };
     };
@@ -291,9 +299,9 @@ Each method can have a `request`, which defines the schema of the accepted reque
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-type UserListSearchParams = HttpSchema.SearchParams<{
+interface UserListSearchParams {
   username?: string;
-}>;
+}
 
 const interceptor = httpInterceptor.create<{
   '/users': {

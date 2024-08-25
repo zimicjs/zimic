@@ -299,14 +299,14 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
  * @example
  *   import { type HttpSchema } from 'zimic/http';
  *
- *   type UserListHeaders = HttpSchema.Headers<{
+ *   interface UserListHeaders {
  *     accept: string;
- *   }>;
+ *   }
  *
- *   type UserListSearchParams = HttpSchema.SearchParams<{
+ *   interface UserListSearchParams {
  *     name?: string;
  *     limit?: `${number}`;
- *   }>;
+ *   }
  *
  *   type Schema = HttpSchema<{
  *     '/users': {
@@ -477,7 +477,8 @@ export namespace HttpSchema {
   export type Response<Schema extends HttpResponseSchema> = ConvertToStrictHttpResponseSchema<Schema>;
 
   /**
-   * Declares an HTTP body schema.
+   * Declares an HTTP body schema. JSON values are serialized to their strict form using
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic#jsonserialized `JSONSerialized`} if necessary.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -497,7 +498,9 @@ export namespace HttpSchema {
   export type Body<Schema extends HttpBody.Loose> = HttpBody.ConvertToStrict<Schema>;
 
   /**
-   * Declares an HTTP headers schema.
+   * Declares an HTTP headers schema. Headers are serialized to their strict form using
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheadersserialized `HttpHeadersSerialized`} if
+   * necessary.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -522,7 +525,9 @@ export namespace HttpSchema {
   export type Headers<Schema extends HttpHeadersSchema.Loose> = HttpHeadersSerialized<Schema>;
 
   /**
-   * Declares an HTTP search params schema.
+   * Declares an HTTP search params schema. Search params are serialized to their strict form using
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparamsserialized `HttpSearchParamsSerialized`}
+   * if necessary.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -548,7 +553,8 @@ export namespace HttpSchema {
   export type SearchParams<Schema extends HttpSearchParamsSchema.Loose> = HttpSearchParamsSerialized<Schema>;
 
   /**
-   * Declares an HTTP path params schema.
+   * Declares an HTTP path params schema. Path params are serialized to their strict form using
+   * {@link HttpPathParamsSerialized} if necessary.
    *
    * @example
    *   import { type HttpSchema, InferPathParams } from 'zimic/http';
@@ -573,7 +579,9 @@ export namespace HttpSchema {
   export type PathParams<Schema extends HttpPathParamsSchema.Loose> = HttpPathParamsSerialized<Schema>;
 
   /**
-   * Declares an HTTP form data schema.
+   * Declares an HTTP form data schema. Form data is serialized to their strict form using
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdataserialized `HttpFormDataSerialized`} if
+   * necessary.
    *
    * @example
    *   import { HttpFormData, type HttpSchema } from 'zimic/http';

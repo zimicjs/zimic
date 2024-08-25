@@ -22,7 +22,7 @@ type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema
           ? undefined
           : never;
 /**
- * Recursively converts a type to its path parameters-serialized version. Numbers and booleans are converted to
+ * Recursively converts a schema to its path parameters-serialized version. Numbers and booleans are converted to
  * `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are excluded, such as
  * functions and dates.
  *

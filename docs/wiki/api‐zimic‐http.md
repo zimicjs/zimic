@@ -14,6 +14,8 @@
     - [`HttpSearchParamsSchemaName`](#httpsearchparamsschemaname)
 - [`HttpFormData`](#httpformdata)
   - [Comparing `HttpFormData`](#comparing-httpformdata)
+  - [`HttpFormData` utility types](#httpformdata-utility-types)
+    - [`HttpFormDataSerialized`](#httpformdataserialized)
 - [Utility types](#utility-types)
   - [`HttpSchemaPath`](#httpschemapath)
     - [`HttpSchemaPath.Literal`](#httpschemapathliteral)
@@ -99,7 +101,7 @@ console.log(headers3.contains(headers1)); // true
 
 #### `HttpHeadersSerialized`
 
-Recursively converts a type to its [HTTP headers](https://developer.mozilla.org/docs/Web/API/Headers)-serialized
+Recursively converts a schema to its [HTTP headers](https://developer.mozilla.org/docs/Web/API/Headers)-serialized
 version. Numbers and booleans are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not
 serializable values are excluded, such as functions and dates.
 
@@ -203,7 +205,7 @@ console.log(searchParams3.contains(searchParams1)); // true
 
 #### `HttpSearchParamsSerialized`
 
-Recursively converts a type to its
+Recursively converts a schema to its
 [URLSearchParams](https://developer.mozilla.org/docs/Web/API/URLSearchParams)-serialized version. Numbers and booleans
 are converted to `${number}` and `${boolean}` respectively, null becomes undefined and not serializable values are
 excluded, such as functions and dates.
@@ -312,6 +314,33 @@ console.log(formData1.equals(formData3)); // false
 console.log(formData1.contains(formData2)); // true
 console.log(formData1.contains(formData3)); // true
 console.log(formData3.contains(formData1)); // false
+```
+
+### `HttpFormData` utility types
+
+#### `HttpFormDataSerialized`
+
+Recursively converts a schema to its [FormData](https://developer.mozilla.org/docs/Web/API/FormData)-serialized version.
+Numbers and booleans are converted to `${number}` and `${boolean}` respectively, and not serializable values are
+excluded, such as functions and dates.
+
+```ts
+import { type HttpFormDataSerialized } from 'zimic/http';
+
+type Schema = HttpFormDataSerialized<{
+  contentTitle: string | null;
+  contentSize: number;
+  content: Blob;
+  full?: boolean;
+  date: Date;
+  method: () => void;
+}>;
+// {
+//   contentTitle: string | null;
+//   contentSize: `${number}`;
+//   content: Blob;
+//   full?: "false" | "true";
+// }
 ```
 
 ## Utility types
