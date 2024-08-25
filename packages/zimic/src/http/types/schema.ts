@@ -293,12 +293,10 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
  * @example
  *   import { type HttpSchema } from 'zimic/http';
  *
- *   // Type header declaration
  *   type UserListHeaders = HttpSchema.Headers<{
  *     accept: string;
  *   }>;
  *
- *   // Type search params declaration
  *   type UserListSearchParams = HttpSchema.SearchParams<{
  *     name?: string;
  *     limit?: `${number}`;
@@ -313,7 +311,7 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
  *         };
  *         response: {
  *           200: {
- *             // Inline header declaration
+ *             // Inline headers declaration
  *             headers: { 'content-type': string };
  *             body: User[];
  *           };
@@ -330,7 +328,7 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service schema.
    *
-   * @deprecated Use {@link HttpSchema} directly instead, which is simpler to use and a drop-in replacement.
+   * @deprecated Use {@link HttpSchema} directly instead, which is a drop-in replacement.
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
