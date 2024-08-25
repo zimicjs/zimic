@@ -3,7 +3,7 @@
 
 import type { HttpHeadersSerialized, HttpSchema, HttpSearchParamsSerialized } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/users': {
     /** List users */
     GET: MyServiceOperations['users/list'];

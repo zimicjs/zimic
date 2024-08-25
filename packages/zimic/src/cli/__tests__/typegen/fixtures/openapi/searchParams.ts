@@ -3,7 +3,7 @@
 
 import type { HttpSchema, HttpSearchParams, HttpSearchParamsSerialized } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/users-with-literal-component-search-params-in-path': {
     GET: {
       request: {

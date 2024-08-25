@@ -3,4 +3,4 @@
 
 import type { HttpSchema } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{}>;
+export type MyServiceSchema = HttpSchema<{}>;

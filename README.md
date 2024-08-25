@@ -61,7 +61,7 @@ interface User {
 }
 
 // Declare your service schema
-type MyServiceSchema = HttpSchema.Paths<{
+type MyServiceSchema = HttpSchema<{
   '/users': {
     GET: {
       response: {

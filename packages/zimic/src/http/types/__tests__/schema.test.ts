@@ -8,7 +8,7 @@ describe('Schema types', () => {
     date: Date;
   }
 
-  type Schema = HttpSchema.Paths<{
+  type Schema = HttpSchema<{
     '/users': {
       POST: {
         request: { body: User };

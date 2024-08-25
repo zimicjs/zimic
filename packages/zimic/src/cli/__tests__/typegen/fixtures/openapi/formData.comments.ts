@@ -3,7 +3,7 @@
 
 import type { HttpFormData, HttpFormDataSerialized, HttpSchema } from '@/http';
 
-export type MyServiceSchema = HttpSchema.Paths<{
+export type MyServiceSchema = HttpSchema<{
   '/upload-with-literal-form-data': {
     POST: {
       request: {

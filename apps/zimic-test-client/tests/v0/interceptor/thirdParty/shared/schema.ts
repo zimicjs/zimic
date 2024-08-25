@@ -49,7 +49,7 @@ export type UserListSearchParams = HttpSchema.SearchParams<{
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
 }>;
 
-type UserPaths = HttpSchema.Paths<{
+type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
@@ -76,7 +76,7 @@ type UserPaths = HttpSchema.Paths<{
   };
 }>;
 
-type UserByIdPaths = HttpSchema.Paths<{
+type UserByIdPaths = HttpSchema<{
   '/users/:id': {
     GET: {
       response: {
@@ -102,7 +102,7 @@ type UserByIdPaths = HttpSchema.Paths<{
   };
 }>;
 
-type SessionPaths = HttpSchema.Paths<{
+type SessionPaths = HttpSchema<{
   '/session/login': {
     POST: {
       request: {
@@ -149,7 +149,7 @@ export type Notification = JSONValue<{
   content: string;
 }>;
 
-export type NotificationServiceSchema = HttpSchema.Paths<{
+export type NotificationServiceSchema = HttpSchema<{
   '/notifications/:userId': {
     GET: {
       response: {
