@@ -52,7 +52,7 @@ Creates an HTTP interceptor, the main interface to intercept HTTP requests and r
 
 > [!TIP]
 >
-> If you are using TypeScript and have an [OpenAPI 3](https://swagger.io/specification) specification, you can use
+> If you are using TypeScript and have an [OpenAPI v3](https://swagger.io/specification) schema, you can use
 > [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
 
 #### Creating a local HTTP interceptor
@@ -1335,6 +1335,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 
 await fetch(`http://localhost:3000/users/${1}`, {
   method: 'PUT',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'new' }),
 });
 
@@ -1359,6 +1360,7 @@ const updateHandler = await interceptor.put('/users/:id').respond((request) => {
 
 await fetch(`http://localhost:3000/users/${1}`, {
   method: 'PUT',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'new' }),
 });
 

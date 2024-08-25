@@ -38,7 +38,7 @@ beforeAll(async () => {
   await myOtherInterceptor.start();
 });
 
-// Clear all interceptors so that no tests affect each other
+// Clear interceptors so that no tests affect each other
 afterEach(() => {
   myInterceptor.clear();
   myOtherInterceptor.clear();

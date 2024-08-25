@@ -35,7 +35,7 @@
     - [`HttpInterceptor`](api‐zimic‐interceptor‐http#httpinterceptor)
     - [`HttpRequestHandler`](api‐zimic‐interceptor‐http#httprequesthandler)
     - [Intercepted HTTP resources](api‐zimic‐interceptor‐http#intercepted-http-resources)
-    - [Declaring HTTP service schemas](api‐zimic‐interceptor‐http‐schemas)
+    - [Declaring HTTP interceptor schemas](api‐zimic‐interceptor‐http‐schemas)
   - [`zimic/interceptor/server`](api‐zimic‐interceptor‐server)
   - [`zimic/typegen`](api‐zimic‐typegen)
 - [CLI reference](cli‐zimic)

@@ -15,7 +15,7 @@ errors and keep your types consistent with specifications, such as [OpenAPI](htt
 
 ## `zimic typegen openapi`
 
-Generate types from an [OpenAPI 3](https://swagger.io/specification) schema.
+Generate types from an [OpenAPI v3](https://swagger.io/specification) schema.
 
 ```
 zimic typegen openapi <input>

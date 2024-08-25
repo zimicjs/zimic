@@ -198,7 +198,7 @@ use remote interceptors.
 
    In this example, we're [creating an interceptor](api‐zimic‐interceptor‐http#httpinterceptorcreateoptions) for a
    service supporting `GET` requests to `/users`. A successful response contains an array of `User` objects. Learn more
-   about declaring [HTTP service schemas](api‐zimic‐interceptor‐http‐schemas).
+   about declaring [HTTP interceptor schemas](api‐zimic‐interceptor‐http‐schemas).
 
    You can also use [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema.
 
@@ -269,7 +269,7 @@ use remote interceptors.
       - [Static responses](api‐zimic‐interceptor‐http#static-responses)
       - [Computed responses](api‐zimic‐interceptor‐http#computed-responses)
   - [Intercepted HTTP resources](api‐zimic‐interceptor‐http#intercepted-http-resources)
-  - [Declaring HTTP service schemas](api‐zimic‐interceptor‐http‐schemas)
+  - [Declaring HTTP interceptor schemas](api‐zimic‐interceptor‐http‐schemas)
 
 - Explore the [`zimic` CLI](cli‐zimic):
 
