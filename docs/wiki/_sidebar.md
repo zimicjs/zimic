@@ -1,4 +1,4 @@
-- [Home](home)
+- [Introduction](home)
 - [Getting started](getting‐started)
   - [Requirements](getting‐started#1-requirements)
   - [Installation](getting‐started#2-installation)
