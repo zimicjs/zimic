@@ -502,50 +502,61 @@ describe('HttpSearchParams', () => {
 
   describe('Types', () => {
     it('should correctly serialize a type to search params', () => {
-      expectTypeOf<HttpSearchParamsSerialized<string>>().toEqualTypeOf<string>();
+      type SerializedSearchParams = HttpSearchParamsSerialized<{
+        requiredString: string;
+        requiredUndefinedString: string | undefined;
+        optionalString?: string;
+        requiredNumber: number;
+        requiredUndefinedNumber: number | undefined;
+        optionalNumber?: number;
+        requiredBoolean: boolean;
+        requiredUndefinedBoolean: boolean | undefined;
+        optionalBoolean?: boolean;
 
-      expectTypeOf<HttpSearchParamsSerialized<string>>().toEqualTypeOf<string>();
-      expectTypeOf<HttpSearchParamsSerialized<number>>().toEqualTypeOf<`${number}`>();
-      expectTypeOf<HttpSearchParamsSerialized<boolean>>().toEqualTypeOf<`${boolean}`>();
-      expectTypeOf<HttpSearchParamsSerialized<null>>().toEqualTypeOf<undefined>();
-      expectTypeOf<HttpSearchParamsSerialized<undefined>>().toEqualTypeOf<undefined>();
-      expectTypeOf<HttpSearchParamsSerialized<string[]>>().toEqualTypeOf<string[]>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: string }>>().toEqualTypeOf<{ a: string }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a?: string }>>().toEqualTypeOf<{ a?: string }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: string | undefined }>>().toEqualTypeOf<{ a: string | undefined }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a?: string | undefined }>>().toEqualTypeOf<{
-        a?: string | undefined;
+        requiredEnum: 'value1' | 'value2';
+        optionalEnum?: 'value1' | 'value2';
+        nullableString: string | null;
+
+        stringArray: string[];
+        numberArray: number[];
+        booleanArray: boolean[];
+
+        object: { property: string };
+
+        date: Date;
+        method: () => void;
+        symbol: symbol;
+        map: Map<number, string>;
+        set: Set<string>;
+        error: Error;
+      }>;
+
+      expectTypeOf<SerializedSearchParams>().branded.toEqualTypeOf<{
+        requiredString: string;
+        requiredUndefinedString: string | undefined;
+        optionalString?: string;
+        requiredNumber: `${number}`;
+        requiredUndefinedNumber: `${number}` | undefined;
+        optionalNumber?: `${number}`;
+        requiredBoolean: `${boolean}`;
+        requiredUndefinedBoolean: `${boolean}` | undefined;
+        optionalBoolean?: `${boolean}`;
+
+        requiredEnum: 'value1' | 'value2';
+        optionalEnum?: 'value1' | 'value2';
+        nullableString: string | undefined;
+
+        stringArray: string[];
+        numberArray: `${number}`[];
+        booleanArray: `${boolean}`[];
       }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: string }[]>>().toEqualTypeOf<never[]>();
-      expectTypeOf<
-        HttpSearchParamsSerialized<{
-          a: string;
-          b: { c: { d: string[] } };
-        }>
-      >().toEqualTypeOf<{ a: string }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: string | null }>>().toEqualTypeOf<{ a: string | undefined }>();
 
-      type NewType = HttpSearchParamsSerialized<Date>;
-
-      expectTypeOf<NewType>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: Date }>>().toEqualTypeOf<{}>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: Date[]; b: string }>>().toEqualTypeOf<{ a: never[]; b: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<string[]>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpSearchParamsSerialized<Date>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<() => void>>().toEqualTypeOf<never>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: () => void }>>().toEqualTypeOf<{}>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: () => void; b: string }>>().toEqualTypeOf<{ b: string }>();
-      expectTypeOf<
-        HttpSearchParamsSerialized<{
-          a: (value: string, otherValue: Map<number, string>) => Error;
-          b: string;
-        }>
-      >().toEqualTypeOf<{ b: string }>();
-      expectTypeOf<HttpSearchParamsSerialized<{ a: symbol; b: string }>>().toEqualTypeOf<{ b: string }>();
-      expectTypeOf<
-        HttpSearchParamsSerialized<{
-          a: Error;
-          b: string;
-        }>
-      >().toEqualTypeOf<{ b: string }>();
+      expectTypeOf<HttpSearchParamsSerialized<symbol>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpSearchParamsSerialized<Map<never, never>>>().toEqualTypeOf<never>();
+      expectTypeOf<HttpSearchParamsSerialized<Set<never>>>().toEqualTypeOf<never>();
     });
   });
 });

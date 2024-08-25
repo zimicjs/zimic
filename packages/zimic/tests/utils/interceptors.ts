@@ -54,18 +54,20 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): LocalHttpInterceptor<Schema>;
+): LocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): RemoteHttpInterceptor<Schema>;
+): RemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
+): LocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>> | RemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
-  }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
+  }) satisfies HttpInterceptor<HttpSchema.ConvertToStrict<Schema>> as
+    | LocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>
+    | RemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
 }
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (
@@ -78,20 +80,22 @@ interface UsingInterceptorOptions {
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callback: UsingInterceptorCallback<Schema>,
+  callback: UsingInterceptorCallback<HttpSchema.ConvertToStrict<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   options: UsingInterceptorOptions,
-  callback: UsingInterceptorCallback<Schema>,
+  callback: UsingInterceptorCallback<HttpSchema.ConvertToStrict<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callbackOrOptions: UsingInterceptorCallback<Schema> | UsingInterceptorOptions,
-  optionalCallback?: UsingInterceptorCallback<Schema>,
+  callbackOrOptions: UsingInterceptorCallback<HttpSchema.ConvertToStrict<Schema>> | UsingInterceptorOptions,
+  optionalCallback?: UsingInterceptorCallback<HttpSchema.ConvertToStrict<Schema>>,
 ): Promise<void> {
   const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<Schema>;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<
+    HttpSchema.ConvertToStrict<Schema>
+  >;
 
   const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
 

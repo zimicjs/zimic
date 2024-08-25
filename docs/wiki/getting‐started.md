@@ -150,12 +150,11 @@ use remote interceptors.
    <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
    ```ts
-   import { JSONValue } from 'zimic';
    import { httpInterceptor } from 'zimic/interceptor/http';
 
-   type User = JSONValue<{
+   interface User {
      username: string;
-   }>;
+   }
 
    const interceptor = httpInterceptor.create<{
      '/users': {
@@ -174,12 +173,11 @@ use remote interceptors.
    </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
-   import { JSONValue } from 'zimic';
    import { httpInterceptor } from 'zimic/interceptor/http';
 
-   type User = JSONValue<{
+   interface User {
      username: string;
-   }>;
+   }
 
    const interceptor = httpInterceptor.create<{
      '/users': {

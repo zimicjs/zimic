@@ -5,7 +5,6 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
-import { JSONValue } from '@/types/json';
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
@@ -19,10 +18,10 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
 
   const crypto = await importCrypto();
 
-  type User = JSONValue<{
+  interface User {
     id: string;
     name: string;
-  }>;
+  }
 
   const users: User[] = [
     { id: crypto.randomUUID(), name: 'User 1' },
