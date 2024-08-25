@@ -1,4 +1,4 @@
-- [🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic+with&type=wikis)
+[🔍 Search](https://github.com/search?q=repo%3Azimicjs%2Fzimic+with&type=wikis)
 
 ---
 
