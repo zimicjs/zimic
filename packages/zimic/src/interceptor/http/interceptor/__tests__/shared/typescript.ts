@@ -641,7 +641,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
   });
 
   it('should correctly type paths with multiple methods', async () => {
-    type Schema = HttpSchema.Paths<{
+    type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: { body: User };
@@ -900,15 +900,15 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       GET: UserGetMethod;
     }>;
 
-    type UserPaths = HttpSchema.Paths<{
+    type UserPaths = HttpSchema<{
       '/users': UserCreationMethods;
     }>;
 
-    type UserByIdPaths = HttpSchema.Paths<{
+    type UserByIdPaths = HttpSchema<{
       '/users/:id': UserGetMethods;
     }>;
 
-    type InterceptorSchema = HttpSchema.Paths<UserPaths & UserByIdPaths>;
+    type InterceptorSchema = HttpSchema<UserPaths & UserByIdPaths>;
 
     const _compositeInterceptor = createHttpInterceptor<InterceptorSchema>({ type, baseURL });
 
@@ -918,7 +918,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
   });
 
   describe('Dynamic paths', () => {
-    type SchemaWithDynamicPaths = HttpSchema.Paths<{
+    type SchemaWithDynamicPaths = HttpSchema<{
       '/:any': {
         GET: { response: { 200: { body: 'path /:any' } } };
       };

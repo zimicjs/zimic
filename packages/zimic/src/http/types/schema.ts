@@ -40,6 +40,10 @@ export interface HttpRequestSchema {
   body?: HttpBody.Loose;
 }
 
+type ConvertToStrictHttpRequestSchema<Schema> = {
+  [Key in keyof Schema]: Key extends 'body' ? HttpBody.ConvertToStrict<Schema[Key]> : Schema[Key];
+};
+
 /**
  * A schema representing the structure of an HTTP response.
  *
@@ -56,6 +60,8 @@ export namespace HttpResponseSchema {
     body?: null;
   }
 }
+
+type ConvertToStrictHttpResponseSchema<Schema> = ConvertToStrictHttpRequestSchema<Schema>;
 
 /**
  * The status codes used in HTTP responses, as defined by
@@ -207,6 +213,10 @@ export namespace HttpResponseSchemaByStatusCode {
 export type HttpResponseSchemaByStatusCode =
   HttpResponseSchemaByStatusCode.ConvertToStrict<HttpResponseSchemaByStatusCode.Loose>;
 
+type ConvertToStrictHttpResponseSchemaByStatusCode<Schema> = {
+  [Key in keyof Schema]: ConvertToStrictHttpResponseSchema<Schema[Key]>;
+};
+
 /**
  * Extracts the status codes used in a response schema by status code.
  *
@@ -242,6 +252,14 @@ export namespace HttpMethodSchema {
   }
 }
 
+type ConvertToStrictMethod<Schema> = {
+  [Key in keyof Schema]: Key extends 'request'
+    ? ConvertToStrictHttpRequestSchema<Schema[Key]>
+    : Key extends 'response'
+      ? ConvertToStrictHttpResponseSchemaByStatusCode<Schema[Key]>
+      : Schema[Key];
+};
+
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
@@ -257,9 +275,17 @@ export interface HttpMethodsSchema {
   OPTIONS?: HttpMethodSchema.NoRequestBody;
 }
 
+type ConvertToStrictHttpMethodsSchema<Schema> = {
+  [Method in keyof Schema]: ConvertToStrictMethod<Schema[Method]>;
+};
+
 interface BaseHttpSchema {
   [path: string]: HttpMethodsSchema;
 }
+
+export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
+  [Path in keyof Schema]: ConvertToStrictHttpMethodsSchema<Schema[Path]>;
+};
 
 /**
  * Declares an HTTP service schema.
@@ -298,17 +324,13 @@ interface BaseHttpSchema {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP Interceptor Schemas}
  */
-export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = Schema;
+export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
 
 export namespace HttpSchema {
-  export type ConvertToStrict<Schema extends HttpSchema> = {
-    [Path in keyof Schema]: ConvertToStrictMethods<Schema[Path]>;
-  };
-
   /**
    * Declares an HTTP service schema.
    *
-   * @deprecated Use {@link HttpSchema} directly instead.
+   * @deprecated Use {@link HttpSchema} directly instead, which is simpler to use and a drop-in replacement.
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
@@ -322,11 +344,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Paths<Schema extends HttpSchema> = ConvertToStrict<Schema>;
-
-  type ConvertToStrictMethods<Schema> = {
-    [Method in keyof Schema]: ConvertToStrictMethod<Schema[Method]>;
-  };
+  export type Paths<Schema extends BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
 
   /**
    * Declares an HTTP service methods schema.
@@ -346,19 +364,7 @@ export namespace HttpSchema {
    *     '/users': UserMethods;
    *   }>;
    */
-  export type Methods<Schema extends HttpMethodsSchema> = ConvertToStrictMethods<Schema>;
-
-  type ConvertToStrictRequestOrResponse<Schema> = {
-    [Key in keyof Schema]: Key extends 'body' ? HttpBody.ConvertToStrict<Schema[Key]> : Schema[Key];
-  };
-
-  type ConvertToStrictMethod<Schema> = {
-    [Key in keyof Schema]: Key extends 'request'
-      ? ConvertToStrictRequestOrResponse<Schema[Key]>
-      : Key extends 'response'
-        ? ConvertToStrictResponseByStatusCode<Schema[Key]>
-        : Schema[Key];
-  };
+  export type Methods<Schema extends HttpMethodsSchema> = ConvertToStrictHttpMethodsSchema<Schema>;
 
   /**
    * Declares an HTTP service method schema.
@@ -402,11 +408,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Request<Schema extends HttpRequestSchema> = ConvertToStrictRequestOrResponse<Schema>;
-
-  type ConvertToStrictResponseByStatusCode<Schema> = {
-    [Key in keyof Schema]: ConvertToStrictRequestOrResponse<Schema[Key]>;
-  };
+  export type Request<Schema extends HttpRequestSchema> = ConvertToStrictHttpRequestSchema<Schema>;
 
   /**
    * Declares an HTTP service response schema by status code.
@@ -428,7 +430,7 @@ export namespace HttpSchema {
    *   }>;
    */
   export type ResponseByStatusCode<Schema extends HttpResponseSchemaByStatusCode> =
-    ConvertToStrictResponseByStatusCode<Schema>;
+    ConvertToStrictHttpResponseSchemaByStatusCode<Schema>;
 
   /**
    * Declares an HTTP service response schema.
@@ -450,7 +452,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Response<Schema extends HttpResponseSchema> = ConvertToStrictRequestOrResponse<Schema>;
+  export type Response<Schema extends HttpResponseSchema> = ConvertToStrictHttpResponseSchema<Schema>;
 
   /**
    * Declares an HTTP body schema.

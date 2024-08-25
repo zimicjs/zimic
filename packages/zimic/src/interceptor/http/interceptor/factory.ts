@@ -1,4 +1,4 @@
-import { HttpSchema } from '@/http/types/schema';
+import { ConvertToStrictHttpSchema, HttpSchema } from '@/http/types/schema';
 
 import UnknownHttpInterceptorTypeError from './errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptor from './LocalHttpInterceptor';
@@ -28,26 +28,26 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
  */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): PublicLocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
+): PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): PublicRemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
+): PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ):
-  | PublicLocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>
-  | PublicRemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>;
+  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
+  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ):
-  | PublicLocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>
-  | PublicRemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>> {
+  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
+  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>> {
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
-    return new LocalHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>(options);
+    return new LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
   } else if (isRemoteHttpInterceptorOptions(options)) {
-    return new RemoteHttpInterceptor<HttpSchema.ConvertToStrict<Schema>>(options);
+    return new RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
   }
 
   throw new UnknownHttpInterceptorTypeError(type);
