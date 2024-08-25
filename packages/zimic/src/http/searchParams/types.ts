@@ -7,6 +7,12 @@ export interface HttpSearchParamsSchema {
   [paramName: string]: string | string[] | undefined;
 }
 
+export namespace HttpSearchParamsSchema {
+  /** A schema for loose HTTP URL search parameters. Parameter values are not strictly typed. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any>;
+}
+
 /** A strict tuple representation of a {@link HttpSearchParamsSchema}. */
 export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = {
   [Key in keyof Schema & string]: [Key, ArrayItemIfArray<Defined<Schema[Key]>>];

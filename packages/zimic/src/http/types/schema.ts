@@ -1,8 +1,9 @@
 import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify, NonEmptyArray } from '@/types/utils';
 
-import { HttpFormDataSchema } from '../formData/types';
-import { HttpHeadersSchema } from '../headers/types';
-import { HttpSearchParamsSchema } from '../searchParams/types';
+import { HttpFormDataSchema, HttpFormDataSerialized } from '../formData/types';
+import { HttpHeadersSchema, HttpHeadersSerialized } from '../headers/types';
+import { HttpPathParamsSchema, HttpPathParamsSerialized } from '../pathParams/types';
+import { HttpSearchParamsSchema, HttpSearchParamsSerialized } from '../searchParams/types';
 import { HttpBody } from './requests';
 
 export const HTTP_METHODS_WITH_REQUEST_BODY = Object.freeze(['POST', 'PUT', 'PATCH', 'DELETE'] as const);
@@ -25,23 +26,25 @@ export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELET
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-export interface HttpPathParamsSchema {
-  [paramName: string]: string | undefined;
-}
-
 /**
  * A schema representing the structure of an HTTP request.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpRequestSchema {
-  headers?: HttpHeadersSchema;
-  searchParams?: HttpSearchParamsSchema;
+  headers?: HttpHeadersSchema.Loose;
+  searchParams?: HttpSearchParamsSchema.Loose;
   body?: HttpBody.Loose;
 }
 
 type ConvertToStrictHttpRequestSchema<Schema> = {
-  [Key in keyof Schema]: Key extends 'body' ? HttpBody.ConvertToStrict<Schema[Key]> : Schema[Key];
+  [Key in keyof Schema]: Key extends 'headers'
+    ? HttpHeadersSerialized<Schema[Key]>
+    : Key extends 'searchParams'
+      ? HttpSearchParamsSerialized<Schema[Key]>
+      : Key extends 'body'
+        ? HttpBody.ConvertToStrict<Schema[Key]>
+        : Schema[Key];
 };
 
 /**
@@ -50,7 +53,7 @@ type ConvertToStrictHttpRequestSchema<Schema> = {
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpResponseSchema {
-  headers?: HttpHeadersSchema;
+  headers?: HttpHeadersSchema.Loose;
   body?: HttpBody.Loose;
 }
 
@@ -476,9 +479,6 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP body schema.
    *
-   * **IMPORTANT**: the input of `HttpSchema.Body` and all of its internal types must be declared inline or as a type
-   * aliases (`type`). Types other than bodies cannot be interfaces.
-   *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
@@ -494,13 +494,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Body<Schema extends HttpBody> = Schema;
+  export type Body<Schema extends HttpBody.Loose> = HttpBody.ConvertToStrict<Schema>;
 
   /**
    * Declares an HTTP headers schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Headers` and all of its internal types must be declared inline or as a type
-   * aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -522,13 +519,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type Headers<Schema extends HttpHeadersSchema> = Schema;
+  export type Headers<Schema extends HttpHeadersSchema.Loose> = HttpHeadersSerialized<Schema>;
 
   /**
    * Declares an HTTP search params schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a
-   * type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -551,13 +545,10 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type SearchParams<Schema extends HttpSearchParamsSchema> = Schema;
+  export type SearchParams<Schema extends HttpSearchParamsSchema.Loose> = HttpSearchParamsSerialized<Schema>;
 
   /**
    * Declares an HTTP path params schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.PathParams` and all of its internal types must be declared inline or as a
-   * type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema, InferPathParams } from 'zimic/http';
@@ -579,13 +570,10 @@ export namespace HttpSchema {
    *   // Or infer from the path string
    *   type UserByIdPathParams = InferPathParams<Schema, '/users/:userId'>;
    */
-  export type PathParams<Schema extends HttpPathParamsSchema> = Schema;
+  export type PathParams<Schema extends HttpPathParamsSchema.Loose> = HttpPathParamsSerialized<Schema>;
 
   /**
    * Declares an HTTP form data schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a
-   * type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { HttpFormData, type HttpSchema } from 'zimic/http';
@@ -610,7 +598,7 @@ export namespace HttpSchema {
    *     };
    *   }>;
    */
-  export type FormData<Schema extends HttpFormDataSchema> = Schema;
+  export type FormData<Schema extends HttpFormDataSchema.Loose> = HttpFormDataSerialized<Schema>;
 }
 
 /**

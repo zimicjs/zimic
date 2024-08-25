@@ -12,7 +12,11 @@ interface UserWithPassword extends User {
   password: string;
 }
 
-export type UserCreationPayload = Omit<JSONSerialized<UserWithPassword>, 'id'>;
+interface UserCreationRequestHeaders {
+  'content-type'?: string;
+}
+
+export type UserCreationRequestBody = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
 type LoginResult = JSONValue<{
   accessToken: string;
@@ -44,17 +48,17 @@ export interface ConflictError extends RequestError {
   message: string;
 }
 
-export type UserListSearchParams = HttpSchema.SearchParams<{
+export interface UserListSearchParams {
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
-}>;
+}
 
 type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        headers: { 'content-type'?: string };
-        body: UserCreationPayload;
+        headers: UserCreationRequestHeaders;
+        body: UserCreationRequestBody;
       };
       response: {
         201: {

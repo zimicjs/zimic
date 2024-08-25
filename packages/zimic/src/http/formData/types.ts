@@ -5,6 +5,12 @@ export interface HttpFormDataSchema {
   [fieldName: string]: string | string[] | Blob | Blob[] | null | undefined;
 }
 
+export namespace HttpFormDataSchema {
+  /** A schema for loose HTTP form data. Field values are not strictly typed. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any>;
+}
+
 type PrimitiveHttpFormDataSerialized<Type> = Type extends HttpFormDataSchema[string]
   ? Type
   : Type extends (infer ArrayItem)[]

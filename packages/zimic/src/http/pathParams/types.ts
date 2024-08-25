@@ -4,6 +4,12 @@ export interface HttpPathParamsSchema {
   [paramName: string]: string | undefined;
 }
 
+export namespace HttpPathParamsSchema {
+  /** A schema for loose HTTP path parameters. Parameter values are not strictly typed. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Loose = Record<string, any>;
+}
+
 type PrimitiveHttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema[string]
   ? Type
   : Type extends (infer _ArrayItem)[]

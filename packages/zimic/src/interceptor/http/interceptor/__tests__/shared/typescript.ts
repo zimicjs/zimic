@@ -10,6 +10,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import { createHttpInterceptor } from '../../factory';
 import { InferHttpInterceptorSchema } from '../../types/schema';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { HttpHeadersSerialized, HttpSearchParamsSerialized } from '@/http';
 
 export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL } = options;
@@ -86,6 +87,46 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
     });
   });
 
+  it('should correctly type requests with search params not strictly following a search params schema', async () => {
+    interface UserListSearchParams {
+      name: string;
+      usernames: string[];
+      orderBy?: ('name' | 'createdAt')[];
+      date: Date; // Forcing an invalid type
+      method: () => void; // Forcing an invalid type
+    }
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            searchParams: UserListSearchParams;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const listHandler = await interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.searchParams).toEqualTypeOf<
+          HttpSearchParams<HttpSearchParamsSerialized<UserListSearchParams>>
+        >();
+
+        return {
+          status: 200,
+          body: users[0],
+        };
+      });
+
+      const _listRequests = await listHandler.requests();
+      type RequestSearchParams = (typeof _listRequests)[number]['searchParams'];
+      expectTypeOf<RequestSearchParams>().toEqualTypeOf<
+        HttpSearchParams<HttpSearchParamsSerialized<UserListSearchParams>>
+      >();
+    });
+  });
+
   it('should correctly type requests with no search params', async () => {
     await usingHttpInterceptor<{
       '/users': {
@@ -151,6 +192,41 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       const _listRequests = await listHandler.requests();
       type RequestHeaders = (typeof _listRequests)[number]['headers'];
       expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+    });
+  });
+
+  it('should correctly type requests with headers not strictly following a headers schema', async () => {
+    interface UserListHeaders {
+      accept: string;
+      'content-language': string;
+      date: Date; // Forcing an invalid type
+      method: () => void; // Forcing an invalid type
+    }
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const listHandler = await interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
+
+        return {
+          status: 200,
+          body: users[0],
+        };
+      });
+
+      const _listRequests = await listHandler.requests();
+      type RequestHeaders = (typeof _listRequests)[number]['headers'];
+      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
     });
   });
 
@@ -397,9 +473,7 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
 
       type ResponseHeaders = (typeof _requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<
-        HttpHeaders<{ 'content-type': string }> | HttpHeaders | HttpHeaders<{}>
-      >();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<{}>>();
 
       type ResponseStatus = (typeof _requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
@@ -475,6 +549,39 @@ export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterc
       const _listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+    });
+  });
+
+  it('should correctly type responses with headers not strictly following a headers schema', async () => {
+    interface UserListHeaders {
+      accept: string;
+      date: Date; // Forcing an invalid type
+      method: () => void; // Forcing an invalid type
+    }
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: {
+          accept: '*/*',
+        },
+        body: users[0],
+      });
+
+      const _listRequests = await listHandler.requests();
+      type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
     });
   });
 

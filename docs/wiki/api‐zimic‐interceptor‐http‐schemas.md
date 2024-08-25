@@ -373,11 +373,6 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!IMPORTANT]
->
-> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a type aliases
-> (`type`). They cannot be interfaces.
-
 <details open>
   <summary>
     Declaring a request type with a <b>blob</b> body:
@@ -448,11 +443,6 @@ const interceptor = httpInterceptor.create<{
 ```
 
 </details>
-
-> [!IMPORTANT]
->
-> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a type aliases
-> (`type`). They cannot be interfaces.
 
 <details>
   <summary>
@@ -565,11 +555,6 @@ const interceptor = httpInterceptor.create<{
 
 </details>
 
-> [!IMPORTANT]
->
-> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a type aliases
-> (`type`). They cannot be interfaces.
-
 <details open>
   <summary>
     Declaring a response type with a <b>blob</b> body:
@@ -646,11 +631,6 @@ const interceptor = httpInterceptor.create<{
 ```
 
 </details>
-
-> [!IMPORTANT]
->
-> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a type aliases
-> (`type`). They cannot be interfaces.
 
 <details>
   <summary>
