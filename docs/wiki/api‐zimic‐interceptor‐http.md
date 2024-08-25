@@ -492,8 +492,8 @@ Returns the method that matches a handler.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const handler = interceptor.post('/users');
-const method = handler.method();
+const creationHandler = interceptor.post('/users');
+const method = creationHandler.method();
 console.log(method); // 'POST'
 ```
 
@@ -515,8 +515,8 @@ requests.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const handler = interceptor.get('/users');
-const path = handler.path();
+const listHandler = interceptor.get('/users');
+const path = listHandler.path();
 console.log(path); // '/users'
 ```
 
