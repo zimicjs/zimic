@@ -15,11 +15,14 @@
 - [`HttpFormData`](#httpformdata)
   - [Comparing `HttpFormData`](#comparing-httpformdata)
 - [Utility types](#utility-types)
+  - [`HttpSchemaPath`](#httpschemapath)
+    - [`HttpSchemaPath.Literal`](#httpschemapathliteral)
+    - [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral)
+  - [`HttpServiceSchemaPath`](#httpserviceschemapath)
   - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
   - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
-  - [`HttpServiceSchemaPath`](#httpserviceschemapath)
-  - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
   - [`InferPathParams`](#inferpathparams)
+  - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
   - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
 
 ---

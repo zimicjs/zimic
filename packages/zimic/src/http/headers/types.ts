@@ -46,7 +46,7 @@ export type HttpHeadersSchemaName<Schema extends HttpHeadersSchema> = IfNever<Sc
  *     'content-type': string;
  *     'x-remaining-tries': number;
  *     'x-full'?: boolean;
- *     'x-date'?: Date;
+ *     'x-date': Date;
  *     method(): void;
  *   }>;
  *   // {
