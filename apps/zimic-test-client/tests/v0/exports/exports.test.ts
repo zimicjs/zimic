@@ -130,6 +130,7 @@ describe('Exports', () => {
     expectTypeOf<HttpFormDataSerialized<never>>().not.toBeAny();
     expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
+    expectTypeOf<HttpSchema<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();
