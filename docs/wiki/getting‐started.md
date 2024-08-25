@@ -242,7 +242,8 @@ use remote interceptors.
    // https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
    const myInterceptor = httpInterceptor.create<MySchema>({
      type: 'remote',
-     baseURL: 'http://localhost:4000/my-service', // The interceptor server is at http://localhost:4000
+     // The interceptor server is at http://localhost:4000
+     baseURL: 'http://localhost:4000/my-service',
      saveRequests: true, // Allow access to `handler.requests()`
    });
    ```
@@ -323,7 +324,7 @@ use remote interceptors.
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
      const listHandler = myInterceptor
        .get('/users')
-       // Use restrictions to narrow down your mocks
+       // Use restrictions to make declarative assertions and narrow down your mocks
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
        .with({
          headers: { authorization: `Bearer ${token}` },
@@ -348,10 +349,12 @@ use remote interceptors.
      const listRequests = listHandler.requests();
      expect(listRequests).toHaveLength(1);
 
-     // The following assertions are automatically enforced by the declared
-     // restrictions. Requests not matching them will cause warnings and
-     // not be intercepted. If you are not using restrictions, you can assert
-     // the requests manually:
+     // The following assertions are automatically checked by the declared
+     // restrictions and thus are not necessary. Requests not matching them will
+     // cause warnings and not be intercepted by default.
+
+     // If you are not using restrictions, asserting the requests manually is
+     // a good practice:
      expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
 
      expect(listRequests[0].searchParams.size).toBe(1);
@@ -370,7 +373,7 @@ use remote interceptors.
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
      const listHandler = await myInterceptor
        .get('/users')
-       // Use restrictions to narrow down your mocks
+       // Use restrictions to make declarative assertions and narrow down your mocks
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
        .with({
          headers: { authorization: `Bearer ${token}` },
@@ -395,10 +398,12 @@ use remote interceptors.
      const listRequests = await listHandler.requests();
      expect(listRequests).toHaveLength(1);
 
-     // The following assertions are automatically enforced by the declared
-     // restrictions. Requests not matching them will cause warnings and
-     // not be intercepted. If you are not using restrictions, you can assert
-     // the requests manually:
+     // The following assertions are automatically checked by the declared
+     // restrictions and thus are not necessary. Requests not matching them will
+     // cause warnings and not be intercepted by default.
+
+     // If you are not using restrictions, asserting the requests manually is
+     // a good practice:
      expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
 
      expect(listRequests[0].searchParams.size).toBe(1);
