@@ -375,8 +375,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!IMPORTANT]
 >
-> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or using `type`. They cannot
-> be interfaces.
+> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a type aliases
+> (`type`). They cannot be interfaces.
 
 <details open>
   <summary>
@@ -451,8 +451,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!IMPORTANT]
 >
-> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or using `type`. They
-> cannot be interfaces.
+> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a type aliases
+> (`type`). They cannot be interfaces.
 
 <details>
   <summary>
@@ -567,8 +567,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!IMPORTANT]
 >
-> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or using `type`. They cannot
-> be interfaces.
+> The input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a type aliases
+> (`type`). They cannot be interfaces.
 
 <details open>
   <summary>
@@ -649,8 +649,8 @@ const interceptor = httpInterceptor.create<{
 
 > [!IMPORTANT]
 >
-> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or using `type`. They
-> cannot be interfaces.
+> The input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a type aliases
+> (`type`). They cannot be interfaces.
 
 <details>
   <summary>

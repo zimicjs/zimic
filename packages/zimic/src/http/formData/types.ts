@@ -30,7 +30,7 @@ type PrimitiveHttpFormDataSerialized<Type> = Type extends HttpFormDataSchema[str
  *     contentSize?: number;
  *     full?: boolean;
  *     date?: Date;
- *     method(): void;
+ *     method: () => void;
  *   }>;
  *   // {
  *   //   contentTitle: string | undefined;

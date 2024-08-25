@@ -8,13 +8,20 @@ namespace JSON {
 /**
  * Represents or validates a type that is compatible with JSON.
  *
+ * **IMPORTANT**: the input of `JSONValue` and all of its internal types must be declared inline or as a type aliases
+ * (`type`). They cannot be interfaces.
+ *
  * @example
  *   import { type JSONValue } from 'zimic';
  *
  *   // Can be used as a standalone type:
- *   function doSomething(value: JSONValue): string {
- *     // ...
- *   }
+ *   const value: JSONValue = {
+ *     name: 'example',
+ *     tags: ['one', 'two'],
+ *   };
+ *
+ * @example
+ *   import { type JSONValue } from 'zimic';
  *
  *   // Can be used with a type argument to validate a JSON value:
  *   type ValidJSON = JSONValue<{
@@ -23,11 +30,12 @@ namespace JSON {
  *     createdAt: string;
  *   }>;
  *
+ *   // This results in a type error:
  *   type InvalidJSON = JSONValue<{
  *     id: string;
  *     email: string;
  *     createdAt: Date; // `Date` is not a valid JSON value.
- *     save(): Promise<void>; // Functions are not valid JSON values.
+ *     save: () => Promise<void>; // Functions are not valid JSON values.
  *   }>;
  */
 export type JSONValue<Type extends JSON = JSON> = Type;
@@ -48,7 +56,7 @@ export namespace JSONValue {
  *     id: string;
  *     email: string;
  *     createdAt: Date;
- *     save(): Promise<void>;
+ *     save: () => Promise<void>;
  *   }>;
  *   // {
  *   //   id: string;

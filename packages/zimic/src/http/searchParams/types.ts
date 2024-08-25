@@ -94,7 +94,7 @@ type PrimitiveHttpSearchParamsSerialized<Type> = Type extends HttpSearchParamsSc
  *     page?: number;
  *     full?: boolean;
  *     date: Date;
- *     method(): void;
+ *     method: () => void;
  *   }>;
  *   // {
  *   //   query: string | undefined;

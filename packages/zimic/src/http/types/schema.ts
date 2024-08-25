@@ -290,6 +290,9 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
 /**
  * Declares an HTTP service schema.
  *
+ * **IMPORTANT**: the input of `HttpSchema` and all of its internal types, except bodies, must be declared inline or as
+ * a type aliases (`type`). Types other than bodies cannot be interfaces.
+ *
  * @example
  *   import { type HttpSchema } from 'zimic/http';
  *
@@ -328,6 +331,9 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service schema.
    *
+   * **IMPORTANT**: the input of `HttpSchema.Paths` and all of its internal types, except bodies, must be declared
+   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
+   *
    * @deprecated Use {@link HttpSchema} directly instead, which is a drop-in replacement.
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -346,6 +352,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP service methods schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.Methods` and all of its internal types, except bodies, must be declared
+   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -367,6 +376,9 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service method schema.
    *
+   * **IMPORTANT**: the input of `HttpSchema.Method` and all of its internal types, except bodies, must be declared
+   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
+   *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
@@ -386,6 +398,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP service request schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.Request` and all of its internal types, except bodies, must be declared
+   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -411,6 +426,9 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service response schema by status code.
    *
+   * **IMPORTANT**: the input of `HttpSchema.ResponseByStatusCode` and all of its internal types, except bodies, must be
+   * declared inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
+   *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
@@ -432,6 +450,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP service response schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.Response` and all of its internal types, except bodies, must be declared
+   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -455,6 +476,9 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP body schema.
    *
+   * **IMPORTANT**: the input of `HttpSchema.Body` and all of its internal types must be declared inline or as a type
+   * aliases (`type`). Types other than bodies cannot be interfaces.
+   *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
    *
@@ -474,6 +498,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP headers schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.Headers` and all of its internal types must be declared inline or as a type
+   * aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -499,6 +526,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP search params schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.SearchParams` and all of its internal types must be declared inline or as a
+   * type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from 'zimic/http';
@@ -526,6 +556,9 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP path params schema.
    *
+   * **IMPORTANT**: the input of `HttpSchema.PathParams` and all of its internal types must be declared inline or as a
+   * type aliases (`type`). Types other than bodies cannot be interfaces.
+   *
    * @example
    *   import { type HttpSchema, InferPathParams } from 'zimic/http';
    *
@@ -550,6 +583,9 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP form data schema.
+   *
+   * **IMPORTANT**: the input of `HttpSchema.FormData` and all of its internal types must be declared inline or as a
+   * type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { HttpFormData, type HttpSchema } from 'zimic/http';

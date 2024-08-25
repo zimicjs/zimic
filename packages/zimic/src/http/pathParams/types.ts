@@ -31,7 +31,7 @@ type PrimitiveHttpPathParamsSerialized<Type> =
  *     notificationId: number | null;
  *     full?: boolean;
  *     from?: Date;
- *     method(): void;
+ *     method: () => void;
  *   }>;
  *   // {
  *   //   userId: string;

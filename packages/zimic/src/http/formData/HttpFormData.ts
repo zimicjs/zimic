@@ -7,6 +7,9 @@ import { HttpFormDataSchema } from './types';
  * An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
  * {@link https://developer.mozilla.org/docs/Web/API/FormData `FormData`} class.
  *
+ * **IMPORTANT**: the input of `HttpFormData` and all of its internal types must be declared inline or as a type aliases
+ * (`type`). They cannot be interfaces.
+ *
  * @example
  *   import { HttpFormData } from 'zimic/http';
  *
