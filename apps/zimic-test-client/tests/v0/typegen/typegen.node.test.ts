@@ -75,6 +75,12 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
         serviceName: 'Stripe',
         outputFileName: 'stripe-3.0.openapi.ts',
       },
+      {
+        input:
+          'https://docs-be.here.com/bundle/geocoding-and-search-api-v7-api-reference/page/open-search-v7-external-spec.json',
+        serviceName: 'Here',
+        outputFileName: 'here-geocoding-search-v7-3.0.openapi.ts',
+      },
     ])(
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',
       async ({ input, serviceName, outputFileName }) => {
