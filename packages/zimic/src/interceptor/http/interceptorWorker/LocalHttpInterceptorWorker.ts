@@ -1,8 +1,9 @@
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
+import * as mswBrowser from 'msw/browser';
+import * as mswNode from 'msw/node';
 
 import { HttpRequest } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
-import { importMSWBrowser, importMSWNode } from '@/utils/msw';
 import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
@@ -35,25 +36,22 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     return this._internalWorker;
   }
 
-  async internalWorkerOrLoad() {
+  internalWorkerOrCreate() {
     if (!this._internalWorker) {
-      this._internalWorker = await this.createInternalWorker();
+      this._internalWorker = this.createInternalWorker();
     }
     return this._internalWorker;
   }
 
-  private async createInternalWorker() {
-    const { setupServer } = await importMSWNode();
-    if (typeof setupServer !== 'undefined') {
-      return setupServer();
+  private createInternalWorker() {
+    if (typeof mswNode.setupServer !== 'undefined') {
+      return mswNode.setupServer();
     }
 
-    const { setupWorker } = await importMSWBrowser();
     /* istanbul ignore else -- @preserve */
-    if (typeof setupWorker !== 'undefined') {
-      return setupWorker();
+    if (typeof mswBrowser.setupWorker !== 'undefined') {
+      return mswBrowser.setupWorker();
     }
-
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
     throw new UnknownHttpInterceptorPlatformError();
@@ -61,7 +59,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      const internalWorker = await this.internalWorkerOrLoad();
+      const internalWorker = this.internalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: async (request) => {
@@ -101,8 +99,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async stop() {
-    await super.sharedStop(async () => {
-      const internalWorker = await this.internalWorkerOrLoad();
+    await super.sharedStop(() => {
+      const internalWorker = this.internalWorkerOrCreate();
 
       if (this.isInternalBrowserWorker(internalWorker)) {
         this.stopInBrowser(internalWorker);

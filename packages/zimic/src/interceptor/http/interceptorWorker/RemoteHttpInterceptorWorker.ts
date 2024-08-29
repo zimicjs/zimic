@@ -1,9 +1,11 @@
+import * as mswBrowser from 'msw/browser';
+import * as mswNode from 'msw/node';
+
 import { HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { importMSWBrowser, importMSWNode } from '@/utils/msw';
 import { createURL, ensureUniquePathParams, excludeNonPathParams, ExtendedURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -55,7 +57,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       await this._webSocketClient.start();
       this._webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
 
-      const platform = await this.readPlatform();
+      const platform = this.readPlatform();
       super.setPlatform(platform);
       super.setIsRunning(true);
     });
@@ -86,15 +88,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
   };
 
-  private async readPlatform(): Promise<HttpInterceptorPlatform> {
-    const { setupServer } = await importMSWNode();
-    if (typeof setupServer !== 'undefined') {
+  private readPlatform(): HttpInterceptorPlatform {
+    if (typeof mswNode.setupServer !== 'undefined') {
       return 'node';
     }
 
-    const { setupWorker } = await importMSWBrowser();
     /* istanbul ignore else -- @preserve */
-    if (typeof setupWorker !== 'undefined') {
+    if (typeof mswBrowser.setupWorker !== 'undefined') {
       return 'browser';
     }
 
