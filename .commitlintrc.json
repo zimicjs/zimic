@@ -29,7 +29,8 @@
         "examples-jest-jsdom",
         "examples-playwright",
         "examples-next-js-app",
-        "examples-next-js-pages"
+        "examples-next-js-pages",
+        "examples-openapi-typegen"
       ]
     ],
     "scope-empty": [2, "never"]
