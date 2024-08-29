@@ -58,13 +58,13 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
     it.concurrent.each([
       {
         input:
-          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml',
+          'https://raw.githubusercontent.com/github/rest-api-description/8bec6e8fe8562e79a6034437e4e097e10df9cd2c/descriptions/api.github.com/api.github.com.yaml',
         serviceName: 'GitHub',
         outputFileName: 'github-3.0.openapi.ts',
       },
       {
         input:
-          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions-next/api.github.com/api.github.com.yaml',
+          'https://raw.githubusercontent.com/github/rest-api-description/8bec6e8fe8562e79a6034437e4e097e10df9cd2c/descriptions-next/api.github.com/api.github.com.yaml',
         serviceName: 'GitHub',
         outputFileName: 'github-3.1.openapi.ts',
       },
