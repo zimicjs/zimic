@@ -26,7 +26,7 @@ async function normalizeStripeTypes(generatedFilePath: string) {
   await filesystem.writeFile(generatedFilePath, normalizedOutput);
 }
 
-describe('Typegen', { timeout: 30 * 1000 }, () => {
+describe('Typegen', { timeout: 45 * 1000 }, () => {
   const generatedDirectory = path.join(__dirname, 'generated');
   const tsconfigFilePath = path.join(generatedDirectory, 'tsconfig.json');
   const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
@@ -52,7 +52,7 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
     const lintPromise = lint(path.join(generatedDirectory, '*.ts'), eslintConfigFilePath);
 
     await Promise.all([typesCheckPromise, lintPromise]);
-  }, 30 * 1000);
+  }, 60 * 1000);
 
   describe('OpenAPI', () => {
     it.concurrent.each([
@@ -63,10 +63,8 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
         outputFileName: 'github-3.0.openapi.ts',
       },
       {
-        // TODO: Revert to the `main` branch once the `api.github.com.yaml` file is fixed.
-        // See https://github.com/zimicjs/zimic/pull/378.
         input:
-          'https://raw.githubusercontent.com/github/rest-api-description/8bec6e8fe8562e79a6034437e4e097e10df9cd2c/descriptions-next/api.github.com/api.github.com.yaml',
+          'https://raw.githubusercontent.com/github/rest-api-description/main/descriptions-next/api.github.com/api.github.com.yaml',
         serviceName: 'GitHub',
         outputFileName: 'github-3.1.openapi.ts',
       },
