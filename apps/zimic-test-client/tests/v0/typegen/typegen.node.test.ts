@@ -75,9 +75,15 @@ describe('Typegen', { timeout: 45 * 1000 }, () => {
       },
       {
         input:
+          'https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.json',
+        serviceName: 'GoogleMaps',
+        outputFileName: 'google-maps-3.0.openapi.ts',
+      },
+      {
+        input:
           'https://docs-be.here.com/bundle/geocoding-and-search-api-v7-api-reference/page/open-search-v7-external-spec.json',
-        serviceName: 'Here',
-        outputFileName: 'here-geocoding-search-v7-3.0.openapi.ts',
+        serviceName: 'HereSearch',
+        outputFileName: 'here-geocoding-search-3.0.openapi.ts',
       },
     ])(
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',
