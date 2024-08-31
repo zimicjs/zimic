@@ -1,14 +1,16 @@
 import axios, { AxiosError } from 'axios';
 
+import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
 
-export async function axiosAsFetch(request: Request): Promise<Response> {
+export async function axiosAsFetch(request: Request, options: { adapter?: 'fetch' } = {}): Promise<Response> {
   try {
     const axiosResponse = await axios({
       url: request.url,
       method: request.method,
       headers: convertHeadersToObject(request.headers),
-      data: await request.text(),
+      data: requestCanHaveBody(request) ? await request.text() : undefined,
+      adapter: options.adapter,
     });
 
     const stringifiedResponseData = axiosResponse.status === 204 ? null : JSON.stringify(axiosResponse.data);

@@ -1,13 +1,18 @@
 import superagent from 'superagent';
 import SuperagentResponse from 'superagent/lib/node/response';
 
+import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject } from '@tests/utils/headers';
 
 export async function superagentAsFetch(request: Request): Promise<Response> {
+  let superAgentRequest = superagent(request.method, request.url).set(convertHeadersToObject(request.headers));
+
+  if (requestCanHaveBody(request)) {
+    superAgentRequest = superAgentRequest.send(await request.text());
+  }
+
   try {
-    const superAgentResponse = await superagent(request.method, request.url)
-      .set(convertHeadersToObject(request.headers))
-      .send(await request.text());
+    const superAgentResponse = await superAgentRequest;
 
     const responseBody = superAgentResponse.status === 204 ? null : superAgentResponse.text;
 
