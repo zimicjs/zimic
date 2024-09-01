@@ -97,15 +97,15 @@
     "chalk": "^4.1.2",
     "execa": "^9.3.1",
     "isomorphic-ws": "^5.0.0",
-    "msw": "^2.3.5",
-    "openapi-typescript": "7.3.0",
+    "msw": "^2.4.1",
+    "openapi-typescript": "7.3.3",
     "ws": "^8.18.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.5.0",
+    "@types/node": "^22.5.1",
     "@types/ws": "^8.5.12",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "2.0.5",
@@ -118,7 +118,7 @@
     "playwright": "^1.46.1",
     "prettier": "^3.3.3",
     "tsup": "^8.2.4",
-    "tsx": "^4.18.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.5.4",
     "vitest": "2.0.5"
   },

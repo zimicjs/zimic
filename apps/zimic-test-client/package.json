@@ -19,13 +19,13 @@
     "zimic0": "workspace:zimic@*"
   },
   "devDependencies": {
-    "@types/superagent": "^8.1.8",
+    "@types/superagent": "^8.1.9",
     "@vitest/browser": "2.0.5",
     "@vitest/coverage-istanbul": "2.0.5",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "axios": "^1.7.5",
+    "axios": "^1.7.7",
     "dotenv-cli": "^7.4.2",
     "execa": "^9.3.1",
     "node-fetch": "^3.3.2",
