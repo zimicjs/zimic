@@ -322,7 +322,7 @@ use remote interceptors.
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-     const listHandler = myInterceptor
+     const myHandler = myInterceptor
        .get('/users')
        // Use restrictions to make declarative assertions and narrow down your mocks
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
@@ -338,27 +338,25 @@ use remote interceptors.
        .respond({ status: 200, body: users });
 
      // Run your application and make requests
-     const fetchedUsers = await myApplication.fetchUsers({
-       token,
-       filters: { username: 'diego' },
-     });
-     expect(fetchedUsers).toEqual(users);
+     // ...
 
-     // Assert yours requests
+     // Check the requests you expect
      // https://bit.ly/zimic-interceptor-http#http-handlerrequests
-     const listRequests = listHandler.requests();
-     expect(listRequests).toHaveLength(1);
+     const requests = myHandler.requests();
+     expect(requests).toHaveLength(1);
 
-     // The following assertions are automatically checked by the declared
-     // restrictions and thus are not necessary. Requests not matching them will
-     // cause warnings and not be intercepted by default.
+     // The following expects are automatically checked by the restrictions
+     // we declared above. Requests not matching them will cause warnings and not
+     // be intercepted.
 
      // If you are not using restrictions, asserting the requests manually is
      // a good practice:
-     expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+     expect(requests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
 
-     expect(listRequests[0].searchParams.size).toBe(1);
-     expect(listRequests[0].searchParams.get('username')).toBe('diego');
+     expect(requests[0].searchParams.size).toBe(1);
+     expect(requests[0].searchParams.get('username')).toBe('diego');
+
+     expect(requests[0].body).toBe(null);
    });
    ```
 
@@ -371,7 +369,7 @@ use remote interceptors.
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-     const listHandler = await myInterceptor
+     const myHandler = await myInterceptor
        .get('/users')
        // Use restrictions to make declarative assertions and narrow down your mocks
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
@@ -387,27 +385,25 @@ use remote interceptors.
        .respond({ status: 200, body: users });
 
      // Run your application and make requests
-     const fetchedUsers = await myApplication.fetchUsers({
-       token,
-       filters: { username: 'diego' },
-     });
-     expect(fetchedUsers).toEqual(users);
+     // ...
 
-     // Assert yours requests
+     // Check the requests you expect
      // https://bit.ly/zimic-interceptor-http#http-handlerrequests
-     const listRequests = await listHandler.requests();
-     expect(listRequests).toHaveLength(1);
+     const requests = await myHandler.requests();
+     expect(requests).toHaveLength(1);
 
-     // The following assertions are automatically checked by the declared
-     // restrictions and thus are not necessary. Requests not matching them will
-     // cause warnings and not be intercepted by default.
+     // The following expects are automatically checked by the restrictions
+     // we declared above. Requests not matching them will cause warnings and not
+     // be intercepted.
 
      // If you are not using restrictions, asserting the requests manually is
      // a good practice:
-     expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+     expect(requests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
 
-     expect(listRequests[0].searchParams.size).toBe(1);
-     expect(listRequests[0].searchParams.get('username')).toBe('diego');
+     expect(requests[0].searchParams.size).toBe(1);
+     expect(requests[0].searchParams.get('username')).toBe('diego');
+
+     expect(requests[0].body).toBe(null);
    });
    ```
 
