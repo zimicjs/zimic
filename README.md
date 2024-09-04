@@ -79,15 +79,29 @@ type MySchema = HttpSchema<{
         409: { body: RequestError }; // Conflict
       };
     };
+
     GET: {
       request: {
-        headers: { authorization?: string };
+        headers: { authorization: string };
         searchParams: { username?: string; limit?: `${number}` };
       };
       response: {
         200: { body: User[] }; // Users listed
         400: { body: RequestError }; // Bad request
         401: { body: RequestError }; // Unauthorized
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {}; // User updated
+        400: { body: RequestError }; // Bad request
       };
     };
   };
@@ -124,7 +138,6 @@ afterAll(async () => {
 // Enjoy mocking!
 test('should list users', async () => {
   const users: User[] = [{ username: 'diego-aquino' }];
-  const token = 'my-token';
 
   // 7. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -133,7 +146,7 @@ test('should list users', async () => {
     // 7.1. Use restrictions to make declarative assertions and narrow down your mocks
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
-      headers: { authorization: `Bearer ${token}` },
+      headers: { authorization: 'Bearer my-token' },
     })
     .with({
       searchParams: { username: 'diego' },
@@ -157,7 +170,7 @@ test('should list users', async () => {
 
   // If you are not using restrictions, asserting the requests manually is
   // a good practice:
-  expect(requests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+  expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
   expect(requests[0].searchParams.size).toBe(1);
   expect(requests[0].searchParams.get('username')).toBe('diego');
