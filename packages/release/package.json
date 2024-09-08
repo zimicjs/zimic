@@ -30,7 +30,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^22.5.1",
+    "@types/node": "^22.5.4",
     "@types/yargs": "^17.0.33",
     "@vitest/coverage-istanbul": "2.0.5",
     "@zimic/eslint-config-node": "workspace:*",
