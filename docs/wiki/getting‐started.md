@@ -159,6 +159,7 @@ use remote interceptors.
    }
 
    interface RequestError {
+     code: string;
      message: string;
    }
 
@@ -169,21 +170,24 @@ use remote interceptors.
        POST: {
          request: { body: User };
          response: {
-           201: { body: User }; // User create
-           400: { body: RequestError }; // Bad request
-           409: { body: RequestError }; // Conflict
+           201: { body: User };
+           400: { body: RequestError };
+           409: { body: RequestError };
          };
        };
 
        GET: {
          request: {
            headers: { authorization: string };
-           searchParams: { username?: string; limit?: `${number}` };
+           searchParams: {
+             username?: string;
+             limit?: `${number}`;
+           };
          };
          response: {
-           200: { body: User[] }; // Users listed
-           400: { body: RequestError }; // Bad request
-           401: { body: RequestError }; // Unauthorized
+           200: { body: User[] };
+           400: { body: RequestError };
+           401: { body: RequestError };
          };
        };
      };
@@ -195,8 +199,8 @@ use remote interceptors.
            body: Partial<User>;
          };
          response: {
-           204: {}; // User updated
-           400: { body: RequestError }; // Bad request
+           204: {};
+           400: { body: RequestError };
          };
        };
      };
@@ -223,6 +227,7 @@ use remote interceptors.
    }
 
    interface RequestError {
+     code: string;
      message: string;
    }
 
@@ -233,21 +238,24 @@ use remote interceptors.
        POST: {
          request: { body: User };
          response: {
-           201: { body: User }; // User create
-           400: { body: RequestError }; // Bad request
-           409: { body: RequestError }; // Conflict
+           201: { body: User };
+           400: { body: RequestError };
+           409: { body: RequestError };
          };
        };
 
        GET: {
          request: {
            headers: { authorization: string };
-           searchParams: { username?: string; limit?: `${number}` };
+           searchParams: {
+             username?: string;
+             limit?: `${number}`;
+           };
          };
          response: {
-           200: { body: User[] }; // Users listed
-           400: { body: RequestError }; // Bad request
-           401: { body: RequestError }; // Unauthorized
+           200: { body: User[] };
+           400: { body: RequestError };
+           401: { body: RequestError };
          };
        };
      };
@@ -259,8 +267,8 @@ use remote interceptors.
            body: Partial<User>;
          };
          response: {
-           204: {}; // User updated
-           400: { body: RequestError }; // Bad request
+           204: {};
+           400: { body: RequestError };
          };
        };
      };
@@ -344,7 +352,7 @@ use remote interceptors.
    <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
    ```ts
-   test('should list users', async () => {
+   test('example', async () => {
      const users: User[] = [{ username: 'diego-aquino' }];
 
      // Declare your mocks
@@ -355,14 +363,14 @@ use remote interceptors.
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
        .with({
          headers: { authorization: 'Bearer my-token' },
-       })
-       .with({
          searchParams: { username: 'diego' },
-         exact: true,
        })
        // Respond with your mock data
        // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
-       .respond({ status: 200, body: users });
+       .respond({
+         status: 200,
+         body: users,
+       });
 
      // Run your application and make requests
      // ...
@@ -390,7 +398,7 @@ use remote interceptors.
    </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
-   test('should list users', async () => {
+   test('example', async () => {
      const users: User[] = [{ username: 'diego-aquino' }];
 
      // Declare your mocks
@@ -401,14 +409,14 @@ use remote interceptors.
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
        .with({
          headers: { authorization: 'Bearer my-token' },
-       })
-       .with({
          searchParams: { username: 'diego' },
-         exact: true,
        })
        // Respond with your mock data
        // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
-       .respond({ status: 200, body: users });
+       .respond({
+         status: 200,
+         body: users,
+       });
 
      // Run your application and make requests
      // ...

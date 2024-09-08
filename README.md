@@ -64,6 +64,7 @@ interface User {
 }
 
 interface RequestError {
+  code: string;
   message: string;
 }
 
@@ -74,21 +75,24 @@ type MySchema = HttpSchema<{
     POST: {
       request: { body: User };
       response: {
-        201: { body: User }; // User created
-        400: { body: RequestError }; // Bad request
-        409: { body: RequestError }; // Conflict
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
       };
     };
 
     GET: {
       request: {
         headers: { authorization: string };
-        searchParams: { username?: string; limit?: `${number}` };
+        searchParams: {
+          username?: string;
+          limit?: `${number}`;
+        };
       };
       response: {
-        200: { body: User[] }; // Users listed
-        400: { body: RequestError }; // Bad request
-        401: { body: RequestError }; // Unauthorized
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
       };
     };
   };
@@ -100,8 +104,8 @@ type MySchema = HttpSchema<{
         body: Partial<User>;
       };
       response: {
-        204: {}; // User updated
-        400: { body: RequestError }; // Bad request
+        204: {};
+        400: { body: RequestError };
       };
     };
   };
@@ -136,7 +140,7 @@ afterAll(async () => {
 });
 
 // Enjoy mocking!
-test('should list users', async () => {
+test('example', async () => {
   const users: User[] = [{ username: 'diego-aquino' }];
 
   // 7. Declare your mocks
@@ -147,14 +151,14 @@ test('should list users', async () => {
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
       headers: { authorization: 'Bearer my-token' },
-    })
-    .with({
       searchParams: { username: 'diego' },
-      exact: true,
     })
     // 7.2. Respond with your mock data
     // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
-    .respond({ status: 200, body: users });
+    .respond({
+      status: 200,
+      body: users,
+    });
 
   // 8. Run your application and make requests
   // ...
