@@ -16,7 +16,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@vitest/browser": "2.0.5",
     "dotenv-cli": "^7.4.2",
-    "playwright": "^1.46.1",
+    "playwright": "^1.47.0",
     "typescript": "^5.5.4",
     "vitest": "2.0.5",
     "zimic": "latest"
