@@ -290,6 +290,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.2
+      '@vitest/spy':
+        specifier: ^2.1.1
+        version: 2.1.1
       dotenv-cli:
         specifier: ^7.4.2
         version: 7.4.2
@@ -396,6 +399,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.5.2
         version: 14.5.2(@testing-library/dom@10.4.0)
+      '@vitest/spy':
+        specifier: ^2.1.1
+        version: 2.1.1
       dotenv-cli:
         specifier: ^7.4.2
         version: 7.4.2
@@ -421,6 +427,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.2
+      '@vitest/spy':
+        specifier: ^2.1.1
+        version: 2.1.1
       dotenv-cli:
         specifier: ^7.4.2
         version: 7.4.2
@@ -503,6 +512,9 @@ importers:
       '@vitest/coverage-istanbul':
         specifier: 2.1.1
         version: 2.1.1(vitest@2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.2)))
+      '@vitest/spy':
+        specifier: ^2.1.1
+        version: 2.1.1
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../eslint-config-node
@@ -6400,7 +6412,7 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser@2.1.1(typescript@5.6.2)(vitest@2.1.1)':
+  '@vitest/browser@2.1.1(@vitest/spy@2.1.1)(typescript@5.6.2)(vitest@2.1.1)':
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.5.2(@testing-library/dom@10.4.0)
@@ -10043,7 +10055,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.7.4
-      '@vitest/browser': 2.1.1(typescript@5.6.2)(vitest@2.1.1)
+      '@vitest/browser': 2.1.1(@vitest/spy@2.1.1)(typescript@5.6.2)(vitest@2.1.1)
       jsdom: 20.0.3(bufferutil@4.0.8)
     transitivePeerDependencies:
       - less
