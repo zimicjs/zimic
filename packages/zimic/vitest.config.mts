@@ -51,6 +51,9 @@ export const defaultConfig: UserConfig = {
       '@@': path.resolve(__dirname, '.'),
     },
   },
+  optimizeDeps: {
+    include: ['@vitest/coverage-istanbul'],
+  },
   plugins: [],
 };
 

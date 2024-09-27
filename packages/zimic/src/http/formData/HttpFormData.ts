@@ -126,30 +126,30 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/keys MDN Reference} */
-  keys(): IterableIterator<keyof Schema & string> {
-    return super.keys() as IterableIterator<keyof Schema & string>;
+  keys(): FormDataIterator<keyof Schema & string> {
+    return super.keys() as FormDataIterator<keyof Schema & string>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/values MDN Reference} */
-  values(): IterableIterator<ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>> {
-    return super.values() as IterableIterator<
+  values(): FormDataIterator<ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>> {
+    return super.values() as FormDataIterator<
       ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>
     >;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/entries MDN Reference} */
-  entries(): IterableIterator<
+  entries(): FormDataIterator<
     [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
   > {
-    return super.entries() as IterableIterator<
+    return super.entries() as FormDataIterator<
       [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
     >;
   }
 
-  [Symbol.iterator](): IterableIterator<
+  [Symbol.iterator](): FormDataIterator<
     [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
   > {
-    return super[Symbol.iterator]() as IterableIterator<
+    return super[Symbol.iterator]() as FormDataIterator<
       [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
     >;
   }
