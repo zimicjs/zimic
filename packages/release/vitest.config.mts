@@ -40,5 +40,8 @@ export default defineConfig({
       '@tests': path.resolve(__dirname, './tests'),
     },
   },
+  optimizeDeps: {
+    include: ['@vitest/coverage-istanbul'],
+  },
   plugins: [],
 });
