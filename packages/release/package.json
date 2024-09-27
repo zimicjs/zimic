@@ -33,6 +33,7 @@
     "@types/node": "^22.7.4",
     "@types/yargs": "^17.0.33",
     "@vitest/coverage-istanbul": "2.1.1",
+    "@vitest/spy": "^2.1.1",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
