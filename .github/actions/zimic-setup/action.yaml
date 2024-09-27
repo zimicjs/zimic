@@ -89,12 +89,14 @@ runs:
 
         if [[ '${{ inputs.build }}' == '' ]]; then
           buildFilters=''
+          fullBuildFilters=''
         else
           buildFilters="$(composeFilterOptions ${{ inputs.build }})"
+          fullBuildFilters="--filter zimic $buildFilters"
         fi
 
         echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
-        pnpm turbo build $buildFilters
+        pnpm turbo build $fullBuildFilters
 
         # apply the build outputs of the internal packages
         pnpm install --offline $fullInstallFilters

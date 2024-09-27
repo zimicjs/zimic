@@ -46,7 +46,7 @@ jobs:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS == '' && '' || format('zimic {0}', env.INSTALL_OPTIONS) }}
-          build: ${{ env.BUILD_OPTIONS == '' && '' || format('zimic {0}', env.BUILD_OPTIONS) }}
+          build: ${{ format('zimic {0}', env.BUILD_OPTIONS) }}
           install-playwright-browsers: true
 
       - name: Check formatting style
@@ -174,7 +174,6 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          install-playwright-browsers: false
 
       - name: Set TypeScript version
         run: |
