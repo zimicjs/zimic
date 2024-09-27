@@ -85,26 +85,26 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/keys MDN Reference} */
-  keys(): IterableIterator<HttpHeadersSchemaName<Schema>> {
-    return super.keys() as IterableIterator<HttpHeadersSchemaName<Schema>>;
+  keys(): HeadersIterator<HttpHeadersSchemaName<Schema>> {
+    return super.keys() as HeadersIterator<HttpHeadersSchemaName<Schema>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
-  values(): IterableIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>> {
-    return super.values() as IterableIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>>;
+  values(): HeadersIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>> {
+    return super.values() as HeadersIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
-  entries(): IterableIterator<[HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]> {
-    return super.entries() as IterableIterator<
+  entries(): HeadersIterator<[HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]> {
+    return super.entries() as HeadersIterator<
       [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
     >;
   }
 
-  [Symbol.iterator](): IterableIterator<
+  [Symbol.iterator](): HeadersIterator<
     [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
   > {
-    return super[Symbol.iterator]() as IterableIterator<
+    return super[Symbol.iterator]() as HeadersIterator<
       [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
     >;
   }
