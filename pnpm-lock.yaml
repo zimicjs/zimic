@@ -56,7 +56,7 @@ importers:
         version: 2.1.1(@vitest/spy@2.1.1)(bufferutil@4.0.8)(playwright@1.47.2)(typescript@5.6.2)(vite@5.3.4(@types/node@22.7.4))(vitest@2.1.1)
       '@vitest/coverage-istanbul':
         specifier: 2.1.1
-        version: 2.1.1(vitest@2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.2)))
+        version: 2.1.1(vitest@2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.2)))
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../../packages/eslint-config-node
@@ -89,7 +89,7 @@ importers:
         version: 5.6.2
       vitest:
         specifier: 2.1.1
-        version: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.2))
+        version: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.2))
 
   examples:
     dependencies:
@@ -558,8 +558,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(ws@8.18.0(bufferutil@4.0.8))
       msw:
-        specifier: 2.4.3
-        version: 2.4.3(typescript@5.6.2)
+        specifier: 2.4.9
+        version: 2.4.9(typescript@5.6.2)
       openapi-typescript:
         specifier: 7.4.1
         version: 7.4.1(encoding@0.1.13)(typescript@5.6.2)
@@ -594,7 +594,7 @@ importers:
         version: 2.1.1(@vitest/spy@2.1.1)(bufferutil@4.0.8)(playwright@1.47.2)(typescript@5.6.2)(vite@5.3.4(@types/node@22.7.4))(vitest@2.1.1)
       '@vitest/coverage-istanbul':
         specifier: 2.1.1
-        version: 2.1.1(vitest@2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.2)))
+        version: 2.1.1(vitest@2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.2)))
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../eslint-config-node
@@ -627,7 +627,7 @@ importers:
         version: 5.6.2
       vitest:
         specifier: 2.1.1
-        version: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.2))
+        version: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.2))
 
 packages:
 
@@ -6418,13 +6418,13 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.5.2(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 2.1.1(@vitest/spy@2.1.1)(msw@2.4.9(typescript@5.6.2))(vite@5.3.4(@types/node@22.7.4))
+      '@vitest/mocker': 2.1.1(@vitest/spy@2.1.1)(msw@2.4.3(typescript@5.6.2))(vite@5.3.4(@types/node@22.7.4))
       '@vitest/utils': 2.1.1
       magic-string: 0.30.11
-      msw: 2.4.9(typescript@5.6.2)
+      msw: 2.4.3(typescript@5.6.2)
       sirv: 2.0.4
       tinyrainbow: 1.2.0
-      vitest: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.2))
+      vitest: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.2))
       ws: 8.18.0(bufferutil@4.0.8)
     optionalDependencies:
       playwright: 1.47.2
@@ -6439,10 +6439,10 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.5.2(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 2.1.1(@vitest/spy@2.1.1)(msw@2.4.9(typescript@5.6.2))(vite@5.3.4(@types/node@22.7.4))
+      '@vitest/mocker': 2.1.1(@vitest/spy@2.1.1)(msw@2.4.3(typescript@5.6.2))(vite@5.3.4(@types/node@22.7.4))
       '@vitest/utils': 2.1.1
       magic-string: 0.30.11
-      msw: 2.4.9(typescript@5.6.2)
+      msw: 2.4.3(typescript@5.6.2)
       sirv: 2.0.4
       tinyrainbow: 1.2.0
       vitest: 2.1.1(@types/node@22.7.4)(@vitest/browser@2.1.1)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.2))
