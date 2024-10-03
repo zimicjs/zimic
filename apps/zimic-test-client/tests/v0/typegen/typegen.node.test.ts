@@ -26,7 +26,7 @@ async function normalizeStripeTypes(generatedFilePath: string) {
   await filesystem.writeFile(generatedFilePath, normalizedOutput);
 }
 
-describe('Typegen', { timeout: 30 * 1000 }, () => {
+describe('Typegen', { timeout: 45 * 1000 }, () => {
   const generatedDirectory = path.join(__dirname, 'generated');
   const tsconfigFilePath = path.join(generatedDirectory, 'tsconfig.json');
   const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
@@ -52,7 +52,7 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
     const lintPromise = lint(path.join(generatedDirectory, '*.ts'), eslintConfigFilePath);
 
     await Promise.all([typesCheckPromise, lintPromise]);
-  }, 30 * 1000);
+  }, 60 * 1000);
 
   describe('OpenAPI', () => {
     it.concurrent.each([
@@ -72,6 +72,18 @@ describe('Typegen', { timeout: 30 * 1000 }, () => {
         input: 'https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.yaml',
         serviceName: 'Stripe',
         outputFileName: 'stripe-3.0.openapi.ts',
+      },
+      {
+        input:
+          'https://raw.githubusercontent.com/googlemaps/openapi-specification/main/dist/google-maps-platform-openapi3.json',
+        serviceName: 'GoogleMaps',
+        outputFileName: 'google-maps-3.0.openapi.ts',
+      },
+      {
+        input:
+          'https://docs-be.here.com/bundle/geocoding-and-search-api-v7-api-reference/page/open-search-v7-external-spec.json',
+        serviceName: 'HereSearch',
+        outputFileName: 'here-geocoding-search-3.0.openapi.ts',
       },
     ])(
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',

@@ -133,28 +133,30 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys MDN Reference} */
-  keys(): IterableIterator<HttpSearchParamsSchemaName<Schema>> {
-    return super.keys() as IterableIterator<HttpSearchParamsSchemaName<Schema>>;
+  keys(): URLSearchParamsIterator<HttpSearchParamsSchemaName<Schema>> {
+    return super.keys() as URLSearchParamsIterator<HttpSearchParamsSchemaName<Schema>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
-  values(): IterableIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
-    return super.values() as IterableIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>>;
+  values(): URLSearchParamsIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
+    return super.values() as URLSearchParamsIterator<
+      ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>
+    >;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
-  entries(): IterableIterator<
+  entries(): URLSearchParamsIterator<
     [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
   > {
-    return super.entries() as IterableIterator<
+    return super.entries() as URLSearchParamsIterator<
       [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }
 
-  [Symbol.iterator](): IterableIterator<
+  [Symbol.iterator](): URLSearchParamsIterator<
     [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
   > {
-    return super[Symbol.iterator]() as IterableIterator<
+    return super[Symbol.iterator]() as URLSearchParamsIterator<
       [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }

@@ -93,7 +93,7 @@ abstract class HttpInterceptorWorker {
 
   abstract stop(): Promise<void>;
 
-  protected async sharedStop(internalStop: () => Promise<void>) {
+  protected async sharedStop(internalStop: () => PossiblePromise<void>) {
     if (!this.isRunning()) {
       return;
     }
@@ -101,8 +101,12 @@ abstract class HttpInterceptorWorker {
       return this.stoppingPromise;
     }
 
-    this.stoppingPromise = internalStop();
-    await this.stoppingPromise;
+    const stoppingResult = internalStop();
+
+    if (stoppingResult instanceof Promise) {
+      this.stoppingPromise = stoppingResult;
+      await this.stoppingPromise;
+    }
 
     this.stoppingPromise = undefined;
   }

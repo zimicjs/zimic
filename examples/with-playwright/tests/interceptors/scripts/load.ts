@@ -1,5 +1,3 @@
-import { execa as $ } from 'execa';
-
 import githubInterceptor, { githubFixtures } from '../github';
 
 async function runOnReadyCommand() {
@@ -7,6 +5,8 @@ async function runOnReadyCommand() {
 
   if (commandDivisorIndex !== -1) {
     const [command, ...commandArguments] = process.argv.slice(commandDivisorIndex + 1);
+
+    const { execa: $ } = await import('execa');
     await $(command, commandArguments, { stdio: 'inherit' });
   }
 }

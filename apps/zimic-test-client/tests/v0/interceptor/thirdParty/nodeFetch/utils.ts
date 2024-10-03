@@ -1,14 +1,13 @@
 import fetch from 'node-fetch';
 
+import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
 
 export async function nodeFetchAsFetch(request: Request): Promise<Response> {
-  const requestCanContainBody = request.method === 'GET' || request.method === 'HEAD';
-
   const response = await fetch(request.url, {
     method: request.method,
     headers: convertHeadersToObject(request.headers),
-    body: requestCanContainBody ? undefined : await request.text(),
+    body: requestCanHaveBody(request) ? await request.text() : undefined,
   });
 
   const responseBody = response.status === 204 ? undefined : await response.text();

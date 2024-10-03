@@ -1,15 +1,20 @@
 /// <reference types="vitest" />
 
+import os from 'os';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
+
+const numberOfCPUs = os.cpus().length;
+const maxWorkers = process.env.CI === 'true' ? numberOfCPUs : Math.ceil(numberOfCPUs / 2);
 
 export default defineConfig({
   publicDir: './public',
   test: {
     globals: false,
     testTimeout: 5000,
-    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
     minWorkers: 1,
+    maxWorkers,
+    maxConcurrency: maxWorkers,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -37,6 +42,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
     },
+  },
+  optimizeDeps: {
+    include: ['@vitest/coverage-istanbul'],
   },
   plugins: [],
 });

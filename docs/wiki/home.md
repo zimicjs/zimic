@@ -75,6 +75,7 @@ interface User {
 }
 
 interface RequestError {
+  code: string;
   message: string;
 }
 
@@ -85,20 +86,37 @@ type MySchema = HttpSchema<{
     POST: {
       request: { body: User };
       response: {
-        201: { body: User }; // User create
-        400: { body: RequestError }; // Bad request
-        409: { body: RequestError }; // Conflict
+        201: { body: User };
+        400: { body: RequestError };
+        409: { body: RequestError };
       };
     };
+
     GET: {
       request: {
-        headers: { authorization?: string };
-        searchParams: { username?: string; limit?: `${number}` };
+        headers: { authorization: string };
+        searchParams: {
+          username?: string;
+          limit?: `${number}`;
+        };
       };
       response: {
-        200: { body: User[] }; // Users listed
-        400: { body: RequestError }; // Bad request
-        401: { body: RequestError }; // Unauthorized
+        200: { body: User[] };
+        400: { body: RequestError };
+        401: { body: RequestError };
+      };
+    };
+  };
+
+  '/users/:userId': {
+    PATCH: {
+      request: {
+        headers: { authorization: string };
+        body: Partial<User>;
+      };
+      response: {
+        204: {};
+        400: { body: RequestError };
       };
     };
   };
@@ -133,49 +151,46 @@ afterAll(async () => {
 });
 
 // Enjoy mocking!
-test('should list users', async () => {
+test('example', async () => {
   const users: User[] = [{ username: 'diego-aquino' }];
-  const token = 'my-token';
 
   // 7. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-  const listHandler = myInterceptor
+  const myHandler = myInterceptor
     .get('/users')
     // 7.1. Use restrictions to make declarative assertions and narrow down your mocks
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
-      headers: { authorization: `Bearer ${token}` },
-    })
-    .with({
+      headers: { authorization: 'Bearer my-token' },
       searchParams: { username: 'diego' },
-      exact: true,
     })
     // 7.2. Respond with your mock data
     // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
-    .respond({ status: 200, body: users });
+    .respond({
+      status: 200,
+      body: users,
+    });
 
   // 8. Run your application and make requests
-  const fetchedUsers = await myApplication.fetchUsers({
-    token,
-    filters: { username: 'diego' },
-  });
-  expect(fetchedUsers).toEqual(users);
+  // ...
 
-  // 9. Assert yours requests
+  // 9. Check the requests you expect
   // https://bit.ly/zimic-interceptor-http#http-handlerrequests
-  const listRequests = listHandler.requests();
-  expect(listRequests).toHaveLength(1);
+  const requests = myHandler.requests();
+  expect(requests).toHaveLength(1);
 
-  // The following assertions are automatically checked by the declared
-  // restrictions and thus are not necessary. Requests not matching them will
-  // cause warnings and not be intercepted by default.
+  // The following expects are automatically checked by the restrictions
+  // we declared above. Requests not matching them will cause warnings and not
+  // be intercepted.
 
   // If you are not using restrictions, asserting the requests manually is
   // a good practice:
-  expect(listRequests[0].headers.get('authorization')).toBe(`Bearer ${token}`);
+  expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
-  expect(listRequests[0].searchParams.size).toBe(1);
-  expect(listRequests[0].searchParams.get('username')).toBe('diego');
+  expect(requests[0].searchParams.size).toBe(1);
+  expect(requests[0].searchParams.get('username')).toBe('diego');
+
+  expect(requests[0].body).toBe(null);
 });
 ```
 
