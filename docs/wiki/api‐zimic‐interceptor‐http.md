@@ -195,7 +195,7 @@ import { httpInterceptor } from 'zimic/interceptor/http';
 httpInterceptor.default.onUnhandledRequest({ log: false });
 
 // Example 2: Ignore only unhandled requests to /assets
-httpInterceptor.default.onUnhandledRequest((request, context) => {
+httpInterceptor.default.onUnhandledRequest(async (request, context) => {
   const url = new URL(request.url);
 
   if (!url.pathname.startsWith('/assets')) {
