@@ -108,8 +108,8 @@
     "@types/node": "^22.7.4",
     "@types/ws": "^8.5.12",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "2.1.1",
-    "@vitest/coverage-istanbul": "2.1.1",
+    "@vitest/browser": "2.1.2",
+    "@vitest/coverage-istanbul": "2.1.2",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
@@ -120,7 +120,7 @@
     "tsup": "^8.3.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.2",
-    "vitest": "2.1.1"
+    "vitest": "2.1.2"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
