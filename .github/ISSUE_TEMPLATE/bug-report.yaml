@@ -1,0 +1,102 @@
+name: 🐛 Bug report
+description: Something is not working as expected.
+labels:
+  - bug
+  - needs triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug in Zimic!
+
+        Please fill in the information below to help us investigate your issue.
+        Feel free to provide as much detail as possible.
+
+  - type: checkboxes
+    attributes:
+      label: Prerequisites
+      description: First, let's make sure that your issue is not already reported or solved.
+      options:
+        - label: I confirm that none of the [open issues](https://github.com/zimicjs/zimic/issues) match my problem
+          required: true
+        - label:
+            I confirm that the [documentation](https://github.com/zimicjs/zimic/wiki) does not cover a solution to
+            problem
+          required: true
+
+  - type: input
+    attributes:
+      label: Operating system
+      description: What operating system are you using?
+      placeholder: i.e. "macOS 11.2.3", "Windows 10", "Ubuntu 24.04", etc.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Runtime
+      description: What runtime are you using Zimic in?
+      placeholder: i.e. "Google Chrome", "Node.js", "Deno", "Bun", etc.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Runtime version
+      description: |
+        What is the version of the runtime you are using?
+
+        - For browsers: run `navigator.userAgent` in your browser console;
+        - For Node.js: run `node --version` in your terminal;
+        - For Deno: run `deno --version` in your terminal;
+        - For Bun: run `bun --version` in your terminal.
+      placeholder: i.e. 20.17.0
+
+  - type: input
+    attributes:
+      label: Zimic version
+      description: |
+        What is the version of Zimic you are using?
+
+        To get your Zimic version, run `npx zimic --version` in your terminal or check your `package.json`.
+      placeholder: i.e. 0.9.2
+
+  - type: input
+    attributes:
+      label: Reproduction repository
+      description: |
+        What minimal repository reproduces your issue?
+
+        You can clone one of [our examples](https://github.com/zimicjs/zimic/blob/canary/examples/README.md) to get
+        started. Please make sure that the repository is public, contains the minimal code to reproduce the issue, and
+        includes a `README.md` detailing how to run it.
+
+        We will only be able to investigate issues with a reproduction. **Issues without a reproduction will be closed.**
+      placeholder: i.e. https://github.com/you/zimic-issue
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+      description: |
+        How can we reproduce your issue in the repository above?
+      placeholder: i.e. "npm install && npm test"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Current behavior
+      description: |
+        What is the current behavior you are experiencing? (errors, warnings, unexpected behavior, etc.)
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: |
+        What is the behavior you expected to see?
+    validations:
+      required: true
