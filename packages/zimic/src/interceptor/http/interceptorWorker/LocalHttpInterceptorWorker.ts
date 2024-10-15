@@ -158,7 +158,15 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
           return passthrough();
         }
 
-        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
+        const response =
+          context.request.method === 'HEAD'
+            ? new Response(null, {
+                status: result.response.status,
+                statusText: result.response.statusText,
+                headers: result.response.headers,
+              })
+            : result.response;
+
         return response;
       } catch (error) {
         console.error(error);
