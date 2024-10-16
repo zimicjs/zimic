@@ -1,10 +1,10 @@
 import yargs, { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { readReleaseConfig } from '@/config/release-config';
+import { readReleaseConfig } from '@/config/releaseConfig';
 
-import prepareRelease from './actions/prepare-release';
-import upgradeVersion, { UpgradeMode } from './actions/upgrade-version';
+import prepareRelease from './actions/prepareRelease';
+import upgradeVersion, { UpgradeMode } from './actions/upgradeVersion';
 import { withCLIErrorBoundary } from './errors';
 
 function withVersionUpgradeParameters(yargs: Argv) {

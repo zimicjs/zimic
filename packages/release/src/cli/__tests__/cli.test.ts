@@ -1,22 +1,22 @@
 import path from 'node:path';
 import { Mock, afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ReleaseConfig } from '@/config/release-config';
-import { RELEASE_CONFIG_FIXTURES_DIRECTORY } from '@/config/release-config/__tests__/fixtures';
+import { ReleaseConfig } from '@/config/releaseConfig';
+import { RELEASE_CONFIG_FIXTURES_DIRECTORY } from '@/config/releaseConfig/__tests__/fixtures';
 
-import prepareRelease from '../actions/prepare-release';
-import upgradeVersion, { UpgradeMode } from '../actions/upgrade-version';
+import prepareRelease from '../actions/prepareRelease';
+import upgradeVersion, { UpgradeMode } from '../actions/upgradeVersion';
 import runReleaseCLI from '../cli';
 import { CLIError } from '../errors';
 
 const VALID_RELEASE_CONFIG_FIXTURE_PATH = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'valid');
 
-vi.mock('../actions/prepare-release', () => ({
+vi.mock('../actions/prepareRelease', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('../actions/upgrade-version', async () => ({
-  ...(await vi.importActual<{}>('../actions/upgrade-version')),
+vi.mock('../actions/upgradeVersion', async () => ({
+  ...(await vi.importActual<{}>('../actions/upgradeVersion')),
   default: vi.fn(),
 }));
 

@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 
 import { ReleaseConfig } from '../constants';
 import { InvalidReleaseConfigError, MissingReleaseConfigError } from '../errors';
-import { readReleaseConfig } from '../release-config';
+import { readReleaseConfig } from '../releaseConfig';
 import { RELEASE_CONFIG_FIXTURES_DIRECTORY } from './fixtures';
 
 describe('Release config', () => {
@@ -45,18 +45,18 @@ describe('Release config', () => {
   });
 
   it('should read a valid release config in a parent directory', async () => {
-    const validSubDirectoryFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'valid', 'sub-directory');
+    const validSubDirectoryFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'valid', 'subDirectory');
     workingDirectorySpy.mockReturnValue(validSubDirectoryFixtureDirectory);
     const releaseConfig = await readReleaseConfig();
     expect(releaseConfig).toEqual(expectedReleaseConfig);
   });
 
   it('should throw an error if the release config is invalid', async () => {
-    const validationErrorFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'invalid', 'validation-error');
+    const validationErrorFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'invalid', 'validationError');
     workingDirectorySpy.mockReturnValue(validationErrorFixtureDirectory);
     await expect(readReleaseConfig()).rejects.toThrowError(InvalidReleaseConfigError);
 
-    const syntaxErrorFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'invalid', 'syntax-error');
+    const syntaxErrorFixtureDirectory = path.join(RELEASE_CONFIG_FIXTURES_DIRECTORY, 'invalid', 'syntaxError');
     workingDirectorySpy.mockReturnValue(syntaxErrorFixtureDirectory);
     await expect(readReleaseConfig()).rejects.toThrowError(InvalidReleaseConfigError);
   });

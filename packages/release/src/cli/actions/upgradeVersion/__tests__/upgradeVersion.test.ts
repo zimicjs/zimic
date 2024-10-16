@@ -2,11 +2,11 @@ import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/release-config';
+import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/releaseConfig';
 
 import { AppendPartialVersionToNonStringError, MissingRequiredPartialLabelError } from '../errors';
 import { MetadataFileContent, UpgradeMode } from '../types';
-import upgradeVersion from '../upgrade-version';
+import upgradeVersion from '../upgradeVersion';
 import { IGNORED_PARTIAL_LABELS_MESSAGE } from '../utils/log';
 import { InvalidVersionFormatError, UnknownUpgradeModeError } from '../utils/version';
 

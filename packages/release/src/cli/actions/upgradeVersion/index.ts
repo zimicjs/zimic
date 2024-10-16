@@ -1,4 +1,4 @@
-import upgradeVersion from './upgrade-version';
+import upgradeVersion from './upgradeVersion';
 
 export * from './types';
 export default upgradeVersion;

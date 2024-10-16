@@ -1,8 +1,8 @@
-import { ReleaseConfig } from '@/config/release-config';
+import { ReleaseConfig } from '@/config/releaseConfig';
 import Logger from '@/utils/logger';
 import { importExeca } from '@/utils/processes';
 
-import upgradeVersion, { UpgradeMode } from '../upgrade-version';
+import upgradeVersion, { UpgradeMode } from '../upgradeVersion';
 import { getGitHubPullRequestURL } from './utils/github';
 
 interface CommandParameters {
