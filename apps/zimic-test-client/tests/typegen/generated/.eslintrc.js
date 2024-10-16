@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   root: true,
-  extends: ['../../../../.eslintrc.js'],
+  extends: ['../../../.eslintrc.js'],
   parserOptions: {
     ecmaFeatures: { js: true, ts: true },
     ecmaVersion: 2020,

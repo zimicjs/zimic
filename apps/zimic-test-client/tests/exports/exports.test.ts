@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic0';
+import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic';
 import {
   type HttpBody,
   type HttpRequest,
@@ -50,7 +50,7 @@ import {
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
   InvalidFormDataError,
-} from 'zimic0/http';
+} from 'zimic/http';
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
@@ -87,7 +87,7 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
-} from 'zimic0/interceptor/http';
+} from 'zimic/interceptor/http';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {

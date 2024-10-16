@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
-import { JSONSerialized } from 'zimic0';
-import { HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from 'zimic0/http';
-import { httpInterceptor, HttpInterceptorType } from 'zimic0/interceptor/http';
+import { JSONSerialized } from 'zimic';
+import { HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from 'zimic/http';
+import { httpInterceptor, HttpInterceptorType } from 'zimic/interceptor/http';
 
 import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
 

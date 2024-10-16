@@ -5,12 +5,6 @@ import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import { checkTypes, lint } from '@tests/utils/linting';
 
-async function normalizeImportsInGeneratedFile(generatedFilePath: string) {
-  const output = await filesystem.readFile(generatedFilePath, 'utf-8');
-  const normalizedOutput = output.replace(/from "zimic(.*)";$/gm, 'from "zimic0$1";');
-  await filesystem.writeFile(generatedFilePath, normalizedOutput);
-}
-
 async function normalizeStripeTypes(generatedFilePath: string) {
   const output = await filesystem.readFile(generatedFilePath, 'utf-8');
   const normalizedOutput = output
@@ -95,8 +89,6 @@ describe('Typegen', { timeout: 45 * 1000 }, () => {
           ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
           { stdio: 'inherit' },
         );
-
-        await normalizeImportsInGeneratedFile(generatedFilePath);
 
         if (serviceName === 'Stripe') {
           await normalizeStripeTypes(generatedFilePath);
