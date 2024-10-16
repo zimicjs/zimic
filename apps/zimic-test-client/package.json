@@ -15,9 +15,6 @@
     "deps:init-zimic": "zimic browser init ./public",
     "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
   },
-  "dependencies": {
-    "zimic0": "workspace:zimic@*"
-  },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
     "@vitest/browser": "2.1.2",
@@ -32,6 +29,7 @@
     "playwright": "^1.48.0",
     "superagent": "^10.1.0",
     "typescript": "^5.6.3",
-    "vitest": "2.1.2"
+    "vitest": "2.1.2",
+    "zimic": "workspace:*"
   }
 }

@@ -7,8 +7,8 @@ import {
   NotStartedInterceptorServerError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
-} from 'zimic0/interceptor/server';
-import { typegen, type TypegenNamespace, type OpenAPITypegenOptions } from 'zimic0/typegen';
+} from 'zimic/interceptor/server';
+import { typegen, type TypegenNamespace, type OpenAPITypegenOptions } from 'zimic/typegen';
 
 describe('Exports (Node.js)', () => {
   it('should export all expected resources', () => {
