@@ -1,3 +1,3 @@
-export * from './release-config';
+export * from './releaseConfig';
 export type { MetadataFileEntry, ReleaseConfig } from './constants';
 export * from './errors';

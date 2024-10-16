@@ -1,4 +1,4 @@
-import { ReleaseConfig } from '@/config/release-config';
+import { ReleaseConfig } from '@/config/releaseConfig';
 import { prettifyFiles } from '@/utils/format';
 
 import { UpgradeMode } from './types';
@@ -8,7 +8,7 @@ import {
   getPrimaryVersion,
   writeMetadataFileContents,
   upgradeMetadataFileContents,
-} from './utils/metadata-files';
+} from './utils/metadataFiles';
 import { formatVersion, upgradeVersion as upgradeParsedVersion } from './utils/version';
 
 interface CommandContext {

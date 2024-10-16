@@ -1,4 +1,4 @@
-import { ReleaseConfig } from '@/config/release-config';
+import { ReleaseConfig } from '@/config/releaseConfig';
 
 function getGitHubRepositoryURL(repositoryOwner: string, repositoryName: string) {
   return `https://github.com/${repositoryOwner}/${repositoryName}`;

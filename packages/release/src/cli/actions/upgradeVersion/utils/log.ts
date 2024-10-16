@@ -1,6 +1,6 @@
 import { log } from '@/cli/log';
 
-import { CommandParameters } from '../upgrade-version';
+import { CommandParameters } from '../upgradeVersion';
 
 export const IGNORED_PARTIAL_LABELS_MESSAGE =
   'Partial labels are ignored when the upgrade mode is `partial` or `full`.';

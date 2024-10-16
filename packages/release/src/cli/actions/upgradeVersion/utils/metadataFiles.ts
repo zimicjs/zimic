@@ -1,7 +1,7 @@
 import filesystem from 'fs/promises';
 import { z } from 'zod';
 
-import { MetadataFileEntry } from '@/config/release-config';
+import { MetadataFileEntry } from '@/config/releaseConfig';
 
 import { VERSION_REGEX_AS_STRING } from '../constants';
 import { AppendPartialVersionToNonStringError } from '../errors';

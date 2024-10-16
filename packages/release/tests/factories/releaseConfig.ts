@@ -1,4 +1,4 @@
-import { MetadataFileEntry, ReleaseConfig } from '@/config/release-config';
+import { MetadataFileEntry, ReleaseConfig } from '@/config/releaseConfig';
 
 export function createMetadataFileEntry(metadataFile?: Partial<MetadataFileEntry>): MetadataFileEntry {
   return {
@@ -21,7 +21,7 @@ export function createReleaseConfig(partialConfig?: Partial<ReleaseConfig>): Rel
       }),
     ],
     github: {
-      repositoryOwner: 'owner',
+      repositoryOwner: 'zimicjs',
       repositoryName: 'zimic',
       productionBranch: 'main',
     },

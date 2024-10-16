@@ -2,11 +2,11 @@ import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MetadataFileContent } from '@/cli/actions/upgrade-version';
+import { MetadataFileContent } from '@/cli/actions/upgradeVersion';
 import Logger from '@/utils/logger';
-import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/release-config';
+import { createMetadataFileEntry, createReleaseConfig } from '@tests/factories/releaseConfig';
 
-import prepareRelease from '../prepare-release';
+import prepareRelease from '../prepareRelease';
 
 vi.mock('execa', () => ({
   execa: vi.fn(),
