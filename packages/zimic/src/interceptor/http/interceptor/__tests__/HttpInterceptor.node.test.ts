@@ -10,17 +10,8 @@ describe('HttpInterceptor (Node.js)', () => {
 
   declareSharedHttpInterceptorTests({
     platform: 'node',
-
-    async startServer() {
-      await server.start();
-    },
-
-    getBaseURL(type) {
-      return getNodeBaseURL(type, server);
-    },
-
-    async stopServer() {
-      await server.stop();
-    },
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
+    getBaseURL: (type) => getNodeBaseURL(type, server),
   });
 });

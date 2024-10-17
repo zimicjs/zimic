@@ -3,13 +3,13 @@ import { describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
+import { declareMethodHttpInterceptorWorkerTests } from './shared/methods';
 
-describe.each(testMatrix)('HttpInterceptorWorker (Node.js) (type $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker methods (Node.js) (type $type)', (defaultWorkerOptions) => {
   const server = createInternalInterceptorServer();
 
-  declareDefaultHttpInterceptorWorkerTests({
+  declareMethodHttpInterceptorWorkerTests({
     platform: 'node',
     defaultWorkerOptions,
     startServer: () => server.start(),
