@@ -6,7 +6,7 @@ import { HttpInterceptorPlatform } from '../../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from '../errors/UnregisteredBrowserServiceWorkerError';
 import { createHttpInterceptorWorker } from '../factory';
 
-describe('HttpInterceptorWorker (browser, no worker)', () => {
+describe('HttpInterceptorWorker (browser no worker)', () => {
   const platform = 'browser' satisfies HttpInterceptorPlatform;
 
   it('should throw an error after failing to start without a registered service worker', async () => {
