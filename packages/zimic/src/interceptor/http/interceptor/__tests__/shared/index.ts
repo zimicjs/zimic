@@ -6,7 +6,11 @@ import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import { HttpInterceptorType } from '../../types/options';
 import { declareBaseURLHttpInterceptorTests } from './baseURLs';
-import { declareBodyHttpInterceptorTests } from './bodies';
+import { declareBlobBodyHttpInterceptorTests } from './bodies/blob';
+import { declareFormDataBodyHttpInterceptorTests } from './bodies/formData';
+import { declareJSONBodyHttpInterceptorTests } from './bodies/json';
+import { declarePlainTextBodyHttpInterceptorTests } from './bodies/plainText';
+import { declareURLSearchParamsBodyHttpInterceptorTests } from './bodies/urlSearchParams';
 import { declareBypassHttpInterceptorTests } from './bypass';
 import { declareClearHttpInterceptorTests } from './clear';
 import { declareDeclareHttpInterceptorTests } from './default';
@@ -81,8 +85,24 @@ export function declareSharedHttpInterceptorTests(options: SharedHttpInterceptor
       await declarePathParamsHttpInterceptorTests(runtimeOptions);
     });
 
-    describe('Bodies', async () => {
-      await declareBodyHttpInterceptorTests(runtimeOptions);
+    describe('Bodies: JSON', async () => {
+      await declareJSONBodyHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bodies: Form data', async () => {
+      await declareFormDataBodyHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bodies: URL search params', async () => {
+      await declareURLSearchParamsBodyHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bodies: Plain text', async () => {
+      await declarePlainTextBodyHttpInterceptorTests(runtimeOptions);
+    });
+
+    describe('Bodies: Blob', async () => {
+      await declareBlobBodyHttpInterceptorTests(runtimeOptions);
     });
 
     describe('Restrictions', async () => {
