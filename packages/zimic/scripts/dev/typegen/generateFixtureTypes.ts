@@ -4,8 +4,8 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import typegenFixtures from '@/cli/__tests__/typegen/fixtures/typegenFixtures';
-import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/__tests__/typegen/fixtures/types';
+import typegenFixtures from '@/cli/typegen/__tests__/fixtures/typegenFixtures';
+import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/typegen/__tests__/fixtures/types';
 import { runCommand } from '@/utils/processes';
 
 import { usingConsoleTime } from '../utils/console';
