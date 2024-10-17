@@ -29,7 +29,7 @@ export function declareDefaultHttpRequestHandlerTests(
     Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
   },
 ) {
-  const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
+  const { platform, type, startServer, stopServer, getBaseURL, Handler } = options;
 
   let baseURL: URL;
 
