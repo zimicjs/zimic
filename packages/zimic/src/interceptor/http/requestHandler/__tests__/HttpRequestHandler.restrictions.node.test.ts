@@ -3,13 +3,13 @@ import { describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareDefaultHttpRequestHandlerTests } from './shared/default';
 import testMatrix from './shared/matrix';
+import { declareRestrictionHttpRequestHandlerTests } from './shared/restrictions';
 
-describe.each(testMatrix)('HttpRequestHandler (Node.js) (type $type)', ({ type, Handler }) => {
+describe.each(testMatrix)('HttpRequestHandler restrictions (Node.js) (type $type)', ({ type, Handler }) => {
   const server = createInternalInterceptorServer();
 
-  declareDefaultHttpRequestHandlerTests({
+  declareRestrictionHttpRequestHandlerTests({
     platform: 'node',
     type,
     Handler,
