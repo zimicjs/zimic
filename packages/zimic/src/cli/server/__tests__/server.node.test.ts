@@ -18,9 +18,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
 import { waitFor } from '@tests/utils/time';
 
-import runCLI from '../cli';
-import { serverSingleton as server } from '../server/start';
-import { delayHttpServerCloseIndefinitely, delayHttpServerListenIndefinitely } from './utils';
+import runCLI from '../../cli';
+import { serverSingleton as server } from '../start';
+import { delayHttpServerListenIndefinitely, delayHttpServerCloseIndefinitely } from './utils';
 
 function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
   const exitEventListeners: (() => PossiblePromise<void>)[] = [];

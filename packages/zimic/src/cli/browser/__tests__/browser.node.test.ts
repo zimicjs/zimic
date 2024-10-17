@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
 
-import { MOCK_SERVICE_WORKER_PATH } from '../browser/init';
-import { SERVICE_WORKER_FILE_NAME } from '../browser/shared/constants';
-import runCLI from '../cli';
+import runCLI from '../../cli';
+import { MOCK_SERVICE_WORKER_PATH } from '../init';
+import { SERVICE_WORKER_FILE_NAME } from '../shared/constants';
 
 describe('CLI (browser)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
