@@ -1,15 +1,11 @@
-import chalk from 'chalk';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { typegen } from '@/typegen';
-import { logWithPrefix } from '@/utils/console';
-import { formatElapsedTime, usingElapsedTime } from '@/utils/time';
-
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
+import generateTypesFromOpenAPI from './typegen/openapi';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -29,7 +25,9 @@ async function runCLI() {
             demandOption: true,
           }),
         async (cliArguments) => {
-          await initializeBrowserServiceWorker(cliArguments);
+          await initializeBrowserServiceWorker({
+            publicDirectory: cliArguments.publicDirectory,
+          });
         },
       ),
     )
@@ -155,27 +153,15 @@ async function runCLI() {
               alias: 'F',
             }),
         async (cliArguments) => {
-          const outputFilePath = cliArguments.output;
-
-          const executionSummary = await usingElapsedTime(async () => {
-            await typegen.generateFromOpenAPI({
-              input: cliArguments.input,
-              output: cliArguments.output,
-              serviceName: cliArguments.serviceName,
-              includeComments: cliArguments.comments,
-              prune: cliArguments.prune,
-              filters: cliArguments.filter,
-              filterFile: cliArguments.filterFile,
-            });
+          await generateTypesFromOpenAPI({
+            input: cliArguments.input,
+            output: cliArguments.output,
+            serviceName: cliArguments.serviceName,
+            includeComments: cliArguments.comments,
+            prune: cliArguments.prune,
+            filters: cliArguments.filter,
+            filterFile: cliArguments.filterFile,
           });
-
-          const successMessage =
-            `${chalk.green.bold('✔')} Generated ` +
-            `${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ` +
-            `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
-
-          const hasWrittenToStdout = outputFilePath === undefined;
-          logWithPrefix(successMessage, { method: hasWrittenToStdout ? 'warn' : 'log' });
         },
       ),
     )
