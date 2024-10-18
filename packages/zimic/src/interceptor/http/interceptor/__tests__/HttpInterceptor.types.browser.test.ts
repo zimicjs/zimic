@@ -4,7 +4,7 @@ import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import testMatrix from './shared/matrix';
-import { declareTypeHttpInterceptorTests } from './shared/typescript';
+import { declareTypeHttpInterceptorTests } from './shared/types';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Types', ({ type }) => {
   let baseURL: ExtendedURL;
@@ -17,6 +17,5 @@ describe.each(testMatrix)('HttpInterceptor (browser, $type) > Types', ({ type })
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

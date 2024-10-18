@@ -5,7 +5,7 @@ import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import testMatrix from './shared/matrix';
-import { declareTypeHttpInterceptorTests } from './shared/typescript';
+import { declareTypeHttpInterceptorTests } from './shared/types';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) => {
   const server = createInternalInterceptorServer();
@@ -29,6 +29,5 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) =>
     platform: 'node',
     type,
     getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });
