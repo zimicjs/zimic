@@ -2,14 +2,14 @@ import { describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpRequestHandlerTests } from './shared';
+import { declareDefaultHttpRequestHandlerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpRequestHandler (browser)', () => {
-  declareSharedHttpRequestHandlerTests({
+describe.each(testMatrix)('HttpRequestHandler (browser, $type)', ({ type, Handler }) => {
+  declareDefaultHttpRequestHandlerTests({
     platform: 'browser',
-
-    getBaseURL(type) {
-      return getBrowserBaseURL(type);
-    },
+    type,
+    Handler,
+    getBaseURL: getBrowserBaseURL,
   });
 });

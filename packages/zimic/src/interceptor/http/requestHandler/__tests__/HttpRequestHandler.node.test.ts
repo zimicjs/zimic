@@ -3,24 +3,18 @@ import { describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareSharedHttpRequestHandlerTests } from './shared';
+import { declareDefaultHttpRequestHandlerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpRequestHandler (Node.js)', () => {
+describe.each(testMatrix)('HttpRequestHandler (node, $type)', ({ type, Handler }) => {
   const server = createInternalInterceptorServer();
 
-  declareSharedHttpRequestHandlerTests({
+  declareDefaultHttpRequestHandlerTests({
     platform: 'node',
-
-    async startServer() {
-      await server.start();
-    },
-
-    getBaseURL(type) {
-      return getNodeBaseURL(type, server);
-    },
-
-    async stopServer() {
-      await server.stop();
-    },
+    type,
+    Handler,
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
+    getBaseURL: (type) => getNodeBaseURL(type, server),
   });
 });

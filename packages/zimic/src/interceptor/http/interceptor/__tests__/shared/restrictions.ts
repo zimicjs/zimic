@@ -16,7 +16,7 @@ import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/ut
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -67,7 +67,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     };
   }>;
 
-  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
       method,
       platform,
@@ -242,7 +242,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
     });
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having partial, exact body JSON restrictions`, async () => {

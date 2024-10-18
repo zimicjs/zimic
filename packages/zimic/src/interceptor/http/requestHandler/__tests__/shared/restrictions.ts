@@ -51,7 +51,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   describe('By search params', () => {
     it.each([{ exact: true }])(
-      'should match only specific requests if contains a declared response, a static search param restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static search param restriction, and exact $exact',
       async ({ exact }) => {
         const name = 'User';
 
@@ -84,7 +84,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     );
 
     it.each([{ exact: false }, { exact: undefined }])(
-      'should match only specific requests if contains a declared response, a static search param restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static search param restriction, and exact $exact',
       async ({ exact }) => {
         const name = 'User';
 
@@ -158,7 +158,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   describe('By headers', () => {
     it.each([{ exact: true }])(
-      'should match only specific requests if contains a declared response, a static header restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static header restriction, and exact $exact',
       async ({ exact }) => {
         const contentLanguage = 'en';
 
@@ -191,7 +191,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     );
 
     it.each([{ exact: false }, { exact: undefined }])(
-      'should match only specific requests if contains a declared response, a static header restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static header restriction, and exact $exact',
       async ({ exact }) => {
         const contentLanguage = 'en';
 
@@ -265,7 +265,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   describe('By body', () => {
     it.each([{ exact: true }])(
-      'should match only specific requests if contains a declared response, a static body restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static body restriction, and exact $exact',
       async ({ exact }) => {
         const name = 'User';
 
@@ -306,7 +306,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     );
 
     it.each([{ exact: false }, { exact: undefined }])(
-      'should match only specific requests if contains a declared response, a static header restriction, and exact: $exact',
+      'should match only specific requests if contains a declared response, a static header restriction, and exact $exact',
       async ({ exact }) => {
         const name = 'User';
 

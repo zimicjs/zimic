@@ -1,15 +1,22 @@
-import { describe } from 'vitest';
+import { beforeAll, describe } from 'vitest';
 
+import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpInterceptorTests } from './shared';
+import { declareDeclareHttpInterceptorTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpInterceptor (browser)', () => {
-  declareSharedHttpInterceptorTests({
+describe.each(testMatrix)('HttpInterceptor (browser, $type)', ({ type }) => {
+  let baseURL: ExtendedURL;
+
+  beforeAll(async () => {
+    baseURL = await getBrowserBaseURL(type);
+  });
+
+  declareDeclareHttpInterceptorTests({
     platform: 'browser',
-
-    getBaseURL(type) {
-      return getBrowserBaseURL(type);
-    },
+    type,
+    getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

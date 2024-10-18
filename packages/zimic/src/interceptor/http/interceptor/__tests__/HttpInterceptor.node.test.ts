@@ -1,26 +1,34 @@
-import { describe } from 'vitest';
+import { afterAll, beforeAll, describe } from 'vitest';
 
+import { ExtendedURL } from '@/utils/urls';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareSharedHttpInterceptorTests } from './shared';
+import { declareDeclareHttpInterceptorTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpInterceptor (Node.js)', () => {
+describe.each(testMatrix)('HttpInterceptor (node, $type)', ({ type }) => {
   const server = createInternalInterceptorServer();
 
-  declareSharedHttpInterceptorTests({
-    platform: 'node',
+  let baseURL: ExtendedURL;
 
-    async startServer() {
+  beforeAll(async () => {
+    if (type === 'remote') {
       await server.start();
-    },
+    }
+    baseURL = await getNodeBaseURL(type, server);
+  });
 
-    getBaseURL(type) {
-      return getNodeBaseURL(type, server);
-    },
-
-    async stopServer() {
+  afterAll(async () => {
+    if (type === 'remote') {
       await server.stop();
-    },
+    }
+  });
+
+  declareDeclareHttpInterceptorTests({
+    platform: 'node',
+    type,
+    getBaseURL: () => baseURL,
+    getInterceptorOptions: () => ({ type, baseURL }),
   });
 });

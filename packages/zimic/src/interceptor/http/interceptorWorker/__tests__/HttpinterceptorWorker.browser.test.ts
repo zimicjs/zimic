@@ -2,14 +2,13 @@ import { describe } from 'vitest';
 
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareSharedHttpInterceptorWorkerTests } from './shared';
+import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpInterceptorWorker (browser)', () => {
-  declareSharedHttpInterceptorWorkerTests({
+describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
+  declareDefaultHttpInterceptorWorkerTests({
     platform: 'browser',
-
-    getBaseURL(type) {
-      return getBrowserBaseURL(type);
-    },
+    defaultWorkerOptions,
+    getBaseURL: getBrowserBaseURL,
   });
 });

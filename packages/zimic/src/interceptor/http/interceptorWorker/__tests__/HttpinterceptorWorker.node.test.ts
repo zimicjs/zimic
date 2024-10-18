@@ -3,24 +3,17 @@ import { describe } from 'vitest';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareSharedHttpInterceptorWorkerTests } from './shared';
+import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
+import testMatrix from './shared/matrix';
 
-describe('HttpInterceptorWorker (Node.js)', () => {
+describe.each(testMatrix)('HttpInterceptorWorker (node, $type)', (defaultWorkerOptions) => {
   const server = createInternalInterceptorServer();
 
-  declareSharedHttpInterceptorWorkerTests({
+  declareDefaultHttpInterceptorWorkerTests({
     platform: 'node',
-
-    async startServer() {
-      await server.start();
-    },
-
-    getBaseURL(type) {
-      return getNodeBaseURL(type, server);
-    },
-
-    async stopServer() {
-      await server.stop();
-    },
+    defaultWorkerOptions,
+    startServer: () => server.start(),
+    stopServer: () => server.stop(),
+    getBaseURL: (type) => getNodeBaseURL(type, server),
   });
 });
