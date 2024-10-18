@@ -190,6 +190,9 @@ export interface GitHubComponents {
       secret_scanning_non_provider_patterns?: {
         status?: 'enabled' | 'disabled';
       };
+      secret_scanning_ai_detection?: {
+        status?: 'enabled' | 'disabled';
+      };
     } | null;
     'nullable-repository': {
       id: number;
