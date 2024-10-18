@@ -10,7 +10,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { createHttpInterceptor } from '../../factory';
 import { InferHttpInterceptorSchema } from '../../types/schema';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareTypeHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL } = options;

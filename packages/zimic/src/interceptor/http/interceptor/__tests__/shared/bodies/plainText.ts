@@ -10,7 +10,7 @@ import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
 export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -39,7 +39,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having a plain text body`, async () => {

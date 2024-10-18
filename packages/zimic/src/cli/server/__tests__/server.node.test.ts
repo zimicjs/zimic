@@ -321,7 +321,7 @@ describe('CLI (server)', async () => {
     });
 
     it.each(['--no-ephemeral', '--ephemeral=false'])(
-      'should not stop the server after the on-ready command finishes if ephemeral is false: %s',
+      'should not stop the server after the on-ready command finishes if ephemeral is false (%s)',
       async (ephemeralFlag) => {
         const temporarySaveFileContent = crypto.randomUUID();
 
@@ -502,7 +502,7 @@ describe('CLI (server)', async () => {
     });
 
     it.each(PROCESS_EXIT_EVENTS)(
-      'should stop the server after a process exit event with the correct exit code: %s',
+      'should stop the server after a process exit event with the correct exit code (%s)',
       async (exitEvent) => {
         const exitEventListeners = watchExitEventListeners(exitEvent);
 
@@ -587,7 +587,7 @@ describe('CLI (server)', async () => {
       { overrideDefault: 'static-empty' as const },
       { overrideDefault: 'function' as const },
     ])(
-      'should show an error if logging is enabled when a request is received and does not match any interceptors: override default $overrideDefault',
+      'should show an error if logging is enabled when a request is received and does not match any interceptors (override default $overrideDefault)',
       async ({ overrideDefault }) => {
         processArgvSpy.mockReturnValue([
           'node',
@@ -644,7 +644,7 @@ describe('CLI (server)', async () => {
     );
 
     it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
-      'should not show an error if logging is disabled when a request is received and does not match any interceptors: override default $overrideDefault',
+      'should not show an error if logging is disabled when a request is received and does not match any interceptors (override default $overrideDefault)',
       async ({ overrideDefault }) => {
         processArgvSpy.mockReturnValue([
           'node',

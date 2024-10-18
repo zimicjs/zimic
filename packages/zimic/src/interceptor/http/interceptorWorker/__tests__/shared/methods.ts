@@ -53,7 +53,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     }
   });
 
-  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
       method,
       platform,

@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declareDefaultHttpRequestHandlerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpRequestHandler (Node.js) (type $type)', ({ type, Handler }) => {
+describe.each(testMatrix)('HttpRequestHandler (node, $type)', ({ type, Handler }) => {
   const server = createInternalInterceptorServer();
 
   declareDefaultHttpRequestHandlerTests({

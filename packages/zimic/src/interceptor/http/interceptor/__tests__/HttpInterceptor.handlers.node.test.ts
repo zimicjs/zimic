@@ -4,10 +4,10 @@ import { ExtendedURL } from '@/utils/urls';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareDeclareHttpInterceptorTests } from './shared/default';
+import { declareHandlerHttpInterceptorTests } from './shared/handlers';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type)', ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Handlers', ({ type }) => {
   const server = createInternalInterceptorServer();
 
   let baseURL: ExtendedURL;
@@ -25,7 +25,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type)', ({ type }) => {
     }
   });
 
-  declareDeclareHttpInterceptorTests({
+  declareHandlerHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

@@ -4,10 +4,10 @@ import { ExtendedURL } from '@/utils/urls';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
-import { declareDeclareHttpInterceptorTests } from './shared/default';
+import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formData';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (node, $type)', ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', async ({ type }) => {
   const server = createInternalInterceptorServer();
 
   let baseURL: ExtendedURL;
@@ -25,7 +25,7 @@ describe.each(testMatrix)('HttpInterceptor (node, $type)', ({ type }) => {
     }
   });
 
-  declareDeclareHttpInterceptorTests({
+  await declareFormDataBodyHttpInterceptorTests({
     platform: 'node',
     type,
     getBaseURL: () => baseURL,

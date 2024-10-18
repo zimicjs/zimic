@@ -2,9 +2,25 @@ import { expect } from 'vitest';
 
 import { HttpRequest } from '@/http/types/requests';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { PossiblePromise } from '@/types/utils';
 import { formatObjectToLog } from '@/utils/console';
+import { ExtendedURL } from '@/utils/urls';
 
-import { HttpInterceptorPlatform } from '../../types/options';
+import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
+
+export interface SharedHttpInterceptorTestsOptions {
+  platform: HttpInterceptorPlatform;
+  startServer?: () => PossiblePromise<void>;
+  stopServer?: () => PossiblePromise<void>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
+}
+
+export interface RuntimeSharedHttpInterceptorTestsOptions {
+  platform: HttpInterceptorPlatform;
+  type: HttpInterceptorType;
+  getBaseURL: () => ExtendedURL;
+  getInterceptorOptions: () => HttpInterceptorOptions;
+}
 
 export async function verifyUnhandledRequestMessage(
   message: string,

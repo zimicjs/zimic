@@ -155,7 +155,7 @@ describe('Type generation (OpenAPI)', () => {
     });
   });
 
-  describe.each(fixtureCaseEntries)('Schema: %s', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
+  describe.each(fixtureCaseEntries)('Schema (%s)', (fixtureName, fixtureCases: TypegenFixtureCase[]) => {
     function verifyFilterFileWarnings(consoleSpies: { warn: MockInstance }) {
       expect(consoleSpies.warn).toHaveBeenCalledTimes(1);
 
@@ -227,7 +227,7 @@ describe('Type generation (OpenAPI)', () => {
       }
     }
 
-    describe.each(fixtureFileTypes)('Type: %s', (fileType) => {
+    describe.each(fixtureFileTypes)('Type (%s)', (fileType) => {
       for (const fixtureCase of fixtureCases) {
         it(`should correctly generate types: ${fixtureCase.expectedOutputFileName}${fixtureCase.shouldWriteToStdout ? ', stdout true' : ''}`, async () => {
           const inputDirectory =

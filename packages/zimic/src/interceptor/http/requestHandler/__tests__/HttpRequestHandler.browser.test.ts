@@ -5,7 +5,7 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareDefaultHttpRequestHandlerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpRequestHandler (browser) (type $type)', ({ type, Handler }) => {
+describe.each(testMatrix)('HttpRequestHandler (browser, $type)', ({ type, Handler }) => {
   declareDefaultHttpRequestHandlerTests({
     platform: 'browser',
     type,

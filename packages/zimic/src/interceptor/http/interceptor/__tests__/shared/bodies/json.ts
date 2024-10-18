@@ -13,7 +13,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
 export async function declareJSONBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
@@ -47,7 +47,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestJSONString = '<invalid-request-json>';

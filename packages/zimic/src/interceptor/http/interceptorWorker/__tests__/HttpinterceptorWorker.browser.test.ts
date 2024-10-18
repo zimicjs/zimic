@@ -5,7 +5,7 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptorWorker (browser) (type $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker (browser, $type)', (defaultWorkerOptions) => {
   declareDefaultHttpInterceptorWorkerTests({
     platform: 'browser',
     defaultWorkerOptions,

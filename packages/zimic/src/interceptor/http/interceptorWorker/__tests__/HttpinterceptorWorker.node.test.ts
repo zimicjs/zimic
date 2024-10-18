@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptorWorker (Node.js) (type $type)', (defaultWorkerOptions) => {
+describe.each(testMatrix)('HttpInterceptorWorker (node, $type)', (defaultWorkerOptions) => {
   const server = createInternalInterceptorServer();
 
   declareDefaultHttpInterceptorWorkerTests({

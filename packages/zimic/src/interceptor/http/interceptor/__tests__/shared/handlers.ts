@@ -14,8 +14,7 @@ import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/ut
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
-import { verifyUnhandledRequestMessage } from './utils';
+import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -32,7 +31,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
       method,
       platform,

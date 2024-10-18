@@ -3,17 +3,17 @@ import { beforeAll, describe } from 'vitest';
 import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareDeclareHttpInterceptorTests } from './shared/default';
 import testMatrix from './shared/matrix';
+import { declareTypeHttpInterceptorTests } from './shared/typescript';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type)', ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Types', ({ type }) => {
   let baseURL: ExtendedURL;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);
   });
 
-  declareDeclareHttpInterceptorTests({
+  declareTypeHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

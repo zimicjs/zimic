@@ -10,7 +10,7 @@ import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -27,7 +27,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
       method,
       platform,

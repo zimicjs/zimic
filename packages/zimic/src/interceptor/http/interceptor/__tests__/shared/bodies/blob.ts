@@ -12,7 +12,7 @@ import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
 async function createRandomFile(
   contentType:
@@ -70,7 +70,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it.each([

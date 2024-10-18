@@ -3,17 +3,17 @@ import { beforeAll, describe } from 'vitest';
 import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
-import { declareDeclareHttpInterceptorTests } from './shared/default';
+import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formData';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type)', ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Form data', async ({ type }) => {
   let baseURL: ExtendedURL;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);
   });
 
-  declareDeclareHttpInterceptorTests({
+  await declareFormDataBodyHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

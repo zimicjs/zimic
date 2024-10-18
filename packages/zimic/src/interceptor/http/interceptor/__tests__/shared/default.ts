@@ -1,11 +1,16 @@
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
 import { ExtendedURL, createURL } from '@/utils/urls';
-import { getSingletonWorkerByType, usingHttpInterceptor } from '@tests/utils/interceptors';
+import {
+  createInternalHttpInterceptor,
+  getSingletonWorkerByType,
+  usingHttpInterceptor,
+} from '@tests/utils/interceptors';
 
 import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
+import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import HttpInterceptorStore from '../../HttpInterceptorStore';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -27,12 +32,26 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   afterEach(() => {
     const worker = getSingletonWorkerByType(store, type, serverURL);
-    expect(worker).toBeDefined();
-    expect(worker!.isRunning()).toBe(false);
-    expect(worker!.interceptorsWithHandlers()).toHaveLength(0);
+
+    if (worker) {
+      expect(worker.isRunning()).toBe(false);
+      expect(worker.interceptorsWithHandlers()).toHaveLength(0);
+    }
 
     expect(store.numberOfRunningLocalInterceptors()).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
+  });
+
+  it('should throw an error if created with an unknown type', () => {
+    // @ts-expect-error Forcing an unknown type.
+    const unknownType: HttpInterceptorType = 'unknown';
+
+    expect(() => {
+      createInternalHttpInterceptor({
+        type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+        baseURL: 'http://localhost:3000',
+      });
+    }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
   });
 
   it('should initialize with the correct platform', async () => {

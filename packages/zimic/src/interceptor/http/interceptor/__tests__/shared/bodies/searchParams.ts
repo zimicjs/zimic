@@ -12,11 +12,9 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from '../types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from '../utils';
 
-export async function declareURLSearchParamsBodyHttpInterceptorTests(
-  options: RuntimeSharedHttpInterceptorTestsOptions,
-) {
+export async function declareSearchParamsBodyHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { getBaseURL, getInterceptorOptions } = options;
 
   const crypto = await importCrypto();
@@ -43,7 +41,7 @@ export async function declareURLSearchParamsBodyHttpInterceptorTests(
     Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
     const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestURLSearchParamsString = '<invalid-request-url-search-params>';

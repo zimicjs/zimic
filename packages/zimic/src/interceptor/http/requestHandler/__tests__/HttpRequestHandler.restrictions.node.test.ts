@@ -6,7 +6,7 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 import testMatrix from './shared/matrix';
 import { declareRestrictionHttpRequestHandlerTests } from './shared/restrictions';
 
-describe.each(testMatrix)('HttpRequestHandler restrictions (Node.js) (type $type)', ({ type, Handler }) => {
+describe.each(testMatrix)('HttpRequestHandler restrictions (node, $type)', ({ type, Handler }) => {
   const server = createInternalInterceptorServer();
 
   declareRestrictionHttpRequestHandlerTests({
