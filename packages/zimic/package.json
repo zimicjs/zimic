@@ -40,6 +40,8 @@
     "interceptor/server.d.ts",
     "typegen.d.ts"
   ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "index.d.ts",
   "bin": {
     "zimic": "./dist/cli.js"
