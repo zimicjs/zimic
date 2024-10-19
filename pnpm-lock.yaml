@@ -570,7 +570,7 @@ importers:
         version: 17.7.2
     optionalDependencies:
       bufferutil:
-        specifier: ^4.0.8
+        specifier: 4.0.8
         version: 4.0.8
     devDependencies:
       '@types/cross-spawn':
@@ -589,10 +589,10 @@ importers:
         specifier: ^17.0.33
         version: 17.0.33
       '@vitest/browser':
-        specifier: 2.1.2
+        specifier: ^2.1.2
         version: 2.1.2(@vitest/spy@2.1.2)(bufferutil@4.0.8)(playwright@1.48.0)(typescript@5.6.3)(vite@5.3.4(@types/node@22.7.5))(vitest@2.1.2)
       '@vitest/coverage-istanbul':
-        specifier: 2.1.2
+        specifier: ^2.1.2
         version: 2.1.2(vitest@2.1.2(@types/node@22.7.5)(@vitest/browser@2.1.2)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3)))
       '@zimic/eslint-config-node':
         specifier: workspace:*
@@ -625,7 +625,7 @@ importers:
         specifier: ^5.6.3
         version: 5.6.3
       vitest:
-        specifier: 2.1.2
+        specifier: ^2.1.2
         version: 2.1.2(@types/node@22.7.5)(@vitest/browser@2.1.2)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3))
 
 packages:
