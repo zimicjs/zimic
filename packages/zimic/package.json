@@ -92,7 +92,7 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "typegen:fixtures": "tsx ./scripts/dev/typegen/generateFixtureTypes.js",
-    "deps:install-playwright": "pnpm playwright install chromium",
+    "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\"",
     "prepublish:patch-relative-paths": "sed -E -i 's/\\]\\(\\.\\/([^\\)]+)\\)/](..\\/..\\/\\1)/g;s/\"\\.\\/([^\"]+)\"/\"..\\/..\\/\\1\"/g'",

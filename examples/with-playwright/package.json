@@ -12,8 +12,8 @@
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
-    "deps:install-playwright": "pnpm playwright install chromium",
-    "postinstall": "pnpm deps:install-playwright || echo 'Could not postinstall.'"
+    "deps:install-playwright": "playwright install chromium",
+    "postinstall": "pnpm deps:install-playwright"
   },
   "dependencies": {
     "clsx": "^2.1.1",
