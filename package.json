@@ -23,7 +23,7 @@
     "types:check": "turbo types:check --continue --concurrency 50%",
     "pre:commit": "lint-staged",
     "pre:push": "concurrently --names style,lint 'pnpm style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
-    "prepare": "husky || echo 'Could not install git hooks with husky.'"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",

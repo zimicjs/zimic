@@ -13,7 +13,7 @@
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "pnpm playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
+    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
@@ -23,6 +23,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.7",
+    "concurrently": "^9.0.1",
     "dotenv-cli": "^7.4.2",
     "execa": "^9.4.0",
     "node-fetch": "^3.3.2",
