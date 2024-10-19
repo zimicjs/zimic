@@ -16,6 +16,10 @@
     "url": "https://github.com/zimicjs/zimic.git",
     "directory": "packages/zimic"
   },
+  "author": {
+    "name": "Diego Aquino",
+    "url": "https://github.com/diego-aquino"
+  },
   "private": false,
   "publishConfig": {
     "access": "public",
