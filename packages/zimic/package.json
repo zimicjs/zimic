@@ -16,6 +16,10 @@
     "url": "https://github.com/zimicjs/zimic.git",
     "directory": "packages/zimic"
   },
+  "author": {
+    "name": "Diego Aquino",
+    "url": "https://github.com/diego-aquino"
+  },
   "private": false,
   "publishConfig": {
     "access": "public",
@@ -36,6 +40,8 @@
     "interceptor/server.d.ts",
     "typegen.d.ts"
   ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "index.d.ts",
   "bin": {
     "zimic": "./dist/cli.js"
