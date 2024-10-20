@@ -342,6 +342,8 @@ least one test. By behavior, we mean anything users may reasonably rely on or en
 break in the future. Treat the opposite as true too. If a specific behavior is not documented or tested, it should not
 be considered a feature of the library, should not be relied upon, and may be removed or changed at any time.
 
-Note that 100% coverage does not mean that the library is bug-free or that every edge case is covered. We use it as a
-rough, easy to calculate metric to make sure that the library is well tested. Code review is the extra step to catch any
-other missing tests.
+> [!NOTE]
+>
+> 100% coverage does not mean that the library is bug-free or that every edge case is covered. We use it as a rough,
+> easy to calculate metric to encourage well-tested code. Code review is an extra step to catch any missing tests not
+> identified by the test coverage.
