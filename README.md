@@ -215,3 +215,7 @@ Visit our [examples](./examples/README.md) to see how to use Zimic with popular 
 ## Changelog
 
 The changelog is available on our [GitHub Releases](https://github.com/zimicjs/zimic/releases) page.
+
+## Contributing
+
+Interested in contributing to Zimic? Check out our [contributing guide](./CONTRIBUTING.md) to get started!
