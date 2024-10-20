@@ -1,9 +1,7 @@
-/// <reference types="vitest" />
-
 import path from 'path';
-import { UserConfig, defineConfig } from 'vitest/config';
+import { ViteUserConfig, defineConfig } from 'vitest/config';
 
-export const defaultConfig: UserConfig = {
+export const defaultConfig: ViteUserConfig = {
   publicDir: './public',
   test: {
     globals: false,

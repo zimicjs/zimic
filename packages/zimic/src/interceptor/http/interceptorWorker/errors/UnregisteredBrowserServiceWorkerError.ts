@@ -19,7 +19,7 @@ class UnregisteredBrowserServiceWorkerError extends Error {
   static matchesRawError(error: unknown) {
     return (
       error instanceof Error &&
-      error.message.toLowerCase().startsWith('[msw] failed to register a service worker for scope')
+      error.message.toLowerCase().includes('service worker script does not exist at the given path')
     );
   }
 }
