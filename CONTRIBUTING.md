@@ -9,18 +9,18 @@ environment and making contributions to the project.
 > feel free to [open an issue](https://github.com/zimicjs/zimic/issues/new/choose) and discuss it!
 
 - [Tools](#tools)
-- [Getting Started](#getting-started)
+- [Getting started](#getting-started)
   - [1. Fork the repository](#1-fork-the-repository)
   - [2. Clone the repository](#2-clone-the-repository)
   - [3. Install dependencies](#3-install-dependencies)
 - [Architecture](#architecture)
-- [Git workflow](#git-workflow)
-  - [Branching](#branching)
+- [Implementing changes](#implementing-changes)
+  - [Branches](#branches)
     - [Creating a branch](#creating-a-branch)
-  - [Committing](#committing)
+  - [Commits](#commits)
     - [Creating commits](#creating-commits)
   - [Pull requests](#pull-requests)
-- [Build](#build)
+- [Building](#building)
 - [Checking types](#checking-types)
 - [Linting](#linting)
 - [Formatting](#formatting)
@@ -47,7 +47,7 @@ releases. Our workflows are declared in the [.github/workflows](../.github/workf
 The [examples](https://github.com/zimicjs/zimic/blob/canary/examples/README.md) may use other tools to show different
 setups with Zimic, such as [Next.js](https://nextjs.org) and [Jest](https://jestjs.io).
 
-## Getting Started
+## Getting started
 
 ### 1. Fork the repository
 
@@ -105,14 +105,14 @@ structured as follows:
 - `docs`
   - `wiki`: Documentation (wiki) pages for the project;
 
-## Git workflow
+## Implementing changes
 
 Before making any changes to the project's code, we strongly recommend
 [opening an issue](https://github.com/zimicjs/zimic/issues/new/choose) first to discuss what you want to address. This
 way, we can ensure that your proposal is aligned with the project goals and the maintainers can provide guidance and
 suggestions.
 
-### Branching
+### Branches
 
 Zimic uses the following long-lived branches:
 
@@ -149,7 +149,7 @@ branch is related to.
   git checkout -b feat/123-my-feature
   ```
 
-### Committing
+### Commits
 
 Zimic uses [Conventional Commits](https://www.conventionalcommits.org) to standardize commit messages. This helps us
 automate the release process, generate changelogs, and understand the changes made to the project. We use
@@ -233,7 +233,7 @@ tests will run as part of our [CI pipeline](./.github/workflows/ci.yaml).
 > In Zimic, we require 100% test coverage to ensure that any implementation is property tested and all of the behaviors
 > exposed to users are verified by at least one test. The automated checks will fail if the coverage drops below 100%.
 
-## Build
+## Building
 
 Zimic uses [tsup](https://tsup.egoist.dev) for builds and [Turborepo](https://turbo.build/repo/docs) to manage each
 package dependencies and cache the results.
