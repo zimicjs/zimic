@@ -309,7 +309,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -391,7 +391,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -418,7 +418,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -449,7 +449,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -519,7 +519,7 @@ importers:
         version: 17.0.33
       '@vitest/coverage-istanbul':
         specifier: 2.1.3
-        version: 2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3)))
+        version: 2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3)))
       '@vitest/spy':
         specifier: ^2.1.3
         version: 2.1.3
@@ -543,7 +543,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
 
   packages/tsconfig:
     dependencies:
@@ -566,8 +566,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(ws@8.18.0(bufferutil@4.0.8))
       msw:
-        specifier: 2.4.10
-        version: 2.4.10(typescript@5.6.3)
+        specifier: 2.4.12
+        version: 2.4.12(typescript@5.6.3)
       openapi-typescript:
         specifier: 7.4.1
         version: 7.4.1(encoding@0.1.13)(typescript@5.6.3)
@@ -602,7 +602,7 @@ importers:
         version: 2.1.3(@vitest/spy@2.1.3)(bufferutil@4.0.8)(playwright@1.48.1)(typescript@5.6.3)(vite@5.4.9(@types/node@22.7.7))(vitest@2.1.3)
       '@vitest/coverage-istanbul':
         specifier: ^2.1.3
-        version: 2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3)))
+        version: 2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3)))
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../eslint-config-node
@@ -635,7 +635,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: ^2.1.3
-        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3))
+        version: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3))
 
 packages:
 
@@ -1355,8 +1355,8 @@ packages:
     resolution: {integrity: sha512-3rDakgJZ77+RiQUuSK69t1F0m8BQKA8Vh5DCS5V0DWvNY67zob2JhhQrhCO0AKLGINTRSFd1tBaHcJTkhefoSw==}
     engines: {node: '>=18'}
 
-  '@mswjs/interceptors@0.35.9':
-    resolution: {integrity: sha512-SSnyl/4ni/2ViHKkiZb8eajA/eN1DNFaHjhGiLUdZvDz6PKF4COSf/17xqSz64nOo2Ia29SA6B2KNCsyCbVmaQ==}
+  '@mswjs/interceptors@0.36.5':
+    resolution: {integrity: sha512-aQ8WF5zQwOdcxLsxSEk9Jd01GgGb80xxqCaiDDlewhtwqpSm8MOvUHslwPydVirasdW09++NxDNNftm1vLY8yA==}
     engines: {node: '>=18'}
 
   '@next/env@14.2.15':
@@ -3948,8 +3948,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  msw@2.4.10:
-    resolution: {integrity: sha512-bDQh9b25JK4IKMs5hnamwAkcNZ9RwA4mR/4YcgWkzwHOxj7UICbVJfmChJvY1UCAAMraPpvjHdxjoUDpc3F+Qw==}
+  msw@2.4.12:
+    resolution: {integrity: sha512-upQMKZt0fYIB0Gj6gKc5i/PK4JrICTu3ItfXiju3FTdgQLaqARv7+jugPCsOkrWpTzzjo5iLW+4F6L/mGNukbA==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -6079,7 +6079,7 @@ snapshots:
       outvariant: 1.4.3
       strict-event-emitter: 0.5.1
 
-  '@mswjs/interceptors@0.35.9':
+  '@mswjs/interceptors@0.36.5':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/logger': 0.3.0
@@ -6633,7 +6633,7 @@ snapshots:
       msw: 2.4.3(typescript@5.6.3)
       sirv: 2.0.4
       tinyrainbow: 1.2.0
-      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3))
+      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3))
       ws: 8.18.0(bufferutil@4.0.8)
     optionalDependencies:
       playwright: 1.48.1
@@ -6648,13 +6648,13 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.0
       '@testing-library/user-event': 14.5.2(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.3(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))
+      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.3(typescript@5.6.3))(vite@5.4.9(@types/node@22.7.7))
       '@vitest/utils': 2.1.3
       magic-string: 0.30.11
       msw: 2.4.3(typescript@5.6.3)
       sirv: 2.0.4
       tinyrainbow: 1.2.0
-      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
       ws: 8.18.0(bufferutil@4.0.8)
     transitivePeerDependencies:
       - '@vitest/spy'
@@ -6663,6 +6663,22 @@ snapshots:
       - utf-8-validate
       - vite
     optional: true
+
+  '@vitest/coverage-istanbul@2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3)))':
+    dependencies:
+      '@istanbuljs/schema': 0.1.3
+      debug: 4.3.7(supports-color@9.4.0)
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-instrument: 6.0.3
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.1.7
+      magicast: 0.3.4
+      test-exclude: 7.0.1
+      tinyrainbow: 1.2.0
+      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3))
+    transitivePeerDependencies:
+      - supports-color
 
   '@vitest/coverage-istanbul@2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3)))':
     dependencies:
@@ -6680,7 +6696,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-istanbul@2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3)))':
+  '@vitest/coverage-istanbul@2.1.3(vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3)))':
     dependencies:
       '@istanbuljs/schema': 0.1.3
       debug: 4.3.7(supports-color@9.4.0)
@@ -6692,7 +6708,7 @@ snapshots:
       magicast: 0.3.4
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3))
+      vitest: 2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3))
     transitivePeerDependencies:
       - supports-color
 
@@ -6702,6 +6718,15 @@ snapshots:
       '@vitest/utils': 2.1.3
       chai: 5.1.1
       tinyrainbow: 1.2.0
+
+  '@vitest/mocker@2.1.3(@vitest/spy@2.1.3)(msw@2.4.12(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))':
+    dependencies:
+      '@vitest/spy': 2.1.3
+      estree-walker: 3.0.3
+      magic-string: 0.30.12
+    optionalDependencies:
+      msw: 2.4.12(typescript@5.6.3)
+      vite: 5.3.4(@types/node@22.7.7)
 
   '@vitest/mocker@2.1.3(@vitest/spy@2.1.3)(msw@2.4.3(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))':
     dependencies:
@@ -6720,15 +6745,6 @@ snapshots:
     optionalDependencies:
       msw: 2.4.3(typescript@5.6.3)
       vite: 5.4.9(@types/node@22.7.7)
-
-  '@vitest/mocker@2.1.3(@vitest/spy@2.1.3)(msw@2.4.9(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))':
-    dependencies:
-      '@vitest/spy': 2.1.3
-      estree-walker: 3.0.3
-      magic-string: 0.30.12
-    optionalDependencies:
-      msw: 2.4.9(typescript@5.6.3)
-      vite: 5.3.4(@types/node@22.7.7)
 
   '@vitest/pretty-format@2.1.3':
     dependencies:
@@ -9124,13 +9140,13 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw@2.4.10(typescript@5.6.3):
+  msw@2.4.12(typescript@5.6.3):
     dependencies:
       '@bundled-es-modules/cookie': 2.0.0
       '@bundled-es-modules/statuses': 1.0.1
       '@bundled-es-modules/tough-cookie': 0.1.6
       '@inquirer/confirm': 3.2.0
-      '@mswjs/interceptors': 0.35.9
+      '@mswjs/interceptors': 0.36.5
       '@open-draft/until': 2.1.0
       '@types/cookie': 0.6.0
       '@types/statuses': 2.0.5
@@ -10307,6 +10323,41 @@ snapshots:
       fsevents: 2.3.3
     optional: true
 
+  vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.12(typescript@5.6.3)):
+    dependencies:
+      '@vitest/expect': 2.1.3
+      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.12(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))
+      '@vitest/pretty-format': 2.1.3
+      '@vitest/runner': 2.1.3
+      '@vitest/snapshot': 2.1.3
+      '@vitest/spy': 2.1.3
+      '@vitest/utils': 2.1.3
+      chai: 5.1.1
+      debug: 4.3.7(supports-color@9.4.0)
+      magic-string: 0.30.12
+      pathe: 1.1.2
+      std-env: 3.7.0
+      tinybench: 2.9.0
+      tinyexec: 0.3.0
+      tinypool: 1.0.0
+      tinyrainbow: 1.2.0
+      vite: 5.3.4(@types/node@22.7.7)
+      vite-node: 2.1.3(@types/node@22.7.7)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 22.7.7
+      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(bufferutil@4.0.8)(playwright@1.48.1)(typescript@5.6.3)(vite@5.4.9(@types/node@22.7.7))(vitest@2.1.3)
+      jsdom: 20.0.3(bufferutil@4.0.8)
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+
   vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3)):
     dependencies:
       '@vitest/expect': 2.1.3
@@ -10330,7 +10381,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.7.7
-      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(bufferutil@4.0.8)(playwright@1.48.1)(typescript@5.6.3)(vite@5.4.9(@types/node@22.7.7))(vitest@2.1.3)
+      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(bufferutil@4.0.8)(playwright@1.48.1)(typescript@5.6.3)(vite@5.3.4(@types/node@22.7.7))(vitest@2.1.3)
       jsdom: 20.0.3(bufferutil@4.0.8)
     transitivePeerDependencies:
       - less
@@ -10342,45 +10393,10 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.9(typescript@5.6.3)):
+  vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.12(typescript@5.6.3)):
     dependencies:
       '@vitest/expect': 2.1.3
-      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.9(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))
-      '@vitest/pretty-format': 2.1.3
-      '@vitest/runner': 2.1.3
-      '@vitest/snapshot': 2.1.3
-      '@vitest/spy': 2.1.3
-      '@vitest/utils': 2.1.3
-      chai: 5.1.1
-      debug: 4.3.7(supports-color@9.4.0)
-      magic-string: 0.30.12
-      pathe: 1.1.2
-      std-env: 3.7.0
-      tinybench: 2.9.0
-      tinyexec: 0.3.0
-      tinypool: 1.0.0
-      tinyrainbow: 1.2.0
-      vite: 5.3.4(@types/node@22.7.7)
-      vite-node: 2.1.3(@types/node@22.7.7)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 22.7.7
-      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(bufferutil@4.0.8)(playwright@1.48.1)(typescript@5.6.3)(vite@5.4.9(@types/node@22.7.7))(vitest@2.1.3)
-      jsdom: 20.0.3(bufferutil@4.0.8)
-    transitivePeerDependencies:
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-
-  vitest@2.1.3(@types/node@22.7.7)(@vitest/browser@2.1.3)(jsdom@20.0.3)(msw@2.4.9(typescript@5.6.3)):
-    dependencies:
-      '@vitest/expect': 2.1.3
-      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.9(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))
+      '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.4.12(typescript@5.6.3))(vite@5.3.4(@types/node@22.7.7))
       '@vitest/pretty-format': 2.1.3
       '@vitest/runner': 2.1.3
       '@vitest/snapshot': 2.1.3
