@@ -1,5 +1,5 @@
-name: Get zimic version
-description: Get zimic version
+name: Get Zimic Version
+description: Get Zimic Version
 
 inputs:
   ref-name:
