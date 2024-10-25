@@ -5,11 +5,11 @@ import GitHubRepositoryShowcase from './components/GitHubRepositoryShowcase';
 import { HomePageSearchParams } from './hooks/useHomePageSearchParams';
 
 interface Props {
-  searchParams: HomePageSearchParams;
+  searchParams: Promise<HomePageSearchParams>;
 }
 
-function HomePage({ searchParams }: Props) {
-  const { owner: ownerName, repo: repositoryName } = searchParams;
+async function HomePage({ searchParams }: Props) {
+  const { owner: ownerName, repo: repositoryName } = await searchParams;
   const shouldFetchRepository = ownerName && repositoryName;
 
   return (

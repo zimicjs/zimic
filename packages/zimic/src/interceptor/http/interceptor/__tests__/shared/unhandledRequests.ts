@@ -78,7 +78,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       });
 
       if (type === 'local') {
-        it(`should show a warning when logging is enabled and an ${method} request with no body is unhandled and bypassed`, async () => {
+        it(`should show a warning when logging is enabled and ${method} requests with no body are unhandled and bypassed`, async () => {
           await usingHttpInterceptor<{
             '/users': {
               GET: MethodSchemaWithoutRequestBody;
@@ -150,7 +150,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       }
 
       if (type === 'local' && methodCanHaveRequestBody(method)) {
-        it(`should show a warning when logging is enabled and an ${method} request with body is unhandled and bypassed`, async () => {
+        it(`should show a warning when logging is enabled and ${method} requests with body are unhandled and bypassed`, async () => {
           await usingHttpInterceptor<{
             '/users': {
               POST: MethodSchemaWithRequestBody;
@@ -225,7 +225,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       }
 
       if (type === 'remote') {
-        it(`should show an error when logging is enabled and an ${method} request with no body is unhandled and rejected`, async () => {
+        it(`should show an error when logging is enabled and ${method} requests with no body are unhandled and rejected`, async () => {
           await usingHttpInterceptor<{
             '/users': {
               GET: MethodSchemaWithoutRequestBody;
@@ -299,7 +299,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       }
 
       if (type === 'remote' && methodCanHaveRequestBody(method)) {
-        it(`should show an error when logging is enabled and an ${method} request with body is unhandled and rejected`, async () => {
+        it(`should show an error when logging is enabled and ${method} requests with body are unhandled and rejected`, async () => {
           await usingHttpInterceptor<{
             '/users': {
               POST: MethodSchemaWithRequestBody;
@@ -377,7 +377,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     });
 
     it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
-      `should not show a warning or error when logging is disabled and an ${method} request is unhandled: override default $overrideDefault`,
+      `should not show a warning or error when logging is disabled and ${method} requests are unhandled: override default $overrideDefault`,
       async ({ overrideDefault }) => {
         if (overrideDefault === 'static') {
           httpInterceptor.default.onUnhandledRequest({ log: false });

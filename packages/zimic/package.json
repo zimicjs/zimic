@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.9.3-canary.7",
+  "version": "0.9.3-canary.8",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -48,34 +48,34 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     },
     "./http": {
+      "types": "./dist/http.d.ts",
       "import": "./dist/http.mjs",
       "require": "./dist/http.js",
-      "default": "./dist/http.js",
-      "types": "./dist/http.d.ts"
+      "default": "./dist/http.js"
     },
     "./interceptor/http": {
+      "types": "./dist/interceptor/http.d.ts",
       "import": "./dist/interceptor/http.mjs",
       "require": "./dist/interceptor/http.js",
-      "default": "./dist/interceptor/http.js",
-      "types": "./dist/interceptor/http.d.ts"
+      "default": "./dist/interceptor/http.js"
     },
     "./interceptor/server": {
+      "types": "./dist/interceptor/server.d.ts",
       "import": "./dist/interceptor/server.mjs",
       "require": "./dist/interceptor/server.js",
-      "default": "./dist/interceptor/server.js",
-      "types": "./dist/interceptor/server.d.ts"
+      "default": "./dist/interceptor/server.js"
     },
     "./typegen": {
+      "types": "./dist/typegen.d.ts",
       "import": "./dist/typegen.mjs",
       "require": "./dist/typegen.js",
-      "default": "./dist/typegen.js",
-      "types": "./dist/typegen.d.ts"
+      "default": "./dist/typegen.js"
     },
     "./package.json": "./package.json"
   },
@@ -99,12 +99,12 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@whatwg-node/server": "0.9.49",
+    "@whatwg-node/server": "0.9.50",
     "chalk": "4.1.2",
     "execa": "9.4.1",
     "isomorphic-ws": "5.0.0",
     "msw": "2.4.12",
-    "openapi-typescript": "7.4.1",
+    "openapi-typescript": "7.4.2",
     "ws": "8.18.0",
     "yargs": "17.7.2"
   },
@@ -114,7 +114,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.7.7",
+    "@types/node": "^22.8.0",
     "@types/ws": "^8.5.12",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^2.1.3",
@@ -126,7 +126,7 @@
     "js-yaml": "^4.1.0",
     "playwright": "^1.48.1",
     "prettier": "^3.3.3",
-    "tsup": "^8.3.0",
+    "tsup": "^8.3.4",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3",
     "vitest": "^2.1.3"
