@@ -13,8 +13,6 @@ updates:
     commit-message:
       prefix: chore
     target-branch: canary
-    reviewers:
-      - diego-aquino
     groups:
       npm:
         patterns:
@@ -52,8 +50,6 @@ updates:
     commit-message:
       prefix: chore
     target-branch: canary
-    reviewers:
-      - diego-aquino
     groups:
       github-actions:
         patterns:
