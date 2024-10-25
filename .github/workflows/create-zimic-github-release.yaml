@@ -62,8 +62,8 @@ jobs:
         with:
           project-name: zimic
           project-directory: packages/zimic
-          upgrade-type: ${{ github.event.inputs.upgrade-type }}
-          pre-release-tag: ${{ github.event.inputs.pre-release-tag }}
+          upgrade-type: ${{ inputs.upgrade-type }}
+          pre-release-tag: ${{ inputs.pre-release-tag }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
           commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
 

@@ -72,9 +72,11 @@ jobs:
 
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
+        id: zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
-          install-playwright-browsers: true
+          install: zimic-test-client zimic-examples zimic-example-*
+          build: zimic-test-client^... zimic-examples^... zimic-example-*^...
 
       - name: Test released package
         run: |
@@ -101,7 +103,7 @@ jobs:
           echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
           timeout 90s bash -c '
-            until pnpm install --no-frozen-lockfile; do
+            until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
               sleep 5
               echo "Retrying..."
             done
@@ -111,17 +113,13 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            --filter zimic-test-client \
-            --filter zimic-examples \
-            --filter 'zimic-example-*'
+            ${{ steps.zimic-setup.outputs.install-filters }}
 
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 1 \
-            --filter zimic-test-client \
-            --filter zimic-examples \
-            --filter 'zimic-example-*'
+            --concurrency 100% \
+            ${{ steps.zimic-setup.outputs.install-filters }}
 
   release-docs:
     name: Release documentation
@@ -151,6 +149,7 @@ jobs:
         with:
           repository: zimicjs/zimic.wiki
           path: zimic.wiki
+          ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
 
       - name: Sync wiki content
         working-directory: zimic
@@ -160,8 +159,8 @@ jobs:
       - name: Commit and push wiki changes
         working-directory: zimic.wiki
         run: |
-          git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
-          git config user.email '${{ vars.ZIMIC_WIKI_COMMIT_USER_EMAIL }}'
+          git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
+          git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
 
           git add .
           git commit -m 'docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}'
