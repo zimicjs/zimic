@@ -11,7 +11,7 @@ updates:
     labels:
       - dependencies
     commit-message:
-      prefix: chore
+      prefix: chore(root)
     target-branch: canary
     groups:
       npm:
@@ -48,7 +48,7 @@ updates:
     labels:
       - dependencies
     commit-message:
-      prefix: chore
+      prefix: chore(root)
     target-branch: canary
     groups:
       github-actions:
