@@ -56,7 +56,7 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: zimic
 
-      - name: Bump zimic version
+      - name: Bump Zimic version
         id: bump-version
         uses: ./.github/actions/zimic-bump-version
         with:

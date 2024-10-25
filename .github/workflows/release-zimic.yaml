@@ -36,7 +36,7 @@ jobs:
           project-directory: packages/zimic
           validate-ref-name: ${{ github.ref_name }}
 
-      - name: Set up zimic
+      - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -44,7 +44,7 @@ jobs:
           install: zimic...
           build: zimic^...
 
-      - name: Build zimic
+      - name: Build Zimic
         run: pnpm turbo build --filter zimic
 
       - name: Release to NPM
@@ -65,14 +65,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get zimic release version
+      - name: Get Zimic release version
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
           project-directory: packages/zimic
           validate-ref-name: ${{ github.ref_name }}
 
-      - name: Set up zimic
+      - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         id: zimic-setup
         with:
@@ -139,7 +139,7 @@ jobs:
         with:
           path: zimic
 
-      - name: Get zimic release version
+      - name: Get Zimic release version
         id: zimic-version
         uses: ./zimic/.github/actions/zimic-version
         with:
@@ -169,7 +169,7 @@ jobs:
           git push
 
   publish-release-comments:
-    name: Publish zimic release comments
+    name: Publish Zimic release comments
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs:
