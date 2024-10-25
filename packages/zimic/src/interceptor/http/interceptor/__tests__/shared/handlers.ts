@@ -325,7 +325,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
       });
     });
 
-    it(`should not intercept an ${method} request without a registered response`, async () => {
+    it(`should not intercept ${method} requests without a registered response`, async () => {
       type MethodSchema = HttpSchema.Method<{
         response: { 200: { headers: AccessControlHeaders } };
       }>;
