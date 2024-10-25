@@ -1,4 +1,4 @@
-name: Create Zimic Github Release
+name: Create Zimic GitHub Release
 
 on:
   workflow_dispatch:
@@ -14,8 +14,8 @@ on:
           - patch
           - minor
           - major
-      pre-release-tag:
-        description: Pre-release tag
+      pre-release-id:
+        description: Pre-release id
         type: choice
         required: true
         default: canary
@@ -63,7 +63,7 @@ jobs:
           project-name: zimic
           project-directory: packages/zimic
           upgrade-type: ${{ inputs.upgrade-type }}
-          pre-release-tag: ${{ inputs.pre-release-tag }}
+          pre-release-id: ${{ inputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
           commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
 
@@ -74,7 +74,7 @@ jobs:
           tag: v${{ steps.bump-version.outputs.value }}
           commit: ${{ github.sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          makeLatest: ${{ inputs.pre-release-tag == 'none' }}
-          prerelease: ${{ inputs.pre-release-tag != 'node' }}
+          makeLatest: ${{ inputs.pre-release-id == 'none' }}
+          prerelease: ${{ inputs.pre-release-id != 'node' }}
           generateReleaseNotes: true
           draft: true
