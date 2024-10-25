@@ -1,4 +1,4 @@
-name: Release zimic
+name: Release Zimic
 
 on:
   release:
@@ -33,9 +33,10 @@ jobs:
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
+          project-directory: packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
-      - name: Set up zimic
+      - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -43,7 +44,7 @@ jobs:
           install: zimic...
           build: zimic^...
 
-      - name: Build zimic
+      - name: Build Zimic
         run: pnpm turbo build --filter zimic
 
       - name: Release to NPM
@@ -64,17 +65,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get zimic release version
+      - name: Get Zimic release version
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
+          project-directory: packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
-      - name: Set up zimic
+      - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
+        id: zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
-          install-playwright-browsers: true
+          install: zimic-test-client zimic-examples zimic-example-*
+          build: zimic-test-client^... zimic-examples^... zimic-example-*^...
 
       - name: Test released package
         run: |
@@ -101,7 +105,7 @@ jobs:
           echo "zimic@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
           timeout 90s bash -c '
-            until pnpm install --no-frozen-lockfile; do
+            until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
               sleep 5
               echo "Retrying..."
             done
@@ -111,17 +115,13 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            --filter zimic-test-client \
-            --filter zimic-examples \
-            --filter 'zimic-example-*'
+            ${{ steps.zimic-setup.outputs.install-filters }}
 
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 1 \
-            --filter zimic-test-client \
-            --filter zimic-examples \
-            --filter 'zimic-example-*'
+            --concurrency 100% \
+            ${{ steps.zimic-setup.outputs.install-filters }}
 
   release-docs:
     name: Release documentation
@@ -139,36 +139,40 @@ jobs:
         with:
           path: zimic
 
-      - name: Get zimic release version
+      - name: Get Zimic release version
         id: zimic-version
         uses: ./zimic/.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
-          working-directory: zimic
+          project-directory: zimic/packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
       - name: Checkout wiki
         uses: actions/checkout@v4
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         with:
           repository: zimicjs/zimic.wiki
           path: zimic.wiki
+          ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
 
       - name: Sync wiki content
         working-directory: zimic
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         run: |
           bash scripts/docs/sync-wiki.sh '${{ github.ref_name }}'
 
       - name: Commit and push wiki changes
         working-directory: zimic.wiki
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         run: |
-          git config user.name '${{ vars.ZIMIC_WIKI_COMMIT_USER_NAME }}'
-          git config user.email '${{ vars.ZIMIC_WIKI_COMMIT_USER_EMAIL }}'
+          git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
+          git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
 
           git add .
           git commit -m 'docs(wiki): zimic@${{ steps.zimic-version.outputs.value }}'
           git push
 
   publish-release-comments:
-    name: Publish zimic release comments
+    name: Publish Zimic release comments
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs:
