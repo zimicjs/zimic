@@ -6,7 +6,8 @@ inputs:
     description: The tag name that triggered the workflow
     required: true
   working-directory:
-    description: The working directory to run the action in
+    description: The working directory of the zimic package
+    default: packages/zimic
 
 outputs:
   value:
@@ -24,7 +25,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        version=$(jq -r '.version' ./packages/zimic/package.json)
+        version=$(jq -r '.version' ./package.json)
         echo "value=$version" >> $GITHUB_OUTPUT
 
         if [[ '${{ inputs.ref-name }}' != "v$version" ]]; then

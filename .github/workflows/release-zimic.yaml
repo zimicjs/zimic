@@ -142,7 +142,7 @@ jobs:
         uses: ./zimic/.github/actions/zimic-version
         with:
           ref-name: ${{ github.ref_name }}
-          working-directory: zimic
+          working-directory: zimic/packages/zimic
 
       - name: Checkout wiki
         uses: actions/checkout@v4
