@@ -148,6 +148,7 @@ jobs:
 
       - name: Checkout wiki
         uses: actions/checkout@v4
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         with:
           repository: zimicjs/zimic.wiki
           path: zimic.wiki
@@ -155,11 +156,13 @@ jobs:
 
       - name: Sync wiki content
         working-directory: zimic
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         run: |
           bash scripts/docs/sync-wiki.sh '${{ github.ref_name }}'
 
       - name: Commit and push wiki changes
         working-directory: zimic.wiki
+        if: ${{ steps.zimic-version.outputs.label == 'latest' }}
         run: |
           git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
           git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
