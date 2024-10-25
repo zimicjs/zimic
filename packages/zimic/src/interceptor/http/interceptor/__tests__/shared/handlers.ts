@@ -368,10 +368,13 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
-        const handlerWithResponse = handlerWithoutResponse.respond({
-          status: 200,
-          headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-        });
+        const handlerWithResponse = await promiseIfRemote(
+          handlerWithoutResponse.respond({
+            status: 200,
+            headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+          }),
+          interceptor,
+        );
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
