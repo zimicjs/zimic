@@ -72,7 +72,7 @@ jobs:
         with:
           name: v${{ steps.bump-version.outputs.value }}
           tag: v${{ steps.bump-version.outputs.value }}
-          commit: ${{ github.sha }}
+          commit: ${{ steps.bump-version.outputs.commit-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           makeLatest: ${{ inputs.pre-release-id == 'none' }}
           prerelease: ${{ inputs.pre-release-id != 'node' }}
