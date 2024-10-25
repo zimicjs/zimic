@@ -17,6 +17,7 @@ class TestEnvironment extends JSDOMEnvironment {
     this.global.TextEncoder = TextEncoder;
     this.global.TextDecoder = TextDecoder;
     this.global.ReadableStream = ReadableStream;
+    this.global.TransformStream = TransformStream;
   }
 }
 
