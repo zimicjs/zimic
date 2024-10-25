@@ -34,6 +34,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
+          install: ./{apps,examples,packages}/*
+          build: ./packages/*
 
       - name: Check formatting style and save prettier cache
         uses: ./.github/actions/zimic-style-check

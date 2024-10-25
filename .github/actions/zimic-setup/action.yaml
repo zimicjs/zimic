@@ -17,15 +17,9 @@ inputs:
   install:
     description: Filter to install the dependencies of a specific app or package
     required: false
-    default: './{apps,packages}/*'
   build:
     description: Filter to build the dependencies of a specific app or package
     required: false
-    default: './packages/*'
-  install-playwright-browsers:
-    description: Whether to install the browsers for Playwright
-    required: false
-    default: 'false'
 
 outputs:
   install-filters:
@@ -78,13 +72,14 @@ runs:
 
         if [[ '${{ inputs.install }}' == '' ]]; then
           installFilters=''
-          fullInstallFilters=''
+          fullInstallFilters='--filter zimic-root'
         else
           installFilters="$(composeFilterOptions ${{ inputs.install }})"
           fullInstallFilters="--filter zimic-root --filter zimic $installFilters"
         fi
 
         echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
+
         pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $fullInstallFilters
 
         if [[ '${{ inputs.build }}' == '' ]]; then
@@ -96,13 +91,12 @@ runs:
         fi
 
         echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
-        pnpm turbo build $fullBuildFilters
 
-        # apply the build outputs of the internal packages
-        pnpm install --offline $fullInstallFilters
+        if [[ "$fullBuildFilters" != '' ]]; then
+          pnpm turbo build $fullBuildFilters
 
-        if [[ '${{ inputs.install-playwright-browsers }}' == 'true' ]]; then
-          pnpm --dir packages/zimic deps:install-playwright
+          # apply the build outputs of the internal packages
+          pnpm install --offline $fullInstallFilters
         fi
       env:
         NODE_VERSION: ${{ inputs.node-version }}
