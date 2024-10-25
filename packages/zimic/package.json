@@ -48,34 +48,34 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     },
     "./http": {
+      "types": "./dist/http.d.ts",
       "import": "./dist/http.mjs",
       "require": "./dist/http.js",
-      "default": "./dist/http.js",
-      "types": "./dist/http.d.ts"
+      "default": "./dist/http.js"
     },
     "./interceptor/http": {
+      "types": "./dist/interceptor/http.d.ts",
       "import": "./dist/interceptor/http.mjs",
       "require": "./dist/interceptor/http.js",
-      "default": "./dist/interceptor/http.js",
-      "types": "./dist/interceptor/http.d.ts"
+      "default": "./dist/interceptor/http.js"
     },
     "./interceptor/server": {
+      "types": "./dist/interceptor/server.d.ts",
       "import": "./dist/interceptor/server.mjs",
       "require": "./dist/interceptor/server.js",
-      "default": "./dist/interceptor/server.js",
-      "types": "./dist/interceptor/server.d.ts"
+      "default": "./dist/interceptor/server.js"
     },
     "./typegen": {
+      "types": "./dist/typegen.d.ts",
       "import": "./dist/typegen.mjs",
       "require": "./dist/typegen.js",
-      "default": "./dist/typegen.js",
-      "types": "./dist/typegen.d.ts"
+      "default": "./dist/typegen.js"
     },
     "./package.json": "./package.json"
   },
