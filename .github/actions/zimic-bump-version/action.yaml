@@ -61,14 +61,16 @@ runs:
         fi
 
         echo "Project '$projectName' is now at $bumpedVersion"
+
         echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
+        echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
         echo 'Committing changes...'
 
         git config user.name '${{ inputs.commit-user-name }}'
         git config user.email '${{ inputs.commit-user-email }}'
 
-        git add .
+        git add --all
         git commit -m "chore(release): $projectName@$bumpedVersion"
 
         echo 'Pushing changes...'

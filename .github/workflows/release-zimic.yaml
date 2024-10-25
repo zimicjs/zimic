@@ -1,4 +1,4 @@
-name: Release zimic
+name: Release Zimic
 
 on:
   release:
@@ -33,7 +33,8 @@ jobs:
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
+          project-directory: packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
@@ -68,7 +69,8 @@ jobs:
         id: zimic-version
         uses: ./.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
+          project-directory: packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
       - name: Set up zimic
         uses: ./.github/actions/zimic-setup
@@ -141,8 +143,8 @@ jobs:
         id: zimic-version
         uses: ./zimic/.github/actions/zimic-version
         with:
-          ref-name: ${{ github.ref_name }}
-          working-directory: zimic
+          project-directory: zimic/packages/zimic
+          validate-ref-name: ${{ github.ref_name }}
 
       - name: Checkout wiki
         uses: actions/checkout@v4

@@ -1,5 +1,5 @@
-name: Set up zimic
-description: Set up zimic
+name: Set Up Zimic
+description: Set Up Zimic
 
 inputs:
   node-version:
