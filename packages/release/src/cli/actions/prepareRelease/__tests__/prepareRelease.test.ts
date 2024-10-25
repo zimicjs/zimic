@@ -50,7 +50,7 @@ describe('Prepare release command', () => {
       if (filePath === metadataFilePath) {
         return Promise.resolve(JSON.stringify(metadataFileContent));
       } else {
-        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
+        return Promise.reject(new Error(`File ${JSON.stringify(filePath)} not found.`));
       }
     });
 
@@ -62,7 +62,7 @@ describe('Prepare release command', () => {
         Object.assign(metadataFileContent, JSON.parse(newMetadataFileContent));
         return Promise.resolve();
       } else {
-        return Promise.reject(new Error(`File ${filePath.toLocaleString()} not found.`));
+        return Promise.reject(new Error(`File ${JSON.stringify(filePath)} not found.`));
       }
     });
 
