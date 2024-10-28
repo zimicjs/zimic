@@ -17,14 +17,14 @@ env:
   NODE_VERSION: 20
 
   TURBO_TOKEN: |
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM: |
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
   INSTALL_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || './{apps,examples,packages}/*' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"...[HEAD^1]"' || './{apps,examples,packages}/*' }}
   BUILD_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci-general:
