@@ -5,12 +5,9 @@ import githubInterceptor, { githubFixtures } from './github';
 httpInterceptor.default.onUnhandledRequest(async (request, context) => {
   const url = new URL(request.url);
 
-  // Ignore requests to the same host
-  if (url.host === window.location.host) {
-    return;
+  if (url.hostname !== '127.0.0.1') {
+    await context.log();
   }
-
-  await context.log();
 });
 
 export async function loadInterceptors() {
