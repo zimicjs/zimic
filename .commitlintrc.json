@@ -16,7 +16,6 @@
         "release",
         "zimic-test-client",
         "#zimic",
-        "#release",
         "#eslint",
         "#eslint-node",
         "#lint-staged",
