@@ -1,7 +1,7 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "version": "0.9.3-canary.11",
+  "version": "0.9.3-canary.12",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git"
@@ -29,7 +29,6 @@
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "@zimic/lint-staged-config": "workspace:*",
-    "@zimic/release": "workspace:*",
     "concurrently": "^9.0.1",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
