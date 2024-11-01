@@ -6,8 +6,8 @@ import { ExtendedURL } from '@/utils/urls';
 export interface SharedHttpRequestHandlerTestOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
   stopServer?: () => PossiblePromise<void>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
 }
 
 export type HeadersSchema = HttpSchema.Headers<{

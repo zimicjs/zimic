@@ -6,19 +6,20 @@
     "test": "vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit",
-    "deps:install-playwright": "pnpm playwright install chromium",
+    "deps:install-playwright": "playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "pnpm deps:install-playwright && pnpm deps:init-zimic || echo 'Could not postinstall.'"
+    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/jest-dom": "^6.6.2",
     "@testing-library/user-event": "^14.5.2",
-    "@vitest/browser": "2.1.1",
+    "@vitest/browser": "2.1.3",
+    "concurrently": "^9.0.1",
     "dotenv-cli": "^7.4.2",
-    "playwright": "^1.47.2",
-    "typescript": "^5.6.2",
-    "vitest": "2.1.1",
+    "playwright": "^1.48.2",
+    "typescript": "^5.6.3",
+    "vitest": "2.1.3",
     "zimic": "latest"
   }
 }

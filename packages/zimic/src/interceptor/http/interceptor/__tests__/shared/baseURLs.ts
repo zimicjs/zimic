@@ -6,7 +6,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL, getInterceptorOptions } = options;
@@ -83,7 +83,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   if (type === 'local') {
     it.each(SUPPORTED_BASE_URL_PROTOCOLS)(
-      'should not throw an error if provided a supported base URL protocol: %s',
+      'should not throw an error if provided a supported base URL protocol (%s)',
       async (supportedProtocol) => {
         const url = `${supportedProtocol}://localhost:3000`;
         const handler = vi.fn();
@@ -98,7 +98,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     const exampleUnsupportedProtocols = ['ws', 'wss', 'ftp'];
 
     it.each(exampleUnsupportedProtocols)(
-      'should throw an error if provided an unsupported base URL protocol: %s',
+      'should throw an error if provided an unsupported base URL protocol (%s)',
       async (unsupportedProtocol) => {
         expect(SUPPORTED_BASE_URL_PROTOCOLS).not.toContain(unsupportedProtocol);
 

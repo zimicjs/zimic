@@ -33,6 +33,7 @@ export interface GitHubComponents {
       type: string;
       site_admin: boolean;
       starred_at?: string;
+      user_view_type?: string;
     };
     'basic-error': {
       message?: string;
@@ -62,6 +63,7 @@ export interface GitHubComponents {
       type: string;
       site_admin: boolean;
       starred_at?: string;
+      user_view_type?: string;
     } | null;
     'nullable-license-simple': {
       key: string;
@@ -188,6 +190,9 @@ export interface GitHubComponents {
         status?: 'enabled' | 'disabled';
       };
       secret_scanning_non_provider_patterns?: {
+        status?: 'enabled' | 'disabled';
+      };
+      secret_scanning_ai_detection?: {
         status?: 'enabled' | 'disabled';
       };
     } | null;

@@ -1,5 +1,3 @@
-/// <reference types="vitest" />
-
 import { defineWorkspace } from 'vitest/config';
 
 const shouldIncludeExtendedBrowsers = process.env.CI === 'true' || process.env.ALL_BROWSERS === 'true';
@@ -15,7 +13,7 @@ export default defineWorkspace([
       name: 'node',
       environment: 'node',
       include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.node.test.ts'],
-      exclude: ['**/*.browser.test.ts', '**/*.browserNoWorker.test.ts'],
+      exclude: ['**/*.browser.test.ts'],
     },
   },
   ...browserNames.flatMap((browserName) => [
@@ -25,23 +23,8 @@ export default defineWorkspace([
         name: `browser-${browserName}`,
         environment: undefined,
         include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.browser.test.ts'],
-        exclude: ['**/*.node.test.ts', '**/*.browserNoWorker.test.ts'],
+        exclude: ['**/*.node.test.ts'],
         globalSetup: './tests/setup/global/browser.ts',
-        browser: {
-          name: browserName,
-          provider: 'playwright',
-          enabled: true,
-          headless: true,
-          screenshotFailures: false,
-        },
-      },
-    },
-    {
-      extends: 'vitest.config.noPublic.mts',
-      test: {
-        name: `browser-${browserName}-no-worker`,
-        environment: undefined,
-        include: ['./{src,tests,scripts}/**/*.browserNoWorker.test.ts'],
         browser: {
           name: browserName,
           provider: 'playwright',

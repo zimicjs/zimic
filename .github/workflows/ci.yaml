@@ -17,14 +17,14 @@ env:
   NODE_VERSION: 20
 
   TURBO_TOKEN: |
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM: |
-    ${{ !(github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
   INSTALL_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"...[HEAD^1]"' || '' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"...[HEAD^1]"' || './{apps,examples,packages}/*' }}
   BUILD_OPTIONS: |
-    ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main' && '"{./apps/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
 
 jobs:
   ci-general:
@@ -38,16 +38,15 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS == '' && '' || format('zimic {0}', env.INSTALL_OPTIONS) }}
-          build: ${{ format('zimic {0}', env.BUILD_OPTIONS) }}
-          install-playwright-browsers: true
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -104,7 +103,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
@@ -113,17 +112,16 @@ jobs:
           turbo-team: ${{ env.TURBO_TEAM }}
           install: ${{ env.INSTALL_OPTIONS }}
           build: ${{ env.BUILD_OPTIONS }}
-          install-playwright-browsers: true
 
       - name: Run tests
         run: |
           pnpm turbo \
             test:turbo \
             --continue \
-            --concurrency 1 \
+            --concurrency 100% \
             ${{ steps.zimic-setup.outputs.install-filters }}
         env:
-          PLAYWRIGHT_WORKERS: 100%
+          PLAYWRIGHT_WORKERS: 50%
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -146,7 +144,6 @@ jobs:
       fail-fast: false
       matrix:
         typescript-version:
-          - '4.7'
           - '4.8'
           - '4.9'
           - '5.0'
@@ -166,7 +163,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up zimic
+      - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:

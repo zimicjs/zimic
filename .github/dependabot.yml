@@ -8,11 +8,11 @@ updates:
       day: sunday
       time: '00:00'
       timezone: America/Sao_Paulo
+    labels:
+      - dependencies
     commit-message:
-      prefix: chore
+      prefix: chore(root)
     target-branch: canary
-    reviewers:
-      - diego-aquino
     groups:
       npm:
         patterns:
@@ -30,6 +30,11 @@ updates:
       - dependency-name: eslint
         update-types:
           - version-update:semver-major
+      - dependency-name: msw
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directories:
@@ -40,11 +45,11 @@ updates:
       day: sunday
       time: '00:00'
       timezone: America/Sao_Paulo
+    labels:
+      - dependencies
     commit-message:
-      prefix: chore
+      prefix: chore(root)
     target-branch: canary
-    reviewers:
-      - diego-aquino
     groups:
       github-actions:
         patterns:

@@ -1,0 +1,67 @@
+name: 🚀 Feature request
+description: Propose a new feature or improvement.
+labels:
+  - feature
+  - needs triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to improve Zimic!
+
+        Please fill in the information below to help us understand your proposal.
+
+  - type: checkboxes
+    attributes:
+      label: Prerequisites
+      description: Let's first make sure that your idea is not already proposed or available in Zimic.
+      options:
+        - label: I confirm that none of the [open issues](https://github.com/zimicjs/zimic/issues) match my proposal
+          required: true
+        - label:
+            I confirm that my proposal is not yet available in the latest version of Zimic (see the
+            [documentation](https://github.com/zimicjs/zimic/wiki) and the
+            [releases](https://github.com/zimicjs/zimic/discussions/categories/announcements?discussions_q=is%3Aopen+category%3AAnnouncements+label%3Arelease))
+          required: true
+
+  - type: dropdown
+    attributes:
+      label: Scope
+      multiple: false
+      options:
+        - Adds a new behavior
+        - Improves an existing behavior
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Compatibility
+      description: |
+        Is your proposal a breaking change? (alters existing APIs and/or behaviors)
+
+        Leave unchecked if not sure.
+      options:
+        - label: This is a breaking change
+          required: false
+
+  - type: textarea
+    attributes:
+      label: Context
+      description: |
+        What is the context and motivations behind your proposal? What are you trying to do and how would you do it
+        differently?
+
+        Is it something that is not possible in the current version of Zimic? Is it possible, but could be improved?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Feature description
+      description: |
+        What is the feature you are proposing? Please describe it in detail. Feel free to include behavior descriptions
+        and pseudo-code snippets, compare it to existing alternatives, and discuss the advantages and limitations you
+        see.
+    validations:
+      required: true

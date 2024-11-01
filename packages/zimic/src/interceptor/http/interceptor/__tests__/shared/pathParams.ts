@@ -11,7 +11,7 @@ import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
-import { RuntimeSharedHttpInterceptorTestsOptions } from './types';
+import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export async function declarePathParamsHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -40,7 +40,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
-  describe.each(HTTP_METHODS)('Method: %s', (method) => {
+  describe.each(HTTP_METHODS)('Method (%s)', (method) => {
     const { overridesPreflightResponse, numberOfRequestsIncludingPreflight } = assessPreflightInterference({
       method,
       platform,

@@ -42,8 +42,8 @@ test.describe('Home page', () => {
     await expect(submitButton).toBeVisible();
     await submitButton.click();
 
-    const notFoundMessage = page.getByRole('status');
+    const notFoundMessage = page.getByText('Repository not found.');
     await expect(notFoundMessage).toBeVisible();
-    await expect(notFoundMessage).toHaveText('Repository not found.');
+    await expect(notFoundMessage).toHaveAttribute('role', 'status');
   });
 });
