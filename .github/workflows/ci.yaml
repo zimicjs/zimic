@@ -14,7 +14,7 @@ concurrency:
 
 env:
   CI: true
-  NODE_VERSION: 20
+  NODE_VERSION: 22
 
   TURBO_TOKEN: |
     ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
