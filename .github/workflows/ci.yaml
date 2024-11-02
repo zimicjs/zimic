@@ -22,9 +22,9 @@ env:
     ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
   TURBO_LOG_ORDER: stream
   INSTALL_OPTIONS: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"...[HEAD^1]"' || './{apps,examples,packages}/*' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"...[HEAD^1]"' || '"./{apps,examples,packages}/*"' }}
   BUILD_OPTIONS: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || '"./packages/*"' }}
 
 jobs:
   ci-general:
@@ -38,6 +38,11 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Configure setup parameters
+        run: |
+          echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-example-with-openapi-typegen'" >> $GITHUB_ENV
+          echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-example-with-openapi-typegen^...'" >> $GITHUB_ENV
+
       - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
@@ -45,8 +50,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '${{ env.INSTALL_OPTIONS }} zimic-example-with-openapi-typegen'
-          build: '${{ env.BUILD_OPTIONS }} zimic-example-with-openapi-typegen^...'
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -115,7 +120,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pnpm --dir packages/zimic playwright install chromium
+          pnpm --dir packages/zimic exec playwright install chromium
 
           pnpm turbo \
             test:turbo \
@@ -165,6 +170,11 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Configure setup parameters
+        run: |
+          echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-test-client zimic-examples zimic-example-*'" >> $GITHUB_ENV
+          echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-test-client^... zimic-examples^... zimic-example-*^..." >> $GITHUB_ENV
+
       - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
@@ -172,8 +182,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '${{ env.INSTALL_OPTIONS }} zimic-test-client zimic-examples zimic-example-*'
-          build: '${{ env.BUILD_OPTIONS }} zimic-test-client^... zimic-examples^... zimic-example-*^...'
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
 
       - name: Set TypeScript version
         run: |
