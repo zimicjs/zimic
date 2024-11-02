@@ -1,1 +1,1 @@
-pnpm pre:commit
+node --run pre:commit

@@ -45,7 +45,7 @@ jobs:
           build: zimic^...
 
       - name: Build Zimic
-        run: pnpm turbo build --filter zimic
+        run: node --run turbo -- build --filter zimic
 
       - name: Release to NPM
         working-directory: packages/zimic
@@ -111,13 +111,13 @@ jobs:
             done
           '
 
-          pnpm turbo \
+          node --run turbo -- \
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
             ${{ steps.zimic-setup.outputs.install-filters }}
 
-          pnpm turbo \
+          node --run turbo -- \
             test:turbo \
             --continue \
             --concurrency 100% \

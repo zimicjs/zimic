@@ -15,7 +15,7 @@ runs:
 
     - name: Check formatting style
       shell: bash
-      run: pnpm style:check
+      run: node --run style:check
 
     - name: Save prettier cache
       if: ${{ steps.prettier-cache.outputs.cache-hit != 'true' }}

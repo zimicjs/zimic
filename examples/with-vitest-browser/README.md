@@ -62,5 +62,5 @@ where the repository is found and another where it is not.
 3. Run the tests:
 
    ```bash
-   pnpm run test
+   node --run test
    ```

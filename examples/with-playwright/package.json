@@ -3,17 +3,18 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- pnpm dev:no-env",
-    "dev:mock": "dotenv -c test -- dotenv -c development -- pnpm mock -- pnpm dev:no-env",
+    "turbo": "turbo",
+    "dev": "dotenv -c development -- node --run dev:no-env",
+    "dev:mock": "dotenv -c test -- dotenv -c development -- node --run mock -- -- -- node --run dev:no-env",
     "dev:no-env": "next dev --turbo --port 3002",
-    "mock": "pnpm mock:start -- pnpm mock:load",
+    "mock": "node --run mock:start -- -- node --run mock:load",
     "mock:start": "zimic server start --port 3003 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test",
+    "test:turbo": "dotenv -v CI=true -- node --run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "postinstall": "pnpm deps:install-playwright"
+    "postinstall": "node --run deps:install-playwright"
   },
   "dependencies": {
     "clsx": "^2.1.1",

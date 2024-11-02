@@ -240,10 +240,10 @@ package dependencies and cache the results.
 
 ```bash
 # build all packages
-pnpm turbo build
+node --run turbo -- build
 
 # build a specific package (pass the package name as a filter)
-pnpm turbo build --filter zimic
+node --run turbo -- build --filter zimic
 ```
 
 The build outputs of any package are stored in the `dist` directory, such as `packages/zimic/dist`.
@@ -256,10 +256,10 @@ Zimic uses [TypeScript](https://www.typescriptlang.org) to check type safety usi
 
 ```bash
 # check types for all packages
-pnpm turbo types:check
+node --run turbo -- types:check
 
 # check types for a specific package (pass the package name as a filter)
-pnpm turbo types:check --filter zimic
+node --run turbo -- types:check --filter zimic
 ```
 
 ## Linting
@@ -268,10 +268,10 @@ Zimic uses [ESLint](https://eslint.org) to enforce a consistent code style and i
 
 ```bash
 # lint all packages
-pnpm turbo lint:turbo
+node --run turbo -- lint:turbo
 
 # lint a specific package (pass the package name as a filter)
-pnpm turbo lint:turbo --filter zimic
+node --run turbo -- lint:turbo --filter zimic
 ```
 
 For more information about using ESLint, please refer to their documentation.
@@ -282,10 +282,10 @@ Zimic uses [Prettier](https://prettier.io) to format code.
 
 ```bash
 # format all code in the current directory
-pnpm style:format .
+node --run style:format -- .
 
 # check if all code is formatted in the current directory
-pnpm style:check .
+node --run style:check -- .
 ```
 
 For more information about using Prettier, please refer to their documentation.
@@ -301,13 +301,13 @@ their source files and have the `.test.ts` extension.
 
 ```bash
 # inside an app, example, or package, run the tests in interactive mode
-pnpm test
+node --run test
 
 # run all tests in all packages in non-interactive mode
-pnpm turbo test:turbo
+node --run turbo -- test:turbo
 
 # run all tests in a specific package in non-interactive mode (pass the package name as a filter)
-pnpm turbo test:turbo --filter zimic
+node --run turbo -- test:turbo --filter zimic
 ```
 
 For more information about using Vitest, please refer to their documentation.

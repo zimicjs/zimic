@@ -34,7 +34,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm run dev',
+    command: 'node --run dev',
     port: 3006,
     stdout: 'pipe',
     stderr: 'pipe',

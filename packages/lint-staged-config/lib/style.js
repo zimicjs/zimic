@@ -1,3 +1,3 @@
 module.exports = {
-  '*': ['pnpm style:format'],
+  '*': ['node --run style:format --'],
 };

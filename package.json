@@ -13,16 +13,17 @@
   },
   "license": "MIT",
   "scripts": {
+    "turbo": "turbo",
     "dev": "turbo dev --parallel --continue",
     "build": "turbo build --concurrency 50%",
     "lint": "turbo lint:turbo --continue --concurrency 50%",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
-    "style:check": "pnpm style --check .",
-    "style:format": "pnpm style --write .",
+    "style:check": "node --run style -- --check .",
+    "style:format": "node --run style -- --write .",
     "test": "turbo test:turbo --concurrency 20% --continue",
     "types:check": "turbo types:check --continue --concurrency 50%",
     "pre:commit": "lint-staged",
-    "pre:push": "concurrently --names style,lint 'pnpm style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
+    "pre:push": "concurrently --names style,lint 'node --run style:check' 'turbo types:check lint:turbo --filter ...[${PARENT_REF:-origin/canary}...HEAD] --concurrency 50% --continue'",
     "prepare": "husky"
   },
   "devDependencies": {

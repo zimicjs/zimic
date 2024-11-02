@@ -19,7 +19,7 @@ The types of the GitHub API are generated automatically using the `zimic typegen
 `typegen:github` script is declared in [`package.json`](./package.json) and can be used as follows:
 
 ```bash
-pnpm typegen:github
+node --run typegen:github
 ```
 
 - Generated types: [`src/types/github/typegen/generated.ts`](./src/types/github/typegen/generated.ts)
@@ -71,5 +71,5 @@ where the repository is found and another where it is not.
 3. Run the tests:
 
    ```bash
-   pnpm run test
+   node --run test
    ```

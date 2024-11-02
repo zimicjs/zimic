@@ -3,17 +3,18 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
+    "turbo": "turbo",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
-    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "lint:turbo": "node --run lint -- . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
-    "style:check": "pnpm style --check",
-    "style:format": "pnpm style --write",
+    "style:check": "node --run style -- --check",
+    "style:format": "node --run style -- --write",
     "test": "dotenv -v NODE_ENV=test -- zimic server start --port 4000 --ephemeral -- vitest",
-    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "test:turbo": "dotenv -v CI=true -- node --run test -- run --coverage",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
+    "postinstall": "concurrently --names playwright,zimic 'node --run deps:install-playwright' 'node --run deps:init-zimic'"
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
