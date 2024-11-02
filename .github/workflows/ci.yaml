@@ -16,26 +16,17 @@ env:
   CI: true
   NODE_VERSION: 22
 
-  TURBO_TOKEN: |
-    ${{
-      !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-        secrets.TURBO_REMOTE_CACHE_TOKEN ||
-        ''
-    }}
-  TURBO_TEAM: |
-    ${{
-      !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-        secrets.TURBO_REMOTE_CACHE_TEAM ||
-        ''
-    }}
+  TURBO_TOKEN:
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM:
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
 
   TURBO_LOG_ORDER: stream
-  TURBO_FILTERS: |
-    ${{
-      github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') &&
-        '--filter "./{apps,examples,packages}/*"' ||
-        '--filter "...[HEAD^1]"'
-    }}
+  TURBO_FILTERS:
+    ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') && '--filter
+    "./{apps,examples,packages}/*"' || '--filter "...[HEAD^1]"' }}
 
 jobs:
   ci-general:
