@@ -64,10 +64,6 @@ runs:
         fi
 
         echo "Project '$projectName' is now at $bumpedVersion"
-
-        echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
-        echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
         echo 'Committing changes...'
 
         git config user.name '${{ inputs.commit-user-name }}'
@@ -79,3 +75,6 @@ runs:
         echo 'Pushing changes...'
 
         git push -u origin HEAD --no-verify
+
+        echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
+        echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
