@@ -25,6 +25,9 @@ outputs:
   value:
     description: Bumped version
     value: ${{ steps.bump-version.outputs.value }}
+  commit-sha:
+    description: Release commit SHA
+    value: ${{ steps.bump-version.outputs.commit-sha }}
 
 runs:
   using: composite
