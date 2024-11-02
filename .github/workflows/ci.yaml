@@ -40,8 +40,15 @@ jobs:
 
       - name: Configure setup parameters
         run: |
-          echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-example-with-openapi-typegen'" >> $GITHUB_ENV
-          echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-example-with-openapi-typegen^...'" >> $GITHUB_ENV
+          echo $(
+            echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-example-with-openapi-typegen'" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
+          echo $(
+            echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-example-with-openapi-typegen^...'" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
 
       - name: Set up Zimic
         id: zimic-setup
@@ -172,8 +179,15 @@ jobs:
 
       - name: Configure setup parameters
         run: |
-          echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-test-client zimic-examples zimic-example-*'" >> $GITHUB_ENV
-          echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-test-client^... zimic-examples^... zimic-example-*^..." >> $GITHUB_ENV
+          echo $(
+            echo "INSTALL_OPTIONS='${{ env.INSTALL_OPTIONS }} zimic-test-client zimic-examples zimic-example-*'" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
+          echo $(
+            echo "BUILD_OPTIONS='${{ env.BUILD_OPTIONS }} zimic-test-client^... zimic-examples^... zimic-example-*^...'" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
 
       - name: Set up Zimic
         id: zimic-setup
