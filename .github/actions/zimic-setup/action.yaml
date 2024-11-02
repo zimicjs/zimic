@@ -93,7 +93,7 @@ runs:
         echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
 
         if [[ "$fullBuildFilters" != '' ]]; then
-          node --run turbo -- build $fullBuildFilters
+          pnpm turbo build $fullBuildFilters
 
           # apply the build outputs of the internal packages
           pnpm install --offline $fullInstallFilters

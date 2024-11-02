@@ -57,14 +57,8 @@ jobs:
             ./examples/with-openapi-typegen/src/types/github/typegen/generated.ts \
             ./examples/with-openapi-typegen/src/types/github/typegen/generated.current.ts
 
-          (
-            cd examples/with-openapi-typegen
-            node --run typegen:github
-          )
-          (
-            cd examples
-            node --run style:format -- ./with-openapi-typegen/src/types/github/typegen/generated.ts
-          )
+          pnpm --dir examples/with-openapi-typegen typegen:github
+          pnpm --dir examples style:format ./with-openapi-typegen/src/types/github/typegen/generated.ts
 
           if ! diff -u \
             ./examples/with-openapi-typegen/src/types/github/typegen/generated.ts \
@@ -72,7 +66,7 @@ jobs:
           then
             echo \
               "[examples/with-openapi-typegen] Generated types are out of date." \
-              "Please run 'cd examples/with-openapi-typegen && node --run typegen:github' and commit the changes." >&2
+              "Please run 'pnpm --dir examples/with-openapi-typegen typegen:github' and commit the changes." >&2
             exit 1
           else
             rm ./examples/with-openapi-typegen/src/types/github/typegen/generated.current.ts
@@ -81,7 +75,7 @@ jobs:
 
       - name: Lint code and check types
         run: |
-          node --run turbo -- \
+          pnpm turbo \
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
@@ -121,7 +115,7 @@ jobs:
 
       - name: Run tests
         run: |
-          node --run turbo -- \
+          pnpm turbo \
             test:turbo \
             --continue \
             --concurrency 100% \
@@ -202,7 +196,7 @@ jobs:
             '--filter !zimic-example-with-next-js-pages'
           )
 
-          node --run turbo -- \
+          pnpm turbo \
             types:check \
             --continue \
             --concurrency 100% \

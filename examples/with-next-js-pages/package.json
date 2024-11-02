@@ -3,14 +3,13 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "turbo": "turbo",
     "dev": "dotenv -c development -- next dev --turbo --port 3006",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
-    "test:turbo": "dotenv -v CI=true -- node --run test",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-zimic": "zimic browser init ./public",
-    "postinstall": "concurrently --names playwright,zimic 'node --run deps:install-playwright' 'node --run deps:init-zimic'"
+    "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.16",

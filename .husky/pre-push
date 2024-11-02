@@ -1,1 +1,1 @@
-node --run pre:push
+pnpm pre:push

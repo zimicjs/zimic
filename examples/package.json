@@ -3,12 +3,11 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "turbo": "turbo",
     "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
-    "lint:turbo": "node --run lint -- . --max-warnings 0",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
-    "style:check": "node --run style -- --check",
-    "style:format": "node --run style -- --write"
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write"
   },
   "dependencies": {
     "zimic": "latest"

@@ -3,9 +3,8 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "turbo": "turbo",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:turbo": "dotenv -v CI=true -- node --run test",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit"
   },
   "devDependencies": {

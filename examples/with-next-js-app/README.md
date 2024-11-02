@@ -60,7 +60,7 @@ before the application is started in development. It is used by the command `dev
    1. Start the application:
 
       ```bash
-      node --run dev:mock
+      pnpm run dev:mock
       ```
 
       After started, the application will be available at [http://localhost:3004](http://localhost:3004).
@@ -68,5 +68,5 @@ before the application is started in development. It is used by the command `dev
    2. In another terminal, run the tests:
 
       ```bash
-      node --run test -- --ui
+      pnpm run test --ui
       ```

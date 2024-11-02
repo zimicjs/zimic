@@ -60,7 +60,7 @@ GitHub API and simulate a test case where the repository is found and another wh
    1. Start the application:
 
       ```bash
-      node --run dev
+      pnpm run dev
       ```
 
       After started, the application will be available at [http://localhost:3006](http://localhost:3006).
@@ -68,5 +68,5 @@ GitHub API and simulate a test case where the repository is found and another wh
    2. In another terminal, run the tests:
 
       ```bash
-      node --run test -- --ui
+      pnpm run test --ui
       ```

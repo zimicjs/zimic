@@ -3,9 +3,8 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "turbo": "turbo",
     "test": "vitest",
-    "test:turbo": "dotenv -v CI=true -- node --run test -- run",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
