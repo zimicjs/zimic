@@ -38,6 +38,18 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Configure setup parameters
+        run: |
+          echo $(
+            echo "INSTALL_OPTIONS=${{ env.INSTALL_OPTIONS }} zimic-example-with-openapi-typegen" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
+          echo $(
+            echo "BUILD_OPTIONS=${{ env.BUILD_OPTIONS }} zimic-example-with-openapi-typegen^..." \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
       - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
@@ -45,8 +57,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ format('{0} zimic-example-with-openapi-typegen', env.INSTALL_OPTIONS) }}
-          build: ${{ format('{0} zimic-example-with-openapi-typegen^...', env.BUILD_OPTIONS) }}
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -165,6 +177,18 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Configure setup parameters
+        run: |
+          echo $(
+            echo "INSTALL_OPTIONS=${{ env.INSTALL_OPTIONS }} zimic-test-client zimic-examples zimic-example-*" \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
+          echo $(
+            echo "BUILD_OPTIONS=${{ env.BUILD_OPTIONS }} zimic-test-client^... zimic-examples^... zimic-example-*^..." \
+              | tr -d '\n' | sed -r 's/ {2,}/ /g'
+          ) >> $GITHUB_ENV
+
       - name: Set up Zimic
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
@@ -172,8 +196,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ format('{0} zimic-test-client zimic-examples zimic-example-*', env.INSTALL_OPTIONS) }}
-          build: ${{ format('{0} zimic-test-client^... zimic-examples^... zimic-example-*^...', env.BUILD_OPTIONS) }}
+          install: ${{ env.INSTALL_OPTIONS }}
+          build: ${{ env.BUILD_OPTIONS }}
 
       - name: Set TypeScript version
         run: |
