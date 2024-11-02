@@ -17,10 +17,25 @@ env:
   NODE_VERSION: 22
 
   TURBO_TOKEN: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{
+      !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+        secrets.TURBO_REMOTE_CACHE_TOKEN ||
+        ''
+    }}
   TURBO_TEAM: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{
+      !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+        secrets.TURBO_REMOTE_CACHE_TEAM ||
+        ''
+    }}
+
   TURBO_LOG_ORDER: stream
+  TURBO_FILTERS: |
+    ${{
+      github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') &&
+        '--filter "./{apps,examples,packages}/*"' ||
+        '--filter "...[HEAD^1]"'
+    }}
 
 jobs:
   ci-general:
@@ -75,7 +90,7 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
+            ${{ env.TURBO_FILTERS }}
 
   ci-node:
     name: CI Node.js
@@ -115,7 +130,7 @@ jobs:
             test:turbo \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
+            ${{ env.TURBO_FILTERS }}
         env:
           PLAYWRIGHT_WORKERS: 50%
 
@@ -174,7 +189,7 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
+            ${{ env.TURBO_FILTERS }} \
             --filter !zimic \
             --filter !@zimic/*
 
@@ -196,7 +211,7 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
+            ${{ env.TURBO_FILTERS }} \
             --filter !zimic \
             --filter !@zimic/* \
             $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
