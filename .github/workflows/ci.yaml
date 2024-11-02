@@ -33,8 +33,8 @@ env:
   TURBO_FILTERS: |
     ${{
       github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') &&
-        '--filter ./{apps,examples,packages}/*' ||
-        '--filter ...[HEAD^1]'
+        '--filter "./{apps,examples,packages}/*"' ||
+        '--filter "...[HEAD^1]"'
     }}
 
 jobs:
