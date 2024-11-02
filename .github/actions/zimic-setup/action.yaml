@@ -80,7 +80,7 @@ runs:
 
         echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
 
-        pnpm install --prefer-offline --frozen-lockfile --ignore-scripts $fullInstallFilters
+        pnpm install --prefer-offline --frozen-lockfile $fullInstallFilters
 
         if [[ '${{ inputs.build }}' == '' ]]; then
           buildFilters=''
