@@ -47,8 +47,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*" "zimic-example*"'
-          build: '"./packages/*"'
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -112,8 +112,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*" "zimic-example*"'
-          build: '"./packages/*"'
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Run tests
         run: |
@@ -173,8 +173,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '"./{apps,packages}/*" "zimic-example*"'
-          build: '"./packages/*"'
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Set TypeScript version
         run: |
