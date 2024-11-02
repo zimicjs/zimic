@@ -75,7 +75,7 @@ runs:
           fullInstallFilters='--filter zimic-root'
         else
           installFilters="$(composeFilterOptions ${{ inputs.install }})"
-          fullInstallFilters="--filter zimic-root --filter zimic $installFilters"
+          fullInstallFilters="--filter zimic-root $installFilters"
         fi
 
         echo "install-filters=$installFilters" >> $GITHUB_OUTPUT
@@ -84,16 +84,14 @@ runs:
 
         if [[ '${{ inputs.build }}' == '' ]]; then
           buildFilters=''
-          fullBuildFilters=''
         else
           buildFilters="$(composeFilterOptions ${{ inputs.build }})"
-          fullBuildFilters="--filter zimic $buildFilters"
         fi
 
         echo "build-filters=$buildFilters" >> $GITHUB_OUTPUT
 
-        if [[ "$fullBuildFilters" != '' ]]; then
-          pnpm turbo build $fullBuildFilters
+        if [[ "$buildFilters" != '' ]]; then
+          pnpm turbo build $buildFilters
 
           # apply the build outputs of the internal packages
           pnpm install --offline $fullInstallFilters
