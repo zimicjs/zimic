@@ -77,8 +77,8 @@ jobs:
         id: zimic-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
-          install: zimic-test-client zimic-examples zimic-example-*
-          build: zimic-test-client^... zimic-examples^... zimic-example-*^...
+          install: zimic-test-client zimic-example*
+          build: zimic-test-client^... zimic-example*^...
 
       - name: Test released package
         run: |
