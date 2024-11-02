@@ -189,9 +189,9 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
-            --filter !@zimic/*
+            --filter !@zimic/* \
+            ${{ env.TURBO_FILTERS }}
 
       - name: Check types
         run: |
