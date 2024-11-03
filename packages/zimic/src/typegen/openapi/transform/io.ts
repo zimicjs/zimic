@@ -1,10 +1,13 @@
-import generateTypesFromOpenAPI, { SchemaObject, astToString as convertTypeASTToString } from 'openapi-typescript';
+import type { SchemaObject } from 'openapi-typescript';
 import path from 'path';
 import ts from 'typescript';
 
+import { createCachedDynamicImport } from '@/utils/imports';
 import { createFileURL, createURL } from '@/utils/urls';
 
 import { createBlobType, createNullType } from '../utils/types';
+
+const importOpenapiTypeScript = createCachedDynamicImport(() => import('openapi-typescript'));
 
 function transformSchemaObject(schemaObject: SchemaObject) {
   if (schemaObject.format === 'binary') {
@@ -30,6 +33,8 @@ function convertFilePathOrURLToURL(filePathOrURL: string) {
 export async function importTypesFromOpenAPI(filePathOrURL: string) {
   const schemaURL = convertFilePathOrURLToURL(filePathOrURL);
 
+  const { default: generateTypesFromOpenAPI } = await importOpenapiTypeScript();
+
   const rawNodes = await generateTypesFromOpenAPI(schemaURL, {
     alphabetize: false,
     additionalProperties: false,
@@ -50,7 +55,9 @@ export async function importTypesFromOpenAPI(filePathOrURL: string) {
   return rawNodes;
 }
 
-export function convertTypesToString(nodes: ts.Node[], options: { includeComments: boolean }) {
+export async function convertTypesToString(nodes: ts.Node[], options: { includeComments: boolean }) {
+  const { astToString: convertTypeASTToString } = await importOpenapiTypeScript();
+
   const typeOutput = convertTypeASTToString(nodes, {
     formatOptions: { removeComments: !options.includeComments },
   });
