@@ -27,14 +27,10 @@ updates:
       - dependency-name: chalk
         update-types:
           - version-update:semver-major
+      # Migrating from ESLint 8 to 9 includes breaking changes. See: https://github.com/zimicjs/zimic/issues/421.
       - dependency-name: eslint
         update-types:
           - version-update:semver-major
-      - dependency-name: msw
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directories:
