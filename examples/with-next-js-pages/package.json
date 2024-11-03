@@ -8,19 +8,19 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public",
+    "deps:init-zimic": "zimic browser init ./public || true",
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.59.16",
+    "@tanstack/react-query": "^5.59.17",
     "clsx": "^2.1.1",
-    "next": "15.0.1",
+    "next": "15.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.1",
-    "@types/node": "^22.8.0",
+    "@playwright/test": "^1.48.2",
+    "@types/node": "^22.8.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "concurrently": "^9.0.1",

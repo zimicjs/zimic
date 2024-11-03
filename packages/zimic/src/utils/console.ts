@@ -1,15 +1,9 @@
 import chalk from 'chalk';
 
 import { isClientSide } from './environment';
+import { createCachedDynamicImport } from './imports';
 
-let utilSingleton: typeof import('util') | undefined;
-
-async function importUtil() {
-  if (!utilSingleton) {
-    utilSingleton = await import('util');
-  }
-  return utilSingleton;
-}
+const importUtil = createCachedDynamicImport(() => import('util'));
 
 export async function formatObjectToLog(value: unknown) {
   if (isClientSide()) {

@@ -116,16 +116,16 @@ suggestions.
 
 Zimic uses the following long-lived branches:
 
-| Branch   | Description                                             |
-| -------- | ------------------------------------------------------- |
-| `main`   | Production branch containing the latest stable release. |
-| `canary` | Development branch containing the latest unstable code. |
+| Branch   | Description                                                                |
+| -------- | -------------------------------------------------------------------------- |
+| `canary` | Development branch containing the latest unstable code.                    |
+| `v0`     | Production branch containing the latest stable code in the `v0.x.x` range. |
 
-New pull requests should be opened against the `canary` branch. The `main` branch is updated only when a new stable
-release is ready.
+New pull requests should be opened against the `canary` branch. The `v*` branches are updated only when a new stable
+release is ready for their respective major version.
 
-Once Zimic reaches v1 upwards, we will start using branches for each major version, such as `v1`, `v2`, and so on,
-replacing our current `main` branch. This will allow backporting fixes and security patches to older versions.
+Each supported major version of Zimic will have its own `v*` branch. This will allow backporting fixes and security
+patches to older versions.
 
 #### Creating a branch
 

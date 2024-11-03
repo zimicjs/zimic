@@ -50,7 +50,7 @@ body:
         - For Node.js: run `node --version` in your terminal;
         - For Deno: run `deno --version` in your terminal;
         - For Bun: run `bun --version` in your terminal.
-      placeholder: i.e. 20.17.0
+      placeholder: i.e. 22.11.0
 
   - type: input
     attributes:

@@ -60,7 +60,7 @@ before the application is started in development. It is used by the command `dev
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
    git sparse-checkout set examples/with-playwright
-   git pull origin main
+   git pull origin v0
    cd examples/with-playwright
    ```
 

@@ -44,7 +44,7 @@ where the repository is found and another where it is not.
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
    git sparse-checkout set examples/with-jest-node
-   git pull origin main
+   git pull origin v0
    cd examples/with-jest-node
    ```
 

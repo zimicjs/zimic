@@ -1,3 +1,5 @@
+import { createCachedDynamicImport } from './imports';
+
 export const PROCESS_EXIT_EVENTS = Object.freeze([
   'beforeExit',
   'uncaughtExceptionMonitor',
@@ -19,14 +21,7 @@ export const PROCESS_EXIT_CODE_BY_EXIT_EVENT: Record<string, number | undefined>
   SIGBREAK: 131,
 } satisfies Record<ProcessExitEvent, number | undefined>;
 
-let execaSingleton: typeof import('execa') | undefined;
-
-async function importExeca() {
-  if (!execaSingleton) {
-    execaSingleton = await import('execa');
-  }
-  return execaSingleton;
-}
+export const importExeca = createCachedDynamicImport(() => import('execa'));
 
 interface CommandErrorOptions {
   command?: string[];
