@@ -1,16 +1,11 @@
 import { blobEquals } from './data';
+import { createCachedDynamicImport } from './imports';
 
-let bufferSingleton: typeof import('buffer') | undefined;
-
-/* istanbul ignore next -- @preserve
- * Ignoring as Node.js >=20 provides a global file and the buffer import won't run. */
-export async function importBuffer() {
-  if (bufferSingleton) {
-    return bufferSingleton;
-  }
-  bufferSingleton = await import('buffer');
-  return bufferSingleton;
-}
+export const importBuffer = createCachedDynamicImport(
+  /* istanbul ignore next -- @preserve
+   * Ignoring as Node.js >=20 provides a global file and the buffer import won't run. */
+  () => import('buffer'),
+);
 
 let FileSingleton: typeof File | undefined;
 
