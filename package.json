@@ -1,13 +1,13 @@
 {
   "name": "zimic-root",
   "description": "TypeScript-first, statically inferred HTTP mocks",
-  "version": "0.9.3",
+  "version": "0.9.4-canary.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git"
   },
   "private": false,
-  "packageManager": "pnpm@9.2.0",
+  "packageManager": "pnpm@9.12.3",
   "engines": {
     "node": ">=18.0.0"
   },

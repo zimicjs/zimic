@@ -12,25 +12,25 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public",
+    "deps:init-zimic": "zimic browser init ./public || true",
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "2.1.3",
-    "@vitest/coverage-istanbul": "2.1.3",
+    "@vitest/browser": "2.1.4",
+    "@vitest/coverage-istanbul": "2.1.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.7",
     "concurrently": "^9.0.1",
     "dotenv-cli": "^7.4.2",
-    "execa": "^9.4.1",
+    "execa": "^9.5.1",
     "node-fetch": "^3.3.2",
     "playwright": "^1.48.2",
     "superagent": "^10.1.1",
     "typescript": "^5.6.3",
-    "vitest": "2.1.3",
+    "vitest": "2.1.4",
     "zimic": "workspace:*"
   }
 }

@@ -151,7 +151,7 @@ async function generateTypesFromOpenAPI({
   const importDeclarations = createImportDeclarations(context);
   nodes.unshift(...importDeclarations);
 
-  const typeOutput = convertTypesToString(nodes, { includeComments });
+  const typeOutput = await convertTypesToString(nodes, { includeComments });
   const formattedOutput = prepareTypeOutputToSave(typeOutput);
 
   const shouldWriteToStdout = outputFilePath === undefined;

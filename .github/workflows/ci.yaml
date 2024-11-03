@@ -14,17 +14,19 @@ concurrency:
 
 env:
   CI: true
-  NODE_VERSION: 20
+  NODE_VERSION: 22
 
-  TURBO_TOKEN: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
-  TURBO_TEAM: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+  TURBO_TOKEN:
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+  TURBO_TEAM:
+    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
+    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+
   TURBO_LOG_ORDER: stream
-  INSTALL_OPTIONS: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"...[HEAD^1]"' || './{apps,examples,packages}/*' }}
-  BUILD_OPTIONS: |
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) && '"{./apps/*}[HEAD^1]^..." "{./examples/*}[HEAD^1]^..." "{./packages/*}[HEAD^1]..."' || './packages/*' }}
+  TURBO_FILTERS:
+    ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') && '--filter
+    "./{apps,packages}/*" --filter "zimic-example*"' || '--filter "...[HEAD^1]"' }}
 
 jobs:
   ci-general:
@@ -45,8 +47,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS }}
-          build: ${{ env.BUILD_OPTIONS }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Check formatting style
         uses: ./.github/actions/zimic-style-check
@@ -79,7 +81,7 @@ jobs:
             types:check lint:turbo \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
+            ${{ env.TURBO_FILTERS }}
 
   ci-node:
     name: CI Node.js
@@ -110,8 +112,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS }}
-          build: ${{ env.BUILD_OPTIONS }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Run tests
         run: |
@@ -119,7 +121,7 @@ jobs:
             test:turbo \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }}
+            ${{ env.TURBO_FILTERS }}
         env:
           PLAYWRIGHT_WORKERS: 50%
 
@@ -142,6 +144,7 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         typescript-version:
           - '4.8'
@@ -170,17 +173,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: ${{ env.INSTALL_OPTIONS }}
-          build: ${{ env.BUILD_OPTIONS }}
+          install: '"./{apps,packages}/*..." "zimic-example*..."'
+          build: '"./{apps,packages}/*^..." "zimic-example*^..."'
 
       - name: Set TypeScript version
         run: |
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
-            --filter !@zimic/*
+            --filter !@zimic/* \
+            ${{ env.TURBO_FILTERS }}
 
       - name: Check types
         run: |
@@ -200,8 +203,8 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            ${{ steps.zimic-setup.outputs.install-filters }} \
             --filter !zimic \
             --filter !@zimic/* \
             $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
-            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]})
+            $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \
+            ${{ env.TURBO_FILTERS }}
