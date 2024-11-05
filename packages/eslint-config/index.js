@@ -34,6 +34,7 @@ module.exports = {
     'no-array-constructor': 'off',
     'array-callback-return': 'warn',
     eqeqeq: 'warn',
+    quotes: ['warn', 'single', { avoidEscape: true, allowTemplateLiterals: false }],
     'no-constructor-return': 'error',
     'no-catch-shadow': 'error',
     'no-cond-assign': 'warn',
