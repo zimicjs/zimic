@@ -8,7 +8,9 @@ import { declareHandlerHttpInterceptorTests } from './shared/handlers';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Handlers', ({ type }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({
+    onUnhandledRequest: { action: 'reject', log: false },
+  });
 
   let baseURL: ExtendedURL;
 

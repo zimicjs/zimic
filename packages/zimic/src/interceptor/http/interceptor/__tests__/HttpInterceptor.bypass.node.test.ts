@@ -8,7 +8,9 @@ import { declareBypassHttpInterceptorTests } from './shared/bypass';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Bypass', ({ type }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({
+    onUnhandledRequest: { action: 'reject', log: false },
+  });
 
   let baseURL: ExtendedURL;
 

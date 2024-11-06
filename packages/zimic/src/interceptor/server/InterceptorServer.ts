@@ -3,9 +3,7 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import { UnhandledRequestStrategy } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -13,9 +11,13 @@ import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
-import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
+import {
+  DEFAULT_ACCESS_CONTROL_HEADERS,
+  DEFAULT_PREFLIGHT_STATUS_CODE,
+  DEFAULT_UNHANDLED_REQUEST_STRATEGY,
+} from './constants';
 import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
-import { InterceptorServerOptions } from './types/options';
+import { InterceptorServerOptions, UnhandledRequestStrategy } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
 import { getFetchAPI } from './utils/fetch';
@@ -33,8 +35,7 @@ class InterceptorServer implements PublicInterceptorServer {
   private _hostname: string;
   private _port?: number;
 
-  private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
-  private workerStore = new HttpInterceptorWorkerStore();
+  private onUnhandledRequest: UnhandledRequestStrategy;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -53,7 +54,7 @@ class InterceptorServer implements PublicInterceptorServer {
   constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
-    this.onUnhandledRequest = options.onUnhandledRequest;
+    this.onUnhandledRequest = options.onUnhandledRequest ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY;
   }
 
   hostname() {
@@ -314,17 +315,11 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async logUnhandledRequest(request: Request) {
-    const action: UnhandledRequestStrategy.Action = 'reject';
+    const strategy = this.onUnhandledRequest;
+    const shouldLog = strategy.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log;
 
-    const declaration = this.onUnhandledRequest;
-    const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
-
-    if (declaration?.log !== undefined) {
-      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, { log: declaration.log }, action);
-    } else if (typeof defaultDeclarationOrHandler === 'function') {
-      await HttpInterceptorWorker.logUnhandledRequestWithHandler(request, defaultDeclarationOrHandler, action);
-    } else {
-      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, defaultDeclarationOrHandler, action);
+    if (shouldLog) {
+      await HttpInterceptorWorker.logUnhandledRequest(request, strategy.action);
     }
   }
 }

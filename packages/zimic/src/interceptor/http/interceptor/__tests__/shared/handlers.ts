@@ -13,7 +13,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions } from '../../types/options';
+import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -139,6 +139,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
+      const defaultAction: UnhandledRequestStrategy.Action = type === 'local' ? 'bypass' : 'reject';
+
       await usingHttpInterceptor<{
         '/users': {
           GET: MethodSchema;
@@ -149,7 +151,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           HEAD: MethodSchema;
           OPTIONS: MethodSchema;
         };
-      }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
+      }>({ ...interceptorOptions, onUnhandledRequest: { action: defaultAction, log: true } }, async (interceptor) => {
         const error = new Error('An error occurred.');
 
         const handler = await promiseIfRemote(

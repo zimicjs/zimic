@@ -1,17 +1,8 @@
 import { UnhandledRequestStrategy } from '../interceptor/types/options';
-
-export type DefaultUnhandledRequestStrategy =
-  | Required<UnhandledRequestStrategy.Declaration>
-  | UnhandledRequestStrategy.Handler;
-
-const DEFAULT_UNHANDLED_REQUEST_STRATEGY: Required<UnhandledRequestStrategy.Declaration> = Object.freeze({
-  log: true,
-});
+import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 
 class HttpInterceptorWorkerStore {
-  private static _defaultUnhandledRequestStrategy: DefaultUnhandledRequestStrategy = {
-    ...DEFAULT_UNHANDLED_REQUEST_STRATEGY,
-  };
+  private static _defaultUnhandledRequestStrategy: UnhandledRequestStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY;
 
   private class = HttpInterceptorWorkerStore;
 
@@ -20,12 +11,7 @@ class HttpInterceptorWorkerStore {
   }
 
   setDefaultUnhandledRequestStrategy(strategy: UnhandledRequestStrategy) {
-    this.class._defaultUnhandledRequestStrategy =
-      typeof strategy === 'function'
-        ? strategy
-        : {
-            log: strategy.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
-          };
+    this.class._defaultUnhandledRequestStrategy = strategy;
   }
 }
 

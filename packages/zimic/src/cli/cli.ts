@@ -79,6 +79,7 @@ async function runCLI() {
             port: cliArguments.port,
             ephemeral: cliArguments.ephemeral,
             onUnhandledRequest: {
+              action: 'reject',
               log: cliArguments.logUnhandledRequests,
             },
             onReady: onReadyCommand
