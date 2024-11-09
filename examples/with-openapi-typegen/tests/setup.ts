@@ -3,13 +3,14 @@ import { httpInterceptor } from 'zimic/interceptor/http';
 
 import githubInterceptor from './interceptors/github';
 
-httpInterceptor.default.onUnhandledRequest(async (request, context) => {
+httpInterceptor.default.local.onUnhandledRequest = (request) => {
   const url = new URL(request.url);
 
-  if (url.hostname !== '127.0.0.1') {
-    await context.log();
-  }
-});
+  return {
+    action: 'bypass',
+    logWarning: url.hostname !== '127.0.0.1',
+  };
+};
 
 beforeAll(async () => {
   await githubInterceptor.start();
