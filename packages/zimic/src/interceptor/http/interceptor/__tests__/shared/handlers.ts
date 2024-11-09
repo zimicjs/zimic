@@ -151,59 +151,68 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           HEAD: MethodSchema;
           OPTIONS: MethodSchema;
         };
-      }>({ ...interceptorOptions, onUnhandledRequest: { action: defaultAction, log: true } }, async (interceptor) => {
-        const error = new Error('An error occurred.');
+      }>(
+        {
+          ...interceptorOptions,
+          onUnhandledRequest: {
+            action: defaultAction,
+            logWarning: true,
+          },
+        },
+        async (interceptor) => {
+          const error = new Error('An error occurred.');
 
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users').respond(() => {
-            throw error;
-          }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users').respond(() => {
+              throw error;
+            }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['error', 'warn'], async (spies) => {
-          const request = new Request(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-value': '1' },
+          await usingIgnoredConsole(['error', 'warn'], async (spies) => {
+            const request = new Request(joinURL(baseURL, '/users'), {
+              method,
+              headers: { 'x-value': '1' },
+            });
+
+            const fetchPromise = fetch(request);
+            await expectFetchErrorOrPreflightResponse(fetchPromise, {
+              shouldBePreflight: overridesPreflightResponse,
+            });
+
+            if (type === 'remote') {
+              expect(spies.error).toHaveBeenCalledTimes(method === 'OPTIONS' && platform === 'browser' ? 4 : 2);
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error.mock.calls[0]).toEqual([error]);
+
+              const errorMessage = spies.error.mock.calls[1].join(' ');
+              await verifyUnhandledRequestMessage(errorMessage, {
+                type: 'error',
+                platform,
+                request,
+              });
+            } else {
+              expect(spies.error).toHaveBeenCalledTimes(1);
+              expect(spies.warn).toHaveBeenCalledTimes(1);
+              expect(spies.error.mock.calls[0]).toEqual([error]);
+
+              const warnMessage = spies.warn.mock.calls[0].join(' ');
+              await verifyUnhandledRequestMessage(warnMessage, {
+                type: 'warn',
+                platform,
+                request,
+              });
+            }
           });
 
-          const fetchPromise = fetch(request);
-          await expectFetchErrorOrPreflightResponse(fetchPromise, {
-            shouldBePreflight: overridesPreflightResponse,
-          });
-
-          if (type === 'remote') {
-            expect(spies.error).toHaveBeenCalledTimes(method === 'OPTIONS' && platform === 'browser' ? 4 : 2);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error.mock.calls[0]).toEqual([error]);
-
-            const errorMessage = spies.error.mock.calls[1].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform,
-              request,
-            });
-          } else {
-            expect(spies.error).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error.mock.calls[0]).toEqual([error]);
-
-            const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, {
-              type: 'warn',
-              platform,
-              request,
-            });
-          }
-        });
-
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-      });
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+        },
+      );
     });
 
     it(`should support intercepting ${method} requests having headers`, async () => {

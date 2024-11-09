@@ -124,7 +124,7 @@ abstract class HttpInterceptorWorker {
 
     try {
       const strategy = await this.getUnhandledRequestStrategy(requestURL, request);
-      const shouldLog = strategy.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log;
+      const shouldLog = strategy.logWarning ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.logWarning;
 
       if (shouldLog) {
         await HttpInterceptorWorker.logUnhandledRequest(request, strategy.action);

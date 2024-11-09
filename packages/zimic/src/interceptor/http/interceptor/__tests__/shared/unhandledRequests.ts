@@ -70,13 +70,23 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     ])('Logging enabled or disabled: override default $overrideDefault', ({ overrideDefault }) => {
       beforeEach(() => {
         if (overrideDefault === 'static-object') {
-          httpInterceptor.default.onUnhandledRequest = { action: defaultAction, log: true };
+          httpInterceptor.default.onUnhandledRequest = {
+            action: defaultAction,
+            logWarning: true,
+          };
         } else if (overrideDefault === 'static-object-undefined-log') {
-          httpInterceptor.default.onUnhandledRequest = { action: defaultAction };
+          httpInterceptor.default.onUnhandledRequest = {
+            action: defaultAction,
+          };
         } else if (overrideDefault === 'factory-object') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({ action: defaultAction, log: true });
+          httpInterceptor.default.onUnhandledRequest = (_request) => ({
+            action: defaultAction,
+            logWarning: true,
+          });
         } else if (overrideDefault === 'factory-object-undefined-log') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({ action: defaultAction });
+          httpInterceptor.default.onUnhandledRequest = (_request) => ({
+            action: defaultAction,
+          });
         }
       });
 
@@ -95,7 +105,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }>(
             {
               ...interceptorOptions,
-              onUnhandledRequest: overrideDefault === false ? { action: defaultAction, log: true } : undefined,
+              onUnhandledRequest:
+                overrideDefault === false
+                  ? {
+                      action: defaultAction,
+                      logWarning: true,
+                    }
+                  : undefined,
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -164,7 +180,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }>(
             {
               ...interceptorOptions,
-              onUnhandledRequest: overrideDefault === false ? { action: defaultAction, log: true } : undefined,
+              onUnhandledRequest:
+                overrideDefault === false
+                  ? {
+                      action: defaultAction,
+                      logWarning: true,
+                    }
+                  : undefined,
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -242,7 +264,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }>(
             {
               ...interceptorOptions,
-              onUnhandledRequest: overrideDefault === false ? { action: defaultAction, log: true } : undefined,
+              onUnhandledRequest:
+                overrideDefault === false
+                  ? {
+                      action: defaultAction,
+                      logWarning: true,
+                    }
+                  : undefined,
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -313,7 +341,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }>(
             {
               ...interceptorOptions,
-              onUnhandledRequest: overrideDefault === false ? { action: defaultAction, log: true } : undefined,
+              onUnhandledRequest:
+                overrideDefault === false
+                  ? {
+                      action: defaultAction,
+                      logWarning: true,
+                    }
+                  : undefined,
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -387,9 +421,15 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       `should not show a warning or error when logging is disabled and ${method} requests are unhandled: override default $overrideDefault`,
       async ({ overrideDefault }) => {
         if (overrideDefault === 'static-object') {
-          httpInterceptor.default.onUnhandledRequest = { action: defaultAction, log: false };
+          httpInterceptor.default.onUnhandledRequest = {
+            action: defaultAction,
+            logWarning: false,
+          };
         } else if (overrideDefault === 'factory-object') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({ action: defaultAction, log: false });
+          httpInterceptor.default.onUnhandledRequest = (_request) => ({
+            action: defaultAction,
+            logWarning: false,
+          });
         }
 
         await usingHttpInterceptor<{
@@ -405,7 +445,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         }>(
           {
             ...interceptorOptions,
-            onUnhandledRequest: overrideDefault === false ? { action: defaultAction, log: false } : undefined,
+            onUnhandledRequest:
+              overrideDefault === false
+                ? {
+                    action: defaultAction,
+                    logWarning: false,
+                  }
+                : undefined,
           },
           async (interceptor) => {
             const handler = await promiseIfRemote(
@@ -457,7 +503,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
         return {
           action: defaultAction,
-          log: !url.searchParams.has('name'),
+          logWarning: !url.searchParams.has('name'),
         };
       });
 
@@ -554,7 +600,10 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           throw error;
         }
 
-        return { action: defaultAction, log: false };
+        return {
+          action: defaultAction,
+          logWarning: false,
+        };
       });
 
       await usingHttpInterceptor<{

@@ -5,6 +5,6 @@ import { httpInterceptor } from '@/interceptor/http';
 beforeEach(() => {
   httpInterceptor.default.onUnhandledRequest = {
     action: 'bypass',
-    log: false,
+    logWarning: false,
   };
 });

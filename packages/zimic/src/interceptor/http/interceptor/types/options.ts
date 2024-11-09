@@ -51,7 +51,7 @@ export namespace UnhandledRequestStrategy {
      *
      * @default true
      */
-    log?: boolean;
+    logWarning?: boolean;
   }
 
   /**
