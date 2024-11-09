@@ -184,13 +184,13 @@ describe('Exports', () => {
     expect(typeof httpInterceptor.create).toBe('function');
 
     expectTypeOf(httpInterceptor.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
-    expect(typeof httpInterceptor.default.onUnhandledRequest).toBe('function');
+    expect(typeof httpInterceptor.default.local.onUnhandledRequest).toBe('function');
+    expect(typeof httpInterceptor.default.remote.onUnhandledRequest).toBe('function');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Handler>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.HandlerContext>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.DeclarationFactory>().not.toBeAny();
 
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
