@@ -8,7 +8,7 @@ import { declareRestrictionHttpRequestHandlerTests } from './shared/restrictions
 
 describe.each(testMatrix)('HttpRequestHandler restrictions (node, $type)', ({ type, Handler }) => {
   const server = createInternalInterceptorServer({
-    onUnhandledRequest: { action: 'reject', log: false },
+    logUnhandledRequests: false,
   });
 
   declareRestrictionHttpRequestHandlerTests({

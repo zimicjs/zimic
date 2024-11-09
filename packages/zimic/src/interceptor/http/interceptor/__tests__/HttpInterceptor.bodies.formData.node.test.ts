@@ -9,7 +9,7 @@ import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', async ({ type }) => {
   const server = createInternalInterceptorServer({
-    onUnhandledRequest: { action: 'reject', log: false },
+    logUnhandledRequests: false,
   });
 
   let baseURL: ExtendedURL;

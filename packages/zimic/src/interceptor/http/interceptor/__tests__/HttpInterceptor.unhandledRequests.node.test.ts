@@ -9,7 +9,7 @@ import { declareUnhandledRequestHttpInterceptorTests } from './shared/unhandledR
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', ({ type }) => {
   const server = createInternalInterceptorServer({
-    onUnhandledRequest: { action: 'reject', log: false },
+    logUnhandledRequests: false,
   });
 
   let baseURL: ExtendedURL;

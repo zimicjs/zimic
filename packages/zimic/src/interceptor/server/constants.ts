@@ -2,8 +2,6 @@ import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@/utils/http';
 import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT } from '@/utils/webSocket';
 
-import { UnhandledRequestStrategy } from './types/options';
-
 export const DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT = DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT;
 export const DEFAULT_SERVER_RPC_TIMEOUT = DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
 
@@ -29,8 +27,4 @@ export const DEFAULT_ACCESS_CONTROL_HEADERS = Object.freeze({
 /** The default status code for the preflight request. */
 export const DEFAULT_PREFLIGHT_STATUS_CODE = 204;
 
-/** The default strategy for handling unhandled requests. */
-export const DEFAULT_UNHANDLED_REQUEST_STRATEGY: UnhandledRequestStrategy.Declaration = Object.freeze({
-  action: 'reject',
-  log: true,
-});
+export const DEFAULT_LOG_UNHANDLED_REQUESTS = true;

@@ -9,7 +9,7 @@ import { declareTypeHttpInterceptorTests } from './shared/types';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) => {
   const server = createInternalInterceptorServer({
-    onUnhandledRequest: { action: 'reject', log: false },
+    logUnhandledRequests: false,
   });
 
   let baseURL: ExtendedURL;

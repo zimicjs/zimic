@@ -207,7 +207,7 @@ describe('Type generation (OpenAPI)', () => {
       expect(successMessage).toBeDefined();
       expect(successMessage).toMatch(/.*\[zimic\].* /);
       expect(successMessage).toContain(`Generated ${outputLabel}`);
-      expect(successMessage).toMatch(/.*(\d+ms).*$/);
+      expect(successMessage).toMatch(/.*([\d.]+m?s).*$/);
     }
 
     async function getGeneratedOutputContent(

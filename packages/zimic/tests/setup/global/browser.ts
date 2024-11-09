@@ -11,7 +11,7 @@ export async function setup() {
   server = new InterceptorServer({
     hostname: GLOBAL_SETUP_SERVER_HOSTNAME,
     port: GLOBAL_SETUP_SERVER_PORT,
-    onUnhandledRequest: { action: 'reject', log: false },
+    logUnhandledRequests: false,
   });
 
   await server.start();
