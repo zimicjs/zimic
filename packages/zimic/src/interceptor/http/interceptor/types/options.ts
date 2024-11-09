@@ -62,13 +62,18 @@ export namespace UnhandledRequestStrategy {
   export type DeclarationFactory<DeclarationAction extends Action = Action> = (
     request: HttpRequest,
   ) => PossiblePromise<Declaration<DeclarationAction>>;
+
+  export type LocalDeclaration = Declaration<Extract<Action, 'bypass'>>;
+  export type LocalDeclarationFactory = DeclarationFactory<Extract<Action, 'bypass'>>;
+
+  export type RemoteDeclaration = Declaration<Extract<Action, 'reject'>>;
+  export type RemoteDeclarationFactory = DeclarationFactory<Extract<Action, 'reject'>>;
+
+  export type Local = LocalDeclaration | LocalDeclarationFactory;
+  export type Remote = RemoteDeclaration | RemoteDeclarationFactory;
 }
 
-export type UnhandledRequestStrategy<
-  DeclarationAction extends UnhandledRequestStrategy.Action = UnhandledRequestStrategy.Action,
-> =
-  | UnhandledRequestStrategy.Declaration<DeclarationAction>
-  | UnhandledRequestStrategy.DeclarationFactory<DeclarationAction>;
+export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;
 
 export interface SharedHttpInterceptorOptions {
   /** The type of the HTTP interceptor. */
@@ -121,7 +126,7 @@ export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOption
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  onUnhandledRequest?: UnhandledRequestStrategy<Extract<UnhandledRequestStrategy.Action, 'bypass'>>;
+  onUnhandledRequest?: UnhandledRequestStrategy.Local;
 }
 
 /**
@@ -140,7 +145,7 @@ export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptio
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  onUnhandledRequest?: UnhandledRequestStrategy<Extract<UnhandledRequestStrategy.Action, 'reject'>>;
+  onUnhandledRequest?: UnhandledRequestStrategy.Remote;
 }
 
 /**

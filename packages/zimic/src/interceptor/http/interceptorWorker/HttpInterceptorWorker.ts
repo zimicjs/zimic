@@ -21,7 +21,7 @@ import { createURL, excludeNonPathParams } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
@@ -119,12 +119,10 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
-  protected async handleUnhandledRequest(request: Request) {
-    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-
+  protected async handleUnhandledRequest(request: Request, interceptorType: HttpInterceptorType) {
     try {
-      const strategy = await this.getUnhandledRequestStrategy(requestURL, request);
-      const shouldLog = strategy.logWarning ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.logWarning;
+      const strategy = await this.getUnhandledRequestStrategy(request, interceptorType);
+      const shouldLog = strategy.logWarning ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType].logWarning;
 
       if (shouldLog) {
         await HttpInterceptorWorker.logUnhandledRequest(request, strategy.action);
@@ -134,8 +132,10 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  private async getUnhandledRequestStrategy(requestURL: string, request: Request) {
-    const { declarationOrFactory = this.store.defaultUnhandledRequestStrategy() } =
+  private async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
+    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
+
+    const { declarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType) } =
       this.unhandledRequestStrategies.findLast((strategy) => requestURL.startsWith(strategy.baseURL)) ?? {};
 
     if (typeof declarationOrFactory !== 'function') {

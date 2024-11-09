@@ -60,31 +60,27 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     }>;
 
     describe.each([
-      { overrideDefault: false as const },
-      { overrideDefault: 'static-object' as const },
-      { overrideDefault: 'static-object-undefined-log' as const },
-      { overrideDefault: 'factory-object' as const },
-      { overrideDefault: 'factory-object-undefined-log' as const },
+      { overrideDefault: undefined },
+      { overrideDefault: 'static' as const },
+      { overrideDefault: 'static-undefined-log' as const },
+      { overrideDefault: 'factory' as const },
+      { overrideDefault: 'factory-undefined-log' as const },
     ])('Logging enabled or disabled: override default $overrideDefault', ({ overrideDefault }) => {
       beforeEach(() => {
-        if (overrideDefault === 'static-object') {
-          httpInterceptor.default.onUnhandledRequest = {
-            action: type === 'local' ? 'bypass' : 'reject',
-            logWarning: true,
-          };
-        } else if (overrideDefault === 'static-object-undefined-log') {
-          httpInterceptor.default.onUnhandledRequest = {
-            action: type === 'local' ? 'bypass' : 'reject',
-          };
-        } else if (overrideDefault === 'factory-object') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({
-            action: type === 'local' ? 'bypass' : 'reject',
-            logWarning: true,
-          });
-        } else if (overrideDefault === 'factory-object-undefined-log') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({
-            action: type === 'local' ? 'bypass' : 'reject',
-          });
+        const logWarning = overrideDefault?.endsWith('undefined-log') ? undefined : true;
+
+        if (overrideDefault?.startsWith('static')) {
+          if (type === 'local') {
+            httpInterceptor.default.local.onUnhandledRequest = { action: 'bypass', logWarning };
+          } else {
+            httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', logWarning };
+          }
+        } else if (overrideDefault?.startsWith('factory')) {
+          if (type === 'local') {
+            httpInterceptor.default.local.onUnhandledRequest = (_request) => ({ action: 'bypass', logWarning });
+          } else {
+            httpInterceptor.default.remote.onUnhandledRequest = (_request) => ({ action: 'reject', logWarning });
+          }
         }
       });
 
@@ -104,7 +100,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault === false ? { action: 'bypass', logWarning: true } : undefined,
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -174,7 +170,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault === false ? { action: 'bypass', logWarning: true } : undefined,
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -253,7 +249,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault === false ? { action: 'reject', logWarning: true } : undefined,
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -325,7 +321,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault === false ? { action: 'reject', logWarning: true } : undefined,
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -392,22 +388,24 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     });
 
     it.each([
-      { overrideDefault: false as const },
-      { overrideDefault: 'static-object' as const },
-      { overrideDefault: 'factory-object' as const },
+      { overrideDefault: undefined },
+      { overrideDefault: 'static' as const },
+      { overrideDefault: 'factory' as const },
     ])(
       `should not show a warning or error when logging is disabled and ${method} requests are unhandled: override default $overrideDefault`,
       async ({ overrideDefault }) => {
-        if (overrideDefault === 'static-object') {
-          httpInterceptor.default.onUnhandledRequest = {
-            action: type === 'local' ? 'bypass' : 'reject',
-            logWarning: false,
-          };
-        } else if (overrideDefault === 'factory-object') {
-          httpInterceptor.default.onUnhandledRequest = (_request) => ({
-            action: type === 'local' ? 'bypass' : 'reject',
-            logWarning: false,
-          });
+        if (overrideDefault === 'static') {
+          if (type === 'local') {
+            httpInterceptor.default.local.onUnhandledRequest = { action: 'bypass', logWarning: false };
+          } else {
+            httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', logWarning: false };
+          }
+        } else if (overrideDefault === 'factory') {
+          if (type === 'local') {
+            httpInterceptor.default.local.onUnhandledRequest = (_request) => ({ action: 'bypass', logWarning: false });
+          } else {
+            httpInterceptor.default.remote.onUnhandledRequest = (_request) => ({ action: 'reject', logWarning: false });
+          }
         }
 
         const extendedInterceptorOptions: HttpInterceptorOptions =
@@ -415,12 +413,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             ? {
                 ...interceptorOptions,
                 type,
-                onUnhandledRequest: overrideDefault === false ? { action: 'bypass', logWarning: false } : undefined,
+                onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: false },
               }
             : {
                 ...interceptorOptions,
                 type,
-                onUnhandledRequest: overrideDefault === false ? { action: 'reject', logWarning: false } : undefined,
+                onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: false },
               };
 
         await usingHttpInterceptor<{
