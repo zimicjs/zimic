@@ -191,6 +191,12 @@ describe('Exports', () => {
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.DeclarationFactory>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Local>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.LocalDeclaration>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.LocalDeclarationFactory>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Remote>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.RemoteDeclaration>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.RemoteDeclarationFactory>().not.toBeAny();
 
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();
