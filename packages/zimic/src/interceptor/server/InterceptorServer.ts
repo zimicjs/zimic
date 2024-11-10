@@ -64,6 +64,10 @@ class InterceptorServer implements PublicInterceptorServer {
     return this._port;
   }
 
+  logUnhandledRequests() {
+    return this._logUnhandledRequests;
+  }
+
   httpURL() {
     if (this._port === undefined) {
       return undefined;
@@ -245,7 +249,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequest(request);
+        await this.logUnhandledRequestWarning(request);
       }
 
       nodeResponse.destroy();
@@ -254,7 +258,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequest(request);
+        await this.logUnhandledRequestWarning(request);
       }
 
       nodeResponse.destroy();
@@ -313,9 +317,9 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  private async logUnhandledRequest(request: Request) {
+  private async logUnhandledRequestWarning(request: Request) {
     if (this._logUnhandledRequests) {
-      await HttpInterceptorWorker.logUnhandledRequest(request, 'reject');
+      await HttpInterceptorWorker.logUnhandledRequestWarning(request, 'reject');
     }
   }
 }

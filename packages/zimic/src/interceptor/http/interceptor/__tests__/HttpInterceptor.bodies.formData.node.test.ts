@@ -8,9 +8,7 @@ import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formDat
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Form data', async ({ type }) => {
-  const server = createInternalInterceptorServer({
-    logUnhandledRequests: false,
-  });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

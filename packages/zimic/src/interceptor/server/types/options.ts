@@ -16,7 +16,7 @@ export interface InterceptorServerOptions {
   port?: number;
 
   /**
-   * Whether to log unhandled requests to the console.
+   * Whether to log warnings about unhandled requests to the console.
    *
    * @default true
    */

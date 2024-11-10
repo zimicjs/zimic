@@ -8,9 +8,7 @@ import testMatrix from './shared/matrix';
 import { declareRestrictionsHttpInterceptorTests } from './shared/restrictions';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Restrictions', async ({ type }) => {
-  const server = createInternalInterceptorServer({
-    logUnhandledRequests: false,
-  });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

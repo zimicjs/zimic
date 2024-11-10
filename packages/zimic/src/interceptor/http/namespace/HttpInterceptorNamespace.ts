@@ -8,10 +8,11 @@ export class HttpInterceptorNamespaceDefault {
     /**
      * Gets or sets the default strategy for unhandled requests. If a request does not start with the base URL of any
      * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled
-     * request. You can override this default for specific interceptors by using `onUnhandledRequest` in
+     * request.
+     *
+     * You can override this default for specific interceptors by using `onUnhandledRequest` in
      * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
      *
-     * @param strategy The default strategy to be set.
      * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
      */
     get onUnhandledRequest(): UnhandledRequestStrategy.Local;
@@ -22,10 +23,11 @@ export class HttpInterceptorNamespaceDefault {
     /**
      * Gets or sets the default strategy for unhandled requests. If a request does not start with the base URL of any
      * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled
-     * request. You can override this default for specific interceptors by using `onUnhandledRequest` in
+     * request.
+     *
+     * You can override this default for specific interceptors by using `onUnhandledRequest` in
      * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
      *
-     * @param strategy The default strategy to be set.
      * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
      */
     get onUnhandledRequest(): UnhandledRequestStrategy.Remote;

@@ -5,7 +5,10 @@ class HttpInterceptorWorkerStore {
   private static _defaultOnUnhandledRequest: {
     local: UnhandledRequestStrategy.Local;
     remote: UnhandledRequestStrategy.Remote;
-  } = { ...DEFAULT_UNHANDLED_REQUEST_STRATEGY };
+  } = {
+    local: { ...DEFAULT_UNHANDLED_REQUEST_STRATEGY.local },
+    remote: { ...DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote },
+  };
 
   private class = HttpInterceptorWorkerStore;
 

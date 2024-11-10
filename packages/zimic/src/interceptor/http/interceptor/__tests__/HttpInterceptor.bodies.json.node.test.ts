@@ -8,9 +8,7 @@ import { declareJSONBodyHttpInterceptorTests } from './shared/bodies/json';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Json', async ({ type }) => {
-  const server = createInternalInterceptorServer({
-    logUnhandledRequests: false,
-  });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

@@ -7,9 +7,7 @@ import testMatrix from './shared/matrix';
 import { declareMethodHttpInterceptorWorkerTests } from './shared/methods';
 
 describe.each(testMatrix)('HttpInterceptorWorker methods (node, $type)', (defaultWorkerOptions) => {
-  const server = createInternalInterceptorServer({
-    logUnhandledRequests: false,
-  });
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   declareMethodHttpInterceptorWorkerTests({
     platform: 'node',

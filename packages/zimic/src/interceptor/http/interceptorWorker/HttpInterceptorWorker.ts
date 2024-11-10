@@ -122,10 +122,12 @@ abstract class HttpInterceptorWorker {
   protected async handleUnhandledRequest(request: Request, interceptorType: HttpInterceptorType) {
     try {
       const strategy = await this.getUnhandledRequestStrategy(request, interceptorType);
-      const shouldLog = strategy.logWarning ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType].logWarning;
+      const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
-      if (shouldLog) {
-        await HttpInterceptorWorker.logUnhandledRequest(request, strategy.action);
+      const shouldLogWarning = strategy.logWarning ?? defaultStrategy.logWarning;
+
+      if (shouldLogWarning) {
+        await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
       }
     } catch (error) {
       console.error(error);
@@ -135,30 +137,30 @@ abstract class HttpInterceptorWorker {
   private async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
     const requestURL = excludeNonPathParams(createURL(request.url)).toString();
 
-    const { declarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType) } =
-      this.unhandledRequestStrategies.findLast((strategy) => requestURL.startsWith(strategy.baseURL)) ?? {};
+    const defaultStrategy = this.store.defaultOnUnhandledRequest(interceptorType);
+    const { declarationOrFactory = defaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
 
     if (typeof declarationOrFactory !== 'function') {
       return declarationOrFactory;
     }
 
     const requestClone = request.clone();
-
     const strategy = await declarationOrFactory(requestClone);
     return strategy;
   }
 
-  onUnhandledRequest(baseURL: string, strategyDeclarationOrFactory: UnhandledRequestStrategy) {
-    this.unhandledRequestStrategies.push({
-      baseURL,
-      declarationOrFactory: strategyDeclarationOrFactory,
-    });
+  onUnhandledRequest(baseURL: string, declarationOrFactory: UnhandledRequestStrategy) {
+    this.unhandledRequestStrategies.push({ baseURL, declarationOrFactory });
   }
 
   offUnhandledRequest(baseURL: string) {
     this.unhandledRequestStrategies = this.unhandledRequestStrategies.filter(
       (strategy) => strategy.baseURL !== baseURL,
     );
+  }
+
+  private findUnhandledRequestStrategy(baseURL: string) {
+    return this.unhandledRequestStrategies.findLast((strategy) => baseURL.startsWith(strategy.baseURL));
   }
 
   abstract clearHandlers(): PossiblePromise<void>;
@@ -409,7 +411,7 @@ abstract class HttpInterceptorWorker {
     return (bodyAsText || null) as Body;
   }
 
-  static async logUnhandledRequest(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
+  static async logUnhandledRequestWarning(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
     const request = await this.parseRawRequest(rawRequest);
 
     logWithPrefix(
