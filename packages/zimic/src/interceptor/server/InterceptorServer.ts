@@ -1,4 +1,4 @@
-import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
+import { FetchAPI, normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
@@ -18,6 +18,30 @@ import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServ
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
+
+const fetchAPI: FetchAPI = {
+  fetch,
+  Request,
+  Response,
+  Headers,
+  FormData,
+  ReadableStream,
+  WritableStream,
+  TransformStream,
+  CompressionStream,
+  DecompressionStream,
+  TextDecoderStream,
+  TextEncoderStream,
+  Blob,
+  File,
+  crypto,
+  btoa,
+  TextEncoder,
+  TextDecoder,
+  URLPattern,
+  URL,
+  URLSearchParams,
+};
 
 interface HttpHandler {
   id: string;
@@ -223,7 +247,7 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
-    const request = normalizeNodeRequest(nodeRequest, Request);
+    const request = normalizeNodeRequest(nodeRequest, fetchAPI);
 
     try {
       const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
