@@ -13,7 +13,12 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { HttpInterceptorOptions, LocalHttpInterceptorOptions, RemoteHttpInterceptorOptions } from '../../types/options';
+import {
+  HttpInterceptorOptions,
+  LocalHttpInterceptorOptions,
+  RemoteHttpInterceptorOptions,
+  UnhandledRequestStrategy,
+} from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -69,17 +74,32 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       beforeEach(() => {
         const logWarning = overrideDefault?.endsWith('undefined-log') ? undefined : true;
 
+        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'bypass', logWarning };
+        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', logWarning };
+
         if (overrideDefault?.startsWith('static')) {
           if (type === 'local') {
-            httpInterceptor.default.local.onUnhandledRequest = { action: 'bypass', logWarning };
+            httpInterceptor.default.local.onUnhandledRequest = localOnUnhandledRequest;
+            expect(httpInterceptor.default.local.onUnhandledRequest).toBe(localOnUnhandledRequest);
           } else {
-            httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', logWarning };
+            httpInterceptor.default.remote.onUnhandledRequest = remoteOnUnhandledRequest;
+            expect(httpInterceptor.default.remote.onUnhandledRequest).toBe(remoteOnUnhandledRequest);
           }
         } else if (overrideDefault?.startsWith('factory')) {
           if (type === 'local') {
-            httpInterceptor.default.local.onUnhandledRequest = (_request) => ({ action: 'bypass', logWarning });
+            function onUnhandledRequest(_request: Request) {
+              return localOnUnhandledRequest;
+            }
+
+            httpInterceptor.default.local.onUnhandledRequest = onUnhandledRequest;
+            expect(httpInterceptor.default.local.onUnhandledRequest).toBe(onUnhandledRequest);
           } else {
-            httpInterceptor.default.remote.onUnhandledRequest = (_request) => ({ action: 'reject', logWarning });
+            function onUnhandledRequest(_request: Request) {
+              return remoteOnUnhandledRequest;
+            }
+
+            httpInterceptor.default.remote.onUnhandledRequest = onUnhandledRequest;
+            expect(httpInterceptor.default.remote.onUnhandledRequest).toBe(onUnhandledRequest);
           }
         }
       });
@@ -394,17 +414,34 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     ])(
       `should not show a warning or error when logging is disabled and ${method} requests are unhandled: override default $overrideDefault`,
       async ({ overrideDefault }) => {
+        const logWarning = false;
+
+        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'bypass', logWarning };
+        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', logWarning };
+
         if (overrideDefault === 'static') {
           if (type === 'local') {
-            httpInterceptor.default.local.onUnhandledRequest = { action: 'bypass', logWarning: false };
+            httpInterceptor.default.local.onUnhandledRequest = localOnUnhandledRequest;
+            expect(httpInterceptor.default.local.onUnhandledRequest).toBe(localOnUnhandledRequest);
           } else {
-            httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', logWarning: false };
+            httpInterceptor.default.remote.onUnhandledRequest = remoteOnUnhandledRequest;
+            expect(httpInterceptor.default.remote.onUnhandledRequest).toBe(remoteOnUnhandledRequest);
           }
         } else if (overrideDefault === 'factory') {
           if (type === 'local') {
-            httpInterceptor.default.local.onUnhandledRequest = (_request) => ({ action: 'bypass', logWarning: false });
+            function onUnhandledRequest(_request: Request) {
+              return localOnUnhandledRequest;
+            }
+
+            httpInterceptor.default.local.onUnhandledRequest = onUnhandledRequest;
+            expect(httpInterceptor.default.local.onUnhandledRequest).toBe(onUnhandledRequest);
           } else {
-            httpInterceptor.default.remote.onUnhandledRequest = (_request) => ({ action: 'reject', logWarning: false });
+            function onUnhandledRequest(_request: Request) {
+              return remoteOnUnhandledRequest;
+            }
+
+            httpInterceptor.default.remote.onUnhandledRequest = onUnhandledRequest;
+            expect(httpInterceptor.default.remote.onUnhandledRequest).toBe(onUnhandledRequest);
           }
         }
 
