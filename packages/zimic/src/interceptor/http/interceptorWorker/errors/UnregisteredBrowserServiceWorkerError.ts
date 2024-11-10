@@ -8,7 +8,7 @@ import { SERVICE_WORKER_FILE_NAME } from '@/cli/browser/shared/constants';
 class UnregisteredBrowserServiceWorkerError extends Error {
   constructor() {
     super(
-      `Failed to register the browser service worker: ` +
+      'Failed to register the browser service worker: ' +
         `script '${window.location.origin}/${SERVICE_WORKER_FILE_NAME}' not found.\n\n` +
         'Did you forget to run `zimic browser init <publicDirectory>`?\n\n' +
         'Learn more: https://github.com/zimicjs/zimic/wiki/getting‐started#client-side-post-install',

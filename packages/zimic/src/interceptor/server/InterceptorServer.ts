@@ -18,6 +18,7 @@ import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServ
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
+import { getFetchAPI } from './utils/fetch';
 
 interface HttpHandler {
   id: string;
@@ -223,7 +224,7 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
-    const request = normalizeNodeRequest(nodeRequest, Request);
+    const request = normalizeNodeRequest(nodeRequest, await getFetchAPI());
 
     try {
       const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
