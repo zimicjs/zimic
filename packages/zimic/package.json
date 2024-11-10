@@ -103,7 +103,7 @@
     "chalk": "4.1.2",
     "execa": "9.5.1",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.6.0",
+    "msw": "2.6.3",
     "openapi-typescript": "7.4.3",
     "ws": "8.18.0",
     "yargs": "17.7.2"
