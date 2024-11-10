@@ -598,6 +598,7 @@ describe('CLI (server)', async () => {
           expect(server!.isRunning()).toBe(true);
           expect(server!.hostname()).toBe('localhost');
           expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests()).toBe(true);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -646,6 +647,7 @@ describe('CLI (server)', async () => {
           expect(server!.isRunning()).toBe(true);
           expect(server!.hostname()).toBe('localhost');
           expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests()).toBe(false);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
