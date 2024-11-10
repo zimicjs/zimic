@@ -26,3 +26,5 @@ export const DEFAULT_ACCESS_CONTROL_HEADERS = Object.freeze({
 
 /** The default status code for the preflight request. */
 export const DEFAULT_PREFLIGHT_STATUS_CODE = 204;
+
+export const DEFAULT_LOG_UNHANDLED_REQUESTS = true;

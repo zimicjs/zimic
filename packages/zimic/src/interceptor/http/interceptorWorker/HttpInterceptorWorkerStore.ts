@@ -1,31 +1,33 @@
-import { UnhandledRequestStrategy } from '../interceptor/types/options';
-
-export type DefaultUnhandledRequestStrategy =
-  | Required<UnhandledRequestStrategy.Declaration>
-  | UnhandledRequestStrategy.Handler;
-
-const DEFAULT_UNHANDLED_REQUEST_STRATEGY: Required<UnhandledRequestStrategy.Declaration> = Object.freeze({
-  log: true,
-});
+import { HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
+import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 
 class HttpInterceptorWorkerStore {
-  private static _defaultUnhandledRequestStrategy: DefaultUnhandledRequestStrategy = {
-    ...DEFAULT_UNHANDLED_REQUEST_STRATEGY,
+  private static _defaultOnUnhandledRequest: {
+    local: UnhandledRequestStrategy.Local;
+    remote: UnhandledRequestStrategy.Remote;
+  } = {
+    local: { ...DEFAULT_UNHANDLED_REQUEST_STRATEGY.local },
+    remote: { ...DEFAULT_UNHANDLED_REQUEST_STRATEGY.remote },
   };
 
   private class = HttpInterceptorWorkerStore;
 
-  defaultUnhandledRequestStrategy() {
-    return this.class._defaultUnhandledRequestStrategy;
+  defaultOnUnhandledRequest(interceptorType: 'local'): UnhandledRequestStrategy.Local;
+  defaultOnUnhandledRequest(interceptorType: 'remote'): UnhandledRequestStrategy.Remote;
+  defaultOnUnhandledRequest(interceptorType: HttpInterceptorType): UnhandledRequestStrategy;
+  defaultOnUnhandledRequest(interceptorType: HttpInterceptorType) {
+    return this.class._defaultOnUnhandledRequest[interceptorType];
   }
 
-  setDefaultUnhandledRequestStrategy(strategy: UnhandledRequestStrategy) {
-    this.class._defaultUnhandledRequestStrategy =
-      typeof strategy === 'function'
-        ? strategy
-        : {
-            log: strategy.log ?? DEFAULT_UNHANDLED_REQUEST_STRATEGY.log,
-          };
+  setDefaultOnUnhandledRequest(interceptorType: 'local', strategy: UnhandledRequestStrategy.Local): void;
+  setDefaultOnUnhandledRequest(interceptorType: 'remote', strategy: UnhandledRequestStrategy.Remote): void;
+  setDefaultOnUnhandledRequest(interceptorType: HttpInterceptorType, strategy: UnhandledRequestStrategy): void;
+  setDefaultOnUnhandledRequest(interceptorType: HttpInterceptorType, strategy: UnhandledRequestStrategy) {
+    if (interceptorType === 'local') {
+      this.class._defaultOnUnhandledRequest[interceptorType] = strategy as UnhandledRequestStrategy.Local;
+    } else {
+      this.class._defaultOnUnhandledRequest[interceptorType] = strategy as UnhandledRequestStrategy.Remote;
+    }
   }
 }
 

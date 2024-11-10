@@ -23,13 +23,13 @@ async function startInterceptorServer({
   hostname,
   port,
   ephemeral,
-  onUnhandledRequest,
+  logUnhandledRequests,
   onReady,
 }: InterceptorServerStartOptions) {
   const server = interceptorServer.create({
     hostname,
     port,
-    onUnhandledRequest,
+    logUnhandledRequests,
   });
 
   async function handleExitEvent(exitEvent: ProcessExitEvent | undefined) {

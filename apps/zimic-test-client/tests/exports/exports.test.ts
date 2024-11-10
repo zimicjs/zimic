@@ -184,13 +184,19 @@ describe('Exports', () => {
     expect(typeof httpInterceptor.create).toBe('function');
 
     expectTypeOf(httpInterceptor.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
-    expect(typeof httpInterceptor.default.onUnhandledRequest).toBe('function');
+    expect(typeof httpInterceptor.default.local.onUnhandledRequest).toBe('object');
+    expect(typeof httpInterceptor.default.remote.onUnhandledRequest).toBe('object');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Declaration>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.Handler>().not.toBeAny();
-    expectTypeOf<UnhandledRequestStrategy.HandlerContext>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.DeclarationFactory>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Local>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.LocalDeclaration>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.LocalDeclarationFactory>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.Remote>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.RemoteDeclaration>().not.toBeAny();
+    expectTypeOf<UnhandledRequestStrategy.RemoteDeclarationFactory>().not.toBeAny();
 
     expectTypeOf<HttpInterceptor<never>>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptor<never>>().not.toBeAny();

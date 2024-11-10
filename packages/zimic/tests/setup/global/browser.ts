@@ -6,12 +6,12 @@ export const GLOBAL_SETUP_SERVER_HOSTNAME = 'localhost';
 export const GLOBAL_SETUP_SERVER_PORT = 3001;
 
 export async function setup() {
-  const { default: Server } = await import('@/interceptor/server/InterceptorServer');
+  const { default: InterceptorServer } = await import('@/interceptor/server/InterceptorServer');
 
-  server = new Server({
+  server = new InterceptorServer({
     hostname: GLOBAL_SETUP_SERVER_HOSTNAME,
     port: GLOBAL_SETUP_SERVER_PORT,
-    onUnhandledRequest: { log: false },
+    logUnhandledRequests: false,
   });
 
   await server.start();

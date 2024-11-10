@@ -3,9 +3,7 @@ import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } f
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
-import { UnhandledRequestStrategy } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import HttpInterceptorWorkerStore from '@/interceptor/http/interceptorWorker/HttpInterceptorWorkerStore';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -13,7 +11,11 @@ import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
-import { DEFAULT_ACCESS_CONTROL_HEADERS, DEFAULT_PREFLIGHT_STATUS_CODE } from './constants';
+import {
+  DEFAULT_ACCESS_CONTROL_HEADERS,
+  DEFAULT_PREFLIGHT_STATUS_CODE,
+  DEFAULT_LOG_UNHANDLED_REQUESTS,
+} from './constants';
 import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
@@ -32,9 +34,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private _hostname: string;
   private _port?: number;
-
-  private onUnhandledRequest?: UnhandledRequestStrategy.Declaration;
-  private workerStore = new HttpInterceptorWorkerStore();
+  private _logUnhandledRequests: boolean;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -53,7 +53,7 @@ class InterceptorServer implements PublicInterceptorServer {
   constructor(options: InterceptorServerOptions) {
     this._hostname = options.hostname ?? 'localhost';
     this._port = options.port;
-    this.onUnhandledRequest = options.onUnhandledRequest;
+    this._logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
   }
 
   hostname() {
@@ -62,6 +62,10 @@ class InterceptorServer implements PublicInterceptorServer {
 
   port() {
     return this._port;
+  }
+
+  logUnhandledRequests() {
+    return this._logUnhandledRequests;
   }
 
   httpURL() {
@@ -245,7 +249,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequest(request);
+        await this.logUnhandledRequestWarning(request);
       }
 
       nodeResponse.destroy();
@@ -254,7 +258,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequest(request);
+        await this.logUnhandledRequestWarning(request);
       }
 
       nodeResponse.destroy();
@@ -313,18 +317,9 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  private async logUnhandledRequest(request: Request) {
-    const action: UnhandledRequestStrategy.Action = 'reject';
-
-    const declaration = this.onUnhandledRequest;
-    const defaultDeclarationOrHandler = this.workerStore.defaultUnhandledRequestStrategy();
-
-    if (declaration?.log !== undefined) {
-      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, { log: declaration.log }, action);
-    } else if (typeof defaultDeclarationOrHandler === 'function') {
-      await HttpInterceptorWorker.logUnhandledRequestWithHandler(request, defaultDeclarationOrHandler, action);
-    } else {
-      await HttpInterceptorWorker.logUnhandledRequestWithStaticStrategy(request, defaultDeclarationOrHandler, action);
+  private async logUnhandledRequestWarning(request: Request) {
+    if (this._logUnhandledRequests) {
+      await HttpInterceptorWorker.logUnhandledRequestWarning(request, 'reject');
     }
   }
 }

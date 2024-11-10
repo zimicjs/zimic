@@ -16,16 +16,9 @@ export interface InterceptorServerOptions {
   port?: number;
 
   /**
-   * The strategy to use for unhandled requests.
+   * Whether to log warnings about unhandled requests to the console.
    *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   * @default true
    */
-  onUnhandledRequest?: {
-    /**
-     * Whether to log unhandled requests.
-     *
-     * @default true
-     */
-    log?: boolean;
-  };
+  logUnhandledRequests?: boolean;
 }

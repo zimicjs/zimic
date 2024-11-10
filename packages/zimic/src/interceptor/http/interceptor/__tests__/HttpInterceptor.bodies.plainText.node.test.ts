@@ -8,7 +8,7 @@ import { declarePlainTextBodyHttpInterceptorTests } from './shared/bodies/plainT
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Bodies > Plain text', async ({ type }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

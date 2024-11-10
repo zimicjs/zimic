@@ -18,6 +18,13 @@ export interface InterceptorServer {
   port: () => number | undefined;
 
   /**
+   * @default true
+   * @returns Whether to log warnings about unhandled requests to the console.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic server` API reference}
+   */
+  logUnhandledRequests: () => boolean;
+
+  /**
    * @returns The HTTP URL of the server.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic server` API reference}
    */
