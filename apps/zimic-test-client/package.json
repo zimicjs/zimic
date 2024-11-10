@@ -23,7 +23,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.7",
-    "concurrently": "^9.0.1",
+    "concurrently": "^9.1.0",
     "dotenv-cli": "^7.4.2",
     "execa": "^9.5.1",
     "node-fetch": "^3.3.2",

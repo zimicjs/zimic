@@ -163,7 +163,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         headers.set('accept', 'application/json');
         headers.set('content-language', 'pt');
 
-        promise = fetch(joinURL(baseURL, `/users`), { method, headers });
+        promise = fetch(joinURL(baseURL, '/users'), { method, headers });
         await expectFetchErrorOrPreflightResponse(promise, {
           shouldBePreflight: overridesPreflightResponse,
         });
@@ -600,7 +600,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const promise = fetch(joinURL(baseURL, `/users?tag=admin`), {
+          const promise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });
@@ -679,7 +679,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const promise = fetch(joinURL(baseURL, `/users?tag=admin`), {
+          const promise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });

@@ -435,7 +435,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       new HttpSearchParams<SearchParamsSchema>({ name }),
       new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
       new HttpSearchParams<SearchParamsSchema>({ other: 'param' }),
-      new HttpSearchParams<SearchParamsSchema>({ other: `Other param` }),
+      new HttpSearchParams<SearchParamsSchema>({ other: 'Other param' }),
       new HttpSearchParams<SearchParamsSchema>({}),
     ];
 
