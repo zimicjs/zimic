@@ -580,74 +580,93 @@ describe('CLI (server)', async () => {
       });
     });
 
-    it('should show an error if logging is enabled when a request is received and does not match any interceptors', async () => {
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
+    it.each([undefined, 'true'])(
+      'should show an error if logging is enabled when a request is received and does not match any interceptors (flag %s)',
+      async (flagValue) => {
+        processArgvSpy.mockReturnValue([
+          'node',
+          './dist/cli.js',
+          'server',
+          'start',
+          ...(flagValue === undefined ? [] : ['--log-unhandled-requests', flagValue]),
+        ]);
 
-      await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-        await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-        expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          `Server is running on http://localhost:${server!.port()}`,
-        );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-        const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-        const response = fetch(request);
-        await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(1);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
 
-        const errorMessage = spies.error.mock.calls[0].join(' ');
-        await verifyUnhandledRequestMessage(errorMessage, {
-          type: 'error',
-          platform: 'node',
-          request,
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, {
+            type: 'error',
+            platform: 'node',
+            request,
+          });
         });
-      });
-    });
+      },
+    );
 
-    it('should not show an error if logging is disabled when a request is received and does not match any interceptors', async () => {
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests', 'false']);
+    it.each(['false'])(
+      'should not show an error if logging is disabled when a request is received and does not match any interceptors (flag %s)',
+      async (flagValue) => {
+        processArgvSpy.mockReturnValue([
+          'node',
+          './dist/cli.js',
+          'server',
+          'start',
+          '--log-unhandled-requests',
+          flagValue,
+        ]);
 
-      await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
-        await runCLI();
+        await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+          await runCLI();
 
-        expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+          expect(server).toBeDefined();
+          expect(server!.isRunning()).toBe(true);
+          expect(server!.hostname()).toBe('localhost');
+          expect(server!.port()).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
 
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          `Server is running on http://localhost:${server!.port()}`,
-        );
+          expect(spies.log).toHaveBeenCalledWith(
+            `${chalk.cyan('[zimic]')}`,
+            `Server is running on http://localhost:${server!.port()}`,
+          );
 
-        const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
 
-        const response = fetch(request);
-        await expectFetchError(response);
+          const response = fetch(request);
+          await expectFetchError(response);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.warn).toHaveBeenCalledTimes(0);
-        expect(spies.error).toHaveBeenCalledTimes(0);
-      });
-    });
+          expect(spies.log).toHaveBeenCalledTimes(1);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
+      },
+    );
 
     it('should log an error and reject the request if it could not be handled due to an error', async () => {
       processArgvSpy.mockReturnValue([
