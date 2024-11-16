@@ -63,7 +63,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: async (request) => {
-          await super.handleUnhandledRequest(request);
+          await super.handleUnhandledRequest(request, 'local');
         },
       };
 
@@ -154,7 +154,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         const result = await createResponse({ ...context, request });
 
         if (result.bypass) {
-          await super.handleUnhandledRequest(requestClone);
+          await super.handleUnhandledRequest(requestClone, 'local');
           return passthrough();
         }
 
@@ -170,7 +170,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
         return response;
       } catch (error) {
         console.error(error);
-        await super.handleUnhandledRequest(requestClone);
+        await super.handleUnhandledRequest(requestClone, 'local');
         return passthrough();
       }
     });

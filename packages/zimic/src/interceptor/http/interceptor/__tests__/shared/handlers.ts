@@ -139,6 +139,11 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
+      const extendedInterceptorOptions: HttpInterceptorOptions =
+        type === 'local'
+          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', logWarning: true } }
+          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', logWarning: true } };
+
       await usingHttpInterceptor<{
         '/users': {
           GET: MethodSchema;
@@ -149,7 +154,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           HEAD: MethodSchema;
           OPTIONS: MethodSchema;
         };
-      }>({ ...interceptorOptions, onUnhandledRequest: { log: true } }, async (interceptor) => {
+      }>(extendedInterceptorOptions, async (interceptor) => {
         const error = new Error('An error occurred.');
 
         const handler = await promiseIfRemote(

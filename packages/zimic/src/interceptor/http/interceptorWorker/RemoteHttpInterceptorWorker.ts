@@ -78,12 +78,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       if (response) {
         return { response: await serializeResponse(response) };
       } else {
-        await super.handleUnhandledRequest(request);
+        await super.handleUnhandledRequest(request, 'remote');
         return { response: null };
       }
     } catch (error) {
       console.error(error);
-      await super.handleUnhandledRequest(request);
+      await super.handleUnhandledRequest(request, 'remote');
       return { response: null };
     }
   };

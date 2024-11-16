@@ -18,43 +18,13 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
 /**
  * The strategy to treat unhandled requests.
  *
- * When `log` is `true`, unhandled requests are logged to the console. If provided a handler, unhandled requests will be
- * logged if `await context.log()` is called.
+ * When `logWarning` is `true` or `undefined`, warnings about the unhandled requests are logged to the console.
+ * Similarly, if provided a factory, unhandled request warnings will be logged if the function returns a declaration
+ * with `logWarning` set to `true` or `undefined`.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
  */
 export namespace UnhandledRequestStrategy {
-  /**
-   * A static declaration of the strategy to use for unhandled requests.
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-   */
-  export type Declaration = Partial<{
-    log: boolean;
-  }>;
-
-  export interface HandlerContext {
-    /**
-     * Logs the unhandled request to the console.
-     *
-     * If the request was bypassed by a
-     * {@link https://github.com/zimicjs/zimic/wiki/getting‐started#local-http-interceptors local interceptor}, the log
-     * will be a warning. If the request was rejected by a
-     * {@link https://github.com/zimicjs/zimic/wiki/getting‐started#remote-http-interceptors remote interceptor}, the log
-     * will be an error.
-     *
-     * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-     */
-    log: () => Promise<void>;
-  }
-
-  /**
-   * A dynamic handler to unhandled requests.
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-   */
-  export type Handler = (request: HttpRequest, context: HandlerContext) => PossiblePromise<void>;
-
   /**
    * The action to take when an unhandled request is intercepted.
    *
@@ -67,9 +37,69 @@ export namespace UnhandledRequestStrategy {
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
   export type Action = 'bypass' | 'reject';
+
+  /**
+   * A static declaration of the strategy to use for unhandled requests.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export interface Declaration<DeclarationAction extends Action = Action> {
+    /** The action to take when an unhandled request is intercepted. */
+    action: DeclarationAction;
+
+    /**
+     * Whether to log unhandled requests to the console.
+     *
+     * @default true
+     */
+    logWarning?: boolean;
+  }
+
+  /**
+   * A factory to create dynamic unhandled request strategies based on the intercepted request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export type DeclarationFactory<DeclarationAction extends Action = Action> = (
+    request: HttpRequest,
+  ) => PossiblePromise<Declaration<DeclarationAction>>;
+
+  /**
+   * A static declaration of the strategy to use for unhandled requests in local interceptors.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export type LocalDeclaration = Declaration<Extract<Action, 'bypass'>>;
+
+  /**
+   * A factory to create dynamic unhandled request strategies based on the intercepted request in local interceptors.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export type LocalDeclarationFactory = DeclarationFactory<Extract<Action, 'bypass'>>;
+
+  /**
+   * A static declaration of the strategy to use for unhandled requests in remote interceptors.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export type RemoteDeclaration = Declaration<Extract<Action, 'reject'>>;
+
+  /**
+   * A factory to create dynamic unhandled request strategies based on the intercepted request in remote interceptors.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  export type RemoteDeclarationFactory = DeclarationFactory<Extract<Action, 'reject'>>;
+
+  /** The static declaration or a factory of the strategy to use for unhandled requests in local interceptors. */
+  export type Local = LocalDeclaration | LocalDeclarationFactory;
+
+  /** The static declaration or a factory of the strategy to use for unhandled requests in remote interceptors. */
+  export type Remote = RemoteDeclaration | RemoteDeclarationFactory;
 }
 
-export type UnhandledRequestStrategy = UnhandledRequestStrategy.Declaration | UnhandledRequestStrategy.Handler;
+export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;
 
 export interface SharedHttpInterceptorOptions {
   /** The type of the HTTP interceptor. */
@@ -104,15 +134,6 @@ export interface SharedHttpInterceptorOptions {
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing Testing}
    */
   saveRequests?: boolean;
-
-  /**
-   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
-   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
-   * unhandled request.
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-   */
-  onUnhandledRequest?: UnhandledRequestStrategy;
 }
 
 /**
@@ -123,6 +144,15 @@ export interface SharedHttpInterceptorOptions {
  */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'local';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest?: UnhandledRequestStrategy.Local;
 }
 
 /**
@@ -133,6 +163,15 @@ export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOption
  */
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest?: UnhandledRequestStrategy.Remote;
 }
 
 /**

@@ -7,7 +7,7 @@ import { declareDefaultHttpRequestHandlerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpRequestHandler (node, $type)', ({ type, Handler }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   declareDefaultHttpRequestHandlerTests({
     platform: 'node',
