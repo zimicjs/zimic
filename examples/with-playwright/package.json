@@ -28,8 +28,8 @@
     "@types/react-dom": "^18.3.1",
     "dotenv-cli": "^7.4.2",
     "execa": "^9.5.1",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "zimic": "latest"
