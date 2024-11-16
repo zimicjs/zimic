@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 /**
  * JSDOM runs on Node.js, but uses browser imports when present. This resolver removes the browser condition of
  * MSW-related imports to prevent test runtime errors.
