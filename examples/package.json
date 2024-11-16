@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
@@ -15,6 +15,7 @@
   "devDependencies": {
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
-    "@zimic/tsconfig": "workspace:*"
+    "@zimic/tsconfig": "workspace:*",
+    "eslint": "^9.15.0"
   }
 }

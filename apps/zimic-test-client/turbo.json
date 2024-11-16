@@ -8,7 +8,7 @@
     },
 
     "lint:turbo": {
-      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", ".eslintrc.js"]
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
     },
 
     "types:check": {

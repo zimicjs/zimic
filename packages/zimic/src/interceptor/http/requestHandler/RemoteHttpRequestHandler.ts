@@ -152,7 +152,6 @@ class RemoteHttpRequestHandler<
 
     return Promise.all(promisesToWait)
       .then(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
         return this.isSynced() ? this.synced : this.unsynced;

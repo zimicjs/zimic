@@ -54,7 +54,6 @@ export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Typ
 
 export type Collection<Type> = Type[] | Set<Type>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DeepPartial<Type> = Type extends Function
   ? Type
   : Type extends (infer ArrayItem)[]
