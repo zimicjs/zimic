@@ -4,11 +4,15 @@ import githubInterceptor, { githubFixtures } from './github';
 
 httpInterceptor.default.local.onUnhandledRequest = (request) => {
   const url = new URL(request.url);
+  const isSameHost = url.host === window.location.host;
 
-  return {
-    action: 'bypass',
-    logWarning: url.host !== window.location.host,
-  };
+  if (isSameHost) {
+    // Ignore requests to the same host
+    return { action: 'bypass', log: false };
+  }
+
+  // Reject any other requests
+  return { action: 'reject' };
 };
 
 export async function loadInterceptors() {
