@@ -519,12 +519,6 @@ importers:
         specifier: 4.0.8
         version: 4.0.8
     devDependencies:
-      '@eslint/eslintrc':
-        specifier: ^3.2.0
-        version: 3.2.0
-      '@eslint/js':
-        specifier: ^9.15.0
-        version: 9.15.0
       '@types/cross-spawn':
         specifier: ^6.0.6
         version: 6.0.6
@@ -6999,7 +6993,7 @@ snapshots:
       magicast: 0.3.5
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.4.3(typescript@5.6.3))
+      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3))
     transitivePeerDependencies:
       - supports-color
 
