@@ -85,7 +85,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       zimic:
         specifier: workspace:*
         version: link:../../packages/zimic
@@ -306,7 +306,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -388,7 +388,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -415,7 +415,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -446,7 +446,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: 2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -506,8 +506,8 @@ importers:
         specifier: 5.0.0
         version: 5.0.0(ws@8.18.0(bufferutil@4.0.8))
       msw:
-        specifier: 2.6.3
-        version: 2.6.3(@types/node@22.9.0)(typescript@5.6.3)
+        specifier: 2.6.5
+        version: 2.6.5(@types/node@22.9.0)(typescript@5.6.3)
       openapi-typescript:
         specifier: 7.4.3
         version: 7.4.3(typescript@5.6.3)
@@ -575,7 +575,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: ^2.1.4
-        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))
+        version: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
 
 packages:
 
@@ -1433,16 +1433,36 @@ packages:
     peerDependencies:
       '@types/node': '>=18'
 
+  '@inquirer/confirm@5.0.2':
+    resolution: {integrity: sha512-KJLUHOaKnNCYzwVbryj3TNBxyZIrr56fR5N45v6K9IPrbT6B7DcudBMfylkV1A8PUdJE15mybkEQyp2/ZUpxUA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+
   '@inquirer/core@10.0.1':
     resolution: {integrity: sha512-KKTgjViBQUi3AAssqjUFMnMO3CM3qwCHvePV9EW+zTKGKafFGFF01sc1yOIYjLJ7QU52G/FbzKc+c01WLzXmVQ==}
+    engines: {node: '>=18'}
+
+  '@inquirer/core@10.1.0':
+    resolution: {integrity: sha512-I+ETk2AL+yAVbvuKx5AJpQmoaWhpiTFOg/UJb7ZkMAK4blmtG8ATh5ct+T/8xNld0CZG/2UhtkdMwpgvld92XQ==}
     engines: {node: '>=18'}
 
   '@inquirer/figures@1.0.7':
     resolution: {integrity: sha512-m+Trk77mp54Zma6xLkLuY+mvanPxlE4A7yNKs2HBiyZ4UkVs28Mv5c/pgWrHeInx+USHeX/WEPzjrWrcJiQgjw==}
     engines: {node: '>=18'}
 
+  '@inquirer/figures@1.0.8':
+    resolution: {integrity: sha512-tKd+jsmhq21AP1LhexC0pPwsCxEhGgAkg28byjJAd+xhmIs8LUX8JbUc3vBf3PhLxWiB5EvyBE5X7JSPAqMAqg==}
+    engines: {node: '>=18'}
+
   '@inquirer/type@3.0.0':
     resolution: {integrity: sha512-YYykfbw/lefC7yKj7nanzQXILM7r3suIvyFlCcMskc99axmsSewXWkAfXKwMbgxL76iAFVmRwmYdwNZNc8gjog==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+
+  '@inquirer/type@3.0.1':
+    resolution: {integrity: sha512-+ksJMIy92sOAiAccGpcKZUc3bYO07cADnscIxHBknEm3uNts3movSmBofc1908BNy5edKscxYeAdaX1NXkHS6A==}
     engines: {node: '>=18'}
     peerDependencies:
       '@types/node': '>=18'
@@ -1550,12 +1570,12 @@ packages:
   '@kamilkisiela/fast-url-parser@1.1.4':
     resolution: {integrity: sha512-gbkePEBupNydxCelHCESvFSFM8XPh1Zs/OAVRW/rKpEqPAl5PbOM90Si8mv9bvnR53uPD2s/FiRxdvSejpRJew==}
 
-  '@mswjs/interceptors@0.36.10':
-    resolution: {integrity: sha512-GXrJgakgJW3DWKueebkvtYgGKkxA7s0u5B0P5syJM5rvQUnrpLPigvci8Hukl7yEM+sU06l+er2Fgvx/gmiRgg==}
-    engines: {node: '>=18'}
-
   '@mswjs/interceptors@0.36.8':
     resolution: {integrity: sha512-/SKHnCpFdVoEZT4gYNWDJL42y+wK6z1V6HdEoyCb13O6Hkle/wVZ9wQfGwUdYgZj4iY4E74t0hoQ+8C7Yyy87g==}
+    engines: {node: '>=18'}
+
+  '@mswjs/interceptors@0.37.0':
+    resolution: {integrity: sha512-lDiHQMCBV9qz8c7+zxaNFQtWWaSogTYkqJ3Pg+FGYYC76nsfSxkMQ0df8fojyz16E+w4vp57NLjN2muNG7LugQ==}
     engines: {node: '>=18'}
 
   '@next/env@15.0.3':
@@ -2599,13 +2619,13 @@ packages:
     resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
     engines: {node: '>= 0.6'}
 
-  cookie@1.0.1:
-    resolution: {integrity: sha512-Xd8lFX4LM9QEEwxQpF9J9NTUh8pmdJO0cyRJhFiDoLTk2eH8FXlRv2IFGYVadZpqI3j8fhNrSdKCeYPxiAhLXw==}
-    engines: {node: '>=18'}
-
   cookie@0.7.2:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
+
+  cookie@1.0.1:
+    resolution: {integrity: sha512-Xd8lFX4LM9QEEwxQpF9J9NTUh8pmdJO0cyRJhFiDoLTk2eH8FXlRv2IFGYVadZpqI3j8fhNrSdKCeYPxiAhLXw==}
+    engines: {node: '>=18'}
 
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
@@ -4124,8 +4144,8 @@ packages:
       typescript:
         optional: true
 
-  msw@2.6.3:
-    resolution: {integrity: sha512-+8fGdyFl3tjEZSKavuKp9BaVCLFmN/4D0m4qAPOd25/J6MjeaW2qBkZvWliLTp/i6cYthEmMtJjki/wLBrYCTA==}
+  msw@2.6.5:
+    resolution: {integrity: sha512-PnlnTpUlOrj441kYQzzFhzMzMCGFT6a2jKUBG7zSpLkYS5oh8Arrbc0dL8/rNAtxaoBy0EVs2mFqj2qdmWK7lQ==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -5154,6 +5174,10 @@ packages:
     resolution: {integrity: sha512-yOGpmOAL7CkKe/91I5O3gPICmJNLJ1G4zFYVAsRHg7M64biSnPtRj0WNQt++bRkjYOqjWXrhnUw1utzmVErAdg==}
     engines: {node: '>=16'}
 
+  type-fest@4.27.0:
+    resolution: {integrity: sha512-3IMSWgP7C5KSQqmo1wjhKrwsvXAtF33jO3QY+Uy++ia7hqvgSK6iXbbg5PbDBc1P2ZbNEDgejOrN4YooXvhwCw==}
+    engines: {node: '>=16'}
+
   typed-array-buffer@1.0.2:
     resolution: {integrity: sha512-gEymJYKZtKXzzBzM4jqa9w6Q1Jjm7x2d+sh19AdsD4wqnMPDYyvwpsIc2Q/835kHuo3BEQ7CjelGhfTsoBb2MQ==}
     engines: {node: '>= 0.4'}
@@ -6133,6 +6157,12 @@ snapshots:
       '@inquirer/type': 3.0.0(@types/node@22.9.0)
       '@types/node': 22.9.0
 
+  '@inquirer/confirm@5.0.2(@types/node@22.9.0)':
+    dependencies:
+      '@inquirer/core': 10.1.0(@types/node@22.9.0)
+      '@inquirer/type': 3.0.1(@types/node@22.9.0)
+      '@types/node': 22.9.0
+
   '@inquirer/core@10.0.1(@types/node@22.9.0)':
     dependencies:
       '@inquirer/figures': 1.0.7
@@ -6147,9 +6177,29 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@inquirer/core@10.1.0(@types/node@22.9.0)':
+    dependencies:
+      '@inquirer/figures': 1.0.8
+      '@inquirer/type': 3.0.1(@types/node@22.9.0)
+      ansi-escapes: 4.3.2
+      cli-width: 4.1.0
+      mute-stream: 2.0.0
+      signal-exit: 4.1.0
+      strip-ansi: 6.0.1
+      wrap-ansi: 6.2.0
+      yoctocolors-cjs: 2.1.2
+    transitivePeerDependencies:
+      - '@types/node'
+
   '@inquirer/figures@1.0.7': {}
 
+  '@inquirer/figures@1.0.8': {}
+
   '@inquirer/type@3.0.0(@types/node@22.9.0)':
+    dependencies:
+      '@types/node': 22.9.0
+
+  '@inquirer/type@3.0.1(@types/node@22.9.0)':
     dependencies:
       '@types/node': 22.9.0
 
@@ -6357,7 +6407,7 @@ snapshots:
 
   '@kamilkisiela/fast-url-parser@1.1.4': {}
 
-  '@mswjs/interceptors@0.36.10':
+  '@mswjs/interceptors@0.36.8':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/logger': 0.3.0
@@ -6366,7 +6416,7 @@ snapshots:
       outvariant: 1.4.3
       strict-event-emitter: 0.5.1
 
-  '@mswjs/interceptors@0.36.8':
+  '@mswjs/interceptors@0.37.0':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/logger': 0.3.0
@@ -6888,7 +6938,7 @@ snapshots:
       msw: 2.6.0(@types/node@22.9.0)(typescript@5.6.3)
       sirv: 3.0.0
       tinyrainbow: 1.2.0
-      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3))
+      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
       ws: 8.18.0(bufferutil@4.0.8)
     optionalDependencies:
       playwright: 1.48.2
@@ -6911,7 +6961,7 @@ snapshots:
       magicast: 0.3.5
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3))
+      vitest: 2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))
     transitivePeerDependencies:
       - supports-color
 
@@ -6931,13 +6981,13 @@ snapshots:
       msw: 2.6.0(@types/node@22.9.0)(typescript@5.6.3)
       vite: 5.4.9(@types/node@22.9.0)
 
-  '@vitest/mocker@2.1.4(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))(vite@5.4.9(@types/node@22.9.0))':
+  '@vitest/mocker@2.1.4(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))(vite@5.4.9(@types/node@22.9.0))':
     dependencies:
       '@vitest/spy': 2.1.4
       estree-walker: 3.0.3
       magic-string: 0.30.12
     optionalDependencies:
-      msw: 2.6.3(@types/node@22.9.0)(typescript@5.6.3)
+      msw: 2.6.5(@types/node@22.9.0)(typescript@5.6.3)
       vite: 5.4.9(@types/node@22.9.0)
 
   '@vitest/pretty-format@2.1.4':
@@ -7440,9 +7490,9 @@ snapshots:
 
   cookie@0.5.0: {}
 
-  cookie@1.0.1: {}
-
   cookie@0.7.2: {}
+
+  cookie@1.0.1: {}
 
   cookiejar@2.1.4: {}
 
@@ -9348,13 +9398,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3):
+  msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3):
     dependencies:
       '@bundled-es-modules/cookie': 2.0.1
       '@bundled-es-modules/statuses': 1.0.1
       '@bundled-es-modules/tough-cookie': 0.1.6
-      '@inquirer/confirm': 5.0.1(@types/node@22.9.0)
-      '@mswjs/interceptors': 0.36.10
+      '@inquirer/confirm': 5.0.2(@types/node@22.9.0)
+      '@mswjs/interceptors': 0.37.0
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/until': 2.1.0
       '@types/cookie': 0.6.0
@@ -9366,7 +9416,7 @@ snapshots:
       outvariant: 1.4.3
       path-to-regexp: 6.3.0
       strict-event-emitter: 0.5.1
-      type-fest: 4.26.1
+      type-fest: 4.27.0
       yargs: 17.7.2
     optionalDependencies:
       typescript: 5.6.3
@@ -10421,6 +10471,8 @@ snapshots:
 
   type-fest@4.26.1: {}
 
+  type-fest@4.27.0: {}
+
   typed-array-buffer@1.0.2:
     dependencies:
       call-bind: 1.0.7
@@ -10527,47 +10579,10 @@ snapshots:
       '@types/node': 22.9.0
       fsevents: 2.3.3
 
-  vitest@2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3)):
+  vitest@2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3)):
     dependencies:
       '@vitest/expect': 2.1.4
-      '@vitest/mocker': 2.1.4(msw@2.6.0(@types/node@22.9.0)(typescript@5.6.3))(vite@5.4.9(@types/node@22.9.0))
-      '@vitest/pretty-format': 2.1.4
-      '@vitest/runner': 2.1.4
-      '@vitest/snapshot': 2.1.4
-      '@vitest/spy': 2.1.4
-      '@vitest/utils': 2.1.4
-      chai: 5.1.2
-      debug: 4.3.7(supports-color@9.4.0)
-      expect-type: 1.1.0
-      magic-string: 0.30.12
-      pathe: 1.1.2
-      std-env: 3.7.0
-      tinybench: 2.9.0
-      tinyexec: 0.3.1
-      tinypool: 1.0.1
-      tinyrainbow: 1.2.0
-      vite: 5.4.9(@types/node@22.9.0)
-      vite-node: 2.1.4(@types/node@22.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 22.9.0
-      '@vitest/browser': 2.1.4(@types/node@22.9.0)(bufferutil@4.0.8)(playwright@1.48.2)(typescript@5.6.3)(vite@5.4.9(@types/node@22.9.0))(vitest@2.1.4)
-      jsdom: 20.0.3(bufferutil@4.0.8)
-    transitivePeerDependencies:
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-
-  vitest@2.1.4(@types/node@22.9.0)(@vitest/browser@2.1.4)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3)):
-    dependencies:
-      '@vitest/expect': 2.1.4
-      '@vitest/mocker': 2.1.4(msw@2.6.3(@types/node@22.9.0)(typescript@5.6.3))(vite@5.4.9(@types/node@22.9.0))
+      '@vitest/mocker': 2.1.4(msw@2.6.5(@types/node@22.9.0)(typescript@5.6.3))(vite@5.4.9(@types/node@22.9.0))
       '@vitest/pretty-format': 2.1.4
       '@vitest/runner': 2.1.4
       '@vitest/snapshot': 2.1.4
