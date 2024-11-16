@@ -133,7 +133,10 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
     class RejectedUnhandledRequestError extends InternalError {
       constructor() {
-        super('Request was not handled and was rejected.');
+        super(
+          'Request was not handled and was rejected because `action` is set to `reject`.\n' +
+            'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
+        );
         this.name = 'RejectedUnhandledRequestError';
       }
     }
