@@ -13,7 +13,7 @@ import WebSocketClient from '@/webSocket/WebSocketClient';
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
+import { HttpInterceptorPlatform } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
@@ -82,24 +82,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       console.error(error);
     }
 
-    const {
-      originalDefaultStrategy: originalDefaultStrategyOrPromise,
-      customDefaultStrategy: customDefaultStrategyOrPromise,
-      customStrategy: customStrategyOrPromise,
-    } = super.getUnhandledRequestStrategy(request, 'remote');
-
-    const [originalDefaultStrategy, customDefaultStrategy, customStrategy] = await Promise.all([
-      originalDefaultStrategyOrPromise,
-      customDefaultStrategyOrPromise,
-      customStrategyOrPromise,
-    ]);
-
-    const strategy: UnhandledRequestStrategy.Declaration = {
-      ...originalDefaultStrategy,
-      ...customDefaultStrategy,
-      ...customStrategy,
-    };
-
+    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
     await super.handleUnhandledRequest(request, strategy);
 
     return { response: null };

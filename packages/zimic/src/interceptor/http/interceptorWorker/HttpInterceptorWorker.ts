@@ -15,6 +15,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
@@ -121,11 +122,9 @@ abstract class HttpInterceptorWorker {
 
   protected async handleUnhandledRequest(request: Request, strategy: UnhandledRequestStrategy.Declaration) {
     try {
-      if (!strategy.log) {
-        return;
+      if (strategy.log) {
+        await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
       }
-
-      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
     } catch (error) {
       console.error(error);
     }
@@ -134,27 +133,48 @@ abstract class HttpInterceptorWorker {
   protected getUnhandledRequestStrategy(
     request: Request,
     interceptorType: 'local',
-  ): {
-    originalDefaultStrategy: UnhandledRequestStrategy.Declaration;
-    customDefaultStrategy: UnhandledRequestStrategy.Declaration;
-    customStrategy: UnhandledRequestStrategy.Declaration;
-  };
+  ): UnhandledRequestStrategy.Declaration;
   protected getUnhandledRequestStrategy(
     request: Request,
     interceptorType: 'remote',
-  ): {
-    originalDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
-    customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
-    customStrategy: Promise<UnhandledRequestStrategy.Declaration>;
-  };
+  ): PossiblePromise<UnhandledRequestStrategy.Declaration>;
   protected getUnhandledRequestStrategy(
     request: Request,
     interceptorType: HttpInterceptorType,
-  ): {
-    originalDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
-    customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
-    customStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null;
-  } {
+  ): PossiblePromise<UnhandledRequestStrategy.Declaration> {
+    if (interceptorType === 'local') {
+      const candidates = this.getUnhandledRequestStrategyCandidates(request, 'local');
+      const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
+      return strategy;
+    }
+
+    const candidatesOrPromises = this.getUnhandledRequestStrategyCandidates(request, 'remote');
+
+    return Promise.all(candidatesOrPromises).then((candidates) => {
+      const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
+      return strategy;
+    });
+  }
+
+  private reduceUnhandledRequestStrategyCandidates(candidates: UnhandledRequestStrategy.Declaration[]) {
+    return candidates.reduce((strategy, candidate) => ({
+      action: candidate.action,
+      log: candidate.log ?? strategy.log,
+    }));
+  }
+
+  private getUnhandledRequestStrategyCandidates(
+    request: Request,
+    interceptorType: 'local',
+  ): UnhandledRequestStrategy.Declaration[];
+  private getUnhandledRequestStrategyCandidates(
+    request: Request,
+    interceptorType: 'remote',
+  ): PossiblePromise<UnhandledRequestStrategy.Declaration>[];
+  private getUnhandledRequestStrategyCandidates(
+    request: Request,
+    interceptorType: HttpInterceptorType,
+  ): PossiblePromise<UnhandledRequestStrategy.Declaration>[] {
     const originalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
     try {
@@ -169,24 +189,16 @@ abstract class HttpInterceptorWorker {
           ? defaultDeclarationOrFactory(requestClone)
           : defaultDeclarationOrFactory;
 
-      const { declarationOrFactory = customDefaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
+      const { declarationOrFactory = null } = this.findUnhandledRequestStrategy(requestURL) ?? {};
 
       const interceptorStrategy =
         typeof declarationOrFactory === 'function' ? declarationOrFactory(otherRequestClone) : declarationOrFactory;
 
-      return {
-        originalDefaultStrategy,
-        customDefaultStrategy,
-        customStrategy: interceptorStrategy,
-      };
+      return [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy].filter(isDefined);
     } catch (error) {
       console.error(error);
 
-      return {
-        originalDefaultStrategy,
-        customDefaultStrategy: originalDefaultStrategy,
-        customStrategy: null,
-      };
+      return [originalDefaultStrategy];
     }
   }
 

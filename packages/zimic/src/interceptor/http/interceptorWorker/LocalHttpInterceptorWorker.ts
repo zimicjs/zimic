@@ -10,7 +10,6 @@ import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
-import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
@@ -71,17 +70,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: (request, print) => {
-          const { originalDefaultStrategy, customDefaultStrategy, customStrategy } = super.getUnhandledRequestStrategy(
-            request,
-            'local',
-          );
-
-          const strategy: UnhandledRequestStrategy.Declaration = {
-            ...originalDefaultStrategy,
-            ...customDefaultStrategy,
-            ...customStrategy,
-          };
-
+          const strategy = super.getUnhandledRequestStrategy(request, 'local');
           // MSW does not support async callbacks for `onUnhandledRequest`.
           // As a workaround, we can only support synchronous code.
           void super.handleUnhandledRequest(request, strategy);
@@ -224,16 +213,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       if (!result?.response) {
-        const { originalDefaultStrategy, customDefaultStrategy, customStrategy } = super.getUnhandledRequestStrategy(
-          requestClone,
-          'local',
-        );
-
-        const strategy: UnhandledRequestStrategy.Declaration = {
-          ...originalDefaultStrategy,
-          ...customDefaultStrategy,
-          ...customStrategy,
-        };
+        const strategy = super.getUnhandledRequestStrategy(requestClone, 'local');
+        await super.handleUnhandledRequest(requestClone, strategy);
 
         if (strategy.action === 'reject') {
           return Response.error();

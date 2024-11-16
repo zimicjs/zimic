@@ -739,10 +739,30 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
             numberOfRequestsIncludingPreflight * 2,
           );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-          expect(spies.error).toHaveBeenCalledWith(error);
+          if (type === 'local') {
+            expect(spies.warn).toHaveBeenCalledTimes(1);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+            expect(spies.error).toHaveBeenCalledWith(error);
+
+            await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
+              type: 'warn',
+              platform,
+              request,
+            });
+          } else {
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+            expect(spies.error).toHaveBeenNthCalledWith(1, error);
+
+            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+              type: 'error',
+              platform,
+              request,
+            });
+          }
         });
       });
     });
