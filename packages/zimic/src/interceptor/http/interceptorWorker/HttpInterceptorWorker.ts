@@ -135,42 +135,58 @@ abstract class HttpInterceptorWorker {
     request: Request,
     interceptorType: 'local',
   ): {
-    partialStrategy: UnhandledRequestStrategy.Declaration;
-    defaultStrategy: UnhandledRequestStrategy;
+    originalDefaultStrategy: UnhandledRequestStrategy.Declaration;
+    customDefaultStrategy: UnhandledRequestStrategy.Declaration;
+    customStrategy: UnhandledRequestStrategy.Declaration;
   };
   protected getUnhandledRequestStrategy(
     request: Request,
     interceptorType: 'remote',
   ): {
-    partialStrategy: Promise<UnhandledRequestStrategy.Declaration>;
-    defaultStrategy: UnhandledRequestStrategy;
+    originalDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
+    customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
+    customStrategy: Promise<UnhandledRequestStrategy.Declaration>;
   };
   protected getUnhandledRequestStrategy(
     request: Request,
     interceptorType: HttpInterceptorType,
   ): {
-    partialStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null;
-    defaultStrategy: UnhandledRequestStrategy;
+    originalDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
+    customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration>;
+    customStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null;
   } {
-    const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
+    const originalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
     try {
       const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-
-      const defaultStrategy = this.store.defaultOnUnhandledRequest(interceptorType);
-      const { declarationOrFactory = defaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
-
-      if (typeof declarationOrFactory !== 'function') {
-        return { partialStrategy: declarationOrFactory, defaultStrategy };
-      }
+      const defaultDeclarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
 
       const requestClone = request.clone();
-      const strategy = declarationOrFactory(requestClone);
+      const otherRequestClone = request.clone();
 
-      return { partialStrategy: strategy, defaultStrategy };
+      const customDefaultStrategy =
+        typeof defaultDeclarationOrFactory === 'function'
+          ? defaultDeclarationOrFactory(requestClone)
+          : defaultDeclarationOrFactory;
+
+      const { declarationOrFactory = customDefaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
+
+      const interceptorStrategy =
+        typeof declarationOrFactory === 'function' ? declarationOrFactory(otherRequestClone) : declarationOrFactory;
+
+      return {
+        originalDefaultStrategy,
+        customDefaultStrategy,
+        customStrategy: interceptorStrategy,
+      };
     } catch (error) {
       console.error(error);
-      return { partialStrategy: null, defaultStrategy };
+
+      return {
+        originalDefaultStrategy,
+        customDefaultStrategy: originalDefaultStrategy,
+        customStrategy: null,
+      };
     }
   }
 

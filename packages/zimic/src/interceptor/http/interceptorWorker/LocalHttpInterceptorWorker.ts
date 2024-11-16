@@ -71,8 +71,16 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: (request, print) => {
-          const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'local');
-          const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...partialStrategy };
+          const { originalDefaultStrategy, customDefaultStrategy, customStrategy } = super.getUnhandledRequestStrategy(
+            request,
+            'local',
+          );
+
+          const strategy: UnhandledRequestStrategy.Declaration = {
+            ...originalDefaultStrategy,
+            ...customDefaultStrategy,
+            ...customStrategy,
+          };
 
           // MSW does not support async callbacks for `onUnhandledRequest`.
           // As a workaround, we can only support synchronous code.
@@ -213,8 +221,16 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       if (!result?.response) {
-        const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(requestClone, 'local');
-        const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...partialStrategy };
+        const { originalDefaultStrategy, customDefaultStrategy, customStrategy } = super.getUnhandledRequestStrategy(
+          requestClone,
+          'local',
+        );
+
+        const strategy: UnhandledRequestStrategy.Declaration = {
+          ...originalDefaultStrategy,
+          ...customDefaultStrategy,
+          ...customStrategy,
+        };
 
         if (strategy.action === 'reject') {
           return Response.error();

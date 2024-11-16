@@ -77,24 +77,32 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       if (response) {
         return { response: await serializeResponse(response) };
-      } else {
-        const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'remote');
-        const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...(await partialStrategy) };
-
-        await super.handleUnhandledRequest(request, strategy);
-
-        return { response: null };
       }
     } catch (error) {
       console.error(error);
-
-      const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'remote');
-      const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...(await partialStrategy) };
-
-      await super.handleUnhandledRequest(request, strategy);
-
-      return { response: null };
     }
+
+    const {
+      originalDefaultStrategy: originalDefaultStrategyOrPromise,
+      customDefaultStrategy: customDefaultStrategyOrPromise,
+      customStrategy: customStrategyOrPromise,
+    } = super.getUnhandledRequestStrategy(request, 'remote');
+
+    const [originalDefaultStrategy, customDefaultStrategy, customStrategy] = await Promise.all([
+      originalDefaultStrategyOrPromise,
+      customDefaultStrategyOrPromise,
+      customStrategyOrPromise,
+    ]);
+
+    const strategy: UnhandledRequestStrategy.Declaration = {
+      ...originalDefaultStrategy,
+      ...customDefaultStrategy,
+      ...customStrategy,
+    };
+
+    await super.handleUnhandledRequest(request, strategy);
+
+    return { response: null };
   };
 
   private readPlatform(): HttpInterceptorPlatform {
