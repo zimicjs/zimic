@@ -1,18 +1,26 @@
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
+import { UnhandledRequestPrint } from 'msw/lib/core/utils/request/onUnhandledRequest';
 import * as mswNode from 'msw/node';
 
-import { HttpRequest } from '@/http/types/requests';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
+import { UnhandledRequestStrategy } from '../interceptor/types/options';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
-import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
+import {
+  BrowserHttpWorker,
+  HttpResponseFactory,
+  HttpResponseFactoryResult,
+  HttpWorker,
+  NodeHttpWorker,
+} from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'local';
@@ -62,8 +70,17 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const internalWorker = this.internalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
-        onUnhandledRequest: async (request) => {
-          await super.handleUnhandledRequest(request, 'local');
+        onUnhandledRequest: (request, print) => {
+          const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'local');
+          const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...partialStrategy };
+
+          // MSW does not support async callbacks for `onUnhandledRequest`.
+          // As a workaround, we can only support synchronous code.
+          void super.handleUnhandledRequest(request, strategy);
+
+          if (strategy.action === 'reject') {
+            this.rejectGlobalUnhandledRequest(print);
+          }
         },
       };
 
@@ -77,6 +94,43 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       super.setIsRunning(true);
     });
+  }
+
+  private rejectGlobalUnhandledRequest(print: UnhandledRequestPrint): never {
+    let InternalError: ErrorConstructor | null = null;
+    const originalConsoleError = console.error;
+
+    try {
+      // Ignore calls to `console.error`.
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      console.error = () => {};
+
+      // `print.error()` throws an InternalError that is not exposed in the public API of MSW.
+      // We need to catch it and rethrow it as a custom error.
+      print.error();
+    } catch (error) {
+      if (error instanceof Error) {
+        InternalError = error.constructor as ErrorConstructor;
+      }
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    if (!InternalError) {
+      throw new Error(
+        `Could not properly reject an unhandled request: InternalError is ${InternalError}.\n` +
+          'This is likely a bug in Zimic. Please fill in an issue.',
+      );
+    }
+
+    class RejectedUnhandledRequestError extends InternalError {
+      constructor() {
+        super('Request was not handled and was rejected.');
+        this.name = 'RejectedUnhandledRequestError';
+      }
+    }
+
+    throw new RejectedUnhandledRequestError();
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -146,25 +200,38 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const url = excludeNonPathParams(createURL(rawURL)).toString();
     ensureUniquePathParams(url);
 
-    const httpHandler = http[lowercaseMethod](url, async (context) => {
+    const httpHandler = http[lowercaseMethod](url, async (context): Promise<HttpResponse> => {
       const request = context.request as HttpRequest;
       const requestClone = request.clone();
 
+      let result: HttpResponseFactoryResult | null = null;
+
       try {
-        const result = await createResponse({ ...context, request });
-
-        if (result.bypass) {
-          await super.handleUnhandledRequest(requestClone, 'local');
-          return passthrough();
-        }
-
-        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
-        return response;
+        result = await createResponse({ ...context, request });
       } catch (error) {
         console.error(error);
-        await super.handleUnhandledRequest(requestClone, 'local');
-        return passthrough();
       }
+
+      if (!result?.response) {
+        const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(requestClone, 'local');
+        const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...partialStrategy };
+
+        if (strategy.action === 'reject') {
+          return Response.error();
+        } else {
+          return passthrough();
+        }
+      }
+
+      if (context.request.method === 'HEAD') {
+        return new Response(null, {
+          status: result.response.status,
+          statusText: result.response.statusText,
+          headers: result.response.headers,
+        });
+      }
+
+      return result.response;
     });
 
     internalWorker.use(httpHandler);

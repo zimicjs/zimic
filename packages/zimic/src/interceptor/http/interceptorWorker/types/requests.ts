@@ -11,19 +11,9 @@ export interface HttpResponseFactoryContext<Body extends HttpBody = HttpBody> {
   request: HttpRequest<Body>;
 }
 
-export interface EffectiveHttpResponseFactoryResult<Body extends HttpBody = HttpBody> {
-  bypass?: never;
-  response: HttpResponse<Body>;
+export interface HttpResponseFactoryResult<Body extends HttpBody = HttpBody> {
+  response: HttpResponse<Body> | null;
 }
-
-export interface BypassedHttpResponseFactoryResult {
-  bypass: true;
-  response?: never;
-}
-
-export type HttpResponseFactoryResult<Body extends HttpBody = HttpBody> =
-  | EffectiveHttpResponseFactoryResult<Body>
-  | BypassedHttpResponseFactoryResult;
 
 export type HttpResponseFactory<RequestBody extends HttpBody = HttpBody, ResponseBody extends HttpBody = HttpBody> = (
   context: HttpResponseFactoryContext<RequestBody>,

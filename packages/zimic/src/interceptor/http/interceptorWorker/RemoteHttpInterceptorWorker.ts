@@ -13,7 +13,7 @@ import WebSocketClient from '@/webSocket/WebSocketClient';
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
-import { HttpInterceptorPlatform } from '../interceptor/types/options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from '../interceptor/types/options';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { RemoteHttpInterceptorWorkerOptions } from './types/options';
 import { HttpResponseFactory, HttpResponseFactoryContext } from './types/requests';
@@ -78,12 +78,21 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       if (response) {
         return { response: await serializeResponse(response) };
       } else {
-        await super.handleUnhandledRequest(request, 'remote');
+        const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'remote');
+        const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...(await partialStrategy) };
+
+        await super.handleUnhandledRequest(request, strategy);
+
         return { response: null };
       }
     } catch (error) {
       console.error(error);
-      await super.handleUnhandledRequest(request, 'remote');
+
+      const { partialStrategy, defaultStrategy } = super.getUnhandledRequestStrategy(request, 'remote');
+      const strategy: UnhandledRequestStrategy.Declaration = { ...defaultStrategy, ...(await partialStrategy) };
+
+      await super.handleUnhandledRequest(request, strategy);
+
       return { response: null };
     }
   };
@@ -134,7 +143,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       interceptor,
       async createResponse(context) {
         const result = await createResponse(context);
-        return result.bypass ? null : result.response;
+        return result.response;
       },
     };
 

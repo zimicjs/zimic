@@ -119,34 +119,59 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
-  protected async handleUnhandledRequest(request: Request, interceptorType: HttpInterceptorType) {
+  protected async handleUnhandledRequest(request: Request, strategy: UnhandledRequestStrategy.Declaration) {
     try {
-      const strategy = await this.getUnhandledRequestStrategy(request, interceptorType);
-      const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
-
-      const shouldLogWarning = strategy.logWarning ?? defaultStrategy.logWarning;
-
-      if (shouldLogWarning) {
-        await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
+      if (!strategy.log) {
+        return;
       }
+
+      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
     } catch (error) {
       console.error(error);
     }
   }
 
-  private async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
-    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
+  protected getUnhandledRequestStrategy(
+    request: Request,
+    interceptorType: 'local',
+  ): {
+    partialStrategy: UnhandledRequestStrategy.Declaration;
+    defaultStrategy: UnhandledRequestStrategy;
+  };
+  protected getUnhandledRequestStrategy(
+    request: Request,
+    interceptorType: 'remote',
+  ): {
+    partialStrategy: Promise<UnhandledRequestStrategy.Declaration>;
+    defaultStrategy: UnhandledRequestStrategy;
+  };
+  protected getUnhandledRequestStrategy(
+    request: Request,
+    interceptorType: HttpInterceptorType,
+  ): {
+    partialStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null;
+    defaultStrategy: UnhandledRequestStrategy;
+  } {
+    const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
-    const defaultStrategy = this.store.defaultOnUnhandledRequest(interceptorType);
-    const { declarationOrFactory = defaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
+    try {
+      const requestURL = excludeNonPathParams(createURL(request.url)).toString();
 
-    if (typeof declarationOrFactory !== 'function') {
-      return declarationOrFactory;
+      const defaultStrategy = this.store.defaultOnUnhandledRequest(interceptorType);
+      const { declarationOrFactory = defaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
+
+      if (typeof declarationOrFactory !== 'function') {
+        return { partialStrategy: declarationOrFactory, defaultStrategy };
+      }
+
+      const requestClone = request.clone();
+      const strategy = declarationOrFactory(requestClone);
+
+      return { partialStrategy: strategy, defaultStrategy };
+    } catch (error) {
+      console.error(error);
+      return { partialStrategy: null, defaultStrategy };
     }
-
-    const requestClone = request.clone();
-    const strategy = await declarationOrFactory(requestClone);
-    return strategy;
   }
 
   onUnhandledRequest(baseURL: string, declarationOrFactory: UnhandledRequestStrategy) {

@@ -512,23 +512,23 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       },
     );
 
-    it(`should not intercept bypassed ${method} requests`, async () => {
+    it(`should not intercept ${method} requests that resulted in no mocked response`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        const bypassedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ bypass: true }));
+        const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ response: null }));
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, bypassedSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, emptySpiedRequestHandler), worker);
 
-        expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
+        expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
         const fetchPromise = fetch(baseURL, { method });
         await expectFetchErrorOrPreflightResponse(fetchPromise, {
           shouldBePreflight: overridesPreflightResponse,
         });
 
-        expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        expect(emptySpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-        const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        const [handlerContext] = emptySpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
       });

@@ -141,8 +141,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
       const extendedInterceptorOptions: HttpInterceptorOptions =
         type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', logWarning: true } }
-          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', logWarning: true } };
+          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', log: true } }
+          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', log: true } };
 
       await usingHttpInterceptor<{
         '/users': {

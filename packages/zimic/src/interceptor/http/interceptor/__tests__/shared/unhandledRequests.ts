@@ -74,8 +74,14 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       beforeEach(() => {
         const logWarning = overrideDefault?.endsWith('undefined-log') ? undefined : true;
 
-        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'bypass', logWarning };
-        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', logWarning };
+        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
+          action: 'bypass',
+          log: logWarning,
+        };
+        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
+          action: 'reject',
+          log: logWarning,
+        };
 
         if (overrideDefault?.startsWith('static')) {
           if (type === 'local') {
@@ -120,7 +126,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: true },
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', log: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -190,7 +196,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: true },
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', log: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -269,7 +275,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: true },
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', log: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -341,7 +347,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             {
               ...interceptorOptions,
               type,
-              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: true },
+              onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', log: true },
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
@@ -416,8 +422,14 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       async ({ overrideDefault }) => {
         const logWarning = false;
 
-        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'bypass', logWarning };
-        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', logWarning };
+        const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
+          action: 'bypass',
+          log: logWarning,
+        };
+        const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
+          action: 'reject',
+          log: logWarning,
+        };
 
         if (overrideDefault === 'static') {
           if (type === 'local') {
@@ -450,12 +462,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             ? {
                 ...interceptorOptions,
                 type,
-                onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', logWarning: false },
+                onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', log: false },
               }
             : {
                 ...interceptorOptions,
                 type,
-                onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', logWarning: false },
+                onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', log: false },
               };
 
         await usingHttpInterceptor<{
@@ -516,7 +528,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         (request) => {
           const url = new URL(request.url);
 
-          return { action: 'bypass', logWarning: !url.searchParams.has('name') };
+          return { action: 'bypass', log: !url.searchParams.has('name') };
         },
       );
 
@@ -524,7 +536,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         (request) => {
           const url = new URL(request.url);
 
-          return { action: 'reject', logWarning: !url.searchParams.has('name') };
+          return { action: 'reject', log: !url.searchParams.has('name') };
         },
       );
 
@@ -632,7 +644,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             throw error;
           }
 
-          return { action: 'bypass', logWarning: false };
+          return { action: 'bypass', log: false };
         },
       );
 
@@ -644,7 +656,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             throw error;
           }
 
-          return { action: 'reject', logWarning: false };
+          return { action: 'reject', log: false };
         },
       );
 

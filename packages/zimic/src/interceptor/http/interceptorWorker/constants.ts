@@ -3,10 +3,10 @@ import { HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/ty
 export const DEFAULT_UNHANDLED_REQUEST_STRATEGY = Object.freeze({
   local: Object.freeze<UnhandledRequestStrategy.LocalDeclaration>({
     action: 'bypass',
-    logWarning: true,
+    log: true,
   }),
   remote: Object.freeze<UnhandledRequestStrategy.RemoteDeclaration>({
     action: 'reject',
-    logWarning: true,
+    log: true,
   }),
 } satisfies Record<HttpInterceptorType, Readonly<UnhandledRequestStrategy.Declaration>>);

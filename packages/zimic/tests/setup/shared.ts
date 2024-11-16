@@ -5,11 +5,11 @@ import { httpInterceptor } from '@/interceptor/http';
 beforeEach(() => {
   httpInterceptor.default.local.onUnhandledRequest = {
     action: 'bypass',
-    logWarning: false,
+    log: false,
   };
 
   httpInterceptor.default.remote.onUnhandledRequest = {
     action: 'reject',
-    logWarning: false,
+    log: false,
   };
 });
