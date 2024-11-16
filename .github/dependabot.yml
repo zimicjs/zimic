@@ -27,9 +27,6 @@ updates:
       - dependency-name: chalk
         update-types:
           - version-update:semver-major
-      - dependency-name: eslint
-        update-types:
-          - version-update:semver-major
       - dependency-name: msw
         update-types:
           - version-update:semver-major

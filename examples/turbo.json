@@ -8,7 +8,7 @@
         "with-*/{src,tests}/**/*.{ts,json}",
         "with-*/{package,tsconfig}.json",
         "{package,tsconfig}.json",
-        ".eslintrc.js"
+        "eslint.config.mjs"
       ]
     }
   }

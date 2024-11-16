@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "lint": "eslint --ext 'ts,tsx' --cache --no-error-on-unmatched-pattern --fix",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
@@ -25,6 +25,7 @@
     "axios": "^1.7.7",
     "concurrently": "^9.1.0",
     "dotenv-cli": "^7.4.2",
+    "eslint": "^9.15.0",
     "execa": "^9.5.1",
     "node-fetch": "^3.3.2",
     "playwright": "^1.48.2",
