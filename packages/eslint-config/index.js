@@ -1,4 +1,3 @@
-import prettierPlugin from 'eslint-plugin-prettier';
 import importHelpersPlugin from 'eslint-plugin-import-helpers';
 import typescriptPlugin from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
@@ -19,7 +18,6 @@ export default [
   {
     files: ['**/*.ts'],
     plugins: {
-      prettier: prettierPlugin,
       'import-helpers': importHelpersPlugin,
       '@typescript-eslint': typescriptPlugin,
     },
@@ -46,7 +44,6 @@ export default [
     },
 
     rules: {
-      'prettier/prettier': 'warn',
       camelcase: 'off',
       'no-var': 'error',
       'no-shadow': 'off',
@@ -208,14 +205,7 @@ export default [
       '@typescript-eslint/no-inferrable-types': 'warn',
       '@typescript-eslint/unified-signatures': 'warn',
       '@typescript-eslint/unbound-method': 'error',
-      '@typescript-eslint/array-type': [
-        'error',
-        {
-          default: 'array',
-          readonly: 'array',
-        },
-      ],
-
+      '@typescript-eslint/array-type': ['error', { default: 'array', readonly: 'array' }],
       '@typescript-eslint/no-misused-new': 'error',
       '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
       '@typescript-eslint/no-floating-promises': ['warn', { ignoreVoid: true }],

@@ -12,5 +12,10 @@
   "dependencies": {
     "@eslint/compat": "^1.2.3",
     "@zimic/eslint-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0",
+    "prettier": ">=3.0.0",
+    "typescript": ">=4.8.0"
   }
 }

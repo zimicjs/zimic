@@ -15,6 +15,7 @@
   "devDependencies": {
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
-    "@zimic/tsconfig": "workspace:*"
+    "@zimic/tsconfig": "workspace:*",
+    "eslint": "^9.15.0"
   }
 }

@@ -125,6 +125,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
+    "eslint": "^9.15.0",
     "js-yaml": "^4.1.0",
     "playwright": "^1.48.2",
     "prettier": "^3.3.3",
