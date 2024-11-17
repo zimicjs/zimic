@@ -393,13 +393,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
                   body: JSON.stringify({ message: 'ok' }),
                 });
                 const requestClone = request.clone();
-                const responsePromise = fetch(request);
 
-                if (overridesPreflightResponse) {
-                  await expectPreflightResponse(responsePromise);
-                } else {
-                  await expectFetchError(responsePromise);
-                }
+                const responsePromise = fetch(request);
+                await expectFetchError(responsePromise);
 
                 requests = await promiseIfRemote(handler.requests(), interceptor);
                 expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
