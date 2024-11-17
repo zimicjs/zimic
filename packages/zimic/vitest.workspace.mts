@@ -14,6 +14,10 @@ export default defineWorkspace([
       environment: 'node',
       include: ['./{src,tests,scripts}/**/*.test.ts', './{src,tests,scripts}/**/*.node.test.ts'],
       exclude: ['**/*.browser.test.ts'],
+      globalSetup: './tests/setup/global/node.ts',
+    },
+    define: {
+      'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3002'",
     },
   },
   ...browserNames.flatMap((browserName) => [
@@ -32,6 +36,9 @@ export default defineWorkspace([
           headless: true,
           screenshotFailures: false,
         },
+      },
+      define: {
+        'process.env.GLOBAL_FALLBACK_SERVER_PORT': "'3003'",
       },
     },
   ]),

@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -138,10 +138,15 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(specificRequest.response.body).toEqualTypeOf<null>();
         expect(specificRequest.response.body).toBe(null);
 
-        const unmatchedPromise = fetch(joinURL(baseURL, `/users/${2}`), { method });
-        await expectFetchErrorOrPreflightResponse(unmatchedPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        const unmatchedResponsePromise = fetch(joinURL(baseURL, `/users/${2}`), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(unmatchedResponsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(unmatchedResponsePromise);
+        } else {
+          await expectFetchError(unmatchedResponsePromise);
+        }
       });
     });
   });

@@ -708,8 +708,8 @@ describe('CLI (server)', async () => {
           webSocketServerRequestSpy.mockRejectedValueOnce(error);
 
           const request = new Request('http://localhost:5001/users', { method: 'GET' });
-          const fetchPromise = fetch(request);
-          await expectFetchError(fetchPromise);
+          const responsePromise = fetch(request);
+          await expectFetchError(responsePromise);
 
           expect(server!.isRunning()).toBe(true);
 
@@ -776,7 +776,7 @@ describe('CLI (server)', async () => {
           await interceptor.get('/users').respond(responseFactory);
 
           const onFetchError = vi.fn();
-          const fetchPromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+          const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
 
           await waitFor(() => {
             expect(wasResponseFactoryCalled).toBe(true);
@@ -785,7 +785,7 @@ describe('CLI (server)', async () => {
           await interceptor.stop();
           expect(interceptor.isRunning()).toBe(false);
 
-          await fetchPromise;
+          await responsePromise;
 
           await waitFor(() => {
             expect(onFetchError).toHaveBeenCalled();

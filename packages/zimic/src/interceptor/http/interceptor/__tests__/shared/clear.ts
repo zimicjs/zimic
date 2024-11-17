@@ -6,7 +6,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -72,10 +72,15 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.clear(), interceptor);
 
-        const promise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
