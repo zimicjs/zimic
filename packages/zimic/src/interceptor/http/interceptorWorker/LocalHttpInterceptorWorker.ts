@@ -192,7 +192,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
     const requestClone = request.clone();
 
-    const strategy = super.getUnhandledRequestStrategy(request, 'local');
+    const strategy = await super.getUnhandledRequestStrategy(request, 'local');
     await super.handleUnhandledRequest(requestClone, strategy);
 
     if (strategy.action === 'reject') {

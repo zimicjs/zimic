@@ -126,51 +126,29 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  protected getUnhandledRequestStrategy(
-    request: Request,
-    interceptorType: 'local',
-  ): UnhandledRequestStrategy.Declaration;
-  protected getUnhandledRequestStrategy(
-    request: Request,
-    interceptorType: 'remote',
-  ): PossiblePromise<UnhandledRequestStrategy.Declaration>;
-  protected getUnhandledRequestStrategy(
+  protected async getUnhandledRequestStrategy(
     request: Request,
     interceptorType: HttpInterceptorType,
-  ): PossiblePromise<UnhandledRequestStrategy.Declaration> {
-    if (interceptorType === 'local') {
-      const candidates = this.getUnhandledRequestStrategyCandidates(request, 'local');
-      const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
-      return strategy;
-    }
-
-    const candidatesOrPromises = this.getUnhandledRequestStrategyCandidates(request, 'remote');
-
-    return Promise.all(candidatesOrPromises).then((candidates) => {
-      const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
-      return strategy;
-    });
+  ): Promise<UnhandledRequestStrategy.Declaration> {
+    const candidates = await this.getUnhandledRequestStrategyCandidates(request, interceptorType);
+    const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
+    return strategy;
   }
 
   private reduceUnhandledRequestStrategyCandidates(candidates: UnhandledRequestStrategy.Declaration[]) {
-    return candidates.reduce((strategy, candidate) => ({
-      action: candidate.action,
-      log: candidate.log ?? strategy.log,
-    }));
+    return candidates.reduce<UnhandledRequestStrategy.Declaration>(
+      (strategy, candidate) => ({
+        action: candidate.action,
+        log: candidate.log ?? strategy.log,
+      }),
+      candidates[0],
+    );
   }
 
-  private getUnhandledRequestStrategyCandidates(
-    request: Request,
-    interceptorType: 'local',
-  ): UnhandledRequestStrategy.Declaration[];
-  private getUnhandledRequestStrategyCandidates(
-    request: Request,
-    interceptorType: 'remote',
-  ): PossiblePromise<UnhandledRequestStrategy.Declaration>[];
-  private getUnhandledRequestStrategyCandidates(
+  private async getUnhandledRequestStrategyCandidates(
     request: Request,
     interceptorType: HttpInterceptorType,
-  ): PossiblePromise<UnhandledRequestStrategy.Declaration>[] {
+  ): Promise<UnhandledRequestStrategy.Declaration[]> {
     const originalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
     try {
@@ -189,11 +167,14 @@ abstract class HttpInterceptorWorker {
       const interceptorStrategy =
         typeof declarationOrFactory === 'function' ? declarationOrFactory(requestClone) : declarationOrFactory;
 
-      return [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy].filter(isDefined);
+      const candidatesOrPromises = [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy];
+      const candidates = await Promise.all(candidatesOrPromises.filter(isDefined));
+      return candidates;
     } catch (error) {
       console.error(error);
 
-      return [originalDefaultStrategy];
+      const candidates = [originalDefaultStrategy];
+      return candidates;
     }
   }
 
