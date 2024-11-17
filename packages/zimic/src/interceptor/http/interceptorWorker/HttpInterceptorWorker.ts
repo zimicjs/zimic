@@ -29,7 +29,7 @@ import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   UnhandledHttpInterceptorRequestPath,
-  UnhandledHttpInterceptorRequestMethodSchema,
+  UnhandledHttpInterceptorRequestSchema,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
@@ -244,9 +244,7 @@ abstract class HttpInterceptorWorker {
   }
 
   static async parseRawUnhandledRequest(request: HttpRequest) {
-    return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestMethodSchema>(
-      request,
-    );
+    return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestSchema>(request);
   }
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(

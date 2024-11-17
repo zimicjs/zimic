@@ -11,7 +11,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import {
   HttpRequestBodySchema,
   UnhandledHttpInterceptorRequest,
-  UnhandledHttpInterceptorRequestMethodSchema,
+  UnhandledHttpInterceptorRequestSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { methodCanHaveRequestBody } from '@/utils/http';
@@ -37,7 +37,7 @@ const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, 
   expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
   expect(request.pathParams).toEqual({});
 
-  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestMethodSchema>;
+  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestSchema>;
 
   expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
   expect(request).toHaveProperty('body');

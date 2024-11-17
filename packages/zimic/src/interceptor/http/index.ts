@@ -13,6 +13,7 @@ export type {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   TrackedHttpInterceptorRequest,
+  UnhandledHttpInterceptorRequest,
 } from './requestHandler/types/requests';
 
 export type {

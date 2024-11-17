@@ -144,7 +144,7 @@ export interface TrackedHttpInterceptorRequest<
 
 export type UnhandledHttpInterceptorRequestPath = string;
 
-export interface UnhandledHttpInterceptorRequestMethodSchema extends HttpMethodSchema {
+export interface UnhandledHttpInterceptorRequestSchema extends HttpMethodSchema {
   request: {
     headers: Record<string, string>;
     searchParams: Record<string, string | string[]>;
@@ -153,6 +153,6 @@ export interface UnhandledHttpInterceptorRequestMethodSchema extends HttpMethodS
 }
 
 export type UnhandledHttpInterceptorRequest = Omit<
-  HttpInterceptorRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestMethodSchema>,
+  HttpInterceptorRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestSchema>,
   'response'
 >;
