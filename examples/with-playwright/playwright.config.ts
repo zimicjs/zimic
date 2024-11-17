@@ -15,7 +15,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'http://localhost:3002',
+    baseURL: 'http://localhost:3004',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 10 * 1000,
@@ -35,7 +35,7 @@ export default defineConfig({
 
   webServer: {
     command: 'pnpm run dev:mock',
-    url: 'http://localhost:3002',
+    port: 3004,
     stdout: 'pipe',
     stderr: 'pipe',
     reuseExistingServer: true,

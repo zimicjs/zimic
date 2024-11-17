@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "dev": "dotenv -c development -- next dev --turbo --port 3006",
+    "dev": "dotenv -c development -- next dev --turbo --port 3008",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",

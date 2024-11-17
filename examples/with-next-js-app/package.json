@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "dotenv -c development -- pnpm dev:no-env",
     "dev:mock": "dotenv -c test -- dotenv -c development -- pnpm mock -- pnpm dev:no-env",
-    "dev:no-env": "next dev --turbo --port 3004",
+    "dev:no-env": "next dev --turbo --port 3006",
     "mock": "pnpm mock:start -- pnpm mock:load",
-    "mock:start": "zimic server start --port 3005 --ephemeral",
+    "mock:start": "zimic server start --port 3007 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
