@@ -87,7 +87,7 @@ describe('Typegen', { timeout: 45 * 1000 }, () => {
         await $(
           'pnpm',
           ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
-          { stdio: 'inherit' },
+          { stderr: 'inherit' },
         );
 
         if (serviceName === 'Stripe') {
