@@ -6,9 +6,13 @@ import zimicConfigNode from '@zimic/eslint-config-node';
 const fileName = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(fileName);
 
+const zimicConfigWithLanguageOptionsIndex = zimicConfigNode.findIndex((config) => config.languageOptions !== undefined);
+
 export default [
-  ...zimicConfigNode,
+  ...zimicConfigNode.slice(0, zimicConfigWithLanguageOptionsIndex),
   {
+    ...zimicConfigNode[zimicConfigWithLanguageOptionsIndex],
+    files: ['*.ts'],
     languageOptions: {
       parserOptions: {
         ecmaFeatures: { ts: true },
@@ -16,6 +20,7 @@ export default [
       },
     },
   },
+  ...zimicConfigNode.slice(zimicConfigWithLanguageOptionsIndex + 1),
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

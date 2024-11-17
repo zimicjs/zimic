@@ -52,7 +52,7 @@ export namespace UnhandledRequestStrategy {
      *
      * @default true
      */
-    logWarning?: boolean;
+    log?: boolean;
   }
 
   /**
@@ -69,14 +69,14 @@ export namespace UnhandledRequestStrategy {
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  export type LocalDeclaration = Declaration<Extract<Action, 'bypass'>>;
+  export type LocalDeclaration = Declaration;
 
   /**
    * A factory to create dynamic unhandled request strategies based on the intercepted request in local interceptors.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  export type LocalDeclarationFactory = DeclarationFactory<Extract<Action, 'bypass'>>;
+  export type LocalDeclarationFactory = DeclarationFactory;
 
   /**
    * A static declaration of the strategy to use for unhandled requests in remote interceptors.

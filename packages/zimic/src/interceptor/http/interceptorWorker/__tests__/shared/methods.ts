@@ -8,7 +8,7 @@ import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { joinURL, DuplicatedPathParamError, createURL, InvalidURLError, createRegexFromURL } from '@/utils/urls';
-import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
   createInternalHttpInterceptor,
@@ -467,11 +467,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           const urlExpectedToFail = joinURL(baseURL, path.fetch);
 
-          const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
-          await expectFetchErrorOrPreflightResponse(fetchPromise, {
-            shouldBePreflight: overridesPreflightResponse,
-            canBeAborted: true,
-          });
+          const responsePromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 500 });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else if (defaultWorkerOptions.type === 'local') {
+            await expectBypassedResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise, { canBeAborted: true });
+          }
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
         });
@@ -501,34 +505,43 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           const urlExpectedToFail = joinURL(baseURL, paths.fetch);
 
-          const fetchPromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 200 });
-          await expectFetchErrorOrPreflightResponse(fetchPromise, {
-            shouldBePreflight: overridesPreflightResponse,
-            canBeAborted: true,
-          });
+          const responsePromise = fetchWithTimeout(urlExpectedToFail, { method, timeout: 500 });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else if (defaultWorkerOptions.type === 'local') {
+            await expectBypassedResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise, { canBeAborted: true });
+          }
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
         });
       },
     );
 
-    it(`should not intercept bypassed ${method} requests`, async () => {
+    it(`should not intercept ${method} requests that resulted in no mocked response`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        const bypassedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ bypass: true }));
+        const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ response: null }));
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, bypassedSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, emptySpiedRequestHandler), worker);
 
-        expect(bypassedSpiedRequestHandler).not.toHaveBeenCalled();
+        expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
-        const fetchPromise = fetch(baseURL, { method });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        const responsePromise = fetch(baseURL, { method });
 
-        expect(bypassedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
-        const [handlerContext] = bypassedSpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
+        expect(emptySpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+        const [handlerContext] = emptySpiedRequestHandler.mock.calls[numberOfRequestsIncludingPreflight - 1];
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
       });
@@ -546,11 +559,11 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 20 });
-        await expectFetchError(fetchPromise, { canBeAborted: true });
+        let responsePromise = fetchWithTimeout(baseURL, { method, timeout: 20 });
+        await expectFetchError(responsePromise, { canBeAborted: true });
 
-        fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
-        await expect(fetchPromise).resolves.toBeInstanceOf(Response);
+        responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+        await expect(responsePromise).resolves.toBeInstanceOf(Response);
 
         expect(delayedSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight + 1);
 
@@ -570,11 +583,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+        const responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -587,11 +604,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await worker.stop();
 
-        const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+        const responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -605,11 +626,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         await worker.stop();
         await worker.start();
 
-        const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+        const responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });
@@ -622,11 +647,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await promiseIfRemote(worker.clearHandlers(), worker);
 
-        const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+        const responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -719,11 +748,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         interceptorsWithHandlers = worker.interceptorsWithHandlers();
         expect(interceptorsWithHandlers).toHaveLength(0);
 
-        const fetchPromise = fetchWithTimeout(baseURL, { method, timeout: 200 });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+        const responsePromise = fetchWithTimeout(baseURL, { method, timeout: 500 });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (defaultWorkerOptions.type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         expect(okSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
         expect(noContentSpiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);

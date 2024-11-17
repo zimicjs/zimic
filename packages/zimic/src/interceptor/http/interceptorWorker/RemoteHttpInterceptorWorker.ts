@@ -77,15 +77,15 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       if (response) {
         return { response: await serializeResponse(response) };
-      } else {
-        await super.handleUnhandledRequest(request, 'remote');
-        return { response: null };
       }
     } catch (error) {
       console.error(error);
-      await super.handleUnhandledRequest(request, 'remote');
-      return { response: null };
     }
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+    await super.handleUnhandledRequest(request, strategy);
+
+    return { response: null };
   };
 
   private readPlatform(): HttpInterceptorPlatform {
@@ -134,7 +134,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       interceptor,
       async createResponse(context) {
         const result = await createResponse(context);
-        return result.bypass ? null : result.response;
+        return result.response;
       },
     };
 

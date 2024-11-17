@@ -15,6 +15,7 @@ export default defineConfig({
     minWorkers: 1,
     maxWorkers,
     maxConcurrency: maxWorkers,
+    setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],

@@ -15,6 +15,7 @@ import {
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { createURL, excludeNonPathParams } from '@/utils/urls';
@@ -119,34 +120,62 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
-  protected async handleUnhandledRequest(request: Request, interceptorType: HttpInterceptorType) {
-    try {
-      const strategy = await this.getUnhandledRequestStrategy(request, interceptorType);
-      const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
-
-      const shouldLogWarning = strategy.logWarning ?? defaultStrategy.logWarning;
-
-      if (shouldLogWarning) {
-        await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
-      }
-    } catch (error) {
-      console.error(error);
+  protected async handleUnhandledRequest(request: Request, strategy: UnhandledRequestStrategy.Declaration) {
+    if (strategy.log) {
+      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
     }
   }
 
-  private async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
-    const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-
-    const defaultStrategy = this.store.defaultOnUnhandledRequest(interceptorType);
-    const { declarationOrFactory = defaultStrategy } = this.findUnhandledRequestStrategy(requestURL) ?? {};
-
-    if (typeof declarationOrFactory !== 'function') {
-      return declarationOrFactory;
-    }
-
-    const requestClone = request.clone();
-    const strategy = await declarationOrFactory(requestClone);
+  protected async getUnhandledRequestStrategy(
+    request: Request,
+    interceptorType: HttpInterceptorType,
+  ): Promise<UnhandledRequestStrategy.Declaration> {
+    const candidates = await this.getUnhandledRequestStrategyCandidates(request, interceptorType);
+    const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
     return strategy;
+  }
+
+  private reduceUnhandledRequestStrategyCandidates(candidates: UnhandledRequestStrategy.Declaration[]) {
+    return candidates.reduce<UnhandledRequestStrategy.Declaration>(
+      (strategy, candidate) => ({
+        action: candidate.action,
+        log: candidate.log ?? strategy.log,
+      }),
+      candidates[0],
+    );
+  }
+
+  private async getUnhandledRequestStrategyCandidates(
+    request: Request,
+    interceptorType: HttpInterceptorType,
+  ): Promise<UnhandledRequestStrategy.Declaration[]> {
+    const originalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
+
+    try {
+      const requestURL = excludeNonPathParams(createURL(request.url)).toString();
+      const defaultDeclarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
+
+      const requestClone = request.clone();
+
+      const customDefaultStrategy =
+        typeof defaultDeclarationOrFactory === 'function'
+          ? defaultDeclarationOrFactory(request)
+          : defaultDeclarationOrFactory;
+
+      const { declarationOrFactory = null } = this.findUnhandledRequestStrategy(requestURL) ?? {};
+
+      const interceptorStrategy =
+        typeof declarationOrFactory === 'function' ? declarationOrFactory(requestClone) : declarationOrFactory;
+
+      const candidatesOrPromises = [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy];
+      const candidates = await Promise.all(candidatesOrPromises.filter(isDefined));
+      return candidates;
+    } catch (error) {
+      console.error(error);
+
+      const candidates = [originalDefaultStrategy];
+      return candidates;
+    }
   }
 
   onUnhandledRequest(baseURL: string, declarationOrFactory: UnhandledRequestStrategy) {

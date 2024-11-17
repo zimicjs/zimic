@@ -1,22 +1,31 @@
 import type InterceptorServer from '@/interceptor/server/InterceptorServer';
 
-let server: InterceptorServer | undefined;
+import { setup as sharedSetup, teardown as sharedTeardown } from './shared';
 
-export const GLOBAL_SETUP_SERVER_HOSTNAME = 'localhost';
-export const GLOBAL_SETUP_SERVER_PORT = 3001;
+let interceptorServer: InterceptorServer | undefined;
+
+export const GLOBAL_INTERCEPTOR_SERVER_HOSTNAME = 'localhost';
+export const GLOBAL_INTERCEPTOR_SERVER_PORT = 3001;
+
+// We cannot start interceptor servers in browser environments, so we need to use a global setup script to start the
+// server before the browser tests. The server will be reused across all browser tests.
 
 export async function setup() {
+  await sharedSetup();
+
   const { default: InterceptorServer } = await import('@/interceptor/server/InterceptorServer');
 
-  server = new InterceptorServer({
-    hostname: GLOBAL_SETUP_SERVER_HOSTNAME,
-    port: GLOBAL_SETUP_SERVER_PORT,
+  interceptorServer = new InterceptorServer({
+    hostname: GLOBAL_INTERCEPTOR_SERVER_HOSTNAME,
+    port: GLOBAL_INTERCEPTOR_SERVER_PORT,
     logUnhandledRequests: false,
   });
 
-  await server.start();
+  await interceptorServer.start();
 }
 
 export async function teardown() {
-  await server?.stop();
+  await sharedTeardown();
+
+  await interceptorServer?.stop();
 }

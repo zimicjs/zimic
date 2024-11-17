@@ -78,7 +78,7 @@ before the application is started in development. It is used by the command `dev
       pnpm run dev:mock
       ```
 
-      After started, it will be available at [http://localhost:3002](http://localhost:3002).
+      After started, it will be available at [http://localhost:3004](http://localhost:3004).
 
    2. In another terminal, run the tests:
 

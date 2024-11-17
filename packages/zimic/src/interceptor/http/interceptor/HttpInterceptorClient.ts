@@ -208,7 +208,7 @@ class HttpInterceptorClient<
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
 
     if (!matchedHandler) {
-      return { bypass: true };
+      return { response: null };
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);

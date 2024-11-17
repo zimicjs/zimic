@@ -10,7 +10,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -141,8 +141,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
       const extendedInterceptorOptions: HttpInterceptorOptions =
         type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', logWarning: true } }
-          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', logWarning: true } };
+          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', log: true } }
+          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', log: true } };
 
       await usingHttpInterceptor<{
         '/users': {
@@ -174,10 +174,15 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
             headers: { 'x-value': '1' },
           });
 
-          const fetchPromise = fetch(request);
-          await expectFetchErrorOrPreflightResponse(fetchPromise, {
-            shouldBePreflight: overridesPreflightResponse,
-          });
+          const responsePromise = fetch(request);
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else if (type === 'local') {
+            await expectBypassedResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
 
           if (type === 'remote') {
             expect(spies.error).toHaveBeenCalledTimes(method === 'OPTIONS' && platform === 'browser' ? 4 : 2);
@@ -346,10 +351,15 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
-        let fetchPromise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         const handlerWithoutResponse = await promiseIfRemote(interceptor[lowerMethod]('/users'), interceptor);
         expect(handlerWithoutResponse).toBeInstanceOf(Handler);
@@ -361,10 +371,15 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
-        fetchPromise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(fetchPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         requestsWithoutResponse = await promiseIfRemote(handlerWithoutResponse.requests(), interceptor);
         expect(requestsWithoutResponse).toHaveLength(0);
@@ -505,12 +520,12 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
           const initialRequests = await promiseIfRemote(handler.requests(), interceptor);
           expect(initialRequests).toHaveLength(0);
 
-          const promise = fetch(joinURL(baseURL, '/users'), { method });
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
           if (type === 'remote' && platform === 'browser') {
-            await expectFetchError(promise);
+            await expectFetchError(responsePromise);
           } else {
-            const response = await promise;
+            const response = await responsePromise;
             expect(response.status).toBe(200);
           }
         });
