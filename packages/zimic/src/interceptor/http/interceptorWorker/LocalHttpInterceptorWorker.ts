@@ -1,6 +1,5 @@
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
-import { UnhandledRequestPrint } from 'msw/lib/core/utils/request/onUnhandledRequest';
 import * as mswNode from 'msw/node';
 
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
@@ -26,6 +25,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _internalWorker?: HttpWorker;
 
+  private defaultHttpHandler: MSWHttpHandler;
+
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
@@ -34,6 +35,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   constructor(options: LocalHttpInterceptorWorkerOptions) {
     super();
     this.type = options.type;
+
+    this.defaultHttpHandler = http.all('*', async (context) => {
+      const request = context.request satisfies Request as HttpRequest;
+      return this.bypassOrRejectUnhandledRequest(request);
+    });
   }
 
   internalWorkerOrThrow() {
@@ -52,12 +58,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private createInternalWorker() {
     if (typeof mswNode.setupServer !== 'undefined') {
-      return mswNode.setupServer();
+      return mswNode.setupServer(this.defaultHttpHandler);
     }
 
     /* istanbul ignore else -- @preserve */
     if (typeof mswBrowser.setupWorker !== 'undefined') {
-      return mswBrowser.setupWorker();
+      return mswBrowser.setupWorker(this.defaultHttpHandler);
     }
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
@@ -69,16 +75,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const internalWorker = this.internalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
-        onUnhandledRequest: (request, print) => {
-          const strategy = super.getUnhandledRequestStrategy(request, 'local');
-          // MSW does not support async callbacks for `onUnhandledRequest`.
-          // As a workaround, we can only support synchronous code.
-          void super.handleUnhandledRequest(request, strategy);
-
-          if (strategy.action === 'reject') {
-            this.rejectGlobalUnhandledRequest(print);
-          }
-        },
+        onUnhandledRequest: 'bypass',
       };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
@@ -91,46 +88,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
       super.setIsRunning(true);
     });
-  }
-
-  private rejectGlobalUnhandledRequest(print: UnhandledRequestPrint): never {
-    let InternalError: ErrorConstructor | null = null;
-    const originalConsoleError = console.error;
-
-    try {
-      // Ignore calls to `console.error`.
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      console.error = () => {};
-
-      // `print.error()` throws an InternalError that is not exposed in the public API of MSW.
-      // We need to catch it and rethrow it as a custom error.
-      print.error();
-    } catch (error) {
-      if (error instanceof Error) {
-        InternalError = error.constructor as ErrorConstructor;
-      }
-    } finally {
-      console.error = originalConsoleError;
-    }
-
-    if (!InternalError) {
-      throw new Error(
-        `Could not properly reject an unhandled request: InternalError is ${InternalError}.\n` +
-          'This is likely a bug in Zimic. Please fill in an issue.',
-      );
-    }
-
-    class RejectedUnhandledRequestError extends InternalError {
-      constructor() {
-        super(
-          'Request was not handled and was rejected because `action` is set to `reject`.\n' +
-            'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
-        );
-        this.name = 'RejectedUnhandledRequestError';
-      }
-    }
-
-    throw new RejectedUnhandledRequestError();
   }
 
   private async startInBrowser(internalWorker: BrowserHttpWorker, sharedOptions: MSWWorkerSharedOptions) {
@@ -201,7 +158,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     ensureUniquePathParams(url);
 
     const httpHandler = http[lowercaseMethod](url, async (context): Promise<HttpResponse> => {
-      const request = context.request as HttpRequest;
+      const request = context.request satisfies Request as HttpRequest;
       const requestClone = request.clone();
 
       let result: HttpResponseFactoryResult | null = null;
@@ -213,14 +170,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
 
       if (!result?.response) {
-        const strategy = super.getUnhandledRequestStrategy(requestClone, 'local');
-        await super.handleUnhandledRequest(requestClone, strategy);
-
-        if (strategy.action === 'reject') {
-          return Response.error();
-        } else {
-          return passthrough();
-        }
+        return this.bypassOrRejectUnhandledRequest(requestClone);
       }
 
       if (context.request.method === 'HEAD') {
@@ -237,6 +187,19 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     internalWorker.use(httpHandler);
 
     this.httpHandlerGroups.push({ interceptor, httpHandler });
+  }
+
+  private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
+    const requestClone = request.clone();
+
+    const strategy = super.getUnhandledRequestStrategy(request, 'local');
+    await super.handleUnhandledRequest(requestClone, strategy);
+
+    if (strategy.action === 'reject') {
+      return Response.error();
+    } else {
+      return passthrough();
+    }
   }
 
   clearHandlers() {

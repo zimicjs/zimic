@@ -60,15 +60,6 @@ export namespace UnhandledRequestStrategy {
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  export type DeclarationFactorySync<DeclarationAction extends Action = Action> = (
-    request: HttpRequest,
-  ) => Declaration<DeclarationAction>;
-
-  /**
-   * A factory to create dynamic unhandled request strategies based on the intercepted request.
-   *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-   */
   export type DeclarationFactory<DeclarationAction extends Action = Action> = (
     request: HttpRequest,
   ) => PossiblePromise<Declaration<DeclarationAction>>;
@@ -104,20 +95,8 @@ export namespace UnhandledRequestStrategy {
   /** The static declaration or a factory of the strategy to use for unhandled requests in local interceptors. */
   export type Local = LocalDeclaration | LocalDeclarationFactory;
 
-  /**
-   * The static declaration or a synchronous factory of the strategy to use for unhandled requests in local
-   * interceptors.
-   */
-  export type LocalSync = LocalDeclaration | DeclarationFactorySync;
-
   /** The static declaration or a factory of the strategy to use for unhandled requests in remote interceptors. */
   export type Remote = RemoteDeclaration | RemoteDeclarationFactory;
-
-  /**
-   * The static declaration or a synchronous factory of the strategy to use for unhandled requests in remote
-   * interceptors.
-   */
-  export type RemoteSync = RemoteDeclaration | DeclarationFactorySync;
 }
 
 export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;

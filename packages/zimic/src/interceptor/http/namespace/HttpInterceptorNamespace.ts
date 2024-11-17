@@ -15,8 +15,8 @@ export class HttpInterceptorNamespaceDefault {
      *
      * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
      */
-    get onUnhandledRequest(): UnhandledRequestStrategy.LocalSync;
-    set onUnhandledRequest(strategy: UnhandledRequestStrategy.LocalSync);
+    get onUnhandledRequest(): UnhandledRequestStrategy.Local;
+    set onUnhandledRequest(strategy: UnhandledRequestStrategy.Local);
   };
 
   remote: {
@@ -41,7 +41,7 @@ export class HttpInterceptorNamespaceDefault {
       get onUnhandledRequest() {
         return workerStore.defaultOnUnhandledRequest('local');
       },
-      set onUnhandledRequest(strategy: UnhandledRequestStrategy.LocalSync) {
+      set onUnhandledRequest(strategy: UnhandledRequestStrategy.Local) {
         workerStore.setDefaultOnUnhandledRequest('local', strategy);
       },
     };

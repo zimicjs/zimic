@@ -182,17 +182,16 @@ abstract class HttpInterceptorWorker {
       const defaultDeclarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
 
       const requestClone = request.clone();
-      const otherRequestClone = request.clone();
 
       const customDefaultStrategy =
         typeof defaultDeclarationOrFactory === 'function'
-          ? defaultDeclarationOrFactory(requestClone)
+          ? defaultDeclarationOrFactory(request)
           : defaultDeclarationOrFactory;
 
       const { declarationOrFactory = null } = this.findUnhandledRequestStrategy(requestURL) ?? {};
 
       const interceptorStrategy =
-        typeof declarationOrFactory === 'function' ? declarationOrFactory(otherRequestClone) : declarationOrFactory;
+        typeof declarationOrFactory === 'function' ? declarationOrFactory(requestClone) : declarationOrFactory;
 
       return [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy].filter(isDefined);
     } catch (error) {
