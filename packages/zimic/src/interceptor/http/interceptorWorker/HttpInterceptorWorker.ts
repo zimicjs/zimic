@@ -121,12 +121,8 @@ abstract class HttpInterceptorWorker {
   ): PossiblePromise<void>;
 
   protected async handleUnhandledRequest(request: Request, strategy: UnhandledRequestStrategy.Declaration) {
-    try {
-      if (strategy.log) {
-        await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
-      }
-    } catch (error) {
-      console.error(error);
+    if (strategy.log) {
+      await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
     }
   }
 
