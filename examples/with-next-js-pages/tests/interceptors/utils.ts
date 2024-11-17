@@ -7,11 +7,9 @@ httpInterceptor.default.local.onUnhandledRequest = (request) => {
   const isSameHost = url.host === window.location.host;
 
   if (isSameHost) {
-    // Ignore requests to the same host
     return { action: 'bypass', log: false };
   }
 
-  // Reject any other requests
   return { action: 'reject' };
 };
 

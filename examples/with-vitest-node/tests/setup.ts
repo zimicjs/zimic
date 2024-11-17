@@ -9,11 +9,9 @@ httpInterceptor.default.local.onUnhandledRequest = (request) => {
   const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
 
   if (isLocalhost) {
-    // Ignore requests to localhost
     return { action: 'bypass', log: false };
   }
 
-  // Reject any other requests
   return { action: 'reject' };
 };
 
