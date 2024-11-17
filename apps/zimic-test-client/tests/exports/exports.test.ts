@@ -69,6 +69,7 @@ import {
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
   type TrackedHttpInterceptorRequest,
+  type UnhandledHttpInterceptorRequest,
   type HttpRequestHandler,
   type LocalHttpRequestHandler,
   type RemoteHttpRequestHandler,
@@ -211,6 +212,7 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
     expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();
+    expectTypeOf<UnhandledHttpInterceptorRequest>().not.toBeAny();
 
     expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
     expectTypeOf<LocalHttpRequestHandler<never, never, never>>().not.toBeAny();

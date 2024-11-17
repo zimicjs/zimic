@@ -1,4 +1,4 @@
-import { HttpRequest } from '@/http/types/requests';
+import { UnhandledHttpInterceptorRequest } from '@/interceptor/http/requestHandler/types/requests';
 import { PossiblePromise } from '@/types/utils';
 
 /**
@@ -61,7 +61,7 @@ export namespace UnhandledRequestStrategy {
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
   export type DeclarationFactory<DeclarationAction extends Action = Action> = (
-    request: HttpRequest,
+    request: UnhandledHttpInterceptorRequest,
   ) => PossiblePromise<Declaration<DeclarationAction>>;
 
   /**

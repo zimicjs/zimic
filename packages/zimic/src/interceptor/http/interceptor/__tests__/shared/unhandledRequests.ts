@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { HttpHeaders, HttpRequest } from '@/http';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { httpInterceptor } from '@/interceptor/http';
@@ -7,6 +8,11 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/constants';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
+import {
+  HttpRequestBodySchema,
+  UnhandledHttpInterceptorRequest,
+  UnhandledHttpInterceptorRequestSchema,
+} from '@/interceptor/http/requestHandler/types/requests';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { methodCanHaveRequestBody } from '@/utils/http';
 import { waitForDelay } from '@/utils/time';
@@ -17,6 +23,31 @@ import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
+
+const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, method: string) => {
+  expect(request).toBeInstanceOf(Request);
+  expect(request).not.toHaveProperty('response');
+
+  expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<Record<string, string>>>();
+  expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+  expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<Record<string, string | string[]>>>();
+  expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+  expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
+  expect(request.pathParams).toEqual({});
+
+  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestSchema>;
+
+  expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
+  expect(request).toHaveProperty('body');
+
+  expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema>>();
+  expect(request.raw).toBeInstanceOf(Request);
+  expect(request.raw.url).toBe(request.url);
+  expect(request.raw.method).toBe(method);
+  expect(Object.fromEntries(request.headers)).toEqual(expect.objectContaining(Object.fromEntries(request.raw.headers)));
+});
 
 export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
@@ -31,6 +62,8 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     interceptorOptions = getInterceptorOptions();
 
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
+
+    verifyUnhandledRequest.mockClear();
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -90,14 +123,16 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }
         } else if (overrideDefault?.startsWith('factory')) {
           if (type === 'local') {
-            function onUnhandledRequest(_request: Request) {
+            function onUnhandledRequest(request: UnhandledHttpInterceptorRequest) {
+              verifyUnhandledRequest(request, method);
               return localOnUnhandledRequest;
             }
 
             httpInterceptor.default.local.onUnhandledRequest = onUnhandledRequest;
             expect(httpInterceptor.default.local.onUnhandledRequest).toBe(onUnhandledRequest);
           } else {
-            function onUnhandledRequest(_request: Request) {
+            function onUnhandledRequest(request: UnhandledHttpInterceptorRequest) {
+              verifyUnhandledRequest(request, method);
               return remoteOnUnhandledRequest;
             }
 
@@ -110,6 +145,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       afterEach(() => {
         localOnUnhandledRequest.action = 'bypass';
         remoteOnUnhandledRequest.action = 'reject';
+
+        if (overrideDefault?.startsWith('factory')) {
+          expect(verifyUnhandledRequest).toHaveBeenCalled();
+        } else {
+          expect(verifyUnhandledRequest).not.toHaveBeenCalled();
+        }
       });
 
       if (type === 'local') {
@@ -447,14 +488,16 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           }
         } else if (overrideDefault === 'factory') {
           if (type === 'local') {
-            function onUnhandledRequest(_request: Request) {
+            function onUnhandledRequest(request: UnhandledHttpInterceptorRequest) {
+              verifyUnhandledRequest(request, method);
               return localOnUnhandledRequest;
             }
 
             httpInterceptor.default.local.onUnhandledRequest = onUnhandledRequest;
             expect(httpInterceptor.default.local.onUnhandledRequest).toBe(onUnhandledRequest);
           } else {
-            function onUnhandledRequest(_request: Request) {
+            function onUnhandledRequest(request: UnhandledHttpInterceptorRequest) {
+              verifyUnhandledRequest(request, method);
               return remoteOnUnhandledRequest;
             }
 
@@ -467,6 +510,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       afterEach(() => {
         localOnUnhandledRequest.action = 'bypass';
         remoteOnUnhandledRequest.action = 'reject';
+
+        if (overrideDefault?.startsWith('factory')) {
+          expect(verifyUnhandledRequest).toHaveBeenCalled();
+        } else {
+          expect(verifyUnhandledRequest).not.toHaveBeenCalled();
+        }
       });
 
       if (type === 'local') {
