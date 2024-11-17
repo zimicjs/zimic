@@ -28,6 +28,8 @@ import {
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
+  UnhandledHttpInterceptorRequestPath,
+  UnhandledHttpInterceptorRequestMethodSchema,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
@@ -157,15 +159,25 @@ abstract class HttpInterceptorWorker {
 
       const requestClone = request.clone();
 
-      const customDefaultStrategy =
-        typeof defaultDeclarationOrFactory === 'function'
-          ? defaultDeclarationOrFactory(request)
-          : defaultDeclarationOrFactory;
+      let customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null = null;
+
+      if (typeof defaultDeclarationOrFactory === 'function') {
+        const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
+        customDefaultStrategy = defaultDeclarationOrFactory(parsedRequest);
+      } else {
+        customDefaultStrategy = defaultDeclarationOrFactory;
+      }
 
       const { declarationOrFactory = null } = this.findUnhandledRequestStrategy(requestURL) ?? {};
 
-      const interceptorStrategy =
-        typeof declarationOrFactory === 'function' ? declarationOrFactory(requestClone) : declarationOrFactory;
+      let interceptorStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null = null;
+
+      if (typeof declarationOrFactory === 'function') {
+        const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(requestClone);
+        interceptorStrategy = declarationOrFactory(parsedRequest);
+      } else {
+        interceptorStrategy = declarationOrFactory;
+      }
 
       const candidatesOrPromises = [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy];
       const candidates = await Promise.all(candidatesOrPromises.filter(isDefined));
@@ -229,6 +241,12 @@ abstract class HttpInterceptorWorker {
     }
 
     return Response.json(declaration.body, { headers, status });
+  }
+
+  static async parseRawUnhandledRequest(request: HttpRequest) {
+    return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestMethodSchema>(
+      request,
+    );
   }
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
