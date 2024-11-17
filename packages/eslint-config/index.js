@@ -16,7 +16,8 @@ export default [
     ],
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
+
     plugins: {
       'import-helpers': importHelpersPlugin,
       '@typescript-eslint': typescriptPlugin,
@@ -272,6 +273,11 @@ export default [
       ],
       '@typescript-eslint/no-implied-eval': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-expressions': [
+        'warn',
+        { allowShortCircuit: false, allowTernary: false, allowTaggedTemplates: false },
+      ],
+      '@typescript-eslint/no-empty-object-type': ['warn', { allowObjectTypes: 'always' }],
 
       'turbo/no-undeclared-env-vars': 'off',
     },

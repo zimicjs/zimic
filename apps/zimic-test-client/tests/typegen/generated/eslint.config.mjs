@@ -1,17 +1,17 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import zimicConfigNode from '@zimic/eslint-config-node';
+import nodeConfig from '@zimic/eslint-config-node';
 
 const fileName = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(fileName);
 
-const zimicConfigWithLanguageOptionsIndex = zimicConfigNode.findIndex((config) => config.languageOptions !== undefined);
+const zimicConfigWithLanguageOptionsIndex = nodeConfig.findIndex((config) => config.languageOptions !== undefined);
 
 export default [
-  ...zimicConfigNode.slice(0, zimicConfigWithLanguageOptionsIndex),
+  ...nodeConfig.slice(0, zimicConfigWithLanguageOptionsIndex),
   {
-    ...zimicConfigNode[zimicConfigWithLanguageOptionsIndex],
+    ...nodeConfig[zimicConfigWithLanguageOptionsIndex],
     files: ['*.ts'],
     languageOptions: {
       parserOptions: {
@@ -20,7 +20,7 @@ export default [
       },
     },
   },
-  ...zimicConfigNode.slice(zimicConfigWithLanguageOptionsIndex + 1),
+  ...nodeConfig.slice(zimicConfigWithLanguageOptionsIndex + 1),
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
