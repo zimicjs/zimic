@@ -92,10 +92,10 @@ export function getHttpServerPort(server: HttpServer) {
 
   /* istanbul ignore else -- @preserve
    * The address is expected to be an object because the server does not listen on a pipe or Unix domain socket.  */
-  if (typeof address !== 'string') {
-    return address?.port;
-  } else {
+  if (typeof address === 'string') {
     return undefined;
+  } else {
+    return address?.port;
   }
 }
 
