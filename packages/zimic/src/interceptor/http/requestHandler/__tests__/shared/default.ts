@@ -536,9 +536,9 @@ export function declareDefaultHttpRequestHandlerTests(
         // @ts-expect-error Forcing an exception in an internal method
         handler.syncPromises = 'not-an-array';
 
-        const rejectionListener = vi.fn((error: Error) => {
+        const rejectionListener = vi.fn((error: unknown) => {
           expect(error).toBeInstanceOf(Error);
-          expect(error.message).toBe('this.syncPromises.filter is not a function');
+          expect(error).toHaveProperty('message', 'this.syncPromises.filter is not a function');
         });
 
         await handler.with({}).catch(rejectionListener);

@@ -109,11 +109,11 @@ describe('Schema types', () => {
         }>
       >();
 
-      // @ts-expect-error
+      // @ts-expect-error `/unknown` is not a path of the schema
       expectTypeOf<InferPathParams<Schema, '/unknown'>>();
-      // @ts-expect-error
+      // @ts-expect-error `/users/1` is not a literal path
       expectTypeOf<InferPathParams<Schema, '/users/1'>>();
-      // @ts-expect-error
+      // @ts-expect-error `/users/1` is not a literal path
       expectTypeOf<InferPathParams<Schema, '/users/1/notifications/2'>>();
     });
   });

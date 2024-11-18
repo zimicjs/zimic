@@ -42,7 +42,7 @@ export async function verifyUnhandledRequestMessage(
   expect(message).toContain(platform === 'node' ? 'Headers: ' : 'Headers: [object Object]');
 
   if (platform === 'node') {
-    const headersLine = message.match(/Headers: (?<headers>[^\n]*)\n/)!;
+    const headersLine = /Headers: (?<headers>[^\n]*)\n/.exec(message)!;
     expect(headersLine).not.toBe(null);
 
     const formattedHeaders = (await formatObjectToLog(Object.fromEntries(request.headers))) as string;

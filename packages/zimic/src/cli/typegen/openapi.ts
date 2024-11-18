@@ -13,8 +13,9 @@ async function generateTypesFromOpenAPI(options: OpenAPITypegenOptions) {
 
   const successMessage =
     `${chalk.green.bold('✔')} Generated ` +
-    `${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ` +
-    `${chalk.dim(`(${formatElapsedTime(executionSummary.elapsedTime)})`)}`;
+    `${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ${chalk.dim(
+      `(${formatElapsedTime(executionSummary.elapsedTime)})`,
+    )}`;
 
   const hasWrittenToStdout = outputFilePath === undefined;
   logWithPrefix(successMessage, { method: hasWrittenToStdout ? 'warn' : 'log' });

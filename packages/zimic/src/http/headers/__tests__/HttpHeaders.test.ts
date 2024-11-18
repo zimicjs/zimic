@@ -479,30 +479,30 @@ describe('HttpHeaders', () => {
     defaultSchemaHeaders.delete('unknown');
 
     const emptySchemaHeaders = new HttpHeaders<{}>();
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaHeaders.set('unknown', '*/*');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaHeaders.append('unknown', '*/*');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaHeaders.get('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaHeaders.has('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaHeaders.delete('unknown');
 
     const neverSchemaHeaders = new HttpHeaders<never>();
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaHeaders.set('unknown', '*/*');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaHeaders.append('unknown', '*/*');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaHeaders.get('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaHeaders.has('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaHeaders.delete('unknown');
 
-    // @ts-expect-error
+    // @ts-expect-error `string` is not a valid schema
     new HttpHeaders<string>();
   });
 

@@ -132,7 +132,7 @@ describe('Exports', () => {
     expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchema<never>>().not.toBeAny();
-    expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.Paths<never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Request<never>>().not.toBeAny();
@@ -146,30 +146,30 @@ describe('Exports', () => {
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpStatusCode>().not.toBeAny();
-    expectTypeOf<HttpServiceSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceSchema>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceMethodsSchema>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpMethodsSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceMethodSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceMethodSchema>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpMethodSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceRequestSchema>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpRequestSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchemaByStatusCode>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchema>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchema>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpResponseSchema>().not.toBeAny();
-    expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny();
+    expectTypeOf<HttpServiceResponseSchemaStatusCode<never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
 
-    expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny();
+    expectTypeOf<HttpServiceSchemaMethod<never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();
-    expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<HttpServiceSchemaPath<never, never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchemaPath<never, never>>().not.toBeAny();
-    expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<LiteralHttpServiceSchemaPath<never, never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchemaPath.Literal<never, never>>().not.toBeAny();
-    expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny();
+    expectTypeOf<NonLiteralHttpServiceSchemaPath<never, never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<HttpSchemaPath.NonLiteral<never, never>>().not.toBeAny();
-    expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny();
+    expectTypeOf<PathParamsSchemaFromPath<never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<InferPathParams<never>>().not.toBeAny();
     expectTypeOf<MergeHttpResponsesByStatusCode<never>>().not.toBeAny();
 
@@ -207,7 +207,7 @@ describe('Exports', () => {
     expectTypeOf<HttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<LocalHttpInterceptorOptions>().not.toBeAny();
     expectTypeOf<RemoteHttpInterceptorOptions>().not.toBeAny();
-    expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny();
+    expectTypeOf<ExtractHttpInterceptorSchema<never>>().not.toBeAny(); // eslint-disable-line @typescript-eslint/no-deprecated
     expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
