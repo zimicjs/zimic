@@ -90,7 +90,7 @@ export async function stopHttpServer(server: HttpServer, options: { timeout?: nu
 export function getHttpServerPort(server: HttpServer) {
   const address = server.address();
 
-  /* istanbul ignore else -- @preserve
+  /* istanbul ignore if -- @preserve
    * The address is expected to be an object because the server does not listen on a pipe or Unix domain socket.  */
   if (typeof address === 'string') {
     return undefined;
