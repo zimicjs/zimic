@@ -145,8 +145,7 @@ class RemoteHttpRequestHandler<
           handler: PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
     const promisesToWait = new Set(this.syncPromises);
 
@@ -160,8 +159,7 @@ class RemoteHttpRequestHandler<
   }
 
   catch<RejectedResult = never>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> | RejectedResult> {
     return this.then().catch(onRejected);
   }

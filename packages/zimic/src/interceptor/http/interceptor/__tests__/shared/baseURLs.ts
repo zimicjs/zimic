@@ -21,9 +21,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   it('should handle base URLs and paths correctly', async () => {
     for (const { baseURL, path } of [
-      { baseURL: `${defaultBaseURL.raw}`, path: 'path' },
+      { baseURL: defaultBaseURL.raw, path: 'path' },
       { baseURL: `${defaultBaseURL.raw}/`, path: 'path' },
-      { baseURL: `${defaultBaseURL.raw}`, path: '/path' },
+      { baseURL: defaultBaseURL.raw, path: '/path' },
       { baseURL: `${defaultBaseURL.raw}/`, path: '/path' },
     ]) {
       await usingHttpInterceptor<{

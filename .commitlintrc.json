@@ -18,6 +18,7 @@
         "#zimic",
         "#eslint",
         "#eslint-node",
+        "#eslint-react",
         "#lint-staged",
         "#tsconfig",
         "examples",

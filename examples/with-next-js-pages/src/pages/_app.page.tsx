@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import clsx from 'clsx';
 import type { AppProps } from 'next/app';
 import { Inter } from 'next/font/google';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { loadInterceptors } from '../../tests/interceptors/utils';
 
@@ -12,7 +12,8 @@ const inter = Inter({ subsets: ['latin'] });
 const SHOULD_LOAD_INTERCEPTORS = process.env.NODE_ENV !== 'production';
 
 function App({ Component, pageProps }: AppProps) {
-  const [queryClient] = useState(() => new QueryClient());
+  const queryClient = useMemo(() => new QueryClient(), []);
+
   const [isLoading, setIsLoading] = useState(SHOULD_LOAD_INTERCEPTORS);
 
   useEffect(() => {

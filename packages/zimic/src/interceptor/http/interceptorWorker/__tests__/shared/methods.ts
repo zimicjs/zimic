@@ -123,17 +123,17 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it.each([
       {
         use: ':param',
-        fetch: `${param1}`,
+        fetch: param1,
         params: { param: param1 },
       },
       {
         use: ':param',
-        fetch: `${param2}`,
+        fetch: param2,
         params: { param: param2 },
       },
       {
-        use: `${param1}`,
-        fetch: `${param1}`,
+        use: param1,
+        fetch: param1,
         params: {},
       },
 
@@ -148,7 +148,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         params: { param: param2 },
       },
       {
-        use: `${param1}`,
+        use: param1,
         fetch: `/${param1}`,
         params: {},
       },
@@ -171,17 +171,17 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
       {
         use: '/:param',
-        fetch: `${param1}`,
+        fetch: param1,
         params: { param: param1 },
       },
       {
         use: '/:param',
-        fetch: `${param2}`,
+        fetch: param2,
         params: { param: param2 },
       },
       {
         use: `/${param1}`,
-        fetch: `${param1}`,
+        fetch: param1,
         params: {},
       },
 

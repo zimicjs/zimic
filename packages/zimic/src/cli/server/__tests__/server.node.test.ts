@@ -154,10 +154,7 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(5000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          'Server is running on http://localhost:5000',
-        );
+        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://localhost:5000');
       });
     });
 
@@ -182,7 +179,7 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(`${chalk.cyan('[zimic]')}`, 'Server is running on http://0.0.0.0:3000');
+        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://0.0.0.0:3000');
       });
     });
 
@@ -199,7 +196,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
       });
@@ -302,7 +299,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Ephemeral server is running on http://localhost:${server!.port()}`,
         );
 
@@ -346,7 +343,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -517,7 +514,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -558,7 +555,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
 
@@ -605,7 +602,7 @@ describe('CLI (server)', async () => {
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -654,7 +651,7 @@ describe('CLI (server)', async () => {
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -775,7 +772,7 @@ describe('CLI (server)', async () => {
 
           await interceptor.get('/users').respond(responseFactory);
 
-          const onFetchError = vi.fn();
+          const onFetchError = vi.fn<(error: unknown) => void>();
           const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
 
           await waitFor(() => {

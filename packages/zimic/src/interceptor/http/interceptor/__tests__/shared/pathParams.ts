@@ -138,7 +138,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(specificRequest.response.body).toEqualTypeOf<null>();
         expect(specificRequest.response.body).toBe(null);
 
-        const unmatchedResponsePromise = fetch(joinURL(baseURL, `/users/${2}`), { method });
+        const unmatchedResponsePromise = fetch(joinURL(baseURL, '/users/2'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(unmatchedResponsePromise);

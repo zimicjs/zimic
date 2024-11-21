@@ -48,7 +48,7 @@ export type HttpPathParamsSerialized<Type> = Type extends HttpPathParamsSchema
     ? never
     : Type extends Date
       ? never
-      : Type extends Function
+      : Type extends (...parameters: never[]) => unknown
         ? never
         : Type extends symbol
           ? never
