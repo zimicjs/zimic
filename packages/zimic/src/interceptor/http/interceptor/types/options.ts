@@ -1,5 +1,6 @@
-import { UnhandledHttpInterceptorRequest } from '@/interceptor/http/requestHandler/types/requests';
 import { PossiblePromise } from '@/types/utils';
+
+import { UnhandledHttpInterceptorRequest } from './requests';
 
 /**
  * An type of an HTTP interceptor.

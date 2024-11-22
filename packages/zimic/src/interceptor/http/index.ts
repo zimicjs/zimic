@@ -12,7 +12,6 @@ export type {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
   TrackedHttpInterceptorRequest,
-  UnhandledHttpInterceptorRequest,
 } from './requestHandler/types/requests';
 
 export type {
@@ -37,6 +36,8 @@ export type {
   HttpInterceptorOptions,
   UnhandledRequestStrategy,
 } from './interceptor/types/options';
+
+export type { UnhandledHttpInterceptorRequest } from './interceptor/types/requests';
 
 export type { InferHttpInterceptorSchema } from './interceptor/types/schema';
 

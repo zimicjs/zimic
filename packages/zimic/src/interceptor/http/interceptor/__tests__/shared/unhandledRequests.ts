@@ -8,11 +8,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/constants';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import {
-  HttpRequestBodySchema,
-  UnhandledHttpInterceptorRequest,
-  UnhandledHttpInterceptorRequestSchema,
-} from '@/interceptor/http/requestHandler/types/requests';
+import { HttpRequestBodySchema } from '@/interceptor/http/requestHandler/types/requests';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { methodCanHaveRequestBody } from '@/utils/http';
 import { waitForDelay } from '@/utils/time';
@@ -22,6 +18,7 @@ import { expectBypassedResponse, expectPreflightResponse, expectFetchError } fro
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
+import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, method: string) => {
@@ -37,7 +34,7 @@ const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, 
   expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
   expect(request.pathParams).toEqual({});
 
-  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestSchema>;
+  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestMethodSchema>;
 
   expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
   expect(request).toHaveProperty('body');
