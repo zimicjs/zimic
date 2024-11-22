@@ -19,7 +19,6 @@
   - [HTTP `interceptor.clear()`](#http-interceptorclear)
   - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
     - [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema)
-    - [`ExtractHttpInterceptorSchema`](#extracthttpinterceptorschema)
 - [`HttpRequestHandler`](#httprequesthandler)
   - [HTTP `handler.method()`](#http-handlermethod)
   - [HTTP `handler.path()`](#http-handlerpath)
@@ -468,13 +467,6 @@ type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 //   };
 // }
 ```
-
-#### `ExtractHttpInterceptorSchema`
-
-> [!WARNING]
->
-> This type is **deprecated** and was renamed to [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) with no
-> changes in behavior. Please use [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema) instead.
 
 ## `HttpRequestHandler`
 

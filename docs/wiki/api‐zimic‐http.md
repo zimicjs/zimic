@@ -20,11 +20,7 @@
   - [`HttpSchemaPath`](#httpschemapath)
     - [`HttpSchemaPath.Literal`](#httpschemapathliteral)
     - [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral)
-  - [`HttpServiceSchemaPath`](#httpserviceschemapath)
-  - [`LiteralHttpServiceSchemaPath`](#literalhttpserviceschemapath)
-  - [`NonLiteralHttpServiceSchemaPath`](#nonliteralhttpserviceschemapath)
   - [`InferPathParams`](#inferpathparams)
-  - [`PathParamsSchemaFromPath`](#pathparamsschemafrompath)
   - [`MergeHttpResponsesByStatusCode`](#mergehttpresponsesbystatuscode)
 
 ---
@@ -430,24 +426,6 @@ type NonLiteralGetPath = NonLiteralHttpSchemaPath<Schema, 'GET'>;
 // "/users"
 ```
 
-### `HttpServiceSchemaPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`HttpSchemaPath`](#httpschemapath) instead.
-
-### `LiteralHttpServiceSchemaPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`HttpSchemaPath.Literal`](#httpschemapathliteral) instead.
-
-### `NonLiteralHttpServiceSchemaPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral) instead.
-
 ### `InferPathParams`
 
 Infers the path parameters schema from a path string, optionally validating it against an
@@ -479,12 +457,6 @@ import { InferPathParams } from 'zimic/http';
 type PathParams = InferPathParams<'/users/:userId'>;
 // { userId: string }
 ```
-
-### `PathParamsSchemaFromPath`
-
-> [!WARNING]
->
-> This type is **deprecated**. Please use [`InferPathParams`](#inferpathparams) instead.
 
 ### `MergeHttpResponsesByStatusCode`
 
