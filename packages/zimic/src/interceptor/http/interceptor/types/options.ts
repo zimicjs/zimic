@@ -19,9 +19,9 @@ export type HttpInterceptorPlatform = 'node' | 'browser';
 /**
  * The strategy to treat unhandled requests.
  *
- * When `logWarning` is `true` or `undefined`, warnings about the unhandled requests are logged to the console.
- * Similarly, if provided a factory, unhandled request warnings will be logged if the function returns a declaration
- * with `logWarning` set to `true` or `undefined`.
+ * When `log` is `true` or `undefined`, warnings about unhandled requests are logged to the console. If provided a
+ * factory, unhandled request warnings will be logged if the function returns a
+ * {@link UnhandledRequestStrategy.Declaration strategy declaration} containing `log` as `true` or `undefined`.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
  */

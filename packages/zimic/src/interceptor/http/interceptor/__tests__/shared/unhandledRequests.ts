@@ -463,15 +463,15 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       { overrideDefault: 'static' as const },
       { overrideDefault: 'factory' as const },
     ])('Logging disabled: override default $overrideDefault', ({ overrideDefault }) => {
-      const logWarning = false;
+      const log = false;
 
       const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
         action: 'bypass',
-        log: logWarning,
+        log,
       };
       const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
         action: 'reject',
-        log: logWarning,
+        log,
       };
 
       beforeEach(() => {
