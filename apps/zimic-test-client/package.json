@@ -24,13 +24,13 @@
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.7",
     "concurrently": "^9.1.0",
-    "dotenv-cli": "^7.4.2",
+    "dotenv-cli": "^7.4.4",
     "eslint": "^9.15.0",
     "execa": "^9.5.1",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.48.2",
+    "playwright": "^1.49.0",
     "superagent": "^10.1.1",
-    "typescript": "^5.6.3",
+    "typescript": "^5.7.2",
     "vitest": "2.1.5",
     "zimic": "workspace:*"
   }
