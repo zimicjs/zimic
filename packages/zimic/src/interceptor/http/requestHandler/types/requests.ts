@@ -1,7 +1,7 @@
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HttpHeadersInit } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import {
   HttpMethodSchema,
   HttpResponseSchema,
@@ -141,18 +141,3 @@ export interface TrackedHttpInterceptorRequest<
   /** The response that was returned for the intercepted request. */
   response: StatusCode extends [never] ? never : HttpInterceptorResponse<MethodSchema, StatusCode>;
 }
-
-export type UnhandledHttpInterceptorRequestPath = string;
-
-export interface UnhandledHttpInterceptorRequestSchema extends HttpMethodSchema {
-  request: {
-    headers: Record<string, string>;
-    searchParams: Record<string, string | string[]>;
-    body: HttpBody;
-  };
-}
-
-export type UnhandledHttpInterceptorRequest = Omit<
-  HttpInterceptorRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestSchema>,
-  'response'
->;

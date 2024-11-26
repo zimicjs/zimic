@@ -24,12 +24,14 @@ import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
+  UnhandledHttpInterceptorRequestPath,
+  UnhandledHttpInterceptorRequestMethodSchema,
+} from '../interceptor/types/requests';
+import {
   HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES,
   HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES,
   HttpInterceptorRequest,
   HttpInterceptorResponse,
-  UnhandledHttpInterceptorRequestPath,
-  UnhandledHttpInterceptorRequestSchema,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
@@ -244,7 +246,9 @@ abstract class HttpInterceptorWorker {
   }
 
   static async parseRawUnhandledRequest(request: HttpRequest) {
-    return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestSchema>(request);
+    return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestMethodSchema>(
+      request,
+    );
   }
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
