@@ -248,6 +248,8 @@ httpInterceptor.default.remote.onUnhandledRequest = {
 };
 ```
 
+</details>
+
 <details>
   <summary>
     Example 5: Reject all unhandled requests with logging:
