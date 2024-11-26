@@ -8,7 +8,7 @@ import { declareLifeCycleHttpInterceptorTests } from './shared/lifeCycle';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Life cycle', ({ type }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

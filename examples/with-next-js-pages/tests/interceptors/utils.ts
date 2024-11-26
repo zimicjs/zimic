@@ -2,16 +2,16 @@ import { httpInterceptor } from 'zimic/interceptor/http';
 
 import githubInterceptor, { githubFixtures } from './github';
 
-httpInterceptor.default.onUnhandledRequest(async (request, context) => {
+httpInterceptor.default.local.onUnhandledRequest = (request) => {
   const url = new URL(request.url);
+  const isSameHost = url.host === window.location.host;
 
-  // Ignore requests to the same host
-  if (url.host === window.location.host) {
-    return;
+  if (isSameHost) {
+    return { action: 'bypass', log: false };
   }
 
-  await context.log();
-});
+  return { action: 'reject' };
+};
 
 export async function loadInterceptors() {
   await githubInterceptor.start();

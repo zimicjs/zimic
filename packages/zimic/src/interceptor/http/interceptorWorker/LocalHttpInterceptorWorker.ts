@@ -2,7 +2,7 @@ import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions,
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
-import { HttpRequest } from '@/http/types/requests';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
@@ -12,12 +12,20 @@ import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
-import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
+import {
+  BrowserHttpWorker,
+  HttpResponseFactory,
+  HttpResponseFactoryResult,
+  HttpWorker,
+  NodeHttpWorker,
+} from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'local';
 
   private _internalWorker?: HttpWorker;
+
+  private defaultHttpHandler: MSWHttpHandler;
 
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -27,6 +35,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   constructor(options: LocalHttpInterceptorWorkerOptions) {
     super();
     this.type = options.type;
+
+    this.defaultHttpHandler = http.all('*', async (context) => {
+      const request = context.request satisfies Request as HttpRequest;
+      return this.bypassOrRejectUnhandledRequest(request);
+    });
   }
 
   internalWorkerOrThrow() {
@@ -45,12 +58,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private createInternalWorker() {
     if (typeof mswNode.setupServer !== 'undefined') {
-      return mswNode.setupServer();
+      return mswNode.setupServer(this.defaultHttpHandler);
     }
 
     /* istanbul ignore else -- @preserve */
     if (typeof mswBrowser.setupWorker !== 'undefined') {
-      return mswBrowser.setupWorker();
+      return mswBrowser.setupWorker(this.defaultHttpHandler);
     }
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
@@ -62,9 +75,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const internalWorker = this.internalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
-        onUnhandledRequest: async (request) => {
-          await super.handleUnhandledRequest(request);
-        },
+        onUnhandledRequest: 'bypass',
       };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
@@ -146,30 +157,49 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const url = excludeNonPathParams(createURL(rawURL)).toString();
     ensureUniquePathParams(url);
 
-    const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const request = context.request as HttpRequest;
+    const httpHandler = http[lowercaseMethod](url, async (context): Promise<HttpResponse> => {
+      const request = context.request satisfies Request as HttpRequest;
       const requestClone = request.clone();
 
+      let result: HttpResponseFactoryResult | null = null;
+
       try {
-        const result = await createResponse({ ...context, request });
-
-        if (result.bypass) {
-          await super.handleUnhandledRequest(requestClone);
-          return passthrough();
-        }
-
-        const response = context.request.method === 'HEAD' ? new Response(null, result.response) : result.response;
-        return response;
+        result = await createResponse({ ...context, request });
       } catch (error) {
         console.error(error);
-        await super.handleUnhandledRequest(requestClone);
-        return passthrough();
       }
+
+      if (!result?.response) {
+        return this.bypassOrRejectUnhandledRequest(requestClone);
+      }
+
+      if (context.request.method === 'HEAD') {
+        return new Response(null, {
+          status: result.response.status,
+          statusText: result.response.statusText,
+          headers: result.response.headers,
+        });
+      }
+
+      return result.response;
     });
 
     internalWorker.use(httpHandler);
 
     this.httpHandlerGroups.push({ interceptor, httpHandler });
+  }
+
+  private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
+    const requestClone = request.clone();
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'local');
+    await super.handleUnhandledRequest(requestClone, strategy);
+
+    if (strategy.action === 'reject') {
+      return Response.error();
+    } else {
+      return passthrough();
+    }
   }
 
   clearHandlers() {

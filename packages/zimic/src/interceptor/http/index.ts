@@ -1,4 +1,3 @@
-import { InferHttpInterceptorSchema } from './interceptor/types/schema';
 import HttpInterceptorNamespace from './namespace/HttpInterceptorNamespace';
 
 export { default as NotStartedHttpInterceptorError } from './interceptor/errors/NotStartedHttpInterceptorError';
@@ -38,12 +37,8 @@ export type {
   UnhandledRequestStrategy,
 } from './interceptor/types/options';
 
-/**
- * @deprecated Use
- *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#inferpathparams `InferHttpInterceptorSchema` }
- *   instead, which is a drop-in replacement.
- */
-export type ExtractHttpInterceptorSchema<Interceptor> = InferHttpInterceptorSchema<Interceptor>;
+export type { UnhandledHttpInterceptorRequest } from './interceptor/types/requests';
+
 export type { InferHttpInterceptorSchema } from './interceptor/types/schema';
 
 export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } from './interceptor/types/public';

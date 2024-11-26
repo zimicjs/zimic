@@ -78,4 +78,13 @@ describe('Interceptor server', () => {
     await server.stop();
     expect(server.isRunning()).toBe(false);
   });
+
+  it('should use the default values for optional parameters if not provided', () => {
+    server = createInternalInterceptorServer();
+
+    expect(server.hostname()).toBe('localhost');
+    expect(server.port()).toBe(undefined);
+    expect(server.logUnhandledRequests()).toBe(true);
+    expect(server.httpURL()).toBe(undefined);
+  });
 });

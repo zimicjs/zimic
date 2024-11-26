@@ -195,13 +195,6 @@ export namespace HttpResponseSchemaByStatusCode {
     [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpResponseSchema.NoBody : Schema[StatusCode];
   };
 
-  /**
-   * A schema representing the strict structure of HTTP responses by status code.
-   *
-   * @deprecated Use {@link HttpResponseSchemaByStatusCode} directly instead.
-   */
-  export type Strict = ConvertToStrict<Loose>;
-
   /** A schema representing the structure of HTTP responses by status code with no body. */
   export type NoBody = {
     [StatusCode in HttpStatusCode]?: HttpResponseSchema.NoBody;
@@ -331,28 +324,6 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
 export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
 
 export namespace HttpSchema {
-  /**
-   * Declares an HTTP service schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Paths` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
-   *
-   * @deprecated Use {@link HttpSchema} directly instead, which is a drop-in replacement.
-   * @example
-   *   import { type HttpSchema } from 'zimic/http';
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: {
-   *           200: { body: User[] };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
-  export type Paths<Schema extends BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
-
   /**
    * Declares an HTTP service methods schema.
    *

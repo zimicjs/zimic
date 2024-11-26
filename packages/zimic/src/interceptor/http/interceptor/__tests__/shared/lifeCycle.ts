@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
   createInternalHttpInterceptor,
@@ -80,14 +80,18 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let promise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method,
           timeout: 200,
         });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
-        });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
@@ -95,10 +99,15 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
 
-        promise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
@@ -143,11 +152,15 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let promise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 200 });
-          await expectFetchErrorOrPreflightResponse(promise, {
-            shouldBePreflight: overridesPreflightResponse,
-            canBeAborted: true,
-          });
+          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 500 });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else if (type === 'local') {
+            await expectBypassedResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise, { canBeAborted: true });
+          }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
@@ -156,10 +169,15 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          promise = fetch(joinURL(baseURL, '/users'), { method });
-          await expectFetchErrorOrPreflightResponse(promise, {
-            shouldBePreflight: overridesPreflightResponse,
-          });
+          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else if (type === 'local') {
+            await expectBypassedResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);

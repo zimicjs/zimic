@@ -3,7 +3,6 @@ import filesystem from 'fs/promises';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { httpInterceptor } from '@/interceptor/http';
 import { verifyUnhandledRequestMessage } from '@/interceptor/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/interceptor/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/interceptor/server/constants';
@@ -155,10 +154,7 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(5000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
-          'Server is running on http://localhost:5000',
-        );
+        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://localhost:5000');
       });
     });
 
@@ -183,7 +179,7 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(`${chalk.cyan('[zimic]')}`, 'Server is running on http://0.0.0.0:3000');
+        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://0.0.0.0:3000');
       });
     });
 
@@ -200,7 +196,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
       });
@@ -303,7 +299,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Ephemeral server is running on http://localhost:${server!.port()}`,
         );
 
@@ -347,7 +343,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -518,7 +514,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -559,7 +555,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          `${chalk.cyan('[zimic]')}`,
+          chalk.cyan('[zimic]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
 
@@ -581,31 +577,16 @@ describe('CLI (server)', async () => {
       });
     });
 
-    it.each([
-      { overrideDefault: false as const },
-      { overrideDefault: 'static' as const },
-      { overrideDefault: 'static-empty' as const },
-      { overrideDefault: 'function' as const },
-    ])(
-      'should show an error if logging is enabled when a request is received and does not match any interceptors (override default $overrideDefault)',
-      async ({ overrideDefault }) => {
+    it.each([undefined, 'true'])(
+      'should show an error if logging is enabled when a request is received and does not match any interceptors (flag %s)',
+      async (flagValue) => {
         processArgvSpy.mockReturnValue([
           'node',
           './dist/cli.js',
           'server',
           'start',
-          ...(overrideDefault === false ? ['--log-unhandled-requests'] : []),
+          ...(flagValue === undefined ? [] : ['--log-unhandled-requests', flagValue]),
         ]);
-
-        if (overrideDefault === 'static') {
-          httpInterceptor.default.onUnhandledRequest({ log: true });
-        } else if (overrideDefault === 'static-empty') {
-          httpInterceptor.default.onUnhandledRequest({});
-        } else if (overrideDefault === 'function') {
-          httpInterceptor.default.onUnhandledRequest(async (_request, context) => {
-            await context.log();
-          });
-        }
 
         await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
           await runCLI();
@@ -614,13 +595,14 @@ describe('CLI (server)', async () => {
           expect(server!.isRunning()).toBe(true);
           expect(server!.hostname()).toBe('localhost');
           expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests()).toBe(true);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -643,22 +625,17 @@ describe('CLI (server)', async () => {
       },
     );
 
-    it.each([{ overrideDefault: false }, { overrideDefault: 'static' }, { overrideDefault: 'function' }])(
-      'should not show an error if logging is disabled when a request is received and does not match any interceptors (override default $overrideDefault)',
-      async ({ overrideDefault }) => {
+    it.each(['false'])(
+      'should not show an error if logging is disabled when a request is received and does not match any interceptors (flag %s)',
+      async (flagValue) => {
         processArgvSpy.mockReturnValue([
           'node',
           './dist/cli.js',
           'server',
           'start',
-          ...(overrideDefault === false ? ['--log-unhandled-requests', 'false'] : []),
+          '--log-unhandled-requests',
+          flagValue,
         ]);
-
-        if (overrideDefault === 'static') {
-          httpInterceptor.default.onUnhandledRequest({ log: false });
-        } else if (overrideDefault === 'function') {
-          httpInterceptor.default.onUnhandledRequest(vi.fn());
-        }
 
         await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
           await runCLI();
@@ -667,13 +644,14 @@ describe('CLI (server)', async () => {
           expect(server!.isRunning()).toBe(true);
           expect(server!.hostname()).toBe('localhost');
           expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests()).toBe(false);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            `${chalk.cyan('[zimic]')}`,
+            chalk.cyan('[zimic]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -727,8 +705,8 @@ describe('CLI (server)', async () => {
           webSocketServerRequestSpy.mockRejectedValueOnce(error);
 
           const request = new Request('http://localhost:5001/users', { method: 'GET' });
-          const fetchPromise = fetch(request);
-          await expectFetchError(fetchPromise);
+          const responsePromise = fetch(request);
+          await expectFetchError(responsePromise);
 
           expect(server!.isRunning()).toBe(true);
 
@@ -794,8 +772,8 @@ describe('CLI (server)', async () => {
 
           await interceptor.get('/users').respond(responseFactory);
 
-          const onFetchError = vi.fn();
-          const fetchPromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+          const onFetchError = vi.fn<(error: unknown) => void>();
+          const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
 
           await waitFor(() => {
             expect(wasResponseFactoryCalled).toBe(true);
@@ -804,7 +782,7 @@ describe('CLI (server)', async () => {
           await interceptor.stop();
           expect(interceptor.isRunning()).toBe(false);
 
-          await fetchPromise;
+          await responsePromise;
 
           await waitFor(() => {
             expect(onFetchError).toHaveBeenCalled();

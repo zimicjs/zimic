@@ -63,7 +63,7 @@ GitHub API and simulate a test case where the repository is found and another wh
       pnpm run dev
       ```
 
-      After started, the application will be available at [http://localhost:3006](http://localhost:3006).
+      After started, the application will be available at [http://localhost:3008](http://localhost:3008).
 
    2. In another terminal, run the tests:
 

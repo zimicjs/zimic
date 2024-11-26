@@ -44,4 +44,9 @@ app.get('/github/repositories/:owner/:name', async (request, reply) => {
   });
 });
 
+app.setErrorHandler(async (error, _request, reply) => {
+  console.error(error);
+  await reply.status(500).send({ message: 'Internal server error' });
+});
+
 export default app;

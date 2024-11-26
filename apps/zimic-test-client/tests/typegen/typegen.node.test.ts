@@ -23,7 +23,7 @@ async function normalizeStripeTypes(generatedFilePath: string) {
 describe('Typegen', { timeout: 45 * 1000 }, () => {
   const generatedDirectory = path.join(__dirname, 'generated');
   const tsconfigFilePath = path.join(generatedDirectory, 'tsconfig.json');
-  const eslintConfigFilePath = path.join(generatedDirectory, '.eslintrc.js');
+  const eslintConfigFilePath = path.join(generatedDirectory, 'eslint.config.mjs');
 
   beforeAll(async () => {
     const generatedFileNames = await filesystem.readdir(generatedDirectory);
@@ -87,7 +87,7 @@ describe('Typegen', { timeout: 45 * 1000 }, () => {
         await $(
           'pnpm',
           ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
-          { stdio: 'inherit' },
+          { stderr: 'inherit' },
         );
 
         if (serviceName === 'Stripe') {

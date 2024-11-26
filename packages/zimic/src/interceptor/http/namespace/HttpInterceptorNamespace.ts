@@ -4,19 +4,56 @@ import HttpInterceptorWorkerStore from '../interceptorWorker/HttpInterceptorWork
 
 /** Default HTTP interceptor settings. */
 export class HttpInterceptorNamespaceDefault {
-  private workerStore = new HttpInterceptorWorkerStore();
+  local: {
+    /**
+     * Gets or sets the default strategy for local unhandled requests. If a request does not start with the base URL of
+     * any local interceptors, this strategy will be used. If a function is provided, it will be called with the
+     * unhandled request.
+     *
+     * You can override this default for specific interceptors by using `onUnhandledRequest` in
+     * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
+     *
+     * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+     */
+    get onUnhandledRequest(): UnhandledRequestStrategy.Local;
+    set onUnhandledRequest(strategy: UnhandledRequestStrategy.Local);
+  };
 
-  /**
-   * Sets the default strategy for unhandled requests. If a request does not start with the base URL of any
-   * interceptors, this strategy will be used. If a function is provided, it will be called with the unhandled request.
-   * You can override this default for specific interceptors by using `onUnhandledRequest` in
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
-   *
-   * @param strategy The default strategy to be set.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
-   */
-  onUnhandledRequest(strategy: UnhandledRequestStrategy) {
-    this.workerStore.setDefaultUnhandledRequestStrategy(strategy);
+  remote: {
+    /**
+     * Gets or sets the default strategy for remote unhandled requests. If a request does not start with the base URL of
+     * any remote interceptors, this strategy will be used. If a function is provided, it will be called with the
+     * unhandled request.
+     *
+     * You can override this default for specific interceptors by using `onUnhandledRequest` in
+     * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)`}.
+     *
+     * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+     */
+    get onUnhandledRequest(): UnhandledRequestStrategy.Remote;
+    set onUnhandledRequest(strategy: UnhandledRequestStrategy.Remote);
+  };
+
+  constructor() {
+    const workerStore = new HttpInterceptorWorkerStore();
+
+    this.local = {
+      get onUnhandledRequest() {
+        return workerStore.defaultOnUnhandledRequest('local');
+      },
+      set onUnhandledRequest(strategy: UnhandledRequestStrategy.Local) {
+        workerStore.setDefaultOnUnhandledRequest('local', strategy);
+      },
+    };
+
+    this.remote = {
+      get onUnhandledRequest() {
+        return workerStore.defaultOnUnhandledRequest('remote');
+      },
+      set onUnhandledRequest(strategy: UnhandledRequestStrategy.Remote) {
+        workerStore.setDefaultOnUnhandledRequest('remote', strategy);
+      },
+    };
   }
 }
 

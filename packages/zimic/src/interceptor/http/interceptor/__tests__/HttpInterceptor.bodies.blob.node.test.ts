@@ -8,7 +8,7 @@ import { declareBlobBodyHttpInterceptorTests } from './shared/bodies/blob';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Blob', async ({ type }) => {
-  const server = createInternalInterceptorServer();
+  const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
   let baseURL: ExtendedURL;
 

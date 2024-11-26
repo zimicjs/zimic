@@ -465,38 +465,38 @@ describe('HttpSearchParams', () => {
     defaultSchemaSearchParams.delete('unknown');
 
     const emptySchemaSearchParams = new HttpSearchParams<{}>();
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.set('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.append('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.get('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.getAll('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.has('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.has('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     emptySchemaSearchParams.delete('unknown');
 
     const neverSchemaSearchParams = new HttpSearchParams<never>();
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.set('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.append('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.get('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.getAll('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.has('unknown');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.has('unknown', 'value');
-    // @ts-expect-error
+    // @ts-expect-error `unknown` is not part of the schema
     neverSchemaSearchParams.delete('unknown');
 
-    // @ts-expect-error
+    // @ts-expect-error `string` is not a valid schema
     new HttpSearchParams<string>();
   });
 

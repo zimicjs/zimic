@@ -10,19 +10,22 @@ function useHomePageSearchParams() {
   const router = useRouter();
   const { owner: ownerName, repo: repositoryName } = router.query as HomePageSearchParams;
 
-  const setSearchParams = useCallback(async (params: Partial<HomePageSearchParams>) => {
-    const newURL = new URL(window.location.href);
+  const setSearchParams = useCallback(
+    async (params: Partial<HomePageSearchParams>) => {
+      const newURL = new URL(window.location.href);
 
-    for (const [key, value] of Object.entries(params)) {
-      if (value) {
-        newURL.searchParams.set(key, value);
-      } else {
-        newURL.searchParams.delete(key);
+      for (const [key, value] of Object.entries(params)) {
+        if (value) {
+          newURL.searchParams.set(key, value);
+        } else {
+          newURL.searchParams.delete(key);
+        }
       }
-    }
 
-    await router.replace(newURL);
-  }, []);
+      await router.replace(newURL);
+    },
+    [router],
+  );
 
   return {
     ownerName,

@@ -11,6 +11,6 @@
     "./style": "./lib/style.js"
   },
   "peerDependencies": {
-    "lint-staged": "^15.1.0"
+    "lint-staged": "^15"
   }
 }

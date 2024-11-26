@@ -52,7 +52,7 @@ export type HttpFormDataSerialized<Type> = Type extends HttpFormDataSchema
     ? never
     : Type extends Date
       ? never
-      : Type extends Function
+      : Type extends (...parameters: never[]) => unknown
         ? never
         : Type extends symbol
           ? never

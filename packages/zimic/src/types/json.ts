@@ -70,7 +70,7 @@ export type JSONSerialized<Type> = Type extends JSONValue
     ? Type
     : Type extends Date
       ? string
-      : Type extends Function
+      : Type extends (...parameters: never[]) => unknown
         ? never
         : Type extends symbol
           ? never

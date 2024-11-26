@@ -15,6 +15,7 @@ export default defineConfig({
     minWorkers: 1,
     maxWorkers,
     maxConcurrency: maxWorkers,
+    setupFiles: ['./tests/setup/shared.ts'],
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -32,7 +33,8 @@ export default defineConfig({
         'tests/coverage/**',
         '**/types/**',
         '**/{*.d.ts,types}.ts',
-        '**/{.eslintrc,.lintstagedrc}.js',
+        '**/.lintstagedrc.js',
+        '**/eslint.config.mjs',
         '**/vitest.{config,workspace}.*',
       ],
     },

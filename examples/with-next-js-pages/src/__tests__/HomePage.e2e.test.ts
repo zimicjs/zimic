@@ -46,8 +46,7 @@ test.describe('Home page', () => {
 
     await expect(page).toHaveURL('/?owner=unknown&repo=unknown');
 
-    const notFoundMessage = page.getByRole('status');
+    const notFoundMessage = page.getByText('Repository not found.');
     await expect(notFoundMessage).toBeVisible();
-    await expect(notFoundMessage).toHaveText('Repository not found.');
   });
 });
