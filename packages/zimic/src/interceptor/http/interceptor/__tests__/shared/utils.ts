@@ -1,12 +1,15 @@
-import { expect } from 'vitest';
+import { expect, expectTypeOf, vi } from 'vitest';
 
+import { HttpHeaders, HttpSearchParams } from '@/http';
 import { HttpRequest } from '@/http/types/requests';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { HttpRequestBodySchema } from '@/interceptor/http/requestHandler/types/requests';
 import { PossiblePromise } from '@/types/utils';
 import { formatObjectToLog } from '@/utils/console';
 import { ExtendedURL } from '@/utils/urls';
 
 import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
+import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';
 
 export interface SharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
@@ -71,3 +74,28 @@ export async function verifyUnhandledRequestMessage(
     );
   }
 }
+
+export const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, method: string) => {
+  expect(request).toBeInstanceOf(Request);
+  expect(request).not.toHaveProperty('response');
+
+  expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<Record<string, string>>>();
+  expect(request.headers).toBeInstanceOf(HttpHeaders);
+
+  expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<Record<string, string | string[]>>>();
+  expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
+
+  expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
+  expect(request.pathParams).toEqual({});
+
+  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestMethodSchema>;
+
+  expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
+  expect(request).toHaveProperty('body');
+
+  expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema>>();
+  expect(request.raw).toBeInstanceOf(Request);
+  expect(request.raw.url).toBe(request.url);
+  expect(request.raw.method).toBe(method);
+  expect(Object.fromEntries(request.headers)).toEqual(expect.objectContaining(Object.fromEntries(request.raw.headers)));
+});

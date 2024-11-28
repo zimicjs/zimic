@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { HttpHeaders, HttpRequest } from '@/http';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { httpInterceptor } from '@/interceptor/http';
@@ -8,8 +7,8 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/constants';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import { HttpRequestBodySchema } from '@/interceptor/http/requestHandler/types/requests';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
+import { importCrypto } from '@/utils/crypto';
 import { methodCanHaveRequestBody } from '@/utils/http';
 import { waitForDelay } from '@/utils/time';
 import { joinURL } from '@/utils/urls';
@@ -18,36 +17,19 @@ import { expectBypassedResponse, expectPreflightResponse, expectFetchError } fro
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
-import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';
-import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
+import { UnhandledHttpInterceptorRequest } from '../../types/requests';
+import {
+  RuntimeSharedHttpInterceptorTestsOptions,
+  verifyUnhandledRequestMessage,
+  verifyUnhandledRequest,
+} from './utils';
 
-const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, method: string) => {
-  expect(request).toBeInstanceOf(Request);
-  expect(request).not.toHaveProperty('response');
-
-  expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<Record<string, string>>>();
-  expect(request.headers).toBeInstanceOf(HttpHeaders);
-
-  expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<Record<string, string | string[]>>>();
-  expect(request.searchParams).toBeInstanceOf(HttpSearchParams);
-
-  expectTypeOf(request.pathParams).toEqualTypeOf<{}>();
-  expect(request.pathParams).toEqual({});
-
-  type BodySchema = HttpRequestBodySchema<UnhandledHttpInterceptorRequestMethodSchema>;
-
-  expectTypeOf(request.body).toEqualTypeOf<BodySchema>();
-  expect(request).toHaveProperty('body');
-
-  expectTypeOf(request.raw).toEqualTypeOf<HttpRequest<BodySchema>>();
-  expect(request.raw).toBeInstanceOf(Request);
-  expect(request.raw.url).toBe(request.url);
-  expect(request.raw.method).toBe(method);
-  expect(Object.fromEntries(request.headers)).toEqual(expect.objectContaining(Object.fromEntries(request.raw.headers)));
-});
-
-export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export async function declareUnhandledRequestLoggingHttpInterceptorTests(
+  options: RuntimeSharedHttpInterceptorTestsOptions,
+) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
+
+  const crypto = await importCrypto();
 
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
@@ -57,7 +39,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
   type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
     request: {
       headers: { 'x-value'?: string };
-      searchParams: { 'x-value'?: string; name?: string };
+      searchParams: { value?: string; name?: string };
     };
     response: { 200: { headers: AccessControlHeaders } };
   }>;
@@ -77,7 +59,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
   type MethodSchemaWithRequestBody = HttpSchema.Method<{
     request: {
       headers: { 'x-value'?: string };
-      searchParams: { 'x-value'?: string; name?: string };
+      searchParams: { value?: string; name?: string };
       body: { message: string };
     };
     response: {
@@ -306,7 +288,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           async (interceptor) => {
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
-                .with({ searchParams: { 'x-value': '1' } })
+                .with({ searchParams: { value: '1' } })
                 .respond({
                   status: 200,
                   headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -319,9 +301,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-              const searchParams = new HttpSearchParams({ 'x-value': '1' });
+              const searchParams = new HttpSearchParams({ value: '1' });
 
-              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
               expect(response.status).toBe(200);
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -335,7 +317,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
               const request = new Request(joinURL(baseURL, '/users'), {
                 method,
-                headers: { 'x-value': '1' },
+                headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
               });
               const responsePromise = fetch(request);
 
@@ -373,7 +355,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             async (interceptor) => {
               const handler = await promiseIfRemote(
                 interceptor[lowerMethod]('/users')
-                  .with({ searchParams: { 'x-value': '1' } })
+                  .with({ searchParams: { value: '1' } })
                   .respond({
                     status: 200,
                     headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -386,9 +368,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
               expect(requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-                const searchParams = new HttpSearchParams({ 'x-value': '1' });
+                const searchParams = new HttpSearchParams({ value: '1' });
 
-                const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+                const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), {
                   method,
                   headers: { 'content-type': 'application/json' },
                   body: JSON.stringify({ message: 'ok' }),
@@ -406,7 +388,10 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
                 const request = new Request(joinURL(baseURL, '/users'), {
                   method,
-                  headers: { 'x-value': '1', 'content-type': 'application/json' },
+                  headers: {
+                    'x-id': crypto.randomUUID(), // Ensure the request is unique.
+                    'content-type': 'application/json',
+                  },
                   body: JSON.stringify({ message: 'ok' }),
                 });
                 const requestClone = request.clone();
@@ -495,7 +480,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
-                .with({ searchParams: { 'x-value': '1' } })
+                .with({ searchParams: { value: '1' } })
                 .respond({
                   status: 200,
                   headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -508,9 +493,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-              const searchParams = new HttpSearchParams({ 'x-value': '1' });
+              const searchParams = new HttpSearchParams({ value: '1' });
 
-              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
               expect(response.status).toBe(200);
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -547,7 +532,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
-              .with({ searchParams: { 'x-value': '1' } })
+              .with({ searchParams: { value: '1' } })
               .respond({
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -560,9 +545,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           expect(requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const searchParams = new HttpSearchParams({ 'x-value': '1' });
+            const searchParams = new HttpSearchParams({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -624,12 +609,10 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           { ...interceptorOptions, baseURL: otherBaseURL },
           async (interceptor) => {
             const handler = await promiseIfRemote(
-              interceptor[lowerMethod]('/users')
-                .with({ searchParams: { 'x-value': '1' } })
-                .respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+              interceptor[lowerMethod]('/users').respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
               interceptor,
             );
             expect(handler).toBeInstanceOf(Handler);
@@ -670,7 +653,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           async (interceptor) => {
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
-                .with({ searchParams: { 'x-value': '1' } })
+                .with({ searchParams: { value: '1' } })
                 .respond({
                   status: 200,
                   headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -683,9 +666,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-              const searchParams = new HttpSearchParams<{ 'x-value': string }>({ 'x-value': '1' });
+              const searchParams = new HttpSearchParams({ value: '1' });
 
-              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
               expect(response.status).toBe(200);
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -696,7 +679,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
               const request = new Request(joinURL(baseURL, '/users'), {
                 method,
-                headers: { 'x-value': '1' },
+                headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
               });
               let responsePromise = fetch(request);
 
@@ -762,7 +745,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
-              .with({ searchParams: { 'x-value': '1' } })
+              .with({ searchParams: { value: '1' } })
               .respond({
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -775,12 +758,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           expect(requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const searchParams = new HttpSearchParams<{
-              'x-value': string;
-              name?: string;
-            }>({ 'x-value': '1' });
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -790,12 +770,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            searchParams.set('x-value', '2');
+            searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
               method,
-              headers: { 'x-value': '1' },
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
 
             if (overridesPreflightResponse) {
@@ -869,7 +849,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
-              .with({ searchParams: { 'x-value': '1' } })
+              .with({ searchParams: { value: '1' } })
               .respond({
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -882,12 +862,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           expect(requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const searchParams = new HttpSearchParams<{
-              'x-value': string;
-              name?: string;
-            }>({ 'x-value': '1' });
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -897,12 +874,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            searchParams.set('x-value', '2');
+            searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
               method,
-              headers: { 'x-value': '1' },
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
 
             if (overridesPreflightResponse) {
@@ -976,7 +953,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
-              .with({ searchParams: { 'x-value': '1' } })
+              .with({ searchParams: { value: '1' } })
               .respond({
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -989,12 +966,9 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           expect(requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-            const searchParams = new HttpSearchParams<{
-              'x-value': string;
-              name?: string;
-            }>({ 'x-value': '1' });
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -1004,12 +978,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            searchParams.set('x-value', '2');
+            searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
               method,
-              headers: { 'x-value': '1' },
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
 
             if (overridesPreflightResponse) {
@@ -1110,7 +1084,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
         await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
-              .with({ searchParams: { 'x-value': '1' } })
+              .with({ searchParams: { value: '1' } })
               .respond({
                 status: 200,
                 headers: DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -1124,11 +1098,11 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{
-              'x-value': string;
+              value: string;
               name?: string;
-            }>({ 'x-value': '1' });
+            }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -1138,12 +1112,12 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            searchParams.set('x-value', '2');
+            searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
               method,
-              headers: { 'x-value': '1' },
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
 
             if (overridesPreflightResponse) {
