@@ -25,8 +25,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _internalWorker?: HttpWorker;
 
-  private defaultHttpHandler: MSWHttpHandler;
-
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
@@ -35,11 +33,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   constructor(options: LocalHttpInterceptorWorkerOptions) {
     super();
     this.type = options.type;
-
-    this.defaultHttpHandler = http.all('*', async (context) => {
-      const request = context.request satisfies Request as HttpRequest;
-      return this.bypassOrRejectUnhandledRequest(request);
-    });
   }
 
   internalWorkerOrThrow() {
@@ -58,12 +51,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private createInternalWorker() {
     if (typeof mswNode.setupServer !== 'undefined') {
-      return mswNode.setupServer(this.defaultHttpHandler);
+      return mswNode.setupServer();
     }
 
     /* istanbul ignore else -- @preserve */
     if (typeof mswBrowser.setupWorker !== 'undefined') {
-      return mswBrowser.setupWorker(this.defaultHttpHandler);
+      return mswBrowser.setupWorker();
     }
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */

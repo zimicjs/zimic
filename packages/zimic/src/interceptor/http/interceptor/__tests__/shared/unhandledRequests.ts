@@ -54,6 +54,46 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
   let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
+  type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
+    request: {
+      headers: { 'x-value'?: string };
+      searchParams: { 'x-value'?: string; name?: string };
+    };
+    response: { 200: { headers: AccessControlHeaders } };
+  }>;
+
+  type SchemaWithoutRequestBody = HttpSchema<{
+    '/users': {
+      GET: MethodSchemaWithoutRequestBody;
+      POST: MethodSchemaWithoutRequestBody;
+      PUT: MethodSchemaWithoutRequestBody;
+      PATCH: MethodSchemaWithoutRequestBody;
+      DELETE: MethodSchemaWithoutRequestBody;
+      HEAD: MethodSchemaWithoutRequestBody;
+      OPTIONS: MethodSchemaWithoutRequestBody;
+    };
+  }>;
+
+  type MethodSchemaWithRequestBody = HttpSchema.Method<{
+    request: {
+      headers: { 'x-value'?: string };
+      searchParams: { 'x-value'?: string; name?: string };
+      body: { message: string };
+    };
+    response: {
+      200: { headers: AccessControlHeaders };
+    };
+  }>;
+
+  type SchemaWithRequestBody = HttpSchema<{
+    '/users': {
+      POST: MethodSchemaWithRequestBody;
+      PUT: MethodSchemaWithRequestBody;
+      PATCH: MethodSchemaWithRequestBody;
+      DELETE: MethodSchemaWithRequestBody;
+    };
+  }>;
+
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
@@ -71,25 +111,6 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
     });
 
     const lowerMethod = method.toLowerCase<'POST'>();
-
-    type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
-      request: {
-        headers: { 'x-value'?: string };
-        searchParams: { 'x-value'?: string; name?: string };
-      };
-      response: { 200: { headers: AccessControlHeaders } };
-    }>;
-
-    type MethodSchemaWithRequestBody = HttpSchema.Method<{
-      request: {
-        headers: { 'x-value'?: string };
-        searchParams: { 'x-value'?: string; name?: string };
-        body: { message: string };
-      };
-      response: {
-        200: { headers: AccessControlHeaders };
-      };
-    }>;
 
     describe.each([
       { overrideDefault: undefined },
@@ -152,17 +173,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
       if (type === 'local') {
         it(`should show a warning when logging is enabled and ${method} requests with no body are unhandled and bypassed`, async () => {
-          await usingHttpInterceptor<{
-            '/users': {
-              GET: MethodSchemaWithoutRequestBody;
-              POST: MethodSchemaWithoutRequestBody;
-              PUT: MethodSchemaWithoutRequestBody;
-              PATCH: MethodSchemaWithoutRequestBody;
-              DELETE: MethodSchemaWithoutRequestBody;
-              HEAD: MethodSchemaWithoutRequestBody;
-              OPTIONS: MethodSchemaWithoutRequestBody;
-            };
-          }>(
+          await usingHttpInterceptor<SchemaWithoutRequestBody>(
             {
               ...interceptorOptions,
               type,
@@ -210,11 +221,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
                 const warnMessage = spies.warn.mock.calls[0].join(' ');
-                await verifyUnhandledRequestMessage(warnMessage, {
-                  type: 'warn',
-                  platform,
-                  request,
-                });
+                await verifyUnhandledRequestMessage(warnMessage, { type: 'warn', platform, request });
               });
             },
           );
@@ -223,14 +230,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
 
       if (type === 'local' && methodCanHaveRequestBody(method)) {
         it(`should show a warning when logging is enabled and ${method} requests with body are unhandled and bypassed`, async () => {
-          await usingHttpInterceptor<{
-            '/users': {
-              POST: MethodSchemaWithRequestBody;
-              PUT: MethodSchemaWithRequestBody;
-              PATCH: MethodSchemaWithRequestBody;
-              DELETE: MethodSchemaWithRequestBody;
-            };
-          }>(
+          await usingHttpInterceptor<SchemaWithRequestBody>(
             {
               ...interceptorOptions,
               type,
@@ -285,11 +285,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
                 const warnMessage = spies.warn.mock.calls[0].join(' ');
-                await verifyUnhandledRequestMessage(warnMessage, {
-                  type: 'warn',
-                  platform,
-                  request: requestClone,
-                });
+                await verifyUnhandledRequestMessage(warnMessage, { type: 'warn', platform, request: requestClone });
               });
             },
           );
@@ -301,17 +297,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           localOnUnhandledRequest.action = 'reject';
         }
 
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchemaWithoutRequestBody;
-            POST: MethodSchemaWithoutRequestBody;
-            PUT: MethodSchemaWithoutRequestBody;
-            PATCH: MethodSchemaWithoutRequestBody;
-            DELETE: MethodSchemaWithoutRequestBody;
-            HEAD: MethodSchemaWithoutRequestBody;
-            OPTIONS: MethodSchemaWithoutRequestBody;
-          };
-        }>(
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(
           {
             ...interceptorOptions,
             type,
@@ -366,11 +352,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
               expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
               const errorMessage = spies.error.mock.calls[0].join(' ');
-              await verifyUnhandledRequestMessage(errorMessage, {
-                type: 'error',
-                platform,
-                request,
-              });
+              await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
             });
           },
         );
@@ -382,14 +364,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             localOnUnhandledRequest.action = 'reject';
           }
 
-          await usingHttpInterceptor<{
-            '/users': {
-              POST: MethodSchemaWithRequestBody;
-              PUT: MethodSchemaWithRequestBody;
-              PATCH: MethodSchemaWithRequestBody;
-              DELETE: MethodSchemaWithRequestBody;
-            };
-          }>(
+          await usingHttpInterceptor<SchemaWithRequestBody>(
             {
               ...interceptorOptions,
               type,
@@ -446,11 +421,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
                 expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
                 const errorMessage = spies.error.mock.calls[0].join(' ');
-                await verifyUnhandledRequestMessage(errorMessage, {
-                  type: 'error',
-                  platform,
-                  request: requestClone,
-                });
+                await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request: requestClone });
               });
             },
           );
@@ -463,15 +434,13 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       { overrideDefault: 'static' as const },
       { overrideDefault: 'factory' as const },
     ])('Logging disabled: override default $overrideDefault', ({ overrideDefault }) => {
-      const log = false;
-
       const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
         action: 'bypass',
-        log,
+        log: false,
       };
       const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
         action: 'reject',
-        log,
+        log: false,
       };
 
       beforeEach(() => {
@@ -523,17 +492,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
             onUnhandledRequest: overrideDefault ? undefined : { action: 'bypass', log: false },
           };
 
-          await usingHttpInterceptor<{
-            '/users': {
-              GET: MethodSchemaWithoutRequestBody;
-              POST: MethodSchemaWithoutRequestBody;
-              PUT: MethodSchemaWithoutRequestBody;
-              PATCH: MethodSchemaWithoutRequestBody;
-              DELETE: MethodSchemaWithoutRequestBody;
-              HEAD: MethodSchemaWithoutRequestBody;
-              OPTIONS: MethodSchemaWithoutRequestBody;
-            };
-          }>(extendedInterceptorOptions, async (interceptor) => {
+          await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
                 .with({ searchParams: { 'x-value': '1' } })
@@ -585,17 +544,7 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
           onUnhandledRequest: overrideDefault ? undefined : { action: 'reject', log: false },
         };
 
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchemaWithoutRequestBody;
-            POST: MethodSchemaWithoutRequestBody;
-            PUT: MethodSchemaWithoutRequestBody;
-            PATCH: MethodSchemaWithoutRequestBody;
-            DELETE: MethodSchemaWithoutRequestBody;
-            HEAD: MethodSchemaWithoutRequestBody;
-            OPTIONS: MethodSchemaWithoutRequestBody;
-          };
-        }>(extendedInterceptorOptions, async (interceptor) => {
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
               .with({ searchParams: { 'x-value': '1' } })
@@ -641,522 +590,621 @@ export function declareUnhandledRequestHttpInterceptorTests(options: RuntimeShar
       });
     });
 
-    it(`should support a synchronous unhandled ${method} request factory`, async () => {
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
+    describe('Global logging', () => {
+      beforeEach(() => {
+        httpInterceptor.default.local.onUnhandledRequest = { action: 'reject', log: true };
+        httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', log: true };
       });
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchemaWithoutRequestBody;
-          POST: MethodSchemaWithoutRequestBody;
-          PUT: MethodSchemaWithoutRequestBody;
-          PATCH: MethodSchemaWithoutRequestBody;
-          DELETE: MethodSchemaWithoutRequestBody;
-          HEAD: MethodSchemaWithoutRequestBody;
-          OPTIONS: MethodSchemaWithoutRequestBody;
-        };
-      }>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { 'x-value': '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
+      it(`should not log global unhandled ${method} requests when no interceptors exist`, async () => {
         await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{
-            'x-value': string;
-            name?: string;
-          }>({ 'x-value': '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('x-value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-            method,
-            headers: { 'x-value': '1' },
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
-          );
           expect(spies.warn).toHaveBeenCalledTimes(0);
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
+          const responsePromise = fetch(request);
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-          const errorMessage = spies.error.mock.calls[0].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, {
-            type: 'error',
-            platform,
-            request,
-          });
-        });
-      });
-    });
-
-    it(`should support an asynchronous unhandled ${method} request factory`, async () => {
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
-
-        await waitForDelay(10);
-
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
-      });
-
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
-
-        await waitForDelay(10);
-
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchemaWithoutRequestBody;
-          POST: MethodSchemaWithoutRequestBody;
-          PUT: MethodSchemaWithoutRequestBody;
-          PATCH: MethodSchemaWithoutRequestBody;
-          DELETE: MethodSchemaWithoutRequestBody;
-          HEAD: MethodSchemaWithoutRequestBody;
-          OPTIONS: MethodSchemaWithoutRequestBody;
-        };
-      }>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { 'x-value': '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{
-            'x-value': string;
-            name?: string;
-          }>({ 'x-value': '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('x-value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-            method,
-            headers: { 'x-value': '1' },
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-          const errorMessage = spies.error.mock.calls[0].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, {
-            type: 'error',
-            platform,
-            request,
-          });
-        });
-      });
-    });
-
-    it(`should log an error if a synchronous unhandled ${method} request factory throws`, async () => {
-      const error = new Error('Unhandled request.');
-
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
-
-        return { action: 'reject', log: false };
-      });
-
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
-
-        return { action: 'reject', log: false };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchemaWithoutRequestBody;
-          POST: MethodSchemaWithoutRequestBody;
-          PUT: MethodSchemaWithoutRequestBody;
-          PATCH: MethodSchemaWithoutRequestBody;
-          DELETE: MethodSchemaWithoutRequestBody;
-          HEAD: MethodSchemaWithoutRequestBody;
-          OPTIONS: MethodSchemaWithoutRequestBody;
-        };
-      }>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { 'x-value': '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{
-            'x-value': string;
-            name?: string;
-          }>({ 'x-value': '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('x-value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-            method,
-            headers: { 'x-value': '1' },
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
-
-          const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
-
-          if (defaultStrategy.action === 'bypass') {
+          } else if (type === 'local') {
             await expectBypassedResponse(responsePromise);
-          } else if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
+      });
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
+      it(`should not log global unhandled ${method} requests when no interceptor was matched`, async () => {
+        const otherBaseURL = joinURL(baseURL, 'other');
+
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(
+          { ...interceptorOptions, baseURL: otherBaseURL },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor[lowerMethod]('/users')
+                .with({ searchParams: { 'x-value': '1' } })
+                .respond({
+                  status: 200,
+                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+                }),
+              interceptor,
+            );
+            expect(handler).toBeInstanceOf(Handler);
+
+            let requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(0);
+
+            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              const request = new Request(joinURL(baseURL, '/users'), { method });
+              expect(request.url.startsWith(otherBaseURL)).toBe(false);
+
+              const responsePromise = fetch(request);
+
+              if (overridesPreflightResponse) {
+                await expectPreflightResponse(responsePromise);
+              } else if (type === 'local') {
+                await expectBypassedResponse(responsePromise);
+              } else {
+                await expectFetchError(responsePromise);
+              }
+
+              requests = await promiseIfRemote(handler.requests(), interceptor);
+              expect(requests).toHaveLength(0);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
+            });
+          },
+        );
+      });
+
+      it(`should not log unhandled ${method} requests when the matched interceptor is not running`, async () => {
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(
+          {
+            ...interceptorOptions,
+            onUnhandledRequest: { action: 'reject', log: true },
+          },
+          async (interceptor) => {
+            const handler = await promiseIfRemote(
+              interceptor[lowerMethod]('/users')
+                .with({ searchParams: { 'x-value': '1' } })
+                .respond({
+                  status: 200,
+                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+                }),
+              interceptor,
+            );
+            expect(handler).toBeInstanceOf(Handler);
+
+            let requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(0);
+
+            await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+              const searchParams = new HttpSearchParams<{ 'x-value': string }>({ 'x-value': '1' });
+
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+              expect(response.status).toBe(200);
+
+              requests = await promiseIfRemote(handler.requests(), interceptor);
+              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
+
+              const request = new Request(joinURL(baseURL, '/users'), {
+                method,
+                headers: { 'x-value': '1' },
+              });
+              let responsePromise = fetch(request);
+
+              if (overridesPreflightResponse) {
+                await expectPreflightResponse(responsePromise);
+              } else {
+                await expectFetchError(responsePromise);
+
+                expect(spies.warn).toHaveBeenCalledTimes(0);
+                expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+                const errorMessage = spies.error.mock.calls[0].join(' ');
+                await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+              }
+
+              spies.warn.mockClear();
+              spies.error.mockClear();
+
+              await interceptor.stop();
+
+              responsePromise = fetch(request);
+
+              if (overridesPreflightResponse) {
+                await expectPreflightResponse(responsePromise);
+              } else if (type === 'local') {
+                await expectBypassedResponse(responsePromise);
+              } else {
+                await expectFetchError(responsePromise);
+              }
+
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(0);
+            });
+          },
+        );
+      });
+    });
+
+    describe('Synchronous and asynchronous factories', () => {
+      it(`should support a synchronous unhandled ${method} request factory`, async () => {
+        const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
+          const url = new URL(request.url);
+          return {
+            action: 'reject',
+            log: !url.searchParams.has('name'),
+          };
+        });
+
+        const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
+          const url = new URL(request.url);
+          return {
+            action: 'reject',
+            log: !url.searchParams.has('name'),
+          };
+        });
+
+        const extendedInterceptorOptions = (
+          type === 'local'
+            ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
+            : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
+        ) satisfies HttpInterceptorOptions;
+
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { 'x-value': '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
           );
+          expect(handler).toBeInstanceOf(Handler);
 
-          if (defaultStrategy.action === 'bypass') {
-            expect(spies.warn).toHaveBeenCalledTimes(1);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{
+              'x-value': string;
+              name?: string;
+            }>({ 'x-value': '1' });
+
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            expect(response.status).toBe(200);
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            searchParams.set('x-value', '2');
+            searchParams.set('name', 'User 1');
+
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+              method,
+              headers: { 'x-value': '1' },
+            });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight * 2,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-            expect(spies.error).toHaveBeenCalledWith(error);
-
-            await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-              type: 'warn',
-              platform,
-              request,
-            });
-          } else {
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
-
-            expect(spies.error).toHaveBeenNthCalledWith(1, error);
-
-            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
-              request,
-            });
-          }
+            const errorMessage = spies.error.mock.calls[0].join(' ');
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+          });
         });
       });
-    });
 
-    it(`should log an error if an asynchronous unhandled ${method} request factory throws`, async () => {
-      const error = new Error('Unhandled request.');
+      it(`should support an asynchronous unhandled ${method} request factory`, async () => {
+        const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
+          const url = new URL(request.url);
 
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
+          await waitForDelay(10);
 
-        await waitForDelay(10);
+          return {
+            action: 'reject',
+            log: !url.searchParams.has('name'),
+          };
+        });
 
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
+        const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
+          const url = new URL(request.url);
 
-        return { action: 'reject', log: false };
-      });
+          await waitForDelay(10);
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
+          return {
+            action: 'reject',
+            log: !url.searchParams.has('name'),
+          };
+        });
 
-        await waitForDelay(10);
+        const extendedInterceptorOptions = (
+          type === 'local'
+            ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
+            : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
+        ) satisfies HttpInterceptorOptions;
 
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
-
-        return { action: 'reject', log: false };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<{
-        '/users': {
-          GET: MethodSchemaWithoutRequestBody;
-          POST: MethodSchemaWithoutRequestBody;
-          PUT: MethodSchemaWithoutRequestBody;
-          PATCH: MethodSchemaWithoutRequestBody;
-          DELETE: MethodSchemaWithoutRequestBody;
-          HEAD: MethodSchemaWithoutRequestBody;
-          OPTIONS: MethodSchemaWithoutRequestBody;
-        };
-      }>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { 'x-value': '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{
-            'x-value': string;
-            name?: string;
-          }>({ 'x-value': '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('x-value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
-            method,
-            headers: { 'x-value': '1' },
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { 'x-value': '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
           );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(handler).toBeInstanceOf(Handler);
 
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-          const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{
+              'x-value': string;
+              name?: string;
+            }>({ 'x-value': '1' });
 
-          if (defaultStrategy.action === 'bypass') {
-            await expectBypassedResponse(responsePromise);
-          } else if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-          if (defaultStrategy.action === 'bypass') {
-            expect(spies.warn).toHaveBeenCalledTimes(1);
+            searchParams.set('x-value', '2');
+            searchParams.set('name', 'User 1');
+
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+              method,
+              headers: { 'x-value': '1' },
+            });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight * 2,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
-            expect(spies.error).toHaveBeenCalledWith(error);
+            const errorMessage = spies.error.mock.calls[0].join(' ');
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+          });
+        });
+      });
 
-            await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-              type: 'warn',
-              platform,
-              request,
-            });
-          } else {
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+      it(`should log an error if a synchronous unhandled ${method} request factory throws`, async () => {
+        const error = new Error('Unhandled request.');
 
-            expect(spies.error).toHaveBeenNthCalledWith(1, error);
+        const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
+          const url = new URL(request.url);
 
-            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
-              request,
-            });
+          if (!url.searchParams.has('name')) {
+            throw error;
           }
+
+          return { action: 'reject', log: false };
+        });
+
+        const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
+          const url = new URL(request.url);
+
+          if (!url.searchParams.has('name')) {
+            throw error;
+          }
+
+          return { action: 'reject', log: false };
+        });
+
+        const extendedInterceptorOptions = (
+          type === 'local'
+            ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
+            : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
+        ) satisfies HttpInterceptorOptions;
+
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { 'x-value': '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{
+              'x-value': string;
+              name?: string;
+            }>({ 'x-value': '1' });
+
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            expect(response.status).toBe(200);
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            searchParams.set('x-value', '2');
+            searchParams.set('name', 'User 1');
+
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+              method,
+              headers: { 'x-value': '1' },
+            });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+
+            if (defaultStrategy.action === 'bypass') {
+              await expectBypassedResponse(responsePromise);
+            } else if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight * 2,
+            );
+
+            if (defaultStrategy.action === 'bypass') {
+              expect(spies.warn).toHaveBeenCalledTimes(1);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+              expect(spies.error).toHaveBeenCalledWith(error);
+
+              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
+                type: 'warn',
+                platform,
+                request,
+              });
+            } else {
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+              expect(spies.error).toHaveBeenNthCalledWith(1, error);
+
+              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+                type: 'error',
+                platform,
+                request,
+              });
+            }
+          });
+        });
+      });
+
+      it(`should log an error if an asynchronous unhandled ${method} request factory throws`, async () => {
+        const error = new Error('Unhandled request.');
+
+        const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
+          const url = new URL(request.url);
+
+          await waitForDelay(10);
+
+          if (!url.searchParams.has('name')) {
+            throw error;
+          }
+
+          return { action: 'reject', log: false };
+        });
+
+        const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
+          const url = new URL(request.url);
+
+          await waitForDelay(10);
+
+          if (!url.searchParams.has('name')) {
+            throw error;
+          }
+
+          return { action: 'reject', log: false };
+        });
+
+        const extendedInterceptorOptions = (
+          type === 'local'
+            ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
+            : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
+        ) satisfies HttpInterceptorOptions;
+
+        await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { 'x-value': '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{
+              'x-value': string;
+              name?: string;
+            }>({ 'x-value': '1' });
+
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+            expect(response.status).toBe(200);
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            searchParams.set('x-value', '2');
+            searchParams.set('name', 'User 1');
+
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+              method,
+              headers: { 'x-value': '1' },
+            });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight,
+            );
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+
+            if (defaultStrategy.action === 'bypass') {
+              await expectBypassedResponse(responsePromise);
+            } else if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
+              numberOfRequestsIncludingPreflight * 2,
+            );
+
+            if (defaultStrategy.action === 'bypass') {
+              expect(spies.warn).toHaveBeenCalledTimes(1);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+              expect(spies.error).toHaveBeenCalledWith(error);
+
+              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
+                type: 'warn',
+                platform,
+                request,
+              });
+            } else {
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+              expect(spies.error).toHaveBeenNthCalledWith(1, error);
+
+              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+                type: 'error',
+                platform,
+                request,
+              });
+            }
+          });
         });
       });
     });

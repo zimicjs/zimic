@@ -24,6 +24,10 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
 
+  type MethodSchema = HttpSchema.Method<{
+    response: { 200: { headers: AccessControlHeaders } };
+  }>;
+
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
@@ -39,10 +43,6 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     const lowerMethod = method.toLowerCase<'POST'>();
-
-    type MethodSchema = HttpSchema.Method<{
-      response: { 200: { headers: AccessControlHeaders } };
-    }>;
 
     it(`should support intercepting ${method} requests with a static response`, async () => {
       await usingHttpInterceptor<{
@@ -190,22 +190,14 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
             expect(spies.error.mock.calls[0]).toEqual([error]);
 
             const errorMessage = spies.error.mock.calls[1].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform,
-              request,
-            });
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
           } else {
             expect(spies.error).toHaveBeenCalledTimes(1);
             expect(spies.warn).toHaveBeenCalledTimes(1);
             expect(spies.error.mock.calls[0]).toEqual([error]);
 
             const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, {
-              type: 'warn',
-              platform,
-              request,
-            });
+            await verifyUnhandledRequestMessage(warnMessage, { type: 'warn', platform, request });
           }
         });
 
