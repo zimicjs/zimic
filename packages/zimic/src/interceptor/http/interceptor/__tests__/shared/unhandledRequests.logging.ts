@@ -103,14 +103,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
     ])('Logging enabled: override default $overrideDefault', ({ overrideDefault }) => {
       const log = overrideDefault?.endsWith('undefined-log') ? undefined : true;
 
-      const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
-        action: 'bypass',
-        log,
-      };
-      const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
-        action: 'reject',
-        log,
-      };
+      const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'reject', log };
+      const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', log };
 
       beforeEach(() => {
         if (overrideDefault?.startsWith('static')) {
@@ -143,12 +137,16 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       });
 
       afterEach(() => {
-        localOnUnhandledRequest.action = 'bypass';
+        localOnUnhandledRequest.action = 'reject';
         remoteOnUnhandledRequest.action = 'reject';
       });
 
       if (type === 'local') {
         it(`should show a warning when logging is enabled and ${method} requests with no body are unhandled and bypassed`, async () => {
+          if (overrideDefault) {
+            localOnUnhandledRequest.action = 'bypass';
+          }
+
           await usingHttpInterceptor<SchemaWithoutRequestBody>(
             {
               ...interceptorOptions,
@@ -200,6 +198,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
       if (type === 'local' && methodCanHaveRequestBody(method)) {
         it(`should show a warning when logging is enabled and ${method} requests with body are unhandled and bypassed`, async () => {
+          if (overrideDefault) {
+            localOnUnhandledRequest.action = 'bypass';
+          }
+
           await usingHttpInterceptor<SchemaWithRequestBody>(
             {
               ...interceptorOptions,
@@ -259,6 +261,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         });
 
         it(`should show a warning when logging is enabled and ${method} requests are unhandled due to restrictions and bypassed`, async () => {
+          if (overrideDefault) {
+            localOnUnhandledRequest.action = 'bypass';
+          }
+
           await usingHttpInterceptor<SchemaWithoutRequestBody>(
             {
               ...interceptorOptions,
@@ -311,6 +317,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         });
 
         it(`should show a warning when logging is enabled and ${method} requests are unhandled due to unmocked path and bypassed`, async () => {
+          if (overrideDefault) {
+            localOnUnhandledRequest.action = 'bypass';
+          }
+
           await usingHttpInterceptor<SchemaWithoutRequestBody>(
             {
               ...interceptorOptions,
@@ -359,10 +369,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       }
 
       it(`should show an error when logging is enabled and ${method} requests with no body are unhandled and rejected`, async () => {
-        if (overrideDefault) {
-          localOnUnhandledRequest.action = 'reject';
-        }
-
         await usingHttpInterceptor<SchemaWithoutRequestBody>(
           {
             ...interceptorOptions,
@@ -421,10 +427,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
       if (methodCanHaveRequestBody(method)) {
         it(`should show an error when logging is enabled and ${method} requests with body are unhandled and rejected`, async () => {
-          if (overrideDefault) {
-            localOnUnhandledRequest.action = 'reject';
-          }
-
           await usingHttpInterceptor<SchemaWithRequestBody>(
             {
               ...interceptorOptions,
@@ -485,10 +487,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       }
 
       it(`should show an error when logging is enabled and ${method} requests are unhandled due to restrictions and rejected`, async () => {
-        if (overrideDefault) {
-          localOnUnhandledRequest.action = 'reject';
-        }
-
         await usingHttpInterceptor<SchemaWithoutRequestBody>(
           {
             ...interceptorOptions,
@@ -548,10 +546,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       });
 
       it(`should show an error when logging is enabled and ${method} requests are unhandled due to unmocked path and rejected`, async () => {
-        if (overrideDefault) {
-          localOnUnhandledRequest.action = 'reject';
-        }
-
         await usingHttpInterceptor<SchemaWithoutRequestBody>(
           {
             ...interceptorOptions,
@@ -615,14 +609,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       { overrideDefault: 'static' as const },
       { overrideDefault: 'factory' as const },
     ])('Logging disabled: override default $overrideDefault', ({ overrideDefault }) => {
-      const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = {
-        action: 'bypass',
-        log: false,
-      };
-      const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = {
-        action: 'reject',
-        log: false,
-      };
+      const localOnUnhandledRequest: UnhandledRequestStrategy.LocalDeclaration = { action: 'reject', log: false };
+      const remoteOnUnhandledRequest: UnhandledRequestStrategy.RemoteDeclaration = { action: 'reject', log: false };
 
       beforeEach(() => {
         if (overrideDefault === 'static') {
@@ -655,12 +643,16 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       });
 
       afterEach(() => {
-        localOnUnhandledRequest.action = 'bypass';
+        localOnUnhandledRequest.action = 'reject';
         remoteOnUnhandledRequest.action = 'reject';
       });
 
       if (type === 'local') {
         it(`should not show a warning when logging is disabled and ${method} requests are unhandled and bypassed`, async () => {
+          if (overrideDefault) {
+            localOnUnhandledRequest.action = 'bypass';
+          }
+
           const extendedInterceptorOptions: HttpInterceptorOptions = {
             ...interceptorOptions,
             type,
@@ -706,10 +698,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       }
 
       it(`should not show an error when logging is disabled and ${method} requests are unhandled and rejected`, async () => {
-        if (overrideDefault) {
-          localOnUnhandledRequest.action = 'reject';
-        }
-
         const extendedInterceptorOptions: HttpInterceptorOptions = {
           ...interceptorOptions,
           type,
@@ -780,7 +768,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       });
     });
 
-    it(`should not log unhandled ${method} requests when no interceptor with matching request base URL was found`, async () => {
+    it(`should not log unhandled ${method} requests when no interceptor matching the base URL of the request was found`, async () => {
       const otherBaseURL = joinURL(baseURL, 'other');
 
       await usingHttpInterceptor<SchemaWithoutRequestBody>(

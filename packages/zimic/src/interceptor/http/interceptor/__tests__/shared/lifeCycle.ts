@@ -103,8 +103,6 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -159,8 +157,6 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise, { canBeAborted: true });
           } else {
             await expectFetchError(responsePromise, { canBeAborted: true });
           }
@@ -176,8 +172,6 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise);
           }

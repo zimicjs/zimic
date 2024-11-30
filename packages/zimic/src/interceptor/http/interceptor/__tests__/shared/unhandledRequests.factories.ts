@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from '@/interceptor/http/interceptorWorker/constants';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
@@ -11,7 +10,7 @@ import { importCrypto } from '@/utils/crypto';
 import { waitForDelay } from '@/utils/time';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
@@ -301,11 +300,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const request = new Request(joinURL(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
-            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
-
-            if (defaultStrategy.action === 'bypass') {
-              await expectBypassedResponse(responsePromise);
-            } else if (overridesPreflightResponse) {
+            if (overridesPreflightResponse) {
               await expectPreflightResponse(responsePromise);
             } else {
               await expectFetchError(responsePromise);
@@ -316,29 +311,16 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
-            if (defaultStrategy.action === 'bypass') {
-              expect(spies.warn).toHaveBeenCalledTimes(1);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
-              expect(spies.error).toHaveBeenCalledWith(error);
+            expect(spies.error).toHaveBeenNthCalledWith(1, error);
 
-              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-                type: 'warn',
-                platform,
-                request,
-              });
-            } else {
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
-
-              expect(spies.error).toHaveBeenNthCalledWith(1, error);
-
-              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-                type: 'error',
-                platform,
-                request,
-              });
-            }
+            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+              type: 'error',
+              platform,
+              request,
+            });
           });
         },
       );
@@ -416,11 +398,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const request = new Request(joinURL(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
-            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
-
-            if (defaultStrategy.action === 'bypass') {
-              await expectBypassedResponse(responsePromise);
-            } else if (overridesPreflightResponse) {
+            if (overridesPreflightResponse) {
               await expectPreflightResponse(responsePromise);
             } else {
               await expectFetchError(responsePromise);
@@ -431,29 +409,16 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
-            if (defaultStrategy.action === 'bypass') {
-              expect(spies.warn).toHaveBeenCalledTimes(1);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
-              expect(spies.error).toHaveBeenCalledWith(error);
+            expect(spies.error).toHaveBeenNthCalledWith(1, error);
 
-              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-                type: 'warn',
-                platform,
-                request,
-              });
-            } else {
-              expect(spies.warn).toHaveBeenCalledTimes(0);
-              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
-
-              expect(spies.error).toHaveBeenNthCalledWith(1, error);
-
-              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-                type: 'error',
-                platform,
-                request,
-              });
-            }
+            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+              type: 'error',
+              platform,
+              request,
+            });
           });
         },
       );
