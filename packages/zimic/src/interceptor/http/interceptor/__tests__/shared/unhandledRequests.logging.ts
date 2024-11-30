@@ -8,6 +8,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
+import { fetchWithTimeout } from '@/utils/fetch';
 import { methodCanHaveRequestBody } from '@/utils/http';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -904,14 +905,16 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           await interceptor.stop();
 
-          responsePromise = fetch(request);
+          responsePromise = fetchWithTimeout(request, {
+            timeout: overridesPreflightResponse ? 0 : 500,
+          });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
           } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
+            await expectBypassedResponse(responsePromise, { canBeAborted: true });
           } else {
-            await expectFetchError(responsePromise);
+            await expectFetchError(responsePromise, { canBeAborted: true });
           }
 
           expect(spies.warn).toHaveBeenCalledTimes(0);

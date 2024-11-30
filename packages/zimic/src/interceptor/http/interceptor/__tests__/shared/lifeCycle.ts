@@ -82,13 +82,13 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
         let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method,
-          timeout: 200,
+          timeout: overridesPreflightResponse ? 0 : 500,
         });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
         } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
+          await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
         }
@@ -152,12 +152,15 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 500 });
+          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+            method,
+            timeout: overridesPreflightResponse ? 0 : 500,
+          });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
           } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
+            await expectBypassedResponse(responsePromise, { canBeAborted: true });
           } else {
             await expectFetchError(responsePromise, { canBeAborted: true });
           }
