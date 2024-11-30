@@ -11,7 +11,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/intercep
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -142,11 +142,6 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
     });
 
     it(`should log an error if a ${method} request is intercepted with a computed response and the handler throws`, async () => {
-      const extendedInterceptorOptions: HttpInterceptorOptions =
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: { action: 'bypass', log: true } }
-          : { ...interceptorOptions, type, onUnhandledRequest: { action: 'reject', log: true } };
-
       await usingHttpInterceptor<{
         '/users': {
           GET: MethodSchema;
@@ -157,7 +152,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           HEAD: MethodSchema;
           OPTIONS: MethodSchema;
         };
-      }>(extendedInterceptorOptions, async (interceptor) => {
+      }>({ ...interceptorOptions, onUnhandledRequest: { action: 'reject', log: true } }, async (interceptor) => {
         const error = new Error('An error occurred.');
 
         const handler = await promiseIfRemote(
@@ -180,27 +175,18 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise);
           }
 
-          if (type === 'remote') {
-            expect(spies.error).toHaveBeenCalledTimes(method === 'OPTIONS' && platform === 'browser' ? 4 : 2);
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error.mock.calls[0]).toEqual([error]);
+          expect(spies.error).toHaveBeenCalledTimes(
+            method === 'OPTIONS' && type === 'remote' && platform === 'browser' ? 4 : 2,
+          );
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error.mock.calls[0]).toEqual([error]);
 
-            const errorMessage = spies.error.mock.calls[1].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
-          } else {
-            expect(spies.error).toHaveBeenCalledTimes(1);
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error.mock.calls[0]).toEqual([error]);
-
-            const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, { type: 'warn', platform, request });
-          }
+          const errorMessage = spies.error.mock.calls[1].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
         });
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -349,8 +335,6 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -369,8 +353,6 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }

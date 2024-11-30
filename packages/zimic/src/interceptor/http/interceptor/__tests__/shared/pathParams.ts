@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -142,8 +142,6 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(unmatchedResponsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(unmatchedResponsePromise);
         } else {
           await expectFetchError(unmatchedResponsePromise);
         }
