@@ -20,10 +20,7 @@ import { HttpResponseFactory, HttpResponseFactoryContext } from './types/request
 
 interface HttpHandler {
   id: string;
-  url: {
-    base: string;
-    full: string;
-  };
+  url: { base: string; full: string };
   method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
@@ -58,8 +55,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       await this._webSocketClient.start();
+
       this._webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
-      this._webSocketClient.onEvent('interceptors/responses/unhandled', this.handleRemoteUnhandledRequest);
+      this._webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       const platform = this.readPlatform();
       super.setPlatform(platform);
@@ -87,19 +85,19 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    await super.handleUnhandledRequest(request, strategy);
+    await super.logUnhandledRequestIfNecessary(request, strategy);
 
     return { response: null };
   };
 
-  private handleRemoteUnhandledRequest = async (
+  private handleUnhandledServerRequest = async (
     message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
   ) => {
     const { request: serializedRequest } = message.data;
     const request = deserializeRequest(serializedRequest);
 
     const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
-    const { wasLogged } = await super.handleUnhandledRequest(request, strategy);
+    const { wasLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
 
     return { wasLogged };
   };
@@ -124,7 +122,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       await this.clearHandlers();
 
       this._webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
-      this._webSocketClient.offEvent('interceptors/responses/unhandled', this.handleRemoteUnhandledRequest);
+      this._webSocketClient.offEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+
       await this._webSocketClient.stop();
 
       super.setIsRunning(false);

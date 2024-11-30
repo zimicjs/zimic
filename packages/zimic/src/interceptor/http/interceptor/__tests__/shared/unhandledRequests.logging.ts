@@ -157,10 +157,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
               expect(handler).toBeInstanceOf(Handler);
@@ -211,10 +208,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
               expect(handler).toBeInstanceOf(Handler);
@@ -275,10 +269,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               const handler = await promiseIfRemote(
                 interceptor[lowerMethod]('/users')
                   .with({ headers: { 'x-value': '1' } })
-                  .respond({
-                    status: 200,
-                    headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                  }),
+                  .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
               expect(handler).toBeInstanceOf(Handler);
@@ -328,10 +319,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
               expect(handler).toBeInstanceOf(Handler);
@@ -383,10 +371,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           },
           async (interceptor) => {
             const handler = await promiseIfRemote(
-              interceptor[lowerMethod]('/users').respond({
-                status: 200,
-                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-              }),
+              interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
             expect(handler).toBeInstanceOf(Handler);
@@ -448,10 +433,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             },
             async (interceptor) => {
               const handler = await promiseIfRemote(
-                interceptor[lowerMethod]('/users').respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
                 interceptor,
               );
               expect(handler).toBeInstanceOf(Handler);
@@ -517,10 +499,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
                 .with({ searchParams: { value: '1' } })
-                .respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
             expect(handler).toBeInstanceOf(Handler);
@@ -581,10 +560,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           },
           async (interceptor) => {
             const handler = await promiseIfRemote(
-              interceptor[lowerMethod]('/users').respond({
-                status: 200,
-                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-              }),
+              interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
             expect(handler).toBeInstanceOf(Handler);
@@ -695,10 +671,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             const handler = await promiseIfRemote(
               interceptor[lowerMethod]('/users')
                 .with({ searchParams: { value: '1' } })
-                .respond({
-                  status: 200,
-                  headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-                }),
+                .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
               interceptor,
             );
             expect(handler).toBeInstanceOf(Handler);
@@ -747,10 +720,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users')
               .with({ searchParams: { value: '1' } })
-              .respond({
-                status: 200,
-                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-              }),
+              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
             interceptor,
           );
           expect(handler).toBeInstanceOf(Handler);
@@ -817,10 +787,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         { ...interceptorOptions, baseURL: otherBaseURL },
         async (interceptor) => {
           const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users').respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
+            interceptor[lowerMethod]('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
             interceptor,
           );
           expect(handler).toBeInstanceOf(Handler);
@@ -856,13 +823,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       await usingHttpInterceptor<SchemaWithoutRequestBody>(interceptorOptions, async (interceptor) => {
         const handler = await promiseIfRemote(
           interceptor[lowerMethod]('/users')
-            .with({
-              searchParams: { value: '1' },
-            })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
+            .with({ searchParams: { value: '1' } })
+            .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
           interceptor,
         );
         expect(handler).toBeInstanceOf(Handler);
@@ -884,7 +846,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           const request = new Request(joinURL(baseURL, '/users'), {
             method,
-            headers: { 'x-id': crypto.randomUUID() },
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
           });
           let responsePromise = fetch(request);
 
@@ -892,13 +854,13 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             await expectPreflightResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise);
-
-            expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-            const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
           }
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
 
           spies.warn.mockClear();
           spies.error.mockClear();

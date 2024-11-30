@@ -44,7 +44,7 @@ export async function expectBypassedResponse(
 
   /* istanbul ignore next -- @preserve */
   // In rare cases, bypassed responses in browser local interceptors may time out. We do not know why that happens.
-  // If a fetch error occurs, we check if it is a timeout. If so, we may ignore it if the test does not expect it.
+  // Thus, if a fetch error occurs, we check if it is a timeout. If so, we ignore it if the test does not expect it.
   try {
     response = await responsePromise;
   } catch (error) {
@@ -53,9 +53,9 @@ export async function expectBypassedResponse(
       canBeAborted: options.canBeAborted,
     });
 
-    const isTimeoutError = error instanceof Error && errorMessageExpression.test(error.message);
+    const isExpectedAbortError = error instanceof Error && errorMessageExpression.test(error.message);
 
-    if (isTimeoutError) {
+    if (isExpectedAbortError) {
       return;
     } else {
       throw error;

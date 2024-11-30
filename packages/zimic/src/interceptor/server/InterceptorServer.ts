@@ -144,7 +144,7 @@ class InterceptorServer implements PublicInterceptorServer {
     socket: Socket,
   ) => {
     const commit = message.data;
-    this.registerHttpHandlerGroup(commit, socket);
+    this.registerHttpHandler(commit, socket);
     this.registerWorkerSocketIfUnknown(socket);
     return {};
   };
@@ -153,7 +153,7 @@ class InterceptorServer implements PublicInterceptorServer {
     message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/reset'>,
     socket: Socket,
   ) => {
-    this.removeHttpHandlerGroupsBySocket(socket);
+    this.removeHttpHandlersBySocket(socket);
 
     const handlersToResetTo = message.data;
     const isWorkerNoLongerCommitted = handlersToResetTo === undefined;
@@ -164,7 +164,7 @@ class InterceptorServer implements PublicInterceptorServer {
       this.webSocketServer().abortSocketMessages([socket]);
     } else {
       for (const handler of handlersToResetTo) {
-        this.registerHttpHandlerGroup(handler, socket);
+        this.registerHttpHandler(handler, socket);
       }
     }
 
@@ -173,18 +173,16 @@ class InterceptorServer implements PublicInterceptorServer {
     return {};
   };
 
-  private registerHttpHandlerGroup({ id, url, method }: HttpHandlerCommit, socket: Socket) {
+  private registerHttpHandler({ id, url, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const fullURLWithoutNonPathParams = createURL(url.full, {
-      excludeNonPathParams: true,
-    });
+    const fullURL = createURL(url.full, { excludeNonPathParams: true });
 
     handlerGroups.push({
       id,
       url: {
         base: url.base,
-        fullRegex: createRegexFromURL(fullURLWithoutNonPathParams.toString()),
+        fullRegex: createRegexFromURL(fullURL.toString()),
       },
       socket,
     });
@@ -196,14 +194,14 @@ class InterceptorServer implements PublicInterceptorServer {
     }
 
     socket.addEventListener('close', () => {
-      this.removeHttpHandlerGroupsBySocket(socket);
+      this.removeHttpHandlersBySocket(socket);
       this.knownWorkerSockets.delete(socket);
     });
 
     this.knownWorkerSockets.add(socket);
   }
 
-  private removeHttpHandlerGroupsBySocket(socket: Socket) {
+  private removeHttpHandlersBySocket(socket: Socket) {
     for (const handlerGroups of Object.values(this.httpHandlerGroups)) {
       const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
       removeArrayIndex(handlerGroups, socketIndex);
@@ -243,7 +241,7 @@ class InterceptorServer implements PublicInterceptorServer {
     const serializedRequest = await serializeRequest(request);
 
     try {
-      const { response, matchedAnyInterceptor } = await this.createResponseForRequest(serializedRequest);
+      const { response, matchedSomeInterceptor } = await this.createResponseForRequest(serializedRequest);
 
       if (response) {
         this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
@@ -259,10 +257,10 @@ class InterceptorServer implements PublicInterceptorServer {
         await sendNodeResponse(defaultPreflightResponse, nodeResponse, nodeRequest);
       }
 
-      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
+      const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedSomeInterceptor;
 
       if (shouldWarnUnhandledRequest) {
-        await this.logUnhandledRequestWarning(request, serializedRequest);
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
       nodeResponse.destroy();
@@ -271,7 +269,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (!isMessageAbortError) {
         console.error(error);
-        await this.logUnhandledRequestWarning(request, serializedRequest);
+        await this.logUnhandledRequestIfNecessary(request, serializedRequest);
       }
 
       nodeResponse.destroy();
@@ -280,23 +278,21 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
     const webSocketServer = this.webSocketServer();
-    const handlerGroup = this.httpHandlerGroups[request.method as HttpMethod];
+    const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const urlWithoutNonPathParams = createURL(request.url, {
-      excludeNonPathParams: true,
-    }).toString();
+    const requestURL = createURL(request.url, { excludeNonPathParams: true }).toString();
 
-    let matchedAnyInterceptor = false;
+    let matchedSomeInterceptor = false;
 
-    for (let index = handlerGroup.length - 1; index >= 0; index--) {
-      const handler = handlerGroup[index];
+    for (let index = methodHandlers.length - 1; index >= 0; index--) {
+      const handler = methodHandlers[index];
 
-      const matchesHandlerURL = handler.url.fullRegex.test(urlWithoutNonPathParams);
+      const matchesHandlerURL = handler.url.fullRegex.test(requestURL);
       if (!matchesHandlerURL) {
         continue;
       }
 
-      matchedAnyInterceptor = true;
+      matchedSomeInterceptor = true;
 
       const { response: serializedResponse } = await webSocketServer.request(
         'interceptors/responses/create',
@@ -306,11 +302,11 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
-        return { response, matchedAnyInterceptor };
+        return { response, matchedSomeInterceptor };
       }
     }
 
-    return { response: null, matchedAnyInterceptor };
+    return { response: null, matchedSomeInterceptor };
   }
 
   private setDefaultAccessControlHeaders(
@@ -331,18 +327,19 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  private async logUnhandledRequestWarning(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
+  private async logUnhandledRequestIfNecessary(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
     const webSocketServer = this.webSocketServer();
+
     const handler = this.findHttpHandlerByRequestBaseURL(request);
 
     if (handler) {
-      const { wasLogged: wasRequestAlreadyLogged } = await webSocketServer.request(
+      const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await webSocketServer.request(
         'interceptors/responses/unhandled',
         { request: serializedRequest },
         { sockets: [handler.socket] },
       );
 
-      if (wasRequestAlreadyLogged) {
+      if (wasRequestLoggedByRemoteInterceptor) {
         return;
       }
     }
@@ -355,10 +352,10 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private findHttpHandlerByRequestBaseURL(request: HttpRequest) {
-    const httpHandlers = this.httpHandlerGroups[request.method as HttpMethod];
+    const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const handler = httpHandlers.findLast((group) => {
-      return request.url.startsWith(group.url.base);
+    const handler = methodHandlers.findLast((handler) => {
+      return request.url.startsWith(handler.url.base);
     });
 
     return handler;

@@ -190,7 +190,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const requestClone = request.clone();
 
     const strategy = await super.getUnhandledRequestStrategy(request, 'local');
-    await super.handleUnhandledRequest(requestClone, strategy);
+    await super.logUnhandledRequestIfNecessary(requestClone, strategy);
 
     if (strategy?.action === 'reject') {
       return Response.error();
@@ -208,15 +208,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const internalWorker = this.internalWorkerOrThrow();
 
-    const httpHandlersIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
-    removeArrayIndex(this.httpHandlerGroups, httpHandlersIndex);
-
-    const keptHttpHandlers = this.httpHandlerGroups.map((group) => group.httpHandler);
+    const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
+    removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
 
     internalWorker.resetHandlers();
 
-    for (const handler of keptHttpHandlers) {
-      internalWorker.use(handler);
+    for (const { httpHandler } of this.httpHandlerGroups) {
+      internalWorker.use(httpHandler);
     }
   }
 

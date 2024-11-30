@@ -65,105 +65,91 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
     const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support a synchronous unhandled ${method} request factory`, async () => {
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
         const url = new URL(request.url);
+
         return {
           action: 'reject',
           log: !url.searchParams.has('name'),
         };
       });
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
-      });
+      await usingHttpInterceptor<SchemaWithoutRequestBody>(
+        { ...interceptorOptions, onUnhandledRequest },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
 
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-      await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { value: '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            expect(response.status).toBe(200);
 
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
-          expect(response.status).toBe(200);
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            searchParams.set('value', '2');
+            searchParams.set('name', 'User 1');
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+              method,
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+            });
 
-          searchParams.set('value', '2');
-          searchParams.set('name', 'User 1');
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
 
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+            const errorMessage = spies.error.mock.calls[0].join(' ');
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
           });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-          const errorMessage = spies.error.mock.calls[0].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
-        });
-      });
+        },
+      );
     });
 
     it(`should support an asynchronous unhandled ${method} request factory`, async () => {
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
         const url = new URL(request.url);
 
         await waitForDelay(10);
@@ -174,102 +160,84 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         };
       });
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
+      await usingHttpInterceptor<SchemaWithoutRequestBody>(
+        { ...interceptorOptions, type, onUnhandledRequest },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
 
-        await waitForDelay(10);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-        return {
-          action: 'reject',
-          log: !url.searchParams.has('name'),
-        };
-      });
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            expect(response.status).toBe(200);
 
-      await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { value: '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
+            searchParams.set('value', '2');
+            searchParams.set('name', 'User 1');
 
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
-          expect(response.status).toBe(200);
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+              method,
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+            });
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          searchParams.set('value', '2');
-          searchParams.set('name', 'User 1');
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+            const errorMessage = spies.error.mock.calls[0].join(' ');
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
           });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-          const errorMessage = spies.error.mock.calls[0].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
-        });
-      });
+        },
+      );
     });
 
     it(`should log an error if a synchronous unhandled ${method} request factory throws`, async () => {
       const error = new Error('Unhandled request.');
 
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>((request) => {
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
         const url = new URL(request.url);
 
         if (!url.searchParams.has('name')) {
@@ -279,124 +247,107 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         return { action: 'reject', log: false };
       });
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {
-        const url = new URL(request.url);
-
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
-
-        return { action: 'reject', log: false };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { value: '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
+      await usingHttpInterceptor<SchemaWithoutRequestBody>(
+        { ...interceptorOptions, type, onUnhandledRequest },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
           );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(handler).toBeInstanceOf(Handler);
 
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-          const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-          if (defaultStrategy.action === 'bypass') {
-            await expectBypassedResponse(responsePromise);
-          } else if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-
-          if (defaultStrategy.action === 'bypass') {
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-            expect(spies.error).toHaveBeenCalledWith(error);
-
-            await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-              type: 'warn',
-              platform,
-              request,
-            });
-          } else {
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.error).toHaveBeenNthCalledWith(1, error);
+            searchParams.set('value', '2');
+            searchParams.set('name', 'User 1');
 
-            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
-              request,
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+              method,
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
-          }
-        });
-      });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+
+            if (defaultStrategy.action === 'bypass') {
+              await expectBypassedResponse(responsePromise);
+            } else if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+            if (defaultStrategy.action === 'bypass') {
+              expect(spies.warn).toHaveBeenCalledTimes(1);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+              expect(spies.error).toHaveBeenCalledWith(error);
+
+              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
+                type: 'warn',
+                platform,
+                request,
+              });
+            } else {
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+              expect(spies.error).toHaveBeenNthCalledWith(1, error);
+
+              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+                type: 'error',
+                platform,
+                request,
+              });
+            }
+          });
+        },
+      );
     });
 
     it(`should log an error if an asynchronous unhandled ${method} request factory throws`, async () => {
       const error = new Error('Unhandled request.');
 
-      const localOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.LocalDeclarationFactory>(async (request) => {
+      const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
         const url = new URL(request.url);
 
         await waitForDelay(10);
@@ -408,123 +359,104 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
         return { action: 'reject', log: false };
       });
 
-      const remoteOnUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>(async (request) => {
-        const url = new URL(request.url);
-
-        await waitForDelay(10);
-
-        if (!url.searchParams.has('name')) {
-          throw error;
-        }
-
-        return { action: 'reject', log: false };
-      });
-
-      const extendedInterceptorOptions = (
-        type === 'local'
-          ? { ...interceptorOptions, type, onUnhandledRequest: localOnUnhandledRequest }
-          : { ...interceptorOptions, type, onUnhandledRequest: remoteOnUnhandledRequest }
-      ) satisfies HttpInterceptorOptions;
-
-      await usingHttpInterceptor<SchemaWithoutRequestBody>(extendedInterceptorOptions, async (interceptor) => {
-        const handler = await promiseIfRemote(
-          interceptor[lowerMethod]('/users')
-            .with({ searchParams: { value: '1' } })
-            .respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-          interceptor,
-        );
-        expect(handler).toBeInstanceOf(Handler);
-
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
-
-        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
-          const searchParams = new HttpSearchParams<{
-            value: string;
-            name?: string;
-          }>({ value: '1' });
-
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(0);
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
-
-          searchParams.set('value', '2');
-          searchParams.set('name', 'User 1');
-
-          let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight,
+      await usingHttpInterceptor<SchemaWithoutRequestBody>(
+        { ...interceptorOptions, type, onUnhandledRequest },
+        async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({
+                status: 200,
+                headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+              }),
+            interceptor,
           );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error).toHaveBeenCalledTimes(0);
+          expect(handler).toBeInstanceOf(Handler);
 
-          const request = new Request(joinURL(baseURL, '/users'), { method });
-          responsePromise = fetch(request);
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
 
-          const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+          await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+            const searchParams = new HttpSearchParams<{
+              value: string;
+              name?: string;
+            }>({ value: '1' });
 
-          if (defaultStrategy.action === 'bypass') {
-            await expectBypassedResponse(responsePromise);
-          } else if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-          expect(extendedInterceptorOptions.onUnhandledRequest).toHaveBeenCalledTimes(
-            numberOfRequestsIncludingPreflight * 2,
-          );
-
-          if (defaultStrategy.action === 'bypass') {
-            expect(spies.warn).toHaveBeenCalledTimes(1);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
-
-            expect(spies.error).toHaveBeenCalledWith(error);
-
-            await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
-              type: 'warn',
-              platform,
-              request,
-            });
-          } else {
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
-            expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+            expect(spies.error).toHaveBeenCalledTimes(0);
 
-            expect(spies.error).toHaveBeenNthCalledWith(1, error);
+            searchParams.set('value', '2');
+            searchParams.set('name', 'User 1');
 
-            await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
-              request,
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+              method,
+              headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
-          }
-        });
-      });
+
+            if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+            expect(spies.warn).toHaveBeenCalledTimes(0);
+            expect(spies.error).toHaveBeenCalledTimes(0);
+
+            const request = new Request(joinURL(baseURL, '/users'), { method });
+            responsePromise = fetch(request);
+
+            const defaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[type];
+
+            if (defaultStrategy.action === 'bypass') {
+              await expectBypassedResponse(responsePromise);
+            } else if (overridesPreflightResponse) {
+              await expectPreflightResponse(responsePromise);
+            } else {
+              await expectFetchError(responsePromise);
+            }
+
+            requests = await promiseIfRemote(handler.requests(), interceptor);
+            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+
+            expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+            if (defaultStrategy.action === 'bypass') {
+              expect(spies.warn).toHaveBeenCalledTimes(1);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
+
+              expect(spies.error).toHaveBeenCalledWith(error);
+
+              await verifyUnhandledRequestMessage(spies.warn.mock.calls[0].join(' '), {
+                type: 'warn',
+                platform,
+                request,
+              });
+            } else {
+              expect(spies.warn).toHaveBeenCalledTimes(0);
+              expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
+
+              expect(spies.error).toHaveBeenNthCalledWith(1, error);
+
+              await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
+                type: 'error',
+                platform,
+                request,
+              });
+            }
+          });
+        },
+      );
     });
   });
 }

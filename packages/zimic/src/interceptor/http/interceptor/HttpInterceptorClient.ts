@@ -1,4 +1,3 @@
-import { HttpResponse } from '@/http';
 import {
   HTTP_METHODS,
   HttpMethod,
@@ -88,13 +87,13 @@ class HttpInterceptorClient<
   async start() {
     await this.worker.start();
 
-    this.worker.registerInterceptor(this);
+    this.worker.registerRunningInterceptor(this);
     this.markAsRunning(true);
   }
 
   async stop() {
-    this.worker.unregisterInterceptor(this);
     this.markAsRunning(false);
+    this.worker.unregisterRunningInterceptor(this);
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
     if (wasLastRunningInterceptor) {
@@ -202,7 +201,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponse | null> {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context) {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });
