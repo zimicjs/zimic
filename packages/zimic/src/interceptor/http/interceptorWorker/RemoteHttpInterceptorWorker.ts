@@ -6,7 +6,7 @@ import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { createURL, ensureUniquePathParams, excludeNonPathParams, ExtendedURL } from '@/utils/urls';
+import { createURL, ExtendedURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
@@ -20,7 +20,10 @@ import { HttpResponseFactory, HttpResponseFactoryContext } from './types/request
 
 interface HttpHandler {
   id: string;
-  url: string;
+  url: {
+    base: string;
+    full: string;
+  };
   method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
@@ -139,12 +142,18 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     const crypto = await importCrypto();
-    const url = excludeNonPathParams(createURL(rawURL)).toString();
-    ensureUniquePathParams(url);
+
+    const url = createURL(rawURL, {
+      excludeNonPathParams: true,
+      ensureUniquePathParams: true,
+    });
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      url,
+      url: {
+        base: interceptor.baseURL().toString(),
+        full: url.toString(),
+      },
       method,
       interceptor,
       async createResponse(context) {
@@ -157,7 +166,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     await this._webSocketClient.request('interceptors/workers/use/commit', {
       id: handler.id,
-      url,
+      url: handler.url,
       method,
     });
   }

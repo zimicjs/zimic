@@ -19,7 +19,7 @@ import { formatObjectToLog, logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
-import { createURL, excludeNonPathParams } from '@/utils/urls';
+import { createURL } from '@/utils/urls';
 
 import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
@@ -158,8 +158,7 @@ abstract class HttpInterceptorWorker {
     const globalDefaultStrategy = this.getGlobalDefaultUnhandledRequestStrategy(interceptorType);
 
     try {
-      const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-      const interceptor = this.findMatchingInterceptor(requestURL);
+      const interceptor = this.findInterceptorByRequestBaseURL(request);
 
       if (!interceptor) {
         return [];
@@ -191,10 +190,10 @@ abstract class HttpInterceptorWorker {
     removeArrayElement(this.interceptors, interceptor);
   }
 
-  private findMatchingInterceptor(requestURL: string) {
+  private findInterceptorByRequestBaseURL(request: HttpRequest) {
     const interceptor = this.interceptors.findLast((interceptor) => {
       const baseURL = interceptor.baseURL().toString();
-      return requestURL.startsWith(baseURL);
+      return request.url.startsWith(baseURL);
     });
 
     return interceptor;

@@ -1,5 +1,5 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
-import { createURL, excludeNonPathParams } from '@/utils/urls';
+import { createURL } from '@/utils/urls';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -19,8 +19,8 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
 
     const baseURL = createURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+      excludeNonPathParams: true,
     });
-    excludeNonPathParams(baseURL);
 
     const worker = this.store.getOrCreateLocalWorker({});
 

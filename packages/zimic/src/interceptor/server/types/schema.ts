@@ -4,7 +4,10 @@ import { WebSocket } from '@/webSocket/types';
 
 export interface HttpHandlerCommit {
   id: string;
-  url: string;
+  url: {
+    base: string;
+    full: string;
+  };
   method: HttpMethod;
 }
 

@@ -5,7 +5,7 @@ import * as mswNode from 'msw/node';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { removeArrayIndex } from '@/utils/arrays';
-import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
+import { createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -149,10 +149,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const url = excludeNonPathParams(createURL(rawURL)).toString();
-    ensureUniquePathParams(url);
+    const url = createURL(rawURL, {
+      excludeNonPathParams: true,
+      ensureUniquePathParams: true,
+    });
 
-    const httpHandler = http[lowercaseMethod](url, async (context): Promise<HttpResponse> => {
+    const httpHandler = http[lowercaseMethod](url.toString(), async (context): Promise<HttpResponse> => {
       const request = context.request satisfies Request as HttpRequest;
       const requestClone = request.clone();
 
