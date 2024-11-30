@@ -152,7 +152,7 @@ On the other hand, [remote interceptors](getting‐started#remote-http-intercept
 [interceptor server](cli‐zimic‐server) always reject unhandled requests. This is because the unhandled requests have
 already reached the interceptor server, so there would be no way of bypassing them at this point.
 
-You can override the default logging behavior per interceptor with `onUnhandledRequest` in
+You can override the logging behavior for each interceptor with `onUnhandledRequest` in
 [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
 dynamically determine which strategy to use for an unhandled request.
 
@@ -212,6 +212,8 @@ const interceptor = httpInterceptor.create<Schema>({
 
     // Ignore only unhandled requests to /assets
     if (url.pathname.startsWith('/assets')) {
+      // Remember: 'bypass' is only available for local interceptors!
+      // Use 'reject' for remote interceptors.
       return { action: 'bypass', log: false };
     }
 
@@ -223,25 +225,26 @@ const interceptor = httpInterceptor.create<Schema>({
 
 </details>
 
-If you want to override the default logging behavior for all interceptors, or requests that did not match any known base
-URL, you can use `httpInterceptor.default.local.onUnhandledRequest` or
-`httpInterceptor.default.remote.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when creating an
-interceptor will take precedence over `httpInterceptor.default.local.onUnhandledRequest` and
-`httpInterceptor.default.remote.onUnhandledRequest`.
+If you want to override the default logging behavior for all interceptors, you can use
+`httpInterceptor.default.local.onUnhandledRequest` or `httpInterceptor.default.remote.onUnhandledRequest`. Keep in mind
+that defining an `onUnhandledRequest` strategy when creating an interceptor will take precedence over
+`httpInterceptor.default.local.onUnhandledRequest` and `httpInterceptor.default.remote.onUnhandledRequest`.
 
 <details>
   <summary>
-    Example 4: Ignore all unhandled requests with no logging:
+    Example 4: Ignore unhandled requests in all interceptors with no logging:
   </summary>
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
 
+// For local interceptors:
 httpInterceptor.default.local.onUnhandledRequest = {
   action: 'bypass',
   log: false,
 };
 
+// For remote interceptors:
 httpInterceptor.default.remote.onUnhandledRequest = {
   action: 'reject',
   log: false,
@@ -252,7 +255,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
 
 <details>
   <summary>
-    Example 5: Reject all unhandled requests with logging:
+    Example 5: Reject unhandled requests in all interceptors with logging:
   </summary>
 
 ```ts
@@ -275,7 +278,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
 
 <details>
   <summary>
-    Example 6: Dynamically ignore or reject all unhandled requests:
+    Example 6: Dynamically ignore or reject unhandled requests in all interceptors:
   </summary>
 
 ```ts
