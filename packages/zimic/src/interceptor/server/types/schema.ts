@@ -28,4 +28,13 @@ export type InterceptorServerWebSocketSchema = WebSocket.ServiceSchema<{
       response: SerializedResponse | null;
     };
   };
+
+  'interceptors/responses/unhandled': {
+    event: {
+      request: SerializedHttpRequest;
+    };
+    reply: {
+      wasLogged: boolean;
+    };
+  };
 }>;

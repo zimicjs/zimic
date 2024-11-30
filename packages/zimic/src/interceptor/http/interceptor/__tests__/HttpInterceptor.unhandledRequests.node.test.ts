@@ -6,7 +6,6 @@ import { createInternalInterceptorServer } from '@tests/utils/interceptorServers
 
 import testMatrix from './shared/matrix';
 import { declareUnhandledRequestFactoriesHttpInterceptorTests } from './shared/unhandledRequests.factories';
-import { declareUnhandledRequestGlobalLoggingHttpInterceptorTests } from './shared/unhandledRequests.globalLogging';
 import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unhandledRequests.logging';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', ({ type }) => {
@@ -29,15 +28,6 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', 
 
   describe('Logging', async () => {
     await declareUnhandledRequestLoggingHttpInterceptorTests({
-      platform: 'node',
-      type,
-      getBaseURL: () => baseURL,
-      getInterceptorOptions: () => ({ type, baseURL }),
-    });
-  });
-
-  describe('Global logging', async () => {
-    await declareUnhandledRequestGlobalLoggingHttpInterceptorTests({
       platform: 'node',
       type,
       getBaseURL: () => baseURL,

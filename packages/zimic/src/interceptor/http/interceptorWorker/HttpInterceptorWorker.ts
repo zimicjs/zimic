@@ -47,10 +47,7 @@ abstract class HttpInterceptorWorker {
 
   private store = new HttpInterceptorWorkerStore();
 
-  private unhandledRequestStrategies: {
-    baseURL: string;
-    declarationOrFactory: UnhandledRequestStrategy;
-  }[] = [];
+  private interceptors: AnyHttpInterceptorClient[] = [];
 
   platform() {
     return this._platform;
@@ -124,86 +121,111 @@ abstract class HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ): PossiblePromise<void>;
 
-  protected async handleUnhandledRequest(request: Request, strategy: UnhandledRequestStrategy.Declaration) {
-    if (strategy.log) {
+  protected async handleUnhandledRequest(request: HttpRequest, strategy: UnhandledRequestStrategy.Declaration | null) {
+    if (strategy?.log) {
       await HttpInterceptorWorker.logUnhandledRequestWarning(request, strategy.action);
+      return { wasLogged: true };
     }
+
+    return { wasLogged: false };
   }
 
-  protected async getUnhandledRequestStrategy(
-    request: Request,
-    interceptorType: HttpInterceptorType,
-  ): Promise<UnhandledRequestStrategy.Declaration> {
+  protected async getUnhandledRequestStrategy(request: HttpRequest, interceptorType: HttpInterceptorType) {
     const candidates = await this.getUnhandledRequestStrategyCandidates(request, interceptorType);
     const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
     return strategy;
   }
 
   private reduceUnhandledRequestStrategyCandidates(candidates: UnhandledRequestStrategy.Declaration[]) {
-    return candidates.reduce<UnhandledRequestStrategy.Declaration>(
-      (strategy, candidate) => ({
-        action: candidate.action,
-        log: candidate.log ?? strategy.log,
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    // Prefer strategies from first to last, overriding undefined values with the value of the next candidate.
+    return candidates.reduce(
+      (accumulatedStrategy, candidate): UnhandledRequestStrategy.Declaration => ({
+        action: accumulatedStrategy.action,
+        log: accumulatedStrategy.log ?? candidate.log,
       }),
-      candidates[0],
     );
   }
 
   private async getUnhandledRequestStrategyCandidates(
-    request: Request,
+    request: HttpRequest,
     interceptorType: HttpInterceptorType,
   ): Promise<UnhandledRequestStrategy.Declaration[]> {
-    const originalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
+    const globalDefaultStrategy = this.getGlobalDefaultUnhandledRequestStrategy(interceptorType);
 
     try {
       const requestURL = excludeNonPathParams(createURL(request.url)).toString();
-      const defaultDeclarationOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
+      const interceptor = this.findMatchingInterceptor(requestURL);
+
+      if (!interceptor) {
+        return [];
+      }
 
       const requestClone = request.clone();
 
-      let customDefaultStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null = null;
+      const [defaultStrategy, interceptorStrategy] = await Promise.all([
+        this.getDefaultUnhandledRequestStrategy(request, interceptorType),
+        this.getInterceptorUnhandledRequestStrategy(requestClone, interceptor),
+      ]);
 
-      if (typeof defaultDeclarationOrFactory === 'function') {
-        const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
-        customDefaultStrategy = defaultDeclarationOrFactory(parsedRequest);
-      } else {
-        customDefaultStrategy = defaultDeclarationOrFactory;
-      }
-
-      const { declarationOrFactory = null } = this.findUnhandledRequestStrategy(requestURL) ?? {};
-
-      let interceptorStrategy: PossiblePromise<UnhandledRequestStrategy.Declaration> | null = null;
-
-      if (typeof declarationOrFactory === 'function') {
-        const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(requestClone);
-        interceptorStrategy = declarationOrFactory(parsedRequest);
-      } else {
-        interceptorStrategy = declarationOrFactory;
-      }
-
-      const candidatesOrPromises = [originalDefaultStrategy, customDefaultStrategy, interceptorStrategy];
+      const candidatesOrPromises = [interceptorStrategy, defaultStrategy, globalDefaultStrategy];
       const candidates = await Promise.all(candidatesOrPromises.filter(isDefined));
       return candidates;
     } catch (error) {
       console.error(error);
 
-      const candidates = [originalDefaultStrategy];
+      const candidates = [globalDefaultStrategy];
       return candidates;
     }
   }
 
-  onUnhandledRequest(baseURL: string, declarationOrFactory: UnhandledRequestStrategy) {
-    this.unhandledRequestStrategies.push({ baseURL, declarationOrFactory });
+  registerInterceptor(interceptor: AnyHttpInterceptorClient) {
+    this.interceptors.push(interceptor);
   }
 
-  offUnhandledRequest(baseURL: string) {
-    this.unhandledRequestStrategies = this.unhandledRequestStrategies.filter(
-      (strategy) => strategy.baseURL !== baseURL,
-    );
+  unregisterInterceptor(interceptor: AnyHttpInterceptorClient) {
+    const interceptorIndex = this.interceptors.indexOf(interceptor);
+    if (interceptorIndex !== -1) {
+      this.interceptors.splice(interceptorIndex, 1);
+    }
   }
 
-  private findUnhandledRequestStrategy(baseURL: string) {
-    return this.unhandledRequestStrategies.findLast((strategy) => baseURL.startsWith(strategy.baseURL));
+  private findMatchingInterceptor(requestURL: string) {
+    const interceptor = this.interceptors.findLast((interceptor) => {
+      const baseURL = interceptor.baseURL().toString();
+      return requestURL.startsWith(baseURL);
+    });
+
+    return interceptor;
+  }
+
+  private getGlobalDefaultUnhandledRequestStrategy(interceptorType: HttpInterceptorType) {
+    return DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
+  }
+
+  private async getDefaultUnhandledRequestStrategy(request: HttpRequest, interceptorType: HttpInterceptorType) {
+    const defaultStrategyOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
+
+    if (typeof defaultStrategyOrFactory === 'function') {
+      const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
+      return defaultStrategyOrFactory(parsedRequest);
+    }
+
+    return defaultStrategyOrFactory;
+  }
+
+  private async getInterceptorUnhandledRequestStrategy(request: HttpRequest, interceptor: AnyHttpInterceptorClient) {
+    const interceptorStrategyOrFactory = interceptor.onUnhandledRequest();
+
+    if (typeof interceptorStrategyOrFactory === 'function') {
+      const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
+      return interceptorStrategyOrFactory(parsedRequest);
+    }
+
+    return interceptorStrategyOrFactory;
   }
 
   abstract clearHandlers(): PossiblePromise<void>;

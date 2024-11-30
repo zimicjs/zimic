@@ -56,6 +56,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.sharedStart(async () => {
       await this._webSocketClient.start();
       this._webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
+      this._webSocketClient.onEvent('interceptors/responses/unhandled', this.handleRemoteUnhandledRequest);
 
       const platform = this.readPlatform();
       super.setPlatform(platform);
@@ -88,6 +89,18 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     return { response: null };
   };
 
+  private handleRemoteUnhandledRequest = async (
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
+  ) => {
+    const { request: serializedRequest } = message.data;
+    const request = deserializeRequest(serializedRequest);
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+    const { wasLogged } = await super.handleUnhandledRequest(request, strategy);
+
+    return { wasLogged };
+  };
+
   private readPlatform(): HttpInterceptorPlatform {
     if (typeof mswNode.setupServer !== 'undefined') {
       return 'node';
@@ -106,7 +119,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       await this.clearHandlers();
+
       this._webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
+      this._webSocketClient.offEvent('interceptors/responses/unhandled', this.handleRemoteUnhandledRequest);
       await this._webSocketClient.stop();
 
       super.setIsRunning(false);
@@ -133,8 +148,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       method,
       interceptor,
       async createResponse(context) {
-        const result = await createResponse(context);
-        return result.response;
+        const response = await createResponse(context);
+        return response;
       },
     };
 

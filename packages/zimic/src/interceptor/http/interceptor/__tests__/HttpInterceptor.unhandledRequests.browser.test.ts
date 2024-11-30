@@ -5,7 +5,6 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import testMatrix from './shared/matrix';
 import { declareUnhandledRequestFactoriesHttpInterceptorTests } from './shared/unhandledRequests.factories';
-import { declareUnhandledRequestGlobalLoggingHttpInterceptorTests } from './shared/unhandledRequests.globalLogging';
 import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unhandledRequests.logging';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests', ({ type }) => {
@@ -17,15 +16,6 @@ describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests
 
   describe('Logging', async () => {
     await declareUnhandledRequestLoggingHttpInterceptorTests({
-      platform: 'browser',
-      type,
-      getBaseURL: () => baseURL,
-      getInterceptorOptions: () => ({ type, baseURL }),
-    });
-  });
-
-  describe('Global logging', async () => {
-    await declareUnhandledRequestGlobalLoggingHttpInterceptorTests({
       platform: 'browser',
       type,
       getBaseURL: () => baseURL,

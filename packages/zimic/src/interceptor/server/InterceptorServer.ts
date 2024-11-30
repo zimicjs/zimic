@@ -194,8 +194,11 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private removeHttpHandlerGroupsBySocket(socket: Socket) {
-    for (const [method, handlerGroups] of Object.entries(this.httpHandlerGroups)) {
-      this.httpHandlerGroups[method] = handlerGroups.filter((handlerGroup) => handlerGroup.socket !== socket);
+    for (const handlerGroups of Object.values(this.httpHandlerGroups)) {
+      const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
+      if (socketIndex !== -1) {
+        handlerGroups.splice(socketIndex, 1);
+      }
     }
   }
 
@@ -231,7 +234,7 @@ class InterceptorServer implements PublicInterceptorServer {
     const request = normalizeNodeRequest(nodeRequest, await getFetchAPI());
 
     try {
-      const { response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
+      const { serializedRequest, response, matchedAnyInterceptor } = await this.createResponseForRequest(request);
 
       if (response) {
         this.setDefaultAccessControlHeaders(response, ['access-control-allow-origin', 'access-control-expose-headers']);
@@ -248,7 +251,20 @@ class InterceptorServer implements PublicInterceptorServer {
       }
 
       const shouldWarnUnhandledRequest = !isUnhandledPreflightResponse && !matchedAnyInterceptor;
-      if (shouldWarnUnhandledRequest) {
+      const hasSomeHandlerGroup = Object.values(this.httpHandlerGroups).some((groups) => groups.length > 0);
+
+      if (shouldWarnUnhandledRequest && hasSomeHandlerGroup) {
+        const webSocketServer = this.webSocketServer();
+
+        const { wasLogged: wasRequestAlreadyLogged } = await webSocketServer.request(
+          'interceptors/responses/unhandled',
+          { request: serializedRequest },
+        );
+
+        if (!wasRequestAlreadyLogged) {
+          await this.logUnhandledRequestWarning(request);
+        }
+      } else if (shouldWarnUnhandledRequest) {
         await this.logUnhandledRequestWarning(request);
       }
 
@@ -292,11 +308,11 @@ class InterceptorServer implements PublicInterceptorServer {
 
       if (serializedResponse) {
         const response = deserializeResponse(serializedResponse);
-        return { response, matchedAnyInterceptor };
+        return { serializedRequest, response, matchedAnyInterceptor };
       }
     }
 
-    return { response: null, matchedAnyInterceptor };
+    return { serializedRequest, response: null, matchedAnyInterceptor };
   }
 
   private setDefaultAccessControlHeaders(

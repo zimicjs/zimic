@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HttpResponse } from '@/http';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import { HTTP_METHODS } from '@/http/types/schema';
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
@@ -17,7 +18,7 @@ import {
 
 import HttpInterceptorWorker from '../../HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions, RemoteHttpInterceptorWorkerOptions } from '../../types/options';
-import { HttpResponseFactoryContext, HttpResponseFactoryResult } from '../../types/requests';
+import { HttpResponseFactoryContext } from '../../types/requests';
 import { promiseIfRemote } from '../utils/promises';
 import { SharedHttpInterceptorWorkerTestOptions } from './types';
 
@@ -72,12 +73,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       }
     }
 
-    function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponseFactoryResult> {
+    function requestHandler(_context: HttpResponseFactoryContext): PossiblePromise<HttpResponse | null> {
       const response = Response.json(responseBody, {
         status: responseStatus,
         headers: defaultHeaders,
       });
-      return { response };
+      return response;
     }
 
     const spiedRequestHandler = vi.fn(requestHandler);
@@ -523,7 +524,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should not intercept ${method} requests that resulted in no mocked response`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => ({ response: null }));
+        const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => null);
 
         await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, emptySpiedRequestHandler), worker);
 
@@ -680,11 +681,11 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const okSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
           const response = new Response(null, { status: 200, headers: defaultHeaders });
-          return { response };
+          return response;
         });
         const noContentSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
           const response = new Response(null, { status: 204, headers: defaultHeaders });
-          return { response };
+          return response;
         });
 
         const interceptor = createDefaultHttpInterceptor();

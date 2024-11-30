@@ -1,4 +1,4 @@
-import { expect, expectTypeOf, vi } from 'vitest';
+import { expect, expectTypeOf } from 'vitest';
 
 import { HttpHeaders, HttpSearchParams } from '@/http';
 import { HttpRequest } from '@/http/types/requests';
@@ -75,7 +75,7 @@ export async function verifyUnhandledRequestMessage(
   }
 }
 
-export const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRequest, method: string) => {
+export function verifyUnhandledRequest(request: UnhandledHttpInterceptorRequest, method: string) {
   expect(request).toBeInstanceOf(Request);
   expect(request).not.toHaveProperty('response');
 
@@ -98,4 +98,4 @@ export const verifyUnhandledRequest = vi.fn((request: UnhandledHttpInterceptorRe
   expect(request.raw.url).toBe(request.url);
   expect(request.raw.method).toBe(method);
   expect(Object.fromEntries(request.headers)).toEqual(expect.objectContaining(Object.fromEntries(request.raw.headers)));
-});
+}

@@ -15,11 +15,7 @@ import { expectBypassedResponse, expectPreflightResponse, expectFetchError } fro
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
-import {
-  RuntimeSharedHttpInterceptorTestsOptions,
-  verifyUnhandledRequestMessage,
-  verifyUnhandledRequest,
-} from './utils';
+import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
 export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
   options: RuntimeSharedHttpInterceptorTestsOptions,
@@ -57,8 +53,6 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
     interceptorOptions = getInterceptorOptions();
 
     Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
-
-    verifyUnhandledRequest.mockClear();
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
