@@ -36,26 +36,7 @@ function createURLOrThrow(rawURL: string | URL) {
   }
 }
 
-export function createURL(
-  rawURL: string | URL,
-  options: { protocols?: string[] | readonly string[] } = {},
-): ExtendedURL {
-  const url = createURLOrThrow(rawURL);
-
-  const protocol = url.protocol.replace(/:$/, '');
-
-  if (options.protocols && !options.protocols.includes(protocol)) {
-    throw new UnsupportedURLProtocolError(protocol, options.protocols);
-  }
-
-  return url;
-}
-
-export function createFileURL(filePath: string) {
-  return createURL(`file://${filePath}`);
-}
-
-export function excludeNonPathParams(url: URL) {
+function excludeNonPathParams(url: URL) {
   url.hash = '';
   url.search = '';
   url.username = '';
@@ -72,9 +53,10 @@ export class DuplicatedPathParamError extends Error {
     this.name = 'DuplicatedPathParamError';
   }
 }
+
 const URL_PATH_PARAM_REGEX = /\/:([^/]+)/g;
 
-export function ensureUniquePathParams(url: string) {
+function ensureUniquePathParams(url: string) {
   const matches = url.matchAll(URL_PATH_PARAM_REGEX);
 
   const uniqueParamNames = new Set<string>();
@@ -86,6 +68,43 @@ export function ensureUniquePathParams(url: string) {
     }
     uniqueParamNames.add(paramName);
   }
+}
+
+export function createURL(
+  rawURL: string | URL,
+  options: {
+    protocols?: string[] | readonly string[];
+    excludeNonPathParams?: boolean;
+    ensureUniquePathParams?: boolean;
+  } = {},
+): ExtendedURL {
+  const {
+    protocols,
+    excludeNonPathParams: shouldExcludeNonPathParams = false,
+    ensureUniquePathParams: shouldEnsureUniquePathParams = false,
+  } = options;
+
+  const url = createURLOrThrow(rawURL);
+
+  const protocol = url.protocol.replace(/:$/, '');
+
+  if (protocols && !protocols.includes(protocol)) {
+    throw new UnsupportedURLProtocolError(protocol, protocols);
+  }
+
+  if (shouldExcludeNonPathParams) {
+    excludeNonPathParams(url);
+  }
+
+  if (shouldEnsureUniquePathParams) {
+    ensureUniquePathParams(url.toString());
+  }
+
+  return url;
+}
+
+export function createFileURL(filePath: string) {
+  return createURL(`file://${filePath}`);
 }
 
 function prepareURLForRegex(url: string) {

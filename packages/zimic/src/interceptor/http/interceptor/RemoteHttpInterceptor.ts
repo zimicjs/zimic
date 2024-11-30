@@ -1,5 +1,5 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
-import { createURL, excludeNonPathParams } from '@/utils/urls';
+import { createURL } from '@/utils/urls';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -19,13 +19,13 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
 
     const baseURL = createURL(options.baseURL, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+      excludeNonPathParams: true,
     });
-    excludeNonPathParams(baseURL);
 
     const serverURL = createURL(baseURL.origin, {
       protocols: SUPPORTED_BASE_URL_PROTOCOLS,
+      excludeNonPathParams: true,
     });
-    excludeNonPathParams(serverURL);
 
     const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 

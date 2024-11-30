@@ -11,10 +11,6 @@ export interface HttpResponseFactoryContext<Body extends HttpBody = HttpBody> {
   request: HttpRequest<Body>;
 }
 
-export interface HttpResponseFactoryResult<Body extends HttpBody = HttpBody> {
-  response: HttpResponse<Body> | null;
-}
-
 export type HttpResponseFactory<RequestBody extends HttpBody = HttpBody, ResponseBody extends HttpBody = HttpBody> = (
   context: HttpResponseFactoryContext<RequestBody>,
-) => PossiblePromise<HttpResponseFactoryResult<ResponseBody>>;
+) => PossiblePromise<HttpResponse<ResponseBody> | null>;

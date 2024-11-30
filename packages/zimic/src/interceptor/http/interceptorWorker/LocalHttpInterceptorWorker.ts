@@ -4,7 +4,8 @@ import * as mswNode from 'msw/node';
 
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
-import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
+import { removeArrayIndex } from '@/utils/arrays';
+import { createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -12,13 +13,7 @@ import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
 import HttpInterceptorWorker from './HttpInterceptorWorker';
 import { LocalHttpInterceptorWorkerOptions } from './types/options';
-import {
-  BrowserHttpWorker,
-  HttpResponseFactory,
-  HttpResponseFactoryResult,
-  HttpWorker,
-  NodeHttpWorker,
-} from './types/requests';
+import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'local';
@@ -154,34 +149,36 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const url = excludeNonPathParams(createURL(rawURL)).toString();
-    ensureUniquePathParams(url);
+    const url = createURL(rawURL, {
+      excludeNonPathParams: true,
+      ensureUniquePathParams: true,
+    });
 
-    const httpHandler = http[lowercaseMethod](url, async (context): Promise<HttpResponse> => {
+    const httpHandler = http[lowercaseMethod](url.toString(), async (context): Promise<HttpResponse> => {
       const request = context.request satisfies Request as HttpRequest;
       const requestClone = request.clone();
 
-      let result: HttpResponseFactoryResult | null = null;
+      let response: HttpResponse | null = null;
 
       try {
-        result = await createResponse({ ...context, request });
+        response = await createResponse({ ...context, request });
       } catch (error) {
         console.error(error);
       }
 
-      if (!result?.response) {
+      if (!response) {
         return this.bypassOrRejectUnhandledRequest(requestClone);
       }
 
       if (context.request.method === 'HEAD') {
         return new Response(null, {
-          status: result.response.status,
-          statusText: result.response.statusText,
-          headers: result.response.headers,
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
         });
       }
 
-      return result.response;
+      return response;
     });
 
     internalWorker.use(httpHandler);
@@ -193,9 +190,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const requestClone = request.clone();
 
     const strategy = await super.getUnhandledRequestStrategy(request, 'local');
-    await super.handleUnhandledRequest(requestClone, strategy);
+    await super.logUnhandledRequestIfNecessary(requestClone, strategy);
 
-    if (strategy.action === 'reject') {
+    if (strategy?.action === 'reject') {
       return Response.error();
     } else {
       return passthrough();
@@ -211,16 +208,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const internalWorker = this.internalWorkerOrThrow();
 
-    const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
-    const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
+    const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
+    removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
 
     internalWorker.resetHandlers();
 
-    for (const handler of httpHandlersToKeep) {
-      internalWorker.use(handler);
+    for (const { httpHandler } of this.httpHandlerGroups) {
+      internalWorker.use(httpHandler);
     }
-
-    this.httpHandlerGroups = httpHandlerGroupsToKeep;
   }
 
   interceptorsWithHandlers() {

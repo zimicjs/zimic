@@ -237,7 +237,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           other: 'value',
         });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
         expect(response.status).toBe(200);
@@ -247,7 +247,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         searchParams.delete('tag');
 
-        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
 

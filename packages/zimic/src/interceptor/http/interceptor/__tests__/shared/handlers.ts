@@ -8,6 +8,7 @@ import DisabledRequestSavingError from '@/interceptor/http/requestHandler/errors
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
+import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
@@ -16,13 +17,19 @@ import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions, verifyUnhandledRequestMessage } from './utils';
 
-export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
+export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
+
+  const crypto = await importCrypto();
 
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
   let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+
+  type MethodSchema = HttpSchema.Method<{
+    response: { 200: { headers: AccessControlHeaders } };
+  }>;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -39,10 +46,6 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
     });
 
     const lowerMethod = method.toLowerCase<'POST'>();
-
-    type MethodSchema = HttpSchema.Method<{
-      response: { 200: { headers: AccessControlHeaders } };
-    }>;
 
     it(`should support intercepting ${method} requests with a static response`, async () => {
       await usingHttpInterceptor<{
@@ -171,9 +174,8 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
         await usingIgnoredConsole(['error', 'warn'], async (spies) => {
           const request = new Request(joinURL(baseURL, '/users'), {
             method,
-            headers: { 'x-value': '1' },
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
           });
-
           const responsePromise = fetch(request);
 
           if (overridesPreflightResponse) {
@@ -190,22 +192,14 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
             expect(spies.error.mock.calls[0]).toEqual([error]);
 
             const errorMessage = spies.error.mock.calls[1].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, {
-              type: 'error',
-              platform,
-              request,
-            });
+            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
           } else {
             expect(spies.error).toHaveBeenCalledTimes(1);
             expect(spies.warn).toHaveBeenCalledTimes(1);
             expect(spies.error.mock.calls[0]).toEqual([error]);
 
             const warnMessage = spies.warn.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(warnMessage, {
-              type: 'warn',
-              platform,
-              request,
-            });
+            await verifyUnhandledRequestMessage(warnMessage, { type: 'warn', platform, request });
           }
         });
 
@@ -320,7 +314,7 @@ export function declareHandlerHttpInterceptorTests(options: RuntimeSharedHttpInt
 
         const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);

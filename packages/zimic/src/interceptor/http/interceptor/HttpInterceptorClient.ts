@@ -11,7 +11,6 @@ import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
-import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
@@ -32,7 +31,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
-  private onUnhandledRequest?: UnhandledRequestStrategy;
+  private _onUnhandledRequest?: UnhandledRequestStrategy;
   private _shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
@@ -61,7 +60,7 @@ class HttpInterceptorClient<
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
-    this.onUnhandledRequest = options.onUnhandledRequest;
+    this._onUnhandledRequest = options.onUnhandledRequest;
     this._shouldSaveRequests = options.saveRequests ?? false;
   }
 
@@ -73,6 +72,10 @@ class HttpInterceptorClient<
     return this.worker.platform();
   }
 
+  onUnhandledRequest() {
+    return this._onUnhandledRequest;
+  }
+
   isRunning() {
     return this.worker.isRunning() && this._isRunning;
   }
@@ -82,17 +85,15 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    if (this.onUnhandledRequest) {
-      this.worker.onUnhandledRequest(this.baseURL().toString(), this.onUnhandledRequest);
-    }
-
     await this.worker.start();
+
+    this.worker.registerRunningInterceptor(this);
     this.markAsRunning(true);
   }
 
   async stop() {
     this.markAsRunning(false);
-    this.worker.offUnhandledRequest(this.baseURL().toString());
+    this.worker.unregisterRunningInterceptor(this);
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
     if (wasLastRunningInterceptor) {
@@ -200,7 +201,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context) {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });
@@ -208,7 +209,7 @@ class HttpInterceptorClient<
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
 
     if (!matchedHandler) {
-      return { response: null };
+      return null;
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
@@ -225,7 +226,7 @@ class HttpInterceptorClient<
       matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
 
-    return { response };
+    return response;
   }
 
   private async findMatchedHandler<
