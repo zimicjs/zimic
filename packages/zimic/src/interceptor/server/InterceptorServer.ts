@@ -4,6 +4,7 @@ import type { WebSocket as Socket } from 'isomorphic-ws';
 
 import { HttpMethod } from '@/http/types/schema';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { createRegexFromURL, createURL, excludeNonPathParams } from '@/utils/urls';
@@ -196,9 +197,7 @@ class InterceptorServer implements PublicInterceptorServer {
   private removeHttpHandlerGroupsBySocket(socket: Socket) {
     for (const handlerGroups of Object.values(this.httpHandlerGroups)) {
       const socketIndex = handlerGroups.findIndex((handlerGroup) => handlerGroup.socket === socket);
-      if (socketIndex !== -1) {
-        handlerGroups.splice(socketIndex, 1);
-      }
+      removeArrayIndex(handlerGroups, socketIndex);
     }
   }
 

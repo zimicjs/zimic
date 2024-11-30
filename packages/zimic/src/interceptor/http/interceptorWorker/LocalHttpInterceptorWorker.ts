@@ -4,6 +4,7 @@ import * as mswNode from 'msw/node';
 
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
+import { removeArrayIndex } from '@/utils/arrays';
 import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
@@ -203,15 +204,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    const httpHandlersIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
-    if (httpHandlersIndex === -1) {
-      return;
-    }
+    const internalWorker = this.internalWorkerOrThrow();
 
-    this.httpHandlerGroups.splice(httpHandlersIndex, 1);
+    const httpHandlersIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
+    removeArrayIndex(this.httpHandlerGroups, httpHandlersIndex);
+
     const keptHttpHandlers = this.httpHandlerGroups.map((group) => group.httpHandler);
 
-    const internalWorker = this.internalWorkerOrThrow();
     internalWorker.resetHandlers();
 
     for (const handler of keptHttpHandlers) {

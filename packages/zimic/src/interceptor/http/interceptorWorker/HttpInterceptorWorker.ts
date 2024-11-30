@@ -14,6 +14,7 @@ import {
   InferPathParams,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
+import { removeArrayElement } from '@/utils/arrays';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
@@ -187,10 +188,7 @@ abstract class HttpInterceptorWorker {
   }
 
   unregisterInterceptor(interceptor: AnyHttpInterceptorClient) {
-    const interceptorIndex = this.interceptors.indexOf(interceptor);
-    if (interceptorIndex !== -1) {
-      this.interceptors.splice(interceptorIndex, 1);
-    }
+    removeArrayElement(this.interceptors, interceptor);
   }
 
   private findMatchingInterceptor(requestURL: string) {
