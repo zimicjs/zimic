@@ -5,10 +5,12 @@ import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/
 import { Default } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
+import { getCurrentStack } from '@/utils/runtime';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
+import TimesCheckError from './errors/TimesCheckError';
 import {
   HttpRequestHandlerRestriction,
   HttpRequestHandlerStaticRestriction,
@@ -31,6 +33,13 @@ class HttpRequestHandlerClient<
   StatusCode extends HttpStatusCode = never,
 > {
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
+
+  private limits = {
+    numberOfRequests: { min: 0, max: Infinity },
+  };
+
+  private timesStack?: string;
+
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
@@ -84,6 +93,43 @@ class HttpRequestHandlerClient<
     return typeof declaration === 'function';
   }
 
+  times(
+    minNumberOfRequests: number,
+    maxNumberOfRequests = minNumberOfRequests,
+  ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
+    if (!this.interceptor.shouldSaveRequests()) {
+      throw new DisabledRequestSavingError();
+    }
+
+    this.limits.numberOfRequests = {
+      min: minNumberOfRequests,
+      max: maxNumberOfRequests,
+    };
+
+    this.timesStack = getCurrentStack();
+
+    return this;
+  }
+
+  checkTimes() {
+    if (!this.interceptor.shouldSaveRequests()) {
+      throw new DisabledRequestSavingError();
+    }
+
+    const numberOfRequests = this.interceptedRequests.length;
+
+    const isWithinLimits =
+      numberOfRequests >= this.limits.numberOfRequests.min && numberOfRequests <= this.limits.numberOfRequests.max;
+
+    if (!isWithinLimits) {
+      throw new TimesCheckError({
+        limits: this.limits.numberOfRequests,
+        numberOfRequests,
+        timesStack: this.timesStack,
+      });
+    }
+  }
+
   /** @deprecated */
   bypass(): this {
     this.createResponseDeclaration = undefined;
@@ -99,7 +145,9 @@ class HttpRequestHandlerClient<
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
     const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
-    return hasDeclaredResponse && (await this.matchesRequestRestrictions(request));
+    const isWithinLimits = this.interceptedRequests.length < this.limits.numberOfRequests.max;
+
+    return hasDeclaredResponse && isWithinLimits && (await this.matchesRequestRestrictions(request));
   }
 
   private async matchesRequestRestrictions(

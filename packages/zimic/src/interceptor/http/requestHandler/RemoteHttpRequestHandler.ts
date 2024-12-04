@@ -89,6 +89,22 @@ class RemoteHttpRequestHandler<
     return newUnsyncedThis;
   }
 
+  times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
+    this._client.times(minNumberOfRequests, maxNumberOfRequests);
+    return this;
+  }
+
+  async checkTimes() {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this._client.checkTimes();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   /** @deprecated */
   bypass(): this {
     // eslint-disable-next-line @typescript-eslint/no-deprecated

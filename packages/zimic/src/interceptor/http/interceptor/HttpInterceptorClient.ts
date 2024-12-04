@@ -248,6 +248,16 @@ class HttpInterceptorClient<
     return undefined;
   }
 
+  checkTimes() {
+    for (const method of HTTP_METHODS) {
+      for (const handlers of this.handlerClientsByMethod[method].values()) {
+        for (const handler of handlers) {
+          handler.checkTimes();
+        }
+      }
+    }
+  }
+
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
     if (!this.isRunning()) {
       throw new NotStartedHttpInterceptorError();

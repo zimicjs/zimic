@@ -55,6 +55,15 @@ class LocalHttpRequestHandler<
     return newThis;
   }
 
+  times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
+    this._client.times(minNumberOfRequests, maxNumberOfRequests);
+    return this;
+  }
+
+  checkTimes() {
+    this._client.checkTimes();
+  }
+
   /** @deprecated */
   bypass(): this {
     // eslint-disable-next-line @typescript-eslint/no-deprecated

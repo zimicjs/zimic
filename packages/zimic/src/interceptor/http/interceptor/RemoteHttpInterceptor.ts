@@ -100,6 +100,17 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     return this._client.options(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
+  checkTimes() {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this._client.checkTimes();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   async clear() {
     await new Promise<void>((resolve, reject) => {
       this._client.clear({

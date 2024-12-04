@@ -227,6 +227,10 @@ export interface LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
+
+  checkTimes: () => void;
+
   /**
    * Clears any response declared with
    * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
@@ -332,6 +336,14 @@ export interface SyncedRemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
+
+  times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
+    ((
+      minNumberOfRequests: number,
+      maxNumberOfRequests: number,
+    ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
+
+  checkTimes: () => Promise<void>;
 
   /**
    * Clears any response declared with

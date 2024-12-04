@@ -52,6 +52,8 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    */
   stop: () => Promise<void>;
 
+  checkTimes: (() => void) | (() => Promise<void>);
+
   /**
    * Clears the interceptor and all of its
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
@@ -155,6 +157,8 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    */
   options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
+  checkTimes: () => void;
+
   clear: () => void;
 }
 
@@ -248,6 +252,8 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+
+  checkTimes: () => Promise<void>;
 
   clear: () => Promise<void>;
 }
