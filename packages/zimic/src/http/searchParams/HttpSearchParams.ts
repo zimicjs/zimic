@@ -162,8 +162,8 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /**
-   * Checks if the current search parameters are equal to another set of search parameters. Equality is defined as
-   * having the same keys and values, regardless of the order of the keys.
+   * Checks if these search params are equal to another set of search parameters. Equality is defined as having the same
+   * keys and values, regardless of the order of the keys.
    *
    * @param otherParams The other search parameters to compare against.
    * @returns `true` if the search parameters are equal, `false` otherwise.
@@ -187,7 +187,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /**
-   * Checks if the current search parameters contain another set of search parameters. This method is less strict than
+   * Checks if these search params contain another set of search parameters. This method is less strict than
    * {@link HttpSearchParams#equals} and only requires that all keys and values in the other search parameters are
    * present in these search parameters.
    *
@@ -210,6 +210,47 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
     }
 
     return true;
+  }
+
+  /**
+   * Converts these search params object to a plain object. This method is useful for serialization and debugging
+   * purposes.
+   *
+   * **NOTE**: If a key has multiple values, the object will contain an array of values for that key. If the key has
+   * only one value, the object will contain its value directly, without an array, regardless of how the value was
+   * initialized when creating the search params object.
+   *
+   * @example
+   *   const searchParams = new HttpSearchParams({
+   *     names: ['user 1', 'user 2'],
+   *     name: ['user 3'],
+   *     page: '1',
+   *   });
+   *   const object = searchParams.toObject();
+   *   console.log(object); // { names: ['user 1', 'user 2'], name: 'user 3', page: '1' }
+   *
+   * @returns A plain object representation of this headers object.
+   */
+  toObject() {
+    const object = {} as Schema;
+
+    type SchemaValue = Schema[HttpSearchParamsSchemaName<Schema>];
+
+    for (const [key, value] of this.entries()) {
+      if (key in object) {
+        const existingValue = object[key];
+
+        if (Array.isArray<SchemaValue>(existingValue)) {
+          existingValue.push(value as SchemaValue);
+        } else {
+          object[key] = [existingValue, value] as SchemaValue;
+        }
+      } else {
+        object[key] = value as SchemaValue;
+      }
+    }
+
+    return object;
   }
 }
 

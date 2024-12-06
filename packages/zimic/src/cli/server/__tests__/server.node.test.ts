@@ -617,9 +617,9 @@ describe('CLI (server)', async () => {
 
           const errorMessage = spies.error.mock.calls[0].join(' ');
           await verifyUnhandledRequestMessage(errorMessage, {
-            type: 'error',
-            platform: 'node',
             request,
+            platform: 'node',
+            type: 'reject',
           });
         });
       },
@@ -715,9 +715,9 @@ describe('CLI (server)', async () => {
 
           const errorMessage = spies.error.mock.calls[1].join(' ');
           await verifyUnhandledRequestMessage(errorMessage, {
-            type: 'error',
-            platform: 'node',
             request,
+            platform: 'node',
+            type: 'reject',
           });
         } finally {
           webSocketServerRequestSpy.mockRestore();

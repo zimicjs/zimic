@@ -183,6 +183,29 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     return true;
   }
 
+  /**
+   * Converts this headers object to a plain object. This method is useful for serialization and debugging purposes.
+   *
+   * @example
+   *   const headers = new HttpHeaders({
+   *     accept: 'application/json',
+   *     'content-type': 'application/json',
+   *   });
+   *   const object = headers.toObject();
+   *   console.log(object); // { accept: 'application/json', 'content-type': 'application/json' }
+   *
+   * @returns A plain object representation of this headers object.
+   */
+  toObject(): Schema {
+    const object = {} as Schema;
+
+    for (const [key, value] of this.entries()) {
+      object[key] = value;
+    }
+
+    return object;
+  }
+
   private splitHeaderValues(value: string) {
     return value
       .split(',')

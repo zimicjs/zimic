@@ -484,17 +484,23 @@ abstract class HttpInterceptorWorker {
   static async logUnhandledRequestWarning(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
     const request = await this.parseRawRequest(rawRequest);
 
+    const [formattedHeaders, formattedSearchParams, formattedBody] = await Promise.all([
+      formatObjectToLog(request.headers.toObject()),
+      formatObjectToLog(request.searchParams.toObject()),
+      formatObjectToLog(request.body),
+    ]);
+
     logWithPrefix(
       [
         `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
           `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
         `${request.method} ${request.url}`,
         '\n    Headers:',
-        await formatObjectToLog(Object.fromEntries(request.headers)),
+        formattedHeaders,
         '\n    Search params:',
-        await formatObjectToLog(Object.fromEntries(request.searchParams)),
+        formattedSearchParams,
         '\n    Body:',
-        await formatObjectToLog(request.body),
+        formattedBody,
         '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
       ],
       { method: action === 'bypass' ? 'warn' : 'error' },

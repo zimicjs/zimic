@@ -141,7 +141,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
             const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+            await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
           });
         },
       );
@@ -227,7 +227,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
 
             const errorMessage = spies.error.mock.calls[0].join(' ');
-            await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+            await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
           });
         },
       );
@@ -317,9 +317,9 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.error).toHaveBeenNthCalledWith(1, error);
 
             await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
               request,
+              platform,
+              type: 'reject',
             });
           });
         },
@@ -415,9 +415,9 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.error).toHaveBeenNthCalledWith(1, error);
 
             await verifyUnhandledRequestMessage(spies.error.mock.calls[1].join(' '), {
-              type: 'error',
-              platform,
               request,
+              platform,
+              type: 'reject',
             });
           });
         },

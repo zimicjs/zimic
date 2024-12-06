@@ -5,15 +5,17 @@ import { createCachedDynamicImport } from './imports';
 
 const importUtil = createCachedDynamicImport(() => import('util'));
 
-export async function formatObjectToLog(value: unknown) {
+export async function formatObjectToLog(value: unknown, options: { colors?: boolean } = {}) {
   if (isClientSide()) {
     return value;
   }
 
+  const { colors = true } = options;
+
   const util = await importUtil();
 
   return util.inspect(value, {
-    colors: true,
+    colors,
     compact: true,
     depth: Infinity,
     maxArrayLength: Infinity,
