@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { HttpSchema } from '@/http/types/schema';
@@ -601,12 +600,16 @@ describe('HttpHeaders', () => {
         'content-type': undefined,
       });
 
-      const formattedHeaders = String(await formatObjectToLog(headers.toObject()));
+      const formattedHeaders = String(
+        await formatObjectToLog(headers.toObject(), {
+          colors: false,
+        }),
+      );
 
       if (isClientSide()) {
         expect(formattedHeaders).toBe('[object Object]');
       } else {
-        expect(formattedHeaders).toBe(`{ accept: ${chalk.green("'*/*'")}, other: ${chalk.green("'value, other'")} }`);
+        expect(formattedHeaders).toBe("{ accept: '*/*', other: 'value, other' }");
       }
     });
   });

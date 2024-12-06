@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { HttpSchema } from '@/http/types/schema';
@@ -600,15 +599,16 @@ describe('HttpSearchParams', () => {
         page: '1',
       });
 
-      const formattedSearchParams = String(await formatObjectToLog(searchParams.toObject()));
+      const formattedSearchParams = String(
+        await formatObjectToLog(searchParams.toObject(), {
+          colors: false,
+        }),
+      );
 
       if (isClientSide()) {
         expect(formattedSearchParams).toBe('[object Object]');
       } else {
-        expect(formattedSearchParams).toBe(
-          `{ name: ${chalk.green("'User1'")}, names: [ ${chalk.green("'User1'")}, ${chalk.green("'User2'")} ], ` +
-            `page: ${chalk.green("'1'")} }`,
-        );
+        expect(formattedSearchParams).toBe("{ name: 'User1', names: [ 'User1', 'User2' ], page: '1' }");
       }
     });
   });
