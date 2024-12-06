@@ -65,10 +65,8 @@ export async function verifyUnhandledRequestMessage(
 
     if (body === null) {
       expect(message).toContain('Body: ');
-    } else if (typeof body === 'object') {
-      expect(message).toContain('Body: [object Object]');
     } else {
-      expect(message).toContain(`Body: ${await formatObjectToLog(body)}`);
+      expect(message).toContain('Body: [object Object]');
     }
   }
 }
