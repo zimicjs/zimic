@@ -1,4 +1,9 @@
+import chalk from 'chalk';
 import { describe, expect, expectTypeOf, it } from 'vitest';
+
+import { HttpSchema } from '@/http/types/schema';
+import { formatObjectToLog } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
 
 import HttpSearchParams from '../HttpSearchParams';
 import { HttpSearchParamsSerialized } from '../types';
@@ -57,7 +62,7 @@ describe('HttpSearchParams', () => {
     });
 
     const searchParams = new HttpSearchParams<{
-      names?: string[];
+      names: string[];
       page?: `${number}`;
     }>({
       names: ['User1', 'User2'],
@@ -73,6 +78,29 @@ describe('HttpSearchParams', () => {
     const page = searchParams.get('page');
     expectTypeOf(page).toEqualTypeOf<`${number}` | null>();
     expect(page).toBe('1');
+  });
+
+  it('should support being converted to an object', () => {
+    type Schema = HttpSchema.SearchParams<{
+      names: string[];
+      name: string[];
+      page?: `${number}`;
+    }>;
+
+    const searchParams = new HttpSearchParams<Schema>({
+      names: ['User1', 'User2'],
+      name: ['User1'],
+      page: '1',
+    });
+
+    const object = searchParams.toObject();
+    expectTypeOf(object).toEqualTypeOf<Schema>();
+
+    expect(object).toEqual({
+      names: ['User1', 'User2'],
+      name: 'User1',
+      page: '1',
+    });
   });
 
   it('should support being created from another HttpSearchParams', () => {
@@ -557,6 +585,31 @@ describe('HttpSearchParams', () => {
       expectTypeOf<HttpSearchParamsSerialized<symbol>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<Map<never, never>>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
+  });
+
+  describe('Formatting', () => {
+    it('should be correctly formatted to log', async () => {
+      const searchParams = new HttpSearchParams<{
+        names: string[];
+        name: string[];
+        page?: `${number}`;
+      }>({
+        names: ['User1', 'User2'],
+        name: ['User1'],
+        page: '1',
+      });
+
+      const formattedSearchParams = String(await formatObjectToLog(searchParams.toObject()));
+
+      if (isClientSide()) {
+        expect(formattedSearchParams).toBe('[object Object]');
+      } else {
+        expect(formattedSearchParams).toBe(
+          `{ name: ${chalk.green("'User1'")}, names: [ ${chalk.green("'User1'")}, ${chalk.green("'User2'")} ], ` +
+            `page: ${chalk.green("'1'")} }`,
+        );
+      }
     });
   });
 });

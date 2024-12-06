@@ -1,4 +1,9 @@
+import chalk from 'chalk';
 import { describe, expect, expectTypeOf, it } from 'vitest';
+
+import { HttpSchema } from '@/http/types/schema';
+import { formatObjectToLog } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
 
 import HttpHeaders from '../HttpHeaders';
 import { HttpHeadersSerialized } from '../types';
@@ -56,6 +61,28 @@ describe('HttpHeaders', () => {
     const contentTypeHeader = headers.get('content-type');
     expectTypeOf(contentTypeHeader).toEqualTypeOf<`application/${string}` | null>();
     expect(contentTypeHeader).toBe(null);
+  });
+
+  it('should support being converted to an object', () => {
+    type Schema = HttpSchema.Headers<{
+      accept: string;
+      other: string;
+      'content-type'?: `application/${string}`;
+    }>;
+
+    const headers = new HttpHeaders<Schema>({
+      accept: '*/*',
+      other: 'value, other',
+      'content-type': undefined,
+    });
+
+    const object = headers.toObject();
+    expectTypeOf(object).toEqualTypeOf<Schema>();
+
+    expect(object).toEqual({
+      accept: '*/*',
+      other: 'value, other',
+    });
   });
 
   it('should support being created from another HttpHeaders', () => {
@@ -559,6 +586,28 @@ describe('HttpHeaders', () => {
       expectTypeOf<HttpHeadersSerialized<symbol>>().toEqualTypeOf<never>();
       expectTypeOf<HttpHeadersSerialized<Map<never, never>>>().toEqualTypeOf<never>();
       expectTypeOf<HttpHeadersSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
+  });
+
+  describe('Formatting', () => {
+    it('should be correctly formatted to log', async () => {
+      const headers = new HttpHeaders<{
+        accept: string;
+        other: string;
+        'content-type'?: `application/${string}`;
+      }>({
+        accept: '*/*',
+        other: 'value, other',
+        'content-type': undefined,
+      });
+
+      const formattedHeaders = String(await formatObjectToLog(headers.toObject()));
+
+      if (isClientSide()) {
+        expect(formattedHeaders).toBe('[object Object]');
+      } else {
+        expect(formattedHeaders).toBe(`{ accept: ${chalk.green("'*/*'")}, other: ${chalk.green("'value, other'")} }`);
+      }
     });
   });
 });

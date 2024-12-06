@@ -183,6 +183,16 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     return true;
   }
 
+  toObject(): Schema {
+    const object = {} as Schema;
+
+    for (const [key, value] of this.entries()) {
+      object[key] = value;
+    }
+
+    return object;
+  }
+
   private splitHeaderValues(value: string) {
     return value
       .split(',')

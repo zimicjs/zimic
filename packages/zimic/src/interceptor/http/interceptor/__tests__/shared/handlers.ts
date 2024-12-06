@@ -186,7 +186,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           expect(spies.error.mock.calls[0]).toEqual([error]);
 
           const errorMessage = spies.error.mock.calls[1].join(' ');
-          await verifyUnhandledRequestMessage(errorMessage, { type: 'error', platform, request });
+          await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
         });
 
         requests = await promiseIfRemote(handler.requests(), interceptor);

@@ -211,6 +211,28 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
 
     return true;
   }
+
+  toObject() {
+    const object = {} as Schema;
+
+    type SchemaValue = Schema[HttpSearchParamsSchemaName<Schema>];
+
+    for (const [key, value] of this.entries()) {
+      if (key in object) {
+        const existingValue = object[key];
+
+        if (Array.isArray<SchemaValue>(existingValue)) {
+          existingValue.push(value as SchemaValue);
+        } else {
+          object[key] = [existingValue, value] as SchemaValue;
+        }
+      } else {
+        object[key] = value as SchemaValue;
+      }
+    }
+
+    return object;
+  }
 }
 
 export default HttpSearchParams;
