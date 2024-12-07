@@ -1,10 +1,6 @@
 import { HttpSchema } from '@/http/types/schema';
 
-import {
-  HttpInterceptorMethodHandler,
-  SyncHttpInterceptorMethodHandler,
-  AsyncHttpInterceptorMethodHandler,
-} from './handlers';
+import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
 import { HttpInterceptorPlatform } from './options';
 
 /**
@@ -13,7 +9,7 @@ import { HttpInterceptorPlatform } from './options';
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface HttpInterceptor<Schema extends HttpSchema> {
+export interface HttpInterceptor {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
@@ -50,6 +46,19 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop `interceptor.stop()` API reference}
    */
   stop: () => Promise<void>;
+}
+
+/**
+ * A local interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
+ * and responses are statically-typed based on the provided service schema.
+ *
+ * To intercept HTTP requests, the interceptor must have been started with
+ * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart `interceptor.start()`}.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
+ */
+export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor {
+  readonly type: 'local';
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -60,7 +69,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  get: HttpInterceptorMethodHandler<Schema, 'GET'>;
+  get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -71,7 +80,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  post: HttpInterceptorMethodHandler<Schema, 'POST'>;
+  post: SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -82,7 +91,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  patch: HttpInterceptorMethodHandler<Schema, 'PATCH'>;
+  patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -93,7 +102,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  put: HttpInterceptorMethodHandler<Schema, 'PUT'>;
+  put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -104,7 +113,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  delete: HttpInterceptorMethodHandler<Schema, 'DELETE'>;
+  delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -115,7 +124,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  head: HttpInterceptorMethodHandler<Schema, 'HEAD'>;
+  head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   /**
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
@@ -126,7 +135,7 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
-  options: HttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
+  options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   /**
    * Clears all of the
@@ -143,29 +152,6 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
 }
 
 /**
- * A local interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
- * and responses are statically-typed based on the provided service schema.
- *
- * To intercept HTTP requests, the interceptor must have been started with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart `interceptor.start()`}.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
- */
-export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  readonly type: 'local';
-
-  get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
-  post: SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
-  patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
-  put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
-  delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
-  head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
-  options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
-
-  clear: () => void;
-}
-
-/**
  * A remote interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,
  * and responses are statically-typed based on the provided service schema.
  *
@@ -176,15 +162,84 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
+export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor {
   readonly type: 'remote';
 
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A GET
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A POST
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A PATCH
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A PUT
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A DELETE
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns A HEAD
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
+
+  /**
+   * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
+   *   to specify the original path as a type parameter to get type-inference and type-validation.
+   * @returns An OPTIONS
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   *   for the provided path. The path and method must be declared in the interceptor schema.
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
+   */
   options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   clear: () => Promise<void>;

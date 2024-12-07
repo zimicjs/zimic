@@ -66,7 +66,7 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(options
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
-  }) satisfies HttpInterceptor<ConvertToStrictHttpSchema<Schema>> as
+  }) satisfies HttpInterceptor as
     | LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
     | RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 }
