@@ -1,4 +1,4 @@
-import { Defined, IfNever } from '@/types/utils';
+import { IfNever } from '@/types/utils';
 
 import { HttpPathParamsSerialized } from '../pathParams/types';
 import HttpHeaders from './HttpHeaders';
@@ -16,7 +16,7 @@ export namespace HttpHeadersSchema {
 
 /** A strict tuple representation of a {@link HttpHeadersSchema}. */
 export type HttpHeadersSchemaTuple<Schema extends HttpHeadersSchema = HttpHeadersSchema> = {
-  [Key in keyof Schema & string]: [Key, Defined<Schema[Key]>];
+  [Key in keyof Schema & string]: [Key, NonNullable<Schema[Key]>];
 }[keyof Schema & string];
 
 /** An initialization value for {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders `HttpHeaders`}. */

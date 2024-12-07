@@ -7,6 +7,7 @@ import { HttpBody } from '@/http/types/requests';
 import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
 import { DeepPartial, Default, IfAny, IfNever, PossiblePromise } from '@/types/utils';
 
+import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
   HttpInterceptorRequest,
   HttpRequestBodySchema,
@@ -249,6 +250,15 @@ export interface HttpRequestHandler<
   requests:
     | (() => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[])
     | (() => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>);
+}
+
+export interface InternalHttpRequestHandler<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+> extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
+  client: () => HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 }
 
 /**

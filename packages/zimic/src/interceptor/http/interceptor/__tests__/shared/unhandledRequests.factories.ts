@@ -61,7 +61,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     it(`should support a synchronous unhandled ${method} request factory`, async () => {
       const onUnhandledRequest = vi.fn<UnhandledRequestStrategy.RemoteDeclarationFactory>((request) => {

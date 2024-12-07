@@ -71,7 +71,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     it.each([
       'image/png',

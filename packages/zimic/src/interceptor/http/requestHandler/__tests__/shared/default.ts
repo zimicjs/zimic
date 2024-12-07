@@ -2,9 +2,8 @@ import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vit
 
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
-import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
-import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
+import { InternalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
@@ -33,7 +32,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
   let baseURL: URL;
 
-  let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
+  let interceptor: InternalHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
 
   beforeAll(async () => {

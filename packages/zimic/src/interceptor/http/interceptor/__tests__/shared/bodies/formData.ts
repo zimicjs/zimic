@@ -44,7 +44,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     const invalidRequestFormDataString = '<invalid-request-form-data>';
     const invalidResponseFormDataString = '<invalid-response-form-data>';

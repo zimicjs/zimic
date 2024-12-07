@@ -45,7 +45,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     it(`should support intercepting ${method} requests with a static response`, async () => {
       await usingHttpInterceptor<{

@@ -1,5 +1,6 @@
 import { HttpSchema } from '@/http/types/schema';
 
+import HttpInterceptorClient from '../HttpInterceptorClient';
 import {
   HttpInterceptorMethodHandler,
   SyncHttpInterceptorMethodHandler,
@@ -14,6 +15,8 @@ import { HttpInterceptorPlatform } from './options';
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
 export interface HttpInterceptor<Schema extends HttpSchema> {
+  readonly type: 'local' | 'remote';
+
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
@@ -139,8 +142,18 @@ export interface HttpInterceptor<Schema extends HttpSchema> {
    * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()` API reference}
    */
-  clear: () => void;
+  clear: (() => Promise<void>) | (() => void);
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyHttpInterceptor = HttpInterceptor<any>;
+
+export interface InternalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
+  client: () => HttpInterceptorClient<Schema>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyInternalHttpInterceptor = InternalHttpInterceptor<any>;
 
 /**
  * A local interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters,

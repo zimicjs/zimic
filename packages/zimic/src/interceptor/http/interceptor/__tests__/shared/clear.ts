@@ -34,7 +34,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };

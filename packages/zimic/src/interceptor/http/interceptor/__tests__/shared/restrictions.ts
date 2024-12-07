@@ -74,7 +74,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     it(`should support intercepting ${method} requests having partial headers restrictions`, async () => {
       await usingHttpInterceptor<{
@@ -258,7 +258,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>();
+    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
 
     it(`should support intercepting ${method} requests having partial, exact body JSON restrictions`, async () => {
       type MethodSchemaWithBody = HttpSchema.Method<{
