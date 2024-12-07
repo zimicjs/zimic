@@ -26,7 +26,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
     request: {
@@ -50,8 +50,6 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {

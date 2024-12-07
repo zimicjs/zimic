@@ -1,18 +1,12 @@
 import chalk from 'chalk';
 
 import InvalidJSONError from '@/errors/InvalidJSONError';
+import { HttpHeadersInit } from '@/http';
 import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpHeadersInit, HttpHeadersSchema } from '@/http/headers/types';
 import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
-import {
-  HttpMethod,
-  HttpMethodSchema,
-  HttpResponseSchemaStatusCode,
-  HttpSchema,
-  InferPathParams,
-} from '@/http/types/schema';
+import { HttpMethod, HttpMethodSchema, HttpSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { removeArrayElement } from '@/utils/arrays';
 import { formatObjectToLog, logWithPrefix } from '@/utils/console';
@@ -235,14 +229,14 @@ abstract class HttpInterceptorWorker {
 
   abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
-  static createResponseFromDeclaration<
-    Declaration extends {
+  static createResponseFromDeclaration(
+    request: HttpRequest,
+    declaration: {
       status: number;
-      headers?: HttpHeadersInit<HeadersSchema>;
+      headers?: HttpHeadersInit;
       body?: HttpBody;
     },
-    HeadersSchema extends HttpHeadersSchema,
-  >(request: HttpRequest, declaration: Declaration) {
+  ): Response {
     const headers = new HttpHeaders(declaration.headers);
     const status = declaration.status;
 
@@ -329,10 +323,9 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static async parseRawResponse<
-    MethodSchema extends HttpMethodSchema,
-    StatusCode extends HttpResponseSchemaStatusCode<Default<MethodSchema['response']>>,
-  >(originalRawResponse: HttpResponse): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
+  static async parseRawResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>(
+    originalRawResponse: HttpResponse,
+  ): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
 

@@ -9,7 +9,9 @@ import { HttpInterceptorPlatform } from './options';
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface HttpInterceptor {
+// The schema is still a generic type for backward compatibility.
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export interface HttpInterceptor<_Schema extends HttpSchema> {
   /**
    * @returns The base URL used by the interceptor.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
@@ -46,6 +48,19 @@ export interface HttpInterceptor {
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop `interceptor.stop()` API reference}
    */
   stop: () => Promise<void>;
+
+  /**
+   * Clears all of the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
+   * instances created by this interceptor. After calling this method, the interceptor will no longer intercept any
+   * requests until new mock responses are registered.
+   *
+   * This method is useful to reset the interceptor mocks between tests.
+   *
+   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()` API reference}
+   */
+  clear: (() => void) | (() => Promise<void>);
 }
 
 /**
@@ -57,7 +72,7 @@ export interface HttpInterceptor {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor {
+export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
   readonly type: 'local';
 
   /**
@@ -137,17 +152,6 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    */
   options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
-  /**
-   * Clears all of the
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
-   * instances created by this interceptor. After calling this method, the interceptor will no longer intercept any
-   * requests until new mock responses are registered.
-   *
-   * This method is useful to reset the interceptor mocks between tests.
-   *
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()` API reference}
-   */
   clear: () => void;
 }
 
@@ -162,7 +166,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
-export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor {
+export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
   readonly type: 'remote';
 
   /**

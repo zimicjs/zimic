@@ -26,13 +26,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   interface RequestHeadersSchema {
