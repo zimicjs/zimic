@@ -42,7 +42,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestURLSearchParamsString = '<invalid-request-url-search-params>';
     const invalidResponseURLSearchParamsString = '<invalid-response-url-search-params>';

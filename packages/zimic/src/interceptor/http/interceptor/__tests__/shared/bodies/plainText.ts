@@ -40,7 +40,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     it(`should support intercepting ${method} requests having a plain text body`, async () => {
       type MethodSchema = HttpSchema.Method<{

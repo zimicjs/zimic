@@ -47,7 +47,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     type MethodSchema = HttpSchema.Method<{
       response: { 200: { headers: AccessControlHeaders } };

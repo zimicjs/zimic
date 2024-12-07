@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
-import { InternalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { createURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
@@ -21,7 +20,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
-    return createInternalHttpInterceptor<{}>({ type: workerOptions.type, baseURL }) as InternalHttpInterceptor<{}>;
+    return createInternalHttpInterceptor<{}>({ type: workerOptions.type, baseURL });
   }
 
   beforeAll(async () => {

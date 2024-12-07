@@ -9,11 +9,9 @@ import { jsonContains, jsonEquals } from '@/utils/json';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import {
-  HttpRequestHandlerRestriction,
-  HttpRequestHandlerStaticRestriction,
-  InternalHttpRequestHandler,
-} from './types/public';
+import LocalHttpRequestHandler from './LocalHttpRequestHandler';
+import RemoteHttpRequestHandler from './RemoteHttpRequestHandler';
+import { HttpRequestHandlerRestriction, HttpRequestHandlerStaticRestriction } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -47,7 +45,9 @@ class HttpRequestHandlerClient<
     private interceptor: HttpInterceptorClient<Schema>,
     private _method: Method,
     private _path: Path,
-    private handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>,
+    private handler:
+      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
   ) {}
 
   method() {

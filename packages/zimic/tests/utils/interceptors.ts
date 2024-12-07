@@ -12,10 +12,14 @@ import {
   LocalHttpInterceptorOptions,
   RemoteHttpInterceptorOptions,
 } from '@/interceptor/http/interceptor/types/options';
-import { HttpInterceptor, InternalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
+import { HttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import { createHttpInterceptorWorker } from '@/interceptor/http/interceptorWorker/factory';
-import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import { HttpInterceptorWorkerOptions } from '@/interceptor/http/interceptorWorker/types/options';
+import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/RemoteHttpInterceptorWorker';
+import {
+  LocalHttpInterceptorWorkerOptions,
+  RemoteHttpInterceptorWorkerOptions,
+} from '@/interceptor/http/interceptorWorker/types/options';
 import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
@@ -57,16 +61,18 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(
 ): RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): InternalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>> | RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
-  });
+  }) satisfies HttpInterceptor<ConvertToStrictHttpSchema<Schema>> as
+    | LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
+    | RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
 }
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (
-  interceptor: HttpInterceptor<Schema>,
+  interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>,
 ) => PossiblePromise<void>;
 
 interface UsingInterceptorOptions {
@@ -104,23 +110,23 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   }
 }
 
-type UsingWorkerCallback = (worker: HttpInterceptorWorker) => PossiblePromise<void>;
+type UsingWorkerCallback = (worker: LocalHttpInterceptorWorker | RemoteHttpInterceptorWorker) => PossiblePromise<void>;
 
 interface UsingWorkerOptions {
   start?: boolean;
 }
 
 export async function usingHttpInterceptorWorker(
-  workerOptions: HttpInterceptorWorkerOptions,
+  workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
   callback: UsingWorkerCallback,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
-  workerOptions: HttpInterceptorWorkerOptions,
+  workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
   options: UsingWorkerOptions,
   callback: UsingWorkerCallback,
 ): Promise<void>;
 export async function usingHttpInterceptorWorker(
-  workerOptions: HttpInterceptorWorkerOptions,
+  workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions,
   callbackOrOptions: UsingWorkerCallback | UsingWorkerOptions,
   optionalCallback?: UsingWorkerCallback,
 ): Promise<void> {

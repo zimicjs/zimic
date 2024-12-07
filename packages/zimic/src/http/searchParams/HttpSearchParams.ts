@@ -1,4 +1,4 @@
-import { ReplaceBy, ArrayItemIfArray } from '@/types/utils';
+import { ReplaceBy, Defined, ArrayItemIfArray } from '@/types/utils';
 
 import { HttpSearchParamsSchema, HttpSearchParamsInit, HttpSearchParamsSchemaName } from './types';
 
@@ -64,7 +64,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/set MDN Reference} */
   set<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<Defined<Schema[Name]>>,
   ): void {
     super.set(name, value);
   }
@@ -72,7 +72,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/append MDN Reference} */
   append<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value: ArrayItemIfArray<Defined<Schema[Name]>>,
   ): void {
     super.append(name, value);
   }
@@ -101,16 +101,14 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll MDN Reference}
    */
-  getAll<Name extends HttpSearchParamsSchemaName.Array<Schema>>(
-    name: Name,
-  ): ArrayItemIfArray<NonNullable<Schema[Name]>>[] {
-    return super.getAll(name) as ArrayItemIfArray<NonNullable<Schema[Name]>>[];
+  getAll<Name extends HttpSearchParamsSchemaName.Array<Schema>>(name: Name): ArrayItemIfArray<Defined<Schema[Name]>>[] {
+    return super.getAll(name) as ArrayItemIfArray<Defined<Schema[Name]>>[];
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/has MDN Reference} */
   has<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<Defined<Schema[Name]>>,
   ): boolean {
     return super.has(name, value);
   }
@@ -118,14 +116,14 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete MDN Reference} */
   delete<Name extends HttpSearchParamsSchemaName<Schema>>(
     name: Name,
-    value?: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    value?: ArrayItemIfArray<Defined<Schema[Name]>>,
   ): void {
     super.delete(name, value);
   }
 
   forEach<This extends HttpSearchParams<Schema>>(
     callback: <Key extends HttpSearchParamsSchemaName<Schema>>(
-      value: ArrayItemIfArray<NonNullable<Schema[Key]>>,
+      value: ArrayItemIfArray<Defined<Schema[Key]>>,
       key: Key,
       parent: HttpSearchParams<Schema>,
     ) => void,
@@ -140,26 +138,26 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/values MDN Reference} */
-  values(): URLSearchParamsIterator<ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
+  values(): URLSearchParamsIterator<ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>> {
     return super.values() as URLSearchParamsIterator<
-      ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>
+      ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>
     >;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries MDN Reference} */
   entries(): URLSearchParamsIterator<
-    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
   > {
     return super.entries() as URLSearchParamsIterator<
-      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }
 
   [Symbol.iterator](): URLSearchParamsIterator<
-    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+    [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
   > {
     return super[Symbol.iterator]() as URLSearchParamsIterator<
-      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<NonNullable<Schema[HttpSearchParamsSchemaName<Schema>]>>]
+      [HttpSearchParamsSchemaName<Schema>, ArrayItemIfArray<Defined<Schema[HttpSearchParamsSchemaName<Schema>]>>]
     >;
   }
 

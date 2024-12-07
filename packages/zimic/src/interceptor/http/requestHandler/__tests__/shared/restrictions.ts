@@ -3,8 +3,9 @@ import { expectTypeOf, expect, it, beforeAll, afterAll, describe } from 'vitest'
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
+import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
+import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
-import { InternalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
@@ -23,7 +24,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
   let baseURL: URL;
 
-  let interceptor: InternalHttpInterceptor<Schema>;
+  let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
 
   beforeAll(async () => {

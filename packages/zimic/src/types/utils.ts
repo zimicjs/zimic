@@ -31,6 +31,12 @@ export type Prettify<Type> = {
   [Key in keyof Type]: Type[Key];
 };
 
+export type NonUndefined<Type> = Exclude<Type, undefined>;
+
+export type NonNullable<Type> = Exclude<Type, null>;
+
+export type Defined<Type> = NonNullable<NonUndefined<Type>>;
+
 export type ArrayItemIfArray<Type> = Type extends (infer Item)[] ? Item : Type;
 
 type PickArrayProperties<Type> = {

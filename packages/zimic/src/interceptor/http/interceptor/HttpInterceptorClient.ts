@@ -14,7 +14,7 @@ import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpIntercepto
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
-import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
+import { HttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
@@ -22,13 +22,6 @@ import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
-
-export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
-
-export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorClient<
-  Schema,
-  typeof LocalHttpRequestHandler & typeof RemoteHttpRequestHandler
->;
 
 class HttpInterceptorClient<
   Schema extends HttpSchema,
@@ -169,7 +162,11 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-  >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
+  >(
+    handler:
+      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
+      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
+  ) {
     const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
     if (!handlerClients.includes(handler.client())) {
       handlerClients.push(handler.client());
@@ -290,5 +287,13 @@ class HttpInterceptorClient<
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyHttpInterceptorClient = HttpInterceptorClient<any>;
+
+export type HttpRequestHandlerConstructor = typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+
+export type SharedHttpInterceptorClient<Schema extends HttpSchema> = HttpInterceptorClient<
+  Schema,
+  typeof LocalHttpRequestHandler
+> &
+  HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
 export default HttpInterceptorClient;

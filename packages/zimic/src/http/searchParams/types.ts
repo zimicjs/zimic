@@ -1,4 +1,4 @@
-import { ArrayItemIfArray, IfNever, NonArrayKey, ArrayKey } from '@/types/utils';
+import { Defined, ArrayItemIfArray, IfNever, NonArrayKey, ArrayKey } from '@/types/utils';
 
 import HttpSearchParams from './HttpSearchParams';
 
@@ -15,7 +15,7 @@ export namespace HttpSearchParamsSchema {
 
 /** A strict tuple representation of a {@link HttpSearchParamsSchema}. */
 export type HttpSearchParamsSchemaTuple<Schema extends HttpSearchParamsSchema = HttpSearchParamsSchema> = {
-  [Key in keyof Schema & string]: [Key, ArrayItemIfArray<NonNullable<Schema[Key]>>];
+  [Key in keyof Schema & string]: [Key, ArrayItemIfArray<Defined<Schema[Key]>>];
 }[keyof Schema & string];
 
 /**

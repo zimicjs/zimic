@@ -34,7 +34,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     type MethodSchema = HttpSchema.Method<{
       response: {

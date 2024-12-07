@@ -6,13 +6,9 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
 } from '@/http/types/schema';
 
-import {
-  HttpRequestHandler,
-  LocalHttpRequestHandler,
-  RemoteHttpRequestHandler,
-} from '../../requestHandler/types/public';
+import { LocalHttpRequestHandler, RemoteHttpRequestHandler } from '../../requestHandler/types/public';
 
-export type SyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> =
+export type SyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
   Method extends HttpSchemaMethod<Schema>
     ? <Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
         path: Path,
@@ -20,7 +16,7 @@ export type SyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method e
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => LocalHttpRequestHandler<any, any, never>;
 
-export type AsyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> =
+export type AsyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
   Method extends HttpSchemaMethod<Schema>
     ? <Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
         path: Path,
@@ -28,12 +24,6 @@ export type AsyncHttpInterceptorMethodHandler<Schema extends HttpSchema, Method 
     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (path: never) => RemoteHttpRequestHandler<any, any, never>;
 
-export type HttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> =
-  Method extends HttpSchemaMethod<Schema>
-    ? <Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
-        path: Path,
-      ) =>
-        | LocalHttpRequestHandler<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>
-        | RemoteHttpRequestHandler<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>
-    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (path: never) => HttpRequestHandler<any, any, never>;
+export type HttpInterceptorMethodHandler<Schema extends HttpSchema, Method extends HttpMethod> =
+  | SyncHttpInterceptorMethodHandler<Schema, Method>
+  | AsyncHttpInterceptorMethodHandler<Schema, Method>;

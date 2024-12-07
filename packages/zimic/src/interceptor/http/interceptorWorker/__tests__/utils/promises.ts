@@ -1,11 +1,17 @@
-import { AnyHttpInterceptor, AnyInternalHttpInterceptor } from '@/interceptor/http/interceptor/types/public';
+import { AnyLocalHttpInterceptor } from '@/interceptor/http/interceptor/LocalHttpInterceptor';
+import { AnyRemoteHttpInterceptor } from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { expectPossiblePromise } from '@tests/utils/promises';
 
-import HttpInterceptorWorker from '../../HttpInterceptorWorker';
+import LocalHttpInterceptorWorker from '../../LocalHttpInterceptorWorker';
+import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
 
 export function promiseIfRemote<FulfilledResult>(
   value: FulfilledResult,
-  comparisonEntity: HttpInterceptorWorker | AnyHttpInterceptor | AnyInternalHttpInterceptor,
+  comparisonEntity:
+    | LocalHttpInterceptorWorker
+    | RemoteHttpInterceptorWorker
+    | AnyLocalHttpInterceptor
+    | AnyRemoteHttpInterceptor,
 ): FulfilledResult {
   return expectPossiblePromise(value, {
     shouldBePromise: comparisonEntity.type === 'remote',

@@ -48,7 +48,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     const invalidRequestJSONString = '<invalid-request-json>';
     const invalidResponseJSONString = '<invalid-response-json>';

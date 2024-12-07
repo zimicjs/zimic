@@ -1,4 +1,4 @@
-import { ArrayItemIfArray, ArrayKey, NonArrayKey, ReplaceBy } from '@/types/utils';
+import { ArrayItemIfArray, ArrayKey, Defined, NonArrayKey, ReplaceBy } from '@/types/utils';
 import { fileEquals } from '@/utils/files';
 
 import { HttpFormDataSchema } from './types';
@@ -33,16 +33,16 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/set MDN Reference} */
   set<Name extends keyof Schema & string>(
     name: Name,
-    value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
+    value: Exclude<ArrayItemIfArray<Defined<Schema[Name]>>, Blob>,
   ): void;
   set<Name extends keyof Schema & string>(
     name: Name,
-    blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
+    blob: Exclude<ArrayItemIfArray<Defined<Schema[Name]>>, string>,
     fileName?: string,
   ): void;
   set<Name extends keyof Schema & string>(
     name: Name,
-    blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    blobOrValue: ArrayItemIfArray<Defined<Schema[Name]>>,
     fileName?: string,
   ): void {
     if (fileName === undefined) {
@@ -55,16 +55,16 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/append MDN Reference} */
   append<Name extends keyof Schema & string>(
     name: Name,
-    value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
+    value: Exclude<ArrayItemIfArray<Defined<Schema[Name]>>, Blob>,
   ): void;
   append<Name extends keyof Schema & string>(
     name: Name,
-    blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
+    blob: Exclude<ArrayItemIfArray<Defined<Schema[Name]>>, string>,
     fileName?: string,
   ): void;
   append<Name extends keyof Schema & string>(
     name: Name,
-    blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
+    blobOrValue: ArrayItemIfArray<Defined<Schema[Name]>>,
     fileName?: string,
   ): void {
     if (fileName === undefined) {
@@ -100,8 +100,8 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    */
   getAll<Name extends ArrayKey<Schema> & string>(
     name: Name,
-  ): ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob, File>[] {
-    return super.getAll(name) as ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob, File>[];
+  ): ReplaceBy<ArrayItemIfArray<Defined<Schema[Name]>>, Blob, File>[] {
+    return super.getAll(name) as ReplaceBy<ArrayItemIfArray<Defined<Schema[Name]>>, Blob, File>[];
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/has MDN Reference} */
@@ -116,7 +116,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
 
   forEach<This extends HttpFormData<Schema>>(
     callback: <Key extends keyof Schema & string>(
-      value: ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Key]>>, Blob, File>,
+      value: ReplaceBy<ArrayItemIfArray<Defined<Schema[Key]>>, Blob, File>,
       key: Key,
       parent: HttpFormData<Schema>,
     ) => void,
@@ -131,26 +131,26 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/values MDN Reference} */
-  values(): FormDataIterator<ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>> {
+  values(): FormDataIterator<ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>> {
     return super.values() as FormDataIterator<
-      ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>
+      ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>
     >;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/entries MDN Reference} */
   entries(): FormDataIterator<
-    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
   > {
     return super.entries() as FormDataIterator<
-      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
     >;
   }
 
   [Symbol.iterator](): FormDataIterator<
-    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
   > {
     return super[Symbol.iterator]() as FormDataIterator<
-      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<Defined<Schema[keyof Schema & string]>>, Blob, File>]
     >;
   }
 

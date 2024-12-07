@@ -92,7 +92,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       type,
     });
 
-    const lowerMethod = method.toLowerCase<'POST'>(); // Only consider POST to reduce type unions
+    const lowerMethod = method.toLowerCase<'POST'>();
 
     describe.each([
       { overrideDefault: undefined },

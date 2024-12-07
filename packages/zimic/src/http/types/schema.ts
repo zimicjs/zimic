@@ -26,14 +26,6 @@ export const HTTP_METHODS = Object.freeze(['GET', 'POST', 'PUT', 'PATCH', 'DELET
  */
 export type HttpMethod = (typeof HTTP_METHODS)[number];
 
-namespace HttpRequestSchema {
-  export interface NoBody {
-    headers?: HttpHeadersSchema.Loose;
-    searchParams?: HttpSearchParamsSchema.Loose;
-    body?: null;
-  }
-}
-
 /**
  * A schema representing the structure of an HTTP request.
  *
@@ -67,8 +59,7 @@ export interface HttpResponseSchema {
 
 export namespace HttpResponseSchema {
   /** A schema representing the structure of an HTTP response with no body. */
-  export interface NoBody {
-    headers?: HttpHeadersSchema.Loose;
+  export interface NoBody extends Omit<HttpResponseSchema, 'body'> {
     body?: null;
   }
 }
@@ -244,17 +235,15 @@ export interface HttpMethodSchema {
 
 export namespace HttpMethodSchema {
   /** A schema representing the structure of an HTTP request and response for a given method, having no request body. */
-  export interface NoRequestBody {
-    request?: HttpRequestSchema.NoBody;
-    response?: HttpResponseSchemaByStatusCode;
+  export interface NoRequestBody extends Omit<HttpMethodSchema, 'request'> {
+    request?: Omit<HttpRequestSchema, 'body'> & { body?: null };
   }
 
   /**
    * A schema representing the structure of an HTTP request and response for a given method, having no request and
    * response bodies.
    */
-  export interface NoBody {
-    request?: HttpRequestSchema.NoBody;
+  export interface NoBody extends Omit<NoRequestBody, 'response'> {
     response?: HttpResponseSchemaByStatusCode.NoBody;
   }
 }
