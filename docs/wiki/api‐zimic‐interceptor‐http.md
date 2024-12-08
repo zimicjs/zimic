@@ -413,7 +413,10 @@ When targeting a browser environment with a local interceptor, make sure to foll
 
 ### HTTP `interceptor.stop()`
 
-Stops the interceptor. Stopping an interceptor will also clear its registered handlers and responses.
+Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
+exactly as if
+[`interceptor.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) had been
+called.
 
 ```ts
 await interceptor.stop();
@@ -576,9 +579,9 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 
 ### HTTP `interceptor.clear()`
 
-Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
-registered responses and intercepted requests. After calling this method, the interceptor will no longer intercept any
-requests until new mock responses are registered.
+Clears the interceptor and all of its [`HttpRequestHandler`](#httprequesthandler) instances, including their registered
+responses and intercepted requests. After calling this method, the interceptor will no longer intercept any requests
+until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
