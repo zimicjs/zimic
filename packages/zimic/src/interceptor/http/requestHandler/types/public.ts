@@ -227,6 +227,22 @@ export interface LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  /**
+   * Clears any response declared with
+   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
+   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
+   *
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   *
+   * This method is useful to skip a handler. It is more gentle than
+   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
+   * removed the response, keeping restrictions and intercepted requests.
+   *
+   * @returns The same handler, now without a declared responses.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
+   */
   bypass: () => this;
 
   /**
@@ -278,6 +294,8 @@ export interface SyncedRemoteHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends HttpRequestHandler<Schema, Method, Path> {
+  readonly type: 'remote';
+
   /**
    * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
    * which requests will match the handler and receive the mock response. If multiple restrictions are declared, either
@@ -298,12 +316,39 @@ export interface SyncedRemoteHttpRequestHandler<
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
+  /**
+   * Declares a response to return for matched intercepted requests.
+   *
+   * When the handler matches a request, it will respond with the given declaration. The response type is statically
+   * validated against the schema of the interceptor.
+   *
+   * @param declaration The response declaration or a factory to create it.
+   * @returns The same handler, now including type information about the response declaration based on the specified
+   *   status code.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
+   */
   respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  /**
+   * Clears any response declared with
+   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
+   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
+   *
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   *
+   * This method is useful to skip a handler. It is more gentle than
+   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
+   * removed the response, keeping restrictions and intercepted requests.
+   *
+   * @returns The same handler, now without a declared responses.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
+   */
   bypass: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /**
@@ -343,13 +388,12 @@ export interface SyncedRemoteHttpRequestHandler<
 }
 
 /**
- * A remote HTTP request handler to declare responses for intercepted requests. In a remote handler, the mocking
- * operations are asynchronous and include remote calls to the connected
+ * A pending remote HTTP request handler. When a remote handler is pending, it is not guaranteed that all of the mocking
+ * operations were committed to the connected
  * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
  *
- * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
- * will be used.
+ * To commit a remote interceptor, you can `await` it or use the methods {@link then handler.then()},
+ * {@link catch handler.catch()}, and {@link finally handler.finally()}.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
@@ -359,8 +403,6 @@ export interface PendingRemoteHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
-  readonly type: 'remote';
-
   /**
    * Waits for the remote handler to be synced with the connected
    * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}.
