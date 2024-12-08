@@ -1,12 +1,9 @@
-import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
 import { Default } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
-import {
-  HttpRequestHandlerRestriction,
-  LocalHttpRequestHandler as PublicLocalHttpRequestHandler,
-} from './types/public';
+import { HttpRequestHandlerRestriction, InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -19,8 +16,8 @@ class LocalHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicLocalHttpRequestHandler<Schema, Method, Path, StatusCode>
+  StatusCode extends HttpStatusCode = never,
+> implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode>
 {
   readonly type = 'local';
 
@@ -42,14 +39,12 @@ class LocalHttpRequestHandler<
     return this._client.path();
   }
 
-  with(
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this._client.with(restriction);
     return this;
   }
 
-  respond<NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond<NewStatusCode extends HttpStatusCode>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
@@ -60,12 +55,14 @@ class LocalHttpRequestHandler<
     return newThis;
   }
 
-  bypass(): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  /** @deprecated */
+  bypass(): this {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     this._client.bypass();
     return this;
   }
 
-  clear(): LocalHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  clear(): this {
     this._client.clear();
     return this;
   }

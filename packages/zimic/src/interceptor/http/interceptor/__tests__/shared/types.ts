@@ -5,7 +5,6 @@ import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http/types/schema';
 import { HttpRequestHandlerPath } from '@/interceptor/http/requestHandler/types/utils';
-import { Prettify } from '@/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { createHttpInterceptor } from '../../factory';
@@ -1023,7 +1022,7 @@ export function declareTypeHttpInterceptorTests(
 
     type CompositeInterceptorSchema = InferHttpInterceptorSchema<typeof _compositeInterceptor>;
     type InlineInterceptorSchema = InferHttpInterceptorSchema<typeof _inlineInterceptor>;
-    expectTypeOf<Prettify<CompositeInterceptorSchema>>().toEqualTypeOf<Prettify<InlineInterceptorSchema>>();
+    expectTypeOf<CompositeInterceptorSchema>().toEqualTypeOf<InlineInterceptorSchema>();
   });
 
   describe('Dynamic paths', () => {

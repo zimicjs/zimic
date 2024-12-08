@@ -12,7 +12,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/intercep
 import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -26,13 +26,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   interface RequestHeadersSchema {
@@ -147,8 +145,6 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -162,8 +158,6 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -178,8 +172,6 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -237,7 +229,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           other: 'value',
         });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
         expect(response.status).toBe(200);
@@ -247,14 +239,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         searchParams.delete('tag');
 
-        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
@@ -318,11 +308,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -390,11 +376,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -469,11 +451,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               body,
             });
 
-            if (type === 'local') {
-              await expectBypassedResponse(responsePromise);
-            } else {
-              await expectFetchError(responsePromise);
-            }
+            await expectFetchError(responsePromise);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(1);
@@ -568,11 +546,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
               body,
             });
 
-            if (type === 'local') {
-              await expectBypassedResponse(responsePromise);
-            } else {
-              await expectFetchError(responsePromise);
-            }
+            await expectFetchError(responsePromise);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(2);
@@ -648,11 +622,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -732,11 +702,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -794,11 +760,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -865,11 +827,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -937,11 +895,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -1018,11 +972,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
             body,
           });
 
-          if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);

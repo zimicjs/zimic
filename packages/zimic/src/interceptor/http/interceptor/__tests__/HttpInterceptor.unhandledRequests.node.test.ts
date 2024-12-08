@@ -5,7 +5,8 @@ import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
 import testMatrix from './shared/matrix';
-import { declareUnhandledRequestHttpInterceptorTests } from './shared/unhandledRequests';
+import { declareUnhandledRequestFactoriesHttpInterceptorTests } from './shared/unhandledRequests.factories';
+import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unhandledRequests.logging';
 
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
@@ -25,10 +26,21 @@ describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', 
     }
   });
 
-  declareUnhandledRequestHttpInterceptorTests({
-    platform: 'node',
-    type,
-    getBaseURL: () => baseURL,
-    getInterceptorOptions: () => ({ type, baseURL }),
+  describe('Logging', async () => {
+    await declareUnhandledRequestLoggingHttpInterceptorTests({
+      platform: 'node',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
+  });
+
+  describe('Factories', async () => {
+    await declareUnhandledRequestFactoriesHttpInterceptorTests({
+      platform: 'node',
+      type,
+      getBaseURL: () => baseURL,
+      getInterceptorOptions: () => ({ type, baseURL }),
+    });
   });
 });

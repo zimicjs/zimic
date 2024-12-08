@@ -6,14 +6,14 @@ import { getBrowserBaseURL } from '@tests/utils/interceptors';
 import { declareHandlerHttpInterceptorTests } from './shared/handlers';
 import testMatrix from './shared/matrix';
 
-describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bypass', ({ type }) => {
+describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bypass', async ({ type }) => {
   let baseURL: ExtendedURL;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);
   });
 
-  declareHandlerHttpInterceptorTests({
+  await declareHandlerHttpInterceptorTests({
     platform: 'browser',
     type,
     getBaseURL: () => baseURL,

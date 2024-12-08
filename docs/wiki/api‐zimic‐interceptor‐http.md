@@ -144,21 +144,21 @@ console by default.
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
-In a [local interceptor](getting‐started#local-http-interceptors), unhandled requests can be either bypassed or
-rejected. Bypassed requests reach the real network, whereas rejected requests fail with an network error. The default
-behavior in local interceptors is to bypass unhandled requests.
+In a [local interceptor](getting‐started#local-http-interceptors), unhandled requests can be either **bypassed** or
+**rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network error. The
+default behavior in local interceptors is to **reject** unhandled requests.
 
-On the other hand, [remote interceptors](getting‐started#remote-http-interceptors) and
-[interceptor server](cli‐zimic‐server) always reject unhandled requests. This is because the unhandled requests have
-already reached the interceptor server, so there would be no way of bypassing them at this point.
+[Remote interceptors](getting‐started#remote-http-interceptors) and [interceptor server](cli‐zimic‐server) always
+**reject** unhandled requests. This is because the unhandled requests have already reached the interceptor server, so
+there would be no way of bypassing them at this point.
 
-You can override the default logging behavior per interceptor with `onUnhandledRequest` in
+You can override the logging behavior per interceptor with `onUnhandledRequest` in
 [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
 dynamically determine which strategy to use for an unhandled request.
 
-<details>
+<details open>
   <summary>
-    Example 1: Ignore all unhandled requests with no logging:
+    Example 1: Ignore unhandled requests in an interceptor without logging:
   </summary>
 
 ```ts
@@ -176,9 +176,9 @@ const interceptor = httpInterceptor.create<Schema>({
 
 </details>
 
-<details>
+<details open>
   <summary>
-    Example 2: Reject all unhandled requests with logging:
+    Example 2: Reject unhandled requests in an interceptor with logging:
   </summary>
 
 ```ts
@@ -196,9 +196,9 @@ const interceptor = httpInterceptor.create<Schema>({
 
 </details>
 
-<details>
+<details open>
   <summary>
-    Example 3: Dynamically ignore or reject unhandled requests:
+    Example 3: Dynamically ignore or reject unhandled requests in an interceptor:
   </summary>
 
 ```ts
@@ -212,6 +212,8 @@ const interceptor = httpInterceptor.create<Schema>({
 
     // Ignore only unhandled requests to /assets
     if (url.pathname.startsWith('/assets')) {
+      // Remember: 'bypass' is only available for local interceptors!
+      // Use 'reject' for remote interceptors.
       return { action: 'bypass', log: false };
     }
 
@@ -223,25 +225,26 @@ const interceptor = httpInterceptor.create<Schema>({
 
 </details>
 
-If you want to override the default logging behavior for all interceptors, or requests that did not match any known base
-URL, you can use `httpInterceptor.default.local.onUnhandledRequest` or
-`httpInterceptor.default.remote.onUnhandledRequest`. Keep in mind that defining an `onUnhandledRequest` when creating an
-interceptor will take precedence over `httpInterceptor.default.local.onUnhandledRequest` and
-`httpInterceptor.default.remote.onUnhandledRequest`.
+If you want to override the default logging behavior for all interceptors, use
+`httpInterceptor.default.local.onUnhandledRequest` or `httpInterceptor.default.remote.onUnhandledRequest`. Keep in mind
+that `onUnhandledRequest` strategies declared when creating an interceptor will take precedence over
+`httpInterceptor.default.local.onUnhandledRequest` and `httpInterceptor.default.remote.onUnhandledRequest`.
 
 <details>
   <summary>
-    Example 4: Ignore all unhandled requests with no logging:
+    Example 4: Ignore unhandled requests without logging in all interceptors:
   </summary>
 
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
 
+// For local interceptors:
 httpInterceptor.default.local.onUnhandledRequest = {
   action: 'bypass',
   log: false,
 };
 
+// For remote interceptors:
 httpInterceptor.default.remote.onUnhandledRequest = {
   action: 'reject',
   log: false,
@@ -252,7 +255,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
 
 <details>
   <summary>
-    Example 5: Reject all unhandled requests with logging:
+    Example 5: Reject unhandled requests with logging in all interceptors:
   </summary>
 
 ```ts
@@ -275,7 +278,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
 
 <details>
   <summary>
-    Example 6: Dynamically ignore or reject all unhandled requests:
+    Example 6: Dynamically ignore or reject unhandled requests in all interceptors:
   </summary>
 
 ```ts
@@ -298,14 +301,31 @@ httpInterceptor.default.local.onUnhandledRequest = (request) => {
 httpInterceptor.default.remote.onUnhandledRequest = (request) => {
   const url = new URL(request.url);
 
-  return {
-    action: 'reject', // Reject all unhandled requests
-    log: !url.pathname.startsWith('/assets'), // Log warnings for all unhandled requests except /assets
-  };
+  // Reject without logging only unhandled requests to /assets
+  if (url.pathname.startsWith('/assets')) {
+    return { action: 'reject', log: false };
+  }
+
+  // Reject with logging all other unhandled requests
+  return { action: 'reject', log: true };
 };
 ```
 
 </details>
+
+> [!NOTE]
+>
+> When a request is unhandled, Zimic looks for a running interceptor whose base URL is the prefix of the unhandled
+> request URL. If such interceptor is found, its strategy is used, or the default strategy if none was defined. If
+> multiple interceptors match the request URL, the **last** one started with `await interceptor.start()` will be used,
+> regardless of existing another interceptor with a more specific base URL.
+>
+> If no running interceptor matches the request, one of two things may happen:
+>
+> - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
+>   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server.md#zimic-server-start) in the
+>   interceptor server.
+> - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests
 
@@ -326,6 +346,8 @@ their intercepted requests in memory.
 >
 > See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
+<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+
 ```ts
 import { httpInterceptor } from 'zimic/interceptor/http';
 
@@ -334,7 +356,33 @@ const interceptor = httpInterceptor.create<Schema>({
   baseURL: 'http://localhost:3000',
   saveRequests: true,
 });
+
+// Recommended: Clear the interceptor after each test.
+// Use the equivalent of `afterEach` in your test framework.
+afterEach(() => {
+  interceptor.clear();
+});
 ```
+
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+
+```ts
+import { httpInterceptor } from 'zimic/interceptor/http';
+
+const interceptor = httpInterceptor.create<Schema>({
+  type: 'remote',
+  baseURL: 'http://localhost:3000',
+  saveRequests: true,
+});
+
+// Recommended: Clear the interceptor after each test.
+// Use the equivalent of `afterEach` in your test framework.
+afterEach(async () => {
+  await interceptor.clear();
+});
+```
+
+</details></td></tr></table>
 
 > [!TIP]
 >
@@ -346,7 +394,7 @@ const interceptor = httpInterceptor.create<Schema>({
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
-  type: 'local',
+  type: 'remote',
   baseURL: 'http://localhost:3000',
   saveRequests: process.env.NODE_ENV === 'test',
 });
@@ -365,7 +413,10 @@ When targeting a browser environment with a local interceptor, make sure to foll
 
 ### HTTP `interceptor.stop()`
 
-Stops the interceptor. Stopping an interceptor will also clear its registered handlers and responses.
+Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
+exactly as if
+[`interceptor.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) had been
+called.
 
 ```ts
 await interceptor.stop();
@@ -398,13 +449,19 @@ const platform = interceptor.platform();
 ### HTTP `interceptor.<method>(path)`
 
 Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and path. The path and method must be
-declared in the interceptor schema.
-
-The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
+declared in the interceptor schema. The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and
+`options`.
 
 When using a [remote interceptor](getting‐started#remote-http-interceptors), creating a handler is an asynchronous
 operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
 handler.
+
+To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request considering
+the interceptor base URL, method, path, and [restrictions](#http-handlerwithrestriction). The handlers are checked from
+the **last** created to the first, so new handlers have preference over old ones. This allows you to declare generic and
+specific handlers based on their order of creation. For example, a generic handler for `GET /users` can return an empty
+list, while a specific handler in a test case can return a list with some users. In this case, the specific handler will
+be considered first as long as it is created **after** the generic one.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -522,9 +579,9 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 
 ### HTTP `interceptor.clear()`
 
-Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
-registered responses and intercepted requests. After calling this method, the interceptor will no longer intercept any
-requests until new mock responses are registered.
+Clears the interceptor and all of its [`HttpRequestHandler`](#httprequesthandler) instances, including their registered
+responses and intercepted requests. After calling this method, the interceptor will no longer intercept any requests
+until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
@@ -1383,6 +1440,13 @@ To make the handler match requests again, register a new response with
 This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
 removed the response, keeping restrictions and intercepted requests.
 
+> [!IMPORTANT]
+>
+> This method is deprecated and will be removed soon. You can achieve an equivalent behavior by controlling the order in
+> which handlers are created. Since new handlers are always considered before old ones, you can replace `bypass()` calls
+> with new handler declarations describing your new responses. Learn more at the
+> [`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
+
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
@@ -1427,9 +1491,6 @@ stop matching requests. The next handler, created before this one, that matches 
 present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with `handler.respond()`.
-
-This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-[`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 

@@ -218,10 +218,8 @@ type ConvertToStrictHttpResponseSchemaByStatusCode<Schema> = {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
  */
-export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> = Extract<
-  keyof ResponseSchemaByStatusCode,
-  HttpStatusCode
->;
+export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> =
+  keyof ResponseSchemaByStatusCode & HttpStatusCode;
 
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
@@ -588,7 +586,7 @@ export namespace HttpSchema {
 export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Schema,
   any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  Extract<keyof UnionToIntersection<Schema[keyof Schema]>, HttpMethod>
+  keyof UnionToIntersection<Schema[keyof Schema]> & HttpMethod
 >;
 
 type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
@@ -627,8 +625,8 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  */
 export namespace HttpSchemaPath {
   type LooseLiteral<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
-    [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
-  }[Extract<keyof Schema, string>];
+    [Path in keyof Schema & string]: Method extends keyof Schema[Path] ? Path : never;
+  }[keyof Schema & string];
 
   /**
    * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more

@@ -84,14 +84,14 @@ export namespace UnhandledRequestStrategy {
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  export type RemoteDeclaration = Declaration<Extract<Action, 'reject'>>;
+  export type RemoteDeclaration = Declaration<'reject'>;
 
   /**
    * A factory to create dynamic unhandled request strategies based on the intercepted request in remote interceptors.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
    */
-  export type RemoteDeclarationFactory = DeclarationFactory<Extract<Action, 'reject'>>;
+  export type RemoteDeclarationFactory = DeclarationFactory<'reject'>;
 
   /** The static declaration or a factory of the strategy to use for unhandled requests in local interceptors. */
   export type Local = LocalDeclaration | LocalDeclarationFactory;

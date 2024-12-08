@@ -1,5 +1,9 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { HttpSchema } from '@/http/types/schema';
+import { formatObjectToLog } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
+
 import HttpSearchParams from '../HttpSearchParams';
 import { HttpSearchParamsSerialized } from '../types';
 
@@ -57,22 +61,68 @@ describe('HttpSearchParams', () => {
     });
 
     const searchParams = new HttpSearchParams<{
-      names?: string[];
+      oneName: string[];
+      twoNames: string[];
+      threeNames: string[];
       page?: `${number}`;
+      other?: string;
     }>({
-      names: ['User1', 'User2'],
+      oneName: ['User1'],
+      twoNames: ['User1', 'User2'],
+      threeNames: ['User1', 'User2', 'User3'],
       page: '1',
+      other: undefined,
     });
 
-    expect(searchParams.size).toBe(3);
+    expect(searchParams.size).toBe(7);
 
-    const names = searchParams.getAll('names');
-    expectTypeOf(names).toEqualTypeOf<string[]>();
-    expect(names).toEqual(['User1', 'User2']);
+    const oneName = searchParams.getAll('oneName');
+    expectTypeOf(oneName).toEqualTypeOf<string[]>();
+    expect(oneName).toEqual(['User1']);
+
+    const twoNames = searchParams.getAll('twoNames');
+    expectTypeOf(twoNames).toEqualTypeOf<string[]>();
+    expect(twoNames).toEqual(['User1', 'User2']);
+
+    const threeNames = searchParams.getAll('threeNames');
+    expectTypeOf(threeNames).toEqualTypeOf<string[]>();
+    expect(threeNames).toEqual(['User1', 'User2', 'User3']);
 
     const page = searchParams.get('page');
     expectTypeOf(page).toEqualTypeOf<`${number}` | null>();
     expect(page).toBe('1');
+
+    const other = searchParams.get('other');
+    expectTypeOf(other).toEqualTypeOf<string | null>();
+    expect(other).toBe(null);
+  });
+
+  it('should support being converted to an object', () => {
+    type Schema = HttpSchema.SearchParams<{
+      name: string[];
+      names: string[];
+      threeNames: string[];
+      page?: `${number}`;
+      other?: string;
+    }>;
+
+    const searchParams = new HttpSearchParams<Schema>({
+      name: ['User1'],
+      names: ['User1', 'User2'],
+      threeNames: ['User1', 'User2', 'User3'],
+      page: '1',
+      other: undefined,
+    });
+
+    const object = searchParams.toObject();
+    expectTypeOf(object).toEqualTypeOf<Schema>();
+
+    expect(object).toEqual({
+      name: 'User1',
+      names: ['User1', 'User2'],
+      threeNames: ['User1', 'User2', 'User3'],
+      page: '1',
+    });
   });
 
   it('should support being created from another HttpSearchParams', () => {
@@ -557,6 +607,32 @@ describe('HttpSearchParams', () => {
       expectTypeOf<HttpSearchParamsSerialized<symbol>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<Map<never, never>>>().toEqualTypeOf<never>();
       expectTypeOf<HttpSearchParamsSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
+  });
+
+  describe('Formatting', () => {
+    it('should be correctly formatted to log', async () => {
+      const searchParams = new HttpSearchParams({
+        oneName: ['User1'],
+        twoNames: ['User1', 'User2'],
+        threeNames: ['User1', 'User2', 'User3'],
+        page: '1',
+        other: undefined,
+      });
+
+      const formattedSearchParams = String(
+        await formatObjectToLog(searchParams.toObject(), {
+          colors: false,
+        }),
+      );
+
+      if (isClientSide()) {
+        expect(formattedSearchParams).toBe('[object Object]');
+      } else {
+        expect(formattedSearchParams).toBe(
+          "{ oneName: 'User1', page: '1', threeNames: [ 'User1', 'User2', 'User3' ], twoNames: [ 'User1', 'User2' ] }",
+        );
+      }
     });
   });
 });

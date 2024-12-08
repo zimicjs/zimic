@@ -24,13 +24,11 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -82,19 +80,19 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
         let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method,
-          timeout: 200,
+          timeout: overridesPreflightResponse ? 0 : 500,
         });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
         } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
+          await expectBypassedResponse(responsePromise, { canBeAborted: true });
         } else {
           await expectFetchError(responsePromise, { canBeAborted: true });
         }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
 
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
@@ -103,14 +101,12 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
-        } else if (type === 'local') {
-          await expectBypassedResponse(responsePromise);
         } else {
           await expectFetchError(responsePromise);
         }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
       });
     });
 
@@ -152,18 +148,19 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 500 });
+          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+            method,
+            timeout: overridesPreflightResponse ? 0 : 500,
+          });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise, { canBeAborted: true });
           }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
 
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
@@ -173,14 +170,12 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
-          } else if (type === 'local') {
-            await expectBypassedResponse(responsePromise);
           } else {
             await expectFetchError(responsePromise);
           }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
         });
       });
     });

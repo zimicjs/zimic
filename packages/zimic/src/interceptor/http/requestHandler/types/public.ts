@@ -4,9 +4,16 @@ import { HttpHeadersSchema } from '@/http/headers/types';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '@/http/searchParams/types';
 import { HttpBody } from '@/http/types/requests';
-import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
-import { DeepPartial, Default, IfAny, IfNever, PossiblePromise } from '@/types/utils';
+import {
+  HttpResponseSchemaStatusCode,
+  HttpSchema,
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  HttpStatusCode,
+} from '@/http/types/schema';
+import { DeepPartial, Default, IfNever, PossiblePromise } from '@/types/utils';
 
+import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
   HttpInterceptorRequest,
   HttpRequestBodySchema,
@@ -17,10 +24,11 @@ import {
   TrackedHttpInterceptorRequest,
 } from './requests';
 
-type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> =
-  | Partial<Schema>
-  | HttpHeaders<Partial<Schema>>
-  | HttpHeaders<Schema>;
+type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> = IfNever<
+  Schema,
+  never,
+  Partial<Schema> | HttpHeaders<Partial<Schema>> | HttpHeaders<Schema>
+>;
 
 /**
  * A static headers restriction to match intercepted requests.
@@ -142,7 +150,6 @@ export interface HttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
 > {
   /**
    * @returns The method that matches this handler.
@@ -156,6 +163,34 @@ export interface HttpRequestHandler<
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerpath `handler.path()` API reference}
    */
   path: () => Path;
+}
+
+export interface InternalHttpRequestHandler<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpStatusCode = never,
+> extends HttpRequestHandler<Schema, Method, Path> {
+  client: () => HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+}
+
+/**
+ * A local HTTP request handler to declare responses for intercepted requests. In a local handler, the mocking
+ * operations are synchronous and are executed in the same process where it was created.
+ *
+ * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
+ * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
+ * will be used.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
+ */
+export interface LocalHttpRequestHandler<
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
+  StatusCode extends HttpStatusCode = never,
+> extends HttpRequestHandler<Schema, Method, Path> {
+  readonly type: 'local';
 
   /**
    * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
@@ -173,10 +208,7 @@ export interface HttpRequestHandler<
    * @returns The same handler, now considering the specified restriction.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
    */
-
-  with: (
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ) => HttpRequestHandler<Schema, Method, Path, StatusCode>;
+  with: (restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) => this;
 
   /**
    * Declares a response to return for matched intercepted requests.
@@ -189,11 +221,11 @@ export interface HttpRequestHandler<
    *   status code.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
    */
-  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
-  ) => HttpRequestHandler<Schema, Method, Path, StatusCode>;
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+  ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /**
    * Clears any response declared with
@@ -208,10 +240,14 @@ export interface HttpRequestHandler<
    * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
    * removed the response, keeping restrictions and intercepted requests.
    *
+   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
+   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
+   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    * @returns The same handler, now without a declared responses.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
    */
-  bypass: () => HttpRequestHandler<Schema, Method, Path, StatusCode>;
+  bypass: () => this;
 
   /**
    * Clears any response declared with
@@ -225,14 +261,10 @@ export interface HttpRequestHandler<
    * To make the handler match requests again, register a new response with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
    *
-   * This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-   * [`handler.bypass()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass), as it
-   * also clears restrictions and intercepted requests.
-   *
    * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}
    */
-  clear: () => HttpRequestHandler<Schema, Method, Path, StatusCode>;
+  clear: () => this;
 
   /**
    * Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This
@@ -246,47 +278,6 @@ export interface HttpRequestHandler<
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
    */
-  requests:
-    | (() => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[])
-    | (() => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>);
-}
-
-/**
- * A local HTTP request handler to declare responses for intercepted requests. In a local handler, the mocking
- * operations are synchronous and are executed in the same process where it was created.
- *
- * When multiple handlers of the same interceptor match the same method and path, the _last_ handler created with
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)`}
- * will be used.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
- */
-export interface LocalHttpRequestHandler<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends IfAny<
-    Schema,
-    any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
-  > = never,
-> extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
-  readonly type: 'local';
-
-  with: (
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ) => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
-
-  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
-    declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
-  ) => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
-
-  bypass: () => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
-
-  clear: () => LocalHttpRequestHandler<Schema, Method, Path, StatusCode>;
-
   requests: () => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
@@ -301,22 +292,98 @@ export interface SyncedRemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> extends HttpRequestHandler<Schema, Method, Path, StatusCode> {
+  StatusCode extends HttpStatusCode = never,
+> extends HttpRequestHandler<Schema, Method, Path> {
+  readonly type: 'remote';
+
+  /**
+   * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
+   * which requests will match the handler and receive the mock response. If multiple restrictions are declared, either
+   * in a single object or with multiple calls to `handler.with()`, all of them must be met, essentially creating an AND
+   * condition.
+   *
+   * By default, restrictions use `exact: false`, meaning that any request **containing** the declared restrictions will
+   * match the handler, regardless of having more properties or values. If you want to match only requests with the
+   * exact values declared, you can use `exact: true`.
+   *
+   * A function is also supported to declare restrictions, in case they are dynamic.
+   *
+   * @param restriction The restriction to match intercepted requests.
+   * @returns The same handler, now considering the specified restriction.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
+   */
   with: (
     restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
-  respond: <StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  /**
+   * Declares a response to return for matched intercepted requests.
+   *
+   * When the handler matches a request, it will respond with the given declaration. The response type is statically
+   * validated against the schema of the interceptor.
+   *
+   * @param declaration The response declaration or a factory to create it.
+   * @returns The same handler, now including type information about the response declaration based on the specified
+   *   status code.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()` API reference}
+   */
+  respond: <NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
     declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
-  ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
+  ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  /**
+   * Clears any response declared with
+   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
+   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
+   *
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   *
+   * This method is useful to skip a handler. It is more gentle than
+   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
+   * removed the response, keeping restrictions and intercepted requests.
+   *
+   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
+   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
+   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
+   * @returns The same handler, now without a declared responses.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
+   */
   bypass: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
+  /**
+   * Clears any response declared with
+   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
+   * restrictions declared with
+   * [`handler.with(restriction)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction),
+   * and intercepted requests, making the handler stop matching requests. The next handler, created before this one,
+   * that matches the same method and path will be used if present. If not, the requests of the method and path will not
+   * be intercepted.
+   *
+   * To make the handler match requests again, register a new response with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   *
+   * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}
+   */
   clear: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
+  /**
+   * Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This
+   * is useful for testing that the correct requests were made by your application.
+   *
+   * **IMPORTANT**: This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
+   * for more information.
+   *
+   * @returns The intercepted requests.
+   * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
+   */
   requests: () => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>;
 }
 
@@ -334,7 +401,7 @@ export interface PendingRemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
+  StatusCode extends HttpStatusCode = never,
 > extends SyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
   /**
    * Waits for the remote handler to be synced with the connected
@@ -377,15 +444,9 @@ export interface PendingRemoteHttpRequestHandler<
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler` API reference}
  */
-export interface RemoteHttpRequestHandler<
+export type RemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends IfAny<
-    Schema,
-    any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
-  > = never,
-> extends PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
-  readonly type: 'remote';
-}
+  StatusCode extends HttpStatusCode = never,
+> = PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;

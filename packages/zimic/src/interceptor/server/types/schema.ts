@@ -4,7 +4,7 @@ import { WebSocket } from '@/webSocket/types';
 
 export interface HttpHandlerCommit {
   id: string;
-  url: string;
+  url: { base: string; full: string };
   method: HttpMethod;
 }
 
@@ -26,6 +26,15 @@ export type InterceptorServerWebSocketSchema = WebSocket.ServiceSchema<{
     };
     reply: {
       response: SerializedResponse | null;
+    };
+  };
+
+  'interceptors/responses/unhandled': {
+    event: {
+      request: SerializedHttpRequest;
+    };
+    reply: {
+      wasLogged: boolean;
     };
   };
 }>;

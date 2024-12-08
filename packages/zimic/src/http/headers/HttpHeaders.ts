@@ -1,4 +1,4 @@
-import { Default, Defined, ReplaceBy } from '@/types/utils';
+import { Default, ReplaceBy } from '@/types/utils';
 
 import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName } from './types';
 
@@ -44,12 +44,12 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
-  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: Defined<Schema[Name]>): void {
+  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]>): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
-  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: Defined<Schema[Name]>): void {
+  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]>): void {
     super.append(name, value);
   }
 
@@ -59,8 +59,8 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
-  getSetCookie(): Defined<Default<Schema['Set-Cookie'], string>>[] {
-    return super.getSetCookie() as Defined<Default<Schema['Set-Cookie'], string>>[];
+  getSetCookie(): NonNullable<Default<Schema['Set-Cookie'], string>>[] {
+    return super.getSetCookie() as NonNullable<Default<Schema['Set-Cookie'], string>>[];
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/has MDN Reference} */
@@ -75,7 +75,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
 
   forEach<This extends HttpHeaders<Schema>>(
     callback: <Key extends HttpHeadersSchemaName<Schema>>(
-      value: Defined<Schema[Key]>,
+      value: NonNullable<Schema[Key]>,
       key: Key,
       parent: Headers,
     ) => void,
@@ -90,22 +90,22 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
-  values(): HeadersIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>> {
-    return super.values() as HeadersIterator<Defined<Schema[HttpHeadersSchemaName<Schema>]>>;
+  values(): HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]>> {
+    return super.values() as HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
-  entries(): HeadersIterator<[HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]> {
+  entries(): HeadersIterator<[HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]> {
     return super.entries() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
+      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
     >;
   }
 
   [Symbol.iterator](): HeadersIterator<
-    [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
+    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
   > {
     return super[Symbol.iterator]() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, Defined<Schema[HttpHeadersSchemaName<Schema>]>]
+      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
     >;
   }
 
@@ -181,6 +181,29 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
     }
 
     return true;
+  }
+
+  /**
+   * Converts this headers object to a plain object. This method is useful for serialization and debugging purposes.
+   *
+   * @example
+   *   const headers = new HttpHeaders({
+   *     accept: 'application/json',
+   *     'content-type': 'application/json',
+   *   });
+   *   const object = headers.toObject();
+   *   console.log(object); // { accept: 'application/json', 'content-type': 'application/json' }
+   *
+   * @returns A plain object representation of this headers object.
+   */
+  toObject(): Schema {
+    const object = {} as Schema;
+
+    for (const [key, value] of this.entries()) {
+      object[key] = value;
+    }
+
+    return object;
   }
 
   private splitHeaderValues(value: string) {
