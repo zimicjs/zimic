@@ -1,10 +1,10 @@
 import {
   HTTP_METHODS,
   HttpMethod,
-  HttpResponseSchemaStatusCode,
   HttpSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
+  HttpStatusCode,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
@@ -14,7 +14,7 @@ import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpIntercepto
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
-import { HttpRequestHandler } from '../requestHandler/types/public';
+import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
@@ -161,12 +161,8 @@ class HttpInterceptorClient<
   registerRequestHandler<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
-    StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-  >(
-    handler:
-      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
-      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
-  ) {
+    StatusCode extends HttpStatusCode = never,
+  >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
     const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
     if (!handlerClients.includes(handler.client())) {
       handlerClients.push(handler.client());
@@ -201,7 +197,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context) {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<Response | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });

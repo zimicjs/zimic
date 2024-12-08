@@ -61,13 +61,11 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS_WITH_REQUEST_BODY)('Method (%s)', (method) => {

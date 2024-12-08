@@ -33,7 +33,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   type MethodSchemaWithoutRequestBody = HttpSchema.Method<{
     request: {
@@ -78,8 +78,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
     httpInterceptor.default.local.onUnhandledRequest = { action: 'reject', log: true };
     httpInterceptor.default.remote.onUnhandledRequest = { action: 'reject', log: true };

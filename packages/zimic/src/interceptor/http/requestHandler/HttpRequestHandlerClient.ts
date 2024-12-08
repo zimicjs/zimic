@@ -1,17 +1,19 @@
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
-import { Default, IfAny } from '@/types/utils';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
+import { Default } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
-import LocalHttpRequestHandler from './LocalHttpRequestHandler';
-import RemoteHttpRequestHandler from './RemoteHttpRequestHandler';
-import { HttpRequestHandlerRestriction, HttpRequestHandlerStaticRestriction } from './types/public';
+import {
+  HttpRequestHandlerRestriction,
+  HttpRequestHandlerStaticRestriction,
+  InternalHttpRequestHandler,
+} from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -26,11 +28,7 @@ class HttpRequestHandlerClient<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends IfAny<
-    Schema,
-    any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>
-  > = never,
+  StatusCode extends HttpStatusCode = never,
 > {
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
@@ -45,9 +43,7 @@ class HttpRequestHandlerClient<
     private interceptor: HttpInterceptorClient<Schema>,
     private _method: Method,
     private _path: Path,
-    private handler:
-      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
-      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
+    private handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>,
   ) {}
 
   method() {
@@ -65,14 +61,14 @@ class HttpRequestHandlerClient<
     return this;
   }
 
-  respond<NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond<NewStatusCode extends HttpStatusCode>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode> {
     const newThis = this as unknown as HttpRequestHandlerClient<Schema, Method, Path, NewStatusCode>;
 
-    newThis.createResponseDeclaration = this.isResponseDeclarationFactory<NewStatusCode>(declaration)
+    newThis.createResponseDeclaration = this.isResponseDeclarationFactory(declaration)
       ? declaration
       : () => declaration;
     newThis.interceptedRequests = [];
@@ -82,12 +78,10 @@ class HttpRequestHandlerClient<
     return newThis;
   }
 
-  private isResponseDeclarationFactory<
-    StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>,
-  >(
+  private isResponseDeclarationFactory(
     declaration:
-      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>
-      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, StatusCode>,
+      | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>>
+      | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>>,
   ) {
     return typeof declaration === 'function';
   }
@@ -164,8 +158,8 @@ class HttpRequestHandlerClient<
       return true;
     }
 
-    const body: unknown = request.body;
-    const restrictionBody: unknown = restriction.body;
+    const body = request.body as unknown;
+    const restrictionBody = restriction.body as unknown;
 
     if (typeof body === 'string' && typeof restrictionBody === 'string') {
       return restriction.exact ? body === restrictionBody : body.includes(restrictionBody);

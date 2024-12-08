@@ -25,7 +25,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   type MethodSchema = HttpSchema.Method<{
     response: { 200: { headers: AccessControlHeaders } };
@@ -34,8 +34,6 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
