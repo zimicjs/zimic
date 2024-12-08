@@ -256,7 +256,7 @@ class HttpInterceptorClient<
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {
-      clearResults.push(...this.bypassMethodHandlers(method));
+      clearResults.push(...this.clearMethodHandlers(method));
       this.handlerClientsByMethod[method].clear();
     }
 
@@ -268,16 +268,16 @@ class HttpInterceptorClient<
     }
   }
 
-  private bypassMethodHandlers(method: HttpMethod) {
-    const bypassResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
+  private clearMethodHandlers(method: HttpMethod) {
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
 
     for (const handlers of this.handlerClientsByMethod[method].values()) {
       for (const handler of handlers) {
-        bypassResults.push(handler.bypass());
+        clearResults.push(handler.clear());
       }
     }
 
-    return bypassResults;
+    return clearResults;
   }
 }
 

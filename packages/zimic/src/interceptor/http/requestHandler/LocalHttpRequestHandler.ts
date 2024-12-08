@@ -55,6 +55,7 @@ class LocalHttpRequestHandler<
     return newThis;
   }
 
+  /** @deprecated */
   bypass(): this {
     this._client.bypass();
     return this;

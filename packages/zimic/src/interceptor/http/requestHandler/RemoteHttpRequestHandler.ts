@@ -89,6 +89,7 @@ class RemoteHttpRequestHandler<
     return newUnsyncedThis;
   }
 
+  /** @deprecated */
   bypass(): this {
     this._client.bypass();
     return this.unsynced;

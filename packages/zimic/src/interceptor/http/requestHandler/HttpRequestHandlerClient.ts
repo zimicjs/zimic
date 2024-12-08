@@ -54,9 +54,7 @@ class HttpRequestHandlerClient<
     return this._path;
   }
 
-  with(
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
+  with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.restrictions.push(restriction);
     return this;
   }
@@ -86,15 +84,17 @@ class HttpRequestHandlerClient<
     return typeof declaration === 'function';
   }
 
-  bypass(): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
+  /** @deprecated */
+  bypass(): this {
     this.createResponseDeclaration = undefined;
     return this;
   }
 
-  clear(): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
+  clear(): this {
     this.restrictions = [];
     this.interceptedRequests = [];
-    return this.bypass();
+    this.createResponseDeclaration = undefined;
+    return this;
   }
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
