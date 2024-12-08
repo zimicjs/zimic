@@ -45,10 +45,10 @@ importers:
         specifier: ^8.1.9
         version: 8.1.9
       '@vitest/browser':
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(bufferutil@4.0.8)(playwright@1.49.0)(typescript@5.7.2)(vite@5.4.9(@types/node@22.10.1))(vitest@2.1.8)
       '@vitest/coverage-istanbul':
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(vitest@2.1.8)
       '@zimic/eslint-config-node':
         specifier: workspace:*
@@ -87,7 +87,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(@vitest/browser@2.1.8)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.10.1)(typescript@5.7.2))
       zimic:
         specifier: workspace:*
@@ -151,7 +151,7 @@ importers:
   examples/with-jest-node:
     dependencies:
       fastify:
-        specifier: 5.1.0
+        specifier: ^5.1.0
         version: 5.1.0
       zod:
         specifier: ^3.23.8
@@ -194,7 +194,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       next:
-        specifier: 15.0.4
+        specifier: ^15.0.4
         version: 15.0.4(@playwright/test@1.49.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react:
         specifier: ^19.0.0
@@ -246,7 +246,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       next:
-        specifier: 15.0.4
+        specifier: ^15.0.4
         version: 15.0.4(@playwright/test@1.49.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react:
         specifier: ^19.0.0
@@ -289,7 +289,7 @@ importers:
   examples/with-openapi-typegen:
     dependencies:
       fastify:
-        specifier: 5.1.0
+        specifier: ^5.1.0
         version: 5.1.0
       zod:
         specifier: ^3.23.8
@@ -311,7 +311,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(@vitest/browser@2.1.8)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.10.1)(typescript@5.7.2))
       zimic:
         specifier: latest
@@ -323,7 +323,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       next:
-        specifier: 15.0.4
+        specifier: ^15.0.4
         version: 15.0.4(@playwright/test@1.49.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react:
         specifier: ^19.0.0
@@ -378,7 +378,7 @@ importers:
         specifier: ^14.5.2
         version: 14.5.2(@testing-library/dom@10.4.0)
       '@vitest/browser':
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(bufferutil@4.0.8)(playwright@1.49.0)(typescript@5.7.2)(vite@5.4.9(@types/node@22.10.1))(vitest@2.1.8)
       concurrently:
         specifier: ^9.1.0
@@ -393,7 +393,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(@vitest/browser@2.1.8)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.10.1)(typescript@5.7.2))
       zimic:
         specifier: latest
@@ -420,7 +420,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(@vitest/browser@2.1.8)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.10.1)(typescript@5.7.2))
       zimic:
         specifier: latest
@@ -429,7 +429,7 @@ importers:
   examples/with-vitest-node:
     dependencies:
       fastify:
-        specifier: 5.1.0
+        specifier: ^5.1.0
         version: 5.1.0
       zod:
         specifier: ^3.23.8
@@ -451,7 +451,7 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: 2.1.8
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.1)(@vitest/browser@2.1.8)(jsdom@20.0.3(bufferutil@4.0.8))(msw@2.6.5(@types/node@22.10.1)(typescript@5.7.2))
       zimic:
         specifier: latest
