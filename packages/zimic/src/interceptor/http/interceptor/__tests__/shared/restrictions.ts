@@ -12,7 +12,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/intercep
 import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectFetchError, expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -26,13 +26,11 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   interface RequestHeadersSchema {
@@ -143,30 +141,41 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         headers.delete('accept');
 
-        let promise = fetch(joinURL(baseURL, '/users'), { method, headers });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(2);
 
         headers.delete('content-language');
 
-        promise = fetch(joinURL(baseURL, '/users'), { method, headers });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
         headers.set('content-language', 'pt');
 
-        promise = fetch(joinURL(baseURL, '/users'), { method, headers });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(2);
       });
@@ -220,7 +229,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           other: 'value',
         });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
         expect(response.status).toBe(200);
@@ -230,12 +239,16 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         searchParams.delete('tag');
 
-        const promise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
+        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
+
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
       });
@@ -289,12 +302,13 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(1);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             headers: body ? { 'content-type': 'application/json' } : undefined,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -356,12 +370,13 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(2);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             headers: body ? { 'content-type': 'application/json' } : undefined,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -431,11 +446,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
-            const promise = fetch(joinURL(baseURL, '/users'), {
+            const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
             });
-            await expectFetchError(promise);
+
+            await expectFetchError(responsePromise);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(1);
@@ -525,11 +541,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
-            const promise = fetch(joinURL(baseURL, '/users'), {
+            const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
             });
-            await expectFetchError(promise);
+
+            await expectFetchError(responsePromise);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
             expect(requests).toHaveLength(2);
@@ -600,11 +617,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const promise = fetch(joinURL(baseURL, '/users?tag=admin'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -679,11 +697,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const promise = fetch(joinURL(baseURL, '/users?tag=admin'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -736,11 +755,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(1);
 
         for (const body of ['more-content', 'cont', '']) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -802,11 +822,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(2);
 
         for (const body of ['cont', '']) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);
@@ -869,11 +890,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new File([], 'file.bin', { type: 'application/octet-stream' }),
           new File([], ''),
         ]) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(1);
@@ -945,11 +967,12 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new File([], 'file.bin', { type: 'application/octet-stream' }),
           new File([], ''),
         ]) {
-          const promise = fetch(joinURL(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
-          await expectFetchError(promise);
+
+          await expectFetchError(responsePromise);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(2);

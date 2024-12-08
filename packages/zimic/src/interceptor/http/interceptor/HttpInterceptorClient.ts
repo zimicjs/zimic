@@ -1,21 +1,20 @@
 import {
   HTTP_METHODS,
   HttpMethod,
-  HttpResponseSchemaStatusCode,
   HttpSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
+  HttpStatusCode,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
-import { HttpResponseFactoryResult } from '../interceptorWorker/types/requests';
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
-import { HttpRequestHandler } from '../requestHandler/types/public';
+import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
@@ -32,7 +31,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL: ExtendedURL;
   private _isRunning = false;
-  private onUnhandledRequest?: UnhandledRequestStrategy;
+  private _onUnhandledRequest?: UnhandledRequestStrategy;
   private _shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
@@ -61,7 +60,7 @@ class HttpInterceptorClient<
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
-    this.onUnhandledRequest = options.onUnhandledRequest;
+    this._onUnhandledRequest = options.onUnhandledRequest;
     this._shouldSaveRequests = options.saveRequests ?? false;
   }
 
@@ -73,6 +72,10 @@ class HttpInterceptorClient<
     return this.worker.platform();
   }
 
+  onUnhandledRequest() {
+    return this._onUnhandledRequest;
+  }
+
   isRunning() {
     return this.worker.isRunning() && this._isRunning;
   }
@@ -82,17 +85,15 @@ class HttpInterceptorClient<
   }
 
   async start() {
-    if (this.onUnhandledRequest) {
-      this.worker.onUnhandledRequest(this.baseURL().toString(), this.onUnhandledRequest);
-    }
-
     await this.worker.start();
+
+    this.worker.registerRunningInterceptor(this);
     this.markAsRunning(true);
   }
 
   async stop() {
     this.markAsRunning(false);
-    this.worker.offUnhandledRequest(this.baseURL().toString());
+    this.worker.unregisterRunningInterceptor(this);
 
     const wasLastRunningInterceptor = this.numberOfRunningInterceptors() === 0;
     if (wasLastRunningInterceptor) {
@@ -160,12 +161,8 @@ class HttpInterceptorClient<
   registerRequestHandler<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
-    StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-  >(
-    handler:
-      | LocalHttpRequestHandler<Schema, Method, Path, StatusCode>
-      | RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
-  ) {
+    StatusCode extends HttpStatusCode = never,
+  >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
     const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
     if (!handlerClients.includes(handler.client())) {
       handlerClients.push(handler.client());
@@ -200,7 +197,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponseFactoryResult> {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<Response | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });
@@ -208,7 +205,7 @@ class HttpInterceptorClient<
     const matchedHandler = await this.findMatchedHandler(method, path, parsedRequest);
 
     if (!matchedHandler) {
-      return { bypass: true };
+      return null;
     }
 
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
@@ -225,7 +222,7 @@ class HttpInterceptorClient<
       matchedHandler.saveInterceptedRequest(parsedRequest, parsedResponse);
     }
 
-    return { response };
+    return response;
   }
 
   private async findMatchedHandler<
@@ -259,7 +256,7 @@ class HttpInterceptorClient<
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {
-      clearResults.push(...this.bypassMethodHandlers(method));
+      clearResults.push(...this.clearMethodHandlers(method));
       this.handlerClientsByMethod[method].clear();
     }
 
@@ -271,16 +268,16 @@ class HttpInterceptorClient<
     }
   }
 
-  private bypassMethodHandlers(method: HttpMethod) {
-    const bypassResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
+  private clearMethodHandlers(method: HttpMethod) {
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
 
     for (const handlers of this.handlerClientsByMethod[method].values()) {
       for (const handler of handlers) {
-        bypassResults.push(handler.bypass());
+        clearResults.push(handler.clear());
       }
     }
 
-    return bypassResults;
+    return clearResults;
   }
 }
 

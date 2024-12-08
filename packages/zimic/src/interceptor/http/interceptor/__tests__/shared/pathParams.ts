@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -31,13 +31,11 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -99,6 +97,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(genericRequest.response.body).toEqualTypeOf<null>();
         expect(genericRequest.response.body).toBe(null);
 
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await promiseIfRemote(genericHandler.bypass(), interceptor);
 
         const specificHandler = await promiseIfRemote(
@@ -138,10 +137,13 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(specificRequest.response.body).toEqualTypeOf<null>();
         expect(specificRequest.response.body).toBe(null);
 
-        const unmatchedPromise = fetch(joinURL(baseURL, `/users/${2}`), { method });
-        await expectFetchErrorOrPreflightResponse(unmatchedPromise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        const unmatchedResponsePromise = fetch(joinURL(baseURL, '/users/2'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(unmatchedResponsePromise);
+        } else {
+          await expectFetchError(unmatchedResponsePromise);
+        }
       });
     });
   });

@@ -1,8 +1,8 @@
 {
-  "extends": "../../../tsconfig.json",
+  "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
+    "target": "es6",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo"
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["*.ts"]
 }

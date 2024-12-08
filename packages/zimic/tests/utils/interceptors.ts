@@ -24,22 +24,23 @@ import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import { createURL, ExtendedURL, joinURL } from '@/utils/urls';
-import { GLOBAL_SETUP_SERVER_HOSTNAME, GLOBAL_SETUP_SERVER_PORT } from '@tests/setup/global/browser';
+import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
+import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
-export async function getBrowserBaseURL(workerType: HttpInterceptorType) {
-  if (workerType === 'local') {
-    return createURL('http://localhost:3000');
+export async function getBrowserBaseURL(type: HttpInterceptorType) {
+  if (type === 'local') {
+    return createURL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
   }
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = joinURL(`http://${GLOBAL_SETUP_SERVER_HOSTNAME}:${GLOBAL_SETUP_SERVER_PORT}`, pathPrefix);
+  const baseURL = joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
   return createURL(baseURL);
 }
 
 export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
-    return createURL('http://localhost:3000');
+    return createURL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
   }
 
   const hostname = server.hostname();

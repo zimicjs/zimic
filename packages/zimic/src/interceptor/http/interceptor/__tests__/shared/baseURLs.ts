@@ -21,9 +21,9 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   it('should handle base URLs and paths correctly', async () => {
     for (const { baseURL, path } of [
-      { baseURL: `${defaultBaseURL.raw}`, path: 'path' },
+      { baseURL: defaultBaseURL.raw, path: 'path' },
       { baseURL: `${defaultBaseURL.raw}/`, path: 'path' },
-      { baseURL: `${defaultBaseURL.raw}`, path: '/path' },
+      { baseURL: defaultBaseURL.raw, path: '/path' },
       { baseURL: `${defaultBaseURL.raw}/`, path: '/path' },
     ]) {
       await usingHttpInterceptor<{
@@ -37,12 +37,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
       }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
         expect(interceptor.baseURL()).toBe(baseURL);
 
-        const handler = await promiseIfRemote(
-          interceptor.get(path).respond({
-            status: 200,
-          }),
-          interceptor,
-        );
+        const handler = await promiseIfRemote(interceptor.get(path).respond({ status: 200 }), interceptor);
 
         let requests = await handler.requests();
         expect(requests).toHaveLength(0);

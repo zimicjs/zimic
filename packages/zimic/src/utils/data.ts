@@ -1,5 +1,3 @@
-import { Defined } from '@/types/utils';
-
 import { isClientSide } from './environment';
 
 export async function blobEquals(blob: Blob, otherBlob: Blob) {
@@ -33,10 +31,10 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
   }
 }
 
-export function isDefined<Value>(value: Value): value is Defined<Value> {
+export function isDefined<Value>(value: Value): value is NonNullable<Value> {
   return value !== undefined && value !== null;
 }
 
-export function isNonEmpty<Value>(value: Value): value is Exclude<Defined<Value>, ''> {
+export function isNonEmpty<Value>(value: Value): value is Exclude<NonNullable<Value>, ''> {
   return isDefined(value) && value !== '';
 }

@@ -1,3 +1,3 @@
-import zimicConfigNode from '@zimic/eslint-config-node';
+import nodeConfig from '@zimic/eslint-config-node';
 
-export default zimicConfigNode;
+export default nodeConfig;

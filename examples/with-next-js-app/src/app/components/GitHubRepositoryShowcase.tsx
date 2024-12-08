@@ -23,7 +23,7 @@ async function GitHubRepositoryShowcase({ ownerName, repositoryName }: Props) {
           </a>
         </>
       ) : (
-        <p role="status">Repository not found.</p>
+        <output>Repository not found.</output>
       )}
     </div>
   );

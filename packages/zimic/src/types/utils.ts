@@ -31,12 +31,6 @@ export type Prettify<Type> = {
   [Key in keyof Type]: Type[Key];
 };
 
-export type NonUndefined<Type> = Exclude<Type, undefined>;
-
-export type NonNullable<Type> = Exclude<Type, null>;
-
-export type Defined<Type> = NonNullable<NonUndefined<Type>>;
-
 export type ArrayItemIfArray<Type> = Type extends (infer Item)[] ? Item : Type;
 
 type PickArrayProperties<Type> = {
@@ -54,7 +48,7 @@ export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Typ
 
 export type Collection<Type> = Type[] | Set<Type>;
 
-export type DeepPartial<Type> = Type extends Function
+export type DeepPartial<Type> = Type extends (...parameters: never[]) => unknown
   ? Type
   : Type extends (infer ArrayItem)[]
     ? DeepPartial<ArrayItem>[]

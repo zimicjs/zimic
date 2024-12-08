@@ -1,7 +1,9 @@
 import { PossiblePromise } from '@/types/utils';
 
 export function waitForDelay(delayDuration: number) {
-  return new Promise((resolve) => setTimeout(resolve, delayDuration));
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayDuration);
+  });
 }
 
 export async function usingElapsedTime<ReturnType>(callback: () => PossiblePromise<ReturnType>) {

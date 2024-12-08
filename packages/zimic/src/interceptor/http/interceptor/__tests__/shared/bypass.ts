@@ -6,7 +6,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../types/options';
@@ -18,13 +18,11 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -62,6 +60,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
               status: 200,
               headers: DEFAULT_ACCESS_CONTROL_HEADERS,
             })
+            // eslint-disable-next-line @typescript-eslint/no-deprecated
             .bypass(),
           interceptor,
         );
@@ -70,10 +69,13 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         let initialRequests = await promiseIfRemote(okHandler.requests(), interceptor);
         expect(initialRequests).toHaveLength(0);
 
-        const promise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         const createdHandler = await promiseIfRemote(
           okHandler.respond({
@@ -138,6 +140,7 @@ export function declareBypassHttpInterceptorTests(options: RuntimeSharedHttpInte
         expectTypeOf(withMessageRequest.response.body).toEqualTypeOf<null>();
         expect(withMessageRequest.response.body).toBe(null);
 
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await promiseIfRemote(noContentHandler.bypass(), interceptor);
 
         response = await fetch(joinURL(baseURL, '/users'), { method });

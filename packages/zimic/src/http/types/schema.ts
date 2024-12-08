@@ -195,13 +195,6 @@ export namespace HttpResponseSchemaByStatusCode {
     [StatusCode in keyof Schema]: StatusCode extends 204 ? HttpResponseSchema.NoBody : Schema[StatusCode];
   };
 
-  /**
-   * A schema representing the strict structure of HTTP responses by status code.
-   *
-   * @deprecated Use {@link HttpResponseSchemaByStatusCode} directly instead.
-   */
-  export type Strict = ConvertToStrict<Loose>;
-
   /** A schema representing the structure of HTTP responses by status code with no body. */
   export type NoBody = {
     [StatusCode in HttpStatusCode]?: HttpResponseSchema.NoBody;
@@ -225,10 +218,8 @@ type ConvertToStrictHttpResponseSchemaByStatusCode<Schema> = {
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
  */
-export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> = Extract<
-  keyof ResponseSchemaByStatusCode,
-  HttpStatusCode
->;
+export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> =
+  keyof ResponseSchemaByStatusCode & HttpStatusCode;
 
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
@@ -331,28 +322,6 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
 export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
 
 export namespace HttpSchema {
-  /**
-   * Declares an HTTP service schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Paths` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
-   *
-   * @deprecated Use {@link HttpSchema} directly instead, which is a drop-in replacement.
-   * @example
-   *   import { type HttpSchema } from 'zimic/http';
-   *
-   *   type Schema = HttpSchema<{
-   *     '/users': {
-   *       GET: {
-   *         response: {
-   *           200: { body: User[] };
-   *         };
-   *       };
-   *     };
-   *   }>;
-   */
-  export type Paths<Schema extends BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
-
   /**
    * Declares an HTTP service methods schema.
    *
@@ -617,7 +586,7 @@ export namespace HttpSchema {
 export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Schema,
   any, // eslint-disable-line @typescript-eslint/no-explicit-any
-  Extract<keyof UnionToIntersection<Schema[keyof Schema]>, HttpMethod>
+  keyof UnionToIntersection<Schema[keyof Schema]> & HttpMethod
 >;
 
 type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
@@ -656,8 +625,8 @@ type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Pre
  */
 export namespace HttpSchemaPath {
   type LooseLiteral<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
-    [Path in Extract<keyof Schema, string>]: Method extends keyof Schema[Path] ? Path : never;
-  }[Extract<keyof Schema, string>];
+    [Path in keyof Schema & string]: Method extends keyof Schema[Path] ? Path : never;
+  }[keyof Schema & string];
 
   /**
    * Extracts the literal paths from an HTTP service schema. Optionally receives a second argument with one or more

@@ -48,6 +48,5 @@ test.describe('Home page', () => {
 
     const notFoundMessage = page.getByText('Repository not found.');
     await expect(notFoundMessage).toBeVisible();
-    await expect(notFoundMessage).toHaveAttribute('role', 'status');
   });
 });

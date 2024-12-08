@@ -6,7 +6,7 @@ import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { createURL, ensureUniquePathParams, excludeNonPathParams, ExtendedURL } from '@/utils/urls';
+import { createURL, ExtendedURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
@@ -20,7 +20,7 @@ import { HttpResponseFactory, HttpResponseFactoryContext } from './types/request
 
 interface HttpHandler {
   id: string;
-  url: string;
+  url: { base: string; full: string };
   method: HttpMethod;
   interceptor: AnyHttpInterceptorClient;
   createResponse: (context: HttpResponseFactoryContext) => Promise<HttpResponse | null>;
@@ -55,7 +55,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async start() {
     await super.sharedStart(async () => {
       await this._webSocketClient.start();
+
       this._webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
+      this._webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
       const platform = this.readPlatform();
       super.setPlatform(platform);
@@ -77,15 +79,27 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
       if (response) {
         return { response: await serializeResponse(response) };
-      } else {
-        await super.handleUnhandledRequest(request, 'remote');
-        return { response: null };
       }
     } catch (error) {
       console.error(error);
-      await super.handleUnhandledRequest(request, 'remote');
-      return { response: null };
     }
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+    await super.logUnhandledRequestIfNecessary(request, strategy);
+
+    return { response: null };
+  };
+
+  private handleUnhandledServerRequest = async (
+    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
+  ) => {
+    const { request: serializedRequest } = message.data;
+    const request = deserializeRequest(serializedRequest);
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'remote');
+    const { wasLogged } = await super.logUnhandledRequestIfNecessary(request, strategy);
+
+    return { wasLogged };
   };
 
   private readPlatform(): HttpInterceptorPlatform {
@@ -106,7 +120,10 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   async stop() {
     await super.sharedStop(async () => {
       await this.clearHandlers();
+
       this._webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
+      this._webSocketClient.offEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+
       await this._webSocketClient.stop();
 
       super.setIsRunning(false);
@@ -124,17 +141,23 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     }
 
     const crypto = await importCrypto();
-    const url = excludeNonPathParams(createURL(rawURL)).toString();
-    ensureUniquePathParams(url);
+
+    const url = createURL(rawURL, {
+      excludeNonPathParams: true,
+      ensureUniquePathParams: true,
+    });
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
-      url,
+      url: {
+        base: interceptor.baseURL().toString(),
+        full: url.toString(),
+      },
       method,
       interceptor,
       async createResponse(context) {
-        const result = await createResponse(context);
-        return result.bypass ? null : result.response;
+        const response = await createResponse(context);
+        return response;
       },
     };
 
@@ -142,7 +165,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     await this._webSocketClient.request('interceptors/workers/use/commit', {
       id: handler.id,
-      url,
+      url: handler.url,
       method,
     });
   }

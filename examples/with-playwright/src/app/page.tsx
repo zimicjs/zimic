@@ -19,7 +19,7 @@ async function HomePage({ searchParams }: Props) {
       <GitHubRepositoryForm />
 
       {shouldFetchRepository && (
-        <Suspense fallback={<p role="status">Loading...</p>}>
+        <Suspense fallback={<output>Loading...</output>}>
           <GitHubRepositoryShowcase ownerName={ownerName} repositoryName={repositoryName} />
         </Suspense>
       )}

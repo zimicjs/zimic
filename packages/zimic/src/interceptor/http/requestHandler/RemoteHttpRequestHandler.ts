@@ -1,11 +1,11 @@
-import { HttpResponseSchemaStatusCode, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
 import {
   HttpRequestHandlerRestriction,
-  RemoteHttpRequestHandler as PublicRemoteHttpRequestHandler,
+  InternalHttpRequestHandler,
   SyncedRemoteHttpRequestHandler as PublicSyncedRemoteHttpRequestHandler,
 } from './types/public';
 import {
@@ -22,8 +22,8 @@ class RemoteHttpRequestHandler<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-  StatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>> = never,
-> implements PublicRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>
+  StatusCode extends HttpStatusCode = never,
+> implements InternalHttpRequestHandler<Schema, Method, Path, StatusCode>
 {
   readonly type = 'remote';
 
@@ -42,14 +42,14 @@ class RemoteHttpRequestHandler<
 
   private createSyncedProxy() {
     return new Proxy(this, {
-      has: (target, property: keyof RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) => {
+      has: (target, property) => {
         if (this.isHiddenPropertyWhenSynced(property)) {
           return false;
         }
         return Reflect.has(target, property);
       },
 
-      get: (target, property: keyof RemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) => {
+      get: (target, property) => {
         if (this.isHiddenPropertyWhenSynced(property)) {
           return undefined;
         }
@@ -58,7 +58,7 @@ class RemoteHttpRequestHandler<
     });
   }
 
-  private isHiddenPropertyWhenSynced(property: string) {
+  private isHiddenPropertyWhenSynced(property: string | symbol) {
     return PENDING_PROPERTIES.has(property);
   }
 
@@ -74,14 +74,12 @@ class RemoteHttpRequestHandler<
     return this._client.path();
   }
 
-  with(
-    restriction: HttpRequestHandlerRestriction<Schema, Method, Path>,
-  ): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this._client.with(restriction);
     return this.unsynced;
   }
 
-  respond<NewStatusCode extends HttpResponseSchemaStatusCode<Default<Default<Schema[Path][Method]>['response']>>>(
+  respond<NewStatusCode extends HttpStatusCode>(
     declaration:
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
@@ -91,12 +89,14 @@ class RemoteHttpRequestHandler<
     return newUnsyncedThis;
   }
 
-  bypass(): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  /** @deprecated */
+  bypass(): this {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     this._client.bypass();
     return this.unsynced;
   }
 
-  clear(): RemoteHttpRequestHandler<Schema, Method, Path, StatusCode> {
+  clear(): this {
     this._client.clear();
     return this.unsynced;
   }
@@ -145,8 +145,7 @@ class RemoteHttpRequestHandler<
           handler: PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>,
         ) => PossiblePromise<FulfilledResult>)
       | null,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<FulfilledResult | RejectedResult> {
     const promisesToWait = new Set(this.syncPromises);
 
@@ -160,8 +159,7 @@ class RemoteHttpRequestHandler<
   }
 
   catch<RejectedResult = never>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onRejected?: ((reason: any) => PossiblePromise<RejectedResult>) | null,
+    onRejected?: ((reason: unknown) => PossiblePromise<RejectedResult>) | null,
   ): Promise<PublicSyncedRemoteHttpRequestHandler<Schema, Method, Path, StatusCode> | RejectedResult> {
     return this.then().catch(onRejected);
   }

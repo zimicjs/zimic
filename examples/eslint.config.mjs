@@ -1,7 +1,7 @@
-import zimicConfigNode from '@zimic/eslint-config-node';
+import reactConfig from '@zimic/eslint-config-react';
 
 export default [
-  ...zimicConfigNode,
+  ...reactConfig,
   {
     files: ['**/typegen/generated.ts'],
     rules: {

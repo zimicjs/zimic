@@ -28,6 +28,7 @@ export function waitFor<ReturnType>(
 ): Promise<Awaited<ReturnType>> {
   const { timeout = 1000, interval = 50 } = options;
 
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     let isSettled = false;
     let lastError: unknown = null;

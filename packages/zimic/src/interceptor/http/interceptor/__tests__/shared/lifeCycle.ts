@@ -7,7 +7,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { joinURL } from '@/utils/urls';
-import { expectFetchErrorOrPreflightResponse } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
   createInternalHttpInterceptor,
@@ -24,13 +24,11 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  let Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler;
+  const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-
-    Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -80,28 +78,35 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let promise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method,
-          timeout: 200,
-        });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-          canBeAborted: true,
+          timeout: overridesPreflightResponse ? 0 : 500,
         });
 
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else if (type === 'local') {
+          await expectBypassedResponse(responsePromise, { canBeAborted: true });
+        } else {
+          await expectFetchError(responsePromise, { canBeAborted: true });
+        }
+
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
 
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
 
-        promise = fetch(joinURL(baseURL, '/users'), { method });
-        await expectFetchErrorOrPreflightResponse(promise, {
-          shouldBePreflight: overridesPreflightResponse,
-        });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+        if (overridesPreflightResponse) {
+          await expectPreflightResponse(responsePromise);
+        } else {
+          await expectFetchError(responsePromise);
+        }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
       });
     });
 
@@ -143,26 +148,34 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let promise = fetchWithTimeout(joinURL(baseURL, '/users'), { method, timeout: 200 });
-          await expectFetchErrorOrPreflightResponse(promise, {
-            shouldBePreflight: overridesPreflightResponse,
-            canBeAborted: true,
+          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+            method,
+            timeout: overridesPreflightResponse ? 0 : 500,
           });
 
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise, { canBeAborted: true });
+          }
+
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
 
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          promise = fetch(joinURL(baseURL, '/users'), { method });
-          await expectFetchErrorOrPreflightResponse(promise, {
-            shouldBePreflight: overridesPreflightResponse,
-          });
+          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
         });
       });
     });

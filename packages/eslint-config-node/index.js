@@ -1,9 +1,9 @@
 import importPlugin from 'eslint-plugin-import';
 import { fixupPluginRules } from '@eslint/compat';
-import zimicConfig from '@zimic/eslint-config';
+import defaultConfig from '@zimic/eslint-config';
 
 export default [
-  ...zimicConfig,
+  ...defaultConfig,
   {
     plugins: {
       import: fixupPluginRules(importPlugin),

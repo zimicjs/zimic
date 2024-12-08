@@ -1,7 +1,7 @@
-import zimicConfigNode from '@zimic/eslint-config-node';
+import nodeConfig from '@zimic/eslint-config-node';
 
 export default [
-  ...zimicConfigNode,
+  ...nodeConfig,
   {
     ignores: ['*.d.ts', 'interceptor/*.d.ts', 'http/*.d.ts'],
   },

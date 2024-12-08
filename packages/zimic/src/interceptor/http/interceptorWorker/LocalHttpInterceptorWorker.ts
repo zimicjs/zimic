@@ -2,9 +2,10 @@ import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions,
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
-import { HttpRequest } from '@/http/types/requests';
+import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpSchema } from '@/http/types/schema';
-import { createURL, ensureUniquePathParams, excludeNonPathParams } from '@/utils/urls';
+import { removeArrayIndex } from '@/utils/arrays';
+import { createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -19,6 +20,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private _internalWorker?: HttpWorker;
 
+  private defaultHttpHandler: MSWHttpHandler;
+
   private httpHandlerGroups: {
     interceptor: HttpInterceptorClient<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     httpHandler: MSWHttpHandler;
@@ -27,6 +30,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   constructor(options: LocalHttpInterceptorWorkerOptions) {
     super();
     this.type = options.type;
+
+    this.defaultHttpHandler = http.all('*', async (context) => {
+      const request = context.request satisfies Request as HttpRequest;
+      return this.bypassOrRejectUnhandledRequest(request);
+    });
   }
 
   internalWorkerOrThrow() {
@@ -45,12 +53,12 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   private createInternalWorker() {
     if (typeof mswNode.setupServer !== 'undefined') {
-      return mswNode.setupServer();
+      return mswNode.setupServer(this.defaultHttpHandler);
     }
 
     /* istanbul ignore else -- @preserve */
     if (typeof mswBrowser.setupWorker !== 'undefined') {
-      return mswBrowser.setupWorker();
+      return mswBrowser.setupWorker(this.defaultHttpHandler);
     }
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
@@ -62,9 +70,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       const internalWorker = this.internalWorkerOrCreate();
 
       const sharedOptions: MSWWorkerSharedOptions = {
-        onUnhandledRequest: async (request) => {
-          await super.handleUnhandledRequest(request, 'local');
-        },
+        onUnhandledRequest: 'bypass',
       };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
@@ -143,41 +149,54 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const url = excludeNonPathParams(createURL(rawURL)).toString();
-    ensureUniquePathParams(url);
+    const url = createURL(rawURL, {
+      excludeNonPathParams: true,
+      ensureUniquePathParams: true,
+    });
 
-    const httpHandler = http[lowercaseMethod](url, async (context) => {
-      const request = context.request as HttpRequest;
+    const httpHandler = http[lowercaseMethod](url.toString(), async (context): Promise<HttpResponse> => {
+      const request = context.request satisfies Request as HttpRequest;
       const requestClone = request.clone();
 
+      let response: HttpResponse | null = null;
+
       try {
-        const result = await createResponse({ ...context, request });
-
-        if (result.bypass) {
-          await super.handleUnhandledRequest(requestClone, 'local');
-          return passthrough();
-        }
-
-        const response =
-          context.request.method === 'HEAD'
-            ? new Response(null, {
-                status: result.response.status,
-                statusText: result.response.statusText,
-                headers: result.response.headers,
-              })
-            : result.response;
-
-        return response;
+        response = await createResponse({ ...context, request });
       } catch (error) {
         console.error(error);
-        await super.handleUnhandledRequest(requestClone, 'local');
-        return passthrough();
       }
+
+      if (!response) {
+        return this.bypassOrRejectUnhandledRequest(requestClone);
+      }
+
+      if (context.request.method === 'HEAD') {
+        return new Response(null, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      }
+
+      return response;
     });
 
     internalWorker.use(httpHandler);
 
     this.httpHandlerGroups.push({ interceptor, httpHandler });
+  }
+
+  private async bypassOrRejectUnhandledRequest(request: HttpRequest) {
+    const requestClone = request.clone();
+
+    const strategy = await super.getUnhandledRequestStrategy(request, 'local');
+    await super.logUnhandledRequestIfNecessary(requestClone, strategy);
+
+    if (strategy?.action === 'reject') {
+      return Response.error();
+    } else {
+      return passthrough();
+    }
   }
 
   clearHandlers() {
@@ -189,16 +208,14 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     const internalWorker = this.internalWorkerOrThrow();
 
-    const httpHandlerGroupsToKeep = this.httpHandlerGroups.filter((group) => group.interceptor !== interceptor);
-    const httpHandlersToKeep = httpHandlerGroupsToKeep.map((group) => group.httpHandler);
+    const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
+    removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
 
     internalWorker.resetHandlers();
 
-    for (const handler of httpHandlersToKeep) {
-      internalWorker.use(handler);
+    for (const { httpHandler } of this.httpHandlerGroups) {
+      internalWorker.use(httpHandler);
     }
-
-    this.httpHandlerGroups = httpHandlerGroupsToKeep;
   }
 
   interceptorsWithHandlers() {

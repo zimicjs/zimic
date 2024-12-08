@@ -10,12 +10,12 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@eslint/compat": "^1.2.3",
+    "eslint-plugin-import": "^2.31.0",
+    "@eslint/compat": "^1.2.4",
     "@zimic/eslint-config": "workspace:*"
   },
   "peerDependencies": {
     "eslint": ">=9.0.0",
-    "prettier": ">=3.0.0",
     "typescript": ">=4.8.0"
   }
 }
