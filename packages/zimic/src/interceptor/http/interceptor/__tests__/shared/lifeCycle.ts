@@ -92,7 +92,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
 
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
@@ -106,7 +106,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
       });
     });
 
@@ -160,7 +160,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
 
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
@@ -175,7 +175,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           }
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(requests).toHaveLength(0);
         });
       });
     });

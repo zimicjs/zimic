@@ -98,6 +98,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await promiseIfRemote(handler.bypass(), interceptor);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
@@ -110,6 +111,7 @@ export function declareDefaultHttpRequestHandlerTests(
     );
     expect(await handler.matchesRequest(parsedRequest)).toBe(true);
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await promiseIfRemote(handler.bypass(), interceptor);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
@@ -420,6 +422,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await promiseIfRemote(handler.bypass(), interceptor);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
@@ -434,6 +437,7 @@ export function declareDefaultHttpRequestHandlerTests(
     );
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     await promiseIfRemote(handler.bypass(), interceptor);
     expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 

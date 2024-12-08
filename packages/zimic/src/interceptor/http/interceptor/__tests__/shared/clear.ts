@@ -79,7 +79,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         }
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(requests).toHaveLength(0);
       });
     });
 

@@ -43,17 +43,20 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   start: () => Promise<void>;
 
   /**
-   * Stops the interceptor, preventing it from intercepting HTTP requests.
+   * Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically
+   * cleared, exactly as if
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
+   * had been called.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop `interceptor.stop()` API reference}
    */
   stop: () => Promise<void>;
 
   /**
-   * Clears all of the
+   * Clears the interceptor and all of its
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
-   * instances created by this interceptor. After calling this method, the interceptor will no longer intercept any
-   * requests until new mock responses are registered.
+   * instances, including their registered responses and intercepted requests. After calling this method, the
+   * interceptor will no longer intercept any requests until new mock responses are registered.
    *
    * This method is useful to reset the interceptor mocks between tests.
    *

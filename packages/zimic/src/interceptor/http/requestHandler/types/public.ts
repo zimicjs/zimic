@@ -240,6 +240,10 @@ export interface LocalHttpRequestHandler<
    * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
    * removed the response, keeping restrictions and intercepted requests.
    *
+   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
+   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
+   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    * @returns The same handler, now without a declared responses.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
    */
@@ -256,10 +260,6 @@ export interface LocalHttpRequestHandler<
    *
    * To make the handler match requests again, register a new response with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
-   *
-   * This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-   * [`handler.bypass()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass), as it
-   * also clears restrictions and intercepted requests.
    *
    * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}
@@ -346,6 +346,10 @@ export interface SyncedRemoteHttpRequestHandler<
    * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
    * removed the response, keeping restrictions and intercepted requests.
    *
+   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
+   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
+   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
+   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    * @returns The same handler, now without a declared responses.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
    */
@@ -362,10 +366,6 @@ export interface SyncedRemoteHttpRequestHandler<
    *
    * To make the handler match requests again, register a new response with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
-   *
-   * This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-   * [`handler.bypass()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass), as it
-   * also clears restrictions and intercepted requests.
    *
    * @returns The same handler, now cleared of any declared responses, restrictions, and intercepted requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear `handler.clear()` API reference}

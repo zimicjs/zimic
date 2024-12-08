@@ -413,7 +413,10 @@ When targeting a browser environment with a local interceptor, make sure to foll
 
 ### HTTP `interceptor.stop()`
 
-Stops the interceptor. Stopping an interceptor will also clear its registered handlers and responses.
+Stops the interceptor, preventing it from intercepting HTTP requests. Stopped interceptors are automatically cleared,
+exactly as if
+[`interceptor.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) had been
+called.
 
 ```ts
 await interceptor.stop();
@@ -446,13 +449,19 @@ const platform = interceptor.platform();
 ### HTTP `interceptor.<method>(path)`
 
 Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and path. The path and method must be
-declared in the interceptor schema.
-
-The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and `options`.
+declared in the interceptor schema. The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and
+`options`.
 
 When using a [remote interceptor](getting‐started#remote-http-interceptors), creating a handler is an asynchronous
 operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
 handler.
+
+To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request considering
+the interceptor base URL, method, path, and [restrictions](#http-handlerwithrestriction). The handlers are checked from
+the **last** created to the first, so new handlers have preference over old ones. This allows you to declare generic and
+specific handlers based on their order of creation. For example, a generic handler for `GET /users` can return an empty
+list, while a specific handler in a test case can return a list with some users. In this case, the specific handler will
+be considered first as long as it is created **after** the generic one.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -570,9 +579,9 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 
 ### HTTP `interceptor.clear()`
 
-Clears all of the [`HttpRequestHandler`](#httprequesthandler) instances created by this interceptor, including their
-registered responses and intercepted requests. After calling this method, the interceptor will no longer intercept any
-requests until new mock responses are registered.
+Clears the interceptor and all of its [`HttpRequestHandler`](#httprequesthandler) instances, including their registered
+responses and intercepted requests. After calling this method, the interceptor will no longer intercept any requests
+until new mock responses are registered.
 
 This method is useful to reset the interceptor mocks between tests.
 
@@ -1431,6 +1440,13 @@ To make the handler match requests again, register a new response with
 This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
 removed the response, keeping restrictions and intercepted requests.
 
+> [!IMPORTANT]
+>
+> This method is deprecated and will be removed soon. You can achieve an equivalent behavior by controlling the order in
+> which handlers are created. Since new handlers are always considered before old ones, you can replace `bypass()` calls
+> with new handler declarations describing your new responses. Learn more at the
+> [`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
+
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
@@ -1475,9 +1491,6 @@ stop matching requests. The next handler, created before this one, that matches 
 present. If not, the requests of the method and path will not be intercepted.
 
 To make the handler match requests again, register a new response with `handler.respond()`.
-
-This method is useful to reset handlers to a clean state between tests. It is more aggressive than
-[`handler.bypass()`](#http-handlerbypass), as it also clears restrictions and intercepted requests.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
