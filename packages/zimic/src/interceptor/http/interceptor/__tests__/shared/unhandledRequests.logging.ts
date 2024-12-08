@@ -174,6 +174,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
+                // eslint-disable-next-line @typescript-eslint/no-deprecated
                 await promiseIfRemote(handler.bypass(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), { method });
@@ -233,6 +234,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
+                // eslint-disable-next-line @typescript-eslint/no-deprecated
                 await promiseIfRemote(handler.bypass(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), {
@@ -453,6 +455,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(0);
 
+              // eslint-disable-next-line @typescript-eslint/no-deprecated
               await promiseIfRemote(handler.bypass(), interceptor);
 
               const request = new Request(joinURL(baseURL, '/users'), {
@@ -515,6 +518,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
+                // eslint-disable-next-line @typescript-eslint/no-deprecated
                 await promiseIfRemote(handler.bypass(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), {

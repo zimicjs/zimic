@@ -97,6 +97,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(genericRequest.response.body).toEqualTypeOf<null>();
         expect(genericRequest.response.body).toBe(null);
 
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         await promiseIfRemote(genericHandler.bypass(), interceptor);
 
         const specificHandler = await promiseIfRemote(

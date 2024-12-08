@@ -57,6 +57,7 @@ class LocalHttpRequestHandler<
 
   /** @deprecated */
   bypass(): this {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     this._client.bypass();
     return this;
   }
