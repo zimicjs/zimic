@@ -10,8 +10,8 @@
     "typegen:github-no-env": "zimic typegen openapi $GITHUB_OPENAPI_SPEC_URL --output ./src/types/github/typegen/generated.ts --service-name GitHub --filter-file ./src/types/github/typegen/filters.txt --no-comments"
   },
   "dependencies": {
-    "fastify": "^5.1.0",
-    "zod": "^3.23.8"
+    "fastify": "^5.2.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.2",
