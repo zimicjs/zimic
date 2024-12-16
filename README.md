@@ -128,13 +128,17 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
-  // 4.2. Clear interceptors so that no tests affect each other
+  // 4.2. Check that all expected requests were made
+  // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
+  myInterceptor.checkTimes();
+
+  // 4.3. Clear interceptors so that no tests affect each other
   // https://bit.ly/zimic-interceptor-http#http-interceptorclear
   myInterceptor.clear();
 });
 
 afterAll(async () => {
-  // 4.3. Stop intercepting requests
+  // 4.4. Stop intercepting requests
   // https://bit.ly/zimic-interceptor-http#http-interceptorstop
   await myInterceptor.stop();
 });
@@ -143,34 +147,35 @@ afterAll(async () => {
 test('example', async () => {
   const users: User[] = [{ username: 'diego-aquino' }];
 
-  // 7. Declare your mocks
+  // 5. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
   const myHandler = myInterceptor
     .get('/users')
-    // 7.1. Use restrictions to make declarative assertions and narrow down your mocks
+    // 5.1. Use restrictions to make declarative assertions and narrow down your mocks
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
       headers: { authorization: 'Bearer my-token' },
       searchParams: { username: 'diego' },
     })
-    // 7.2. Respond with your mock data
+    // 5.2. Respond with your mock data
     // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
     .respond({
       status: 200,
       body: users,
-    });
+    })
+    .times(1);
 
-  // 8. Run your application and make requests
+  // 6. Run your application and make requests
   // ...
 
-  // 9. Check the requests you expect
+  // The following expects are automatically checked by the `with` and `times` calls
+  // we used above. Requests not matching the restrictions or exceeding the number of times
+  // will cause warnings and not be intercepted.
+
+  // 7. Check the requests you expect
   // https://bit.ly/zimic-interceptor-http#http-handlerrequests
   const requests = myHandler.requests();
   expect(requests).toHaveLength(1);
-
-  // The following expects are automatically checked by the restrictions
-  // we declared above. Requests not matching them will cause warnings and not
-  // be intercepted.
 
   // If you are not using restrictions, asserting the requests manually is
   // a good practice:
