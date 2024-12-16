@@ -5,28 +5,28 @@ class WebSocketTimeoutError extends Error {}
 export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket open timed out after ${reachedTimeout}ms.`);
-    this.name = 'WebSocketOpenTimeout';
+    this.name = 'WebSocketOpenTimeout [zimic]';
   }
 }
 
 export class WebSocketMessageTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket message timed out after ${reachedTimeout}ms.`);
-    this.name = 'WebSocketMessageTimeout';
+    this.name = 'WebSocketMessageTimeout [zimic]';
   }
 }
 
 export class WebSocketMessageAbortError extends WebSocketTimeoutError {
   constructor() {
     super('Web socket message was aborted.');
-    this.name = 'WebSocketMessageAbortError';
+    this.name = 'WebSocketMessageAbortError [zimic]';
   }
 }
 
 export class WebSocketCloseTimeoutError extends WebSocketTimeoutError {
   constructor(reachedTimeout: number) {
     super(`Web socket close timed out after ${reachedTimeout}ms.`);
-    this.name = 'WebSocketCloseTimeout';
+    this.name = 'WebSocketCloseTimeout [zimic]';
   }
 }
 

@@ -13,7 +13,7 @@ class UnregisteredBrowserServiceWorkerError extends Error {
         'Did you forget to run `zimic browser init <publicDirectory>`?\n\n' +
         'Learn more: https://github.com/zimicjs/zimic/wiki/getting‐started#client-side-post-install',
     );
-    this.name = 'UnregisteredBrowserServiceWorkerError';
+    this.name = 'UnregisteredBrowserServiceWorkerError [zimic]';
   }
 
   static matchesRawError(error: unknown) {

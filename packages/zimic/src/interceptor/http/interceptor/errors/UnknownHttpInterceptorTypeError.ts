@@ -7,7 +7,7 @@ class UnknownHttpInterceptorTypeError extends TypeError {
         `'${'local' satisfies HttpInterceptorType}' and ` +
         `'${'remote' satisfies HttpInterceptorType}'.`,
     );
-    this.name = 'UnknownHttpInterceptorTypeError';
+    this.name = 'UnknownHttpInterceptorTypeError [zimic]';
   }
 }
 
