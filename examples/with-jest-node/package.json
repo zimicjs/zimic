@@ -8,12 +8,12 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "fastify": "^5.1.0",
-    "zod": "^3.23.8"
+    "fastify": "^5.2.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@swc/core": "^1.10.0",
+    "@swc/core": "^1.10.1",
     "@swc/jest": "^0.2.37",
     "@types/supertest": "^6.0.2",
     "dotenv-cli": "^7.4.4",
