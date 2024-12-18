@@ -3,7 +3,7 @@
 class NotStartedInterceptorServerError extends Error {
   constructor() {
     super('The interceptor server is not running.');
-    this.name = 'NotStartedInterceptorServerError [zimic]';
+    this.name = 'NotStartedInterceptorServerError';
   }
 }
 

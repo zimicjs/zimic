@@ -8,7 +8,7 @@
 class NotStartedHttpInterceptorError extends Error {
   constructor() {
     super('Interceptor is not running. Did you forget to call `await interceptor.start()`?');
-    this.name = 'NotStartedHttpInterceptorError [zimic]';
+    this.name = 'NotStartedHttpInterceptorError';
   }
 }
 

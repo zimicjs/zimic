@@ -41,7 +41,7 @@ export class CommandError extends Error {
     const message = CommandError.createMessage(executable, options);
     super(message);
 
-    this.name = 'CommandError [zimic]';
+    this.name = 'CommandError';
     this.command = options.command ?? [executable];
     this.exitCode = this.getExitCode(options);
     this.signal = options.signal;

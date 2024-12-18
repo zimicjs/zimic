@@ -33,7 +33,7 @@ class TimesCheckError extends TypeError {
       .join('');
 
     super(message);
-    this.name = 'TimesCheckError [zimic]';
+    this.name = 'TimesCheckError';
   }
 }
 
