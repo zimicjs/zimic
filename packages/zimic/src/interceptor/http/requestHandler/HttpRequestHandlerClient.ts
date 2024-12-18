@@ -40,6 +40,7 @@ class HttpRequestHandlerClient<
 
   private timesStack?: string;
 
+  private numberOfMatchedRequests = 0;
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
@@ -78,6 +79,8 @@ class HttpRequestHandlerClient<
     newThis.createResponseDeclaration = this.isResponseDeclarationFactory(declaration)
       ? declaration
       : () => declaration;
+
+    newThis.numberOfMatchedRequests = 0;
     newThis.interceptedRequests = [];
 
     this.interceptor.registerRequestHandler(this.handler);
@@ -97,10 +100,6 @@ class HttpRequestHandlerClient<
     minNumberOfRequests: number,
     maxNumberOfRequests = minNumberOfRequests,
   ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
-    if (!this.interceptor.shouldSaveRequests()) {
-      throw new DisabledRequestSavingError();
-    }
-
     this.limits.numberOfRequests = {
       min: minNumberOfRequests,
       max: maxNumberOfRequests,
@@ -112,19 +111,14 @@ class HttpRequestHandlerClient<
   }
 
   checkTimes() {
-    if (!this.interceptor.shouldSaveRequests()) {
-      throw new DisabledRequestSavingError();
-    }
-
-    const numberOfRequests = this.interceptedRequests.length;
-
     const isWithinLimits =
-      numberOfRequests >= this.limits.numberOfRequests.min && numberOfRequests <= this.limits.numberOfRequests.max;
+      this.numberOfMatchedRequests >= this.limits.numberOfRequests.min &&
+      this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
 
     if (!isWithinLimits) {
       throw new TimesCheckError({
         limits: this.limits.numberOfRequests,
-        numberOfRequests,
+        numberOfRequests: this.numberOfMatchedRequests,
         timesStack: this.timesStack,
       });
     }
@@ -138,16 +132,25 @@ class HttpRequestHandlerClient<
 
   clear(): this {
     this.restrictions = [];
+
+    this.numberOfMatchedRequests = 0;
     this.interceptedRequests = [];
+
     this.createResponseDeclaration = undefined;
+
     return this;
   }
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
     const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
-    const isWithinLimits = this.interceptedRequests.length < this.limits.numberOfRequests.max;
+    const matchesRequest = hasDeclaredResponse && (await this.matchesRequestRestrictions(request));
 
-    return hasDeclaredResponse && isWithinLimits && (await this.matchesRequestRestrictions(request));
+    if (matchesRequest) {
+      this.numberOfMatchedRequests += 1;
+    }
+
+    const isWithinLimits = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
+    return matchesRequest && isWithinLimits;
   }
 
   private async matchesRequestRestrictions(

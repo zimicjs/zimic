@@ -137,7 +137,7 @@ class RemoteHttpRequestHandler<
     return this._client.applyResponseDeclaration(request);
   }
 
-  registerInterceptedRequest(
+  saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
