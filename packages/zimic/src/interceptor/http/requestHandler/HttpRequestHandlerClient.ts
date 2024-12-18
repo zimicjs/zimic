@@ -149,7 +149,7 @@ class HttpRequestHandlerClient<
       this.numberOfMatchedRequests += 1;
     }
 
-    const isWithinLimits = this.numberOfMatchedRequests < this.limits.numberOfRequests.max;
+    const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
     return matchesRequest && isWithinLimits;
   }
 

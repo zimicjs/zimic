@@ -98,4 +98,7 @@ class LocalHttpRequestHandler<
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLocalHttpRequestHandler = LocalHttpRequestHandler<any, any, any, any>;
+
 export default LocalHttpRequestHandler;
