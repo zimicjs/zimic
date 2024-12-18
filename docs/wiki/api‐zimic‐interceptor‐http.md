@@ -16,6 +16,7 @@
   - [HTTP `interceptor.platform()`](#http-interceptorplatform)
   - [HTTP `interceptor.<method>(path)`](#http-interceptormethodpath)
     - [Path parameters](#path-parameters)
+  - [HTTP `interceptor.checkTimes()`](#http-interceptorchecktimes)
   - [HTTP `interceptor.clear()`](#http-interceptorclear)
   - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
     - [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema)
@@ -28,6 +29,8 @@
   - [HTTP `handler.respond(declaration)`](#http-handlerresponddeclaration)
     - [Static responses](#static-responses)
     - [Computed responses](#computed-responses)
+  - [HTTP `handler.times()`](#http-handlertimes)
+  - [HTTP `handler.checkTimes()`](#http-handlerchecktimes)
   - [HTTP `handler.bypass()`](#http-handlerbypass)
   - [HTTP `handler.clear()`](#http-handlerclear)
   - [HTTP `handler.requests()`](#http-handlerrequests)
@@ -576,6 +579,10 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 ```
 
 </details></td></tr></table>
+
+### HTTP `interceptor.checkTimes()`
+
+TODO
 
 ### HTTP `interceptor.clear()`
 
@@ -1427,6 +1434,14 @@ const listHandler = await interceptor.get('/users').respond((request) => {
 ```
 
 </details></td></tr></table>
+
+### HTTP `handler.times()`
+
+TODO
+
+### HTTP `handler.checkTimes()`
+
+TODO
 
 ### HTTP `handler.bypass()`
 

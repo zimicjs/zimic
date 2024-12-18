@@ -227,8 +227,10 @@ export interface LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  /** TODO */
   times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
 
+  /** TODO */
   checkTimes: () => void;
 
   /**
@@ -337,12 +339,14 @@ export interface SyncedRemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
+  /** TODO */
   times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
     ((
       minNumberOfRequests: number,
       maxNumberOfRequests: number,
     ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
 
+  /** TODO */
   checkTimes: () => Promise<void>;
 
   /**

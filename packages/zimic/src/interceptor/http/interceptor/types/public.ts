@@ -52,6 +52,7 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    */
   stop: () => Promise<void>;
 
+  /** TODO */
   checkTimes: (() => void) | (() => Promise<void>);
 
   /**
