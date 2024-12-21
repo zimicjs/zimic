@@ -146,7 +146,7 @@ class HttpRequestHandlerClient<
     const matchesRequest = hasDeclaredResponse && (await this.matchesRequestRestrictions(request));
 
     if (matchesRequest) {
-      this.numberOfMatchedRequests += 1;
+      this.numberOfMatchedRequests++;
     }
 
     const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
