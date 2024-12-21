@@ -28,53 +28,64 @@ An example using a [Jest](https://jestjs.io)/[Vitest](https://vitest.dev) API:
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using local interceptors</b></summary>
 
 ```ts
-// Your interceptors
 import myInterceptor from './interceptors/myInterceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
+// Your interceptors
+const interceptors = [myInterceptor, myOtherInterceptor];
+
 // Start intercepting requests
 beforeAll(async () => {
-  await myInterceptor.start();
-  await myOtherInterceptor.start();
+  const startPromises = interceptors.map((interceptor) => interceptor.start());
+  await Promise.all(startPromises);
 });
 
-// Clear interceptors so that no tests affect each other
 afterEach(() => {
-  myInterceptor.clear();
-  myOtherInterceptor.clear();
+  for (const interceptor of interceptors) {
+    // Check that all expected requests were made
+    interceptor.checkTimes();
+
+    // Clear interceptors so that no tests affect each other
+    interceptor.clear();
+  }
 });
 
 // Stop intercepting requests
 afterAll(async () => {
-  await myInterceptor.stop();
-  await myOtherInterceptor.stop();
+  const stopPromises = interceptors.map((interceptor) => interceptor.stop());
+  await Promise.all(stopPromises);
 });
 ```
 
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using remote interceptors</b></summary>
 
 ```ts
-// Your interceptors
 import myInterceptor from './interceptors/myInterceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
+// Your interceptors
+const interceptors = [myInterceptor, myOtherInterceptor];
+
 // Start intercepting requests
 beforeAll(async () => {
-  await myInterceptor.start();
-  await myOtherInterceptor.start();
+  const startPromises = interceptors.map((interceptor) => interceptor.start());
+  await Promise.all(startPromises);
 });
 
 // Clear all interceptors so that no tests affect each other
 afterEach(async () => {
   // Important: clearing remote interceptors is asynchronous
-  await myInterceptor.clear();
-  await myOtherInterceptor.clear();
+  const clearPromises = interceptors.map(async (interceptor) => {
+    await interceptor.checkTimes();
+    await interceptor.clear();
+  });
+  await Promise.all(clearPromises);
 });
 
 // Stop intercepting requests
 afterAll(async () => {
-  await myInterceptor.stop();
-  await myOtherInterceptor.stop();
+  const stopPromises = interceptors.map((interceptor) => interceptor.stop());
+  await Promise.all(stopPromises);
 });
 ```
 
