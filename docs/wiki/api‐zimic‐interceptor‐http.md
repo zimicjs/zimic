@@ -460,11 +460,12 @@ operation, so you need to `await` it. You can also chain any number of operation
 handler.
 
 To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request considering
-the interceptor base URL, method, path, and [restrictions](#http-handlerwithrestriction). The handlers are checked from
-the **last** created to the first, so new handlers have preference over old ones. This allows you to declare generic and
-specific handlers based on their order of creation. For example, a generic handler for `GET /users` can return an empty
-list, while a specific handler in a test case can return a list with some users. In this case, the specific handler will
-be considered first as long as it is created **after** the generic one.
+the interceptor base URL, method, path, [restrictions](#http-handlerwithrestriction) and
+[limits to the number of requests](#http-handlertimes). The handlers are checked from the **last** created to the first,
+so new handlers have preference over old ones. This allows you to declare generic and specific handlers based on their
+order of creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in
+a test case can return a list with some users. In this case, the specific handler will be considered first as long as it
+is created **after** the generic one.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -582,7 +583,47 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 
 ### HTTP `interceptor.checkTimes()`
 
-TODO
+Checks if all handlers created by this interceptor have matched the expected number of requests declared with their
+[`handler.times()`](#http-handlertimes).
+
+If some handler has not matched the expected number of requests, this method will throw a `TimesCheckError` error
+pointing to the `handler.times()` that was not satisfied.
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+
+```ts
+interceptor.checkTimes();
+```
+
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+
+```ts
+await interceptor.checkTimes();
+```
+
+</details></td></tr></table>
+
+This is useful in an `afterEach` hook (or equivalent) to ensure that all requests expected in a test have been made.
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+
+```ts
+afterEach(() => {
+  interceptor.checkTimes();
+  interceptor.clear();
+});
+```
+
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+
+```ts
+afterEach(async () => {
+  await interceptor.checkTimes();
+  interceptor.clear();
+});
+```
+
+</details></td></tr></table>
 
 ### HTTP `interceptor.clear()`
 
@@ -1437,11 +1478,97 @@ const listHandler = await interceptor.get('/users').respond((request) => {
 
 ### HTTP `handler.times()`
 
-TODO
+Declares the number of times that the handler should match intercepted requests and return its response.
+
+If only one argument is provided, the handler will match exactly that number of requests. If passed two arguments, the
+handler will consider an inclusive range, matching at least the minimum and at most the maximum number of requests.
+
+Once the handler receives more requests than the maximum number of times, it will stop matching requests and they may
+fail if no other handler matches them. Learn more about how Zimic decides which handler to use for a request in the
+[`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+
+```ts
+const exactListHandler = interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  })
+  .times(1); // Matches exactly one request
+
+const rangeListHandler = interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  })
+  .times(0, 3); // Matches at least 0 and at most 3 requests
+```
+
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+
+```ts
+const exactListHandler = await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  })
+  .times(1); // Matches exactly one request
+
+const rangeListHandler = await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [{ username: 'diego-aquino' }],
+  })
+  .times(0, 3); // Matches at least 0 and at most 3 requests
+```
+
+</details></td></tr></table>
 
 ### HTTP `handler.checkTimes()`
 
-TODO
+Checks if the handler has matched the expected number of requests declared with [`handler.times()`](#http-handlertimes).
+
+If the handler has not matched the expected number of requests, this method will throw a `TimesCheckError` error
+pointing to the `handler.times()` that was not satisfied.
+
+<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+
+```ts
+const listHandler = interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [],
+  })
+  .times(1);
+
+// Run application...
+
+// Check that exactly 1 request was made
+handler.checkTimes();
+```
+
+</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+
+```ts
+const listHandler = await interceptor
+  .get('/users')
+  .respond({
+    status: 200,
+    body: [],
+  })
+  .times(1);
+
+// Run application...
+
+// Check that exactly 1 request was made
+await handler.checkTimes();
+```
 
 ### HTTP `handler.bypass()`
 
@@ -1465,35 +1592,35 @@ removed the response, keeping restrictions and intercepted requests.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const listHandler = interceptor.get('/users').respond({
+const genericListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const otherListHandler = interceptor.get('/users').respond({
+const specificListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-otherListHandler.bypass();
-// Now, requests GET /users will match `listHandler` and receive an empty array
+specificListHandler.bypass();
+// Now, requests GET /users will match `genericListHandler` and receive an empty array
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-const listHandler = await interceptor.get('/users').respond({
+const genericListHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const otherListHandler = await interceptor.get('/users').respond({
+const specificListHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-await otherListHandler.bypass();
-// Now, requests GET /users will match `listHandler` and receive an empty array
+await specificListHandler.bypass();
+// Now, requests GET /users will match `genericListHandler` and receive an empty array
 ```
 
 </details></td></tr></table>
@@ -1510,39 +1637,39 @@ To make the handler match requests again, register a new response with `handler.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const listHandler = interceptor.get('/users').respond({
+const genericListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const otherListHandler = interceptor.get('/users').respond({
+const specificListHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-otherListHandler.clear();
-// Now, requests GET /users will match `listHandler` and receive an empty array
+specificListHandler.clear();
+// Now, requests GET /users will match `genericListHandler` and receive an empty array
 
-otherListHandler.requests(); // Now empty
+specificListHandler.requests(); // Now empty
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-const listHandler = await interceptor.get('/users').respond({
+const genericListHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const otherListHandler = await interceptor.get('/users').respond({
+const specificListHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'diego-aquino' }],
 });
 
-await otherListHandler.clear();
-// Now, requests GET /users will match `listHandler` and receive an empty array
+await specificListHandler.clear();
+// Now, requests GET /users will match `genericListHandler` and receive an empty array
 
-await otherListHandler.requests(); // Now empty
+await specificListHandler.requests(); // Now empty
 ```
 
 </details></td></tr></table>
