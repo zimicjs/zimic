@@ -187,7 +187,10 @@ class RemoteHttpRequestHandler<
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyRemoteHttpRequestHandler = RemoteHttpRequestHandler<any, any, any, any>;
+export type AnyRemoteHttpRequestHandler =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | RemoteHttpRequestHandler<any, any, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | RemoteHttpRequestHandler<any, any, any, any>;
 
 export default RemoteHttpRequestHandler;

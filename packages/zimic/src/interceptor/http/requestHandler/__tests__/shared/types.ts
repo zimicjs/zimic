@@ -18,6 +18,7 @@ export type HeadersSchema = HttpSchema.Headers<{
 export type SearchParamsSchema = HttpSchema.SearchParams<{
   name?: string;
   other?: string;
+  value?: string;
 }>;
 
 export type MethodSchema = HttpSchema.Method<{

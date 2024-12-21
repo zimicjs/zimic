@@ -10,12 +10,12 @@ import RemoteHttpInterceptorWorker from '../../RemoteHttpInterceptorWorker';
 export function promiseIfRemote<FulfilledResult>(
   value: FulfilledResult,
   comparisonEntity:
-    | LocalHttpInterceptorWorker
-    | RemoteHttpInterceptorWorker
+    | AnyRemoteHttpInterceptor
+    | AnyLocalHttpInterceptor
     | AnyLocalHttpRequestHandler
     | AnyRemoteHttpRequestHandler
-    | AnyRemoteHttpInterceptor
-    | AnyLocalHttpInterceptor,
+    | LocalHttpInterceptorWorker
+    | RemoteHttpInterceptorWorker,
 ): FulfilledResult {
   return expectPossiblePromise(value, {
     shouldBePromise: comparisonEntity.type === 'remote',

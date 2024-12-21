@@ -6,6 +6,7 @@ import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInte
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
+import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
@@ -61,7 +62,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected exactly 1 request, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -88,7 +89,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected exactly 2 requests, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -126,7 +127,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected exactly 1 request, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -160,7 +161,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -185,7 +186,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected at least 2 and at most 3 requests, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -206,7 +207,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -220,7 +221,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -245,7 +246,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -273,7 +274,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected exactly 1 request, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -301,7 +302,7 @@ export function declareTimesHttpRequestHandlerTests(
         { firstLine: 'Expected exactly 2 requests, but got 0.' },
       );
 
-      const matchingRequest = new Request(baseURL, { method: 'POST' });
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -323,6 +324,57 @@ export function declareTimesHttpRequestHandlerTests(
           await promiseIfRemote(handler.checkTimes(), handler);
         },
         { firstLine: 'Expected exactly 2 requests, but got 3.' },
+      );
+    });
+  });
+
+  describe('Unmatched requests', () => {
+    it('should not consider requests unmatched due to restrictions in time checks', async () => {
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+        .with({ searchParams: { value: '1' } })
+        .respond({ status: 200, body: { success: true } })
+        .times(1);
+
+      await expectTimesCheckError(
+        async () => {
+          await promiseIfRemote(handler.checkTimes(), handler);
+        },
+        { firstLine: 'Expected exactly 1 request, but got 0.' },
+      );
+
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+
+      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+      await expectTimesCheckError(
+        async () => {
+          await promiseIfRemote(handler.checkTimes(), handler);
+        },
+        { firstLine: 'Expected exactly 1 request, but got 0.' },
+      );
+    });
+
+    it('should not consider requests unmatched due to missing response declarations in time checks', async () => {
+      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(1);
+
+      await expectTimesCheckError(
+        async () => {
+          await promiseIfRemote(handler.checkTimes(), handler);
+        },
+        { firstLine: 'Expected exactly 1 request, but got 0.' },
+      );
+
+      const matchingRequest = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+
+      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+      await expectTimesCheckError(
+        async () => {
+          await promiseIfRemote(handler.checkTimes(), handler);
+        },
+        { firstLine: 'Expected exactly 1 request, but got 0.' },
       );
     });
   });

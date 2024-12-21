@@ -30,6 +30,9 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
   });
 
   type MethodSchema = HttpSchema.Method<{
+    request: {
+      searchParams: { value?: string };
+    };
     response: {
       200: { headers: AccessControlHeaders };
     };
@@ -678,6 +681,155 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
                 numberOfRequestsIncludingPreflight * 2
               } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
             },
+          );
+        });
+      });
+    });
+
+    describe('Unmatched requests', () => {
+      it('should not consider requests unmatched due to restrictions in time checks', async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
+              .times(1),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
+          );
+
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
+          );
+        });
+      });
+
+      it('should not consider requests unmatched due to missing response declarations in time checks', async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(interceptor[lowerMethod]('/users').times(1), interceptor);
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
+          );
+
+          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
+          );
+        });
+      });
+
+      it('should not consider requests unmatched due to unmocked path in time checks', async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>(interceptorOptions, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users')
+              .with({ searchParams: { value: '1' } })
+              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
+              .times(1),
+            interceptor,
+          );
+          expect(handler).toBeInstanceOf(Handler);
+
+          let requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
+          );
+
+          const responsePromise = fetch(joinURL(baseURL, '/users/other'), { method });
+
+          if (overridesPreflightResponse) {
+            await expectPreflightResponse(responsePromise);
+          } else {
+            await expectFetchError(responsePromise);
+          }
+
+          requests = await promiseIfRemote(handler.requests(), interceptor);
+          expect(requests).toHaveLength(0);
+
+          await expectTimesCheckError(
+            async () => {
+              await promiseIfRemote(interceptor.checkTimes(), interceptor);
+            },
+            { firstLine: 'Expected exactly 1 request, but got 0.' },
           );
         });
       });
