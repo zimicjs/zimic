@@ -227,10 +227,36 @@ export interface LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
-  /** TODO */
+  /**
+   * Declares the number of times that the handler should match intercepted requests and return its response.
+   *
+   * If only one argument is provided, the handler will match exactly that number of requests. If passed two arguments,
+   * the handler will consider an inclusive range, matching at least the minimum and at most the maximum number of
+   * requests.
+   *
+   * Once the handler receives more requests than the maximum number of times, it will stop matching requests and they
+   * may fail if no other handler matches them. Learn more about how Zimic decides which handler to use for a request in
+   * the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
+   *
+   * @param numberOfRequests The number of times the handler should match intercepted requests.
+   * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
+   * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
+   * @returns The same handler, now considering the specified number of times.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   */
   times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
 
-  /** TODO */
+  /**
+   * Checks if the handler has matched the expected number of requests declared with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   *
+   * If the handler has not matched the expected number of requests, this method will throw an error pointing to the
+   * `handler.times()` that was not satisfied.
+   *
+   * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   */
   checkTimes: () => void;
 
   /**
@@ -339,14 +365,40 @@ export interface SyncedRemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
-  /** TODO */
+  /**
+   * Declares the number of times that the handler should match intercepted requests and return its response.
+   *
+   * If only one argument is provided, the handler will match exactly that number of requests. If passed two arguments,
+   * the handler will consider an inclusive range, matching at least the minimum and at most the maximum number of
+   * requests.
+   *
+   * Once the handler receives more requests than the maximum number of times, it will stop matching requests and they
+   * may fail if no other handler matches them. Learn more about how Zimic decides which handler to use for a request in
+   * the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
+   *
+   * @param numberOfRequests The number of times the handler should match intercepted requests.
+   * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
+   * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
+   * @returns The same handler, now considering the specified number of times.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   */
   times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
     ((
       minNumberOfRequests: number,
       maxNumberOfRequests: number,
     ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
 
-  /** TODO */
+  /**
+   * Checks if the handler has matched the expected number of requests declared with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   *
+   * If the handler has not matched the expected number of requests, this method will throw an error pointing to the
+   * `handler.times()` that was not satisfied.
+   *
+   * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   */
   checkTimes: () => Promise<void>;
 
   /**
