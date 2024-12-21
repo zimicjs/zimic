@@ -11,6 +11,8 @@ export async function expectTimesCheckError(callback: () => Promise<void> | void
     try {
       await callback();
     } catch (error) {
+      /* istanbul ignore else -- @preserve
+       * A times check error is always expected here. */
       if (error instanceof TimesCheckError) {
         timesCheckError = error;
       }
