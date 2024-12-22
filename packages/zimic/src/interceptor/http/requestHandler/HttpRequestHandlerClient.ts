@@ -133,6 +133,12 @@ class HttpRequestHandlerClient<
   clear(): this {
     this.restrictions = [];
 
+    this.limits = {
+      numberOfRequests: { min: 0, max: Infinity },
+    };
+
+    this.timesStack = undefined;
+
     this.numberOfMatchedRequests = 0;
     this.interceptedRequests = [];
 
