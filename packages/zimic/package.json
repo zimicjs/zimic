@@ -99,7 +99,7 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@whatwg-node/server": "0.9.63",
+    "@whatwg-node/server": "0.9.64",
     "chalk": "4.1.2",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
@@ -122,7 +122,7 @@
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "dotenv-cli": "^7.4.4",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9.17.0",
     "js-yaml": "^4.1.0",
     "playwright": "^1.49.1",
