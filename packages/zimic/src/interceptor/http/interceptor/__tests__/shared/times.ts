@@ -88,6 +88,8 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
           handler.times(numberOfRequestsIncludingPreflight * 2);
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
@@ -96,6 +98,8 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
 
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
+
           handler.times(numberOfRequestsIncludingPreflight * 3);
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
@@ -103,6 +107,8 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           requests = await promiseIfRemote(handler.requests(), interceptor);
           expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+
+          await promiseIfRemote(interceptor.checkTimes(), interceptor);
         });
       });
 
@@ -492,64 +498,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
         });
       });
 
-      it(`should intercept the exact number of ${method} requests limited in a range including zero`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(0, numberOfRequestsIncludingPreflight),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          const response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              firstLine: `Expected at least 0 and at most ${numberOfRequestsIncludingPreflight} request${
-                numberOfRequestsIncludingPreflight === 1 ? '' : 's'
-              }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
-            },
-          );
-        });
-      });
-
-      it(`should intercept the exact number of ${method} requests limited in a unitary range`, async () => {
+      it(`should intercept the exact number of ${method} requests limited in a range where the minimum and maximum are equal`, async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;
@@ -610,85 +559,6 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               firstLine: `Expected exactly ${numberOfRequestsIncludingPreflight} request${
                 numberOfRequestsIncludingPreflight === 1 ? '' : 's'
               }, but got ${numberOfRequestsIncludingPreflight * 2}.`,
-            },
-          );
-        });
-      });
-
-      it(`should intercept the exact number of ${method} requests limited in a non-unitary range`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>(interceptorOptions, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users')
-              .respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS })
-              .times(numberOfRequestsIncludingPreflight * 2, numberOfRequestsIncludingPreflight * 2),
-            interceptor,
-          );
-          expect(handler).toBeInstanceOf(Handler);
-
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            { firstLine: `Expected exactly ${numberOfRequestsIncludingPreflight * 2} requests, but got 0.` },
-          );
-
-          let response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              firstLine: `Expected exactly ${
-                numberOfRequestsIncludingPreflight * 2
-              } requests, but got ${numberOfRequestsIncludingPreflight}.`,
-            },
-          );
-
-          response = await fetch(joinURL(baseURL, '/users'), { method });
-          expect(response.status).toBe(200);
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
-
-          await promiseIfRemote(interceptor.checkTimes(), interceptor);
-
-          const responsePromise = fetch(joinURL(baseURL, '/users'), {
-            method,
-            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
-          });
-
-          if (overridesPreflightResponse) {
-            await expectPreflightResponse(responsePromise);
-          } else {
-            await expectFetchError(responsePromise);
-          }
-
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
-
-          await expectTimesCheckError(
-            async () => {
-              await promiseIfRemote(interceptor.checkTimes(), interceptor);
-            },
-            {
-              firstLine: `Expected exactly ${
-                numberOfRequestsIncludingPreflight * 2
-              } requests, but got ${numberOfRequestsIncludingPreflight * 3}.`,
             },
           );
         });
