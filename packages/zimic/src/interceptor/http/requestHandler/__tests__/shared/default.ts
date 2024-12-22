@@ -230,7 +230,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
-    handler.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
+    handler.saveInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
     let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
@@ -249,7 +249,7 @@ export function declareDefaultHttpRequestHandlerTests(
     });
     const parsedSecondResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(secondResponse);
 
-    handler.registerInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
+    handler.saveInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
     expect(interceptedRequests).toHaveLength(1);
     interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
@@ -282,7 +282,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const firstResponseClone = firstResponse.clone();
     const parsedFirstResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(firstResponse);
 
-    handler.registerInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
+    handler.saveInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
     let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
@@ -316,7 +316,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
-    handler.registerInterceptedRequest(parsedRequest, parsedResponse);
+    handler.saveInterceptedRequest(parsedRequest, parsedResponse);
 
     const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);
@@ -359,7 +359,7 @@ export function declareDefaultHttpRequestHandlerTests(
     const response = Response.json(responseDeclaration.body, { status: responseDeclaration.status });
     const parsedResponse = await LocalHttpInterceptorWorker.parseRawResponse<MethodSchema, 200>(response);
 
-    handler.registerInterceptedRequest(parsedRequest, parsedResponse);
+    handler.saveInterceptedRequest(parsedRequest, parsedResponse);
 
     const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
     expect(interceptedRequests).toHaveLength(1);

@@ -65,6 +65,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
   afterEach(async () => {
     await Promise.all(
       interceptors.map(async (interceptor) => {
+        await interceptor.checkTimes();
+      }),
+    );
+
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
         await interceptor.clear();
       }),
     );
@@ -136,7 +142,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
               headers: { 'x-user-id': user.id },
               body: user,
             };
-          });
+          })
+          .times(1);
 
         const response = await createUser(creationPayload);
         expect(response.status).toBe(201);
@@ -193,7 +200,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .respond({
             status: 400,
             body: validationError,
-          });
+          })
+          .times(1);
 
         const response = await createUser(invalidPayload);
         expect(response.status).toBe(400);
@@ -238,7 +246,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .respond({
             status: 409,
             body: conflictError,
-          });
+          })
+          .times(1);
 
         const response = await createUser(conflictingPayload);
         expect(response.status).toBe(409);
@@ -307,10 +316,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should list users', async () => {
-        const listHandler = await authInterceptor.get('/users').respond({
-          status: 200,
-          body: users.map(serializeUser),
-        });
+        const listHandler = await authInterceptor
+          .get('/users')
+          .respond({
+            status: 200,
+            body: users.map(serializeUser),
+          })
+          .times(1);
 
         const response = await listUsers();
         expect(response.status).toBe(200);
@@ -357,7 +369,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .respond({
             status: 200,
             body: [serializeUser(user)],
-          });
+          })
+          .times(1);
 
         const response = await listUsers({ name: user.name });
         expect(response.status).toBe(200);
@@ -407,7 +420,8 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .respond({
             status: 200,
             body: usersSortedByDescendingEmail.map(serializeUser),
-          });
+          })
+          .times(1);
 
         const response = await listUsers({
           orderBy: ['email.desc'],
@@ -454,10 +468,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should support getting users by id', async () => {
-        const getHandler = await authInterceptor.get(`/users/${user.id}`).respond({
-          status: 200,
-          body: serializeUser(user),
-        });
+        const getHandler = await authInterceptor
+          .get(`/users/${user.id}`)
+          .respond({
+            status: 200,
+            body: serializeUser(user),
+          })
+          .times(1);
 
         const response = await getUserById(user.id);
         expect(response.status).toBe(200);
@@ -496,10 +513,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = await authInterceptor.get('/users/:id').respond({
-          status: 404,
-          body: notFoundError,
-        });
+        const getHandler = await authInterceptor
+          .get('/users/:id')
+          .respond({
+            status: 404,
+            body: notFoundError,
+          })
+          .times(1);
 
         const response = await getUserById(user.id);
         expect(response.status).toBe(404);
@@ -541,9 +561,12 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = await authInterceptor.delete(`/users/${user.id}`).respond({
-          status: 204,
-        });
+        const deleteHandler = await authInterceptor
+          .delete(`/users/${user.id}`)
+          .respond({
+            status: 204,
+          })
+          .times(1);
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(204);
@@ -582,10 +605,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = await authInterceptor.delete('/users/:id').respond({
-          status: 404,
-          body: notFoundError,
-        });
+        const getHandler = await authInterceptor
+          .delete('/users/:id')
+          .respond({
+            status: 404,
+            body: notFoundError,
+          })
+          .times(1);
 
         const response = await deleteUserById(user.id);
         expect(response.status).toBe(404);
@@ -644,10 +670,13 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       }
 
       it('should list notifications', async () => {
-        const listHandler = await notificationInterceptor.get('/notifications/:userId').respond({
-          status: 200,
-          body: [notification],
-        });
+        const listHandler = await notificationInterceptor
+          .get('/notifications/:userId')
+          .respond({
+            status: 200,
+            body: [notification],
+          })
+          .times(0, 1);
 
         let response = await listNotifications(notification.userId);
         expect(response.status).toBe(200);

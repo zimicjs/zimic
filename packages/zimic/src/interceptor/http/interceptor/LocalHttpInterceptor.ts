@@ -95,6 +95,10 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     return this._client.options(path);
   }) as unknown as SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
+  checkTimes() {
+    this._client.checkTimes();
+  }
+
   clear() {
     this._client.clear();
   }

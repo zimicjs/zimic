@@ -174,17 +174,19 @@ test('example', async () => {
   // 8. Run your application and make requests
   // ...
 
+  // NOTE: The following lines are not mandatory, because they are automatically
+  // checked by the `with` and `times` calls we used above. Requests not matching
+  // the restrictions or exceeding the number of times will cause warnings and
+  // not be intercepted. We show them here for demonstration purposes.
+
+  // If you are not using `with` or `times`, asserting the requests manually is
+  // a good practice:
+
   // 9. Check the requests you expect
   // https://bit.ly/zimic-interceptor-http#http-handlerrequests
   const requests = myHandler.requests();
   expect(requests).toHaveLength(1);
 
-  // The following expects are automatically checked by the restrictions
-  // we declared above. Requests not matching them will cause warnings and not
-  // be intercepted.
-
-  // If you are not using restrictions, asserting the requests manually is
-  // a good practice:
   expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
   expect(requests[0].searchParams.size).toBe(1);

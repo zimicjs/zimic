@@ -9,6 +9,7 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
+  githubInterceptor.checkTimes();
   githubInterceptor.clear();
 });
 
