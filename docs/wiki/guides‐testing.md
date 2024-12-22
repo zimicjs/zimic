@@ -36,8 +36,11 @@ const interceptors = [myInterceptor, myOtherInterceptor];
 
 // Start intercepting requests
 beforeAll(async () => {
-  const startPromises = interceptors.map((interceptor) => interceptor.start());
-  await Promise.all(startPromises);
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.start();
+    }),
+  );
 });
 
 afterEach(() => {
@@ -52,8 +55,11 @@ afterEach(() => {
 
 // Stop intercepting requests
 afterAll(async () => {
-  const stopPromises = interceptors.map((interceptor) => interceptor.stop());
-  await Promise.all(stopPromises);
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.stop();
+    }),
+  );
 });
 ```
 
@@ -68,24 +74,31 @@ const interceptors = [myInterceptor, myOtherInterceptor];
 
 // Start intercepting requests
 beforeAll(async () => {
-  const startPromises = interceptors.map((interceptor) => interceptor.start());
-  await Promise.all(startPromises);
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.start();
+    }),
+  );
 });
 
 // Clear all interceptors so that no tests affect each other
 afterEach(async () => {
   // Important: clearing remote interceptors is asynchronous
-  const clearPromises = interceptors.map(async (interceptor) => {
-    await interceptor.checkTimes();
-    await interceptor.clear();
-  });
-  await Promise.all(clearPromises);
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.checkTimes();
+      await interceptor.clear();
+    }),
+  );
 });
 
 // Stop intercepting requests
 afterAll(async () => {
-  const stopPromises = interceptors.map((interceptor) => interceptor.stop());
-  await Promise.all(stopPromises);
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.stop();
+    }),
+  );
 });
 ```
 

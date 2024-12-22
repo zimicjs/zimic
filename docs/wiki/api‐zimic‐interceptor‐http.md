@@ -461,7 +461,7 @@ handler.
 
 To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request considering
 the interceptor base URL, method, path, [restrictions](#http-handlerwithrestriction) and
-[limits to the number of requests](#http-handlertimes). The handlers are checked from the **last** created to the first,
+[limits on the number of requests](#http-handlertimes). The handlers are checked from the **last** created to the first,
 so new handlers have preference over old ones. This allows you to declare generic and specific handlers based on their
 order of creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in
 a test case can return a list with some users. In this case, the specific handler will be considered first as long as it
@@ -586,8 +586,8 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 Checks if all handlers created by this interceptor have matched the expected number of requests declared with their
 [`handler.times()`](#http-handlertimes).
 
-If some handler has not matched the expected number of requests, this method will throw a `TimesCheckError` error
-pointing to the `handler.times()` that was not satisfied.
+If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
+pointing to the [`handler.times()`](#http-handlertimes) that was not satisfied.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -603,14 +603,14 @@ await interceptor.checkTimes();
 
 </details></td></tr></table>
 
-This is useful in an `afterEach` hook (or equivalent) to ensure that all requests expected in a test have been made.
+This is useful in an `afterEach` hook (or equivalent) to make sure that all expected requests were made at the end of
+each test.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
 afterEach(() => {
   interceptor.checkTimes();
-  interceptor.clear();
 });
 ```
 
@@ -619,9 +619,10 @@ afterEach(() => {
 ```ts
 afterEach(async () => {
   await interceptor.checkTimes();
-  interceptor.clear();
 });
 ```
+
+See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 </details></td></tr></table>
 
@@ -1478,14 +1479,15 @@ const listHandler = await interceptor.get('/users').respond((request) => {
 
 ### HTTP `handler.times()`
 
-Declares the number of times that the handler should match intercepted requests and return its response.
+Declares the number of intercepted requests that the handler can match and return its response.
 
-If only one argument is provided, the handler will match exactly that number of requests. If passed two arguments, the
-handler will consider an inclusive range, matching at least the minimum and at most the maximum number of requests.
+If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments, the
+handler will consider an inclusive range, matching at least the minimum (first argument) and at most the maximum (second
+argument) number of requests.
 
-Once the handler receives more requests than the maximum number of times, it will stop matching requests and they may
-fail if no other handler matches them. Learn more about how Zimic decides which handler to use for a request in the
-[`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
+Once the handler receives more requests than the maximum number declared, it will stop matching requests and they may
+fail if no other handler is eligible. Learn more about how Zimic decides which handler to use for an intercepted request
+in the [`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1527,14 +1529,27 @@ const rangeListHandler = await interceptor
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
 
+> [!IMPORTANT]
+>
+> To make sure that all expected requests were made, use [`interceptor.checkTimes()`](#http-interceptorchecktimes) or
+> [`handler.checkTimes()`](#http-handlerchecktimes). [`interceptor.checkTimes()`](#http-interceptorchecktimes) is
+> generally preferred, as it checks all handlers created by the interceptor with a single call.
+
+> [!TIP]
+>
+> Prior to v0.12.0, a common strategy to check the number of requests was to assert the length of `handler.requests()`.
+> [`handler.times()`](#http-handlertimes), combined with [`handler.checkTimes()`](#http-handlerchecktimes) or
+> [`interceptor.checkTimes()`](#http-interceptorchecktimes), archives the same purpose in a shorter and more declarative
+> way. In most cases, these methods are preferred over manually checking the length of `handler.requests()`.
+
 </details></td></tr></table>
 
 ### HTTP `handler.checkTimes()`
 
 Checks if the handler has matched the expected number of requests declared with [`handler.times()`](#http-handlertimes).
 
-If the handler has not matched the expected number of requests, this method will throw a `TimesCheckError` error
-pointing to the `handler.times()` that was not satisfied.
+If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
+pointing to the [`handler.times()`](#http-handlertimes) that was not satisfied.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
