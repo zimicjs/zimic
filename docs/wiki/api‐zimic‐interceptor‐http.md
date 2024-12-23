@@ -31,7 +31,6 @@
     - [Computed responses](#computed-responses)
   - [HTTP `handler.times()`](#http-handlertimes)
   - [HTTP `handler.checkTimes()`](#http-handlerchecktimes)
-  - [HTTP `handler.bypass()`](#http-handlerbypass)
   - [HTTP `handler.clear()`](#http-handlerclear)
   - [HTTP `handler.requests()`](#http-handlerrequests)
 - [Intercepted HTTP resources](#intercepted-http-resources)
@@ -1584,61 +1583,6 @@ const listHandler = await interceptor
 // Check that exactly 1 request was made
 await handler.checkTimes();
 ```
-
-### HTTP `handler.bypass()`
-
-Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), making the handler
-stop matching requests. The next handler, created before this one, that matches the same method and path will be used if
-present. If not, the requests of the method and path will not be intercepted.
-
-To make the handler match requests again, register a new response with
-[`handler.respond(declaration)`](#http-handlerresponddeclaration).
-
-This method is useful to skip a handler. It is more gentle than [`handler.clear()`](#http-handlerclear), as it only
-removed the response, keeping restrictions and intercepted requests.
-
-> [!IMPORTANT]
->
-> This method is deprecated and will be removed soon. You can achieve an equivalent behavior by controlling the order in
-> which handlers are created. Since new handlers are always considered before old ones, you can replace `bypass()` calls
-> with new handler declarations describing your new responses. Learn more at the
-> [`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
-
-<table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
-
-```ts
-const genericListHandler = interceptor.get('/users').respond({
-  status: 200,
-  body: [],
-});
-
-const specificListHandler = interceptor.get('/users').respond({
-  status: 200,
-  body: [{ username: 'diego-aquino' }],
-});
-
-specificListHandler.bypass();
-// Now, requests GET /users will match `genericListHandler` and receive an empty array
-```
-
-</details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
-
-```ts
-const genericListHandler = await interceptor.get('/users').respond({
-  status: 200,
-  body: [],
-});
-
-const specificListHandler = await interceptor.get('/users').respond({
-  status: 200,
-  body: [{ username: 'diego-aquino' }],
-});
-
-await specificListHandler.bypass();
-// Now, requests GET /users will match `genericListHandler` and receive an empty array
-```
-
-</details></td></tr></table>
 
 ### HTTP `handler.clear()`
 

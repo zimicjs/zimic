@@ -712,18 +712,6 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([notification]);
 
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        await listHandler.bypass();
-
-        response = await listNotifications(notification.userId);
-        expect(response.status).toBe(200);
-
-        returnedNotifications = (await response.json()) as Notification[];
-        expect(returnedNotifications).toEqual([]);
-
-        expect(listRequests).toHaveLength(1);
-        expect(await listHandler.requests()).toHaveLength(1);
-
         await listHandler.clear();
 
         response = await listNotifications(notification.userId);

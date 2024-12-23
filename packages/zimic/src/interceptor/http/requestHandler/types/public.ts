@@ -270,28 +270,6 @@ export interface LocalHttpRequestHandler<
   /**
    * Clears any response declared with
    * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
-   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
-   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
-   *
-   * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
-   *
-   * This method is useful to skip a handler. It is more gentle than
-   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
-   * removed the response, keeping restrictions and intercepted requests.
-   *
-   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
-   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
-   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
-   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
-   * @returns The same handler, now without a declared responses.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
-   */
-  bypass: () => this;
-
-  /**
-   * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
    * restrictions declared with
    * [`handler.with(restriction)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction),
    * and intercepted requests, making the handler stop matching requests. The next handler, created before this one,
@@ -417,28 +395,6 @@ export interface SyncedRemoteHttpRequestHandler<
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
    */
   checkTimes: () => Promise<void>;
-
-  /**
-   * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
-   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
-   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
-   *
-   * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
-   *
-   * This method is useful to skip a handler. It is more gentle than
-   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
-   * removed the response, keeping restrictions and intercepted requests.
-   *
-   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
-   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
-   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
-   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
-   * @returns The same handler, now without a declared responses.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
-   */
-  bypass: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /**
    * Clears any response declared with

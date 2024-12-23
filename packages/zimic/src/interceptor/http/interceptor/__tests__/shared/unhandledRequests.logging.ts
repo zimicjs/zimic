@@ -174,15 +174,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
-                // eslint-disable-next-line @typescript-eslint/no-deprecated
-                await promiseIfRemote(handler.bypass(), interceptor);
+                await promiseIfRemote(handler.clear(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), { method });
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
                 requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -234,8 +233,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
-                // eslint-disable-next-line @typescript-eslint/no-deprecated
-                await promiseIfRemote(handler.bypass(), interceptor);
+                await promiseIfRemote(handler.clear(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), {
                   method,
@@ -248,7 +246,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await expectBypassedResponse(responsePromise);
 
                 requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -455,8 +453,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(0);
 
-              // eslint-disable-next-line @typescript-eslint/no-deprecated
-              await promiseIfRemote(handler.bypass(), interceptor);
+              await promiseIfRemote(handler.clear(), interceptor);
 
               const request = new Request(joinURL(baseURL, '/users'), {
                 method,
@@ -471,7 +468,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               }
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(requests).toHaveLength(0);
 
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -518,8 +515,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
-                // eslint-disable-next-line @typescript-eslint/no-deprecated
-                await promiseIfRemote(handler.bypass(), interceptor);
+                await promiseIfRemote(handler.clear(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), {
                   method,
@@ -532,7 +528,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await expectFetchError(responsePromise);
 
                 requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);

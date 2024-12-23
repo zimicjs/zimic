@@ -64,13 +64,6 @@ class LocalHttpRequestHandler<
     this._client.checkTimes();
   }
 
-  /** @deprecated */
-  bypass(): this {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    this._client.bypass();
-    return this;
-  }
-
   clear(): this {
     this._client.clear();
     return this;
