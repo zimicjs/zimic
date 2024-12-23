@@ -124,12 +124,6 @@ class HttpRequestHandlerClient<
     }
   }
 
-  /** @deprecated */
-  bypass(): this {
-    this.createResponseDeclaration = undefined;
-    return this;
-  }
-
   clear(): this {
     this.restrictions = [];
 

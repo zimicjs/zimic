@@ -91,40 +91,6 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(await handler.matchesRequest(parsedRequest)).toBe(true);
   });
 
-  it('should not match any request if bypassed', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
-
-    const request = new Request(baseURL);
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    await promiseIfRemote(handler.bypass(), interceptor);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    await promiseIfRemote(
-      handler.respond({
-        status: 200,
-        body: { success: true },
-      }),
-      interceptor,
-    );
-    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    await promiseIfRemote(handler.bypass(), interceptor);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    await promiseIfRemote(
-      handler.respond({
-        status: 200,
-        body: { success: true },
-      }),
-      interceptor,
-    );
-    expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-  });
-
   it('should not match any request if cleared', async () => {
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
@@ -413,42 +379,6 @@ export function declareDefaultHttpRequestHandlerTests(
       interceptor,
     );
     expect(await handler.matchesRequest(parsedRequest)).toBe(true);
-  });
-
-  it('should not clear restrictions after bypassed', async () => {
-    const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
-
-    const request = new Request(baseURL);
-    const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    await promiseIfRemote(handler.bypass(), interceptor);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    await promiseIfRemote(
-      handler
-        .with((_request) => false)
-        .respond({
-          status: 200,
-          body: { success: true },
-        }),
-      interceptor,
-    );
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    await promiseIfRemote(handler.bypass(), interceptor);
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-    await promiseIfRemote(
-      handler.respond({
-        status: 200,
-        body: { success: true },
-      }),
-      interceptor,
-    );
-    expect(await handler.matchesRequest(parsedRequest)).toBe(false);
   });
 
   if (Handler === RemoteHttpRequestHandler) {
