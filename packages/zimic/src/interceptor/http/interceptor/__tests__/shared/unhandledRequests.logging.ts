@@ -515,7 +515,6 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(0);
 
-                 
                 await promiseIfRemote(handler.clear(), interceptor);
 
                 const request = new Request(joinURL(baseURL, '/users'), {
