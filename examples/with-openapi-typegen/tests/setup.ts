@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, afterEach } from 'vitest';
+import { afterAll, beforeAll, afterEach, beforeEach } from 'vitest';
 
 import githubInterceptor from './interceptors/github';
 
@@ -6,9 +6,12 @@ beforeAll(async () => {
   await githubInterceptor.start();
 });
 
+beforeEach(() => {
+  githubInterceptor.clear();
+});
+
 afterEach(() => {
   githubInterceptor.checkTimes();
-  githubInterceptor.clear();
 });
 
 afterAll(async () => {

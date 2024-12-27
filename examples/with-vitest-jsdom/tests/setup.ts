@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 
-import { beforeAll, afterEach, afterAll } from 'vitest';
+import { beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 
 import githubInterceptor from './interceptors/github';
 
@@ -8,9 +8,12 @@ beforeAll(async () => {
   await githubInterceptor.start();
 });
 
+beforeEach(() => {
+  githubInterceptor.clear();
+});
+
 afterEach(() => {
   githubInterceptor.checkTimes();
-  githubInterceptor.clear();
 });
 
 afterAll(async () => {
