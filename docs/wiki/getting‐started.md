@@ -294,7 +294,7 @@ use remote interceptors.
 
 2. Then, manage your interceptor lifecycle:
 
-   <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+    <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
    ```ts
    // https://bit.ly/zimic-guides-testing
@@ -304,12 +304,18 @@ use remote interceptors.
      await myInterceptor.start();
    });
 
-   afterEach(() => {
+   beforeEach(() => {
      // Clear interceptors so that no tests affect each other
      // https://bit.ly/zimic-interceptor-http#http-interceptorclear
      myInterceptor.clear();
    });
 
+   afterEach(() => {
+     // Check that all expected requests were made
+     // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
+     myInterceptor.checkTimes();
+   });
+
    afterAll(async () => {
      // Stop intercepting requests
      // https://bit.ly/zimic-interceptor-http#http-interceptorstop
@@ -317,7 +323,7 @@ use remote interceptors.
    });
    ```
 
-   </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+    </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
    // https://bit.ly/zimic-guides-testing
@@ -327,10 +333,16 @@ use remote interceptors.
      await myInterceptor.start();
    });
 
-   afterEach(() => {
+   beforeEach(() => {
      // Clear interceptors so that no tests affect each other
      // https://bit.ly/zimic-interceptor-http#http-interceptorclear
      await myInterceptor.clear();
+   });
+
+   afterEach(() => {
+     // Check that all expected requests were made
+     // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
+     await myInterceptor.checkTimes();
    });
 
    afterAll(async () => {
@@ -340,7 +352,7 @@ use remote interceptors.
    });
    ```
 
-   </details></td></tr></table>
+    </details></td></tr></table>
 
    If you are [creating a remote interceptor](api‐zimic‐interceptor‐http#creating-a-remote-http-interceptor), it's
    necessary to have a running [interceptor server](cli‐zimic‐server#zimic-server-start) before starting it. The base
@@ -370,22 +382,25 @@ use remote interceptors.
        .respond({
          status: 200,
          body: users,
-       });
+       })
+       .times(1);
 
      // Run your application and make requests
      // ...
+
+     // NOTE: The following lines are not mandatory, because they are automatically
+     // checked by the `with` and `times` calls we used above. Requests not matching
+     // the restrictions or exceeding the number of times will cause warnings and
+     // not be intercepted. We show them here for demonstration purposes.
+
+     // If you are not using `with` or `times`, asserting the requests manually is
+     // a good practice:
 
      // Check the requests you expect
      // https://bit.ly/zimic-interceptor-http#http-handlerrequests
      const requests = myHandler.requests();
      expect(requests).toHaveLength(1);
 
-     // The following expects are automatically checked by the restrictions
-     // we declared above. Requests not matching them will cause warnings and not
-     // be intercepted.
-
-     // If you are not using restrictions, asserting the requests manually is
-     // a good practice:
      expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
      expect(requests[0].searchParams.size).toBe(1);
@@ -416,22 +431,25 @@ use remote interceptors.
        .respond({
          status: 200,
          body: users,
-       });
+       })
+       .times(1);
 
      // Run your application and make requests
      // ...
+
+     // NOTE: The following lines are not mandatory, because they are automatically
+     // checked by the `with` and `times` calls we used above. Requests not matching
+     // the restrictions or exceeding the number of times will cause warnings and
+     // not be intercepted. We show them here for demonstration purposes.
+
+     // If you are not using `with` or `times`, asserting the requests manually is
+     // a good practice:
 
      // Check the requests you expect
      // https://bit.ly/zimic-interceptor-http#http-handlerrequests
      const requests = await myHandler.requests();
      expect(requests).toHaveLength(1);
 
-     // The following expects are automatically checked by the restrictions
-     // we declared above. Requests not matching them will cause warnings and not
-     // be intercepted.
-
-     // If you are not using restrictions, asserting the requests manually is
-     // a good practice:
      expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
      expect(requests[0].searchParams.size).toBe(1);
