@@ -43,13 +43,17 @@ beforeAll(async () => {
   );
 });
 
+beforeEach(() => {
+  for (const interceptor of interceptors) {
+    // Clear interceptors so that no tests affect each other
+    interceptor.clear();
+  }
+});
+
 afterEach(() => {
   for (const interceptor of interceptors) {
     // Check that all expected requests were made
     interceptor.checkTimes();
-
-    // Clear interceptors so that no tests affect each other
-    interceptor.clear();
   }
 });
 
@@ -81,13 +85,20 @@ beforeAll(async () => {
   );
 });
 
-// Clear all interceptors so that no tests affect each other
-afterEach(async () => {
-  // Important: clearing remote interceptors is asynchronous
+beforeEach(() => {
   await Promise.all(
     interceptors.map(async (interceptor) => {
-      await interceptor.checkTimes();
+      // Clear interceptors so that no tests affect each other
       await interceptor.clear();
+    }),
+  );
+});
+
+afterEach(() => {
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      // Check that all expected requests were made
+      await interceptor.checkTimes();
     }),
   );
 });

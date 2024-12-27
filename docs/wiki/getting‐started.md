@@ -304,14 +304,16 @@ use remote interceptors.
      await myInterceptor.start();
    });
 
+   beforeEach(() => {
+     // Clear interceptors so that no tests affect each other
+     // https://bit.ly/zimic-interceptor-http#http-interceptorclear
+     myInterceptor.clear();
+   });
+
    afterEach(() => {
      // Check that all expected requests were made
      // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
      myInterceptor.checkTimes();
-
-     // Clear interceptors so that no tests affect each other
-     // https://bit.ly/zimic-interceptor-http#http-interceptorclear
-     myInterceptor.clear();
    });
 
    afterAll(async () => {
@@ -331,14 +333,16 @@ use remote interceptors.
      await myInterceptor.start();
    });
 
+   beforeEach(() => {
+     // Clear interceptors so that no tests affect each other
+     // https://bit.ly/zimic-interceptor-http#http-interceptorclear
+     await myInterceptor.clear();
+   });
+
    afterEach(() => {
      // Check that all expected requests were made
      // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
      await myInterceptor.checkTimes();
-
-     // Clear interceptors so that no tests affect each other
-     // https://bit.ly/zimic-interceptor-http#http-interceptorclear
-     await myInterceptor.clear();
    });
 
    afterAll(async () => {

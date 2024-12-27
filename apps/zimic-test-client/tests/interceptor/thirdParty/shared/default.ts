@@ -62,16 +62,18 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     );
   });
 
+  beforeEach(async () => {
+    await Promise.all(
+      interceptors.map(async (interceptor) => {
+        await interceptor.clear();
+      }),
+    );
+  });
+
   afterEach(async () => {
     await Promise.all(
       interceptors.map(async (interceptor) => {
         await interceptor.checkTimes();
-      }),
-    );
-
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.clear();
       }),
     );
   });
