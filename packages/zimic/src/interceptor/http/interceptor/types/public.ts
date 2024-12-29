@@ -53,11 +53,11 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   stop: () => Promise<void>;
 
   /**
-   * Checks if all handlers created by this interceptor have matched the expected number of requests declared with their
+   * Checks if all handlers created by this interceptor have matched the number of requests declared with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
    *
-   * If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
-   * pointing to the
+   * If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error,
+   * including a stack trace to the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`} that
    * was not satisfied.
    *
@@ -101,16 +101,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -127,16 +127,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -153,16 +153,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -179,16 +179,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -205,16 +205,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -231,16 +231,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -257,16 +257,16 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`} for
    * a path. The path and method must be declared in the interceptor schema.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -307,16 +307,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -338,16 +338,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -369,16 +369,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -400,16 +400,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -431,16 +431,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -462,16 +462,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
@@ -493,16 +493,16 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * a handler is an asynchronous operation, so you need to `await` it. You can also chain any number of operations and
    * apply them by awaiting the handler.
    *
-   * To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request
-   * considering the interceptor base URL, method, path,
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}
+   * After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+   * interceptor, and the method, path,
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions},
    * and
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}.
-   * The handlers are checked from the **last** created to the first, so new handlers have preference over old ones.
-   * This allows you to declare generic and specific handlers based on their order of creation. For example, a generic
-   * handler for `GET /users` can return an empty list, while a specific handler in a test case can return a list with
-   * some users. In this case, the specific handler will be considered first as long as it is created **after** the
-   * generic one.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes limits on the number of requests}
+   * of the handler. The handlers are checked from the **last** one created to the first one, so new handlers have
+   * preference over older ones. This allows you to declare generic and specific handlers based on their order of
+   * creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in a
+   * test case can return a list with some users. In this case, the specific handler will be considered first as long as
+   * it is created **after** the generic one.
    *
    * @param path The path to intercept. Paths with dynamic parameters, such as `/users/:id`, are supported, but you need
    *   to specify the original path as a type parameter to get type-inference and type-validation.
