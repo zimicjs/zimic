@@ -6,7 +6,7 @@ export function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]
       pickedObject[key] = object[key];
       return pickedObject;
     },
-    {} as Pick<Type, Key>, // eslint-disable-line @typescript-eslint/prefer-reduce-type-parameter
+    {} as Pick<Type, Key>,
   );
 }
 
