@@ -228,14 +228,15 @@ export interface LocalHttpRequestHandler<
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /**
-   * Declares the number of intercepted requests that the handler can match and return its response.
+   * Declares a number of intercepted requests that the handler will be able to match and return its response.
    *
    * If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments,
    * the handler will consider an inclusive range, matching at least the minimum (first argument) and at most the
    * maximum (second argument) number of requests.
    *
-   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and they
-   * may fail if no other handler is eligible. Learn more about how Zimic decides which handler to use for an
+   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and
+   * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
+   * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
    * intercepted request in the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
@@ -352,14 +353,15 @@ export interface SyncedRemoteHttpRequestHandler<
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /**
-   * Declares the number of intercepted requests that the handler can match and return its response.
+   * Declares a number of intercepted requests that the handler will be able to match and return its response.
    *
    * If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments,
    * the handler will consider an inclusive range, matching at least the minimum (first argument) and at most the
    * maximum (second argument) number of requests.
    *
-   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and they
-   * may fail if no other handler is eligible. Learn more about how Zimic decides which handler to use for an
+   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and
+   * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
+   * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
    * intercepted request in the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
