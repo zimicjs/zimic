@@ -1529,6 +1529,8 @@ const rangeListHandler = await interceptor
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
 
+</details></td></tr></table>
+
 > [!IMPORTANT]
 >
 > To make sure that all expected requests were made, use [`interceptor.checkTimes()`](#http-interceptorchecktimes) or
@@ -1541,8 +1543,6 @@ const rangeListHandler = await interceptor
 > [`handler.times()`](#http-handlertimes), combined with [`handler.checkTimes()`](#http-handlerchecktimes) or
 > [`interceptor.checkTimes()`](#http-interceptorchecktimes), archives the same purpose in a shorter and more declarative
 > way. In most cases, these methods are preferred over manually checking the length of `handler.requests()`.
-
-</details></td></tr></table>
 
 ### HTTP `handler.checkTimes()`
 
@@ -1584,6 +1584,8 @@ const listHandler = await interceptor
 // Check that exactly 1 request was made
 await handler.checkTimes();
 ```
+
+</details></td></tr></table>
 
 ### HTTP `handler.clear()`
 
