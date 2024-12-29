@@ -147,7 +147,7 @@ afterAll(async () => {
 
 // Enjoy mocking!
 test('example', async () => {
-  const users: User[] = [{ username: 'diego-aquino' }];
+  const users: User[] = [{ username: 'my-user' }];
 
   // 5. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -157,7 +157,7 @@ test('example', async () => {
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
       headers: { authorization: 'Bearer my-token' },
-      searchParams: { username: 'diego' },
+      searchParams: { username: 'my' },
     })
     // 5.2. Respond with your mock data
     // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
