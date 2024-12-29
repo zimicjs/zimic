@@ -28,53 +28,88 @@ An example using a [Jest](https://jestjs.io)/[Vitest](https://vitest.dev) API:
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using local interceptors</b></summary>
 
 ```ts
-// Your interceptors
 import myInterceptor from './interceptors/myInterceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
+// Your interceptors
+const interceptors = [myInterceptor, myOtherInterceptor];
+
 // Start intercepting requests
 beforeAll(async () => {
-  await myInterceptor.start();
-  await myOtherInterceptor.start();
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.start();
+    }),
+  );
 });
 
-// Clear interceptors so that no tests affect each other
+beforeEach(() => {
+  for (const interceptor of interceptors) {
+    // Clear interceptors so that no tests affect each other
+    interceptor.clear();
+  }
+});
+
 afterEach(() => {
-  myInterceptor.clear();
-  myOtherInterceptor.clear();
+  for (const interceptor of interceptors) {
+    // Check that all expected requests were made
+    interceptor.checkTimes();
+  }
 });
 
 // Stop intercepting requests
 afterAll(async () => {
-  await myInterceptor.stop();
-  await myOtherInterceptor.stop();
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.stop();
+    }),
+  );
 });
 ```
 
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using remote interceptors</b></summary>
 
 ```ts
-// Your interceptors
 import myInterceptor from './interceptors/myInterceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
+// Your interceptors
+const interceptors = [myInterceptor, myOtherInterceptor];
+
 // Start intercepting requests
 beforeAll(async () => {
-  await myInterceptor.start();
-  await myOtherInterceptor.start();
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.start();
+    }),
+  );
 });
 
-// Clear all interceptors so that no tests affect each other
-afterEach(async () => {
-  // Important: clearing remote interceptors is asynchronous
-  await myInterceptor.clear();
-  await myOtherInterceptor.clear();
+beforeEach(() => {
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      // Clear interceptors so that no tests affect each other
+      await interceptor.clear();
+    }),
+  );
+});
+
+afterEach(() => {
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      // Check that all expected requests were made
+      await interceptor.checkTimes();
+    }),
+  );
 });
 
 // Stop intercepting requests
 afterAll(async () => {
-  await myInterceptor.stop();
-  await myOtherInterceptor.stop();
+  await Promise.all(
+    interceptors.map(async (interceptor) => {
+      await interceptor.stop();
+    }),
+  );
 });
 ```
 

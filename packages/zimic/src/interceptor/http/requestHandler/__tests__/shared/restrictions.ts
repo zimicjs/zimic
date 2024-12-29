@@ -66,8 +66,8 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
-          const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -102,8 +102,8 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name }),
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
-          const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -140,8 +140,8 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
-        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -173,8 +173,8 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingHeaders of [new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage })]) {
-          const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const request = new Request(baseURL, { headers: matchingHeaders });
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -209,8 +209,8 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage }),
           new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
         ]) {
-          const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const request = new Request(baseURL, { headers: matchingHeaders });
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -247,8 +247,8 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpHeaders<HeadersSchema>({ 'content-language': contentLanguage, accept: '*/*' }),
         new HttpHeaders<HeadersSchema>({ 'content-language': `${contentLanguage}/other` }),
       ]) {
-        const matchingRequest = new Request(baseURL, { headers: matchingHeaders });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+        const request = new Request(baseURL, { headers: matchingHeaders });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -280,12 +280,12 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingBody of [{ name }] satisfies MethodSchema['request']['body'][]) {
-          const matchingRequest = new Request(baseURL, {
+          const request = new Request(baseURL, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -325,12 +325,12 @@ export function declareRestrictionHttpRequestHandlerTests(
           { name, value: [] },
           { name, value: [1, 2] },
         ] satisfies MethodSchema['request']['body'][]) {
-          const matchingRequest = new Request(baseURL, {
+          const request = new Request(baseURL, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(matchingBody),
           });
-          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+          const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
 
@@ -365,12 +365,12 @@ export function declareRestrictionHttpRequestHandlerTests(
         { name, value: [1] },
         { name: `${name}-other` },
       ] satisfies MethodSchema['request']['body'][]) {
-        const matchingRequest = new Request(baseURL, {
+        const request = new Request(baseURL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(matchingBody),
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -441,10 +441,10 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const matchingHeaders of matchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
           headers: matchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
@@ -459,10 +459,10 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const mismatchingHeaders of mismatchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const matchingRequest = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
           headers: mismatchingHeaders,
         });
-        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(matchingRequest);
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
 

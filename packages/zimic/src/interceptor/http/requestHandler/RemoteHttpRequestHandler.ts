@@ -89,11 +89,20 @@ class RemoteHttpRequestHandler<
     return newUnsyncedThis;
   }
 
-  /** @deprecated */
-  bypass(): this {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    this._client.bypass();
-    return this.unsynced;
+  times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
+    this._client.times(minNumberOfRequests, maxNumberOfRequests);
+    return this;
+  }
+
+  async checkTimes() {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this._client.checkTimes();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   clear(): this {
@@ -121,7 +130,7 @@ class RemoteHttpRequestHandler<
     return this._client.applyResponseDeclaration(request);
   }
 
-  registerInterceptedRequest(
+  saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
@@ -170,5 +179,11 @@ class RemoteHttpRequestHandler<
     return this.then().finally(onFinally);
   }
 }
+
+export type AnyRemoteHttpRequestHandler =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | RemoteHttpRequestHandler<any, any, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | RemoteHttpRequestHandler<any, any, any, any>;
 
 export default RemoteHttpRequestHandler;

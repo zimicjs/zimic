@@ -22,10 +22,13 @@ describe('Example tests', () => {
   });
 
   it('should render a GitHub repository, if found', async () => {
-    const getRepositoryHandler = githubInterceptor.get(`/repos/${ownerName}/${repositoryName}`).respond({
-      status: 200,
-      body: repository,
-    });
+    githubInterceptor
+      .get(`/repos/${ownerName}/${repositoryName}`)
+      .respond({
+        status: 200,
+        body: repository,
+      })
+      .times(1);
 
     renderApp();
 
@@ -43,16 +46,16 @@ describe('Example tests', () => {
 
     const repositoryLink = await screen.findByRole('link', { name: repository.html_url });
     expect(repositoryLink).toBeInTheDocument();
-
-    const getRequests = getRepositoryHandler.requests();
-    expect(getRequests).toHaveLength(1);
   });
 
   it('should return a 404 status code, if the GitHub repository is not found', async () => {
-    const getRepositoryHandler = githubInterceptor.get('/repos/:owner/:name').respond({
-      status: 404,
-      body: { message: 'Not Found' },
-    });
+    githubInterceptor
+      .get('/repos/:owner/:name')
+      .respond({
+        status: 404,
+        body: { message: 'Not Found' },
+      })
+      .times(1);
 
     renderApp();
 
@@ -70,8 +73,5 @@ describe('Example tests', () => {
 
     const repositoryLinkPromise = screen.findByRole('link', {}, { timeout: 200 });
     await expect(repositoryLinkPromise).rejects.toThrowError();
-
-    const getRequests = getRepositoryHandler.requests();
-    expect(getRequests).toHaveLength(1);
   });
 });

@@ -155,6 +155,8 @@ class HttpInterceptorClient<
     }
 
     const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
+    this.registerRequestHandler(handler);
+
     return handler;
   }
 
@@ -164,9 +166,13 @@ class HttpInterceptorClient<
     StatusCode extends HttpStatusCode = never,
   >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
     const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
-    if (!handlerClients.includes(handler.client())) {
-      handlerClients.push(handler.client());
+
+    const isAlreadyRegistered = handlerClients.includes(handler.client());
+    if (isAlreadyRegistered) {
+      return;
     }
+
+    handlerClients.push(handler.client());
 
     const isFirstHandlerForMethodPath = handlerClients.length === 1;
     if (!isFirstHandlerForMethodPath) {
@@ -236,16 +242,28 @@ class HttpInterceptorClient<
   ): Promise<HttpRequestHandlerClient<Schema, Method, Path, any> | undefined> {
     /* istanbul ignore next -- @preserve
      * Ignoring because there will always be a handler for the given method and path at this point. */
-    const methodPathHandlers = this.handlerClientsByMethod[method].get(path) ?? [];
+    const handlersByPath = this.handlerClientsByMethod[method].get(path) ?? [];
 
-    for (let handlerIndex = methodPathHandlers.length - 1; handlerIndex >= 0; handlerIndex--) {
-      const handler = methodPathHandlers[handlerIndex];
+    for (let handlerIndex = handlersByPath.length - 1; handlerIndex >= 0; handlerIndex--) {
+      const handler = handlersByPath[handlerIndex];
       if (await handler.matchesRequest(parsedRequest)) {
         return handler;
       }
     }
 
     return undefined;
+  }
+
+  checkTimes() {
+    for (const method of HTTP_METHODS) {
+      const handlersByPath = this.handlerClientsByMethod[method];
+
+      for (const handlers of handlersByPath.values()) {
+        for (const handler of handlers) {
+          handler.checkTimes();
+        }
+      }
+    }
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
@@ -257,7 +275,8 @@ class HttpInterceptorClient<
 
     for (const method of HTTP_METHODS) {
       clearResults.push(...this.clearMethodHandlers(method));
-      this.handlerClientsByMethod[method].clear();
+      const handlersByPath = this.handlerClientsByMethod[method];
+      handlersByPath.clear();
     }
 
     const clearResult = this.worker.clearInterceptorHandlers(this);
@@ -269,9 +288,10 @@ class HttpInterceptorClient<
   }
 
   private clearMethodHandlers(method: HttpMethod) {
+    const handlersByPath = this.handlerClientsByMethod[method];
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient>[] = [];
 
-    for (const handlers of this.handlerClientsByMethod[method].values()) {
+    for (const handlers of handlersByPath.values()) {
       for (const handler of handlers) {
         clearResults.push(handler.clear());
       }

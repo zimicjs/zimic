@@ -55,11 +55,13 @@ class LocalHttpRequestHandler<
     return newThis;
   }
 
-  /** @deprecated */
-  bypass(): this {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    this._client.bypass();
+  times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
+    this._client.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
+  }
+
+  checkTimes() {
+    this._client.checkTimes();
   }
 
   clear(): this {
@@ -81,12 +83,18 @@ class LocalHttpRequestHandler<
     return this._client.applyResponseDeclaration(request);
   }
 
-  registerInterceptedRequest(
+  saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     this._client.saveInterceptedRequest(request, response);
   }
 }
+
+export type AnyLocalHttpRequestHandler =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | LocalHttpRequestHandler<any, any, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | LocalHttpRequestHandler<any, any, any, any>;
 
 export default LocalHttpRequestHandler;

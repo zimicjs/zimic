@@ -228,26 +228,45 @@ export interface LocalHttpRequestHandler<
   ) => LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /**
-   * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
-   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
-   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
+   * Declares a number of intercepted requests that the handler will be able to match and return its response.
    *
-   * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   * If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments,
+   * the handler will consider an inclusive range, matching at least the minimum (first argument) and at most the
+   * maximum (second argument) number of requests.
    *
-   * This method is useful to skip a handler. It is more gentle than
-   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
-   * removed the response, keeping restrictions and intercepted requests.
+   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and
+   * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
+   * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
+   * intercepted request in the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
-   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
-   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
-   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
-   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
-   * @returns The same handler, now without a declared responses.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
+   * **IMPORTANT**: To make sure that all expected requests were made, use
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
+   * or {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
+   * is generally preferred, as it checks all handlers created by the interceptor with a single call.
+   *
+   * @param numberOfRequests The number of times the handler should match intercepted requests.
+   * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
+   * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
+   * @returns The same handler, now considering the specified number of times.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
    */
-  bypass: () => this;
+  times: ((numberOfRequests: number) => this) & ((minNumberOfRequests: number, maxNumberOfRequests: number) => this);
+
+  /**
+   * Checks if the handler has matched the expected number of requests declared with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   *
+   * If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
+   * pointing to the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * that was not satisfied.
+   *
+   * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   */
+  checkTimes: () => void;
 
   /**
    * Clears any response declared with
@@ -334,26 +353,50 @@ export interface SyncedRemoteHttpRequestHandler<
   ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
 
   /**
-   * Clears any response declared with
-   * [`handler.respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
-   * making the handler stop matching requests. The next handler, created before this one, that matches the same method
-   * and path will be used if present. If not, the requests of the method and path will not be intercepted.
+   * Declares a number of intercepted requests that the handler will be able to match and return its response.
    *
-   * To make the handler match requests again, register a new response with
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrespond `handler.respond()`}.
+   * If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments,
+   * the handler will consider an inclusive range, matching at least the minimum (first argument) and at most the
+   * maximum (second argument) number of requests.
    *
-   * This method is useful to skip a handler. It is more gentle than
-   * [`handler.clear()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerclear), as it only
-   * removed the response, keeping restrictions and intercepted requests.
+   * Once the handler receives more requests than the maximum number declared, it will stop matching requests and
+   * returning its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the
+   * request will be either bypassed or rejected. Learn more about how Zimic decides which handler to use for an
+   * intercepted request in the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
-   * @deprecated This method is deprecated and will be removed soon. You can achieve an equivalent behavior by
-   *   controlling the order in which handlers are created. Since new handlers are always considered before old ones,
-   *   you can replace `bypass()` calls with new handler declarations describing your new responses. Learn more at the
-   *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
-   * @returns The same handler, now without a declared responses.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerbypass `handler.bypass()` API reference}
+   * **IMPORTANT**: To make sure that all expected requests were made, use
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
+   * or
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()`}.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
+   * is generally preferred, as it checks all handlers created by the interceptor with a single call.
+   *
+   * @param numberOfRequests The number of times the handler should match intercepted requests.
+   * @param minNumberOfRequests The minimum number of times the handler should match intercepted requests.
+   * @param maxNumberOfRequests The maximum number of times the handler should match intercepted requests.
+   * @returns The same handler, now considering the specified number of times.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
    */
-  bypass: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
+  times: ((numberOfRequests: number) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>) &
+    ((
+      minNumberOfRequests: number,
+      maxNumberOfRequests: number,
+    ) => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>);
+
+  /**
+   * Checks if the handler has matched the expected number of requests declared with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
+   *
+   * If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
+   * pointing to the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
+   * that was not satisfied.
+   *
+   * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
+   */
+  checkTimes: () => Promise<void>;
 
   /**
    * Clears any response declared with

@@ -75,6 +75,7 @@ import {
   NotStartedHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
+  TimesCheckError,
 } from 'zimic/interceptor/http';
 
 describe('Exports', () => {
@@ -212,5 +213,7 @@ describe('Exports', () => {
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
     expect(typeof DisabledRequestSavingError).toBe('function');
+    expectTypeOf<TimesCheckError>().not.toBeAny();
+    expect(typeof TimesCheckError).toBe('function');
   });
 });

@@ -5,6 +5,7 @@ export { default as UnknownHttpInterceptorPlatformError } from './interceptor/er
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
+export { default as TimesCheckError } from './requestHandler/errors/TimesCheckError';
 
 export type {
   HttpRequestHandlerResponseDeclaration,
