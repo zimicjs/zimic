@@ -152,7 +152,7 @@ afterAll(async () => {
 
 // Enjoy mocking!
 test('example', async () => {
-  const users: User[] = [{ username: 'diego-aquino' }];
+  const users: User[] = [{ username: 'my-user' }];
 
   // 7. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath

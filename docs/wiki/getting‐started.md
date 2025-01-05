@@ -365,7 +365,7 @@ use remote interceptors.
 
    ```ts
    test('example', async () => {
-     const users: User[] = [{ username: 'diego-aquino' }];
+     const users: User[] = [{ username: 'my-user' }];
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -414,7 +414,7 @@ use remote interceptors.
 
    ```ts
    test('example', async () => {
-     const users: User[] = [{ username: 'diego-aquino' }];
+     const users: User[] = [{ username: 'my-user' }];
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
