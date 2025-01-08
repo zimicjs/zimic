@@ -136,7 +136,7 @@ beforeEach(() => {
 afterEach(() => {
   // 4.3. Check that all expected requests were made
   // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
-  myInterceptor.clear();
+  myInterceptor.checkTimes();
 });
 
 afterAll(async () => {
