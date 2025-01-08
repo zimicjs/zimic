@@ -138,10 +138,16 @@ beforeAll(async () => {
   await myInterceptor.start();
 });
 
-afterEach(() => {
+beforeEach(() => {
   // 4.2. Clear interceptors so that no tests affect each other
   // https://bit.ly/zimic-interceptor-http#http-interceptorclear
   myInterceptor.clear();
+});
+
+afterEach(() => {
+  // 4.3. Check that all expected requests were made
+  // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
+  myInterceptor.checkTimes();
 });
 
 afterAll(async () => {
