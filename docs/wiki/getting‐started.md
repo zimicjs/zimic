@@ -294,7 +294,7 @@ use remote interceptors.
 
 2. Then, manage your interceptor lifecycle:
 
-    <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
+   <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
    ```ts
    // https://bit.ly/zimic-guides-testing
@@ -323,7 +323,7 @@ use remote interceptors.
    });
    ```
 
-    </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
+   </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
    // https://bit.ly/zimic-guides-testing
@@ -352,7 +352,7 @@ use remote interceptors.
    });
    ```
 
-    </details></td></tr></table>
+   </details></td></tr></table>
 
    If you are [creating a remote interceptor](api‐zimic‐interceptor‐http#creating-a-remote-http-interceptor), it's
    necessary to have a running [interceptor server](cli‐zimic‐server#zimic-server-start) before starting it. The base
@@ -365,7 +365,7 @@ use remote interceptors.
 
    ```ts
    test('example', async () => {
-     const users: User[] = [{ username: 'diego-aquino' }];
+     const users: User[] = [{ username: 'my-user' }];
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -388,10 +388,10 @@ use remote interceptors.
      // Run your application and make requests
      // ...
 
-     // NOTE: The following lines are not mandatory, because they are automatically
-     // checked by the `with` and `times` calls we used above. Requests not matching
-     // the restrictions or exceeding the number of times will cause warnings and
-     // not be intercepted. We show them here for demonstration purposes.
+     // NOTE: The following lines are for demonstration purposes and not mandatory,
+     // because they are automatically checked by the `with` and `times` calls we
+     // used above. Requests not matching the restrictions or exceeding the number
+     // of times will cause warnings and not be intercepted by default.
 
      // If you are not using `with` or `times`, asserting the requests manually is
      // a good practice:
@@ -414,7 +414,7 @@ use remote interceptors.
 
    ```ts
    test('example', async () => {
-     const users: User[] = [{ username: 'diego-aquino' }];
+     const users: User[] = [{ username: 'my-user' }];
 
      // Declare your mocks
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -437,10 +437,10 @@ use remote interceptors.
      // Run your application and make requests
      // ...
 
-     // NOTE: The following lines are not mandatory, because they are automatically
-     // checked by the `with` and `times` calls we used above. Requests not matching
-     // the restrictions or exceeding the number of times will cause warnings and
-     // not be intercepted. We show them here for demonstration purposes.
+     // NOTE: The following lines are for demonstration purposes and not mandatory,
+     // because they are automatically checked by the `with` and `times` calls we
+     // used above. Requests not matching the restrictions or exceeding the number
+     // of times will cause warnings and not be intercepted by default.
 
      // If you are not using `with` or `times`, asserting the requests manually is
      // a good practice:

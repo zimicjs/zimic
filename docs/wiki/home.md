@@ -152,7 +152,7 @@ afterAll(async () => {
 
 // Enjoy mocking!
 test('example', async () => {
-  const users: User[] = [{ username: 'diego-aquino' }];
+  const users: User[] = [{ username: 'my-user' }];
 
   // 7. Declare your mocks
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
@@ -174,10 +174,10 @@ test('example', async () => {
   // 8. Run your application and make requests
   // ...
 
-  // NOTE: The following lines are not mandatory, because they are automatically
-  // checked by the `with` and `times` calls we used above. Requests not matching
-  // the restrictions or exceeding the number of times will cause warnings and
-  // not be intercepted. We show them here for demonstration purposes.
+  // NOTE: The following lines are for demonstration purposes and not mandatory,
+  // because they are automatically checked by the `with` and `times` calls we
+  // used above. Requests not matching the restrictions or exceeding the number
+  // of times will cause warnings and not be intercepted by default.
 
   // If you are not using `with` or `times`, asserting the requests manually is
   // a good practice:

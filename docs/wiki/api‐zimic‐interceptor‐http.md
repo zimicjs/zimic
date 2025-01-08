@@ -458,13 +458,13 @@ When using a [remote interceptor](getting‐started#remote-http-interceptors), c
 operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
 handler.
 
-To decide which handler to use when intercepting a request, Zimic finds a handler that matches the request considering
-the interceptor base URL, method, path, [restrictions](#http-handlerwithrestriction) and
-[limits on the number of requests](#http-handlertimes). The handlers are checked from the **last** created to the first,
-so new handlers have preference over old ones. This allows you to declare generic and specific handlers based on their
-order of creation. For example, a generic handler for `GET /users` can return an empty list, while a specific handler in
-a test case can return a list with some users. In this case, the specific handler will be considered first as long as it
-is created **after** the generic one.
+After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
+interceptor, and the method, path, [restrictions](#http-handlerwithrestriction), and
+[limits on the number of requests](#http-handlertimes) of the handler. The handlers are checked from the **last** one
+created to the first one, so new handlers have preference over older ones. This allows you to declare generic and
+specific handlers based on their order of creation. For example, a generic handler for `GET /users` can return an empty
+list, while a specific handler in a test case can return a list with some users. In this case, the specific handler will
+be considered first as long as it is created **after** the generic one.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -486,7 +486,7 @@ const interceptor = httpInterceptor.create<{
 
 const listHandler = interceptor.get('/users').respond({
   status: 200
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 ```
 
@@ -510,7 +510,7 @@ const interceptor = httpInterceptor.create<{
 
 const listHandler = await interceptor.get('/users').respond({
   status: 200
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 ```
 
@@ -556,7 +556,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 
   return {
     status: 200,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   };
 });
 
@@ -571,7 +571,7 @@ const updateHandler = await interceptor.put('/users/:id').respond((request) => {
 
   return {
     status: 200,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   };
 });
 
@@ -582,11 +582,11 @@ await fetch('http://localhost:3000/users/1', { method: 'PUT' });
 
 ### HTTP `interceptor.checkTimes()`
 
-Checks if all handlers created by this interceptor have matched the expected number of requests declared with their
+Checks if all handlers created by this interceptor have matched the number of requests declared with
 [`handler.times()`](#http-handlertimes).
 
-If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
-pointing to the [`handler.times()`](#http-handlertimes) that was not satisfied.
+If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error,
+including a stack trace to the [`handler.times()`](#http-handlertimes) that was not satisfied.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -754,7 +754,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -768,7 +768,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -794,7 +794,7 @@ const creationHandler = interceptor
   .with({ headers })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -816,7 +816,7 @@ const creationHandler = await interceptor
   .with({ headers })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -834,11 +834,11 @@ const creationHandler = await interceptor
 const creationHandler = interceptor
   .get('/users')
   .with({
-    searchParams: { username: 'diego-aquino' },
+    searchParams: { username: 'my-user' },
   })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -848,11 +848,11 @@ const creationHandler = interceptor
 const creationHandler = await interceptor
   .get('/users')
   .with({
-    searchParams: { username: 'diego-aquino' },
+    searchParams: { username: 'my-user' },
   })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -870,7 +870,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserListSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const creationHandler = interceptor
@@ -878,7 +878,7 @@ const creationHandler = interceptor
   .with({ searchParams })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -892,7 +892,7 @@ type UserListSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserListSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const creationHandler = await interceptor
@@ -900,7 +900,7 @@ const creationHandler = await interceptor
   .with({ searchParams })
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -918,11 +918,11 @@ const creationHandler = await interceptor
 const creationHandler = interceptor
   .post('/users')
   .with({
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -932,11 +932,11 @@ const creationHandler = interceptor
 const creationHandler = await interceptor
   .post('/users')
   .with({
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -963,7 +963,7 @@ type UserCreationData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserCreationData>();
-formData.append('username', 'diego-aquino');
+formData.append('username', 'my-user');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -978,7 +978,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -993,7 +993,7 @@ type UserCreationData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserCreationData>();
-formData.append('username', 'diego-aquino');
+formData.append('username', 'my-user');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1008,7 +1008,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1036,7 +1036,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1052,7 +1052,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1078,7 +1078,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1092,7 +1092,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1113,7 +1113,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const creationHandler = interceptor
@@ -1123,7 +1123,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1137,7 +1137,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const creationHandler = await interceptor
@@ -1147,7 +1147,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1171,12 +1171,12 @@ const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
     exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1187,12 +1187,12 @@ const creationHandler = await interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
     exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
-    body: { username: 'diego-aquino' },
+    body: { username: 'my-user' },
   });
 ```
 
@@ -1216,7 +1216,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -1231,7 +1231,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   });
 ```
 
@@ -1259,7 +1259,7 @@ validated against the schema of the interceptor.
 ```ts
 const listHandler = interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 ```
 
@@ -1268,7 +1268,7 @@ const listHandler = interceptor.get('/users').respond({
 ```ts
 const listHandler = await interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 ```
 
@@ -1291,7 +1291,7 @@ type UserGetByIdData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserGetByIdData>();
-formData.append('username', 'diego-aquino');
+formData.append('username', 'my-user');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1316,7 +1316,7 @@ type UserGetByIdData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserGetByIdData>();
-formData.append('username', 'diego-aquino');
+formData.append('username', 'my-user');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1404,7 +1404,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const listHandler = interceptor.get('/users').respond({
@@ -1423,7 +1423,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'diego-aquino',
+  username: 'my-user',
 });
 
 const listHandler = await interceptor.get('/users').respond({
@@ -1478,15 +1478,16 @@ const listHandler = await interceptor.get('/users').respond((request) => {
 
 ### HTTP `handler.times()`
 
-Declares the number of intercepted requests that the handler can match and return its response.
+Declares a number of intercepted requests that the handler will be able to match and return its response.
 
 If only one argument is provided, the handler will match exactly that number of requests. In case of two arguments, the
 handler will consider an inclusive range, matching at least the minimum (first argument) and at most the maximum (second
 argument) number of requests.
 
-Once the handler receives more requests than the maximum number declared, it will stop matching requests and they may
-fail if no other handler is eligible. Learn more about how Zimic decides which handler to use for an intercepted request
-in the [`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
+Once the handler receives more requests than the maximum number declared, it will stop matching requests and returning
+its response. In this case, Zimic will try other handlers until one eligible is found, otherwise the request will be
+either bypassed or rejected. Learn more about how Zimic decides which handler to use for an intercepted request in the
+[`interceptor.<method>(path)` API reference](#http-interceptormethodpath).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1495,7 +1496,7 @@ const exactListHandler = interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   })
   .times(1); // Matches exactly one request
 
@@ -1503,7 +1504,7 @@ const rangeListHandler = interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   })
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
@@ -1515,7 +1516,7 @@ const exactListHandler = await interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   })
   .times(1); // Matches exactly one request
 
@@ -1523,10 +1524,12 @@ const rangeListHandler = await interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'diego-aquino' }],
+    body: [{ username: 'my-user' }],
   })
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
+
+</details></td></tr></table>
 
 > [!IMPORTANT]
 >
@@ -1541,14 +1544,12 @@ const rangeListHandler = await interceptor
 > [`interceptor.checkTimes()`](#http-interceptorchecktimes), archives the same purpose in a shorter and more declarative
 > way. In most cases, these methods are preferred over manually checking the length of `handler.requests()`.
 
-</details></td></tr></table>
-
 ### HTTP `handler.checkTimes()`
 
 Checks if the handler has matched the expected number of requests declared with [`handler.times()`](#http-handlertimes).
 
-If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error
-pointing to the [`handler.times()`](#http-handlertimes) that was not satisfied.
+If the handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error,
+including a stack trace to the [`handler.times()`](#http-handlertimes) that was not satisfied.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1584,6 +1585,8 @@ const listHandler = await interceptor
 await handler.checkTimes();
 ```
 
+</details></td></tr></table>
+
 ### HTTP `handler.clear()`
 
 Clears any response declared with [`handler.respond(declaration)`](#http-handlerresponddeclaration), restrictions
@@ -1603,7 +1606,7 @@ const genericListHandler = interceptor.get('/users').respond({
 
 const specificListHandler = interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 
 specificListHandler.clear();
@@ -1622,7 +1625,7 @@ const genericListHandler = await interceptor.get('/users').respond({
 
 const specificListHandler = await interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'diego-aquino' }],
+  body: [{ username: 'my-user' }],
 });
 
 await specificListHandler.clear();
