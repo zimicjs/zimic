@@ -1,16 +1,16 @@
 import path from 'path';
-import { ViteUserConfig, defineConfig } from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 
-export const defaultConfig: ViteUserConfig = {
+export default defineConfig({
   publicDir: './public',
   test: {
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
-    retry: process.env.CI === 'true' ? 1 : 0,
     setupFiles: ['./tests/setup/shared.ts'],
     maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
     minWorkers: 1,
+    clearMocks: true,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
@@ -54,6 +54,4 @@ export const defaultConfig: ViteUserConfig = {
     include: ['@vitest/coverage-istanbul'],
   },
   plugins: [],
-};
-
-export default defineConfig(defaultConfig);
+});

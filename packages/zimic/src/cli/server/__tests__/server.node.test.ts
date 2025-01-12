@@ -38,17 +38,11 @@ describe('CLI (server)', async () => {
   const crypto = await importCrypto();
 
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
-  const processOnSpy = vi.spyOn(process, 'on');
   const processOffSpy = vi.spyOn(process, 'off');
   const processExitSpy = vi.spyOn(process, 'exit').mockReturnValue(undefined as never);
 
   beforeEach(() => {
-    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
-
-    processOnSpy.mockClear();
-    processOffSpy.mockClear();
-    processExitSpy.mockClear();
   });
 
   afterEach(() => {

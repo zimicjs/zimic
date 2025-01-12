@@ -15,6 +15,7 @@ export default defineConfig({
     minWorkers: 1,
     maxWorkers,
     maxConcurrency: maxWorkers,
+    clearMocks: true,
     coverage: {
       provider: 'istanbul',
       reporter: ['text', 'html'],
