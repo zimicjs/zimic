@@ -95,7 +95,6 @@ describe('Type generation (OpenAPI)', () => {
   });
 
   beforeEach(() => {
-    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
 
     schemaInterceptor.clear();
