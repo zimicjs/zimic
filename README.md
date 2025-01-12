@@ -58,7 +58,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 import { type HttpSchema } from 'zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
-// 1. Declare your types
+// 1. Declare your types:
 interface User {
   username: string;
 }
@@ -68,7 +68,7 @@ interface RequestError {
   message: string;
 }
 
-// 2. Declare your HTTP schema
+// 2. Declare your HTTP schema:
 // https://bit.ly/zimic-interceptor-http-schemas
 type MySchema = HttpSchema<{
   '/users': {
@@ -111,7 +111,7 @@ type MySchema = HttpSchema<{
   };
 }>;
 
-// 3. Create your interceptor
+// 3. Create your interceptor:
 // https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
 const myInterceptor = httpInterceptor.create<MySchema>({
   type: 'local',
@@ -119,28 +119,28 @@ const myInterceptor = httpInterceptor.create<MySchema>({
   saveRequests: true, // Allow access to `handler.requests()`
 });
 
-// 4. Manage your interceptor lifecycle
+// 4. Manage your interceptor lifecycle:
 // https://bit.ly/zimic-guides-testing
 beforeAll(async () => {
-  // 4.1. Start intercepting requests
+  // 4.1. Start intercepting requests:
   // https://bit.ly/zimic-interceptor-http#http-interceptorstart
   await myInterceptor.start();
 });
 
 beforeEach(() => {
-  // 4.2. Clear interceptors so that no tests affect each other
+  // 4.2. Clear interceptors so that no tests affect each other:
   // https://bit.ly/zimic-interceptor-http#http-interceptorclear
   myInterceptor.clear();
 });
 
 afterEach(() => {
-  // 4.3. Check that all expected requests were made
+  // 4.3. Check that all expected requests were made:
   // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
-  myInterceptor.clear();
+  myInterceptor.checkTimes();
 });
 
 afterAll(async () => {
-  // 4.4. Stop intercepting requests
+  // 4.4. Stop intercepting requests:
   // https://bit.ly/zimic-interceptor-http#http-interceptorstop
   await myInterceptor.stop();
 });
@@ -149,42 +149,44 @@ afterAll(async () => {
 test('example', async () => {
   const users: User[] = [{ username: 'my-user' }];
 
-  // 5. Declare your mocks
+  // 5. Declare your mocks:
   // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
   const myHandler = myInterceptor
     .get('/users')
-    // 5.1. Use restrictions to make declarative assertions and narrow down your mocks
+    // 5.1. Use restrictions to make declarative assertions and narrow down your mocks:
     // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
     .with({
       headers: { authorization: 'Bearer my-token' },
       searchParams: { username: 'my' },
     })
-    // 5.2. Respond with your mock data
+    // 5.2. Respond with your mock data:
     // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
     .respond({
       status: 200,
       body: users,
     })
+    // 5.3. Define how many requests you expect your application to make:
+    // https://bit.ly/zimic-interceptor-http#http-handlertimes
     .times(1);
 
-  // 6. Run your application and make requests
+  // 6. Run your application and make requests:
   // ...
 
-  // The following expects are automatically checked by the `with` and `times` calls
-  // we used above. Requests not matching the restrictions or exceeding the number of times
-  // will cause warnings and not be intercepted.
-
-  // 7. Check the requests you expect
+  // 7. Check the requests you expect:
   // https://bit.ly/zimic-interceptor-http#http-handlerrequests
+  //
+  // NOTE: The code below checks the requests manually. This is optional in this
+  // example because the `with` and `times` calls act as a declarative validation,
+  // meaning that exactly one request is expected with specific data. If fewer or
+  // more requests are received, the test will fail when `myInterceptor.checkTimes()`
+  // is called in the `afterEach` hook.
   const requests = myHandler.requests();
   expect(requests).toHaveLength(1);
 
-  // If you are not using restrictions, asserting the requests manually is
-  // a good practice:
   expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
 
   expect(requests[0].searchParams.size).toBe(1);
-  expect(requests[0].searchParams.get('username')).toBe('diego');
+  expect(requests[0].searchParams.get('username')).toBe('my');
 
   expect(requests[0].body).toBe(null);
 });

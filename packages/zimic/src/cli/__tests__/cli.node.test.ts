@@ -8,7 +8,6 @@ import runCLI from '../cli';
 
 describe('CLI', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
-  const processOnSpy = vi.spyOn(process, 'on');
 
   const rootHelpOutput = [
     'zimic [command]',
@@ -24,10 +23,7 @@ describe('CLI', () => {
   ].join('\n');
 
   beforeEach(() => {
-    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
-
-    processOnSpy.mockClear();
   });
 
   it('should not throw an error if no command is provided', async () => {

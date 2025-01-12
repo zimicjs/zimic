@@ -1,4 +1,4 @@
-name: Release Zimic
+name: Release Zimic Package
 
 on:
   release:

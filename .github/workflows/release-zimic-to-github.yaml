@@ -1,6 +1,12 @@
-name: Create Zimic GitHub Release
+name: Release Zimic to GitHub
 
 on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - canary
+      - v*
   workflow_dispatch:
     inputs:
       upgrade-type:
@@ -33,10 +39,10 @@ env:
   TURBO_LOG_ORDER: stream
 
 jobs:
-  create-zimic-github-release:
-    name: Create Zimic Github Release
+  release-to-github:
+    name: Release to GitHub
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
 
     environment: GitHub
 
@@ -54,27 +60,37 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: zimic
+          install: zimic...
+
+      - name: Get Zimic release settings
+        id: release-settings
+        uses: ./.github/actions/zimic-get-release-settings
+        with:
+          project-name: zimic
+          input-upgrade-type: ${{ inputs.upgrade-type }}
+          input-pre-release-id: ${{ inputs.pre-release-id }}
 
       - name: Bump Zimic version
         id: bump-version
+        if: ${{ steps.release-settings.outputs.upgrade-type != '' }}
         uses: ./.github/actions/zimic-bump-version
         with:
           project-name: zimic
           project-directory: packages/zimic
-          upgrade-type: ${{ inputs.upgrade-type }}
-          pre-release-id: ${{ inputs.pre-release-id }}
+          upgrade-type: ${{ steps.release-settings.outputs.upgrade-type }}
+          pre-release-id: ${{ steps.release-settings.outputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
           commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
 
       - name: Create GitHub release
+        if: ${{ steps.release-settings.outputs.upgrade-type != '' }}
         uses: ncipollo/release-action@v1
         with:
           name: v${{ steps.bump-version.outputs.value }}
           tag: v${{ steps.bump-version.outputs.value }}
           commit: ${{ steps.bump-version.outputs.commit-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          makeLatest: ${{ inputs.pre-release-id == 'none' }}
-          prerelease: ${{ inputs.pre-release-id != 'node' }}
+          makeLatest: ${{ steps.release-settings.outputs.pre-release-id == 'none' }}
+          prerelease: ${{ steps.release-settings.outputs.pre-release-id != 'node' }}
           generateReleaseNotes: true
           draft: true

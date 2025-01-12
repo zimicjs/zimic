@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { HttpResponse } from '@/http';
 import HttpHeaders from '@/http/headers/HttpHeaders';
@@ -91,10 +91,6 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(matchedBody).toEqual(responseBody);
       }
     }
-
-    beforeEach(() => {
-      spiedRequestHandler.mockClear();
-    });
 
     it(`should intercept ${method} requests after started`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
