@@ -12,7 +12,6 @@ describe('CLI (browser)', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   beforeEach(() => {
-    processArgvSpy.mockClear();
     processArgvSpy.mockReturnValue([]);
   });
 

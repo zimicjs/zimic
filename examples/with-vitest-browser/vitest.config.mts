@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     include: ['./tests/**/*.test.ts'],
     setupFiles: ['./tests/setup.ts'],
+    clearMocks: true,
     browser: {
       name: 'chromium',
       provider: 'playwright',
