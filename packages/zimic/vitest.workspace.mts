@@ -29,7 +29,6 @@ export default defineWorkspace([
         enabled: true,
         headless: true,
         screenshotFailures: false,
-        fileParallelism: false,
       },
     },
     define: {
