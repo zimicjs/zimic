@@ -24,7 +24,7 @@ export default defineWorkspace([
       exclude: ['**/*.node.test.ts'],
       globalSetup: './tests/setup/global/browser.ts',
       browser: {
-        name: 'chromium',
+        instances: [{ browser: 'chromium' }],
         provider: 'playwright',
         enabled: true,
         headless: true,
