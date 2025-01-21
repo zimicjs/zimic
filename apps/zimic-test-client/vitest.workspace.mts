@@ -20,7 +20,7 @@ export default defineWorkspace([
       include: ['./{src,tests}/**/*.test.ts', './{src,tests}/**/*.browser.test.ts'],
       exclude: ['**/*.node.test.ts'],
       browser: {
-        name: 'chromium',
+        instances: [{ browser: 'chromium' }],
         provider: 'playwright',
         enabled: true,
         headless: true,
