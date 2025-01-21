@@ -74,7 +74,22 @@ runs:
 
         echo 'Pushing changes...'
 
-        git push -u origin HEAD --no-verify
+        numberOfPushRetries=0
+        maxNumberOfPushRetries=3
+
+        git config pull.rebase true
+
+        until git push -u origin HEAD --no-verify; do
+          if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
+            echo "Push failed after $maxNumberOfPushRetries retries. Aborting."
+            exit 1
+          fi
+
+          numberOfPushRetries=$((numberOfPushRetries + 1))
+
+          echo 'Push rejected. Retrying...'
+          git pull
+        done
 
         echo "value=$bumpedVersion" >> $GITHUB_OUTPUT
         echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
