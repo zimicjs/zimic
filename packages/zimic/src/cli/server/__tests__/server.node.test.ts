@@ -205,9 +205,13 @@ describe('CLI (server)', async () => {
         );
 
         expect(spies.error).toHaveBeenCalledTimes(1);
-        expect(spies.error).toHaveBeenCalledWith(
-          new RangeError('options.port should be >= 0 and < 65536. Received type number (NaN).'),
-        );
+
+        const errorArguments = spies.error.mock.calls[0];
+
+        const error = new RangeError('options.port should be >= 0 and < 65536. Received type number (NaN).');
+        expect(errorArguments).toEqual([expect.objectContaining(error)]);
+
+        expect(errorArguments[0]).toHaveProperty('code', 'ERR_SOCKET_BAD_PORT');
       });
     });
 
@@ -237,7 +241,17 @@ describe('CLI (server)', async () => {
           await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
 
           expect(spies.error).toHaveBeenCalledTimes(1);
-          expect(spies.error).toHaveBeenCalledWith(new Error('listen EADDRINUSE: address already in use 0.0.0.0:3000'));
+
+          const errorArguments = spies.error.mock.calls[0];
+
+          const error = new Error('listen EADDRINUSE: address already in use 0.0.0.0:3000');
+          expect(errorArguments).toEqual([expect.objectContaining(error)]);
+
+          expect(errorArguments[0]).toHaveProperty('code', 'EADDRINUSE');
+          expect(errorArguments[0]).toHaveProperty('errno', -98);
+          expect(errorArguments[0]).toHaveProperty('syscall', 'listen');
+          expect(errorArguments[0]).toHaveProperty('address', '0.0.0.0');
+          expect(errorArguments[0]).toHaveProperty('port', 3000);
         } finally {
           await initialServer?.stop();
         }
@@ -413,7 +427,10 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', { exitCode });
+        const error = new CommandError('node', {
+          command: ['node', '-e', `process.exit(${exitCode})`],
+          exitCode,
+        });
 
         await runCLI();
 
@@ -443,7 +460,10 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', { signal });
+        const error = new CommandError('node', {
+          command: ['node', '-e', `process.kill(process.pid, '${signal}')`],
+          signal,
+        });
 
         await runCLI();
 
@@ -477,7 +497,10 @@ describe('CLI (server)', async () => {
       ]);
 
       await usingIgnoredConsole(['error', 'log'], async (spies) => {
-        const error = new CommandError('node', { signal });
+        const error = new CommandError('node', {
+          command: ['node', '-e', `process.kill(process.pid, '${signal}')`],
+          signal,
+        });
 
         await runCLI();
 

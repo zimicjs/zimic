@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     clearMocks: true,
     browser: {
-      name: 'chromium',
+      instances: [{ browser: 'chromium' }],
       provider: 'playwright',
       enabled: true,
       headless: true,
