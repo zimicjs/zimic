@@ -12,7 +12,7 @@ function Input({ label, className, ...rest }: Props, ref: ForwardedRef<HTMLInput
       <input
         ref={ref}
         className={clsx(
-          'ring-2 ring-slate-300 outline-none focus:ring-slate-600 hover:ring-slate-400 transition-shadow px-2 py-1.5 rounded',
+          'ring-2 ring-slate-300 outline-hidden focus:ring-slate-600 hover:ring-slate-400 transition-shadow px-2 py-1.5 rounded-sm',
           className,
         )}
         {...rest}
