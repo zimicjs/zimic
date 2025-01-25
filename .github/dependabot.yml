@@ -27,11 +27,6 @@ updates:
       - dependency-name: chalk
         update-types:
           - version-update:semver-major
-      - dependency-name: msw
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directories:
