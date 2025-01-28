@@ -17,21 +17,21 @@
   },
   "devDependencies": {
     "@types/superagent": "^8.1.9",
-    "@vitest/browser": "^2.1.8",
-    "@vitest/coverage-istanbul": "^2.1.8",
+    "@vitest/browser": "^3.0.4",
+    "@vitest/coverage-istanbul": "^3.0.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.9",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.18.0",
+    "eslint": "^9.19.0",
     "execa": "^9.5.2",
     "node-fetch": "^3.3.2",
-    "playwright": "^1.49.1",
+    "playwright": "^1.50.0",
     "superagent": "^10.1.1",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8",
+    "vitest": "^3.0.4",
     "zimic": "workspace:*"
   }
 }

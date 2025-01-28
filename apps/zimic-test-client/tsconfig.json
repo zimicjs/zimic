@@ -2,8 +2,9 @@
   "extends": "@zimic/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "target": "es6",
-    "baseUrl": ".",
+    "moduleResolution": "node",
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"]

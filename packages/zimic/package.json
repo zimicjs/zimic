@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.12.3",
+  "version": "0.12.4-canary.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -107,8 +107,8 @@
     "chalk": "4.1.2",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
-    "msw": "2.4.3",
-    "openapi-typescript": "7.5.2",
+    "msw": "2.7.0",
+    "openapi-typescript": "7.6.0",
     "ws": "8.18.0",
     "yargs": "17.7.2"
   },
@@ -118,23 +118,23 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.10.5",
-    "@types/ws": "^8.5.13",
+    "@types/node": "^22.10.10",
+    "@types/ws": "^8.5.14",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^2.1.8",
-    "@vitest/coverage-istanbul": "^2.1.8",
+    "@vitest/browser": "^3.0.4",
+    "@vitest/coverage-istanbul": "^3.0.4",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.18.0",
+    "eslint": "^9.19.0",
     "js-yaml": "^4.1.0",
-    "playwright": "^1.49.1",
+    "playwright": "^1.50.0",
     "prettier": "^3.4.2",
-    "tsup": "^8.3.5",
+    "tsup": "^8.3.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vitest": "^3.0.4"
   },
   "peerDependencies": {
     "typescript": ">=4.8.0"

@@ -5,7 +5,7 @@
     "module": "esnext",
     "incremental": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "pretty": true,

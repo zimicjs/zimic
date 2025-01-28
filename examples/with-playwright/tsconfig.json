@@ -8,7 +8,7 @@
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "allowJs": true,
     "noEmit": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "pretty": true,
