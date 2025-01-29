@@ -14,7 +14,15 @@ export async function blobContains(blob: Blob, otherBlob: Blob) {
 
 export function convertArrayBufferToBase64(buffer: ArrayBuffer) {
   if (isClientSide()) {
-    const bufferAsString = String.fromCharCode(...new Uint8Array(buffer));
+    const bufferBytes = new Uint8Array(buffer);
+
+    const bufferAsStringArray = [];
+    for (const byte of bufferBytes) {
+      const byteCode = String.fromCharCode(byte);
+      bufferAsStringArray.push(byteCode);
+    }
+    const bufferAsString = bufferAsStringArray.join('');
+
     return btoa(bufferAsString);
   } else {
     return Buffer.from(buffer).toString('base64');
