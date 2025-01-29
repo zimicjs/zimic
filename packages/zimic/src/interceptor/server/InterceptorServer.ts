@@ -333,14 +333,22 @@ class InterceptorServer implements PublicInterceptorServer {
     const handler = this.findHttpHandlerByRequestBaseURL(request);
 
     if (handler) {
-      const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await webSocketServer.request(
-        'interceptors/responses/unhandled',
-        { request: serializedRequest },
-        { sockets: [handler.socket] },
-      );
+      try {
+        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await webSocketServer.request(
+          'interceptors/responses/unhandled',
+          { request: serializedRequest },
+          { sockets: [handler.socket] },
+        );
 
-      if (wasRequestLoggedByRemoteInterceptor) {
-        return;
+        if (wasRequestLoggedByRemoteInterceptor) {
+          return;
+        }
+      } catch (error) {
+        const isMessageAbortError = error instanceof WebSocketMessageAbortError;
+
+        if (!isMessageAbortError) {
+          throw error;
+        }
       }
     }
 

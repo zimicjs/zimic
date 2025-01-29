@@ -811,5 +811,75 @@ describe('CLI (server)', async () => {
         }
       });
     });
+
+    it('should abort waiting for a worker reply if its internal web socket client was closed before responding', async () => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--port',
+        '5001',
+        '--log-unhandled-requests',
+      ]);
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: 'http://localhost:5001',
+      });
+
+      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning()).toBe(true);
+        expect(server!.hostname()).toBe('localhost');
+        expect(server!.port()).toBe(5001);
+
+        try {
+          await interceptor.start();
+          expect(interceptor.isRunning()).toBe(true);
+
+          let wasResponseFactoryCalled = false;
+
+          const responseFactory = vi.fn(async () => {
+            wasResponseFactoryCalled = true;
+
+            await waitForDelay(5000);
+
+            /* istanbul ignore next -- @preserve
+             * This code is unreachable because the request is aborted before the response is sent. */
+            return { status: 204 } as const;
+          });
+
+          await interceptor.get('/users').respond(responseFactory);
+
+          const onFetchError = vi.fn<(error: unknown) => void>();
+          const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+
+          await waitFor(() => {
+            expect(wasResponseFactoryCalled).toBe(true);
+          });
+
+          // @ts-expect-error Force the internal web socket client to stop.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+          await interceptor._client.worker._webSocketClient.stop();
+
+          await responsePromise;
+
+          await waitFor(() => {
+            expect(onFetchError).toHaveBeenCalled();
+          });
+
+          expect(spies.error).not.toHaveBeenCalled();
+        } finally {
+          await interceptor.stop();
+        }
+      });
+    });
   });
 });

@@ -179,6 +179,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   }
 
   private removeSocket(socket: ClientSocket) {
+    this.abortSocketMessages([socket]);
     this.sockets.delete(socket);
   }
 
