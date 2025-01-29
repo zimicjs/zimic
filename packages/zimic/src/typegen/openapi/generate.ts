@@ -149,7 +149,10 @@ async function generateTypesFromOpenAPI({
   const nodes = normalizeRawNodes(rawNodes, context, { prune });
 
   const importDeclarations = createImportDeclarations(context);
-  nodes.unshift(...importDeclarations);
+
+  for (const declaration of importDeclarations) {
+    nodes.unshift(declaration);
+  }
 
   const typeOutput = await convertTypesToString(nodes, { includeComments });
   const formattedOutput = prepareTypeOutputToSave(typeOutput);
