@@ -68,7 +68,9 @@ async function generateFixtureCasesTypes({ fixtureType, fixtureNames }: FixtureT
       batchFixtureCases.map((fixtureCase) => generateFixtureCaseTypes(fixtureType, fixtureCase)),
     );
 
-    outputFilePaths.push(...newOutputFilePaths);
+    for (const outputFilePath of newOutputFilePaths) {
+      outputFilePaths.push(outputFilePath);
+    }
   }
 
   await lintGeneratedFiles(outputFilePaths);
