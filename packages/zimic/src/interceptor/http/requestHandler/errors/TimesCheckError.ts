@@ -4,10 +4,8 @@ class TimesCheckError extends TypeError {
   constructor(options: {
     numberOfRequests: number;
     limits: { min: number; max: number };
-    timesStack: string | undefined;
+    declarationError: Error | undefined;
   }) {
-    const timesStackWithoutInternalCalls = options.timesStack?.replace(/([^\n]+\n\s*){4}at /, '');
-
     const message = [
       'Expected ',
       options.limits.min === options.limits.max ? 'exactly ' : 'at least ',
@@ -21,11 +19,7 @@ class TimesCheckError extends TypeError {
 
       ', but got ',
       options.numberOfRequests,
-
-      '.\n\n',
-
-      timesStackWithoutInternalCalls &&
-        `The failed \`handler.times()\` was declared at: \n    ${timesStackWithoutInternalCalls}`,
+      '.',
 
       '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
     ]
@@ -34,6 +28,7 @@ class TimesCheckError extends TypeError {
 
     super(message);
     this.name = 'TimesCheckError';
+    this.cause = options.declarationError;
   }
 }
 

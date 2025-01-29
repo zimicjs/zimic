@@ -5,12 +5,12 @@ import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/
 import { Default } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
-import { getCurrentStack } from '@/utils/runtime';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import TimesCheckError from './errors/TimesCheckError';
+import TimesDeclarationError from './errors/TimesDeclarationError';
 import {
   HttpRequestHandlerRestriction,
   HttpRequestHandlerStaticRestriction,
@@ -38,7 +38,7 @@ class HttpRequestHandlerClient<
     numberOfRequests: { min: 0, max: Infinity },
   };
 
-  private timesStack?: string;
+  private timesDeclarationError?: TimesDeclarationError;
 
   private numberOfMatchedRequests = 0;
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
@@ -98,14 +98,14 @@ class HttpRequestHandlerClient<
 
   times(
     minNumberOfRequests: number,
-    maxNumberOfRequests = minNumberOfRequests,
+    maxNumberOfRequests?: number,
   ): HttpRequestHandlerClient<Schema, Method, Path, StatusCode> {
     this.limits.numberOfRequests = {
       min: minNumberOfRequests,
-      max: maxNumberOfRequests,
+      max: maxNumberOfRequests ?? minNumberOfRequests,
     };
 
-    this.timesStack = getCurrentStack();
+    this.timesDeclarationError = new TimesDeclarationError(minNumberOfRequests, maxNumberOfRequests);
 
     return this;
   }
@@ -119,7 +119,7 @@ class HttpRequestHandlerClient<
       throw new TimesCheckError({
         limits: this.limits.numberOfRequests,
         numberOfRequests: this.numberOfMatchedRequests,
-        timesStack: this.timesStack,
+        declarationError: this.timesDeclarationError,
       });
     }
   }
@@ -131,7 +131,7 @@ class HttpRequestHandlerClient<
       numberOfRequests: { min: 0, max: Infinity },
     };
 
-    this.timesStack = undefined;
+    this.timesDeclarationError = undefined;
 
     this.numberOfMatchedRequests = 0;
     this.interceptedRequests = [];
