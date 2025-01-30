@@ -272,7 +272,11 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     },
   ) {
     const reply = await this.createReplyMessage(request, replyData);
-    this.sendMessage(reply, options.sockets);
+
+    // If this handler received a request and was stopped before responding, discard any pending replies.
+    if (this.isRunning()) {
+      this.sendMessage(reply, options.sockets);
+    }
   }
 
   private async createReplyMessage<Channel extends WebSocket.EventWithReplyServiceChannel<Schema>>(
