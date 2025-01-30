@@ -344,8 +344,12 @@ class InterceptorServer implements PublicInterceptorServer {
           return;
         }
       } catch (error) {
+        /* istanbul ignore next -- @preserve
+         * This try..catch is for the case when the remote interceptor web socket client is closed before responding.
+         * Since simulating this scenario is difficult, we are ignoring this branch fow now. */
         const isMessageAbortError = error instanceof WebSocketMessageAbortError;
 
+        /* istanbul ignore next -- @preserve */
         if (!isMessageAbortError) {
           throw error;
         }
