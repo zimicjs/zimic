@@ -1,8 +1,14 @@
 import { expect } from 'vitest';
 
 import TimesCheckError from '../../errors/TimesCheckError';
+import TimesDeclarationError from '../../errors/TimesDeclarationError';
 
-export async function expectTimesCheckError(callback: () => Promise<void> | void, options: { firstLine: string }) {
+export async function expectTimesCheckError(
+  callback: () => Promise<void> | void,
+  options: {
+    firstLine: string;
+  } & ({ numberOfRequests: number } | { minNumberOfRequests: number; maxNumberOfRequests?: number }),
+) {
   const { firstLine } = options;
 
   let timesCheckError: TimesCheckError | undefined;
@@ -23,22 +29,26 @@ export async function expectTimesCheckError(callback: () => Promise<void> | void
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('TimesCheckError');
 
-  const splitMessage = timesCheckError!.message.split('\n');
+  expect(timesCheckError!.message).toEqual(
+    [
+      firstLine,
+      '',
+      'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
+    ].join('\n'),
+  );
 
-  const headerLines = splitMessage.slice(0, 3);
-  expect(headerLines).toEqual([firstLine, '', 'The failed `handler.times()` was declared at: ']);
+  const timesDeclarationError = timesCheckError!.cause! as TimesDeclarationError;
+  expect(timesDeclarationError).toBeInstanceOf(TimesDeclarationError);
 
-  const stackTraceLines = splitMessage.slice(3, -2);
-  expect(stackTraceLines.length).toBeGreaterThan(1);
-
-  expect(stackTraceLines[0]).toEqual(expect.stringMatching(/    [^ ]+\/src\/[^ ]+\/__tests__\/[^ ]+\.ts:\d+:\d+/));
-
-  for (const stackTraceLine of stackTraceLines.slice(1)) {
-    expect(stackTraceLine).toEqual(expect.stringMatching(/    at .+/));
+  if ('numberOfRequests' in options) {
+    expect(timesDeclarationError.name).toBe(`handler.times(${options.numberOfRequests})`);
+  } else if (options.maxNumberOfRequests === undefined) {
+    expect(timesDeclarationError.name).toBe(`handler.times(${options.minNumberOfRequests})`);
+  } else {
+    expect(timesDeclarationError.name).toBe(
+      `handler.times(${options.minNumberOfRequests}, ${options.maxNumberOfRequests})`,
+    );
   }
 
-  expect(splitMessage.at(-2)).toBe('');
-  expect(splitMessage.at(-1)).toBe(
-    'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
-  );
+  expect(timesDeclarationError.message).toBe('declared at:');
 }

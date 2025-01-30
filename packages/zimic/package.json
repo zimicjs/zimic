@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.12.4",
+  "version": "0.12.5-canary.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -98,6 +98,7 @@
     "typegen:fixtures": "tsx ./scripts/dev/typegen/generateFixtureTypes.js",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
+    "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\"",
     "prepublish:patch-relative-paths": "sed -E -i 's/\\]\\(\\.\\/([^\\)]+)\\)/](..\\/..\\/\\1)/g;s/\"\\.\\/([^\"]+)\"/\"..\\/..\\/\\1\"/g'",
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"

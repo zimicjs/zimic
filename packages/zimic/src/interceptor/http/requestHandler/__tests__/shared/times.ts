@@ -59,7 +59,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -86,7 +86,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 2 requests, but got 0.' },
+        { firstLine: 'Expected exactly 2 requests, but got 0.', minNumberOfRequests: 2 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -98,7 +98,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 2 requests, but got 1.' },
+        { firstLine: 'Expected exactly 2 requests, but got 1.', minNumberOfRequests: 2 },
       );
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -111,7 +111,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 4 requests, but got 3.' },
+        { firstLine: 'Expected exactly 4 requests, but got 3.', minNumberOfRequests: 4 },
       );
     });
 
@@ -124,7 +124,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -139,7 +139,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 2.' },
+        { firstLine: 'Expected exactly 1 request, but got 2.', numberOfRequests: 1 },
       );
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -148,7 +148,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 3.' },
+        { firstLine: 'Expected exactly 1 request, but got 3.', numberOfRequests: 1 },
       );
     });
   });
@@ -183,7 +183,11 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected at least 2 and at most 3 requests, but got 0.' },
+        {
+          firstLine: 'Expected at least 2 and at most 3 requests, but got 0.',
+          minNumberOfRequests: 2,
+          maxNumberOfRequests: 3,
+        },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -195,7 +199,11 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected at least 2 and at most 3 requests, but got 1.' },
+        {
+          firstLine: 'Expected at least 2 and at most 3 requests, but got 1.',
+          minNumberOfRequests: 2,
+          maxNumberOfRequests: 3,
+        },
       );
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -235,7 +243,11 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected at least 2 and at most 3 requests, but got 4.' },
+        {
+          firstLine: 'Expected at least 2 and at most 3 requests, but got 4.',
+          minNumberOfRequests: 2,
+          maxNumberOfRequests: 3,
+        },
       );
     });
 
@@ -258,7 +270,11 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected at least 0 and at most 1 request, but got 2.' },
+        {
+          firstLine: 'Expected at least 0 and at most 1 request, but got 2.',
+          minNumberOfRequests: 0,
+          maxNumberOfRequests: 1,
+        },
       );
     });
 
@@ -271,7 +287,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', minNumberOfRequests: 1, maxNumberOfRequests: 1 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -286,7 +302,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 2.' },
+        { firstLine: 'Expected exactly 1 request, but got 2.', minNumberOfRequests: 1, maxNumberOfRequests: 1 },
       );
     });
 
@@ -299,7 +315,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 2 requests, but got 0.' },
+        { firstLine: 'Expected exactly 2 requests, but got 0.', minNumberOfRequests: 2, maxNumberOfRequests: 2 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -311,7 +327,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 2 requests, but got 1.' },
+        { firstLine: 'Expected exactly 2 requests, but got 1.', minNumberOfRequests: 2, maxNumberOfRequests: 2 },
       );
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -323,7 +339,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 2 requests, but got 3.' },
+        { firstLine: 'Expected exactly 2 requests, but got 3.', minNumberOfRequests: 2, maxNumberOfRequests: 2 },
       );
     });
   });
@@ -339,7 +355,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -351,7 +367,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
     });
 
@@ -362,7 +378,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
       const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
@@ -374,7 +390,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
     });
   });
@@ -389,7 +405,7 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected exactly 1 request, but got 0.' },
+        { firstLine: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
       handler.clear();
@@ -421,7 +437,11 @@ export function declareTimesHttpRequestHandlerTests(
         async () => {
           await promiseIfRemote(handler.checkTimes(), handler);
         },
-        { firstLine: 'Expected at least 1 and at most 3 requests, but got 0.' },
+        {
+          firstLine: 'Expected at least 1 and at most 3 requests, but got 0.',
+          minNumberOfRequests: 1,
+          maxNumberOfRequests: 3,
+        },
       );
 
       handler.clear();

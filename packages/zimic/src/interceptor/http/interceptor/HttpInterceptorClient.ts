@@ -274,7 +274,12 @@ class HttpInterceptorClient<
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
 
     for (const method of HTTP_METHODS) {
-      clearResults.push(...this.clearMethodHandlers(method));
+      const newClearResults = this.clearMethodHandlers(method);
+
+      for (const result of newClearResults) {
+        clearResults.push(result);
+      }
+
       const handlersByPath = this.handlerClientsByMethod[method];
       handlersByPath.clear();
     }
