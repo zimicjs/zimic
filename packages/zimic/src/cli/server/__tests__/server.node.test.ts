@@ -15,7 +15,7 @@ import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectFetchError } from '@tests/utils/fetch';
-import { waitFor } from '@tests/utils/time';
+import { waitFor, waitForNot } from '@tests/utils/time';
 
 import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
@@ -623,7 +623,7 @@ describe('CLI (server)', async () => {
             `Server is running on http://localhost:${server!.port()}`,
           );
 
-          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`);
 
           const response = fetch(request);
           await expectFetchError(response);
@@ -672,7 +672,7 @@ describe('CLI (server)', async () => {
             `Server is running on http://localhost:${server!.port()}`,
           );
 
-          const request = new Request(`http://localhost:${server!.port()}`, { method: 'GET' });
+          const request = new Request(`http://localhost:${server!.port()}`);
 
           const response = fetch(request);
           await expectFetchError(response);
@@ -721,7 +721,7 @@ describe('CLI (server)', async () => {
           const error = new Error('An error ocurred.');
           webSocketServerRequestSpy.mockRejectedValueOnce(error);
 
-          const request = new Request('http://localhost:5001/users', { method: 'GET' });
+          const request = new Request('http://localhost:5001/users');
           const responsePromise = fetch(request);
           await expectFetchError(responsePromise);
 
@@ -775,37 +775,35 @@ describe('CLI (server)', async () => {
           await interceptor.start();
           expect(interceptor.isRunning()).toBe(true);
 
-          let wasResponseFactoryCalled = false;
+          let responseFactoryPromise: Promise<{ status: 204 }> | undefined;
 
           const responseFactory = vi.fn(async () => {
-            wasResponseFactoryCalled = true;
-
-            await waitForDelay(5000);
-
-            /* istanbul ignore next -- @preserve
-             * This code is unreachable because the request is aborted before the response is sent. */
-            return { status: 204 } as const;
+            responseFactoryPromise = waitForDelay(250).then(() => ({ status: 204 }) as const);
+            return responseFactoryPromise;
           });
 
           await interceptor.get('/users').respond(responseFactory);
 
           const onFetchError = vi.fn<(error: unknown) => void>();
-          const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+          const responsePromise = fetch('http://localhost:5001/users').catch(onFetchError);
 
           await waitFor(() => {
-            expect(wasResponseFactoryCalled).toBe(true);
+            expect(responseFactoryPromise).toBeDefined();
           });
 
           await interceptor.stop();
           expect(interceptor.isRunning()).toBe(false);
 
+          // Wait for request to fail due to stopped interceptor
           await responsePromise;
+          expect(onFetchError).toHaveBeenCalled();
 
-          await waitFor(() => {
-            expect(onFetchError).toHaveBeenCalled();
+          // Wait for slow factory to return the response after the interceptor is already stopped
+          await responseFactoryPromise;
+
+          await waitForNot(() => {
+            expect(spies.error).toHaveBeenCalled();
           });
-
-          expect(spies.error).not.toHaveBeenCalled();
         } finally {
           await interceptor.stop();
         }
@@ -859,7 +857,7 @@ describe('CLI (server)', async () => {
           await interceptor.get('/users').respond(responseFactory);
 
           const onFetchError = vi.fn<(error: unknown) => void>();
-          const responsePromise = fetch('http://localhost:5001/users', { method: 'GET' }).catch(onFetchError);
+          const responsePromise = fetch('http://localhost:5001/users').catch(onFetchError);
 
           await waitFor(() => {
             expect(wasResponseFactoryCalled).toBe(true);
