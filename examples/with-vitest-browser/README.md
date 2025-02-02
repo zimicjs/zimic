@@ -32,12 +32,6 @@ where the repository is found and another where it is not.
 - Test setup file: [`tests/setup.ts`](./tests/setup.ts)
 - Vitest configuration: [`vitest.config.mts`](./vitest.config.mts)
 
-> [!IMPORTANT]
->
-> As a workaround, the setup file must be imported from each test file. Currently, Browser Mode is experimental and
-> Vitest runs the setup file in a different process than the test files, so the worker started on
-> [`tests/setup.ts`](./tests/setup.ts) is not shared between them.
-
 ## Running
 
 1. Clone this example:

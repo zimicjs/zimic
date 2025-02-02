@@ -5,8 +5,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import renderApp, { GitHubRepository } from '../src/app';
 import githubInterceptor from './interceptors/github';
 
-import './setup';
-
 describe('Example tests', () => {
   const ownerName = 'owner';
   const repositoryName = 'example';
