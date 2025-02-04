@@ -1,7 +1,7 @@
 import { expect } from 'vitest';
 
 import TimesCheckError from '../../errors/TimesCheckError';
-import TimesDeclarationError from '../../errors/TimesDeclarationError';
+import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 
 export async function expectTimesCheckError(
   callback: () => Promise<void> | void,
@@ -37,18 +37,18 @@ export async function expectTimesCheckError(
     ].join('\n'),
   );
 
-  const timesDeclarationError = timesCheckError!.cause! as TimesDeclarationError;
-  expect(timesDeclarationError).toBeInstanceOf(TimesDeclarationError);
+  const timesDeclarationPointer = timesCheckError!.cause! as TimesDeclarationPointer;
+  expect(timesDeclarationPointer).toBeInstanceOf(TimesDeclarationPointer);
 
   if ('numberOfRequests' in options) {
-    expect(timesDeclarationError.name).toBe(`handler.times(${options.numberOfRequests})`);
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.numberOfRequests})`);
   } else if (options.maxNumberOfRequests === undefined) {
-    expect(timesDeclarationError.name).toBe(`handler.times(${options.minNumberOfRequests})`);
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.minNumberOfRequests})`);
   } else {
-    expect(timesDeclarationError.name).toBe(
+    expect(timesDeclarationPointer.name).toBe(
       `handler.times(${options.minNumberOfRequests}, ${options.maxNumberOfRequests})`,
     );
   }
 
-  expect(timesDeclarationError.message).toBe('declared at:');
+  expect(timesDeclarationPointer.message).toBe('declared at:');
 }
