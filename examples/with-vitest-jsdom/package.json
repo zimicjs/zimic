@@ -14,7 +14,7 @@
     "@vitest/spy": "^3.0.4",
     "dotenv-cli": "^8.0.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.4",
+    "vitest": "^3.0.5",
     "zimic": "latest"
   }
 }
