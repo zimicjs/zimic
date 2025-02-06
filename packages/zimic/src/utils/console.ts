@@ -5,28 +5,6 @@ import { HttpFormData, HttpHeaders, HttpSearchParams } from '@/http';
 import { isClientSide } from './environment';
 import { createCachedDynamicImport } from './imports';
 
-const importUtil = createCachedDynamicImport(() => import('util'));
-
-export async function formatObjectToLog(value: unknown, options: { colors?: boolean } = {}) {
-  if (isClientSide()) {
-    return value;
-  }
-
-  const { colors = true } = options;
-
-  const util = await importUtil();
-
-  return util.inspect(value, {
-    colors,
-    compact: true,
-    depth: Infinity,
-    maxArrayLength: Infinity,
-    maxStringLength: Infinity,
-    breakLength: Infinity,
-    sorted: true,
-  });
-}
-
 function inlineJSONStringify(value: unknown): string {
   return JSON.stringify(value, null, 2).replace(/\n\s*/g, ' ');
 }
@@ -49,6 +27,28 @@ export function stringifyObjectToLog(value: unknown): string {
   }
 
   return inlineJSONStringify(value);
+}
+
+const importUtil = createCachedDynamicImport(() => import('util'));
+
+export async function formatObjectToLog(value: unknown, options: { colors?: boolean } = {}) {
+  if (isClientSide()) {
+    return value;
+  }
+
+  const { colors = true } = options;
+
+  const util = await importUtil();
+
+  return util.inspect(value, {
+    colors,
+    compact: true,
+    depth: Infinity,
+    maxArrayLength: Infinity,
+    maxStringLength: Infinity,
+    breakLength: Infinity,
+    sorted: true,
+  });
 }
 
 export function logWithPrefix(

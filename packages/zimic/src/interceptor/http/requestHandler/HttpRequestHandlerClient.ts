@@ -2,7 +2,7 @@ import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { Default, Range } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
@@ -17,6 +17,8 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
+  HttpRequestHeadersSchema,
+  HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 import {
@@ -28,7 +30,10 @@ import {
   UnmatchedHttpInterceptorRequestGroup,
 } from './types/restrictions';
 
-const DEFAULT_NUMBER_OF_REQUEST_LIMITS = { min: 0, max: Infinity };
+const DEFAULT_NUMBER_OF_REQUEST_LIMITS: Range<number> = Object.freeze({
+  min: 0,
+  max: Infinity,
+});
 
 class HttpRequestHandlerClient<
   Schema extends HttpSchema,
@@ -45,8 +50,7 @@ class HttpRequestHandlerClient<
   private timesDeclarationPointer?: TimesDeclarationPointer;
 
   private numberOfMatchedRequests = 0;
-
-  private unmatchedGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
+  private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
@@ -87,7 +91,7 @@ class HttpRequestHandlerClient<
       : () => declaration;
 
     newThis.numberOfMatchedRequests = 0;
-    newThis.unmatchedGroups.length = 0;
+    newThis.unmatchedRequestGroups.length = 0;
     newThis.interceptedRequests.length = 0;
 
     this.interceptor.registerRequestHandler(this.handler);
@@ -124,12 +128,12 @@ class HttpRequestHandlerClient<
 
     if (!isWithinLimits) {
       throw new TimesCheckError({
-        limits: this.limits.numberOfRequests,
-        numberOfRequests: this.numberOfMatchedRequests,
+        requestLimits: this.limits.numberOfRequests,
+        numberOfMatchedRequests: this.numberOfMatchedRequests,
         declarationPointer: this.timesDeclarationPointer,
-        unmatchedGroups: this.unmatchedGroups,
+        unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
-        savedRequests: this.interceptor.shouldSaveRequests(),
+        hasSavedRequests: this.interceptor.shouldSaveRequests(),
       });
     }
   }
@@ -144,7 +148,7 @@ class HttpRequestHandlerClient<
     this.timesDeclarationPointer = undefined;
 
     this.numberOfMatchedRequests = 0;
-    this.unmatchedGroups.length = 0;
+    this.unmatchedRequestGroups.length = 0;
     this.interceptedRequests.length = 0;
 
     this.createResponseDeclaration = undefined;
@@ -159,9 +163,9 @@ class HttpRequestHandlerClient<
       return false;
     }
 
-    const restrictionsResult = await this.compareToRequestRestrictions(request);
+    const restrictionsMatch = await this.matchesRequestRestrictions(request);
 
-    if (restrictionsResult.matched) {
+    if (restrictionsMatch.value) {
       this.numberOfMatchedRequests++;
     } else {
       const shouldSaveUnmatchedGroup =
@@ -170,52 +174,51 @@ class HttpRequestHandlerClient<
         this.timesDeclarationPointer !== undefined;
 
       if (shouldSaveUnmatchedGroup) {
-        this.unmatchedGroups.push({ request, diff: restrictionsResult.diff });
+        this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
       }
     }
 
     const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
-    return restrictionsResult.matched && isWithinLimits;
+    return restrictionsMatch.value && isWithinLimits;
   }
 
-  private async compareToRequestRestrictions(
+  private async matchesRequestRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<RestrictionMatchResult<RestrictionDiffs>> {
     for (const restriction of this.restrictions) {
       if (this.isComputedRequestRestriction(restriction)) {
         const matchesComputedRestriction = await restriction(request);
 
-        if (matchesComputedRestriction) {
-          return { matched: true };
-        } else {
+        if (!matchesComputedRestriction) {
           return {
-            matched: false,
-            diff: {
-              computed: { expected: true, received: false },
-            },
+            value: false,
+            diff: { computed: { expected: true, received: false } },
           };
         }
+
+        continue;
       }
 
-      const headersResult = this.matchesRequestHeadersRestrictions(request, restriction);
-      const searchParamsResult = this.matchesRequestSearchParamsRestrictions(request, restriction);
-      const bodyResult = await this.matchesRequestBodyRestrictions(request, restriction);
+      const matchesHeadersRestrictions = this.matchesRequestHeadersRestrictions(request, restriction);
+      const matchesSearchParamsRestrictions = this.matchesRequestSearchParamsRestrictions(request, restriction);
+      const matchesBodyRestrictions = await this.matchesRequestBodyRestrictions(request, restriction);
 
-      const matched = headersResult.matched && searchParamsResult.matched && bodyResult.matched;
+      const matchesRestriction =
+        matchesHeadersRestrictions.value && matchesSearchParamsRestrictions.value && matchesBodyRestrictions.value;
 
-      if (!matched) {
+      if (!matchesRestriction) {
         return {
-          matched: false,
+          value: false,
           diff: {
-            headers: headersResult.matched ? undefined : headersResult.diff,
-            searchParams: searchParamsResult.matched ? undefined : searchParamsResult.diff,
-            body: bodyResult.matched ? undefined : bodyResult.diff,
+            headers: matchesHeadersRestrictions.diff,
+            searchParams: matchesSearchParamsRestrictions.diff,
+            body: matchesBodyRestrictions.diff,
           },
         };
       }
     }
 
-    return { matched: true };
+    return { value: true };
   }
 
   private matchesRequestHeadersRestrictions(
@@ -223,19 +226,21 @@ class HttpRequestHandlerClient<
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<never>>> {
     if (restriction.headers === undefined) {
-      return { matched: true };
+      return { value: true };
     }
 
-    const restrictedHeaders = new HttpHeaders(restriction.headers as never);
+    const restrictedHeaders = new HttpHeaders(
+      restriction.headers as HttpRequestHeadersSchema<Default<Schema[Path][Method]>>,
+    );
 
-    const matched = restriction.exact
+    const matchesRestriction = restriction.exact
       ? request.headers.equals(restrictedHeaders)
       : request.headers.contains(restrictedHeaders);
 
-    return matched
-      ? { matched: true }
+    return matchesRestriction
+      ? { value: true }
       : {
-          matched: false,
+          value: false,
           diff: { expected: restrictedHeaders, received: request.headers },
         };
   }
@@ -245,19 +250,21 @@ class HttpRequestHandlerClient<
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<never>>> {
     if (restriction.searchParams === undefined) {
-      return { matched: true };
+      return { value: true };
     }
 
-    const restrictedSearchParams = new HttpSearchParams(restriction.searchParams as never);
+    const restrictedSearchParams = new HttpSearchParams(
+      restriction.searchParams as HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>,
+    );
 
-    const matched = restriction.exact
+    const matchesRestriction = restriction.exact
       ? request.searchParams.equals(restrictedSearchParams)
       : request.searchParams.contains(restrictedSearchParams);
 
-    return matched
-      ? { matched: true }
+    return matchesRestriction
+      ? { value: true }
       : {
-          matched: false,
+          value: false,
           diff: { expected: restrictedSearchParams, received: request.searchParams },
         };
   }
@@ -267,19 +274,19 @@ class HttpRequestHandlerClient<
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
   ): Promise<RestrictionMatchResult<RestrictionDiff<unknown>>> {
     if (restriction.body === undefined) {
-      return { matched: true };
+      return { value: true };
     }
 
     const body = request.body as unknown;
     const restrictionBody = restriction.body as unknown;
 
     if (typeof body === 'string' && typeof restrictionBody === 'string') {
-      const matched = restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
+      const matchesRestriction = restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
 
-      return matched
-        ? { matched: true }
+      return matchesRestriction
+        ? { value: true }
         : {
-            matched: false,
+            value: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -287,17 +294,19 @@ class HttpRequestHandlerClient<
     if (restrictionBody instanceof HttpFormData) {
       if (!(body instanceof HttpFormData)) {
         return {
-          matched: false,
+          value: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
 
-      const matched = restriction.exact ? await body.equals(restrictionBody) : await body.contains(restrictionBody);
+      const matchesRestriction = restriction.exact
+        ? await body.equals(restrictionBody)
+        : await body.contains(restrictionBody);
 
-      return matched
-        ? { matched }
+      return matchesRestriction
+        ? { value: true }
         : {
-            matched: false,
+            value: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -305,17 +314,17 @@ class HttpRequestHandlerClient<
     if (restrictionBody instanceof HttpSearchParams) {
       if (!(body instanceof HttpSearchParams)) {
         return {
-          matched: false,
+          value: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
 
-      const matched = restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
+      const matchesRestriction = restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
 
-      return matched
-        ? { matched }
+      return matchesRestriction
+        ? { value: true }
         : {
-            matched: false,
+            value: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
@@ -323,31 +332,31 @@ class HttpRequestHandlerClient<
     if (restrictionBody instanceof Blob) {
       if (!(body instanceof Blob)) {
         return {
-          matched: false,
+          value: false,
           diff: { expected: restrictionBody, received: body },
         };
       }
 
-      const matched = restriction.exact
+      const matchesRestriction = restriction.exact
         ? await blobEquals(body, restrictionBody)
         : await blobContains(body, restrictionBody);
 
-      return matched
-        ? { matched }
+      return matchesRestriction
+        ? { value: true }
         : {
-            matched: false,
+            value: false,
             diff: { expected: restrictionBody, received: body },
           };
     }
 
-    const matched = restriction.exact
+    const matchesRestriction = restriction.exact
       ? jsonEquals(request.body, restriction.body)
       : jsonContains(request.body, restriction.body);
 
-    return matched
-      ? { matched: true }
+    return matchesRestriction
+      ? { value: true }
       : {
-          matched: false,
+          value: false,
           diff: { expected: restrictionBody, received: body },
         };
   }

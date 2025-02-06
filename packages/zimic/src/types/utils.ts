@@ -57,3 +57,8 @@ export type DeepPartial<Type> = Type extends (...parameters: never[]) => unknown
       : Type;
 
 export type Override<Type, OverrideType> = Omit<Type, keyof OverrideType> & OverrideType;
+
+export interface Range<Value> {
+  min: Value;
+  max: Value;
+}
