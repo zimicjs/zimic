@@ -6,10 +6,18 @@ import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 export async function expectTimesCheckError(
   callback: () => Promise<void> | void,
   options: {
-    firstLine: string;
-  } & ({ numberOfRequests: number } | { minNumberOfRequests: number; maxNumberOfRequests?: number }),
+    content: string;
+  } & (
+    | {
+        numberOfRequests: number;
+      }
+    | {
+        minNumberOfRequests: number;
+        maxNumberOfRequests?: number;
+      }
+  ),
 ) {
-  const { firstLine } = options;
+  const { content: lines } = options;
 
   let timesCheckError: TimesCheckError | undefined;
 
@@ -29,13 +37,13 @@ export async function expectTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('TimesCheckError');
 
-  expect(timesCheckError!.message).toEqual(
-    [
-      firstLine,
-      '',
-      'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
-    ].join('\n'),
-  );
+  const expectedMessage = [
+    lines,
+    '',
+    'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
+  ].join('\n');
+
+  expect(timesCheckError!.message).toEqual(expectedMessage);
 
   const timesDeclarationPointer = timesCheckError!.cause! as TimesDeclarationPointer;
   expect(timesDeclarationPointer).toBeInstanceOf(TimesDeclarationPointer);
