@@ -616,7 +616,10 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             { content: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
           );
 
-          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
+            method,
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);
