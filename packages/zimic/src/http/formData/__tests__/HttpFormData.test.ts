@@ -333,6 +333,34 @@ describe('HttpFormData', async () => {
     );
   });
 
+  it('should support being converted to an object', () => {
+    const formData = new HttpFormData<{
+      file?: File;
+      blob: Blob[];
+      description: string;
+    }>();
+
+    formData.set('file', file);
+    formData.append('blob', blob);
+    formData.append('blob', blob, blobName);
+    formData.set('description', description);
+
+    const object = formData.toObject();
+    expectTypeOf(object).toEqualTypeOf<{
+      file?: File;
+      blob: Blob[];
+      description: string;
+    }>();
+
+    const blobsAsFiles = formData.getAll('blob');
+
+    expect(object).toEqual({
+      file,
+      blob: blobsAsFiles,
+      description,
+    });
+  });
+
   it('should support checking equality with other form data fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
