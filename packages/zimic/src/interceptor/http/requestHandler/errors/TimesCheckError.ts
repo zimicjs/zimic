@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 import { Range } from '@/types/utils';
-import { stringifyObjectToLog } from '@/utils/console';
+import { stringifyValueToLog } from '@/utils/console';
 import { isNonEmpty } from '@/utils/data';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
@@ -65,8 +65,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
       if (diff.computed) {
         messageParts.push('Computed restriction:');
 
-        const stringifiedExpected = stringifyObjectToLog(diff.computed.expected);
-        const stringifiedReceived = stringifyObjectToLog(diff.computed.received);
+        const stringifiedExpected = stringifyValueToLog(diff.computed.expected);
+        const stringifiedReceived = stringifyValueToLog(diff.computed.received);
 
         messageParts.push(`  ${chalk.green(`- return ${stringifiedExpected}`)}`);
         messageParts.push(`  ${chalk.red(`+ return ${stringifiedReceived}`)}`);
@@ -75,8 +75,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
       if (diff.headers) {
         messageParts.push('Headers:');
 
-        const stringifiedExpected = stringifyObjectToLog(diff.headers.expected);
-        const stringifiedReceived = stringifyObjectToLog(diff.headers.received);
+        const stringifiedExpected = stringifyValueToLog(diff.headers.expected);
+        const stringifiedReceived = stringifyValueToLog(diff.headers.received);
 
         messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
         messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
@@ -85,8 +85,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
       if (diff.searchParams) {
         messageParts.push('Search params:');
 
-        const stringifiedExpected = stringifyObjectToLog(diff.searchParams.expected);
-        const stringifiedReceived = stringifyObjectToLog(diff.searchParams.received);
+        const stringifiedExpected = stringifyValueToLog(diff.searchParams.expected);
+        const stringifiedReceived = stringifyValueToLog(diff.searchParams.received);
 
         messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
         messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
@@ -95,8 +95,12 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
       if (diff.body) {
         messageParts.push('Body:');
 
-        const stringifiedExpected = stringifyObjectToLog(diff.body.expected, { includeSearchParamsClassName: true });
-        const stringifiedReceived = stringifyObjectToLog(diff.body.received, { includeSearchParamsClassName: true });
+        const stringifiedExpected = stringifyValueToLog(diff.body.expected, {
+          includeClassName: { searchParams: true },
+        });
+        const stringifiedReceived = stringifyValueToLog(diff.body.received, {
+          includeClassName: { searchParams: true },
+        });
 
         messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
         messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);

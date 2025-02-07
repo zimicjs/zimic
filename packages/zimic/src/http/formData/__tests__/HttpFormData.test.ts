@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { formatObjectToLog } from '@/utils/console';
+import { formatValueToLog } from '@/utils/console';
 import { isClientSide } from '@/utils/environment';
 import { importFile } from '@/utils/files';
 
@@ -606,7 +606,7 @@ describe('HttpFormData', async () => {
       formData.set('description', description);
 
       const formattedFormData = String(
-        await formatObjectToLog(formData.toObject(), {
+        await formatValueToLog(formData.toObject(), {
           colors: false,
         }),
       );
