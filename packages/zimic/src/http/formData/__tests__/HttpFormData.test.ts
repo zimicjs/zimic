@@ -1,5 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { formatObjectToLog } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
 import { importFile } from '@/utils/files';
 
 import HttpFormData from '../HttpFormData';
@@ -587,6 +589,55 @@ describe('HttpFormData', async () => {
       expectTypeOf<HttpFormDataSerialized<symbol>>().toEqualTypeOf<never>();
       expectTypeOf<HttpFormDataSerialized<Map<never, never>>>().toEqualTypeOf<never>();
       expectTypeOf<HttpFormDataSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
+  });
+
+  describe('Formatting', () => {
+    it('should be correctly formatted to log', async () => {
+      const formData = new HttpFormData<{
+        file?: File;
+        blob: Blob[];
+        description: string;
+      }>();
+
+      formData.set('file', file);
+      formData.append('blob', blob);
+      formData.append('blob', blob, blobName);
+      formData.set('description', description);
+
+      const formattedFormData = String(
+        await formatObjectToLog(formData.toObject(), {
+          colors: false,
+        }),
+      );
+
+      if (isClientSide()) {
+        expect(formattedFormData).toBe('[object Object]');
+      } else {
+        const blobsAsFiles = formData.getAll('blob');
+
+        const formattedBlobsAsFiles = blobsAsFiles.map(
+          (blobAsFile) =>
+            'File { ' +
+            `lastModified: ${blobAsFile.lastModified}, ` +
+            `name: '${blobAsFile.name}', ` +
+            `size: ${blobAsFile.size}, ` +
+            `type: '${blobAsFile.type}' }`,
+        );
+
+        const formattedFile =
+          'File { ' +
+          `lastModified: ${file.lastModified}, ` +
+          `name: '${file.name}', ` +
+          `size: ${file.size}, ` +
+          `type: '${file.type}' }`;
+
+        expect(formattedFormData).toBe(
+          `{ blob: [ ${formattedBlobsAsFiles.join(', ')} ], ` +
+            `description: '${description}', ` +
+            `file: ${formattedFile} }`,
+        );
+      }
     });
   });
 });
