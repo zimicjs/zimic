@@ -609,7 +609,7 @@ describe('HttpHeaders', () => {
       if (isClientSide()) {
         expect(formattedHeaders).toBe('[object Object]');
       } else {
-        expect(formattedHeaders).toBe("{ accept: '*/*', other: 'value, other' }");
+        expect(formattedHeaders).toBe(['{', "accept: '*/*',", "other: 'value, other'", '}'].join(' '));
       }
     });
   });

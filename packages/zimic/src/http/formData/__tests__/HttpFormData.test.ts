@@ -344,10 +344,12 @@ describe('HttpFormData', async () => {
 
     formData.set('file', file);
     formData.append('blob', blob);
+    formData.append('blob', blob);
     formData.append('blob', blob, blobName);
     formData.set('description', description);
 
     const object = formData.toObject();
+
     expectTypeOf(object).toEqualTypeOf<{
       file?: File;
       blob: Blob[];
@@ -355,6 +357,7 @@ describe('HttpFormData', async () => {
     }>();
 
     const blobsAsFiles = formData.getAll('blob');
+    expect(blobsAsFiles).toHaveLength(3);
 
     expect(object).toEqual({
       file,
@@ -602,6 +605,7 @@ describe('HttpFormData', async () => {
 
       formData.set('file', file);
       formData.append('blob', blob);
+      formData.append('blob', blob);
       formData.append('blob', blob, blobName);
       formData.set('description', description);
 
@@ -615,27 +619,36 @@ describe('HttpFormData', async () => {
         expect(formattedFormData).toBe('[object Object]');
       } else {
         const blobsAsFiles = formData.getAll('blob');
+        expect(blobsAsFiles).toHaveLength(3);
 
-        const formattedBlobsAsFiles = blobsAsFiles.map(
-          (blobAsFile) =>
-            'File { ' +
-            `lastModified: ${blobAsFile.lastModified}, ` +
-            `name: '${blobAsFile.name}', ` +
-            `size: ${blobAsFile.size}, ` +
-            `type: '${blobAsFile.type}' }`,
+        const formattedBlobsAsFiles = blobsAsFiles.map((blobAsFile) =>
+          [
+            'File {',
+            `lastModified: ${blobAsFile.lastModified},`,
+            `name: '${blobAsFile.name}',`,
+            `size: ${blobAsFile.size},`,
+            `type: '${blobAsFile.type}'`,
+            '}',
+          ].join(' '),
         );
 
-        const formattedFile =
-          'File { ' +
-          `lastModified: ${file.lastModified}, ` +
-          `name: '${file.name}', ` +
-          `size: ${file.size}, ` +
-          `type: '${file.type}' }`;
+        const formattedFile = [
+          'File {',
+          `lastModified: ${file.lastModified},`,
+          `name: '${file.name}',`,
+          `size: ${file.size},`,
+          `type: '${file.type}'`,
+          '}',
+        ].join(' ');
 
         expect(formattedFormData).toBe(
-          `{ blob: [ ${formattedBlobsAsFiles.join(', ')} ], ` +
-            `description: '${description}', ` +
-            `file: ${formattedFile} }`,
+          [
+            '{',
+            `blob: [ ${formattedBlobsAsFiles.join(', ')} ],`,
+            `description: '${description}',`,
+            `file: ${formattedFile}`,
+            '}',
+          ].join(' '),
         );
       }
     });

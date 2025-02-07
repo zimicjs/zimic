@@ -630,7 +630,14 @@ describe('HttpSearchParams', () => {
         expect(formattedSearchParams).toBe('[object Object]');
       } else {
         expect(formattedSearchParams).toBe(
-          "{ oneName: 'User1', page: '1', threeNames: [ 'User1', 'User2', 'User3' ], twoNames: [ 'User1', 'User2' ] }",
+          [
+            '{',
+            "oneName: 'User1',",
+            "page: '1',",
+            "threeNames: [ 'User1', 'User2', 'User3' ],",
+            "twoNames: [ 'User1', 'User2' ]",
+            '}',
+          ].join(' '),
         );
       }
     });
