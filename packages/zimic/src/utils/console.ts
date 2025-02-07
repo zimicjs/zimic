@@ -6,24 +6,54 @@ import { isClientSide } from './environment';
 import { createCachedDynamicImport } from './imports';
 
 function inlineJSONStringify(value: unknown): string {
-  return JSON.stringify(value, null, 2).replace(/\n\s*/g, ' ');
+  return (
+    JSON.stringify(
+      value,
+      (_key, value: unknown) => {
+        if (value instanceof File) {
+          return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
+        }
+
+        if (value instanceof Blob) {
+          return `Blob { type: '${value.type}', size: ${value.size} }`;
+        }
+
+        return value;
+      },
+      2,
+    )
+      // Remove newlines and spaces after them
+      .replace(/\n\s*/g, ' ')
+      // Remove double quotes around File and Blob
+      .replace(/"(File { name: '.*?', type: '.*?', size: \d*? }|Blob { type: '.*?', size: \d*? })"/g, '$1')
+  );
 }
 
-export function stringifyObjectToLog(value: unknown): string {
-  if (value instanceof HttpHeaders || value instanceof HttpSearchParams) {
+export function stringifyObjectToLog(value: unknown, options: { includeSearchParamsClassName?: boolean } = {}): string {
+  const { includeSearchParamsClassName = false } = options;
+
+  if (value === null || value === undefined || typeof value !== 'object') {
+    return String(value);
+  }
+
+  if (value instanceof HttpHeaders) {
     return stringifyObjectToLog(value.toObject());
   }
 
-  if (value instanceof HttpFormData) {
-    const formattedEntries = Array.from(value.entries())
-      .map(([key, value]) => `${key}: ${stringifyObjectToLog(value)}`)
-      .join(', ');
+  if (value instanceof HttpHeaders || value instanceof HttpSearchParams) {
+    return `${includeSearchParamsClassName ? 'URLSearchParams ' : ''}${stringifyObjectToLog(value.toObject())}`;
+  }
 
-    return `FormData { ${formattedEntries} }`;
+  if (value instanceof HttpFormData) {
+    return `FormData ${stringifyObjectToLog(value.toObject())}`;
+  }
+
+  if (value instanceof File) {
+    return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
   }
 
   if (value instanceof Blob) {
-    return `Blob { type: ${value.type}, size: ${value.size} }`;
+    return `Blob { type: '${value.type}', size: ${value.size} }`;
   }
 
   return inlineJSONStringify(value);

@@ -1,3 +1,4 @@
+import { HttpFormData, HttpSearchParams } from '@/http';
 import { HttpSchema } from '@/http/types/schema';
 import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { PossiblePromise } from '@/types/utils';
@@ -25,10 +26,12 @@ export type MethodSchema = HttpSchema.Method<{
   request: {
     headers: HeadersSchema;
     searchParams: SearchParamsSchema;
-    body: {
-      name?: string;
-      value?: number[];
-    };
+    body:
+      | { name?: string; value?: number[] }
+      | HttpSearchParams<{ name: string }>
+      | HttpFormData<{ name: string }>
+      | Blob
+      | string;
   };
   response: {
     200: {

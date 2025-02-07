@@ -64,26 +64,42 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
 
       if (diff.computed) {
         messageParts.push('Computed restriction:');
-        messageParts.push(`  ${chalk.green(`- return ${stringifyObjectToLog(diff.computed.expected)}`)}`);
-        messageParts.push(`  ${chalk.red(`+ return ${stringifyObjectToLog(diff.computed.received)}`)}`);
+
+        const stringifiedExpected = stringifyObjectToLog(diff.computed.expected);
+        const stringifiedReceived = stringifyObjectToLog(diff.computed.received);
+
+        messageParts.push(`  ${chalk.green(`- return ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${chalk.red(`+ return ${stringifiedReceived}`)}`);
       }
 
       if (diff.headers) {
         messageParts.push('Headers:');
-        messageParts.push(`  ${chalk.green(`- ${stringifyObjectToLog(diff.headers.expected)}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifyObjectToLog(diff.headers.received)}`)}`);
+
+        const stringifiedExpected = stringifyObjectToLog(diff.headers.expected);
+        const stringifiedReceived = stringifyObjectToLog(diff.headers.received);
+
+        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
       }
 
       if (diff.searchParams) {
         messageParts.push('Search params:');
-        messageParts.push(`  ${chalk.green(`- ${stringifyObjectToLog(diff.searchParams.expected)}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifyObjectToLog(diff.searchParams.received)}`)}`);
+
+        const stringifiedExpected = stringifyObjectToLog(diff.searchParams.expected);
+        const stringifiedReceived = stringifyObjectToLog(diff.searchParams.received);
+
+        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
       }
 
       if (diff.body) {
         messageParts.push('Body:');
-        messageParts.push(`  ${chalk.green(`- ${stringifyObjectToLog(diff.body.expected)}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifyObjectToLog(diff.body.received)}`)}`);
+
+        const stringifiedExpected = stringifyObjectToLog(diff.body.expected, { includeSearchParamsClassName: true });
+        const stringifiedReceived = stringifyObjectToLog(diff.body.received, { includeSearchParamsClassName: true });
+
+        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
       }
 
       return messageParts.join('\n     ');

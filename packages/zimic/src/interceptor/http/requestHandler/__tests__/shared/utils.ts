@@ -6,7 +6,7 @@ import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 export async function expectTimesCheckError(
   callback: () => Promise<void> | void,
   options: {
-    content: string;
+    message: string;
   } & (
     | {
         numberOfRequests: number;
@@ -17,7 +17,7 @@ export async function expectTimesCheckError(
       }
   ),
 ) {
-  const { content: lines } = options;
+  const { message } = options;
 
   let timesCheckError: TimesCheckError | undefined;
 
@@ -38,7 +38,7 @@ export async function expectTimesCheckError(
   expect(timesCheckError!.name).toBe('TimesCheckError');
 
   const expectedMessage = [
-    lines,
+    message,
     '',
     'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
   ].join('\n');
