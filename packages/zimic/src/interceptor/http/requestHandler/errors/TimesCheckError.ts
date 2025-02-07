@@ -53,7 +53,7 @@ function createMessageHeader({
 
 function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesCheckErrorOptions) {
   if (!hasSavedRequests) {
-    return 'Tip: use `saveRequests: true` in your interceptor for a detailed diff.';
+    return 'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.';
   }
 
   return unmatchedRequestGroups

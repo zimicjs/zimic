@@ -347,619 +347,666 @@ export function declareTimesHttpRequestHandlerTests(
   });
 
   describe('Unmatched requests', () => {
-    it('should not consider requests unmatched due to computed restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with((request) => typeof request.body === 'number')
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+    describe('Restrictions', () => {
+      it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
+        const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, saveRequests: false });
+        const interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with((request) => typeof request.body === 'number')
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Computed restriction:',
-            '       - return true',
-            '       + return false',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-    it('should not consider requests unmatched due to headers restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ headers: { accept: 'application/json' } })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
-
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Headers:',
-            '       - { "accept": "application/json" }',
-            '       + {}',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        headers: { accept: 'text/html', 'content-type': 'text/plain' },
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to computed restrictions in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with((request) => typeof request.body === 'number')
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Headers:',
-            '       - { "accept": "application/json" }',
-            '       + {}',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Headers:',
-            '       - { "accept": "application/json" }',
-            '       + { "accept": "text/html", "content-type": "text/plain" }',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
 
-    it('should not consider requests unmatched due to search params restrictions in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ searchParams: { value: '1' } })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Search params:',
-            '       - { "value": "1" }',
-            '       + {}',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-
-      const searchParams = new HttpSearchParams({ name: '1', value: '2' });
-      request = new Request(joinURL(baseURL, `/users?${searchParams}`), { method: 'POST' });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Search params:',
-            '       - { "value": "1" }',
-            '       + {}',
-            '',
-            `2: POST ${joinURL(baseURL, `/users?${searchParams}`)}`,
-            '     Search params:',
-            '       - { "value": "1" }',
-            '       + { "name": "1", "value": "2" }',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
-
-    it('should not consider requests unmatched due to JSON body restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ body: { name: '1' } })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
-
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
-
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
-
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - { "name": "1" }',
-            '       + null',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: '2' }),
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Computed restriction:',
+              '       - return true',
+              '       + return false',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to headers restrictions in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ headers: { accept: 'application/json' } })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - { "name": "1" }',
-            '       + null',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - { "name": "1" }',
-            '       + { "name": "2" }',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
 
-    it('should not consider requests unmatched due to search params body restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ body: new HttpSearchParams({ name: '1' }) })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Headers:',
+              '       - { "accept": "application/json" }',
+              '       + {}',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { accept: 'text/html', 'content-type': 'text/plain' },
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - URLSearchParams { "name": "1" }',
-            '       + null',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new HttpSearchParams({ name: '2' }),
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Headers:',
+              '       - { "accept": "application/json" }',
+              '       + {}',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Headers:',
+              '       - { "accept": "application/json" }',
+              '       + { "accept": "text/html", "content-type": "text/plain" }',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to search params requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ searchParams: { value: '1' } })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - URLSearchParams { "name": "1" }',
-            '       + null',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - URLSearchParams { "name": "1" }',
-            '       + URLSearchParams { "name": "2" }',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
 
-    it('should not consider requests unmatched due to form data body restrictions in in the number of matched requests', async () => {
-      const formDataRestriction = new HttpFormData<{ name: string }>();
-      formDataRestriction.append('name', '1');
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ body: formDataRestriction })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Search params:',
+              '       - { "value": "1" }',
+              '       + {}',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
 
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        const searchParams = new HttpSearchParams({ name: '1', value: '2' });
+        request = new Request(joinURL(baseURL, `/users?${searchParams}`), { method: 'POST' });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - FormData { "name": "1" }',
-            '       + null',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-
-      const formData = new HttpFormData<{ name: string; file: File; blob: Blob }>();
-      formData.append('name', '2');
-
-      const File = await importFile();
-
-      const blob = new Blob(['response'], { type: 'text/plain' });
-      formData.append('blob', blob);
-
-      const file = new File([blob], 'tag.txt', { type: 'text/plain' });
-      formData.append('file', file);
-
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        body: formData,
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Search params:',
+              '       - { "value": "1" }',
+              '       + {}',
+              '',
+              `2: POST ${joinURL(baseURL, `/users?${searchParams}`)}`,
+              '     Search params:',
+              '       - { "value": "1" }',
+              '       + { "name": "1", "value": "2" }',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to JSON body requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ body: { name: '1' } })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - FormData { "name": "1" }',
-            '       + null',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - FormData { "name": "1" }',
-            '       + FormData { ' +
-              '"name": "2", ' +
-              "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 }, " +
-              "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 } " +
-              '}',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
 
-    it('should not consider requests unmatched due to blob body restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ body: new Blob(['1'], { type: 'application/octet-stream' }) })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - { "name": "1" }',
+              '       + null',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: '2' }),
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            "       - Blob { type: 'application/octet-stream', size: 1 }",
-            '       + null',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        body: new Blob(['blob'], { type: 'application/octet-stream' }),
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - { "name": "1" }',
+              '       + null',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - { "name": "1" }',
+              '       + { "name": "2" }',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to search params matched requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ body: new HttpSearchParams({ name: '1' }) })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            "       - Blob { type: 'application/octet-stream', size: 1 }",
-            '       + null',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            "       - Blob { type: 'application/octet-stream', size: 1 }",
-            "       + Blob { type: 'application/octet-stream', size: 4 }",
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
-    });
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
 
-    it('should not consider requests unmatched due to plain-text body restrictions in in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
-        .with({ body: 'example' })
-        .respond({ status: 200, body: { success: true } })
-        .times(1);
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - URLSearchParams { "name": "1" }',
+              '       + null',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: new HttpSearchParams({ name: '2' }),
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - example',
-            '       + null',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      request = new Request(joinURL(baseURL, '/users'), {
-        method: 'POST',
-        headers: { 'content-type': 'text/plain' },
-        body: 'text',
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - URLSearchParams { "name": "1" }',
+              '       + null',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - URLSearchParams { "name": "1" }',
+              '       + URLSearchParams { "name": "2" }',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
       });
-      parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+      it('should include the requests unmatched due to form data matched requests in times check errors', async () => {
+        const formDataRestriction = new HttpFormData<{ name: string }>();
+        formDataRestriction.append('name', '1');
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        {
-          message: [
-            'Expected exactly 1 matching request, but got 0.',
-            '',
-            'Requests evaluated by this handler:',
-            '',
-            '  - Expected',
-            '  + Received',
-            '',
-            `1: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - example',
-            '       + null',
-            '',
-            `2: POST ${joinURL(baseURL, '/users')}`,
-            '     Body:',
-            '       - example',
-            '       + text',
-          ].join('\n'),
-          numberOfRequests: 1,
-        },
-      );
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ body: formDataRestriction })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
+
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - FormData { "name": "1" }',
+              '       + null',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+
+        const formData = new HttpFormData<{ name: string; file: File; blob: Blob }>();
+        formData.append('name', '2');
+
+        const File = await importFile();
+
+        const blob = new Blob(['response'], { type: 'text/plain' });
+        formData.append('blob', blob);
+
+        const file = new File([blob], 'tag.txt', { type: 'text/plain' });
+        formData.append('file', file);
+
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          body: formData,
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - FormData { "name": "1" }',
+              '       + null',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - FormData { "name": "1" }',
+              '       + FormData { ' +
+                '"name": "2", ' +
+                "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 }, " +
+                "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 } " +
+                '}',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+      });
+
+      it('should include the requests unmatched due to blob body requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ body: new Blob(['1'], { type: 'application/octet-stream' }) })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
+
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              "       - Blob { type: 'application/octet-stream', size: 1 }",
+              '       + null',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          body: new Blob(['blob'], { type: 'application/octet-stream' }),
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              "       - Blob { type: 'application/octet-stream', size: 1 }",
+              '       + null',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              "       - Blob { type: 'application/octet-stream', size: 1 }",
+              "       + Blob { type: 'application/octet-stream', size: 4 }",
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+      });
+
+      it('should include the list unmatched due to plain-text matched requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
+          .with({ body: 'example' })
+          .respond({ status: 200, body: { success: true } })
+          .times(1);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
+        );
+
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - example',
+              '       + null',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+
+        request = new Request(joinURL(baseURL, '/users'), {
+          method: 'POST',
+          headers: { 'content-type': 'text/plain' },
+          body: 'text',
+        });
+        parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          {
+            message: [
+              'Expected exactly 1 matching request, but got 0.',
+              '',
+              'Requests evaluated by this handler:',
+              '',
+              '  - Expected',
+              '  + Received',
+              '',
+              `1: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - example',
+              '       + null',
+              '',
+              `2: POST ${joinURL(baseURL, '/users')}`,
+              '     Body:',
+              '       - example',
+              '       + text',
+            ].join('\n'),
+            numberOfRequests: 1,
+          },
+        );
+      });
     });
 
-    it('should not consider requests unmatched due to missing response declarations in the number of matched requests', async () => {
-      const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(1);
+    describe('Response declarations', () => {
+      it('should include the requests unmatched due to missing response requests in times check errors', async () => {
+        const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users').times(1);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
-      );
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
+        );
 
-      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
-      const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
+        const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
-      expect(await handler.matchesRequest(parsedRequest)).toBe(false);
+        expect(await handler.matchesRequest(parsedRequest)).toBe(false);
 
-      await expectTimesCheckError(
-        async () => {
-          await promiseIfRemote(handler.checkTimes(), handler);
-        },
-        { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
-      );
+        await expectTimesCheckError(
+          async () => {
+            await promiseIfRemote(handler.checkTimes(), handler);
+          },
+          { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
+        );
+      });
     });
   });
 
