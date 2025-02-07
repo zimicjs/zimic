@@ -353,7 +353,8 @@ export function declareRestrictionHttpRequestHandlerTests(
         .with((request) => {
           expectTypeOf(request.body).toEqualTypeOf<MethodSchema['request']['body']>();
 
-          const bodyName = typeof request.body === 'object' && 'name' in request.body ? request.body.name : '';
+          const bodyName = typeof request.body === 'object' && 'name' in request.body ? request.body.name : undefined;
+
           return bodyName?.startsWith(name) ?? false;
         })
         .respond({
@@ -375,7 +376,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
 
-      for (const mismatchingBody of [{ name: `Other ${name}` }, {}] satisfies MethodSchema['request']['body'][]) {
+      for (const mismatchingBody of [{}, { name: `Other ${name}` }, {}] satisfies MethodSchema['request']['body'][]) {
         const request = new Request(baseURL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
