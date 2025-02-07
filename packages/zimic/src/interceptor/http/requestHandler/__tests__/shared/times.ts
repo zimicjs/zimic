@@ -7,7 +7,7 @@ import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInte
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import { importFile } from '@/utils/files';
+import { importFile, isGlobalFileAvailable } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -819,11 +819,19 @@ export function declareTimesHttpRequestHandlerTests(
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - FormData { "name": "1" }',
-              '       + FormData { ' +
-                '"name": "2", ' +
-                "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 }, " +
-                "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 } " +
-                '}',
+              `       + FormData { "name": "2", ${
+                /* istanbul ignore next -- @preserve
+                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                isGlobalFileAvailable()
+                  ? "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 },"
+                  : '"blob": Blob { type: \'text/plain\', size: 8 },'
+              } ${
+                /* istanbul ignore next -- @preserve
+                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                isGlobalFileAvailable()
+                  ? "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 }"
+                  : '"file": Blob { type: \'text/plain\', size: 8 }'
+              } }`,
             ].join('\n'),
             numberOfRequests: 1,
           },

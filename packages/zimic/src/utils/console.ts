@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@/http';
 
 import { isClientSide } from './environment';
+import { isGlobalFileAvailable } from './files';
 import { createCachedDynamicImport } from './imports';
 
 function stringifyJSONToLog(value: unknown): string {
@@ -47,7 +48,7 @@ export function stringifyValueToLog(
     return `FormData ${stringifyValueToLog(value.toObject())}`;
   }
 
-  if (value instanceof File) {
+  if (isGlobalFileAvailable() && value instanceof File) {
     return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
   }
 
