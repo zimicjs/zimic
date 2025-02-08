@@ -1,5 +1,6 @@
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
+import { HttpFormData } from '@/http';
 import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
@@ -294,9 +295,11 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(interceptedRequests[0].raw.url).toBe(request.url);
     expect(interceptedRequests[0].raw.method).toBe('POST');
     expect(interceptedRequests[0].raw.headers).toEqual(request.headers);
-    expectTypeOf(interceptedRequests[0].raw.json).toEqualTypeOf<() => Promise<MethodSchema['request']['body']>>();
+    expectTypeOf(interceptedRequests[0].raw.json).toEqualTypeOf<() => Promise<{ name?: string; value?: number[] }>>();
     expect(await interceptedRequests[0].raw.json()).toEqual<MethodSchema['request']['body']>({ name: 'User' });
-    expectTypeOf(interceptedRequests[0].raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+    expectTypeOf(interceptedRequests[0].raw.formData).toEqualTypeOf<
+      () => Promise<FormData | HttpFormData<{ name: string }>>
+    >();
 
     expect(interceptedRequests[0].response).toEqual(parsedResponse);
 

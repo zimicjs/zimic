@@ -215,8 +215,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
   }
 
   /**
-   * Converts these search params object to a plain object. This method is useful for serialization and debugging
-   * purposes.
+   * Converts these search params into a plain object. This method is useful for serialization and debugging purposes.
    *
    * **NOTE**: If a key has multiple values, the object will contain an array of values for that key. If the key has
    * only one value, the object will contain its value directly, without an array, regardless of how the value was
@@ -231,7 +230,7 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
    *   const object = searchParams.toObject();
    *   console.log(object); // { names: ['user 1', 'user 2'], name: 'user 3', page: '1' }
    *
-   * @returns A plain object representation of this headers object.
+   * @returns A plain object representation of these search params.
    */
   toObject() {
     const object = {} as Schema;

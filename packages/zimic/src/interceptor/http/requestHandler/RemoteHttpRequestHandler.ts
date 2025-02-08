@@ -4,7 +4,6 @@ import { Default, PossiblePromise } from '@/types/utils';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
 import {
-  HttpRequestHandlerRestriction,
   InternalHttpRequestHandler,
   SyncedRemoteHttpRequestHandler as PublicSyncedRemoteHttpRequestHandler,
 } from './types/public';
@@ -15,6 +14,7 @@ import {
   HttpRequestHandlerResponseDeclarationFactory,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
+import { HttpRequestHandlerRestriction } from './types/restrictions';
 
 const PENDING_PROPERTIES = new Set<string | symbol>(['then'] satisfies (keyof Promise<unknown>)[]);
 

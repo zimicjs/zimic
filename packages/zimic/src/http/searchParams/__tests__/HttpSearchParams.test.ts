@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { HttpSchema } from '@/http/types/schema';
-import { formatObjectToLog } from '@/utils/console';
+import { formatValueToLog } from '@/utils/console';
 import { isClientSide } from '@/utils/environment';
 
 import HttpSearchParams from '../HttpSearchParams';
@@ -621,7 +621,7 @@ describe('HttpSearchParams', () => {
       });
 
       const formattedSearchParams = String(
-        await formatObjectToLog(searchParams.toObject(), {
+        await formatValueToLog(searchParams.toObject(), {
           colors: false,
         }),
       );
@@ -630,7 +630,14 @@ describe('HttpSearchParams', () => {
         expect(formattedSearchParams).toBe('[object Object]');
       } else {
         expect(formattedSearchParams).toBe(
-          "{ oneName: 'User1', page: '1', threeNames: [ 'User1', 'User2', 'User3' ], twoNames: [ 'User1', 'User2' ] }",
+          [
+            '{',
+            "oneName: 'User1',",
+            "page: '1',",
+            "threeNames: [ 'User1', 'User2', 'User3' ],",
+            "twoNames: [ 'User1', 'User2' ]",
+            '}',
+          ].join(' '),
         );
       }
     });

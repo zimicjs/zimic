@@ -5,7 +5,7 @@ import { HttpRequest } from '@/http/types/requests';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpRequestBodySchema } from '@/interceptor/http/requestHandler/types/requests';
 import { PossiblePromise } from '@/types/utils';
-import { formatObjectToLog } from '@/utils/console';
+import { formatValueToLog } from '@/utils/console';
 import { ExtendedURL } from '@/utils/urls';
 
 import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
@@ -50,15 +50,15 @@ export async function verifyUnhandledRequestMessage(
     const headersLine = /Headers: (?<headers>[^\n]*)\n/.exec(message)!;
     expect(headersLine).not.toBe(null);
 
-    const formattedHeaders = (await formatObjectToLog(request.headers.toObject())) as string;
+    const formattedHeaders = (await formatValueToLog(request.headers.toObject())) as string;
     const formattedHeadersIgnoringWrapperBrackets = formattedHeaders.slice(1, -1);
 
     for (const headerKeyValuePair of formattedHeadersIgnoringWrapperBrackets.split(', ')) {
       expect(headersLine.groups!.headers).toContain(headerKeyValuePair.trim());
     }
 
-    expect(message).toContain(`Search params: ${await formatObjectToLog(request.searchParams.toObject())}`);
-    expect(message).toContain(`Body: ${await formatObjectToLog(body)}`);
+    expect(message).toContain(`Search params: ${await formatValueToLog(request.searchParams.toObject())}`);
+    expect(message).toContain(`Body: ${await formatValueToLog(body)}`);
   } else {
     expect(message).toContain('Headers: [object Object]');
     expect(message).toContain('Search params: [object Object]');

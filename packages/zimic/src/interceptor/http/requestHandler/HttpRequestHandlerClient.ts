@@ -2,7 +2,7 @@ import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
-import { Default } from '@/types/utils';
+import { Default, Range } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
@@ -10,12 +10,8 @@ import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import DisabledRequestSavingError from './errors/DisabledRequestSavingError';
 import NoResponseDefinitionError from './errors/NoResponseDefinitionError';
 import TimesCheckError from './errors/TimesCheckError';
-import TimesDeclarationError from './errors/TimesDeclarationError';
-import {
-  HttpRequestHandlerRestriction,
-  HttpRequestHandlerStaticRestriction,
-  InternalHttpRequestHandler,
-} from './types/public';
+import TimesDeclarationPointer from './errors/TimesDeclarationPointer';
+import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -25,6 +21,19 @@ import {
   HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
+import {
+  HttpRequestHandlerRestriction,
+  RestrictionDiff,
+  RestrictionDiffs,
+  RestrictionMatchResult,
+  HttpRequestHandlerStaticRestriction,
+  UnmatchedHttpInterceptorRequestGroup,
+} from './types/restrictions';
+
+const DEFAULT_NUMBER_OF_REQUEST_LIMITS: Range<number> = Object.freeze({
+  min: 0,
+  max: Infinity,
+});
 
 class HttpRequestHandlerClient<
   Schema extends HttpSchema,
@@ -35,12 +44,13 @@ class HttpRequestHandlerClient<
   private restrictions: HttpRequestHandlerRestriction<Schema, Method, Path>[] = [];
 
   private limits = {
-    numberOfRequests: { min: 0, max: Infinity },
+    numberOfRequests: DEFAULT_NUMBER_OF_REQUEST_LIMITS,
   };
 
-  private timesDeclarationError?: TimesDeclarationError;
+  private timesDeclarationPointer?: TimesDeclarationPointer;
 
   private numberOfMatchedRequests = 0;
+  private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
   private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
@@ -81,7 +91,8 @@ class HttpRequestHandlerClient<
       : () => declaration;
 
     newThis.numberOfMatchedRequests = 0;
-    newThis.interceptedRequests = [];
+    newThis.unmatchedRequestGroups.length = 0;
+    newThis.interceptedRequests.length = 0;
 
     this.interceptor.registerRequestHandler(this.handler);
 
@@ -105,7 +116,7 @@ class HttpRequestHandlerClient<
       max: maxNumberOfRequests ?? minNumberOfRequests,
     };
 
-    this.timesDeclarationError = new TimesDeclarationError(minNumberOfRequests, maxNumberOfRequests);
+    this.timesDeclarationPointer = new TimesDeclarationPointer(minNumberOfRequests, maxNumberOfRequests);
 
     return this;
   }
@@ -117,24 +128,28 @@ class HttpRequestHandlerClient<
 
     if (!isWithinLimits) {
       throw new TimesCheckError({
-        limits: this.limits.numberOfRequests,
-        numberOfRequests: this.numberOfMatchedRequests,
-        declarationError: this.timesDeclarationError,
+        requestLimits: this.limits.numberOfRequests,
+        numberOfMatchedRequests: this.numberOfMatchedRequests,
+        declarationPointer: this.timesDeclarationPointer,
+        unmatchedRequestGroups: this.unmatchedRequestGroups,
+        hasRestrictions: this.restrictions.length > 0,
+        hasSavedRequests: this.interceptor.shouldSaveRequests(),
       });
     }
   }
 
   clear(): this {
-    this.restrictions = [];
+    this.restrictions.length = 0;
 
     this.limits = {
-      numberOfRequests: { min: 0, max: Infinity },
+      numberOfRequests: DEFAULT_NUMBER_OF_REQUEST_LIMITS,
     };
 
-    this.timesDeclarationError = undefined;
+    this.timesDeclarationPointer = undefined;
 
     this.numberOfMatchedRequests = 0;
-    this.interceptedRequests = [];
+    this.unmatchedRequestGroups.length = 0;
+    this.interceptedRequests.length = 0;
 
     this.createResponseDeclaration = undefined;
 
@@ -143,103 +158,207 @@ class HttpRequestHandlerClient<
 
   async matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
     const hasDeclaredResponse = this.createResponseDeclaration !== undefined;
-    const matchesRequest = hasDeclaredResponse && (await this.matchesRequestRestrictions(request));
 
-    if (matchesRequest) {
+    if (!hasDeclaredResponse) {
+      return false;
+    }
+
+    const restrictionsMatch = await this.matchesRequestRestrictions(request);
+
+    if (restrictionsMatch.value) {
       this.numberOfMatchedRequests++;
+    } else {
+      const shouldSaveUnmatchedGroup =
+        this.interceptor.shouldSaveRequests() &&
+        this.restrictions.length > 0 &&
+        this.timesDeclarationPointer !== undefined;
+
+      if (shouldSaveUnmatchedGroup) {
+        this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
+      }
     }
 
     const isWithinLimits = this.numberOfMatchedRequests <= this.limits.numberOfRequests.max;
-    return matchesRequest && isWithinLimits;
+    return restrictionsMatch.value && isWithinLimits;
   }
 
   private async matchesRequestRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-  ): Promise<boolean> {
+  ): Promise<RestrictionMatchResult<RestrictionDiffs>> {
     for (const restriction of this.restrictions) {
-      const matchesRestriction = this.isComputedRequestRestriction(restriction)
-        ? await restriction(request)
-        : this.matchesRequestHeadersRestrictions(request, restriction) &&
-          this.matchesRequestSearchParamsRestrictions(request, restriction) &&
-          (await this.matchesRequestBodyRestrictions(request, restriction));
+      if (this.isComputedRequestRestriction(restriction)) {
+        const matchesComputedRestriction = await restriction(request);
+
+        if (!matchesComputedRestriction) {
+          return {
+            value: false,
+            diff: { computed: { expected: true, received: false } },
+          };
+        }
+
+        continue;
+      }
+
+      const matchesHeadersRestrictions = this.matchesRequestHeadersRestrictions(request, restriction);
+      const matchesSearchParamsRestrictions = this.matchesRequestSearchParamsRestrictions(request, restriction);
+      const matchesBodyRestrictions = await this.matchesRequestBodyRestrictions(request, restriction);
+
+      const matchesRestriction =
+        matchesHeadersRestrictions.value && matchesSearchParamsRestrictions.value && matchesBodyRestrictions.value;
 
       if (!matchesRestriction) {
-        return false;
+        return {
+          value: false,
+          diff: {
+            headers: matchesHeadersRestrictions.diff,
+            searchParams: matchesSearchParamsRestrictions.diff,
+            body: matchesBodyRestrictions.diff,
+          },
+        };
       }
     }
 
-    return true;
+    return { value: true };
   }
 
   private matchesRequestHeadersRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
-  ) {
+  ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<never>>> {
     if (restriction.headers === undefined) {
-      return true;
+      return { value: true };
     }
 
     const restrictedHeaders = new HttpHeaders(
       restriction.headers as HttpRequestHeadersSchema<Default<Schema[Path][Method]>>,
     );
-    return restriction.exact ? request.headers.equals(restrictedHeaders) : request.headers.contains(restrictedHeaders);
+
+    const matchesRestriction = restriction.exact
+      ? request.headers.equals(restrictedHeaders)
+      : request.headers.contains(restrictedHeaders);
+
+    return matchesRestriction
+      ? { value: true }
+      : {
+          value: false,
+          diff: { expected: restrictedHeaders, received: request.headers },
+        };
   }
 
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
-  ) {
+  ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<never>>> {
     if (restriction.searchParams === undefined) {
-      return true;
+      return { value: true };
     }
 
     const restrictedSearchParams = new HttpSearchParams(
       restriction.searchParams as HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>,
     );
-    return restriction.exact
+
+    const matchesRestriction = restriction.exact
       ? request.searchParams.equals(restrictedSearchParams)
       : request.searchParams.contains(restrictedSearchParams);
+
+    return matchesRestriction
+      ? { value: true }
+      : {
+          value: false,
+          diff: { expected: restrictedSearchParams, received: request.searchParams },
+        };
   }
 
   private async matchesRequestBodyRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
-  ) {
+  ): Promise<RestrictionMatchResult<RestrictionDiff<unknown>>> {
     if (restriction.body === undefined) {
-      return true;
+      return { value: true };
     }
 
     const body = request.body as unknown;
     const restrictionBody = restriction.body as unknown;
 
     if (typeof body === 'string' && typeof restrictionBody === 'string') {
-      return restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
+      const matchesRestriction = restriction.exact ? body === restrictionBody : body.includes(restrictionBody);
+
+      return matchesRestriction
+        ? { value: true }
+        : {
+            value: false,
+            diff: { expected: restrictionBody, received: body },
+          };
     }
 
     if (restrictionBody instanceof HttpFormData) {
       if (!(body instanceof HttpFormData)) {
-        return false;
+        return {
+          value: false,
+          diff: { expected: restrictionBody, received: body },
+        };
       }
-      return restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
+
+      const matchesRestriction = restriction.exact
+        ? await body.equals(restrictionBody)
+        : await body.contains(restrictionBody);
+
+      return matchesRestriction
+        ? { value: true }
+        : {
+            value: false,
+            diff: { expected: restrictionBody, received: body },
+          };
     }
 
     if (restrictionBody instanceof HttpSearchParams) {
       if (!(body instanceof HttpSearchParams)) {
-        return false;
+        return {
+          value: false,
+          diff: { expected: restrictionBody, received: body },
+        };
       }
-      return restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
+
+      const matchesRestriction = restriction.exact ? body.equals(restrictionBody) : body.contains(restrictionBody);
+
+      return matchesRestriction
+        ? { value: true }
+        : {
+            value: false,
+            diff: { expected: restrictionBody, received: body },
+          };
     }
 
     if (restrictionBody instanceof Blob) {
       if (!(body instanceof Blob)) {
-        return false;
+        return {
+          value: false,
+          diff: { expected: restrictionBody, received: body },
+        };
       }
-      return restriction.exact ? blobEquals(body, restrictionBody) : blobContains(body, restrictionBody);
+
+      const matchesRestriction = restriction.exact
+        ? await blobEquals(body, restrictionBody)
+        : await blobContains(body, restrictionBody);
+
+      return matchesRestriction
+        ? { value: true }
+        : {
+            value: false,
+            diff: { expected: restrictionBody, received: body },
+          };
     }
 
-    return restriction.exact
+    const matchesRestriction = restriction.exact
       ? jsonEquals(request.body, restriction.body)
       : jsonContains(request.body, restriction.body);
+
+    return matchesRestriction
+      ? { value: true }
+      : {
+          value: false,
+          diff: { expected: restrictionBody, received: body },
+        };
   }
 
   private isComputedRequestRestriction(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>) {

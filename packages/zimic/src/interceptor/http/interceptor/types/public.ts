@@ -64,6 +64,12 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    * This is useful in an `afterEach` hook (or equivalent) to make sure that all expected requests were made at the end
    * of each test.
    *
+   * When
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
+   * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
+   * expected and received data. This is useful for debugging requests that did not match a handler with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
+   *
    * @throws {TimesCheckError} If some handler has matched less or more requests than the expected number of requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()` API reference}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐teting Testing guide}

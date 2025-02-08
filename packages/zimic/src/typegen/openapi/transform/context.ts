@@ -18,7 +18,7 @@ type HttpTypeImportName =
   | 'MergeHttpResponsesByStatusCode';
 
 type OperationName = string;
-export type OperationPath = `${OperationName}`;
+export type OperationPath = OperationName;
 
 export type ComponentGroupName = string;
 export type ComponentName = string;

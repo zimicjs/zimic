@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { HttpSchema } from '@/http/types/schema';
-import { formatObjectToLog } from '@/utils/console';
+import { formatValueToLog } from '@/utils/console';
 import { isClientSide } from '@/utils/environment';
 
 import HttpHeaders from '../HttpHeaders';
@@ -601,7 +601,7 @@ describe('HttpHeaders', () => {
       });
 
       const formattedHeaders = String(
-        await formatObjectToLog(headers.toObject(), {
+        await formatValueToLog(headers.toObject(), {
           colors: false,
         }),
       );
@@ -609,7 +609,7 @@ describe('HttpHeaders', () => {
       if (isClientSide()) {
         expect(formattedHeaders).toBe('[object Object]');
       } else {
-        expect(formattedHeaders).toBe("{ accept: '*/*', other: 'value, other' }");
+        expect(formattedHeaders).toBe(['{', "accept: '*/*',", "other: 'value, other'", '}'].join(' '));
       }
     });
   });
