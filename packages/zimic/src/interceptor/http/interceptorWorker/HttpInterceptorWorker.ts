@@ -9,7 +9,7 @@ import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpMethodSchema, HttpSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { removeArrayElement } from '@/utils/arrays';
-import { formatObjectToLog, logWithPrefix } from '@/utils/console';
+import { formatValueToLog, logWithPrefix } from '@/utils/console';
 import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
@@ -478,9 +478,9 @@ abstract class HttpInterceptorWorker {
     const request = await this.parseRawRequest(rawRequest);
 
     const [formattedHeaders, formattedSearchParams, formattedBody] = await Promise.all([
-      formatObjectToLog(request.headers.toObject()),
-      formatObjectToLog(request.searchParams.toObject()),
-      formatObjectToLog(request.body),
+      formatValueToLog(request.headers.toObject()),
+      formatValueToLog(request.searchParams.toObject()),
+      formatValueToLog(request.body),
     ]);
 
     logWithPrefix(

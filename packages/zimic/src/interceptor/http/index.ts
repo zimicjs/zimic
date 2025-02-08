@@ -21,13 +21,15 @@ export type {
   SyncedRemoteHttpRequestHandler,
   PendingRemoteHttpRequestHandler,
   HttpRequestHandler,
+} from './requestHandler/types/public';
+export type {
   HttpRequestHandlerRestriction,
   HttpRequestHandlerStaticRestriction,
   HttpRequestHandlerComputedRestriction,
   HttpRequestHandlerHeadersStaticRestriction,
   HttpRequestHandlerSearchParamsStaticRestriction,
   HttpRequestHandlerBodyStaticRestriction,
-} from './requestHandler/types/public';
+} from './requestHandler/types/restrictions';
 
 export type {
   HttpInterceptorType,

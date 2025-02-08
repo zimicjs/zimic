@@ -22,6 +22,7 @@ import {
   type StrictURLSearchParams,
   HttpFormData,
   type HttpFormDataSchema,
+  type HttpFormDataSchemaName,
   type HttpFormDataSerialized,
   type StrictFormData,
   type HttpSchema,
@@ -116,6 +117,7 @@ describe('Exports', () => {
     expectTypeOf<HttpFormData>().not.toBeAny();
     expect(new HttpFormData()).toBeInstanceOf(FormData);
     expectTypeOf<HttpFormDataSchema>().not.toBeAny();
+    expectTypeOf<HttpFormDataSchemaName<never>>().not.toBeAny();
     expectTypeOf<HttpFormDataSerialized<never>>().not.toBeAny();
     expectTypeOf<StrictFormData<never>>().not.toBeAny();
 

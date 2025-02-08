@@ -7,6 +7,11 @@ export const importBuffer = createCachedDynamicImport(
   () => import('buffer'),
 );
 
+export function isGlobalFileAvailable() {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return globalThis.File !== undefined;
+}
+
 let FileSingleton: typeof File | undefined;
 
 export async function importFile() {
@@ -15,7 +20,7 @@ export async function importFile() {
   }
 
   /* istanbul ignore next -- @preserve
-   * Ignoring as Node.js >=20 provides a global file and the import fallback won't run. */
+   * Ignoring as Node.js >=20 provides a global File and the import fallback won't run. */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   FileSingleton = globalThis.File ?? (await importBuffer()).File;
   return FileSingleton;

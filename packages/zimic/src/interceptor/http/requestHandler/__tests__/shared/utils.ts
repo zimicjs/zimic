@@ -1,15 +1,23 @@
 import { expect } from 'vitest';
 
 import TimesCheckError from '../../errors/TimesCheckError';
-import TimesDeclarationError from '../../errors/TimesDeclarationError';
+import TimesDeclarationPointer from '../../errors/TimesDeclarationPointer';
 
 export async function expectTimesCheckError(
   callback: () => Promise<void> | void,
   options: {
-    firstLine: string;
-  } & ({ numberOfRequests: number } | { minNumberOfRequests: number; maxNumberOfRequests?: number }),
+    message: string;
+  } & (
+    | {
+        numberOfRequests: number;
+      }
+    | {
+        minNumberOfRequests: number;
+        maxNumberOfRequests?: number;
+      }
+  ),
 ) {
-  const { firstLine } = options;
+  const { message } = options;
 
   let timesCheckError: TimesCheckError | undefined;
 
@@ -29,26 +37,26 @@ export async function expectTimesCheckError(
   expect(timesCheckError).toBeDefined();
   expect(timesCheckError!.name).toBe('TimesCheckError');
 
-  expect(timesCheckError!.message).toEqual(
-    [
-      firstLine,
-      '',
-      'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
-    ].join('\n'),
-  );
+  const expectedMessage = [
+    message,
+    '',
+    'Learn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes',
+  ].join('\n');
 
-  const timesDeclarationError = timesCheckError!.cause! as TimesDeclarationError;
-  expect(timesDeclarationError).toBeInstanceOf(TimesDeclarationError);
+  expect(timesCheckError!.message).toEqual(expectedMessage);
+
+  const timesDeclarationPointer = timesCheckError!.cause! as TimesDeclarationPointer;
+  expect(timesDeclarationPointer).toBeInstanceOf(TimesDeclarationPointer);
 
   if ('numberOfRequests' in options) {
-    expect(timesDeclarationError.name).toBe(`handler.times(${options.numberOfRequests})`);
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.numberOfRequests})`);
   } else if (options.maxNumberOfRequests === undefined) {
-    expect(timesDeclarationError.name).toBe(`handler.times(${options.minNumberOfRequests})`);
+    expect(timesDeclarationPointer.name).toBe(`handler.times(${options.minNumberOfRequests})`);
   } else {
-    expect(timesDeclarationError.name).toBe(
+    expect(timesDeclarationPointer.name).toBe(
       `handler.times(${options.minNumberOfRequests}, ${options.maxNumberOfRequests})`,
     );
   }
 
-  expect(timesDeclarationError.message).toBe('declared at:');
+  expect(timesDeclarationPointer.message).toBe('declared at:');
 }

@@ -1,5 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { formatValueToLog } from '@/utils/console';
+import { isClientSide } from '@/utils/environment';
 import { importFile } from '@/utils/files';
 
 import HttpFormData from '../HttpFormData';
@@ -333,6 +335,37 @@ describe('HttpFormData', async () => {
     );
   });
 
+  it('should support being converted to an object', () => {
+    const formData = new HttpFormData<{
+      file?: File;
+      blob: Blob[];
+      description: string;
+    }>();
+
+    formData.set('file', file);
+    formData.append('blob', blob);
+    formData.append('blob', blob);
+    formData.append('blob', blob, blobName);
+    formData.set('description', description);
+
+    const object = formData.toObject();
+
+    expectTypeOf(object).toEqualTypeOf<{
+      file?: File;
+      blob: Blob[];
+      description: string;
+    }>();
+
+    const blobsAsFiles = formData.getAll('blob');
+    expect(blobsAsFiles).toHaveLength(3);
+
+    expect(object).toEqual({
+      file,
+      blob: blobsAsFiles,
+      description,
+    });
+  });
+
   it('should support checking equality with other form data fields', async () => {
     const formData = new HttpFormData<{
       file?: File;
@@ -559,6 +592,65 @@ describe('HttpFormData', async () => {
       expectTypeOf<HttpFormDataSerialized<symbol>>().toEqualTypeOf<never>();
       expectTypeOf<HttpFormDataSerialized<Map<never, never>>>().toEqualTypeOf<never>();
       expectTypeOf<HttpFormDataSerialized<Set<never>>>().toEqualTypeOf<never>();
+    });
+  });
+
+  describe('Formatting', () => {
+    it('should be correctly formatted to log', async () => {
+      const formData = new HttpFormData<{
+        file?: File;
+        blob: Blob[];
+        description: string;
+      }>();
+
+      formData.set('file', file);
+      formData.append('blob', blob);
+      formData.append('blob', blob);
+      formData.append('blob', blob, blobName);
+      formData.set('description', description);
+
+      const formattedFormData = String(
+        await formatValueToLog(formData.toObject(), {
+          colors: false,
+        }),
+      );
+
+      if (isClientSide()) {
+        expect(formattedFormData).toBe('[object Object]');
+      } else {
+        const blobsAsFiles = formData.getAll('blob');
+        expect(blobsAsFiles).toHaveLength(3);
+
+        const formattedBlobsAsFiles = blobsAsFiles.map((blobAsFile) =>
+          [
+            'File {',
+            `lastModified: ${blobAsFile.lastModified},`,
+            `name: '${blobAsFile.name}',`,
+            `size: ${blobAsFile.size},`,
+            `type: '${blobAsFile.type}'`,
+            '}',
+          ].join(' '),
+        );
+
+        const formattedFile = [
+          'File {',
+          `lastModified: ${file.lastModified},`,
+          `name: '${file.name}',`,
+          `size: ${file.size},`,
+          `type: '${file.type}'`,
+          '}',
+        ].join(' ');
+
+        expect(formattedFormData).toBe(
+          [
+            '{',
+            `blob: [ ${formattedBlobsAsFiles.join(', ')} ],`,
+            `description: '${description}',`,
+            `file: ${formattedFile}`,
+            '}',
+          ].join(' '),
+        );
+      }
     });
   });
 });

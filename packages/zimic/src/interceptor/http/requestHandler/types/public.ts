@@ -1,9 +1,3 @@
-import HttpFormData from '@/http/formData/HttpFormData';
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpHeadersSchema } from '@/http/headers/types';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpSearchParamsSchema } from '@/http/searchParams/types';
-import { HttpBody } from '@/http/types/requests';
 import {
   HttpResponseSchemaStatusCode,
   HttpSchema,
@@ -11,131 +5,15 @@ import {
   HttpSchemaPath,
   HttpStatusCode,
 } from '@/http/types/schema';
-import { DeepPartial, Default, IfNever, PossiblePromise } from '@/types/utils';
+import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
-  HttpInterceptorRequest,
-  HttpRequestBodySchema,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  HttpRequestHeadersSchema,
-  HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
 } from './requests';
-
-type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> = IfNever<
-  Schema,
-  never,
-  Partial<Schema> | HttpHeaders<Partial<Schema>> | HttpHeaders<Schema>
->;
-
-/**
- * A static headers restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export type HttpRequestHandlerHeadersStaticRestriction<
-  Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
-  Method extends HttpSchemaMethod<Schema>,
-> = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
-
-type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = IfNever<
-  Schema,
-  never,
-  Partial<Schema> | HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
->;
-
-/**
- * A static search params restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export type HttpRequestHandlerSearchParamsStaticRestriction<
-  Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
-  Method extends HttpSchemaMethod<Schema>,
-> = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
-
-type PartialBodyOrSchema<Body extends HttpBody> =
-  Body extends HttpFormData<infer Schema>
-    ? HttpFormData<Partial<Schema>> | HttpFormData<Schema>
-    : Body extends HttpSearchParams<infer Schema>
-      ? HttpSearchParams<Partial<Schema>> | HttpSearchParams<Schema>
-      : Body extends Blob
-        ? Body
-        : DeepPartial<Body>;
-
-/**
- * A static body restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export type HttpRequestHandlerBodyStaticRestriction<
-  Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
-  Method extends HttpSchemaMethod<Schema>,
-> = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
-
-/**
- * A static restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export interface HttpRequestHandlerStaticRestriction<
-  Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
-  Method extends HttpSchemaMethod<Schema>,
-> {
-  /**
-   * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
-   * must contain exactly these headers and no others.
-   */
-  headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Path, Method>;
-
-  /**
-   * A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
-   * request must contain exactly these search params and no others.
-   */
-  searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Path, Method>;
-
-  /**
-   * The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
-   * contain exactly this body and no other.
-   */
-  body?: HttpRequestHandlerBodyStaticRestriction<Schema, Path, Method>;
-
-  /**
-   * If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
-   * Otherwise, the request must contain **at least** them.
-   */
-  exact?: boolean;
-}
-
-/**
- * A computed restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export type HttpRequestHandlerComputedRestriction<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath<Schema, Method>,
-> = (request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>) => PossiblePromise<boolean>;
-
-/**
- * A restriction to match intercepted requests.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction `handler.with()` API reference}
- */
-export type HttpRequestHandlerRestriction<
-  Schema extends HttpSchema,
-  Method extends HttpSchemaMethod<Schema>,
-  Path extends HttpSchemaPath<Schema, Method>,
-> =
-  | HttpRequestHandlerStaticRestriction<Schema, Path, Method>
-  | HttpRequestHandlerComputedRestriction<Schema, Method, Path>;
+import { HttpRequestHandlerRestriction } from './restrictions';
 
 /**
  * An HTTP request handler to declare responses for intercepted requests.
@@ -262,6 +140,12 @@ export interface LocalHttpRequestHandler<
    * pointing to the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
    * that was not satisfied.
+   *
+   * When
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
+   * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
+   * expected and received data. This is useful for debugging requests that did not match a handler with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}
@@ -392,6 +276,12 @@ export interface SyncedRemoteHttpRequestHandler<
    * pointing to the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()` API reference}
    * that was not satisfied.
+   *
+   * When
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
+   * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
+   * expected and received data. This is useful for debugging requests that did not match a handler with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
    *
    * @throws {TimesCheckError} If the handler has matched less or more requests than the expected number of requests.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()` API reference}

@@ -3,7 +3,7 @@ import { Default } from '@/types/utils';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';
-import { HttpRequestHandlerRestriction, InternalHttpRequestHandler } from './types/public';
+import { InternalHttpRequestHandler } from './types/public';
 import {
   HttpInterceptorRequest,
   HttpInterceptorResponse,
@@ -11,6 +11,7 @@ import {
   HttpRequestHandlerResponseDeclarationFactory,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
+import { HttpRequestHandlerRestriction } from './types/restrictions';
 
 class LocalHttpRequestHandler<
   Schema extends HttpSchema,

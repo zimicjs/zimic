@@ -1,7 +1,7 @@
 export { default as InvalidFormDataError } from './errors/InvalidFormDataError';
 
 export { default as HttpFormData } from './formData/HttpFormData';
-export type { HttpFormDataSchema, HttpFormDataSerialized } from './formData/types';
+export type { HttpFormDataSchema, HttpFormDataSchemaName, HttpFormDataSerialized } from './formData/types';
 
 export type { HttpPathParamsSchema, HttpPathParamsSerialized } from './pathParams/types';
 

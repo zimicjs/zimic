@@ -1,7 +1,7 @@
-import { ArrayItemIfArray, ArrayKey, NonArrayKey, ReplaceBy } from '@/types/utils';
+import { ArrayItemIfArray, ReplaceBy } from '@/types/utils';
 import { fileEquals } from '@/utils/files';
 
-import { HttpFormDataSchema } from './types';
+import { HttpFormDataSchema, HttpFormDataSchemaName } from './types';
 
 /**
  * An extended HTTP form data object with a strictly-typed schema. Fully compatible with the built-in
@@ -31,16 +31,16 @@ import { HttpFormDataSchema } from './types';
  */
 class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> extends FormData {
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/set MDN Reference} */
-  set<Name extends keyof Schema & string>(
+  set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
   ): void;
-  set<Name extends keyof Schema & string>(
+  set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
     fileName?: string,
   ): void;
-  set<Name extends keyof Schema & string>(
+  set<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
     fileName?: string,
@@ -53,16 +53,16 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/append MDN Reference} */
-  append<Name extends keyof Schema & string>(
+  append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     value: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob>,
   ): void;
-  append<Name extends keyof Schema & string>(
+  append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     blob: Exclude<ArrayItemIfArray<NonNullable<Schema[Name]>>, string>,
     fileName?: string,
   ): void;
-  append<Name extends keyof Schema & string>(
+  append<Name extends HttpFormDataSchemaName<Schema>>(
     name: Name,
     blobOrValue: ArrayItemIfArray<NonNullable<Schema[Name]>>,
     fileName?: string,
@@ -83,7 +83,7 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    * @returns The value associated with the key name, or `null` if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/FormData/get MDN Reference}
    */
-  get<Name extends NonArrayKey<Schema> & string>(
+  get<Name extends HttpFormDataSchemaName.NonArray<Schema>>(
     name: Name,
   ): ReplaceBy<ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>, Blob, File> {
     return super.get(name) as ReplaceBy<ReplaceBy<ArrayItemIfArray<Schema[Name]>, undefined, null>, Blob, File>;
@@ -98,24 +98,24 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
    * @returns An array of values associated with the key name, or an empty array if the key does not exist.
    * @see {@link https://developer.mozilla.org/docs/Web/API/FormData/getAll MDN Reference}
    */
-  getAll<Name extends ArrayKey<Schema> & string>(
+  getAll<Name extends HttpFormDataSchemaName.Array<Schema>>(
     name: Name,
   ): ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob, File>[] {
     return super.getAll(name) as ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Name]>>, Blob, File>[];
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/has MDN Reference} */
-  has<Name extends keyof Schema & string>(name: Name): boolean {
+  has<Name extends HttpFormDataSchemaName<Schema>>(name: Name): boolean {
     return super.has(name);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/delete MDN Reference} */
-  delete<Name extends keyof Schema & string>(name: Name): void {
+  delete<Name extends HttpFormDataSchemaName<Schema>>(name: Name): void {
     super.delete(name);
   }
 
   forEach<This extends HttpFormData<Schema>>(
-    callback: <Key extends keyof Schema & string>(
+    callback: <Key extends HttpFormDataSchemaName<Schema>>(
       value: ReplaceBy<ArrayItemIfArray<NonNullable<Schema[Key]>>, Blob, File>,
       key: Key,
       parent: HttpFormData<Schema>,
@@ -126,31 +126,45 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/keys MDN Reference} */
-  keys(): FormDataIterator<keyof Schema & string> {
-    return super.keys() as FormDataIterator<keyof Schema & string>;
+  keys(): FormDataIterator<HttpFormDataSchemaName<Schema>> {
+    return super.keys() as FormDataIterator<HttpFormDataSchemaName<Schema>>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/values MDN Reference} */
-  values(): FormDataIterator<ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>> {
+  values(): FormDataIterator<
+    ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>
+  > {
     return super.values() as FormDataIterator<
-      ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>
+      ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>
     >;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/FormData/entries MDN Reference} */
   entries(): FormDataIterator<
-    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+    [
+      HttpFormDataSchemaName<Schema>,
+      ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>,
+    ]
   > {
     return super.entries() as FormDataIterator<
-      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+      [
+        HttpFormDataSchemaName<Schema>,
+        ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>,
+      ]
     >;
   }
 
   [Symbol.iterator](): FormDataIterator<
-    [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+    [
+      HttpFormDataSchemaName<Schema>,
+      ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>,
+    ]
   > {
     return super[Symbol.iterator]() as FormDataIterator<
-      [keyof Schema & string, ReplaceBy<ArrayItemIfArray<NonNullable<Schema[keyof Schema & string]>>, Blob, File>]
+      [
+        HttpFormDataSchemaName<Schema>,
+        ReplaceBy<ArrayItemIfArray<NonNullable<Schema[HttpFormDataSchemaName<Schema>]>>, Blob, File>,
+      ]
     >;
   }
 
@@ -234,6 +248,52 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     }
 
     return true;
+  }
+
+  /**
+   * Converts this form data into a plain object. This method is useful for serialization and debugging purposes.
+   *
+   * **NOTE**: If a key has multiple values, the object will contain an array of values for that key. If the key has
+   * only one value, the object will contain its value directly, without an array, regardless of how the value was
+   * initialized when creating the form data.
+   *
+   * @example
+   *   const formData = new HttpFormData<{
+   *     title: string;
+   *     descriptions: string[];
+   *     content: Blob;
+   *   }>();
+   *
+   *   formData.set('title', 'My title');
+   *   formData.append('descriptions', 'Description 1');
+   *   formData.append('descriptions', 'Description 2');
+   *   formData.set('content', new Blob(['content'], { type: 'text/plain' }));
+   *
+   *   const object = formData.toObject();
+   *   console.log(object); // { title: 'My title', descriptions: ['Description 1', 'Description 2'], content: Blob { type: 'text/plain' } }
+   *
+   * @returns A plain object representation of this form data.
+   */
+  toObject() {
+    const object = {} as Schema;
+
+    type SchemaValue = Schema[HttpFormDataSchemaName<Schema>];
+
+    for (const [key, value] of this.entries()) {
+      if (key in object) {
+        const existingValue = object[key];
+
+        if (Array.isArray<SchemaValue>(existingValue)) {
+          existingValue.push(value as SchemaValue);
+        } else {
+          object[key] = [existingValue, value] as SchemaValue;
+        }
+      } else {
+        object[key] = value as SchemaValue;
+      }
+    }
+
+    return object;
   }
 }
 
