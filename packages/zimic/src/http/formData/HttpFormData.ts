@@ -250,6 +250,30 @@ class HttpFormData<Schema extends HttpFormDataSchema = HttpFormDataSchema> exten
     return true;
   }
 
+  /**
+   * Converts this form data into a plain object. This method is useful for serialization and debugging purposes.
+   *
+   * **NOTE**: If a key has multiple values, the object will contain an array of values for that key. If the key has
+   * only one value, the object will contain its value directly, without an array, regardless of how the value was
+   * initialized when creating the form data.
+   *
+   * @example
+   *   const formData = new HttpFormData<{
+   *     title: string;
+   *     descriptions: string[];
+   *     content: Blob;
+   *   }>();
+   *
+   *   formData.set('title', 'My title');
+   *   formData.append('descriptions', 'Description 1');
+   *   formData.append('descriptions', 'Description 2');
+   *   formData.set('content', new Blob(['content'], { type: 'text/plain' }));
+   *
+   *   const object = formData.toObject();
+   *   console.log(object); // { title: 'My title', descriptions: ['Description 1', 'Description 2'], content: Blob { type: 'text/plain' } }
+   *
+   * @returns A plain object representation of this form data.
+   */
   toObject() {
     const object = {} as Schema;
 
