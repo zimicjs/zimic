@@ -253,10 +253,6 @@ class HttpSearchParams<Schema extends HttpSearchParamsSchema = HttpSearchParamsS
 
     return object;
   }
-
-  toString(): string & Schema {
-    return super.toString() as string & Schema;
-  }
 }
 
 export default HttpSearchParams;

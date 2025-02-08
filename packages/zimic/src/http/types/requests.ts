@@ -7,6 +7,7 @@ import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
+import { HttpStatusCode } from './schema';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,6 +70,9 @@ export interface HttpResponse<
   StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
+  ok: StatusCode extends HttpStatusCode.Information | HttpStatusCode.Success | HttpStatusCode.Redirection
+    ? true
+    : false;
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
