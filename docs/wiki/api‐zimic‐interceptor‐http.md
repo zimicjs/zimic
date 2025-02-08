@@ -588,6 +588,12 @@ Checks if all handlers created by this interceptor have matched the number of re
 If some handler has matched fewer or more requests than expected, this method will throw a `TimesCheckError` error,
 including a stack trace to the [`handler.times()`](#http-handlertimes) that was not satisfied.
 
+> [!TIP]
+>
+> When [`saveRequests: true`](#httpinterceptorcreateoptions) is enabled in your interceptor, the `TimesCheckError`
+> errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging
+> requests that did not match a handler with [restrictions](#http-handlerwithrestriction).
+
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
@@ -621,9 +627,9 @@ afterEach(async () => {
 });
 ```
 
-See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
-
 </details></td></tr></table>
+
+See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ### HTTP `interceptor.clear()`
 
