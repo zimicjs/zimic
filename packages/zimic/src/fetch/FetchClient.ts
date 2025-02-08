@@ -50,11 +50,8 @@ type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpRes
   Default<MethodSchema['response']>
 >;
 
-type FetchResponseStatusCode<
-  MethodSchema extends HttpMethodSchema,
-  ThrowOnError extends boolean,
-> = ThrowOnError extends true
-  ? Exclude<AllFetchResponseStatusCode<MethodSchema>, HttpStatusCode.ClientError | HttpStatusCode.ServerError>
+type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, IsError extends boolean> = IsError extends true
+  ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
 
 type FetchResponsePerStatusCode<
@@ -64,7 +61,10 @@ type FetchResponsePerStatusCode<
   HttpResponseBodySchema<MethodSchema, StatusCode>,
   StatusCode,
   HttpResponseHeadersSchema<MethodSchema, StatusCode>
->;
+> &
+  (StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
+    ? { error: () => FetchRequestError<MethodSchema> }
+    : { error: unknown });
 
 type FetchResponseForEachStatusCode<
   MethodSchema extends HttpMethodSchema,
@@ -78,22 +78,20 @@ export type FetchRequest<MethodSchema extends HttpMethodSchema> = HttpRequest<
 
 export type FetchResponse<
   MethodSchema extends HttpMethodSchema,
-  ThrowOnError extends boolean,
-> = FetchResponseForEachStatusCode<MethodSchema, FetchResponseStatusCode<MethodSchema, ThrowOnError>>;
-export interface FetchOptions<ThrowOnError extends boolean> {
+  IsError extends boolean = false,
+> = FetchResponseForEachStatusCode<MethodSchema, FetchResponseStatusCode<MethodSchema, IsError>>;
+
+export interface FetchOptions {
   baseURL: string;
-  throwOnError?: ThrowOnError;
 }
 
-class FetchClient<Schema extends HttpSchema, ThrowOnError extends boolean> {
+class FetchClient<Schema extends HttpSchema> {
   private _baseURL: string;
-  private _throwOnError: boolean;
 
   private originalFetch = globalThis.fetch;
 
-  constructor(options: FetchOptions<ThrowOnError>) {
+  constructor(options: FetchOptions) {
     this._baseURL = options.baseURL;
-    this._throwOnError = options.throwOnError ?? false;
   }
 
   baseURL() {
@@ -104,29 +102,46 @@ class FetchClient<Schema extends HttpSchema, ThrowOnError extends boolean> {
     this._baseURL = baseURL;
   }
 
-  throwOnError() {
-    return this._throwOnError;
-  }
-
-  setThrowOnError(throwOnError: boolean) {
-    this._throwOnError = throwOnError;
-  }
-
   fetch = async <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     input: Path,
     init?: FetchRequestInit<Schema, Path, Method>,
-  ): Promise<FetchResponse<Default<Schema[Path][Method]>, ThrowOnError>> => {
+  ): Promise<FetchResponse<Default<Schema[Path][Method]>>> => {
     const requestURL = joinURL(this._baseURL, input);
-    const request = new Request(requestURL, init) as FetchRequest<Default<Schema[Path][Method]>>;
 
-    const response = (await this.originalFetch(request)) as FetchResponse<Default<Schema[Path][Method]>, ThrowOnError>;
+    const fetchRequest = new Request(requestURL, init) as FetchRequest<Default<Schema[Path][Method]>>;
 
-    if (this._throwOnError && !response.ok) {
-      throw new FetchRequestError(request, response);
-    }
+    const response = await this.originalFetch(fetchRequest);
 
-    return response;
+    const fetchResponse = new Proxy(response as FetchResponse<Default<Schema[Path][Method]>>, {
+      get(target, property) {
+        if (property === 'error') {
+          if (response.ok) {
+            throw new Error('Cannot create an error from successful response.');
+          }
+
+          return new FetchRequestError(
+            fetchRequest,
+            fetchResponse as FetchResponse<Default<Schema[Path][Method]>, true>,
+          );
+        }
+        return Reflect.get(target, property, target);
+      },
+
+      has(target, property) {
+        return property === 'error' || Reflect.has(target, property);
+      },
+    });
+
+    return fetchResponse;
   };
+
+  isRequestError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    error: unknown,
+    path: Path,
+    method: Method,
+  ): error is FetchRequestError<Default<Schema[Path][Method]>> {
+    return error instanceof FetchRequestError && error.request.method === method && error.request.url === path;
+  }
 }
 
 export default FetchClient;

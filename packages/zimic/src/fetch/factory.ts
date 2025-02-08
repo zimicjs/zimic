@@ -2,10 +2,8 @@ import { HttpSchema } from '@/http';
 
 import FetchClient, { FetchOptions } from './FetchClient';
 
-function createFetch<Schema extends HttpSchema>(options: FetchOptions<true>): FetchClient<Schema, true>;
-function createFetch<Schema extends HttpSchema>(options: FetchOptions<false>): FetchClient<Schema, false>;
-function createFetch<Schema extends HttpSchema>(options: FetchOptions<boolean>): FetchClient<Schema, boolean> {
-  return new FetchClient<Schema, boolean>(options);
+function createFetchClient<Schema extends HttpSchema>(options: FetchOptions): FetchClient<Schema> {
+  return new FetchClient<Schema>(options);
 }
 
-export default createFetch;
+export default createFetchClient;

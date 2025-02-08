@@ -5,6 +5,7 @@
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "allowUnreachableCode": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

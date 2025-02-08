@@ -396,6 +396,10 @@ class HttpRequestHandlerClient<
           }
           return Reflect.get(target, property, target) as unknown;
         },
+
+        has(target, property) {
+          return property === 'response' || Reflect.has(target, property);
+        },
       },
     );
   }
