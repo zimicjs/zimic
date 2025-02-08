@@ -20,8 +20,8 @@ export namespace HttpFormDataSchemaName {
 }
 
 /**
- * Extracts the names of the form data fields defined in a {@link HttpFormDataSchema}. Each key is considered a search
- * param name. `HttpFormDataSchemaName.Array` can be used to extract the names of array form data fields, whereas
+ * Extracts the names of the form data fields defined in a {@link HttpFormDataSchema}. Each key is considered a field
+ * name. `HttpFormDataSchemaName.Array` can be used to extract the names of array form data fields, whereas
  * `HttpFormDataSchemaName.NonArray` extracts the names of non-array form data fields.
  *
  * @example
