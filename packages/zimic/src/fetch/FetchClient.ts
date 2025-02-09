@@ -1,13 +1,22 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
-import { Default } from '@/types/utils';
+import { Default, PossiblePromise } from '@/types/utils';
 import { excludeNonPathParams, urlJoin } from '@/utils/urls';
 
-import FetchResponseError from './FetchResponseError';
-import { FetchInput, FetchClientOptions, FetchRequestConstructor, FetchFunction } from './types/public';
-import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
+import FetchResponseError from './errors/FetchResponseError';
+import {
+  FetchClient as PublicFetchClient,
+  FetchInput,
+  FetchClientOptions,
+  FetchRequestConstructor,
+  FetchFunction,
+} from './types/public';
+import { FetchRequestInit, FetchRequest, FetchResponse, RawFetchRequest, RawFetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> {
+class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
   private _baseURL: string;
+
+  private onRequest?: (this: FetchClient<Schema>, request: RawFetchRequest) => PossiblePromise<RawFetchRequest>;
+  private onResponse?: (this: FetchClient<Schema>, response: RawFetchResponse) => PossiblePromise<RawFetchResponse>;
 
   private originalFetch: typeof fetch;
   private OriginalRequest: typeof Request;
@@ -21,7 +30,9 @@ class FetchClient<Schema extends HttpSchema> {
     fetch: originalFetch = globalThis.fetch,
     Request: OriginalRequest = globalThis.Request,
     Response: OriginalResponse = globalThis.Response,
-  }: FetchClientOptions) {
+    onRequest,
+    onResponse,
+  }: FetchClientOptions<Schema>) {
     this._baseURL = baseURL;
 
     this.originalFetch = originalFetch;
@@ -30,13 +41,16 @@ class FetchClient<Schema extends HttpSchema> {
 
     this.fetch = this.createFetchFunction();
     this.Request = this.createRequestClass(baseURL);
+
+    this.onRequest = onRequest;
+    this.onResponse = onResponse;
   }
 
-  baseURL() {
+  get baseURL() {
     return this._baseURL;
   }
 
-  setBaseURL(baseURL: string) {
+  set baseURL(baseURL: string) {
     this._baseURL = baseURL;
   }
 
@@ -81,12 +95,14 @@ class FetchClient<Schema extends HttpSchema> {
       input: FetchInput<Schema, Path, Method>,
       init?: FetchRequestInit<Schema, Path, Method>,
     ) => {
-      const fetchRequest = input instanceof Request ? input : new this.Request(input, init);
+      const rawFetchRequest = input instanceof Request ? input : new this.Request(input, init);
+      const fetchRequest = (await this.onRequest?.(rawFetchRequest)) ?? rawFetchRequest;
 
-      const response = await this.originalFetch(fetchRequest);
-      const fetchResponse = this.createFetchResponse<Path, Method>(fetchRequest, response);
+      const rawResponse = await this.originalFetch(fetchRequest);
+      const rawFetchResponse = this.createFetchResponse<Path, Method>(rawFetchRequest, rawResponse);
+      const fetchResponse = (await this.onResponse?.(rawFetchResponse)) ?? rawFetchResponse;
 
-      return fetchResponse;
+      return fetchResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
     };
 
     Object.setPrototypeOf(fetch, this);

@@ -1,8 +1,8 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
-import { Default } from '@/types/utils';
+import { Default, PossiblePromise } from '@/types/utils';
 
-import FetchResponseError from '../FetchResponseError';
-import { FetchRequest, FetchRequestInit, FetchResponse } from './requests';
+import FetchResponseError from '../errors/FetchResponseError';
+import { FetchRequest, FetchRequestInit, FetchResponse, RawFetchRequest, RawFetchResponse } from './requests';
 
 export type FetchInput<
   Schema extends HttpSchema,
@@ -18,11 +18,15 @@ export type FetchFunction<Schema extends HttpSchema> = <
   init?: FetchRequestInit<Schema, Path, Method>,
 ) => Promise<FetchResponse<Path, Method, Default<Schema[Path][Method]>>>;
 
-export interface FetchClientOptions {
+export interface FetchClientOptions<Schema extends HttpSchema> {
   baseURL: string;
+
   fetch?: typeof fetch;
   Request?: typeof Request;
   Response?: typeof Response;
+
+  onRequest?: (this: FetchClient<Schema>, request: RawFetchRequest) => PossiblePromise<RawFetchRequest>;
+  onResponse?: (this: FetchClient<Schema>, response: RawFetchResponse) => PossiblePromise<RawFetchResponse>;
 }
 
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
@@ -33,18 +37,16 @@ export type FetchRequestConstructor<Schema extends HttpSchema> = new <
   init?: FetchRequestInit<Schema, Path, Method>,
 ) => FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
-interface FetchClient<Schema extends HttpSchema> {
+export interface FetchClient<Schema extends HttpSchema> {
   Request: FetchRequestConstructor<Schema>;
 
-  baseURL: () => string;
-
-  setBaseURL: (baseURL: string) => void;
+  baseURL: string;
 
   isRequest: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     request: unknown,
     path: Path,
     method: Method,
-  ) => request is FetchRequest<Path, Method, Default<Schema[Path][Method]>;
+  ) => request is FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
   isResponse: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     response: unknown,

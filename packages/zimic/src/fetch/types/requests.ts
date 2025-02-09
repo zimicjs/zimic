@@ -12,13 +12,12 @@ import {
 } from '@/http';
 import {
   HttpResponseBodySchema,
-  HttpResponseHeadersSchema,
   HttpRequestBodySchema,
   HttpRequestHeadersSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
 import { Default } from '@/types/utils';
 
-import FetchResponseError from '../FetchResponseError';
+import FetchResponseError from '../errors/FetchResponseError';
 
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
   ? { headers?: undefined }
@@ -60,31 +59,40 @@ type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, IsError exte
   ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
 
-export interface FetchRequest<Path extends string, Method extends HttpMethod, MethodSchema extends HttpMethodSchema>
-  extends HttpRequest<HttpRequestBodySchema<MethodSchema>, HttpRequestHeadersSchema<MethodSchema>> {
+export interface FetchRequest<
+  Path extends string = string,
+  Method extends HttpMethod = HttpMethod,
+  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+> extends HttpRequest<HttpRequestBodySchema<MethodSchema>, HttpRequestHeadersSchema<MethodSchema>> {
   path: Path;
   method: Method;
 }
 
-type FetchResponsePerStatusCode<
-  Path extends string,
-  Method extends HttpMethod,
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = HttpResponse<
-  HttpResponseBodySchema<MethodSchema, StatusCode>,
-  StatusCode,
-  HttpResponseHeadersSchema<MethodSchema, StatusCode>
-> & {
+export type RawFetchRequest = Request & { path: string; method: HttpMethod };
+
+export type RawFetchResponse = Response & { request: RawFetchRequest };
+
+interface FetchResponsePerStatusCode<
+  Path extends string = string,
+  Method extends HttpMethod = HttpMethod,
+  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+  StatusCode extends HttpStatusCode = HttpStatusCode,
+> extends HttpResponse<
+    HttpResponseBodySchema<MethodSchema, StatusCode>,
+    StatusCode,
+    HttpRequestHeadersSchema<MethodSchema>
+  > {
   request: FetchRequest<Path, Method, MethodSchema>;
-} & (StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? { error: () => FetchResponseError<Path, Method, MethodSchema> }
-    : { error: () => null });
+
+  error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
+    ? () => FetchResponseError<Path, Method, MethodSchema>
+    : () => null;
+}
 
 export type FetchResponse<
-  Path extends string,
-  Method extends HttpMethod,
-  MethodSchema extends HttpMethodSchema,
+  Path extends string = string,
+  Method extends HttpMethod = HttpMethod,
+  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
   IsError extends boolean = false,
   StatusCode extends FetchResponseStatusCode<MethodSchema, IsError> = FetchResponseStatusCode<MethodSchema, IsError>,
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Path, Method, MethodSchema, StatusCode> : never;

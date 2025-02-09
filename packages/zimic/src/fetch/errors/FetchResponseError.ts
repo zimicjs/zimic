@@ -1,6 +1,6 @@
 import { HttpMethod, HttpMethodSchema } from '@/http';
 
-import { FetchRequest, FetchResponse } from './types/requests';
+import { FetchRequest, FetchResponse } from '../types/requests';
 
 class FetchResponseError<
   Path extends string,
