@@ -9,13 +9,23 @@ import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests'
 class FetchClient<Schema extends HttpSchema> {
   private _baseURL: string;
 
+  private originalFetch: typeof fetch;
+  private OriginalRequest: typeof Request;
+
   fetch: FetchFunction<Schema> & this;
   Request: FetchRequestConstructor<Schema>;
 
-  constructor({ baseURL }: FetchClientOptions) {
+  constructor({
+    baseURL,
+    fetch: originalFetch = globalThis.fetch,
+    Request: OriginalRequest = globalThis.Request,
+  }: FetchClientOptions) {
     this._baseURL = baseURL;
 
-    this.fetch = this.createFetch();
+    this.originalFetch = originalFetch;
+    this.OriginalRequest = OriginalRequest;
+
+    this.fetch = this.createFetchFunction();
     this.Request = this.createRequestClass(baseURL);
   }
 
@@ -35,17 +45,20 @@ class FetchClient<Schema extends HttpSchema> {
     return error instanceof FetchResponseError && error.request.method === method && error.request.url === path;
   }
 
-  private createFetch() {
-    const fetch = async <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  private createFetchFunction() {
+    const fetch: FetchFunction<Schema> = async <
+      Path extends HttpSchemaPath<Schema, Method>,
+      Method extends HttpSchemaMethod<Schema>,
+    >(
       input: FetchInput<Schema, Path, Method>,
       init?: FetchRequestInit<Schema, Path, Method>,
     ) => {
-      const request = input instanceof Request ? input : new this.Request(input, init);
+      const fetchRequest = input instanceof Request ? input : new this.Request(input, init);
 
-      const rawResponse = await globalThis.fetch(request);
-      const response = this.createFetchResponseProxy<Path, Method>(rawResponse, request);
+      const response = await this.originalFetch(fetchRequest);
+      const fetchResponse = this.createFetchResponse<Path, Method>(fetchRequest, response);
 
-      return response;
+      return fetchResponse;
     };
 
     Object.setPrototypeOf(fetch, this);
@@ -53,14 +66,15 @@ class FetchClient<Schema extends HttpSchema> {
     return fetch as FetchFunction<Schema> & this;
   }
 
-  private createFetchResponseProxy<
-    Path extends HttpSchemaPath<Schema, Method>,
-    Method extends HttpSchemaMethod<Schema>,
-  >(rawResponse: Response, request: FetchRequest<Path, Method, Default<Schema[Path][Method]>>) {
+  private createFetchResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    request: FetchRequest<Path, Method, Default<Schema[Path][Method]>>,
+    rawResponse: Response,
+  ) {
     let responseError: FetchResponseError<Path, Method, Default<Schema[Path][Method]>> | null = null;
 
     function getResponseError() {
-      if (rawResponse.ok) {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      if (response.ok) {
         return null;
       }
 
@@ -96,7 +110,7 @@ class FetchClient<Schema extends HttpSchema> {
     > = FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
     class Request<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>
-      extends globalThis.Request
+      extends this.OriginalRequest
       implements BaseFetchRequest<Path, Method>
     {
       path: Path;

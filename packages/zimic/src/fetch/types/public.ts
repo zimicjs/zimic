@@ -20,6 +20,8 @@ export type FetchFunction<Schema extends HttpSchema> = <
 
 export interface FetchClientOptions {
   baseURL: string;
+  fetch?: typeof fetch;
+  Request?: typeof Request;
 }
 
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
