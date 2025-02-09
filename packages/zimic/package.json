@@ -104,7 +104,7 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@whatwg-node/server": "0.9.65",
+    "@whatwg-node/server": "0.9.66",
     "chalk": "4.1.2",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
@@ -119,7 +119,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.13.0",
+    "@types/node": "^22.13.1",
     "@types/ws": "^8.5.14",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.0.5",
@@ -128,7 +128,7 @@
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.0",
     "js-yaml": "^4.1.0",
     "playwright": "^1.50.1",
     "prettier": "^3.4.2",
