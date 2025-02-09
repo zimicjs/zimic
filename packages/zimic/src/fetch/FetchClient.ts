@@ -1,6 +1,6 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default } from '@/types/utils';
-import { urlJoin } from '@/utils/urls';
+import { excludeNonPathParams, urlJoin } from '@/utils/urls';
 
 import FetchResponseError from './FetchResponseError';
 import { FetchInput, FetchClientOptions, FetchRequestConstructor, FetchFunction } from './types/public';
@@ -11,6 +11,7 @@ class FetchClient<Schema extends HttpSchema> {
 
   private originalFetch: typeof fetch;
   private OriginalRequest: typeof Request;
+  private OriginalResponse: typeof Response;
 
   fetch: FetchFunction<Schema> & this;
   Request: FetchRequestConstructor<Schema>;
@@ -19,11 +20,13 @@ class FetchClient<Schema extends HttpSchema> {
     baseURL,
     fetch: originalFetch = globalThis.fetch,
     Request: OriginalRequest = globalThis.Request,
+    Response: OriginalResponse = globalThis.Response,
   }: FetchClientOptions) {
     this._baseURL = baseURL;
 
     this.originalFetch = originalFetch;
     this.OriginalRequest = OriginalRequest;
+    this.OriginalResponse = OriginalResponse;
 
     this.fetch = this.createFetchFunction();
     this.Request = this.createRequestClass(baseURL);
@@ -37,12 +40,37 @@ class FetchClient<Schema extends HttpSchema> {
     this._baseURL = baseURL;
   }
 
+  isRequest<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    request: unknown,
+    path: Path,
+    method: Method,
+  ): request is FetchRequest<Path, Method, Default<Schema[Path][Method]>> {
+    return (
+      request instanceof this.OriginalRequest && request.method === method && 'path' in request && request.path === path
+    );
+  }
+
+  isResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    response: unknown,
+    path: Path,
+    method: Method,
+  ): response is FetchResponse<Path, Method, Default<Schema[Path][Method]>> {
+    return (
+      response instanceof this.OriginalResponse &&
+      'request' in response &&
+      response.request instanceof this.OriginalRequest &&
+      response.request.method === method &&
+      'path' in response.request &&
+      response.request.path === path
+    );
+  }
+
   isResponseError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     error: unknown,
     path: Path,
     method: Method,
   ): error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>> {
-    return error instanceof FetchResponseError && error.request.method === method && error.request.url === path;
+    return error instanceof FetchResponseError && error.request.method === method && error.request.path === path;
   }
 
   private createFetchFunction() {
@@ -122,11 +150,17 @@ class FetchClient<Schema extends HttpSchema> {
 
       constructor(input: FetchInput<Schema, Path, Method>, init?: FetchRequestInit<Schema, Path, Method>) {
         if (typeof input === 'string') {
-          super(urlJoin(baseURL, input), init);
+          const url = new URL(urlJoin(baseURL, input));
+          url.search = new URLSearchParams(init?.searchParams ?? {}).toString();
+
+          super(url, init);
           this.path = input;
         } else if (input instanceof URL) {
-          super(input, init);
-          this.path = input.href.replace(baseURL, '') as Path;
+          const url = new URL(input);
+          url.search = new URLSearchParams(init?.searchParams ?? {}).toString();
+
+          super(url, init);
+          this.path = excludeNonPathParams(url).href.replace(baseURL, '') as Path;
         } else {
           super(input, init);
           this.path = input.url.replace(baseURL, '') as Path;

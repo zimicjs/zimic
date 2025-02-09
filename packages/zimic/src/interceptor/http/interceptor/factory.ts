@@ -28,26 +28,22 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
  */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicLocalHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicRemoteHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-):
-  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
-  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-):
-  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
-  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>> {
+): PublicLocalHttpInterceptor<Schema> | PublicRemoteHttpInterceptor<Schema> {
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
-    return new LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
+    return new LocalHttpInterceptor<Schema>(options);
   } else if (isRemoteHttpInterceptorOptions(options)) {
-    return new RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
+    return new RemoteHttpInterceptor<Schema>(options);
   }
 
   throw new UnknownHttpInterceptorTypeError(type);

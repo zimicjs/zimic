@@ -22,6 +22,7 @@ export interface FetchClientOptions {
   baseURL: string;
   fetch?: typeof fetch;
   Request?: typeof Request;
+  Response?: typeof Response;
 }
 
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
@@ -38,6 +39,18 @@ interface FetchClient<Schema extends HttpSchema> {
   baseURL: () => string;
 
   setBaseURL: (baseURL: string) => void;
+
+  isRequest: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    request: unknown,
+    path: Path,
+    method: Method,
+  ) => request is FetchRequest<Path, Method, Default<Schema[Path][Method]>;
+
+  isResponse: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    response: unknown,
+    path: Path,
+    method: Method,
+  ) => response is FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
 
   isResponseError: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     error: unknown,
