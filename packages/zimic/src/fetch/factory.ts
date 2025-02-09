@@ -1,9 +1,10 @@
 import { HttpSchema } from '@/http';
 
-import FetchClient, { FetchOptions } from './FetchClient';
+import FetchClient from './FetchClient';
+import { FetchClientOptions, FetchClient as PublicFetchClient } from './types/public';
 
-function createFetchClient<Schema extends HttpSchema>(options: FetchOptions): FetchClient<Schema> {
+function createFetch<Schema extends HttpSchema>(options: FetchClientOptions): PublicFetchClient<Schema> {
   return new FetchClient<Schema>(options);
 }
 
-export default createFetchClient;
+export default createFetch;

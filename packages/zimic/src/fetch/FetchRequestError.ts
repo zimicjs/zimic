@@ -1,6 +1,6 @@
 import { HttpMethodSchema } from '@/http';
 
-import { FetchRequest, FetchResponse } from './FetchClient';
+import { FetchRequest, FetchResponse } from './types/requests';
 
 class FetchRequestError<MethodSchema extends HttpMethodSchema = HttpMethodSchema> extends Error {
   constructor(

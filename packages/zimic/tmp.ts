@@ -1,5 +1,4 @@
-import createFetchClient from '@/fetch/factory';
-import FetchRequestError from '@/fetch/FetchRequestError';
+import createFetch from '@/fetch/factory';
 import { HttpSchema, HttpSearchParams } from '@/http';
 
 interface User {
@@ -49,7 +48,7 @@ type Schema = HttpSchema<{
   };
 }>;
 
-const client = createFetchClient<Schema>({
+const client = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
@@ -84,11 +83,27 @@ async function main() {
   const data = await response.json();
 
   try {
+    console.log();
   } catch (error) {
     if (client.isRequestError(error, '/api/users/others', 'GET')) {
       const errorData = await error.response.json();
     }
   }
+
+  const request = new client.Request('/api/users/others', {
+    method: 'GET',
+    searchParams: { username: 'john' },
+    headers: { authorization: 'Bearer token' },
+  });
+
+  const response1 = await client.fetch<'/api/users/others', 'GET'>(request);
+  const response2 = await client.fetch(request);
+
+  if (!response2.ok) {
+    throw response2.error();
+  }
+
+  const data2 = await response2.json();
 
   // @ts-expect-error
   await client.fetch('/api/users/others', {

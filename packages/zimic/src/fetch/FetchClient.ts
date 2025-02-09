@@ -1,97 +1,23 @@
-import {
-  HttpSchema,
-  HttpSchemaPath,
-  HttpSchemaMethod,
-  HttpRequestSchema,
-  HttpMethod,
-  HttpMethodSchema,
-  HttpResponseSchemaStatusCode,
-  HttpStatusCode,
-  HttpResponse,
-  HttpRequest,
-} from '@/http';
-import {
-  HttpRequestBodySchema,
-  HttpRequestHeadersSchema,
-  HttpResponseBodySchema,
-  HttpResponseHeadersSchema,
-} from '@/interceptor/http/requestHandler/types/requests';
+import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default } from '@/types/utils';
 import { joinURL } from '@/utils/urls';
 
 import FetchRequestError from './FetchRequestError';
+import { FetchClient as PublicFetchClient, FetchInput, FetchClientOptions } from './types/public';
+import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = undefined extends RequestSchema['headers']
-  ? { headers?: undefined }
-  : { headers: RequestSchema['headers'] };
-
-type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
-  undefined extends RequestSchema['searchParams']
-    ? { searchParams?: undefined }
-    : { searchParams: RequestSchema['searchParams'] };
-
-type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = undefined extends RequestSchema['body']
-  ? { body?: null }
-  : { body: RequestSchema['body'] };
-
-type FetchRequestInitPerPath<Method extends HttpMethod, RequestSchema extends HttpRequestSchema> = RequestInit & {
-  method: Method;
-} & FetchRequestInitWithHeaders<RequestSchema> &
-  FetchRequestInitWithSearchParams<RequestSchema> &
-  FetchRequestInitWithBody<RequestSchema>;
-
-type FetchRequestInit<
-  Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
-  Method extends HttpSchemaMethod<Schema>,
-> = Path extends Path ? FetchRequestInitPerPath<Method, Default<Default<Schema[Path][Method]>['request']>> : never;
-
-type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpResponseSchemaStatusCode<
-  Default<MethodSchema['response']>
->;
-
-type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, IsError extends boolean> = IsError extends true
-  ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
-  : AllFetchResponseStatusCode<MethodSchema>;
-
-type FetchResponsePerStatusCode<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = HttpResponse<
-  HttpResponseBodySchema<MethodSchema, StatusCode>,
-  StatusCode,
-  HttpResponseHeadersSchema<MethodSchema, StatusCode>
-> &
-  (StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? { error: () => FetchRequestError<MethodSchema> }
-    : { error: unknown });
-
-type FetchResponseForEachStatusCode<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<MethodSchema, StatusCode> : never;
-
-export type FetchRequest<MethodSchema extends HttpMethodSchema> = HttpRequest<
-  HttpRequestBodySchema<MethodSchema>,
-  HttpRequestHeadersSchema<MethodSchema>
->;
-
-export type FetchResponse<
-  MethodSchema extends HttpMethodSchema,
-  IsError extends boolean = false,
-> = FetchResponseForEachStatusCode<MethodSchema, FetchResponseStatusCode<MethodSchema, IsError>>;
-
-export interface FetchOptions {
-  baseURL: string;
-}
-
-class FetchClient<Schema extends HttpSchema> {
+class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
   private _baseURL: string;
 
-  private originalFetch = globalThis.fetch;
+  Request: new <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    input: FetchInput<Schema, Path, Method>,
+    init?: FetchRequestInit<Schema, Path, Method>,
+  ) => FetchRequest<Default<Schema[Path][Method]>>;
 
-  constructor(options: FetchOptions) {
-    this._baseURL = options.baseURL;
+  constructor({ baseURL }: FetchClientOptions) {
+    this._baseURL = baseURL;
+
+    this.Request = this.createRequestClass(baseURL);
   }
 
   baseURL() {
@@ -103,26 +29,17 @@ class FetchClient<Schema extends HttpSchema> {
   }
 
   fetch = async <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    input: Path,
+    input: FetchInput<Schema, Path, Method>,
     init?: FetchRequestInit<Schema, Path, Method>,
-  ): Promise<FetchResponse<Default<Schema[Path][Method]>>> => {
-    const requestURL = joinURL(this._baseURL, input);
+  ) => {
+    const request = input instanceof Request ? input : new this.Request(input, init);
 
-    const fetchRequest = new Request(requestURL, init) as FetchRequest<Default<Schema[Path][Method]>>;
+    const rawResponse = await globalThis.fetch(request);
 
-    const response = await this.originalFetch(fetchRequest);
-
-    const fetchResponse = new Proxy(response as FetchResponse<Default<Schema[Path][Method]>>, {
+    const response = new Proxy(rawResponse as FetchResponse<Default<Schema[Path][Method]>>, {
       get(target, property) {
         if (property === 'error') {
-          if (response.ok) {
-            throw new Error('Cannot create an error from successful response.');
-          }
-
-          return new FetchRequestError(
-            fetchRequest,
-            fetchResponse as FetchResponse<Default<Schema[Path][Method]>, true>,
-          );
+          return requestError; // eslint-disable-line @typescript-eslint/no-use-before-define
         }
         return Reflect.get(target, property, target);
       },
@@ -132,7 +49,10 @@ class FetchClient<Schema extends HttpSchema> {
       },
     });
 
-    return fetchResponse;
+    const errorResponse = response as FetchResponse<Default<Schema[Path][Method]>, true>;
+    const requestError = rawResponse.ok ? null : new FetchRequestError(request, errorResponse);
+
+    return response;
   };
 
   isRequestError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -141,6 +61,37 @@ class FetchClient<Schema extends HttpSchema> {
     method: Method,
   ): error is FetchRequestError<Default<Schema[Path][Method]>> {
     return error instanceof FetchRequestError && error.request.method === method && error.request.url === path;
+  }
+
+  private createRequestClass(baseURL: string) {
+    type BaseFetchRequest<
+      Path extends HttpSchemaPath<Schema, Method>,
+      Method extends HttpSchemaMethod<Schema>,
+    > = FetchRequest<Default<Schema[Path][Method]>>;
+
+    class Request<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>
+      extends globalThis.Request
+      implements BaseFetchRequest<Path, Method>
+    {
+      headers!: BaseFetchRequest<Path, Method>['headers'];
+      json!: BaseFetchRequest<Path, Method>['json'];
+      formData!: BaseFetchRequest<Path, Method>['formData'];
+
+      constructor(input: FetchInput<Schema, Path, Method>, init?: FetchRequestInit<Schema, Path, Method>) {
+        if (typeof input === 'string' || input instanceof URL) {
+          const inputWithBaseURL = joinURL(baseURL, input);
+          super(inputWithBaseURL, init);
+        } else if (input.url.startsWith(baseURL)) {
+          super(input, init);
+        } else {
+          const urlWitBase = joinURL(baseURL, input.url);
+          const inputWithBaseURL = new globalThis.Request(urlWitBase, input);
+          super(inputWithBaseURL, init);
+        }
+      }
+    }
+
+    return Request;
   }
 }
 
