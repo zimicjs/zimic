@@ -1,115 +1,112 @@
 import createFetch from '@/fetch/factory';
-import { HttpSchema, HttpSearchParams } from '@/http';
+import { HttpSchema } from '@/http';
+import { httpInterceptor } from '@/interceptor/http';
 
 interface User {
   id: string;
   username: string;
-  name: string;
 }
 
+type UserCreationPayload = Omit<User, 'id'>;
+
 type Schema = HttpSchema<{
-  '/api/users': {
+  '/users': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: UserCreationPayload;
+      };
+      response: {
+        201: { body: User };
+        401: { body: { code: 'UNAUTHORIZED'; message: string } };
+        403: { body: { code: 'FORBIDDEN'; message: string } };
+        409: { body: { code: 'CONFLICT'; message: string } };
+        500: { body: { code: 'INTERNAL_SERVER_ERROR'; message: string } };
+      };
+    };
+
     GET: {
       request: {
         searchParams?: { username?: string };
       };
       response: {
         200: { body: User[] };
-        401: { body: { message?: 401; path: '/api/users' } };
-        403: { body: { message?: 403; path: '/api/users' } };
-        500: { body: { message?: 500; path: '/api/users' } };
-      };
-    };
-
-    POST: {
-      request: {
-        body: { username?: string };
-      };
-      response: {
-        200: { body: User[] };
-        401: { body: { message?: 401; path: '/api/users' } };
-        403: { body: { message?: 403; path: '/api/users' } };
-        500: { body: { message?: 500; path: '/api/users' } };
+        401: { body: { code: 'UNAUTHORIZED'; message: string } };
+        403: { body: { code: 'FORBIDDEN'; message: string } };
+        500: { body: { code: 'INTERNAL_SERVER_ERROR'; message: string } };
       };
     };
   };
 
-  '/api/users/others': {
+  '/users/:id': {
     GET: {
-      request: {
-        headers: { authorization: string };
-        searchParams: { username?: string };
-      };
       response: {
-        200: { body: User[] };
-        401: { body: { message?: 401; path: '/api/users/others' } };
+        200: { body: User };
+        401: { body: { code: 'UNAUTHORIZED'; message: string } };
+        403: { body: { code: 'FORBIDDEN'; message: string } };
+        404: { body: { code: 'NOT_FOUND'; message: string } };
+        500: { body: { code: 'INTERNAL_SERVER_ERROR'; message: string } };
       };
     };
   };
 }>;
 
-const client = createFetch<Schema>({
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-async function main() {
-  const searchParams = new HttpSearchParams({ username: '1' });
+const interceptor = httpInterceptor.create<Schema>({
+  type: 'local',
+  baseURL: fetch.baseURL(),
+});
 
-  await client.fetch('/api/users', {
-    method: 'GET',
-    body: null,
-  });
-
-  await client.fetch('/api/users', {
-    method: 'GET',
-    body: null,
-  });
-
-  await client.fetch('/api/users', {
+async function createUser(payload: UserCreationPayload) {
+  const response = await fetch('/users', {
     method: 'POST',
-    body: JSON.stringify({ username: 'john' }),
-  });
-
-  const response = await client.fetch('/api/users/others', {
-    method: 'GET',
-    searchParams: { username: 'john' },
-    headers: { authorization: 'Bearer token' },
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     throw response.error();
   }
 
-  const data = await response.json();
+  const user = await response.json();
+  return user;
+}
+
+async function main() {
+  await interceptor.start();
+
+  interceptor
+    .post('/users')
+    .with({ body: { username: 'user' } })
+    // .respond({
+    //   status: 409,
+    //   body: { code: 'CONFLICT', message: 'Username already exists' },
+    // })
+    .respond((request) => {
+      const user: User = {
+        id: crypto.randomUUID(),
+        username: request.body.username,
+      };
+
+      return { status: 201, body: user };
+    });
 
   try {
-    console.log();
+    const user = await createUser({ username: 'user' });
+    console.log(user);
   } catch (error) {
-    if (client.isRequestError(error, '/api/users/others', 'GET')) {
-      const errorData = await error.response.json();
+    if (fetch.isResponseError(error, '/users', 'POST')) {
+      const errorBody = await error.response.json();
+      console.log(errorBody);
+    } else {
+      console.error(error);
     }
+  } finally {
+    await interceptor.stop();
   }
-
-  const request = new client.Request('/api/users/others', {
-    method: 'GET',
-    searchParams: { username: 'john' },
-    headers: { authorization: 'Bearer token' },
-  });
-
-  const response1 = await client.fetch<'/api/users/others', 'GET'>(request);
-  const response2 = await client.fetch(request);
-
-  if (!response2.ok) {
-    throw response2.error();
-  }
-
-  const data2 = await response2.json();
-
-  // @ts-expect-error
-  await client.fetch('/api/users/others', {
-    method: 'POST',
-    body: JSON.stringify({ username: 'john' }),
-  });
 }
 
 void main();

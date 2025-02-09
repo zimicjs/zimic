@@ -175,7 +175,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
-        });
+        }) as HttpResponse;
       }
 
       return response;
@@ -193,9 +193,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.logUnhandledRequestIfNecessary(requestClone, strategy);
 
     if (strategy?.action === 'reject') {
-      return Response.error();
+      return Response.error() as HttpResponse;
     } else {
-      return passthrough();
+      return passthrough() as HttpResponse;
     }
   }
 

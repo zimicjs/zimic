@@ -9,7 +9,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -97,7 +97,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         const requestTagFile = new File(['request'], 'tag.txt', { type: 'text/plain' });
         formData.append('tag', requestTagFile);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
           method,
           body: formData,
         });
@@ -205,7 +205,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
-          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+          const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'multipart/form-data' },
             body: invalidRequestFormDataString,
@@ -274,7 +274,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'multipart/form-data' },
         });

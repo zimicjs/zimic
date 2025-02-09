@@ -9,7 +9,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -69,7 +69,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
+        const response = await fetch(urlJoin(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -116,7 +116,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
+        const response = await fetch(urlJoin(baseURL, '/users'), { method });
 
         expect(response.status).toBe(200);
 
@@ -165,7 +165,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         expect(requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error', 'warn'], async (spies) => {
-          const request = new Request(joinURL(baseURL, '/users'), {
+          const request = new Request(urlJoin(baseURL, '/users'), {
             method,
             headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
           });
@@ -233,7 +233,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, '/users'), {
+        const response = await fetch(urlJoin(baseURL, '/users'), {
           method,
           headers: {
             accept: 'application/json',
@@ -298,7 +298,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+        const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -329,7 +329,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           OPTIONS: MethodSchema;
         };
       }>(interceptorOptions, async (interceptor) => {
-        let responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+        let responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -347,7 +347,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
-        responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+        responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -370,7 +370,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           interceptor,
         );
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
+        const response = await fetch(urlJoin(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         expect(requestsWithoutResponse).toHaveLength(0);
@@ -422,7 +422,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, '/users'), { method });
+        const response = await fetch(urlJoin(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -450,7 +450,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         let otherRequests = await promiseIfRemote(otherHandler.requests(), interceptor);
         expect(otherRequests).toHaveLength(0);
 
-        const otherResponse = await fetch(joinURL(baseURL, '/users'), { method });
+        const otherResponse = await fetch(urlJoin(baseURL, '/users'), { method });
         expect(otherResponse.status).toBe(201);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -494,7 +494,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           const initialRequests = await promiseIfRemote(handler.requests(), interceptor);
           expect(initialRequests).toHaveLength(0);
 
-          const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
+          const responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
 
           if (type === 'remote' && platform === 'browser') {
             await expectFetchError(responsePromise);
@@ -542,7 +542,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             const numberOfRequests = 5;
 
             for (let index = 0; index < numberOfRequests; index++) {
-              const response = await fetch(joinURL(baseURL, '/users'), { method });
+              const response = await fetch(urlJoin(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
             }
 
@@ -583,7 +583,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           const numberOfRequests = 5;
 
           for (let index = 0; index < numberOfRequests; index++) {
-            const response = await fetch(joinURL(baseURL, '/users'), { method });
+            const response = await fetch(urlJoin(baseURL, '/users'), { method });
             expect(response.status).toBe(200);
           }
 

@@ -7,7 +7,7 @@ import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterc
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
@@ -66,7 +66,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
-          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const request = new Request(urlJoin(baseURL, `?${matchingSearchParams}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -76,7 +76,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+          const request = new Request(urlJoin(baseURL, `?${mismatchingSearchParams}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -102,7 +102,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name }),
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const request = new Request(urlJoin(baseURL, `?${matchingSearchParams}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -112,7 +112,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: 'other' }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+          const request = new Request(urlJoin(baseURL, `?${mismatchingSearchParams}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -140,7 +140,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+        const request = new Request(urlJoin(baseURL, `?${matchingSearchParams}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
@@ -149,7 +149,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
         new HttpSearchParams<SearchParamsSchema>({}),
       ]) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+        const request = new Request(urlJoin(baseURL, `?${mismatchingSearchParams}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
@@ -443,7 +443,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const matchingHeaders of matchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(urlJoin(baseURL, `?${matchingSearchParams}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -451,7 +451,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`), {
+        const request = new Request(urlJoin(baseURL, `?${mismatchingSearchParams}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -461,7 +461,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const mismatchingHeaders of mismatchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(urlJoin(baseURL, `?${matchingSearchParams}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -469,7 +469,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`), {
+        const request = new Request(urlJoin(baseURL, `?${mismatchingSearchParams}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);

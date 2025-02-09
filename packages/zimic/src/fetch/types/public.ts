@@ -1,42 +1,47 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default } from '@/types/utils';
 
-import FetchRequestError from '../FetchRequestError';
+import FetchResponseError from '../FetchResponseError';
 import { FetchRequest, FetchRequestInit, FetchResponse } from './requests';
 
 export type FetchInput<
   Schema extends HttpSchema,
   Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
-> = Path | FetchRequest<Default<Schema[Path][Method]>>;
+> = Path | FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
-type Fetch<Schema extends HttpSchema> = <
+export type FetchFunction<Schema extends HttpSchema> = <
   Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
 >(
   input: FetchInput<Schema, Path, Method>,
   init?: FetchRequestInit<Schema, Path, Method>,
-) => Promise<FetchResponse<Default<Schema[Path][Method]>>>;
+) => Promise<FetchResponse<Path, Method, Default<Schema[Path][Method]>>>;
 
 export interface FetchClientOptions {
   baseURL: string;
 }
 
-export interface FetchClient<Schema extends HttpSchema> {
+export type FetchRequestConstructor<Schema extends HttpSchema> = new <
+  Path extends HttpSchemaPath<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
+>(
+  input: FetchInput<Schema, Path, Method>,
+  init?: FetchRequestInit<Schema, Path, Method>,
+) => FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
+
+interface FetchClient<Schema extends HttpSchema> {
+  Request: FetchRequestConstructor<Schema>;
+
   baseURL: () => string;
 
   setBaseURL: (baseURL: string) => void;
 
-  fetch: Fetch<Schema>;
-
-  Request: new <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    input: FetchInput<Schema, Path, Method>,
-    init?: FetchRequestInit<Schema, Path, Method>,
-  ) => FetchRequest<Default<Schema[Path][Method]>>;
-
-  isRequestError: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isResponseError: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     error: unknown,
     path: Path,
     method: Method,
-  ) => error is FetchRequestError<Default<Schema[Path][Method]>>;
+  ) => error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>>;
 }
+
+export type Fetch<Schema extends HttpSchema> = FetchFunction<Schema> & FetchClient<Schema>;

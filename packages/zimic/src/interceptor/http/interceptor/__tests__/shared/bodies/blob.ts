@@ -8,7 +8,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -119,7 +119,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
 
         const requestFile = await createRandomFile(contentType);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': contentType },
           body: requestFile,
@@ -214,7 +214,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
         });
@@ -292,7 +292,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         requestView[0] = 0xff;
         requestView[1] = 0x00;
 
-        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
           body: requestBuffer,

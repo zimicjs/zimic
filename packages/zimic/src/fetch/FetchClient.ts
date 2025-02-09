@@ -1,22 +1,21 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default } from '@/types/utils';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 
-import FetchRequestError from './FetchRequestError';
-import { FetchClient as PublicFetchClient, FetchInput, FetchClientOptions } from './types/public';
+import FetchResponseError from './FetchResponseError';
+import { FetchInput, FetchClientOptions, FetchRequestConstructor, FetchFunction } from './types/public';
 import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
+class FetchClient<Schema extends HttpSchema> {
   private _baseURL: string;
 
-  Request: new <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    input: FetchInput<Schema, Path, Method>,
-    init?: FetchRequestInit<Schema, Path, Method>,
-  ) => FetchRequest<Default<Schema[Path][Method]>>;
+  fetch: FetchFunction<Schema> & this;
+  Request: FetchRequestConstructor<Schema>;
 
   constructor({ baseURL }: FetchClientOptions) {
     this._baseURL = baseURL;
 
+    this.fetch = this.createFetch();
     this.Request = this.createRequestClass(baseURL);
   }
 
@@ -28,18 +27,56 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     this._baseURL = baseURL;
   }
 
-  fetch = async <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    input: FetchInput<Schema, Path, Method>,
-    init?: FetchRequestInit<Schema, Path, Method>,
-  ) => {
-    const request = input instanceof Request ? input : new this.Request(input, init);
+  isResponseError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+    error: unknown,
+    path: Path,
+    method: Method,
+  ): error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>> {
+    return error instanceof FetchResponseError && error.request.method === method && error.request.url === path;
+  }
 
-    const rawResponse = await globalThis.fetch(request);
+  private createFetch() {
+    const fetch = async <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+      input: FetchInput<Schema, Path, Method>,
+      init?: FetchRequestInit<Schema, Path, Method>,
+    ) => {
+      const request = input instanceof Request ? input : new this.Request(input, init);
 
-    const response = new Proxy(rawResponse as FetchResponse<Default<Schema[Path][Method]>>, {
+      const rawResponse = await globalThis.fetch(request);
+      const response = this.createFetchResponseProxy<Path, Method>(rawResponse, request);
+
+      return response;
+    };
+
+    Object.setPrototypeOf(fetch, this);
+
+    return fetch as FetchFunction<Schema> & this;
+  }
+
+  private createFetchResponseProxy<
+    Path extends HttpSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+  >(rawResponse: Response, request: FetchRequest<Path, Method, Default<Schema[Path][Method]>>) {
+    let responseError: FetchResponseError<Path, Method, Default<Schema[Path][Method]>> | null = null;
+
+    function getResponseError() {
+      if (rawResponse.ok) {
+        return null;
+      }
+
+      if (!responseError) {
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        const errorResponse = response as FetchResponse<Path, Method, Default<Schema[Path][Method]>, true>;
+        responseError = new FetchResponseError(request, errorResponse);
+      }
+
+      return responseError;
+    }
+
+    const response = new Proxy(rawResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>, {
       get(target, property) {
         if (property === 'error') {
-          return requestError; // eslint-disable-line @typescript-eslint/no-use-before-define
+          return getResponseError;
         }
         return Reflect.get(target, property, target);
       },
@@ -49,45 +86,39 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       },
     });
 
-    const errorResponse = response as FetchResponse<Default<Schema[Path][Method]>, true>;
-    const requestError = rawResponse.ok ? null : new FetchRequestError(request, errorResponse);
-
     return response;
-  };
-
-  isRequestError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    error: unknown,
-    path: Path,
-    method: Method,
-  ): error is FetchRequestError<Default<Schema[Path][Method]>> {
-    return error instanceof FetchRequestError && error.request.method === method && error.request.url === path;
   }
 
   private createRequestClass(baseURL: string) {
     type BaseFetchRequest<
       Path extends HttpSchemaPath<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
-    > = FetchRequest<Default<Schema[Path][Method]>>;
+    > = FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
     class Request<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>
       extends globalThis.Request
       implements BaseFetchRequest<Path, Method>
     {
+      path: Path;
+      method: Method;
+
       headers!: BaseFetchRequest<Path, Method>['headers'];
       json!: BaseFetchRequest<Path, Method>['json'];
       formData!: BaseFetchRequest<Path, Method>['formData'];
 
       constructor(input: FetchInput<Schema, Path, Method>, init?: FetchRequestInit<Schema, Path, Method>) {
-        if (typeof input === 'string' || input instanceof URL) {
-          const inputWithBaseURL = joinURL(baseURL, input);
-          super(inputWithBaseURL, init);
-        } else if (input.url.startsWith(baseURL)) {
+        if (typeof input === 'string') {
+          super(urlJoin(baseURL, input), init);
+          this.path = input;
+        } else if (input instanceof URL) {
           super(input, init);
+          this.path = input.href.replace(baseURL, '') as Path;
         } else {
-          const urlWitBase = joinURL(baseURL, input.url);
-          const inputWithBaseURL = new globalThis.Request(urlWitBase, input);
-          super(inputWithBaseURL, init);
+          super(input, init);
+          this.path = input.url.replace(baseURL, '') as Path;
         }
+
+        this.method = (init?.method ?? 'GET') as Method;
       }
     }
 

@@ -1,10 +1,14 @@
 import { HttpSchema } from '@/http';
+import { ConvertToStrictHttpSchema } from '@/http/types/schema';
 
 import FetchClient from './FetchClient';
-import { FetchClientOptions, FetchClient as PublicFetchClient } from './types/public';
+import { FetchClientOptions, Fetch as PublicFetch } from './types/public';
 
-function createFetch<Schema extends HttpSchema>(options: FetchClientOptions): PublicFetchClient<Schema> {
-  return new FetchClient<Schema>(options);
+function createFetch<Schema extends HttpSchema>(
+  options: FetchClientOptions,
+): PublicFetch<ConvertToStrictHttpSchema<Schema>> {
+  const { fetch } = new FetchClient<ConvertToStrictHttpSchema<Schema>>(options);
+  return fetch;
 }
 
 export default createFetch;

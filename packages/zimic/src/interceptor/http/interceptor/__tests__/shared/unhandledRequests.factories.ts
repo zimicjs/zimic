@@ -8,7 +8,7 @@ import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHt
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { waitForDelay } from '@/utils/time';
-import { joinURL } from '@/utils/urls';
+import { urlJoin } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -91,7 +91,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -104,7 +104,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(urlJoin(baseURL, `/users?${searchParams}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -122,7 +122,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), { method });
+            const request = new Request(urlJoin(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
             if (overridesPreflightResponse) {
@@ -177,7 +177,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -190,7 +190,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(urlJoin(baseURL, `/users?${searchParams}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -208,7 +208,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), { method });
+            const request = new Request(urlJoin(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
             if (overridesPreflightResponse) {
@@ -264,7 +264,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -277,7 +277,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(urlJoin(baseURL, `/users?${searchParams}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -295,7 +295,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), { method });
+            const request = new Request(urlJoin(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
             if (overridesPreflightResponse) {
@@ -362,7 +362,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               name?: string;
             }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -375,7 +375,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(urlJoin(baseURL, `/users?${searchParams}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -393,7 +393,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
 
-            const request = new Request(joinURL(baseURL, '/users'), { method });
+            const request = new Request(urlJoin(baseURL, '/users'), { method });
             responsePromise = fetch(request);
 
             if (overridesPreflightResponse) {

@@ -1,3 +1,4 @@
+import { HttpResponse } from '@/http';
 import {
   HTTP_METHODS,
   HttpMethod,
@@ -7,7 +8,7 @@ import {
   HttpStatusCode,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
+import { urlJoin, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -181,7 +182,7 @@ class HttpInterceptorClient<
 
     this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
 
-    const url = joinURL(this.baseURL(), handler.path());
+    const url = urlJoin(this.baseURL(), handler.path());
     const urlRegex = createRegexFromURL(url);
 
     const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {
@@ -203,7 +204,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<Response | null> {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });

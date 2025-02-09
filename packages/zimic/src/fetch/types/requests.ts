@@ -16,9 +16,9 @@ import {
   HttpRequestBodySchema,
   HttpRequestHeadersSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
-import { Default, IfNever } from '@/types/utils';
+import { Default } from '@/types/utils';
 
-import FetchRequestError from '../FetchRequestError';
+import FetchResponseError from '../FetchResponseError';
 
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = undefined extends RequestSchema['headers']
   ? { headers?: undefined }
@@ -53,7 +53,18 @@ type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, IsError exte
   ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
 
+export type FetchRequest<
+  Path extends string,
+  Method extends HttpMethod,
+  MethodSchema extends HttpMethodSchema,
+> = HttpRequest<HttpRequestBodySchema<MethodSchema>, HttpRequestHeadersSchema<MethodSchema>> & {
+  path: Path;
+  method: Method;
+};
+
 type FetchResponsePerStatusCode<
+  Path extends string,
+  Method extends HttpMethod,
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
 > = HttpResponse<
@@ -62,16 +73,13 @@ type FetchResponsePerStatusCode<
   HttpResponseHeadersSchema<MethodSchema, StatusCode>
 > &
   (StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? { error: () => FetchRequestError<MethodSchema> }
+    ? { error: () => FetchResponseError<Path, Method, MethodSchema> }
     : { error: () => null });
 
-export type FetchRequest<MethodSchema extends HttpMethodSchema> = HttpRequest<
-  HttpRequestBodySchema<MethodSchema>,
-  HttpRequestHeadersSchema<MethodSchema>
->;
-
 export type FetchResponse<
+  Path extends string,
+  Method extends HttpMethod,
   MethodSchema extends HttpMethodSchema,
   IsError extends boolean = false,
   StatusCode extends FetchResponseStatusCode<MethodSchema, IsError> = FetchResponseStatusCode<MethodSchema, IsError>,
-> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<MethodSchema, StatusCode> : never;
+> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Path, Method, MethodSchema, StatusCode> : never;

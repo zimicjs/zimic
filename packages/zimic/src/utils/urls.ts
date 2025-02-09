@@ -131,7 +131,7 @@ export function createRegexFromWildcardPath(path: string, options: { prefix: str
   return new RegExp(`^${options.prefix}/*${pathWithReplacedWildcards}/*$`);
 }
 
-export function joinURL(...parts: (string | URL)[]) {
+export function urlJoin(...parts: (string | URL)[]) {
   return parts
     .map((part, index) => {
       const partAsString = part.toString();
