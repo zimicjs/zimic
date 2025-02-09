@@ -16,6 +16,6 @@
     "@zimic/eslint-config-react": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "eslint": "^9.19.0"
+    "eslint": "^9.20.0"
   }
 }
