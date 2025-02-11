@@ -56,7 +56,7 @@ const fetch = createFetch<Schema>({
 
   async onRequest(request) {
     if (this.isRequest(request, '/users', 'POST')) {
-      const data = await request.json();
+      const data = await request.clone().json();
       console.log(data);
     }
 
@@ -65,7 +65,7 @@ const fetch = createFetch<Schema>({
 
   async onResponse(response) {
     if (this.isResponse(response, '/users', 'POST')) {
-      const data = await response.json();
+      const data = await response.clone().json();
       console.log(data);
     }
 
@@ -99,23 +99,25 @@ async function main() {
   interceptor
     .post('/users')
     .with({ body: { username: 'user' } })
-    // .respond({
-    //   status: 409,
-    //   body: { code: 'CONFLICT', message: 'Username already exists' },
-    // })
-    .respond((request) => {
-      const user: User = {
-        id: crypto.randomUUID(),
-        username: request.body.username,
-      };
-
-      return { status: 201, body: user };
+    .respond({
+      status: 409,
+      body: { code: 'CONFLICT', message: 'Username already exists' },
     });
+  // .respond((request) => {
+  //   const user: User = {
+  //     id: crypto.randomUUID(),
+  //     username: request.body.username,
+  //   };
+
+  //   return { status: 201, body: user };
+  // });
 
   try {
     const user = await createUser({ username: 'user' });
     console.log(user);
   } catch (error) {
+    console.error(error);
+
     if (fetch.isResponseError(error, '/users', 'POST')) {
       const errorBody = await error.response.json();
       console.log(errorBody);

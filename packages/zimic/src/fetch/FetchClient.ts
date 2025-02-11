@@ -1,4 +1,4 @@
-import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
+import { HttpSchema, HttpSchemaPath, HttpSchemaMethod, HttpSearchParams } from '@/http';
 import { Default, PossiblePromise } from '@/types/utils';
 import { excludeNonPathParams, joinURL } from '@/utils/urls';
 
@@ -22,26 +22,11 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     response: FetchResponse.Loose,
   ) => PossiblePromise<FetchResponse.Loose>;
 
-  private originalFetch: typeof fetch;
-  private OriginalRequest: typeof Request;
-  private OriginalResponse: typeof Response;
-
   fetch: FetchFunction<Schema> & this;
   Request: FetchRequestConstructor<Schema>;
 
-  constructor({
-    fetch: originalFetch = globalThis.fetch,
-    Request: OriginalRequest = globalThis.Request,
-    Response: OriginalResponse = globalThis.Response,
-    onRequest,
-    onResponse,
-    ...defaults
-  }: FetchClientOptions<Schema>) {
+  constructor({ onRequest, onResponse, ...defaults }: FetchClientOptions<Schema>) {
     this._defaults = defaults;
-
-    this.originalFetch = originalFetch;
-    this.OriginalRequest = OriginalRequest;
-    this.OriginalResponse = OriginalResponse;
 
     this.fetch = this.createFetchFunction();
     this.Request = this.createRequestClass(defaults);
@@ -59,9 +44,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     path: Path,
     method: Method,
   ): request is FetchRequest<Path, Method, Default<Schema[Path][Method]>> {
-    return (
-      request instanceof this.OriginalRequest && request.method === method && 'path' in request && request.path === path
-    );
+    return request instanceof Request && request.method === method && 'path' in request && request.path === path;
   }
 
   isResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -70,12 +53,10 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     method: Method,
   ): response is FetchResponse<Path, Method, Default<Schema[Path][Method]>> {
     return (
-      response instanceof this.OriginalResponse &&
+      response instanceof Response &&
       'request' in response &&
-      response.request instanceof this.OriginalRequest &&
-      response.request.method === method &&
-      'path' in response.request &&
-      response.request.path === path
+      this.isRequest(response.request, path, method) &&
+      'error' in response
     );
   }
 
@@ -95,23 +76,12 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       input: FetchInput<Schema, Path, Method>,
       init?: FetchRequestInit<Schema, Path, Method>,
     ) => {
-      const fetchRequestBeforeInterceptor = input instanceof Request ? input : new this.Request(input, init);
-      const fetchRequestAfterInterceptor = await this.onRequest(fetchRequestBeforeInterceptor);
+      const fetchRequest = await this.createFetchRequest<Path, Method>(input, init);
 
-      const originalResponse = await this.originalFetch(fetchRequestAfterInterceptor);
+      const response = await globalThis.fetch(fetchRequest);
+      const fetchResponse = await this.createFetchResponse<Path, Method>(fetchRequest, response);
 
-      const fetchResponseBeforeInterceptor = this.createFetchResponse<Path, Method>(
-        fetchRequestBeforeInterceptor,
-        originalResponse,
-      ) as FetchResponse.Loose;
-
-      const fetchResponseAfterInterceptor = (await this.onResponse(fetchResponseBeforeInterceptor)) as FetchResponse<
-        Path,
-        Method,
-        Default<Schema[Path][Method]>
-      >;
-
-      return fetchResponseAfterInterceptor;
+      return fetchResponse;
     };
 
     Object.setPrototypeOf(fetch, this);
@@ -119,100 +89,89 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     return fetch as FetchFunction<Schema> & this;
   }
 
-  private createFetchResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    request: FetchRequest<Path, Method, Default<Schema[Path][Method]>>,
-    rawResponse: Response,
-  ) {
+  private async createFetchRequest<
+    Path extends HttpSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+  >(input: FetchInput<Schema, Path, Method>, init: FetchRequestInit<Schema, Path, Method> | undefined) {
+    const requestBeforeInterceptor = input instanceof Request ? input : new this.Request(input, init);
+    const requestAfterInterceptor = (await this.onRequest(requestBeforeInterceptor)) as typeof requestBeforeInterceptor;
+    return requestAfterInterceptor;
+  }
+
+  private async createFetchResponse<
+    Path extends HttpSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+  >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, response: Response) {
     let responseError: FetchResponseError<Path, Method, Default<Schema[Path][Method]>> | null = null;
 
-    function getResponseError() {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      if (response.ok) {
-        return null;
-      }
+    const fetchResponseBeforeInterceptor = response as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
 
-      if (!responseError) {
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        const errorResponse = response as FetchResponse<Path, Method, Default<Schema[Path][Method]>, true>;
-        responseError = new FetchResponseError(request, errorResponse);
-      }
-
-      return responseError;
-    }
-
-    const response = new Proxy(rawResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>, {
-      get(target, property) {
-        if (property === 'request') {
-          return request;
-        }
-        if (property === 'error') {
-          return getResponseError;
-        }
-        return Reflect.get(target, property, target);
+    Object.defineProperties(fetchResponseBeforeInterceptor, {
+      request: {
+        value: fetchRequest,
       },
 
-      has(target, property) {
-        return property === 'request' || property === 'error' || Reflect.has(target, property);
+      error: {
+        value: () => {
+          if (fetchResponseBeforeInterceptor.ok) {
+            return null;
+          }
+
+          if (!responseError) {
+            responseError = new FetchResponseError(
+              fetchRequest,
+              fetchResponseBeforeInterceptor as FetchResponse<Path, Method, Default<Schema[Path][Method]>, true>,
+            );
+          }
+
+          return responseError;
+        },
       },
     });
 
-    return response;
+    const fetchResponseAfterInterceptor = (await this.onResponse(
+      fetchResponseBeforeInterceptor as FetchResponse.Loose,
+    )) as typeof fetchResponseBeforeInterceptor;
+
+    return fetchResponseAfterInterceptor;
   }
 
   private createRequestClass(defaults: FetchRequestInit.Defaults) {
-    type BaseFetchRequest<
+    class Request<
       Path extends HttpSchemaPath<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
-    > = FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
-
-    class Request<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>
-      extends this.OriginalRequest
-      implements BaseFetchRequest<Path, Method>
-    {
+    > extends globalThis.Request {
       path: Path;
       method: Method;
-
-      headers!: BaseFetchRequest<Path, Method>['headers'];
-      json!: BaseFetchRequest<Path, Method>['json'];
-      formData!: BaseFetchRequest<Path, Method>['formData'];
 
       constructor(input: FetchInput<Schema, Path, Method>, init?: FetchRequestInit<Schema, Path, Method>) {
         const initWithDefaults = { ...defaults, ...init };
 
-        if (typeof input === 'string') {
-          let urlAsString: string = input;
+        if (input instanceof globalThis.Request) {
+          super(input, initWithDefaults);
+
+          const url = new URL(input.url);
+          excludeNonPathParams(url);
+
+          this.path = url.href.replace(initWithDefaults.baseURL, '') as Path;
+        } else {
+          const url = input instanceof URL ? new URL(input) : new URL(joinURL(initWithDefaults.baseURL, input));
 
           if (initWithDefaults.searchParams) {
-            const url = new URL(joinURL(initWithDefaults.baseURL, input));
-            url.search = new URLSearchParams(initWithDefaults.searchParams).toString();
-            urlAsString = url.toString();
-          }
-
-          super(urlAsString, initWithDefaults);
-
-          this.path = input;
-        } else if (input instanceof URL) {
-          let url: URL = input;
-
-          if (initWithDefaults.searchParams) {
-            url = new URL(input);
-            url.search = new URLSearchParams(initWithDefaults.searchParams).toString();
+            url.search = new HttpSearchParams(initWithDefaults.searchParams).toString();
           }
 
           super(url, initWithDefaults);
 
-          this.path = excludeNonPathParams(url).href.replace(initWithDefaults.baseURL, '') as Path;
-        } else {
-          super(input, initWithDefaults);
-
-          this.path = input.url.replace(initWithDefaults.baseURL, '') as Path;
+          const urlWithoutNonPathParams = excludeNonPathParams(url);
+          this.path = urlWithoutNonPathParams.href.replace(initWithDefaults.baseURL, '') as Path;
         }
 
         this.method = (initWithDefaults.method ?? 'GET') as Method;
       }
     }
 
-    return Request;
+    return Request as FetchRequestConstructor<Schema>;
   }
 }
 

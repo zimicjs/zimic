@@ -9,6 +9,7 @@ import {
   HttpStatusCode,
   HttpResponse,
   HttpRequest,
+  HttpSearchParams,
 } from '@/http';
 import {
   HttpResponseBodySchema,
@@ -55,7 +56,7 @@ export namespace FetchRequestInit {
   export interface Defaults extends RequestInit {
     baseURL: string;
     method?: HttpMethod;
-    searchParams?: URLSearchParams;
+    searchParams?: HttpSearchParams;
   }
 }
 

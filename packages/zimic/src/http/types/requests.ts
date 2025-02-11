@@ -59,6 +59,7 @@ export interface HttpRequest<
   headers: StrictHeaders<StrictHeadersSchema>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  clone: () => this;
 }
 
 /**
@@ -77,4 +78,5 @@ export interface HttpResponse<
   headers: StrictHeaders<StrictHeadersSchema>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
   formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  clone: () => this;
 }

@@ -8,7 +8,7 @@ export type FetchInput<
   Schema extends HttpSchema,
   Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
-> = Path | FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
+> = Path | URL | FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
 export type FetchFunction<Schema extends HttpSchema> = <
   Path extends HttpSchemaPath<Schema, Method>,
