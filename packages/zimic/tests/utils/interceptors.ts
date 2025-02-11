@@ -23,7 +23,7 @@ import {
 import InterceptorServer from '@/interceptor/server/InterceptorServer';
 import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
-import { createURL, ExtendedURL, urlJoin } from '@/utils/urls';
+import { createURL, ExtendedURL, joinURL } from '@/utils/urls';
 import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
 import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
@@ -34,7 +34,7 @@ export async function getBrowserBaseURL(type: HttpInterceptorType) {
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = urlJoin(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
+  const baseURL = joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
   return createURL(baseURL);
 }
 
@@ -49,7 +49,7 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = urlJoin(`http://${hostname}:${port}`, pathPrefix);
+  const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
   return createURL(baseURL);
 }
 

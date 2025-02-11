@@ -1,6 +1,6 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default, PossiblePromise } from '@/types/utils';
-import { excludeNonPathParams, urlJoin } from '@/utils/urls';
+import { excludeNonPathParams, joinURL } from '@/utils/urls';
 
 import FetchResponseError from './errors/FetchResponseError';
 import {
@@ -183,7 +183,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
           let urlAsString: string = input;
 
           if (initWithDefaults.searchParams) {
-            const url = new URL(urlJoin(initWithDefaults.baseURL, input));
+            const url = new URL(joinURL(initWithDefaults.baseURL, input));
             url.search = new URLSearchParams(initWithDefaults.searchParams).toString();
             urlAsString = url.toString();
           }

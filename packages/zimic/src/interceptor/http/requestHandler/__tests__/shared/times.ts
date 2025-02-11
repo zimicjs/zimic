@@ -8,7 +8,7 @@ import { HttpInterceptorType } from '@/interceptor/http/interceptor/types/option
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { importFile, isGlobalFileAvailable } from '@/utils/files';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';
@@ -64,7 +64,7 @@ export function declareTimesHttpRequestHandlerTests(
         { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -91,7 +91,7 @@ export function declareTimesHttpRequestHandlerTests(
         { message: 'Expected exactly 2 requests, but got 0.', minNumberOfRequests: 2 },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -129,7 +129,7 @@ export function declareTimesHttpRequestHandlerTests(
         { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -163,7 +163,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -192,7 +192,7 @@ export function declareTimesHttpRequestHandlerTests(
         },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -217,7 +217,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -231,7 +231,7 @@ export function declareTimesHttpRequestHandlerTests(
         .respond({ status: 200, body: { success: true } })
         .times(2, 3);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -260,7 +260,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       await promiseIfRemote(handler.checkTimes(), handler);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -292,7 +292,7 @@ export function declareTimesHttpRequestHandlerTests(
         { message: 'Expected exactly 1 request, but got 0.', minNumberOfRequests: 1, maxNumberOfRequests: 1 },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -320,7 +320,7 @@ export function declareTimesHttpRequestHandlerTests(
         { message: 'Expected exactly 2 requests, but got 0.', minNumberOfRequests: 2, maxNumberOfRequests: 2 },
       );
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -371,7 +371,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -404,7 +404,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -422,7 +422,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Computed restriction:',
               '       - return true',
               '       + return false',
@@ -445,7 +445,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -463,7 +463,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
               '       - { "accept": "application/json" }',
               '       + {}',
@@ -472,7 +472,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           headers: { accept: 'text/html', 'content-type': 'text/plain' },
         });
@@ -493,12 +493,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
               '       - { "accept": "application/json" }',
               '       + {}',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
               '       - { "accept": "application/json" }',
               '       + { "accept": "text/html", "content-type": "text/plain" }',
@@ -521,7 +521,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -539,7 +539,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Search params:',
               '       - { "value": "1" }',
               '       + {}',
@@ -549,7 +549,7 @@ export function declareTimesHttpRequestHandlerTests(
         );
 
         const searchParams = new HttpSearchParams({ name: '1', value: '2' });
-        request = new Request(urlJoin(baseURL, `/users?${searchParams}`), { method: 'POST' });
+        request = new Request(joinURL(baseURL, `/users?${searchParams}`), { method: 'POST' });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -567,12 +567,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Search params:',
               '       - { "value": "1" }',
               '       + {}',
               '',
-              `2: POST ${urlJoin(baseURL, `/users?${searchParams}`)}`,
+              `2: POST ${joinURL(baseURL, `/users?${searchParams}`)}`,
               '     Search params:',
               '       - { "value": "1" }',
               '       + { "name": "1", "value": "2" }',
@@ -595,7 +595,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -613,7 +613,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - { "name": "1" }',
               '       + null',
@@ -622,7 +622,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ name: '2' }),
@@ -644,12 +644,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - { "name": "1" }',
               '       + null',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - { "name": "1" }',
               '       + { "name": "2" }',
@@ -672,7 +672,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -690,7 +690,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - URLSearchParams { "name": "1" }',
               '       + null',
@@ -699,7 +699,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
           body: new HttpSearchParams({ name: '2' }),
@@ -721,12 +721,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - URLSearchParams { "name": "1" }',
               '       + null',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - URLSearchParams { "name": "1" }',
               '       + URLSearchParams { "name": "2" }',
@@ -752,7 +752,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -770,7 +770,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - FormData { "name": "1" }',
               '       + null',
@@ -790,7 +790,7 @@ export function declareTimesHttpRequestHandlerTests(
         const file = new File([blob], 'tag.txt', { type: 'text/plain' });
         formData.append('file', file);
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           body: formData,
         });
@@ -811,12 +811,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - FormData { "name": "1" }',
               '       + null',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - FormData { "name": "1" }',
               `       + FormData { "name": "2", ${
@@ -851,7 +851,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -869,7 +869,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               "       - Blob { type: 'application/octet-stream', size: 1 }",
               '       + null',
@@ -878,7 +878,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           body: new Blob(['blob'], { type: 'application/octet-stream' }),
         });
@@ -899,12 +899,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               "       - Blob { type: 'application/octet-stream', size: 1 }",
               '       + null',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               "       - Blob { type: 'application/octet-stream', size: 1 }",
               "       + Blob { type: 'application/octet-stream', size: 4 }",
@@ -927,7 +927,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 matching request, but got 0.', numberOfRequests: 1 },
         );
 
-        let request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        let request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         let parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -945,7 +945,7 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - example',
               '       + null',
@@ -954,7 +954,7 @@ export function declareTimesHttpRequestHandlerTests(
           },
         );
 
-        request = new Request(urlJoin(baseURL, '/users'), {
+        request = new Request(joinURL(baseURL, '/users'), {
           method: 'POST',
           headers: { 'content-type': 'text/plain' },
           body: 'text',
@@ -976,12 +976,12 @@ export function declareTimesHttpRequestHandlerTests(
               '  - Expected',
               '  + Received',
               '',
-              `1: POST ${urlJoin(baseURL, '/users')}`,
+              `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - example',
               '       + null',
               '',
-              `2: POST ${urlJoin(baseURL, '/users')}`,
+              `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
               '       - example',
               '       + text',
@@ -1003,7 +1003,7 @@ export function declareTimesHttpRequestHandlerTests(
           { message: 'Expected exactly 1 request, but got 0.', numberOfRequests: 1 },
         );
 
-        const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+        const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -1037,7 +1037,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       handler.respond({ status: 200, body: { success: true } }).times(1);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);
@@ -1073,7 +1073,7 @@ export function declareTimesHttpRequestHandlerTests(
 
       handler.respond({ status: 200, body: { success: true } }).times(1, 3);
 
-      const request = new Request(urlJoin(baseURL, '/users'), { method: 'POST' });
+      const request = new Request(joinURL(baseURL, '/users'), { method: 'POST' });
       const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
       expect(await handler.matchesRequest(parsedRequest)).toBe(true);

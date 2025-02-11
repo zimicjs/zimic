@@ -6,7 +6,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';
@@ -76,7 +76,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           body: 'content',
         });
@@ -161,7 +161,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/xml' },
           body: '<request>content</request>',
@@ -226,7 +226,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'text/plain;charset=UTF-8' },
         });

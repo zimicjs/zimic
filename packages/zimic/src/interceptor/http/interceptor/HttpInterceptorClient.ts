@@ -8,7 +8,7 @@ import {
   HttpStatusCode,
 } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
-import { urlJoin, ExtendedURL, createRegexFromURL } from '@/utils/urls';
+import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -182,7 +182,7 @@ class HttpInterceptorClient<
 
     this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
 
-    const url = urlJoin(this.baseURL(), handler.path());
+    const url = joinURL(this.baseURL(), handler.path());
     const urlRegex = createRegexFromURL(url);
 
     const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {

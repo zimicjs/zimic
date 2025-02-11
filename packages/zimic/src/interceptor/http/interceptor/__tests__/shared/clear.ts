@@ -5,7 +5,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -62,7 +62,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), { method });
+        const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -70,7 +70,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
 
         await promiseIfRemote(interceptor.clear(), interceptor);
 
-        const responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
+        const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -117,7 +117,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), { method });
+        const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -173,7 +173,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         let requests = await promiseIfRemote(otherHandler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), { method });
+        const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(otherHandler.requests(), interceptor);

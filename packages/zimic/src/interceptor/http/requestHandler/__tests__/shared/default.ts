@@ -10,7 +10,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/interceptor/http/interceptorWorker/LocalHttpInterceptorWorker';
 import { waitForDelay } from '@/utils/time';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';
@@ -207,7 +207,7 @@ export function declareDefaultHttpRequestHandlerTests(
     expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
     expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
 
-    const secondRequest = new Request(urlJoin(baseURL, '/path'));
+    const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
     const secondResponseDeclaration = await handler.applyResponseDeclaration(parsedSecondRequest);
 

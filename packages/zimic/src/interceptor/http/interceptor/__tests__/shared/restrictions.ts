@@ -10,7 +10,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importFile } from '@/utils/files';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -125,7 +125,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           accept: 'application/json',
         });
 
-        let response = await fetch(urlJoin(baseURL, '/users'), { method, headers });
+        let response = await fetch(joinURL(baseURL, '/users'), { method, headers });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -133,7 +133,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         headers.append('accept', 'application/xml');
 
-        response = await fetch(urlJoin(baseURL, '/users'), { method, headers });
+        response = await fetch(joinURL(baseURL, '/users'), { method, headers });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -141,7 +141,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         headers.delete('accept');
 
-        let responsePromise = fetch(urlJoin(baseURL, '/users'), { method, headers });
+        let responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -154,7 +154,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         headers.delete('content-language');
 
-        responsePromise = fetch(urlJoin(baseURL, '/users'), { method, headers });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -168,7 +168,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         headers.set('accept', 'application/json');
         headers.set('content-language', 'pt');
 
-        responsePromise = fetch(urlJoin(baseURL, '/users'), { method, headers });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method, headers });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -229,7 +229,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           other: 'value',
         });
 
-        const response = await fetch(urlJoin(baseURL, `/users?${searchParams}`), {
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
         expect(response.status).toBe(200);
@@ -239,7 +239,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
         searchParams.delete('tag');
 
-        const responsePromise = fetch(urlJoin(baseURL, `/users?${searchParams}`), {
+        const responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
           method,
         });
 
@@ -291,7 +291,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ message: 'ok' }),
@@ -302,7 +302,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(1);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             headers: body ? { 'content-type': 'application/json' } : undefined,
             body,
@@ -349,7 +349,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        let response = await fetch(urlJoin(baseURL, '/users'), {
+        let response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ message: 'ok' }),
@@ -359,7 +359,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(1);
 
-        response = await fetch(urlJoin(baseURL, '/users'), {
+        response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ message: 'ok', other: 'other' }),
@@ -370,7 +370,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(2);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             headers: body ? { 'content-type': 'application/json' } : undefined,
             body,
@@ -421,7 +421,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedFormData,
         });
@@ -446,7 +446,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
-            const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+            const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
             });
@@ -508,7 +508,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        let response = await fetch(urlJoin(baseURL, '/users'), {
+        let response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedFormData,
         });
@@ -523,7 +523,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         extendedFormData.append('tag', tagFile);
         extendedFormData.append('tag', differentTagFile);
 
-        response = await fetch(urlJoin(baseURL, '/users'), {
+        response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: extendedFormData,
         });
@@ -541,7 +541,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           undefined,
         ]) {
           await usingIgnoredConsole(['error'], async (spies) => {
-            const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+            const responsePromise = fetch(joinURL(baseURL, '/users'), {
               method,
               body,
             });
@@ -602,7 +602,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedSearchParams,
         });
@@ -617,7 +617,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users?tag=admin'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });
@@ -674,7 +674,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        let response = await fetch(urlJoin(baseURL, '/users'), {
+        let response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedSearchParams,
         });
@@ -683,7 +683,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(1);
 
-        response = await fetch(urlJoin(baseURL, '/users'), {
+        response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: new HttpSearchParams<SearchParamsSchema>({ tag: 'admin', other: 'other' }),
         });
@@ -697,7 +697,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new HttpSearchParams<SearchParamsSchema>(),
           undefined,
         ]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users?tag=admin'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users?tag=admin'), {
             method,
             body,
           });
@@ -745,7 +745,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedBody,
         });
@@ -755,7 +755,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(1);
 
         for (const body of ['more-content', 'cont', '']) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
@@ -803,7 +803,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        let response = await fetch(urlJoin(baseURL, '/users'), {
+        let response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: restrictedBody,
         });
@@ -812,7 +812,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(1);
 
-        response = await fetch(urlJoin(baseURL, '/users'), {
+        response = await fetch(joinURL(baseURL, '/users'), {
           method,
           body: 'more-content',
         });
@@ -822,7 +822,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         expect(requests).toHaveLength(2);
 
         for (const body of ['cont', '']) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
@@ -873,7 +873,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), {
+        const response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
           body: restrictedBody,
@@ -890,7 +890,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new File([], 'file.bin', { type: 'application/octet-stream' }),
           new File([], ''),
         ]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });
@@ -941,7 +941,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        let response = await fetch(urlJoin(baseURL, '/users'), {
+        let response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
           body: restrictedBody,
@@ -951,7 +951,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(1);
 
-        response = await fetch(urlJoin(baseURL, '/users'), {
+        response = await fetch(joinURL(baseURL, '/users'), {
           method,
           headers: { 'content-type': 'application/octet-stream' },
           body: new File(['more-content'], 'file.bin', { type: 'application/octet-stream' }),
@@ -967,7 +967,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           new File([], 'file.bin', { type: 'application/octet-stream' }),
           new File([], ''),
         ]) {
-          const responsePromise = fetch(urlJoin(baseURL, '/users'), {
+          const responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
             body,
           });

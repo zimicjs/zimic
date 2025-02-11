@@ -8,7 +8,7 @@ import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/intercep
 import { PossiblePromise } from '@/types/utils';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
-import { urlJoin, DuplicatedPathParamError, createURL, InvalidURLError, createRegexFromURL } from '@/utils/urls';
+import { joinURL, DuplicatedPathParamError, createURL, InvalidURLError, createRegexFromURL } from '@/utils/urls';
 import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
@@ -278,7 +278,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         params: {},
       },
     ])(`should intercept ${method} requests with matching dynamic paths (use $use; fetch $fetch)`, async (path) => {
-      const url = urlJoin(baseURL, path.use);
+      const url = joinURL(baseURL, path.use);
 
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
@@ -286,7 +286,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const urlExpectedToSucceed = urlJoin(baseURL, path.fetch);
+        const urlExpectedToSucceed = joinURL(baseURL, path.fetch);
         const response = await fetch(urlExpectedToSucceed, { method });
 
         expect(spiedRequestHandler).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -454,7 +454,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     ])(
       `should not intercept ${method} requests with non-matching dynamic paths (use $use; fetch $fetch)`,
       async (path) => {
-        const url = urlJoin(baseURL, path.use);
+        const url = joinURL(baseURL, path.use);
 
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
           const interceptor = createDefaultHttpInterceptor();
@@ -462,7 +462,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-          const urlExpectedToFail = urlJoin(baseURL, path.fetch);
+          const urlExpectedToFail = joinURL(baseURL, path.fetch);
 
           const responsePromise = fetch(urlExpectedToFail, { method });
 
@@ -489,7 +489,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     ])(
       `should throw an error if trying to use a ${method} url with duplicate dynamic path params (use $use)`,
       async (paths) => {
-        const url = urlJoin(baseURL, paths.use);
+        const url = joinURL(baseURL, paths.use);
 
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
           const interceptor = createDefaultHttpInterceptor();
@@ -500,7 +500,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-          const urlExpectedToFail = urlJoin(baseURL, paths.fetch);
+          const urlExpectedToFail = joinURL(baseURL, paths.fetch);
 
           const responsePromise = fetch(urlExpectedToFail, { method });
 

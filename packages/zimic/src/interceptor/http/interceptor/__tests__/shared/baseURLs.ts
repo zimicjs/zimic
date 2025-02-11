@@ -1,7 +1,7 @@
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
-import { urlJoin, ExtendedURL, InvalidURLError, UnsupportedURLProtocolError } from '@/utils/urls';
+import { joinURL, ExtendedURL, InvalidURLError, UnsupportedURLProtocolError } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -42,7 +42,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         let requests = await handler.requests();
         expect(requests).toHaveLength(0);
 
-        const url = urlJoin(baseURL, path);
+        const url = joinURL(baseURL, path);
 
         const response = await fetch(url, { method: 'GET' });
         expect(response.status).toBe(200);

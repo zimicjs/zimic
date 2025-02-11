@@ -7,7 +7,7 @@ import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -89,7 +89,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
 
         const requestSearchParams = new HttpSearchParams<UserSearchParamsSchema>({ tag: 'admin' });
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           body: requestSearchParams,
         });
@@ -183,7 +183,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         expect(requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
-          const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'application/x-www-form-urlencoded' },
             body: invalidRequestURLSearchParamsString,
@@ -250,7 +250,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
         });

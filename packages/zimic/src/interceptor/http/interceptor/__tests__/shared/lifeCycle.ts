@@ -6,7 +6,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { fetchWithTimeout } from '@/utils/fetch';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
@@ -68,7 +68,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), { method });
+        const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -78,7 +78,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let responsePromise = fetchWithTimeout(urlJoin(baseURL, '/users'), {
+        let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
           method,
           timeout: overridesPreflightResponse ? 0 : 500,
         });
@@ -97,7 +97,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.start();
         expect(interceptor.isRunning()).toBe(true);
 
-        responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
+        responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
@@ -134,7 +134,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, '/users'), { method });
+        const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -148,7 +148,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let responsePromise = fetchWithTimeout(urlJoin(baseURL, '/users'), {
+          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
             method,
             timeout: overridesPreflightResponse ? 0 : 500,
           });
@@ -166,7 +166,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(true);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          responsePromise = fetch(urlJoin(baseURL, '/users'), { method });
+          responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
           if (overridesPreflightResponse) {
             await expectPreflightResponse(responsePromise);

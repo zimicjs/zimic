@@ -6,7 +6,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -77,7 +77,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         let genericRequests = await promiseIfRemote(genericHandler.requests(), interceptor);
         expect(genericRequests).toHaveLength(0);
 
-        const genericResponse = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), { method });
+        const genericResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method });
         expect(genericResponse.status).toBe(200);
 
         genericRequests = await promiseIfRemote(genericHandler.requests(), interceptor);
@@ -116,7 +116,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         let specificRequests = await promiseIfRemote(specificHandler.requests(), interceptor);
         expect(specificRequests).toHaveLength(0);
 
-        const specificResponse = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), { method });
+        const specificResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method });
         expect(specificResponse.status).toBe(200);
 
         specificRequests = await promiseIfRemote(specificHandler.requests(), interceptor);
@@ -136,7 +136,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         expectTypeOf(specificRequest.response.body).toEqualTypeOf<null>();
         expect(specificRequest.response.body).toBe(null);
 
-        const unmatchedResponsePromise = fetch(urlJoin(baseURL, '/users/2'), { method });
+        const unmatchedResponsePromise = fetch(joinURL(baseURL, '/users/2'), { method });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(unmatchedResponsePromise);

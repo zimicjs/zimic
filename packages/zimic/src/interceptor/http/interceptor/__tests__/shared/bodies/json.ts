@@ -8,7 +8,7 @@ import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttp
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { JSONSerialized, JSONValue } from '@/types/json';
 import { importCrypto } from '@/utils/crypto';
-import { urlJoin } from '@/utils/urls';
+import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -87,7 +87,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(users[0]),
@@ -171,7 +171,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(users[0]),
@@ -272,7 +272,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ ...users[0], date: requestDate }),
@@ -366,7 +366,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(1),
@@ -450,7 +450,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(true),
@@ -538,7 +538,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': '' },
           body: JSON.stringify(users[0]),
@@ -604,7 +604,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': '' },
           body: invalidRequestJSONString,
@@ -670,7 +670,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'unknown' },
           body: JSON.stringify(users[0]),
@@ -736,7 +736,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'unknown' },
           body: invalidRequestJSONString,
@@ -803,7 +803,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         expect(requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
-          const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+          const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'application/json' },
             body: invalidRequestJSONString,
@@ -875,7 +875,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         let requests = await promiseIfRemote(handler.requests(), interceptor);
         expect(requests).toHaveLength(0);
 
-        const response = await fetch(urlJoin(baseURL, `/users/${users[0].id}`), {
+        const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
           headers: { 'content-type': 'application/json' },
         });
