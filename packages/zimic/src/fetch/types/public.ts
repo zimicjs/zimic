@@ -2,7 +2,7 @@ import { HttpSchema, HttpSchemaPath, HttpSchemaMethod } from '@/http';
 import { Default, PossiblePromise } from '@/types/utils';
 
 import FetchResponseError from '../errors/FetchResponseError';
-import { FetchRequest, FetchRequestInit, FetchResponse, RawFetchRequest, RawFetchResponse } from './requests';
+import { FetchRequest, FetchRequestInit, FetchResponse } from './requests';
 
 export type FetchInput<
   Schema extends HttpSchema,
@@ -18,15 +18,13 @@ export type FetchFunction<Schema extends HttpSchema> = <
   init?: FetchRequestInit<Schema, Path, Method>,
 ) => Promise<FetchResponse<Path, Method, Default<Schema[Path][Method]>>>;
 
-export interface FetchClientOptions<Schema extends HttpSchema> {
-  baseURL: string;
-
+export interface FetchClientOptions<Schema extends HttpSchema> extends FetchRequestInit.Defaults {
   fetch?: typeof fetch;
   Request?: typeof Request;
   Response?: typeof Response;
 
-  onRequest?: (this: FetchClient<Schema>, request: RawFetchRequest) => PossiblePromise<RawFetchRequest>;
-  onResponse?: (this: FetchClient<Schema>, response: RawFetchResponse) => PossiblePromise<RawFetchResponse>;
+  onRequest?: (this: FetchClient<Schema>, request: FetchRequest.Loose) => PossiblePromise<FetchRequest.Loose>;
+  onResponse?: (this: FetchClient<Schema>, response: FetchResponse.Loose) => PossiblePromise<FetchResponse.Loose>;
 }
 
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
@@ -38,9 +36,9 @@ export type FetchRequestConstructor<Schema extends HttpSchema> = new <
 ) => FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
 
 export interface FetchClient<Schema extends HttpSchema> {
-  Request: FetchRequestConstructor<Schema>;
+  defaults: FetchRequestInit.Defaults;
 
-  baseURL: string;
+  Request: FetchRequestConstructor<Schema>;
 
   isRequest: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     request: unknown,

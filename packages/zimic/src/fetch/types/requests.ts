@@ -51,6 +51,14 @@ export type FetchRequestInit<
   Method extends HttpSchemaMethod<Schema>,
 > = Path extends Path ? FetchRequestInitPerPath<Method, Default<Default<Schema[Path][Method]>['request']>> : never;
 
+export namespace FetchRequestInit {
+  export interface Defaults extends RequestInit {
+    baseURL: string;
+    method?: HttpMethod;
+    searchParams?: URLSearchParams;
+  }
+}
+
 type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpResponseSchemaStatusCode<
   Default<MethodSchema['response']>
 >;
@@ -68,9 +76,12 @@ export interface FetchRequest<
   method: Method;
 }
 
-export type RawFetchRequest = Request & { path: string; method: HttpMethod };
-
-export type RawFetchResponse = Response & { request: RawFetchRequest };
+export namespace FetchRequest {
+  export interface Loose extends Request {
+    path: string;
+    method: HttpMethod;
+  }
+}
 
 interface FetchResponsePerStatusCode<
   Path extends string = string,
@@ -96,3 +107,10 @@ export type FetchResponse<
   IsError extends boolean = false,
   StatusCode extends FetchResponseStatusCode<MethodSchema, IsError> = FetchResponseStatusCode<MethodSchema, IsError>,
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Path, Method, MethodSchema, StatusCode> : never;
+
+export namespace FetchResponse {
+  export interface Loose extends Response {
+    request: FetchRequest.Loose;
+    error: () => FetchResponseError | null;
+  }
+}

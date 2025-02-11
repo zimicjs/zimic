@@ -10,13 +10,17 @@ import {
   FetchRequestConstructor,
   FetchFunction,
 } from './types/public';
-import { FetchRequestInit, FetchRequest, FetchResponse, RawFetchRequest, RawFetchResponse } from './types/requests';
+import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
-  private _baseURL: string;
+  private _defaults: FetchRequestInit.Defaults;
 
-  private onRequest?: (this: FetchClient<Schema>, request: RawFetchRequest) => PossiblePromise<RawFetchRequest>;
-  private onResponse?: (this: FetchClient<Schema>, response: RawFetchResponse) => PossiblePromise<RawFetchResponse>;
+  private onRequest: (this: FetchClient<Schema>, request: FetchRequest.Loose) => PossiblePromise<FetchRequest.Loose>;
+
+  private onResponse: (
+    this: FetchClient<Schema>,
+    response: FetchResponse.Loose,
+  ) => PossiblePromise<FetchResponse.Loose>;
 
   private originalFetch: typeof fetch;
   private OriginalRequest: typeof Request;
@@ -26,32 +30,28 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
   Request: FetchRequestConstructor<Schema>;
 
   constructor({
-    baseURL,
     fetch: originalFetch = globalThis.fetch,
     Request: OriginalRequest = globalThis.Request,
     Response: OriginalResponse = globalThis.Response,
     onRequest,
     onResponse,
+    ...defaults
   }: FetchClientOptions<Schema>) {
-    this._baseURL = baseURL;
+    this._defaults = defaults;
 
     this.originalFetch = originalFetch;
     this.OriginalRequest = OriginalRequest;
     this.OriginalResponse = OriginalResponse;
 
     this.fetch = this.createFetchFunction();
-    this.Request = this.createRequestClass(baseURL);
+    this.Request = this.createRequestClass(defaults);
 
-    this.onRequest = onRequest;
-    this.onResponse = onResponse;
+    this.onRequest = onRequest ?? ((request) => request);
+    this.onResponse = onResponse ?? ((response) => response);
   }
 
-  get baseURL() {
-    return this._baseURL;
-  }
-
-  set baseURL(baseURL: string) {
-    this._baseURL = baseURL;
+  get defaults() {
+    return this._defaults;
   }
 
   isRequest<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -95,14 +95,23 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       input: FetchInput<Schema, Path, Method>,
       init?: FetchRequestInit<Schema, Path, Method>,
     ) => {
-      const rawFetchRequest = input instanceof Request ? input : new this.Request(input, init);
-      const fetchRequest = (await this.onRequest?.(rawFetchRequest)) ?? rawFetchRequest;
+      const fetchRequestBeforeInterceptor = input instanceof Request ? input : new this.Request(input, init);
+      const fetchRequestAfterInterceptor = await this.onRequest(fetchRequestBeforeInterceptor);
 
-      const rawResponse = await this.originalFetch(fetchRequest);
-      const rawFetchResponse = this.createFetchResponse<Path, Method>(rawFetchRequest, rawResponse);
-      const fetchResponse = (await this.onResponse?.(rawFetchResponse)) ?? rawFetchResponse;
+      const originalResponse = await this.originalFetch(fetchRequestAfterInterceptor);
 
-      return fetchResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
+      const fetchResponseBeforeInterceptor = this.createFetchResponse<Path, Method>(
+        fetchRequestBeforeInterceptor,
+        originalResponse,
+      ) as FetchResponse.Loose;
+
+      const fetchResponseAfterInterceptor = (await this.onResponse(fetchResponseBeforeInterceptor)) as FetchResponse<
+        Path,
+        Method,
+        Default<Schema[Path][Method]>
+      >;
+
+      return fetchResponseAfterInterceptor;
     };
 
     Object.setPrototypeOf(fetch, this);
@@ -133,6 +142,9 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
 
     const response = new Proxy(rawResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>, {
       get(target, property) {
+        if (property === 'request') {
+          return request;
+        }
         if (property === 'error') {
           return getResponseError;
         }
@@ -140,14 +152,14 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       },
 
       has(target, property) {
-        return property === 'error' || Reflect.has(target, property);
+        return property === 'request' || property === 'error' || Reflect.has(target, property);
       },
     });
 
     return response;
   }
 
-  private createRequestClass(baseURL: string) {
+  private createRequestClass(defaults: FetchRequestInit.Defaults) {
     type BaseFetchRequest<
       Path extends HttpSchemaPath<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
@@ -165,24 +177,38 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       formData!: BaseFetchRequest<Path, Method>['formData'];
 
       constructor(input: FetchInput<Schema, Path, Method>, init?: FetchRequestInit<Schema, Path, Method>) {
-        if (typeof input === 'string') {
-          const url = new URL(urlJoin(baseURL, input));
-          url.search = new URLSearchParams(init?.searchParams ?? {}).toString();
+        const initWithDefaults = { ...defaults, ...init };
 
-          super(url, init);
+        if (typeof input === 'string') {
+          let urlAsString: string = input;
+
+          if (initWithDefaults.searchParams) {
+            const url = new URL(urlJoin(initWithDefaults.baseURL, input));
+            url.search = new URLSearchParams(initWithDefaults.searchParams).toString();
+            urlAsString = url.toString();
+          }
+
+          super(urlAsString, initWithDefaults);
+
           this.path = input;
         } else if (input instanceof URL) {
-          const url = new URL(input);
-          url.search = new URLSearchParams(init?.searchParams ?? {}).toString();
+          let url: URL = input;
 
-          super(url, init);
-          this.path = excludeNonPathParams(url).href.replace(baseURL, '') as Path;
+          if (initWithDefaults.searchParams) {
+            url = new URL(input);
+            url.search = new URLSearchParams(initWithDefaults.searchParams).toString();
+          }
+
+          super(url, initWithDefaults);
+
+          this.path = excludeNonPathParams(url).href.replace(initWithDefaults.baseURL, '') as Path;
         } else {
-          super(input, init);
-          this.path = input.url.replace(baseURL, '') as Path;
+          super(input, initWithDefaults);
+
+          this.path = input.url.replace(initWithDefaults.baseURL, '') as Path;
         }
 
-        this.method = (init?.method ?? 'GET') as Method;
+        this.method = (initWithDefaults.method ?? 'GET') as Method;
       }
     }
 

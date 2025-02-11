@@ -3,8 +3,8 @@ import { HttpMethod, HttpMethodSchema } from '@/http';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
 class FetchResponseError<
-  Path extends string,
-  Method extends HttpMethod,
+  Path extends string = string,
+  Method extends HttpMethod = HttpMethod,
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
 > extends Error {
   constructor(

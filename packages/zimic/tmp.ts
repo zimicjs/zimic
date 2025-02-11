@@ -75,7 +75,7 @@ const fetch = createFetch<Schema>({
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
-  baseURL: fetch.baseURL,
+  baseURL: fetch.defaults.baseURL,
 });
 
 async function createUser(payload: UserCreationPayload) {
@@ -84,6 +84,10 @@ async function createUser(payload: UserCreationPayload) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
+  if (!response.ok) {
+    throw response.error();
+  }
 
   const user = await response.json();
   return user;
