@@ -19,10 +19,6 @@ export type FetchFunction<Schema extends HttpSchema> = <
 ) => Promise<FetchResponse<Path, Method, Default<Schema[Path][Method]>>>;
 
 export interface FetchClientOptions<Schema extends HttpSchema> extends FetchRequestInit.Defaults {
-  fetch?: typeof fetch;
-  Request?: typeof Request;
-  Response?: typeof Response;
-
   onRequest?: (this: FetchClient<Schema>, request: FetchRequest.Loose) => PossiblePromise<FetchRequest.Loose>;
   onResponse?: (this: FetchClient<Schema>, response: FetchResponse.Loose) => PossiblePromise<FetchResponse.Loose>;
 }

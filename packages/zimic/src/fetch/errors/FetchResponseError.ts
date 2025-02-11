@@ -7,12 +7,15 @@ class FetchResponseError<
   Method extends HttpMethod = HttpMethod,
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
 > extends Error {
+  cause: FetchResponse<Path, Method, MethodSchema, true>;
+
   constructor(
     public request: FetchRequest<Path, Method, MethodSchema>,
     public response: FetchResponse<Path, Method, MethodSchema, true>,
   ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';
+    this.cause = response;
   }
 }
 
