@@ -46,7 +46,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       Method extends HttpSchemaMethod<Schema>,
     >(
       input: FetchInput<Schema, Path, Method>,
-      init?: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+      init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
     ) => {
       const request = await this.createFetchRequest<Path, Method>(input, init);
 
@@ -69,7 +69,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     Method extends HttpSchemaMethod<Schema>,
   >(
     input: FetchInput<Schema, Path, Method>,
-    init?: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+    init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
   ) {
     let request = input instanceof Request ? input : new this.Request(input, init);
 
@@ -117,7 +117,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
 
       constructor(
         input: FetchInput<Schema, Path, Method>,
-        rawInit?: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+        rawInit: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
       ) {
         const init = { ...defaults, ...rawInit };
 

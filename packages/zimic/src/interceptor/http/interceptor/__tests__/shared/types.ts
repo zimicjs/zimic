@@ -33,9 +33,7 @@ export function declareTypeHttpInterceptorTests(
       '/users': {
         POST: {
           request: { body: User };
-          response: {
-            201: { body: User };
-          };
+          response: { 201: { body: User } };
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
