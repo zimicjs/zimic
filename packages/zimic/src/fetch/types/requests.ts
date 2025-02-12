@@ -18,7 +18,7 @@ import {
 } from '@/interceptor/http/requestHandler/types/requests';
 import { Default } from '@/types/utils';
 
-import FetchResponseError from '../errors/FetchResponseError';
+import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
   ? { headers?: undefined }
@@ -41,6 +41,7 @@ type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [Reques
     : { body: RequestSchema['body'] };
 
 type FetchRequestInitPerPath<Method extends HttpMethod, RequestSchema extends HttpRequestSchema> = RequestInit & {
+  baseURL?: string;
   method: Method;
 } & FetchRequestInitWithHeaders<RequestSchema> &
   FetchRequestInitWithSearchParams<RequestSchema> &
@@ -96,9 +97,9 @@ interface FetchResponsePerStatusCode<
   > {
   request: FetchRequest<Path, Method, MethodSchema>;
 
-  error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? () => FetchResponseError<Path, Method, MethodSchema>
-    : () => null;
+  error: () => StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
+    ? FetchResponseError<Path, Method, MethodSchema>
+    : null;
 }
 
 export type FetchResponse<
@@ -112,6 +113,7 @@ export type FetchResponse<
 export namespace FetchResponse {
   export interface Loose extends Response {
     request: FetchRequest.Loose;
-    error: () => FetchResponseError | null;
+
+    error: () => AnyFetchRequestError | null;
   }
 }
