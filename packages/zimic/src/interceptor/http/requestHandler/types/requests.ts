@@ -73,7 +73,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
-> = IfNever<Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>, {}>;
+> = Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,
