@@ -16,6 +16,7 @@ import {
   HttpResponseBodySchema,
   HttpRequestBodySchema,
   HttpRequestHeadersSchema,
+  HttpResponseHeadersSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
 import { Default } from '@/types/utils';
 
@@ -66,7 +67,7 @@ type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpRes
   Default<MethodSchema['response']>
 >;
 
-type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, IsError extends boolean> = IsError extends true
+type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, ErrorOnly extends boolean> = ErrorOnly extends true
   ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
 
@@ -94,7 +95,7 @@ interface FetchResponsePerStatusCode<
 > extends HttpResponse<
     HttpResponseBodySchema<MethodSchema, StatusCode>,
     StatusCode,
-    HttpRequestHeadersSchema<MethodSchema>
+    HttpResponseHeadersSchema<MethodSchema, StatusCode>
   > {
   request: FetchRequest<Path, Method, MethodSchema>;
 
@@ -107,8 +108,11 @@ export type FetchResponse<
   Path extends string = string,
   Method extends HttpMethod = HttpMethod,
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
-  IsError extends boolean = false,
-  StatusCode extends FetchResponseStatusCode<MethodSchema, IsError> = FetchResponseStatusCode<MethodSchema, IsError>,
+  ErrorOnly extends boolean = false,
+  StatusCode extends FetchResponseStatusCode<MethodSchema, ErrorOnly> = FetchResponseStatusCode<
+    MethodSchema,
+    ErrorOnly
+  >,
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Path, Method, MethodSchema, StatusCode> : never;
 
 export namespace FetchResponse {

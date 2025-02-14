@@ -34,7 +34,14 @@ describe('FetchClient (node) > Search params', () => {
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       const searchParams: RequestSearchParams = { name: 'User' };
 
-      await interceptor.get('/users').with({ searchParams }).respond({ status: 200, body: users }).times(2);
+      await interceptor
+        .get('/users')
+        .with({ searchParams })
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
       expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
@@ -94,7 +101,14 @@ describe('FetchClient (node) > Search params', () => {
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       const searchParams = new HttpSearchParams<RequestSearchParams>({ name: 'User' });
 
-      await interceptor.get('/users').with({ searchParams }).respond({ status: 200, body: users }).times(2);
+      await interceptor
+        .get('/users')
+        .with({ searchParams })
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
       expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
@@ -168,7 +182,14 @@ describe('FetchClient (node) > Search params', () => {
         orderBy: ['name'],
       };
 
-      await interceptor.get('/users').with({ searchParams }).respond({ status: 200, body: users }).times(2);
+      await interceptor
+        .get('/users')
+        .with({ searchParams })
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
       expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
@@ -221,7 +242,13 @@ describe('FetchClient (node) > Search params', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      await interceptor.get('/users').respond({ status: 200, body: users }).times(8);
+      await interceptor
+        .get('/users')
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(8);
 
       const fetch = createFetch<Schema>({ baseURL });
       expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();

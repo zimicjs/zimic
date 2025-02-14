@@ -41,7 +41,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
   }
 
   private createFetchFunction() {
-    const fetch: FetchFunction<Schema> = async <
+    const fetch = (async <
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
     >(
@@ -57,7 +57,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       >(request, rawResponse);
 
       return response;
-    };
+    }) as FetchFunction<Schema>;
 
     Object.setPrototypeOf(fetch, this);
 
