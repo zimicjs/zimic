@@ -589,7 +589,7 @@ export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   keyof UnionToIntersection<Schema[keyof Schema]> & HttpMethod
 >;
 
-type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
+export type AllowAnyStringInPathParams<Path extends string> = Path extends `${infer Prefix}:${string}/${infer Suffix}`
   ? `${Prefix}${string}/${AllowAnyStringInPathParams<Suffix>}`
   : Path extends `${infer Prefix}:${string}`
     ? `${Prefix}${string}`

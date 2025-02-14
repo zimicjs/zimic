@@ -12,7 +12,7 @@ import {
   HttpSearchParams,
   HttpHeaders,
 } from '@/http';
-import { LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
+import { AllowAnyStringInPathParams, LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
 import {
   HttpResponseBodySchema,
   HttpRequestBodySchema,
@@ -78,7 +78,7 @@ export interface FetchRequest<
   Method extends HttpMethod = HttpMethod,
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
 > extends HttpRequest<HttpRequestBodySchema<MethodSchema>, HttpRequestHeadersSchema<MethodSchema>> {
-  path: Path;
+  path: AllowAnyStringInPathParams<Path>;
   method: Method;
 }
 
