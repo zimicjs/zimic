@@ -89,7 +89,7 @@ export namespace FetchRequest {
   }
 }
 
-interface FetchResponsePerStatusCode<
+export interface FetchResponsePerStatusCode<
   Path extends string = string,
   Method extends HttpMethod = HttpMethod,
   MethodSchema extends HttpMethodSchema = HttpMethodSchema,
@@ -101,7 +101,7 @@ interface FetchResponsePerStatusCode<
   > {
   request: FetchRequest<Path, Method, MethodSchema>;
 
-  error: () => StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
+  error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
     ? FetchResponseError<Path, Method, MethodSchema>
     : null;
 }
@@ -121,7 +121,7 @@ export namespace FetchResponse {
   export interface Loose extends Response {
     request: FetchRequest.Loose;
 
-    error: () => AnyFetchRequestError | null;
+    error: AnyFetchRequestError | null;
   }
 }
 

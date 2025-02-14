@@ -10,15 +10,16 @@ import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse 
 class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
   private _defaults: FetchRequestInit.Defaults;
 
+  fetch: FetchFunction<Schema> & this;
+
+  Request: FetchRequestConstructor<Schema>;
+
   private onRequest?: (this: FetchClient<Schema>, request: FetchRequest.Loose) => PossiblePromise<FetchRequest.Loose>;
 
   private onResponse?: (
     this: FetchClient<Schema>,
     response: FetchResponse.Loose,
   ) => PossiblePromise<FetchResponse.Loose>;
-
-  fetch: FetchFunction<Schema> & this;
-  Request: FetchRequestConstructor<Schema>;
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
     this._defaults = defaults;
@@ -87,14 +88,18 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     let response = rawResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
 
     Object.defineProperty(response, 'request', {
-      value: fetchRequest,
+      value: fetchRequest satisfies FetchResponse.Loose['request'],
       writable: false,
       enumerable: true,
       configurable: false,
     });
 
+    const responseError = (
+      response.ok ? null : new FetchResponseError(fetchRequest, response)
+    ) satisfies FetchResponse.Loose['error'];
+
     Object.defineProperty(response, 'error', {
-      value: () => (response.ok ? null : new FetchResponseError(fetchRequest, response)),
+      value: responseError,
       writable: false,
       enumerable: true,
       configurable: false,
