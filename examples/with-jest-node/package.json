@@ -9,11 +9,11 @@
   },
   "dependencies": {
     "fastify": "^5.2.1",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@swc/core": "^1.10.15",
+    "@swc/core": "^1.10.16",
     "@swc/jest": "^0.2.37",
     "@types/supertest": "^6.0.2",
     "dotenv-cli": "^8.0.0",
