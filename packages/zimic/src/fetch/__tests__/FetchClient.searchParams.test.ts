@@ -78,7 +78,9 @@ describe('FetchClient (node) > Search params', () => {
       responses.push(await fetch(request));
 
       for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
+
         expect(await response.json()).toEqual(users);
       }
     });
@@ -145,7 +147,9 @@ describe('FetchClient (node) > Search params', () => {
       responses.push(await fetch(request));
 
       for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
+
         expect(await response.json()).toEqual(users);
       }
     });
@@ -226,7 +230,9 @@ describe('FetchClient (node) > Search params', () => {
       responses.push(await fetch(request));
 
       for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
+
         expect(await response.json()).toEqual(users);
       }
     });
@@ -292,7 +298,9 @@ describe('FetchClient (node) > Search params', () => {
       }
 
       for (const response of responses) {
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
+
         expect(await response.json()).toEqual(users);
       }
     });

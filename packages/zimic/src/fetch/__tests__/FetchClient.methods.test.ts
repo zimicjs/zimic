@@ -38,7 +38,9 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch('/users', { method: 'GET' });
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
+
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
@@ -54,7 +56,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User[]>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -119,7 +121,9 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch(request);
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
+
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
@@ -135,7 +139,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User[]>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -208,7 +212,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -300,7 +304,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -357,6 +361,7 @@ describe('FetchClient (node) > Methods', () => {
         body: JSON.stringify(user),
       });
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual(user);
 
@@ -373,7 +378,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -449,6 +454,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch(request);
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual(user);
 
@@ -465,7 +471,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -522,6 +528,7 @@ describe('FetchClient (node) > Methods', () => {
         body: JSON.stringify(user),
       });
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual(user);
 
@@ -538,7 +545,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -616,6 +623,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch(request);
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual(user);
 
@@ -632,7 +640,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -688,7 +696,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -765,7 +773,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -805,6 +813,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch('/users', { method: 'HEAD' });
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('');
 
@@ -821,7 +830,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -880,6 +889,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch(request);
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('');
 
@@ -896,7 +906,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -936,6 +946,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch('/users', { method: 'OPTIONS' });
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('');
 
@@ -952,7 +963,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
@@ -1013,6 +1024,7 @@ describe('FetchClient (node) > Methods', () => {
 
       const response = await fetch(request);
 
+      expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('');
 
@@ -1029,7 +1041,7 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<() => null>();
+      expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
