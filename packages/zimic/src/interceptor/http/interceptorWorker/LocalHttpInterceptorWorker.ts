@@ -154,8 +154,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       ensureUniquePathParams: true,
     });
 
-    const httpHandler = http[lowercaseMethod](url.toString(), async (context): Promise<HttpResponse> => {
-      const request = context.request satisfies Request as HttpRequest;
+    const httpHandler = http[lowercaseMethod](url.toString(), async (context) => {
+      const request = context.request as HttpRequest;
       const requestClone = request.clone();
 
       let response: HttpResponse | null = null;
@@ -175,7 +175,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers,
-        }) as HttpResponse;
+        });
       }
 
       return response;
@@ -193,9 +193,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.logUnhandledRequestIfNecessary(requestClone, strategy);
 
     if (strategy?.action === 'reject') {
-      return Response.error() as HttpResponse;
+      return Response.error();
     } else {
-      return passthrough() as HttpResponse;
+      return passthrough();
     }
   }
 

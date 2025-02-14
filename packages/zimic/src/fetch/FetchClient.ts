@@ -4,14 +4,8 @@ import { Default, PossiblePromise } from '@/types/utils';
 import { excludeNonPathParams, joinURL } from '@/utils/urls';
 
 import FetchResponseError from './errors/FetchResponseError';
-import {
-  FetchClient as PublicFetchClient,
-  FetchInput,
-  FetchClientOptions,
-  FetchRequestConstructor,
-  FetchFunction,
-} from './types/public';
-import { FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
+import { FetchClient as PublicFetchClient, FetchInput, FetchOptions, FetchFunction } from './types/public';
+import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
   private _defaults: FetchRequestInit.Defaults;
@@ -26,7 +20,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
   fetch: FetchFunction<Schema> & this;
   Request: FetchRequestConstructor<Schema>;
 
-  constructor({ onRequest, onResponse, ...defaults }: FetchClientOptions<Schema>) {
+  constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
     this._defaults = defaults;
 
     this.fetch = this.createFetchFunction();
@@ -41,7 +35,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
   }
 
   private createFetchFunction() {
-    const fetch = (async <
+    const fetch = async <
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
     >(
@@ -50,14 +44,17 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     ) => {
       const request = await this.createFetchRequest<Path, Method>(input, init);
 
-      const rawResponse = await globalThis.fetch(request);
+      const rawResponse = await globalThis.fetch(
+        // Optimize type checking by narrowing the type of request
+        request as Request,
+      );
       const response = await this.createFetchResponse<
         LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
         Method
       >(request, rawResponse);
 
       return response;
-    }) as FetchFunction<Schema>;
+    };
 
     Object.setPrototypeOf(fetch, this);
 
@@ -74,7 +71,10 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     let request = input instanceof Request ? input : new this.Request(input, init);
 
     if (this.onRequest) {
-      request = (await this.onRequest(request)) as typeof request;
+      request = (await this.onRequest(
+        // Optimize type checking by narrowing the type of request
+        request as FetchRequest.Loose,
+      )) as typeof request;
     }
 
     return request;
@@ -101,7 +101,10 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     });
 
     if (this.onResponse) {
-      response = (await this.onResponse(response)) as typeof response;
+      response = (await this.onResponse(
+        // Optimize type checking by narrowing the type of response
+        response as FetchResponse.Loose,
+      )) as typeof response;
     }
 
     return response;
@@ -124,7 +127,11 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
         let url: URL;
 
         if (input instanceof globalThis.Request) {
-          super(input, init);
+          super(
+            // Optimize type checking by narrowing the type of input
+            input as globalThis.Request,
+            init,
+          );
 
           url = new URL(input.url);
         } else {

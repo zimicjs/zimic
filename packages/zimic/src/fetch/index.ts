@@ -1,13 +1,6 @@
-export type {
-  FetchClient,
-  Fetch,
-  FetchClientOptions,
-  FetchFunction,
-  FetchInput,
-  FetchRequestConstructor,
-} from './types/public';
+export type { Fetch, FetchOptions as FetchClientOptions, FetchInput } from './types/public';
 
-export type { FetchRequest, FetchRequestInit, FetchResponse } from './types/requests';
+export type { FetchRequestInit, FetchRequest, FetchRequestConstructor, FetchResponse } from './types/requests';
 
 export { default as FetchResponseError } from './errors/FetchResponseError';
 

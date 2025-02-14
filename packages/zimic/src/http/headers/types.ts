@@ -8,8 +8,6 @@ export interface HttpHeadersSchema {
   [headerName: string]: string | undefined;
 }
 
-export type InferHttpHeadersSchema<Headers> = Headers extends HttpHeaders<infer Schema> ? Schema : never;
-
 export namespace HttpHeadersSchema {
   /** A schema for loose HTTP headers. Header values are not strictly typed. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -12,6 +12,7 @@ import {
   HttpSearchParams,
   HttpHeaders,
 } from '@/http';
+import { LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
 import {
   HttpResponseBodySchema,
   HttpRequestBodySchema,
@@ -21,6 +22,7 @@ import {
 import { Default } from '@/types/utils';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
+import { FetchInput } from './public';
 
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
   ? { headers?: undefined }
@@ -122,3 +124,15 @@ export namespace FetchResponse {
     error: () => AnyFetchRequestError | null;
   }
 }
+
+export type FetchRequestConstructor<Schema extends HttpSchema> = new <
+  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+  Method extends HttpSchemaMethod<Schema>,
+>(
+  input: FetchInput<Schema, Path, Method>,
+  init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+) => FetchRequest<
+  LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
+  Method,
+  Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
+>;
