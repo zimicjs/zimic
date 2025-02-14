@@ -39,3 +39,4 @@ tsconfig.tsbuildinfo
 .DS_Store
 *.pem
 local/
+tracing/
