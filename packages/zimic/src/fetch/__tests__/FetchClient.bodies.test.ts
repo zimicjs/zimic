@@ -40,4 +40,10 @@ describe('FetchClient (node) > Bodies', () => {
 
     it('should consider requests with empty array buffer bodies as null', async () => {});
   });
+
+  it('should show a type error if trying to use a non-assignable request body', async () => {});
+
+  it('should not allow declaring request bodies for methods that do not support them', () => {});
+
+  it('should not allow declaring response bodies for methods or statuses that do not support them', () => {});
 });

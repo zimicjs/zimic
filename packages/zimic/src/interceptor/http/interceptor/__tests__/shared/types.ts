@@ -647,7 +647,7 @@ export function declareTypeHttpInterceptorTests(
       '/users': {
         GET: {
           response: {
-            200: { body: User[] };
+            200: { body?: User[] };
           };
         };
       };

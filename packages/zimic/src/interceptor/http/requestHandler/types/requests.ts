@@ -6,7 +6,11 @@ import { HttpMethodSchema, HttpResponseSchema, HttpStatusCode, InferPathParams }
 import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
 export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
-  undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
+  unknown extends ResponseSchema['body']
+    ? { body?: null }
+    : undefined extends ResponseSchema['body']
+      ? { body?: ReplaceBy<ResponseSchema['body'], undefined, null> }
+      : { body: ResponseSchema['body'] };
 
 export type HttpRequestHandlerResponseWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']

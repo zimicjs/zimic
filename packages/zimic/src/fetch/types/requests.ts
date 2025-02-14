@@ -19,7 +19,7 @@ import {
   HttpRequestHeadersSchema,
   HttpResponseHeadersSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
-import { Default } from '@/types/utils';
+import { Default, ReplaceBy } from '@/types/utils';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { FetchInput } from './public';
@@ -41,7 +41,7 @@ type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
 type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [RequestSchema['body']] extends [never]
   ? { body?: null }
   : undefined extends RequestSchema['body']
-    ? { body?: null }
+    ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
     : { body: RequestSchema['body'] };
 
 type FetchRequestInitPerPath<Method extends HttpMethod, RequestSchema extends HttpRequestSchema> = RequestInit & {

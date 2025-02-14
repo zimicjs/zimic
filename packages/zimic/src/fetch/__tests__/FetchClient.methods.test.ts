@@ -575,7 +575,7 @@ describe('FetchClient (node) > Methods', () => {
         PATCH: {
           request: {
             headers: { 'content-type': 'application/json' };
-            body: User;
+            body: Partial<User>;
           };
           response: { 200: { body: User } };
         };
@@ -617,7 +617,7 @@ describe('FetchClient (node) > Methods', () => {
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<User>>();
+      expectTypeOf(request.json).toEqualTypeOf<() => Promise<Partial<User>>>();
       expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
@@ -658,7 +658,7 @@ describe('FetchClient (node) > Methods', () => {
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
 
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<User>>();
+      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<Partial<User>>>();
       expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
@@ -1062,6 +1062,238 @@ describe('FetchClient (node) > Methods', () => {
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
+    });
+  });
+
+  it('should correctly type requests and responses with multiple methods', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          response: { 200: { body: User[] } };
+        };
+
+        PATCH: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: Partial<User>;
+          };
+          response: { 201: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      const fetch = createFetch<Schema>({ baseURL });
+
+      await interceptor
+        .get('/users')
+        .respond({
+          status: 200,
+          body: [],
+        })
+        .times(1);
+
+      const getResponse = await fetch('/users', { method: 'GET' });
+      expectTypeOf(getResponse.status).toEqualTypeOf<200>();
+      expect(getResponse.status).toBe(200);
+      expect(await getResponse.text()).toBe('');
+
+      expect(getResponse).toBeInstanceOf(Response);
+      expectTypeOf(getResponse satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(getResponse.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(getResponse.headers).toBeInstanceOf(Headers);
+      expectTypeOf(getResponse.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+      expectTypeOf(getResponse.json).toEqualTypeOf<() => Promise<User[]>>();
+      expectTypeOf(getResponse.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(getResponse.clone).toEqualTypeOf<() => typeof getResponse>();
+      expectTypeOf(getResponse.error).toEqualTypeOf<null>();
+
+      expect(getResponse.request).toBeInstanceOf(Request);
+      expectTypeOf(getResponse.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(getResponse.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(getResponse.request.path).toBe('/users');
+      expectTypeOf(getResponse.request.path).toEqualTypeOf<'/users'>();
+
+      expect(getResponse.request.method).toBe('GET');
+      expectTypeOf(getResponse.request.method).toEqualTypeOf<'GET'>();
+
+      expect(getResponse.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(getResponse.request.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+      expectTypeOf(getResponse.request.json).toEqualTypeOf<() => Promise<null>>();
+      expectTypeOf(getResponse.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(getResponse.request.clone).toEqualTypeOf<() => typeof getResponse.request>();
+
+      await interceptor
+        .patch('/users')
+        .with({ body: { name: 'User 1' } })
+        .respond({ status: 201, body: users[0] })
+        .times(1);
+
+      const patchResponse = await fetch('/users', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+      expectTypeOf(patchResponse.status).toEqualTypeOf<201>();
+      expect(patchResponse.status).toBe(201);
+      expect(await patchResponse.text()).toBe('');
+
+      expect(patchResponse).toBeInstanceOf(Response);
+      expectTypeOf(patchResponse satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'PATCH', Schema['/users']['PATCH']>
+      >();
+
+      expect(patchResponse.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(patchResponse.headers).toBeInstanceOf(Headers);
+      expectTypeOf(patchResponse.headers).toEqualTypeOf<StrictHeaders<never>>();
+
+      expectTypeOf(patchResponse.json).toEqualTypeOf<() => Promise<User>>();
+      expectTypeOf(patchResponse.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(patchResponse.clone).toEqualTypeOf<() => typeof patchResponse>();
+      expectTypeOf(patchResponse.error).toEqualTypeOf<null>();
+
+      expect(patchResponse.request).toBeInstanceOf(Request);
+      expectTypeOf(patchResponse.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'PATCH', Schema['/users']['PATCH']>
+      >();
+
+      expect(patchResponse.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(patchResponse.request.path).toBe('/users');
+      expectTypeOf(patchResponse.request.path).toEqualTypeOf<'/users'>();
+
+      expect(patchResponse.request.method).toBe('PATCH');
+      expectTypeOf(patchResponse.request.method).toEqualTypeOf<'PATCH'>();
+
+      expect(patchResponse.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(patchResponse.request.headers).toEqualTypeOf<
+        StrictHeaders<{ 'content-type': 'application/json' }>
+      >();
+
+      expectTypeOf(patchResponse.request.json).toEqualTypeOf<() => Promise<Partial<User>>>();
+      expectTypeOf(patchResponse.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(patchResponse.request.clone).toEqualTypeOf<() => typeof patchResponse.request>();
+    });
+  });
+
+  it('should show a type error if trying to use a non-specified path and/or method', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: User;
+          };
+          response: { 201: { body: User } };
+        };
+
+        GET: {
+          response: { 200: { body: User[] } };
+        };
+      };
+
+      '/users/:username': {
+        GET: {
+          response: { 200: { body: User } };
+        };
+
+        PATCH: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body?: Partial<User>;
+          };
+          response: { 200: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      interceptor.get('/users').respond({
+        status: 200,
+        body: [],
+      });
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      // @ts-expect-error Invalid body
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ other: 1 }),
+      });
+
+      // @ts-expect-error Invalid headers
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      // @ts-expect-error Headers and body are missing
+      await fetch('/users', { method: 'POST' });
+
+      // @ts-expect-error Headers are missing
+      await fetch('/users', {
+        method: 'POST',
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      // @ts-expect-error Body is missing
+      await fetch('/users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await fetch('/users/1', { method: 'GET' });
+
+      // @ts-expect-error Unknown method
+      await fetch('/users/1', { method: 'POST' });
+
+      // @ts-expect-error Unknown path
+      await fetch('/unknown', { method: 'GET' });
+
+      await fetch('/users/1', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      await fetch('/users/1', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      // @ts-expect-error Headers and body are missing
+      await fetch('/users/1', { method: 'PATCH' });
+
+      // @ts-expect-error Headers are missing
+      await fetch('/users/1', {
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'User 1' }),
+      });
+
+      await fetch('/users/1', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+      });
     });
   });
 });
