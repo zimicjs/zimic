@@ -1,4 +1,4 @@
-export type { Fetch, FetchOptions as FetchClientOptions, FetchInput } from './types/public';
+export type { Fetch, FetchFunction, FetchClient, FetchOptions as FetchClientOptions, FetchInput } from './types/public';
 
 export type { FetchRequestInit, FetchRequest, FetchRequestConstructor, FetchResponse } from './types/requests';
 

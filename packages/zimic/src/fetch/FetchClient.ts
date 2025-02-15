@@ -1,6 +1,6 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod, HttpSearchParams } from '@/http';
 import { LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
-import { Default, PossiblePromise } from '@/types/utils';
+import { Default } from '@/types/utils';
 import { excludeNonPathParams, joinURL } from '@/utils/urls';
 
 import FetchResponseError from './errors/FetchResponseError';
@@ -8,31 +8,22 @@ import { FetchClient as PublicFetchClient, FetchInput, FetchOptions, FetchFuncti
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
-  private _defaults: FetchRequestInit.Defaults;
+  defaults: FetchRequestInit.Defaults;
 
   fetch: FetchFunction<Schema> & this;
-
   Request: FetchRequestConstructor<Schema>;
 
-  private onRequest?: (this: FetchClient<Schema>, request: FetchRequest.Loose) => PossiblePromise<FetchRequest.Loose>;
-
-  private onResponse?: (
-    this: FetchClient<Schema>,
-    response: FetchResponse.Loose,
-  ) => PossiblePromise<FetchResponse.Loose>;
+  onRequest?: FetchOptions<Schema>['onRequest'];
+  onResponse?: FetchOptions<Schema>['onResponse'];
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
-    this._defaults = defaults;
+    this.defaults = defaults;
 
     this.fetch = this.createFetchFunction();
     this.Request = this.createRequestClass(defaults);
 
     this.onRequest = onRequest;
     this.onResponse = onResponse;
-  }
-
-  get defaults() {
-    return this._defaults;
   }
 
   private createFetchFunction() {
@@ -72,10 +63,17 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     let request = input instanceof Request ? input : new this.Request(input, init);
 
     if (this.onRequest) {
-      request = (await this.onRequest(
+      const requestAfterInterceptor = await this.onRequest(
         // Optimize type checking by narrowing the type of request
         request as FetchRequest.Loose,
-      )) as typeof request;
+        this.fetch,
+      );
+
+      const isFetchRequest = requestAfterInterceptor instanceof this.Request;
+
+      request = isFetchRequest
+        ? (requestAfterInterceptor as Request as typeof request)
+        : new this.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
     }
 
     return request;
@@ -85,9 +83,35 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     Path extends HttpSchemaPath<Schema, Method>,
     Method extends HttpSchemaMethod<Schema>,
   >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, rawResponse: Response) {
-    let response = rawResponse as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
+    let response = this.defineFetchResponseProperties<Path, Method>(fetchRequest, rawResponse);
 
-    Object.defineProperty(response, 'request', {
+    if (this.onResponse) {
+      const responseAfterInterceptor = await this.onResponse(
+        // Optimize type checking by narrowing the type of response
+        response as FetchResponse.Loose,
+        this.fetch,
+      );
+
+      const isFetchResponse =
+        responseAfterInterceptor instanceof Response &&
+        'request' in responseAfterInterceptor &&
+        responseAfterInterceptor.request instanceof this.Request;
+
+      response = isFetchResponse
+        ? (responseAfterInterceptor as typeof response)
+        : this.defineFetchResponseProperties<Path, Method>(fetchRequest, responseAfterInterceptor);
+    }
+
+    return response;
+  }
+
+  private defineFetchResponseProperties<
+    Path extends HttpSchemaPath<Schema, Method>,
+    Method extends HttpSchemaMethod<Schema>,
+  >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, response: Response) {
+    const fetchResponse = response as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
+
+    Object.defineProperty(fetchResponse, 'request', {
       value: fetchRequest satisfies FetchResponse.Loose['request'],
       writable: false,
       enumerable: true,
@@ -95,24 +119,17 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     });
 
     const responseError = (
-      response.ok ? null : new FetchResponseError(fetchRequest, response)
+      fetchResponse.ok ? null : new FetchResponseError(fetchRequest, fetchResponse)
     ) satisfies FetchResponse.Loose['error'];
 
-    Object.defineProperty(response, 'error', {
+    Object.defineProperty(fetchResponse, 'error', {
       value: responseError,
       writable: false,
       enumerable: true,
       configurable: false,
     });
 
-    if (this.onResponse) {
-      response = (await this.onResponse(
-        // Optimize type checking by narrowing the type of response
-        response as FetchResponse.Loose,
-      )) as typeof response;
-    }
-
-    return response;
+    return fetchResponse;
   }
 
   private createRequestClass(defaults: FetchRequestInit.Defaults) {

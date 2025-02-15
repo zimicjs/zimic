@@ -86,6 +86,7 @@ export namespace FetchRequest {
   export interface Loose extends Request {
     path: string;
     method: HttpMethod;
+    clone: () => Loose;
   }
 }
 
@@ -120,8 +121,8 @@ export type FetchResponse<
 export namespace FetchResponse {
   export interface Loose extends Response {
     request: FetchRequest.Loose;
-
     error: AnyFetchRequestError | null;
+    clone: () => Loose;
   }
 }
 

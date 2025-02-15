@@ -1096,7 +1096,7 @@ describe('FetchClient (node) > Methods', () => {
       const getResponse = await fetch('/users', { method: 'GET' });
       expectTypeOf(getResponse.status).toEqualTypeOf<200>();
       expect(getResponse.status).toBe(200);
-      expect(await getResponse.text()).toBe('');
+      expect(await getResponse.json()).toEqual([]);
 
       expect(getResponse).toBeInstanceOf(Response);
       expectTypeOf(getResponse satisfies Response).toEqualTypeOf<
@@ -1146,7 +1146,7 @@ describe('FetchClient (node) > Methods', () => {
       });
       expectTypeOf(patchResponse.status).toEqualTypeOf<201>();
       expect(patchResponse.status).toBe(201);
-      expect(await patchResponse.text()).toBe('');
+      expect(await patchResponse.json()).toEqual(users[0]);
 
       expect(patchResponse).toBeInstanceOf(Response);
       expectTypeOf(patchResponse satisfies Response).toEqualTypeOf<
@@ -1203,7 +1203,7 @@ describe('FetchClient (node) > Methods', () => {
         };
       };
 
-      '/users/:username': {
+      '/users/:id': {
         GET: {
           response: { 200: { body: User } };
         };
@@ -1219,12 +1219,9 @@ describe('FetchClient (node) > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      interceptor.get('/users').respond({
-        status: 200,
-        body: [],
-      });
-
       const fetch = createFetch<Schema>({ baseURL });
+
+      interceptor.post('/users').respond({ status: 201, body: users[0] });
 
       await fetch('/users', {
         method: 'POST',
@@ -1261,13 +1258,20 @@ describe('FetchClient (node) > Methods', () => {
         headers: { 'content-type': 'application/json' },
       });
 
+      interceptor.get('/users/:id').respond({ status: 200, body: users[0] });
       await fetch('/users/1', { method: 'GET' });
 
-      // @ts-expect-error Unknown method
+      // @ts-expect-error Invalid method
+      interceptor.post('/users/:id').respond({ status: 200 });
+      // @ts-expect-error Invalid method
       await fetch('/users/1', { method: 'POST' });
 
-      // @ts-expect-error Unknown path
+      // @ts-expect-error Invalid path
+      interceptor.get('/unknown').respond({ status: 200 });
+      // @ts-expect-error Invalid path
       await fetch('/unknown', { method: 'GET' });
+
+      interceptor.patch('/users/1').respond({ status: 200, body: users[0] });
 
       await fetch('/users/1', {
         method: 'PATCH',
