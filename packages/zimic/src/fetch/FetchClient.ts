@@ -131,7 +131,6 @@ class FetchClient<Schema extends HttpSchema> {
       Method extends HttpSchemaMethod<Schema>,
     > extends globalThis.Request {
       path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
-      method: Method;
 
       constructor(
         input: FetchInput<Schema, Path, Method>,
@@ -162,8 +161,6 @@ class FetchClient<Schema extends HttpSchema> {
         this.path = excludeNonPathParams(url)
           .toString()
           .replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
-
-        this.method = init.method;
       }
     }
 
