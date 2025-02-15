@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, StrictHeaders } from '@/http';
+import { HttpSchema } from '@/http';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -52,14 +52,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/${users[0].username}`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/:username', 'GET', Schema['/:username']['GET']>
@@ -72,13 +64,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -118,14 +103,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].username}/get`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users/:username/get', 'GET', Schema['/users/:username/get']['GET']>
@@ -138,13 +115,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -184,14 +154,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].username}`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users/:username', 'GET', Schema['/users/:username']['GET']>
@@ -204,13 +166,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -250,14 +205,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].username}/get/${users[1].username}`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users/:username/get/:other', 'GET', Schema['/users/:username/get/:other']['GET']>
@@ -270,13 +217,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -316,14 +256,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].username}/${users[1].username}`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users/:username/:other', 'GET', Schema['/users/:username/:other']['GET']>
@@ -336,13 +268,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -382,14 +307,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].username}/${users[1].username}/get`));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users/:username/:other/get', 'GET', Schema['/users/:username/:other/get']['GET']>
@@ -402,13 +319,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
@@ -456,14 +366,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User[]>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-      expectTypeOf(response.error).toEqualTypeOf<null>();
-
       expect(response.request).toBeInstanceOf(Request);
       expectTypeOf(response.request satisfies Request).toEqualTypeOf<
         FetchRequest<'/users', 'GET', Schema['/users']['GET']>
@@ -476,13 +378,6 @@ describe('FetchClient (node) > Path params', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, StrictHeaders } from '@/http';
+import { HttpSchema } from '@/http';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
@@ -56,9 +56,6 @@ describe('FetchClient (node) > Errors', () => {
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
       expectTypeOf(response.json).toEqualTypeOf<
         | (() => Promise<User[]>)
         | (() => Promise<{ code: 401; message: string }>)
@@ -95,11 +92,6 @@ describe('FetchClient (node) > Errors', () => {
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(response.json).toEqualTypeOf<() => Promise<User[]>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<
         () => FetchResponsePerStatusCode<'/users', 'GET', Schema['/users']['GET'], 200>
       >();
@@ -147,9 +139,6 @@ describe('FetchClient (node) > Errors', () => {
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
       expectTypeOf(response.json).toEqualTypeOf<
         | (() => Promise<User[]>)
         | (() => Promise<{ code: 401; message: string }>)
@@ -187,9 +176,6 @@ describe('FetchClient (node) > Errors', () => {
       >();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
 
       expectTypeOf(response.json).toEqualTypeOf<
         | (() => Promise<{ code: 401; message: string }>)
