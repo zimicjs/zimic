@@ -35,10 +35,11 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
     ) => {
       const request = await this.createFetchRequest<Path, Method>(input, init);
+      const requestClone = request.clone();
 
       const rawResponse = await globalThis.fetch(
         // Optimize type checking by narrowing the type of request
-        request as Request,
+        requestClone as Request,
       );
       const response = await this.createFetchResponse<
         LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
