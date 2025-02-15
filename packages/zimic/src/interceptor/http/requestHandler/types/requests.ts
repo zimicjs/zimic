@@ -9,8 +9,8 @@ export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpRespon
   unknown extends ResponseSchema['body']
     ? { body?: null }
     : undefined extends ResponseSchema['body']
-      ? { body?: ReplaceBy<ResponseSchema['body'], undefined, null> }
-      : { body: ResponseSchema['body'] };
+      ? { body?: ReplaceBy<ReplaceBy<ResponseSchema['body'], undefined, null>, ArrayBuffer, Blob> }
+      : { body: ReplaceBy<ResponseSchema['body'], ArrayBuffer, Blob> };
 
 export type HttpRequestHandlerResponseWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
