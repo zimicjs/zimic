@@ -1,4 +1,6 @@
-export type JSONStringified<Value> = string & Value;
+const value = Symbol.for('JSONStringified.value');
+
+export type JSONStringified<Value> = string & { [value]: Value };
 
 declare global {
   interface JSON {

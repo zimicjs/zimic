@@ -19,9 +19,11 @@ import {
   HttpRequestHeadersSchema,
   HttpResponseHeadersSchema,
 } from '@/interceptor/http/requestHandler/types/requests';
+import { JSONValue } from '@/types/json';
 import { Default, ReplaceBy } from '@/types/utils';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
+import { JSONStringified } from './json';
 import { FetchInput } from './public';
 
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
@@ -42,7 +44,11 @@ type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [Reques
   ? { body?: null }
   : undefined extends RequestSchema['body']
     ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-    : { body: RequestSchema['body'] };
+    : RequestSchema['body'] extends string
+      ? { body: RequestSchema['body'] }
+      : RequestSchema['body'] extends JSONValue
+        ? { body: JSONStringified<RequestSchema['body']> }
+        : { body: RequestSchema['body'] };
 
 type FetchRequestInitPerPath<Method extends HttpMethod, RequestSchema extends HttpRequestSchema> = RequestInit & {
   baseURL?: string;
