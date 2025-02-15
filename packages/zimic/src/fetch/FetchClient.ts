@@ -1,29 +1,21 @@
 import { HttpSchema, HttpSchemaPath, HttpSchemaMethod, HttpSearchParams } from '@/http';
 import { LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
 import { Default } from '@/types/utils';
-import { excludeNonPathParams, joinURL } from '@/utils/urls';
+import { createRegexFromURL, excludeNonPathParams, joinURL } from '@/utils/urls';
 
 import FetchResponseError from './errors/FetchResponseError';
-import { FetchClient as PublicFetchClient, FetchInput, FetchOptions, FetchFunction } from './types/public';
+import { FetchInput, FetchOptions, Fetch } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema> {
-  defaults: FetchRequestInit.Defaults;
-
-  fetch: FetchFunction<Schema> & this;
-  Request: FetchRequestConstructor<Schema>;
-
-  onRequest?: FetchOptions<Schema>['onRequest'];
-  onResponse?: FetchOptions<Schema>['onResponse'];
+class FetchClient<Schema extends HttpSchema> {
+  fetch: Fetch<Schema>;
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
-    this.defaults = defaults;
-
     this.fetch = this.createFetchFunction();
-    this.Request = this.createRequestClass(defaults);
-
-    this.onRequest = onRequest;
-    this.onResponse = onResponse;
+    this.fetch.defaults = defaults;
+    this.fetch.Request = this.createRequestClass(defaults);
+    this.fetch.onRequest = onRequest;
+    this.fetch.onResponse = onResponse;
   }
 
   private createFetchFunction() {
@@ -51,7 +43,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
 
     Object.setPrototypeOf(fetch, this);
 
-    return fetch as FetchFunction<Schema> & this;
+    return fetch as Fetch<Schema>;
   }
 
   private async createFetchRequest<
@@ -61,20 +53,20 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     input: FetchInput<Schema, Path, Method>,
     init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
   ) {
-    let request = input instanceof Request ? input : new this.Request(input, init);
+    let request = input instanceof Request ? input : new this.fetch.Request(input, init);
 
-    if (this.onRequest) {
-      const requestAfterInterceptor = await this.onRequest(
+    if (this.fetch.onRequest) {
+      const requestAfterInterceptor = await this.fetch.onRequest(
         // Optimize type checking by narrowing the type of request
         request as FetchRequest.Loose,
         this.fetch,
       );
 
-      const isFetchRequest = requestAfterInterceptor instanceof this.Request;
+      const isFetchRequest = requestAfterInterceptor instanceof this.fetch.Request;
 
       request = isFetchRequest
         ? (requestAfterInterceptor as Request as typeof request)
-        : new this.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
+        : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
     }
 
     return request;
@@ -86,8 +78,8 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
   >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, rawResponse: Response) {
     let response = this.defineFetchResponseProperties<Path, Method>(fetchRequest, rawResponse);
 
-    if (this.onResponse) {
-      const responseAfterInterceptor = await this.onResponse(
+    if (this.fetch.onResponse) {
+      const responseAfterInterceptor = await this.fetch.onResponse(
         // Optimize type checking by narrowing the type of response
         response as FetchResponse.Loose,
         this.fetch,
@@ -96,7 +88,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
       const isFetchResponse =
         responseAfterInterceptor instanceof Response &&
         'request' in responseAfterInterceptor &&
-        responseAfterInterceptor.request instanceof this.Request;
+        responseAfterInterceptor.request instanceof this.fetch.Request;
 
       response = isFetchResponse
         ? (responseAfterInterceptor as typeof response)
@@ -171,7 +163,7 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
           .toString()
           .replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
 
-        this.method = (init.method ?? 'GET') as Method;
+        this.method = init.method;
       }
     }
 
@@ -183,7 +175,13 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     path: Path,
     method: Method,
   ): request is FetchRequest<Path, Method, Default<Schema[Path][Method]>> {
-    return request instanceof Request && request.method === method && 'path' in request && request.path === path;
+    return (
+      request instanceof Request &&
+      request.method === method &&
+      'path' in request &&
+      typeof request.path === 'string' &&
+      createRegexFromURL(path).test(request.path)
+    );
   }
 
   isResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
@@ -194,8 +192,8 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     return (
       response instanceof Response &&
       'request' in response &&
-      this.isRequest(response.request, path, method) &&
-      'error' in response
+      'error' in response &&
+      this.isRequest(response.request, path, method)
     );
   }
 
@@ -204,7 +202,12 @@ class FetchClient<Schema extends HttpSchema> implements PublicFetchClient<Schema
     path: Path,
     method: Method,
   ): error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>> {
-    return error instanceof FetchResponseError && error.request.method === method && error.request.path === path;
+    return (
+      error instanceof FetchResponseError &&
+      error.request.method === method &&
+      typeof error.request.path === 'string' &&
+      createRegexFromURL(path).test(error.request.path)
+    );
   }
 }
 

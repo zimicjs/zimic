@@ -3,13 +3,14 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { HttpMethod, HttpSchema, StrictHeaders } from '@/http';
 import { Default } from '@/types/utils';
 import { joinURL } from '@/utils/urls';
+import { expectFetchError } from '@tests/utils/fetch';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
 import { Fetch } from '../types/public';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
-describe('FetchClient (node) > Interceptors', () => {
+describe('FetchClient (node) > Listeners', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
@@ -18,7 +19,7 @@ describe('FetchClient (node) > Interceptors', () => {
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
-  it('should support intercepting requests', async () => {
+  it('should support listening to requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -106,7 +107,7 @@ describe('FetchClient (node) > Interceptors', () => {
     });
   });
 
-  it('should support intercepting and modifying requests', async () => {
+  it('should support listening to and modifying requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -174,7 +175,7 @@ describe('FetchClient (node) > Interceptors', () => {
     });
   });
 
-  it('should support intercepting and creating modified requests', async () => {
+  it('should support listening to and creating modified requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -250,7 +251,78 @@ describe('FetchClient (node) > Interceptors', () => {
     });
   });
 
-  it('should support intercepting responses', async () => {
+  it('should support changing an `onRequest` listener after the fetch was created', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          request: {
+            headers?: { 'accept-language'?: string };
+          };
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      await interceptor
+        .get('/users')
+        .with({
+          headers: { 'accept-language': 'en' },
+        })
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+      expect(fetch.onRequest).toBe(undefined);
+
+      const onRequest = vi.fn<Default<Fetch<Schema>['onRequest']>>((request) => {
+        request.headers.set('accept-language', 'en');
+        return request;
+      });
+
+      const responseBeforeListener = fetch('/users', { method: 'GET' });
+      await expectFetchError(responseBeforeListener);
+
+      fetch.onRequest = onRequest;
+
+      const response = await fetch('/users', { method: 'GET' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+
+      expect(await response.json()).toEqual(users);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('GET');
+      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+
+      expect(onRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should support listening to responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -345,10 +417,12 @@ describe('FetchClient (node) > Interceptors', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
+
+      expect(onResponse).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('should support intercepting and creating modified responses', async () => {
+  it('should support listening to and creating modified responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -419,6 +493,86 @@ describe('FetchClient (node) > Interceptors', () => {
 
       expect(response.request.method).toBe('GET');
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
+
+      expect(onResponse).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should support changing an `onResponse` listener after the fetch was created', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers?: { 'content-language'?: string };
+              body: User[];
+            };
+          };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      await interceptor
+        .get('/users')
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(2);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const responseBeforeListener = await fetch('/users', { method: 'GET' });
+      expect(responseBeforeListener.headers.has('content-language')).toBe(false);
+
+      const onResponse = vi.fn<Default<Fetch<Schema>['onResponse']>>((response) => {
+        const updatedHeaders = new Headers(response.headers);
+        updatedHeaders.set('content-language', 'en');
+
+        const updatedResponse = new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: updatedHeaders,
+        });
+
+        return updatedResponse;
+      });
+
+      fetch.onResponse = onResponse;
+
+      const response = await fetch('/users', { method: 'GET' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+
+      expect(await response.json()).toEqual(users);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.url).toBe('');
+
+      expect(response.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-language'?: string }>>();
+      expect(response.headers.get('content-language')).toBe('en');
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('GET');
+      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
+
+      expect(onResponse).toHaveBeenCalledTimes(1);
     });
   });
 });
