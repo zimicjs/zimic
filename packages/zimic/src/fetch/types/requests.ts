@@ -50,10 +50,7 @@ type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [Reques
         ? { body: JSONStringified<RequestSchema['body']> }
         : { body: RequestSchema['body'] };
 
-type FetchRequestInitPerPath<Method extends HttpMethod, RequestSchema extends HttpRequestSchema> = RequestInit & {
-  baseURL?: string;
-  method: Method;
-} & FetchRequestInitWithHeaders<RequestSchema> &
+type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchRequestInitWithHeaders<RequestSchema> &
   FetchRequestInitWithSearchParams<RequestSchema> &
   FetchRequestInitWithBody<RequestSchema>;
 
@@ -61,7 +58,9 @@ export type FetchRequestInit<
   Schema extends HttpSchema,
   Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
-> = Path extends Path ? FetchRequestInitPerPath<Method, Default<Default<Schema[Path][Method]>['request']>> : never;
+> = RequestInit & { baseURL?: string; method: Method } & (Path extends Path
+    ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>>
+    : never);
 
 export namespace FetchRequestInit {
   export interface Defaults extends RequestInit {
