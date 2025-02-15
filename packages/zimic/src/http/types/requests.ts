@@ -57,8 +57,15 @@ export interface HttpRequest<
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
+  text: () => Promise<StrictBody extends string ? StrictBody : string>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  formData: () => Promise<
+    StrictBody extends HttpFormData<infer HttpFormDataSchema>
+      ? StrictFormData<HttpFormDataSchema>
+      : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
+        ? StrictFormData<HttpSearchParamsSchema>
+        : FormData
+  >;
   clone: () => this;
 }
 
@@ -76,7 +83,14 @@ export interface HttpResponse<
     : false;
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
+  text: () => Promise<StrictBody extends string ? StrictBody : string>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  formData: () => Promise<
+    StrictBody extends HttpFormData<infer HttpFormDataSchema>
+      ? StrictFormData<HttpFormDataSchema>
+      : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
+        ? StrictFormData<HttpSearchParamsSchema>
+        : FormData
+  >;
   clone: () => this;
 }

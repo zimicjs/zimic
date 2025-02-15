@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
 import HttpFormData from '@/http/formData/HttpFormData';
-import { HttpRequest, HttpResponse } from '@/http/types/requests';
+import { HttpRequest, HttpResponse, StrictFormData } from '@/http/types/requests';
 import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
@@ -148,7 +148,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           expect.objectContaining(Object.fromEntries(request.raw.headers)),
         );
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<HttpFormData<UserFormDataSchema>>>();
+        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
         expect(Object.fromEntries(await request.raw.formData())).toEqual(Object.fromEntries(formData));
 
         expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpFormData<UserFormDataSchema>, 200>>();
@@ -159,7 +159,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
         );
         expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<HttpFormData<UserFormDataSchema>>>();
+        expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserFormDataSchema>>>();
         expect(Object.fromEntries(await request.response.raw.formData())).toEqual(Object.fromEntries(responseFormData));
       });
     });
