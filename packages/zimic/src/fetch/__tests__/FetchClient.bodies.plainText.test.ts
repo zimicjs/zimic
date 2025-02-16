@@ -25,7 +25,7 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ body: 'request' })
@@ -97,7 +97,7 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({

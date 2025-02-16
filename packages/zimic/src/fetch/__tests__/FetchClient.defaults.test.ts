@@ -27,7 +27,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -78,7 +78,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ headers: { 'content-type': 'application/json' } })
@@ -156,7 +156,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
       await interceptor
         .post('/users')
         // .with({ headers: { 'content-type': 'application/json' } })
