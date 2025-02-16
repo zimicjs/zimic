@@ -1,9 +1,12 @@
-import fetch from 'node-fetch';
-
 import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
+import { createCachedDynamicImport } from '@tests/utils/imports';
+
+export const importNodeFetch = createCachedDynamicImport(() => import('node-fetch'));
 
 export async function nodeFetchAsFetch(request: Request): Promise<Response> {
+  const { default: fetch } = await importNodeFetch();
+
   const response = await fetch(request.url, {
     method: request.method,
     headers: convertHeadersToObject(request.headers),

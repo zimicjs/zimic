@@ -36,7 +36,7 @@ function createURLOrThrow(rawURL: string | URL) {
   }
 }
 
-function excludeNonPathParams(url: URL) {
+export function excludeNonPathParams(url: URL) {
   url.hash = '';
   url.search = '';
   url.username = '';

@@ -1,6 +1,19 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic';
 import {
+  createFetch,
+  type Fetch,
+  type FetchClient,
+  type FetchClientOptions,
+  type FetchFunction,
+  type FetchInput,
+  type FetchRequest,
+  type FetchRequestConstructor,
+  type FetchRequestInit,
+  type FetchResponse,
+  FetchResponseError,
+} from 'zimic/fetch';
+import {
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
@@ -154,6 +167,19 @@ describe('Exports', () => {
     expect(typeof InvalidJSONError).toBe('function');
     expectTypeOf<InvalidFormDataError>().not.toBeAny();
     expect(typeof InvalidFormDataError).toBe('function');
+
+    expect(typeof createFetch).toBe('function');
+    expectTypeOf<Fetch<never>>().not.toBeAny();
+    expectTypeOf<FetchClient<never>>().not.toBeAny();
+    expectTypeOf<FetchClientOptions<never>>().not.toBeAny();
+    expectTypeOf<FetchFunction<never>>().not.toBeAny();
+    expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchRequest<never>>().not.toBeAny();
+    expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
+    expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponse<never>>().not.toBeAny();
+    expectTypeOf<FetchResponseError<never>>().not.toBeAny();
+    expect(typeof FetchResponseError).toBe('function');
 
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
     expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();

@@ -1,9 +1,9 @@
-import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import { checkTypes, lint } from '@tests/utils/linting';
+import { importExeca } from '@tests/utils/scripting';
 
 async function normalizeStripeTypes(generatedFilePath: string) {
   const output = await filesystem.readFile(generatedFilePath, 'utf-8');
@@ -83,6 +83,8 @@ describe('Typegen', () => {
       'should correctly generate types from $serviceName OpenAPI schema to $outputFileName',
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
+
+        const { $ } = await importExeca();
 
         await $(
           'pnpm',

@@ -5,10 +5,14 @@ import { HttpRequest, HttpResponse } from '@/http/types/requests';
 import { HttpMethodSchema, HttpResponseSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
 import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
-export type HttpRequestHandlerResponseBodyAttribute<ResponseSchema extends HttpResponseSchema> =
-  undefined extends ResponseSchema['body'] ? { body?: null } : { body: ResponseSchema['body'] };
+export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
+  unknown extends ResponseSchema['body']
+    ? { body?: null }
+    : undefined extends ResponseSchema['body']
+      ? { body?: ReplaceBy<ReplaceBy<ResponseSchema['body'], undefined, null>, ArrayBuffer, Blob> }
+      : { body: ReplaceBy<ResponseSchema['body'], ArrayBuffer, Blob> };
 
-export type HttpRequestHandlerResponseHeadersAttribute<ResponseSchema extends HttpResponseSchema> =
+export type HttpRequestHandlerResponseWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
     ? { headers?: undefined }
     : { headers: HttpHeadersInit<Default<ResponseSchema['headers']>> };
@@ -20,8 +24,8 @@ export type HttpRequestHandlerResponseDeclaration<
 > = StatusCode extends StatusCode
   ? {
       status: StatusCode;
-    } & HttpRequestHandlerResponseBodyAttribute<Default<Default<MethodSchema['response']>[StatusCode]>> &
-      HttpRequestHandlerResponseHeadersAttribute<Default<Default<MethodSchema['response']>[StatusCode]>>
+    } & HttpRequestHandlerResponseWithBody<Default<Default<MethodSchema['response']>[StatusCode]>> &
+      HttpRequestHandlerResponseWithHeaders<Default<Default<MethodSchema['response']>[StatusCode]>>
   : never;
 
 /**
@@ -73,7 +77,7 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
 export type HttpResponseHeadersSchema<
   MethodSchema extends HttpMethodSchema,
   StatusCode extends HttpStatusCode,
-> = IfNever<Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>, {}>;
+> = Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>;
 
 export type HttpResponseBodySchema<
   MethodSchema extends HttpMethodSchema,

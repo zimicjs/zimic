@@ -78,7 +78,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         status: responseStatus,
         headers: defaultHeaders,
       });
-      return response;
+      return response as HttpResponse;
     }
 
     const spiedRequestHandler = vi.fn(requestHandler);
@@ -686,11 +686,11 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const okSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
           const response = new Response(null, { status: 200, headers: defaultHeaders });
-          return response;
+          return response as HttpResponse;
         });
         const noContentSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => {
           const response = new Response(null, { status: 204, headers: defaultHeaders });
-          return response;
+          return response as HttpResponse;
         });
 
         const interceptor = createDefaultHttpInterceptor();

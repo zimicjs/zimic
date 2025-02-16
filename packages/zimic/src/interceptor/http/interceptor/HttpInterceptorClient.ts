@@ -1,3 +1,4 @@
+import { HttpResponse } from '@/http';
 import {
   HTTP_METHODS,
   HttpMethod,
@@ -203,7 +204,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
     Context extends HttpInterceptorRequestContext<Schema, Method, Path>,
-  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<Response | null> {
+  >(matchedURLRegex: RegExp, method: Method, path: Path, { request }: Context): Promise<HttpResponse | null> {
     const parsedRequest = await HttpInterceptorWorker.parseRawRequest<Path, Default<Schema[Path][Method]>>(request, {
       urlRegex: matchedURLRegex,
     });

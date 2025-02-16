@@ -81,6 +81,12 @@
       "require": "./dist/typegen.js",
       "default": "./dist/typegen.js"
     },
+    "./fetch": {
+      "types": "./dist/fetch.d.ts",
+      "import": "./dist/fetch.mjs",
+      "require": "./dist/fetch.js",
+      "default": "./dist/fetch.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

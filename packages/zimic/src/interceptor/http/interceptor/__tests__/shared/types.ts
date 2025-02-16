@@ -33,9 +33,7 @@ export function declareTypeHttpInterceptorTests(
       '/users': {
         POST: {
           request: { body: User };
-          response: {
-            201: { body: User };
-          };
+          response: { 201: { body: User } };
         };
       };
     }>({ type, baseURL }, async (interceptor) => {
@@ -359,7 +357,7 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | null>();
 
       type ResponseHeaders = (typeof _requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<{}>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
 
       type ResponseStatus = (typeof _requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 400 | 404>();
@@ -474,7 +472,7 @@ export function declareTypeHttpInterceptorTests(
       expectTypeOf<ResponseBody>().toEqualTypeOf<User[] | { message: string } | '2xx' | '4xx' | 'default' | null>();
 
       type ResponseHeaders = (typeof _requests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<{}>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{ 'content-type': string }> | HttpHeaders<never>>();
 
       type ResponseStatus = (typeof _requests)[number]['response']['status'];
       expectTypeOf<ResponseStatus>().toEqualTypeOf<200 | 201 | 204 | 400 | 401 | 404 | 500>();
@@ -611,7 +609,7 @@ export function declareTypeHttpInterceptorTests(
 
       const _listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
-      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<{}>>();
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<never>>();
     });
   });
 
@@ -649,7 +647,7 @@ export function declareTypeHttpInterceptorTests(
       '/users': {
         GET: {
           response: {
-            200: { body: User[] };
+            200: { body?: User[] };
           };
         };
       };

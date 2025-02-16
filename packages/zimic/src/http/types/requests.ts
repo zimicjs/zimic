@@ -7,6 +7,7 @@ import HttpHeaders from '../headers/HttpHeaders';
 import { HttpHeadersSchema } from '../headers/types';
 import HttpSearchParams from '../searchParams/HttpSearchParams';
 import { HttpSearchParamsSchema } from '../searchParams/types';
+import { HttpStatusCode } from './schema';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,8 +57,16 @@ export interface HttpRequest<
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Request {
   headers: StrictHeaders<StrictHeadersSchema>;
+  text: () => Promise<StrictBody extends string ? StrictBody : string>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  formData: () => Promise<
+    StrictBody extends HttpFormData<infer HttpFormDataSchema>
+      ? StrictFormData<HttpFormDataSchema>
+      : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
+        ? StrictFormData<HttpSearchParamsSchema>
+        : FormData
+  >;
+  clone: () => this;
 }
 
 /**
@@ -69,8 +78,19 @@ export interface HttpResponse<
   StatusCode extends number = number,
   StrictHeadersSchema extends HttpHeadersSchema = HttpHeadersSchema,
 > extends Response {
+  ok: StatusCode extends HttpStatusCode.Information | HttpStatusCode.Success | HttpStatusCode.Redirection
+    ? true
+    : false;
   status: StatusCode;
   headers: StrictHeaders<StrictHeadersSchema>;
+  text: () => Promise<StrictBody extends string ? StrictBody : string>;
   json: () => Promise<StrictBody extends string | Exclude<HttpBody, JSONValue> ? never : StrictBody>;
-  formData: () => Promise<StrictBody extends HttpFormData<infer _HttpFormDataSchema> ? StrictBody : FormData>;
+  formData: () => Promise<
+    StrictBody extends HttpFormData<infer HttpFormDataSchema>
+      ? StrictFormData<HttpFormDataSchema>
+      : StrictBody extends HttpSearchParams<infer HttpSearchParamsSchema>
+        ? StrictFormData<HttpSearchParamsSchema>
+        : FormData
+  >;
+  clone: () => this;
 }

@@ -154,8 +154,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       ensureUniquePathParams: true,
     });
 
-    const httpHandler = http[lowercaseMethod](url.toString(), async (context): Promise<HttpResponse> => {
-      const request = context.request satisfies Request as HttpRequest;
+    const httpHandler = http[lowercaseMethod](url.toString(), async (context) => {
+      const request = context.request as HttpRequest;
       const requestClone = request.clone();
 
       let response: HttpResponse | null = null;

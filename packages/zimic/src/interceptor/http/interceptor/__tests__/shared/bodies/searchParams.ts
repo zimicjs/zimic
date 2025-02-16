@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpRequest, HttpResponse } from '@/http/types/requests';
+import { HttpRequest, HttpResponse, StrictFormData } from '@/http/types/requests';
 import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
@@ -127,7 +127,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
           expect.objectContaining(Object.fromEntries(request.raw.headers)),
         );
         expectTypeOf(request.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.raw.formData).toEqualTypeOf<() => Promise<StrictFormData<UserSearchParamsSchema>>>();
 
         expectTypeOf(request.response.raw).toEqualTypeOf<HttpResponse<HttpSearchParams<UserSearchParamsSchema>, 200>>();
         expect(request.response.raw).toBeInstanceOf(Response);
@@ -137,7 +137,9 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
           expect.objectContaining(Object.fromEntries(request.response.raw.headers)),
         );
         expectTypeOf(request.response.raw.json).toEqualTypeOf<() => Promise<never>>();
-        expectTypeOf(request.response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+        expectTypeOf(request.response.raw.formData).toEqualTypeOf<
+          () => Promise<StrictFormData<UserSearchParamsSchema>>
+        >();
       });
     });
 

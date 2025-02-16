@@ -61,7 +61,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
   let baseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
-  const Handler = options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
+  const Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler =
+    options.type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
 
   beforeEach(() => {
     baseURL = getBaseURL();
@@ -277,7 +278,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
             return {
               status: 200,
               headers: { 'content-type': 'application/octet-stream' },
-              body: responseBuffer,
+              body: new Blob([responseBuffer]),
             };
           }),
           interceptor,

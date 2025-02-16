@@ -5,7 +5,7 @@ import { HttpHeadersInit } from '@/http';
 import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
 import HttpFormData from '@/http/formData/HttpFormData';
 import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpBody, HttpRequest, HttpResponse } from '@/http/types/requests';
+import { HttpBody, HttpResponse } from '@/http/types/requests';
 import { HttpMethod, HttpMethodSchema, HttpSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { removeArrayElement } from '@/utils/arrays';
@@ -117,7 +117,7 @@ abstract class HttpInterceptorWorker {
   ): PossiblePromise<void>;
 
   protected async logUnhandledRequestIfNecessary(
-    request: HttpRequest,
+    request: Request,
     strategy: UnhandledRequestStrategy.Declaration | null,
   ) {
     if (strategy?.log) {
@@ -127,7 +127,7 @@ abstract class HttpInterceptorWorker {
     return { wasLogged: false };
   }
 
-  protected async getUnhandledRequestStrategy(request: HttpRequest, interceptorType: HttpInterceptorType) {
+  protected async getUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
     const candidates = await this.getUnhandledRequestStrategyCandidates(request, interceptorType);
     const strategy = this.reduceUnhandledRequestStrategyCandidates(candidates);
     return strategy;
@@ -148,7 +148,7 @@ abstract class HttpInterceptorWorker {
   }
 
   private async getUnhandledRequestStrategyCandidates(
-    request: HttpRequest,
+    request: Request,
     interceptorType: HttpInterceptorType,
   ): Promise<UnhandledRequestStrategy.Declaration[]> {
     const globalDefaultStrategy = this.getGlobalDefaultUnhandledRequestStrategy(interceptorType);
@@ -186,7 +186,7 @@ abstract class HttpInterceptorWorker {
     removeArrayElement(this.runningInterceptors, interceptor);
   }
 
-  private findInterceptorByRequestBaseURL(request: HttpRequest) {
+  private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
       const baseURL = interceptor.baseURL().toString();
       return request.url.startsWith(baseURL);
@@ -199,7 +199,7 @@ abstract class HttpInterceptorWorker {
     return DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
   }
 
-  private async getDefaultUnhandledRequestStrategy(request: HttpRequest, interceptorType: HttpInterceptorType) {
+  private async getDefaultUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
     const defaultStrategyOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
 
     if (typeof defaultStrategyOrFactory === 'function') {
@@ -210,7 +210,7 @@ abstract class HttpInterceptorWorker {
     return defaultStrategyOrFactory;
   }
 
-  private async getInterceptorUnhandledRequestStrategy(request: HttpRequest, interceptor: AnyHttpInterceptorClient) {
+  private async getInterceptorUnhandledRequestStrategy(request: Request, interceptor: AnyHttpInterceptorClient) {
     const interceptorStrategyOrFactory = interceptor.onUnhandledRequest();
 
     if (typeof interceptorStrategyOrFactory === 'function') {
@@ -230,20 +230,16 @@ abstract class HttpInterceptorWorker {
   abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
   static createResponseFromDeclaration(
-    request: HttpRequest,
-    declaration: {
-      status: number;
-      headers?: HttpHeadersInit;
-      body?: HttpBody;
-    },
-  ): Response {
+    request: Request,
+    declaration: { status: number; headers?: HttpHeadersInit; body?: HttpBody },
+  ): HttpResponse {
     const headers = new HttpHeaders(declaration.headers);
     const status = declaration.status;
 
     const canHaveBody = methodCanHaveResponseBody(request.method as HttpMethod) && status !== 204;
 
     if (!canHaveBody) {
-      return new Response(null, { headers, status });
+      return new Response(null, { headers, status }) as HttpResponse;
     }
 
     if (
@@ -254,20 +250,20 @@ abstract class HttpInterceptorWorker {
       declaration.body instanceof Blob ||
       declaration.body instanceof ArrayBuffer
     ) {
-      return new Response(declaration.body ?? null, { headers, status });
+      return new Response(declaration.body ?? null, { headers, status }) as HttpResponse;
     }
 
-    return Response.json(declaration.body, { headers, status });
+    return Response.json(declaration.body, { headers, status }) as HttpResponse;
   }
 
-  static async parseRawUnhandledRequest(request: HttpRequest) {
+  static async parseRawUnhandledRequest(request: Request) {
     return this.parseRawRequest<UnhandledHttpInterceptorRequestPath, UnhandledHttpInterceptorRequestMethodSchema>(
       request,
     );
   }
 
   static async parseRawRequest<Path extends string, MethodSchema extends HttpMethodSchema>(
-    originalRawRequest: HttpRequest,
+    originalRawRequest: Request,
     options: { urlRegex?: RegExp } = {},
   ): Promise<HttpInterceptorRequest<Path, MethodSchema>> {
     const rawRequest = originalRawRequest.clone();
@@ -297,23 +293,43 @@ abstract class HttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === ('body' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return parsedBody;
-        }
-        if (property === ('headers' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return headers;
-        }
-        if (property === ('pathParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return pathParams;
-        }
-        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return searchParams;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return rawRequestClone;
-        }
         return Reflect.get(target, property, target) as unknown;
       },
+    });
+
+    Object.defineProperty(parsedRequest, 'body', {
+      value: parsedBody,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'headers', {
+      value: headers,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'pathParams', {
+      value: pathParams,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'searchParams', {
+      value: searchParams,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'raw', {
+      value: rawRequestClone,
+      enumerable: true,
+      configurable: false,
+      writable: false,
     });
 
     return parsedRequest;
@@ -324,7 +340,7 @@ abstract class HttpInterceptorWorker {
   }
 
   static async parseRawResponse<MethodSchema extends HttpMethodSchema, StatusCode extends HttpStatusCode>(
-    originalRawResponse: HttpResponse,
+    originalRawResponse: Response,
   ): Promise<HttpInterceptorResponse<MethodSchema, StatusCode>> {
     const rawResponse = originalRawResponse.clone();
     const rawResponseClone = rawResponse.clone();
@@ -347,17 +363,29 @@ abstract class HttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
-        if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return headers;
-        }
-        if (property === ('body' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return parsedBody;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return rawResponseClone;
-        }
         return Reflect.get(target, property, target) as unknown;
       },
+    });
+
+    Object.defineProperty(parsedRequest, 'body', {
+      value: parsedBody,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'headers', {
+      value: headers,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'raw', {
+      value: rawResponseClone,
+      enumerable: true,
+      configurable: false,
+      writable: false,
     });
 
     return parsedRequest;
@@ -367,13 +395,13 @@ abstract class HttpInterceptorWorker {
     return HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES.has(property as never);
   }
 
-  static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: HttpRequest): InferPathParams<Path> {
+  static parseRawPathParams<Path extends string>(matchedURLRegex: RegExp, request: Request): InferPathParams<Path> {
     const match = request.url.match(matchedURLRegex);
     const pathParams = { ...match?.groups };
     return pathParams as InferPathParams<Path>;
   }
 
-  static async parseRawBody<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  static async parseRawBody<Body extends HttpBody>(resource: Request | Response) {
     const contentType = resource.headers.get('content-type');
 
     try {
@@ -415,7 +443,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  private static async parseRawBodyAsJSON<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  private static async parseRawBodyAsJSON<Body extends HttpBody>(resource: Request | Response) {
     const bodyAsText = await resource.text();
 
     if (!bodyAsText.trim()) {
@@ -430,7 +458,7 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  private static async parseRawBodyAsSearchParams<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  private static async parseRawBodyAsSearchParams<Body extends HttpBody>(resource: Request | Response) {
     const bodyAsText = await resource.text();
 
     if (!bodyAsText.trim()) {
@@ -441,7 +469,7 @@ abstract class HttpInterceptorWorker {
     return bodyAsSearchParams as Body;
   }
 
-  private static async parseRawBodyAsFormData<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  private static async parseRawBodyAsFormData<Body extends HttpBody>(resource: Request | Response) {
     const resourceClone = resource.clone();
 
     try {
@@ -464,17 +492,17 @@ abstract class HttpInterceptorWorker {
     }
   }
 
-  private static async parseRawBodyAsBlob<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  private static async parseRawBodyAsBlob<Body extends HttpBody>(resource: Request | Response) {
     const bodyAsBlob = await resource.blob();
     return bodyAsBlob as Body;
   }
 
-  private static async parseRawBodyAsText<Body extends HttpBody>(resource: HttpRequest | HttpResponse) {
+  private static async parseRawBodyAsText<Body extends HttpBody>(resource: Request | Response) {
     const bodyAsText = await resource.text();
     return (bodyAsText || null) as Body;
   }
 
-  static async logUnhandledRequestWarning(rawRequest: HttpRequest, action: UnhandledRequestStrategy.Action) {
+  static async logUnhandledRequestWarning(rawRequest: Request, action: UnhandledRequestStrategy.Action) {
     const request = await this.parseRawRequest(rawRequest);
 
     const [formattedHeaders, formattedSearchParams, formattedBody] = await Promise.all([
