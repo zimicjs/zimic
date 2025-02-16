@@ -29,7 +29,7 @@ import { FetchInput } from './public';
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
   ? { headers?: undefined }
   : undefined extends RequestSchema['headers']
-    ? { headers?: undefined }
+    ? { headers?: RequestSchema['headers'] | HttpHeaders<Default<RequestSchema['headers']>> }
     : { headers: RequestSchema['headers'] | HttpHeaders<Default<RequestSchema['headers']>> };
 
 type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> = [
@@ -37,7 +37,7 @@ type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
 ] extends [never]
   ? { searchParams?: undefined }
   : undefined extends RequestSchema['searchParams']
-    ? { searchParams?: undefined }
+    ? { searchParams?: RequestSchema['searchParams'] | HttpSearchParams<Default<RequestSchema['searchParams']>> }
     : { searchParams: RequestSchema['searchParams'] | HttpSearchParams<Default<RequestSchema['searchParams']>> };
 
 type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [RequestSchema['body']] extends [never]

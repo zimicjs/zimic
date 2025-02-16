@@ -24,7 +24,7 @@ describe('FetchClient (node) > Headers', () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
-          request: { headers: RequestHeaders };
+          request: { headers?: RequestHeaders };
           response: { 200: { body: User[] } };
         };
       };
@@ -84,7 +84,7 @@ describe('FetchClient (node) > Headers', () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
-          request: { headers: RequestHeaders };
+          request: { headers?: RequestHeaders };
           response: { 200: { body: User[] } };
         };
       };

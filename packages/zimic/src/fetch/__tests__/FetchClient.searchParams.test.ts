@@ -24,7 +24,7 @@ describe('FetchClient (node) > Search params', () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
-          request: { searchParams: RequestSearchParams };
+          request: { searchParams?: RequestSearchParams };
           response: { 200: { body: User[] } };
         };
       };
@@ -79,7 +79,7 @@ describe('FetchClient (node) > Search params', () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
-          request: { searchParams: RequestSearchParams };
+          request: { searchParams?: RequestSearchParams };
           response: { 200: { body: User[] } };
         };
       };
