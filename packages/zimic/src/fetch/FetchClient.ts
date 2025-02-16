@@ -62,11 +62,13 @@ class FetchClient<Schema extends HttpSchema> {
         this.fetch,
       );
 
-      const isFetchRequest = requestAfterInterceptor instanceof this.fetch.Request;
+      if (requestAfterInterceptor !== request) {
+        const isFetchRequest = requestAfterInterceptor instanceof this.fetch.Request;
 
-      request = isFetchRequest
-        ? (requestAfterInterceptor as Request as typeof request)
-        : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
+        request = isFetchRequest
+          ? (requestAfterInterceptor as Request as typeof request)
+          : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
+      }
     }
 
     return request;
@@ -161,6 +163,19 @@ class FetchClient<Schema extends HttpSchema> {
         this.path = excludeNonPathParams(url)
           .toString()
           .replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
+      }
+
+      clone(): Request<Path, Method> {
+        const rawClone = super.clone();
+
+        return new Request<Path, Method>(
+          rawClone as unknown as FetchInput<Schema, Path, Method>,
+          rawClone as unknown as FetchRequestInit<
+            Schema,
+            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
+            Method
+          >,
+        );
       }
     }
 

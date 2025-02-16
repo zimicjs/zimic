@@ -65,7 +65,57 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making GET requests using a request instance', async () => {
+  it('should support making GET requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        GET: {
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      await interceptor
+        .get('/users')
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, { method: 'GET' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+
+      expect(await response.json()).toEqual(users);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'GET', Schema['/users']['GET']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('GET');
+      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
+    });
+  });
+
+  it('should support making GET requests using a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         GET: {
@@ -190,7 +240,69 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making POST requests with a request instance', async () => {
+  it('should support making POST requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: User;
+          };
+          response: { 201: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      const user: User = { name: 'User 1' };
+
+      await interceptor
+        .post('/users')
+        .with({ body: user })
+        .respond({
+          status: 201,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+
+      expect(response.status).toBe(201);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'POST', Schema['/users']['POST']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'POST', Schema['/users']['POST']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('POST');
+      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
+    });
+  });
+
+  it('should support making POST requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -328,7 +440,70 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making PUT requests with a request instance', async () => {
+  it('should support making PUT requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        PUT: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: User;
+          };
+          response: { 200: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      const user: User = { name: 'User 1' };
+
+      await interceptor
+        .put('/users')
+        .with({ body: user })
+        .respond({
+          status: 200,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'PUT', Schema['/users']['PUT']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'PUT', Schema['/users']['PUT']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('PUT');
+      expectTypeOf(response.request.method).toEqualTypeOf<'PUT'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
+    });
+  });
+
+  it('should support making PUT requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         PUT: {
@@ -467,7 +642,70 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making PATCH requests with a request instance', async () => {
+  it('should support making PATCH requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        PATCH: {
+          request: {
+            headers: { 'content-type': 'application/json' };
+            body: User;
+          };
+          response: { 200: { body: User } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      const user: User = { name: 'User 1' };
+
+      await interceptor
+        .patch('/users')
+        .with({ body: user })
+        .respond({
+          status: 200,
+          body: user,
+        })
+        .times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(user);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'PATCH', Schema['/users']['PATCH']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'PATCH', Schema['/users']['PATCH']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('PATCH');
+      expectTypeOf(response.request.method).toEqualTypeOf<'PATCH'>();
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'application/json' }>>();
+    });
+  });
+
+  it('should support making PATCH requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         PATCH: {
@@ -591,7 +829,49 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making DELETE requests with a request instance', async () => {
+  it('should support making DELETE requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        DELETE: {
+          response: { 204: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      await interceptor.delete('/users').respond({ status: 204 }).times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, { method: 'DELETE' });
+
+      expect(response.status).toBe(204);
+      expect(await response.text()).toBe('');
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'DELETE', Schema['/users']['DELETE']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'DELETE', Schema['/users']['DELETE']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('DELETE');
+      expectTypeOf(response.request.method).toEqualTypeOf<'DELETE'>();
+    });
+  });
+
+  it('should support making DELETE requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         DELETE: {
@@ -664,6 +944,49 @@ describe('FetchClient (node) > Methods', () => {
       const fetch = createFetch<Schema>({ baseURL });
 
       const response = await fetch('/users', { method: 'HEAD' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('');
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'HEAD', Schema['/users']['HEAD']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'HEAD', Schema['/users']['HEAD']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('HEAD');
+      expectTypeOf(response.request.method).toEqualTypeOf<'HEAD'>();
+    });
+  });
+
+  it('should support making HEAD requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        HEAD: {
+          response: { 200: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      await interceptor.head('/users').respond({ status: 200 }).times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, { method: 'HEAD' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expect(response.status).toBe(200);
@@ -790,7 +1113,50 @@ describe('FetchClient (node) > Methods', () => {
     });
   });
 
-  it('should support making OPTIONS requests with a request instance', async () => {
+  it('should support making OPTIONS requests using a URL instance', async () => {
+    type Schema = HttpSchema<{
+      '/users': {
+        OPTIONS: {
+          response: { 200: {} };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      await interceptor.options('/users').respond({ status: 200 }).times(1);
+
+      const fetch = createFetch<Schema>({ baseURL });
+
+      const url = new URL('/users', baseURL);
+      const response = await fetch(url, { method: 'OPTIONS' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('');
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'OPTIONS', Schema['/users']['OPTIONS']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'OPTIONS', Schema['/users']['OPTIONS']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.path).toBe('/users');
+      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
+
+      expect(response.request.method).toBe('OPTIONS');
+      expectTypeOf(response.request.method).toEqualTypeOf<'OPTIONS'>();
+    });
+  });
+
+  it('should support making OPTIONS requests with a Request instance', async () => {
     type Schema = HttpSchema<{
       '/users': {
         OPTIONS: {

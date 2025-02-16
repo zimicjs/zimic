@@ -276,7 +276,7 @@ describe('FetchClient (node) > Errors', () => {
       expect(fetch.isResponseError(error, '/users/:id', 'GET')).toBe(false);
 
       /* istanbul ignore else -- @preserve
-       * This else is necessary to narrow the error type to a specific error. */
+       * This if is necessary to narrow the error type to a specific error. */
       if (fetch.isResponseError(error, '/users', 'GET')) {
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<'/users', 'GET', Schema['/users']['GET']>>();
 
@@ -362,7 +362,7 @@ describe('FetchClient (node) > Errors', () => {
       expect(fetch.isResponseError(error, '/users/:id', 'GET')).toBe(true);
 
       /* istanbul ignore else -- @preserve
-       * This else is necessary to narrow the error type to a specific error. */
+       * This if is necessary to narrow the error type to a specific error. */
       if (fetch.isResponseError(error, '/users/:id', 'GET')) {
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<'/users/:id', 'GET', Schema['/users/:id']['GET']>>();
 
