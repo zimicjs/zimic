@@ -293,23 +293,43 @@ abstract class HttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenRequestProperty(property)) {
           return undefined;
         }
-        if (property === ('body' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return parsedBody;
-        }
-        if (property === ('headers' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return headers;
-        }
-        if (property === ('pathParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return pathParams;
-        }
-        if (property === ('searchParams' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return searchParams;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorRequest<Path, MethodSchema>)) {
-          return rawRequestClone;
-        }
         return Reflect.get(target, property, target) as unknown;
       },
+    });
+
+    Object.defineProperty(parsedRequest, 'body', {
+      value: parsedBody,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'headers', {
+      value: headers,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'pathParams', {
+      value: pathParams,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'searchParams', {
+      value: searchParams,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'raw', {
+      value: rawRequestClone,
+      enumerable: true,
+      configurable: false,
+      writable: false,
     });
 
     return parsedRequest;
@@ -343,17 +363,29 @@ abstract class HttpInterceptorWorker {
         if (HttpInterceptorWorker.isHiddenResponseProperty(property)) {
           return undefined;
         }
-        if (property === ('headers' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return headers;
-        }
-        if (property === ('body' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return parsedBody;
-        }
-        if (property === ('raw' satisfies keyof HttpInterceptorResponse<MethodSchema, StatusCode>)) {
-          return rawResponseClone;
-        }
         return Reflect.get(target, property, target) as unknown;
       },
+    });
+
+    Object.defineProperty(parsedRequest, 'body', {
+      value: parsedBody,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'headers', {
+      value: headers,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    Object.defineProperty(parsedRequest, 'raw', {
+      value: rawResponseClone,
+      enumerable: true,
+      configurable: false,
+      writable: false,
     });
 
     return parsedRequest;

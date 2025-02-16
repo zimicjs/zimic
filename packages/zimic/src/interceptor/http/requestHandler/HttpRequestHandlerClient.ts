@@ -379,29 +379,28 @@ class HttpRequestHandlerClient<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    const interceptedRequest = this.createInterceptedRequestProxy(request, response);
+    const interceptedRequest = this.createInterceptedRequest(request, response);
     this.interceptedRequests.push(interceptedRequest);
   }
 
-  private createInterceptedRequestProxy(
+  private createInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    return new Proxy(
-      request as unknown as TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>,
-      {
-        get(target, property) {
-          if (property === 'response') {
-            return response satisfies HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>;
-          }
-          return Reflect.get(target, property, target) as unknown;
-        },
+    const interceptedRequest = request as unknown as TrackedHttpInterceptorRequest<
+      Path,
+      Default<Schema[Path][Method]>,
+      StatusCode
+    >;
 
-        has(target, property) {
-          return property === 'response' || Reflect.has(target, property);
-        },
-      },
-    );
+    Object.defineProperty(interceptedRequest, 'response', {
+      value: response,
+      enumerable: true,
+      configurable: false,
+      writable: false,
+    });
+
+    return interceptedRequest;
   }
 
   requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
