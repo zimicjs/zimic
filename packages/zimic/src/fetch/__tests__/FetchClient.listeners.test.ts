@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { HttpSchema, StrictHeaders } from '@/http';
+import { HttpHeaders, HttpSchema, HttpSearchParams, StrictHeaders } from '@/http';
 import { Default } from '@/types/utils';
 import { joinURL } from '@/utils/urls';
 import { expectFetchError } from '@tests/utils/fetch';
@@ -290,7 +290,98 @@ describe('FetchClient (node) > Listeners', () => {
     });
   });
 
-  it('should support listening to and creating modified requests', async () => {
+  it('should support listening to and creating modified fetch requests', async () => {
+    type HeadersSchema = HttpSchema.Headers<{
+      'accept-language'?: string;
+    }>;
+
+    type SearchParamsSchema = HttpSchema.SearchParams<{
+      page?: number;
+      limit?: number;
+    }>;
+
+    type Schema = HttpSchema<{
+      '/users': {
+        POST: {
+          request: {
+            headers?: HeadersSchema;
+            searchParams?: SearchParamsSchema;
+          };
+          response: { 200: { body: User[] } };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+      await interceptor
+        .post('/users')
+        .with({
+          headers: { 'accept-language': 'en' },
+          searchParams: { page: '1', limit: '10' },
+        })
+        .respond({
+          status: 200,
+          body: users,
+        })
+        .times(1);
+
+      const onRequest = vi.fn<Default<Fetch<Schema>['onRequest']>>((request, { Request, isRequest }) => {
+        if (isRequest(request, '/users', 'POST')) {
+          const headers = new HttpHeaders<HeadersSchema>(request.headers);
+          headers.set('accept-language', 'en');
+
+          const url = new URL(request.url);
+          const searchParams = new HttpSearchParams<SearchParamsSchema>(url.search);
+          searchParams.set('page', '1');
+          searchParams.set('limit', '10');
+
+          const updatedRequest = new Request('/users', {
+            method: 'POST',
+            headers,
+            searchParams,
+          });
+
+          return updatedRequest;
+        }
+
+        return request;
+      });
+
+      const fetch = createFetch<Schema>({
+        baseURL,
+        onRequest,
+      });
+
+      const response = await fetch('/users', { method: 'POST' });
+
+      expectTypeOf(response.status).toEqualTypeOf<200>();
+      expect(response.status).toBe(200);
+
+      expect(await response.json()).toEqual(users);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponse<'/users', 'POST', Schema['/users']['POST']>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
+        FetchRequest<'/users', 'POST', Schema['/users']['POST']>
+      >();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
+
+      expect(response.request.headers).toBeInstanceOf(Headers);
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+      expect(response.request.headers.get('accept-language')).toBe('en');
+
+      expect(onRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should support listening to and creating modified raw requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
@@ -615,7 +706,7 @@ describe('FetchClient (node) > Listeners', () => {
     });
   });
 
-  it('should support listening to and creating modified responses', async () => {
+  it('should support listening to and creating modified raw responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
         POST: {
