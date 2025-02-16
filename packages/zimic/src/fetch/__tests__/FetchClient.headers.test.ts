@@ -5,7 +5,6 @@ import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
-import { Fetch } from '../types/public';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
 describe('FetchClient (node) > Headers', () => {
@@ -46,7 +45,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -66,10 +64,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -109,7 +103,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -129,10 +122,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -180,7 +169,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -200,10 +188,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -235,7 +219,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(8);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
@@ -261,10 +244,6 @@ describe('FetchClient (node) > Headers', () => {
 
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-        expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
         responses.push(await fetch(request));
       }
@@ -306,7 +285,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const response = await fetch('/users', { method: 'GET' });
 
@@ -363,7 +341,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const response = await fetch('/users', { method: 'GET' });
 
@@ -428,7 +405,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const response = await fetch('/users', { method: 'GET' });
 
@@ -478,7 +454,6 @@ describe('FetchClient (node) > Headers', () => {
         .times(4);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
@@ -504,9 +479,6 @@ describe('FetchClient (node) > Headers', () => {
 
         expect(response.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-        expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
-        expectTypeOf(response.error).toEqualTypeOf<null>();
 
         expect(response.request).toBeInstanceOf(Request);
         expectTypeOf(response.request satisfies Request).toEqualTypeOf<

@@ -1,11 +1,10 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, StrictHeaders, HttpSearchParams } from '@/http';
+import { HttpSchema, HttpSearchParams } from '@/http';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
-import { Fetch } from '../types/public';
 import { FetchRequest } from '../types/requests';
 
 describe('FetchClient (node) > Search params', () => {
@@ -44,7 +43,6 @@ describe('FetchClient (node) > Search params', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -61,13 +59,6 @@ describe('FetchClient (node) > Search params', () => {
       expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
-
-      expect(request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -107,7 +98,6 @@ describe('FetchClient (node) > Search params', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -124,13 +114,6 @@ describe('FetchClient (node) > Search params', () => {
       expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
-
-      expect(request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -184,7 +167,6 @@ describe('FetchClient (node) > Search params', () => {
         .times(2);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', {
@@ -201,13 +183,6 @@ describe('FetchClient (node) > Search params', () => {
       expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User&usernames=User+1&usernames=User+2&orderBy=name'));
-
-      expect(request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-      expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-      expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-      expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
       responses.push(await fetch(request));
 
@@ -239,7 +214,6 @@ describe('FetchClient (node) > Search params', () => {
         .times(8);
 
       const fetch = createFetch<Schema>({ baseURL });
-      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const responses = [
         await fetch('/users', { method: 'GET' }),
@@ -262,13 +236,6 @@ describe('FetchClient (node) > Search params', () => {
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
-
-        expect(request.headers).toBeInstanceOf(Headers);
-        expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
-
-        expectTypeOf(request.json).toEqualTypeOf<() => Promise<null>>();
-        expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
-        expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
         responses.push(await fetch(request));
       }

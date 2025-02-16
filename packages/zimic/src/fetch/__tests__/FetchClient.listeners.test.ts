@@ -152,6 +152,7 @@ describe('FetchClient (node) > Listeners', () => {
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+      expect(response.request.headers.get('accept-language')).toBe('en');
 
       expect(onRequest).toHaveBeenCalledTimes(1);
     });
@@ -222,6 +223,7 @@ describe('FetchClient (node) > Listeners', () => {
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+      expect(response.request.headers.get('accept-language')).toBe('en');
 
       expect(onRequest).toHaveBeenCalledTimes(1);
     });
@@ -287,6 +289,7 @@ describe('FetchClient (node) > Listeners', () => {
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+      expect(response.request.headers.get('accept-language')).toBe('en');
 
       expect(onRequest).toHaveBeenCalledTimes(1);
     });

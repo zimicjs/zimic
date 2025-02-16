@@ -6,7 +6,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
-import { InferFetchSchema } from '../types/public';
+import { Fetch, InferFetchSchema } from '../types/public';
 import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
 describe('FetchClient (node) > Types', () => {
@@ -51,6 +51,7 @@ describe('FetchClient (node) > Types', () => {
         .times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
+      expectTypeOf(fetch).toEqualTypeOf<Fetch<Schema>>();
 
       const response = await fetch('/users', { method: 'GET' });
 
