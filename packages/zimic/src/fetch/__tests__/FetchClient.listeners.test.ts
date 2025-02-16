@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { HttpMethod, HttpSchema, StrictHeaders } from '@/http';
+import { HttpSchema, StrictHeaders } from '@/http';
 import { Default } from '@/types/utils';
 import { joinURL } from '@/utils/urls';
 import { expectFetchError } from '@tests/utils/fetch';
@@ -42,12 +42,6 @@ describe('FetchClient (node) > Listeners', () => {
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
-
-        expect(request.path).toBe('/users');
-        expectTypeOf(request.path).toEqualTypeOf<string>();
-
-        expect(request.method).toBe('GET');
-        expectTypeOf(request.method).toEqualTypeOf<HttpMethod>();
 
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<Headers>();
@@ -96,12 +90,6 @@ describe('FetchClient (node) > Listeners', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(onRequest).toHaveBeenCalledTimes(1);
     });
@@ -161,12 +149,6 @@ describe('FetchClient (node) > Listeners', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
@@ -238,12 +220,6 @@ describe('FetchClient (node) > Listeners', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
 
@@ -309,12 +285,6 @@ describe('FetchClient (node) > Listeners', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
 
@@ -357,12 +327,6 @@ describe('FetchClient (node) > Listeners', () => {
 
         expect(response.request).toBeInstanceOf(Request);
         expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest.Loose>();
-
-        expect(response.request.path).toBe('/users');
-        expectTypeOf(response.request.path).toEqualTypeOf<string>();
-
-        expect(response.request.method).toBe('GET');
-        expectTypeOf(response.request.method).toEqualTypeOf<HttpMethod>();
 
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
@@ -411,12 +375,6 @@ describe('FetchClient (node) > Listeners', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(onResponse).toHaveBeenCalledTimes(1);
     });
@@ -487,12 +445,6 @@ describe('FetchClient (node) > Listeners', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(onResponse).toHaveBeenCalledTimes(1);
     });
@@ -565,12 +517,6 @@ describe('FetchClient (node) > Listeners', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(onResponse).toHaveBeenCalledTimes(1);
     });

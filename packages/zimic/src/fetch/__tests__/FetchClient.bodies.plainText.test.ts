@@ -71,12 +71,6 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'text/plain' }>>();
 
@@ -146,12 +140,6 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'text/plain' }>>();

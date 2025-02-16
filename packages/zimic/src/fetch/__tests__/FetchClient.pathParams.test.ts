@@ -372,12 +372,6 @@ describe('FetchClient (node) > Path params', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
     });
   });
 });

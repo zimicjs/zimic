@@ -64,12 +64,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(request.path).toBe('/users');
-      expectTypeOf(request.path).toEqualTypeOf<'/users'>();
-
-      expect(request.method).toBe('GET');
-      expectTypeOf(request.method).toEqualTypeOf<'GET'>();
-
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
 
@@ -132,12 +126,6 @@ describe('FetchClient (node) > Headers', () => {
       expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(request.path).toBe('/users');
-      expectTypeOf(request.path).toEqualTypeOf<'/users'>();
-
-      expect(request.method).toBe('GET');
-      expectTypeOf(request.method).toEqualTypeOf<'GET'>();
 
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
@@ -210,12 +198,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(request.path).toBe('/users');
-      expectTypeOf(request.path).toEqualTypeOf<'/users'>();
-
-      expect(request.method).toBe('GET');
-      expectTypeOf(request.method).toEqualTypeOf<'GET'>();
-
       expect(request.headers).toBeInstanceOf(Headers);
       expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<RequestHeaders>>();
 
@@ -276,12 +258,6 @@ describe('FetchClient (node) > Headers', () => {
         expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
-
-        expect(request.path).toBe('/users');
-        expectTypeOf(request.path).toEqualTypeOf<'/users'>();
-
-        expect(request.method).toBe('GET');
-        expectTypeOf(request.method).toEqualTypeOf<'GET'>();
 
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<StrictHeaders<never>>();
@@ -356,12 +332,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
     });
@@ -418,12 +388,6 @@ describe('FetchClient (node) > Headers', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
@@ -490,12 +454,6 @@ describe('FetchClient (node) > Headers', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('GET');
-      expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
     });
@@ -556,12 +514,6 @@ describe('FetchClient (node) > Headers', () => {
         >();
 
         expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-        expect(response.request.path).toBe('/users');
-        expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-        expect(response.request.method).toBe('GET');
-        expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
 
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();

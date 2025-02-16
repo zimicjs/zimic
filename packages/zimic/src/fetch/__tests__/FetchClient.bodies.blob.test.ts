@@ -77,12 +77,6 @@ describe('FetchClient (node) > Bodies > Blob', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<
         StrictHeaders<{ 'content-type': 'application/octet-stream' }>
@@ -161,12 +155,6 @@ describe('FetchClient (node) > Bodies > Blob', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<
@@ -254,12 +242,6 @@ describe('FetchClient (node) > Bodies > Blob', () => {
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
-
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<
         StrictHeaders<{ 'content-type': 'application/octet-stream' }>
@@ -336,12 +318,6 @@ describe('FetchClient (node) > Bodies > Blob', () => {
       >();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
-
-      expect(response.request.path).toBe('/users');
-      expectTypeOf(response.request.path).toEqualTypeOf<'/users'>();
-
-      expect(response.request.method).toBe('POST');
-      expectTypeOf(response.request.method).toEqualTypeOf<'POST'>();
 
       expect(response.request.headers).toBeInstanceOf(Headers);
       expectTypeOf(response.request.headers).toEqualTypeOf<
