@@ -113,6 +113,10 @@ importers:
         version: 9.20.1(jiti@2.4.2)
 
   examples/with-jest-jsdom:
+    dependencies:
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0
@@ -144,15 +148,15 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-jest-node:
     dependencies:
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -181,9 +185,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-next-js-app:
     dependencies:
@@ -202,6 +203,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -236,9 +240,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-next-js-pages:
     dependencies:
@@ -257,6 +258,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -288,15 +292,15 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-openapi-typegen:
     dependencies:
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -319,9 +323,6 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-playwright:
     dependencies:
@@ -337,6 +338,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -371,11 +375,12 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+
+  examples/with-vitest-browser:
+    dependencies:
       zimic:
         specifier: latest
         version: link:../../packages/zimic
-
-  examples/with-vitest-browser:
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -404,11 +409,12 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+
+  examples/with-vitest-jsdom:
+    dependencies:
       zimic:
         specifier: latest
         version: link:../../packages/zimic
-
-  examples/with-vitest-jsdom:
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -431,15 +437,15 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-vitest-node:
     dependencies:
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -462,9 +468,6 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   packages/eslint-config:
     dependencies:

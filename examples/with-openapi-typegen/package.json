@@ -7,11 +7,12 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit",
     "typegen:github": "dotenv -c development -- pnpm typegen:github-no-env",
-    "typegen:github-no-env": "zimic typegen openapi $GITHUB_OPENAPI_SPEC_URL --output ./src/types/github/typegen/generated.ts --service-name GitHub --filter-file ./src/types/github/typegen/filters.txt --no-comments"
+    "typegen:github-no-env": "zimic typegen openapi $GITHUB_OPENAPI_SPEC_URL --output ./src/clients/github/typegen/generated.ts --service-name GitHub --filter-file ./src/clients/github/typegen/filters.txt --no-comments"
   },
   "dependencies": {
     "fastify": "^5.2.1",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "zimic": "latest"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.2",
@@ -19,7 +20,6 @@
     "dotenv-cli": "^8.0.0",
     "supertest": "^7.0.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.5",
-    "zimic": "latest"
+    "vitest": "^3.0.5"
   }
 }

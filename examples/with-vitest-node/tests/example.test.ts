@@ -1,7 +1,8 @@
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import app, { GitHubRepository } from '../src/app';
+import app from '../src/app';
+import { GitHubRepository } from '../src/clients/github';
 import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {
@@ -10,8 +11,10 @@ describe('Example tests', () => {
 
   const repository: GitHubRepository = {
     id: 1,
+    name: repositoryName,
     full_name: `${ownerName}/${repositoryName}`,
     html_url: `https://github.com/${ownerName}/${repositoryName}`,
+    owner: { login: ownerName },
   };
 
   beforeAll(async () => {
