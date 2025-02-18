@@ -66,7 +66,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
   [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
 ```ts
-import { type HttpSchema } from 'zimic/http';
+import { type HttpSchema } from '@zimic/http';
 import { httpInterceptor } from 'zimic/interceptor/http';
 
 // 1. Declare your types:
