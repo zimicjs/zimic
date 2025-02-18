@@ -2,10 +2,10 @@
   "compilerOptions": {
     "lib": ["esnext", "dom", "dom.iterable"],
     "target": "esnext",
-    "module": "esnext",
+    "module": "nodenext",
     "incremental": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "pretty": true,

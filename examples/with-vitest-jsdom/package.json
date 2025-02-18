@@ -7,6 +7,9 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit"
   },
+  "dependencies": {
+    "zimic": "latest"
+  },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -14,7 +17,6 @@
     "@vitest/spy": "^3.0.5",
     "dotenv-cli": "^8.0.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.5",
-    "zimic": "latest"
+    "vitest": "^3.0.5"
   }
 }
