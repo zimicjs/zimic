@@ -21,7 +21,7 @@ const sharedConfig: Options = {
   clean: true,
   keepNames: true,
   env: {
-    TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/index' : 'zimic/http',
+    TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/index' : '@zimic/http',
   },
 };
 

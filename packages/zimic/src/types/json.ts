@@ -12,7 +12,7 @@ namespace JSON {
  * (`type`). They cannot be interfaces.
  *
  * @example
- *   import { type JSONValue } from 'zimic';
+ *   import { type JSONValue } from '@zimic/http';
  *
  *   // Can be used as a standalone type:
  *   const value: JSONValue = {
@@ -21,7 +21,7 @@ namespace JSON {
  *   };
  *
  * @example
- *   import { type JSONValue } from 'zimic';
+ *   import { type JSONValue } from '@zimic/http';
  *
  *   // Can be used with a type argument to validate a JSON value:
  *   type ValidJSON = JSONValue<{
@@ -50,7 +50,7 @@ export namespace JSONValue {
  * values are excluded.
  *
  * @example
- *   import { type JSONSerialized } from 'zimic';
+ *   import { type JSONSerialized } from '@zimic/http';
  *
  *   type SerializedUser = JSONSerialized<{
  *     id: string;

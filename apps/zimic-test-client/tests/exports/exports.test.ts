@@ -1,19 +1,4 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic';
-import {
-  createFetch,
-  type Fetch,
-  type FetchClient,
-  type FetchClientOptions,
-  type FetchFunction,
-  type FetchInput,
-  type FetchRequest,
-  type FetchRequestConstructor,
-  type FetchRequestInit,
-  type FetchResponse,
-  FetchResponseError,
-} from 'zimic/fetch';
-import {
+import { type JSONValue, type JSONSerialized ,
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
@@ -51,8 +36,21 @@ import {
   type HttpSchemaPath,
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
-  InvalidFormDataError,
-} from 'zimic/http';
+} from '@zimic/http';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import {
+  createFetch,
+  type Fetch,
+  type FetchClient,
+  type FetchClientOptions,
+  type FetchFunction,
+  type FetchInput,
+  type FetchRequest,
+  type FetchRequestConstructor,
+  type FetchRequestInit,
+  type FetchResponse,
+  FetchResponseError,
+} from 'zimic/fetch';
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
@@ -90,6 +88,8 @@ import {
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
+  InvalidJSONError,
+  InvalidFormDataError,
 } from 'zimic/interceptor/http';
 
 describe('Exports', () => {
