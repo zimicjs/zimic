@@ -53,6 +53,9 @@ importers:
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../../packages/eslint-config-node
+      '@zimic/http':
+        specifier: workspace:*
+        version: link:../../packages/zimic-http
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:../../packages/lint-staged-config
@@ -114,6 +117,9 @@ importers:
 
   examples/with-jest-jsdom:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -151,6 +157,9 @@ importers:
 
   examples/with-jest-node:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
@@ -191,6 +200,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -246,6 +258,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -295,6 +310,9 @@ importers:
 
   examples/with-openapi-typegen:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
@@ -326,6 +344,9 @@ importers:
 
   examples/with-playwright:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -378,6 +399,9 @@ importers:
 
   examples/with-vitest-browser:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -412,6 +436,9 @@ importers:
 
   examples/with-vitest-jsdom:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       zimic:
         specifier: latest
         version: link:../../packages/zimic
@@ -440,6 +467,9 @@ importers:
 
   examples/with-vitest-node:
     dependencies:
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1

@@ -1,5 +1,5 @@
+import type { HttpSchema } from '@zimic/http';
 import { createFetch } from 'zimic/fetch';
-import type { HttpSchema } from 'zimic/http';
 
 export interface GitHubRepository {
   id: number;

@@ -1,4 +1,4 @@
-import { JSONSerialized , HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from '@zimic/http';
+import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from '@zimic/http';
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 import { httpInterceptor, HttpInterceptorType } from 'zimic/interceptor/http';
 
