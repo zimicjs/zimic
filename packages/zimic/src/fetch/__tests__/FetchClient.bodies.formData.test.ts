@@ -1,6 +1,6 @@
+import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@zimic/http';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@/http';
 import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';

@@ -1,6 +1,5 @@
+import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 import chalk from 'chalk';
-
-import { HttpFormData, HttpHeaders, HttpSearchParams } from '@/http';
 
 import { isClientSide } from './environment';
 import { isGlobalFileAvailable } from './files';

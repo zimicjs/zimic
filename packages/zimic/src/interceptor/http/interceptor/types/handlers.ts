@@ -4,7 +4,7 @@ import {
   HttpSchemaMethod,
   HttpSchemaPath,
   LiteralHttpSchemaPathFromNonLiteral,
-} from '@/http/types/schema';
+} from '@zimic/http';
 
 import { LocalHttpRequestHandler, RemoteHttpRequestHandler } from '../../requestHandler/types/public';
 

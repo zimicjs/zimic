@@ -1,7 +1,6 @@
+import { HttpHeaders, HttpSearchParams, HttpRequest } from '@zimic/http';
 import { expect, expectTypeOf } from 'vitest';
 
-import { HttpHeaders, HttpSearchParams } from '@/http';
-import { HttpRequest } from '@/http/types/requests';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { HttpRequestBodySchema } from '@/interceptor/http/requestHandler/types/requests';
 import { PossiblePromise } from '@/types/utils';

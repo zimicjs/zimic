@@ -538,9 +538,6 @@ importers:
       msw:
         specifier: 2.7.0
         version: 2.7.0(@types/node@22.13.4)(typescript@5.7.3)
-      openapi-typescript:
-        specifier: 7.6.1
-        version: 7.6.1(typescript@5.7.3)
       ws:
         specifier: 8.18.0
         version: 8.18.0(bufferutil@4.0.9)
@@ -552,18 +549,73 @@ importers:
         specifier: 4.0.9
         version: 4.0.9
     devDependencies:
-      '@types/cross-spawn':
-        specifier: ^6.0.6
-        version: 6.0.6
-      '@types/js-yaml':
-        specifier: ^4.0.9
-        version: 4.0.9
       '@types/node':
         specifier: ^22.13.4
         version: 22.13.4
       '@types/ws':
         specifier: ^8.5.14
         version: 8.5.14
+      '@types/yargs':
+        specifier: ^17.0.33
+        version: 17.0.33
+      '@vitest/browser':
+        specifier: ^3.0.5
+        version: 3.0.5(@types/node@22.13.4)(bufferutil@4.0.9)(playwright@1.50.1)(typescript@5.7.3)(vite@6.1.0(@types/node@22.13.4)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.2)(yaml@2.7.0))(vitest@3.0.5)
+      '@vitest/coverage-istanbul':
+        specifier: ^3.0.5
+        version: 3.0.5(vitest@3.0.5)
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/http':
+        specifier: workspace:*
+        version: link:../zimic-http
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      dotenv-cli:
+        specifier: ^8.0.0
+        version: 8.0.0
+      eslint:
+        specifier: ^9.20.1
+        version: 9.20.1(jiti@2.4.2)
+      playwright:
+        specifier: ^1.50.1
+        version: 1.50.1
+      tsup:
+        specifier: ^8.3.6
+        version: 8.3.6(@swc/core@1.10.16(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.2)(tsx@4.19.2)(typescript@5.7.3)(yaml@2.7.0)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+
+  packages/zimic-http:
+    dependencies:
+      chalk:
+        specifier: 4.1.2
+        version: 4.1.2
+      openapi-typescript:
+        specifier: 7.6.1
+        version: 7.6.1(typescript@5.7.3)
+      yargs:
+        specifier: 17.7.2
+        version: 17.7.2
+    devDependencies:
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^22.13.4
+        version: 22.13.4
       '@types/yargs':
         specifier: ^17.0.33
         version: 17.0.33
@@ -588,6 +640,9 @@ importers:
       eslint:
         specifier: ^9.20.1
         version: 9.20.1(jiti@2.4.2)
+      execa:
+        specifier: 9.5.2
+        version: 9.5.2
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -609,6 +664,9 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+      zimic:
+        specifier: ^0.13.2
+        version: 0.13.2(@types/node@22.13.4)(typescript@5.7.3)
 
 packages:
 
@@ -1995,9 +2053,6 @@ packages:
 
   '@types/cookiejar@2.1.5':
     resolution: {integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==}
-
-  '@types/cross-spawn@6.0.6':
-    resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -5699,6 +5754,16 @@ packages:
     resolution: {integrity: sha512-GQHQqAopRhwU8Kt1DDM8NjibDXHC8eoh1erhGAJPEyveY9qqVeXvVikNKrDz69sHowPMorbPUrH/mx8c50eiBQ==}
     engines: {node: '>=18'}
 
+  zimic@0.13.2:
+    resolution: {integrity: sha512-o2OnX49rl56ORrSez3zVZg7JAFLAqL0i+zaIrb0Mj4md6xGvVpRRy/bF46hA0u5w/gB7g6njE7eBJ+RrnWJC/w==}
+    engines: {node: '>=18.13.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=4.8.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
@@ -6990,10 +7055,6 @@ snapshots:
   '@types/cookie@0.6.0': {}
 
   '@types/cookiejar@2.1.5': {}
-
-  '@types/cross-spawn@6.0.6':
-    dependencies:
-      '@types/node': 22.13.4
 
   '@types/debug@4.1.12':
     dependencies:
@@ -11445,5 +11506,22 @@ snapshots:
   yoctocolors-cjs@2.1.2: {}
 
   yoctocolors@2.1.1: {}
+
+  zimic@0.13.2(@types/node@22.13.4)(typescript@5.7.3):
+    dependencies:
+      '@whatwg-node/server': 0.9.67
+      chalk: 4.1.2
+      execa: 9.5.2
+      isomorphic-ws: 5.0.0(ws@8.18.0(bufferutil@4.0.9))
+      msw: 2.7.0(@types/node@22.13.4)(typescript@5.7.3)
+      openapi-typescript: 7.6.1(typescript@5.7.3)
+      ws: 8.18.0(bufferutil@4.0.9)
+      yargs: 17.7.2
+    optionalDependencies:
+      bufferutil: 4.0.9
+      typescript: 5.7.3
+    transitivePeerDependencies:
+      - '@types/node'
+      - utf-8-validate
 
   zod@3.24.2: {}

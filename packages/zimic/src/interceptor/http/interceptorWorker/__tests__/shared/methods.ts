@@ -1,8 +1,6 @@
+import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { HttpResponse } from '@/http';
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HTTP_METHODS } from '@/http/types/schema';
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';

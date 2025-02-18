@@ -15,7 +15,6 @@ describe('CLI', () => {
     'Commands:',
     '  zimic browser  Manage your browser mock configuration',
     '  zimic server   Manage interceptor servers',
-    '  zimic typegen  Generate types from schema sources',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',

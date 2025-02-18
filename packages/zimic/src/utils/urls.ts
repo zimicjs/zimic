@@ -103,10 +103,6 @@ export function createURL(
   return url;
 }
 
-export function createFileURL(filePath: string) {
-  return createURL(`file://${filePath}`);
-}
-
 function prepareURLForRegex(url: string) {
   const encodedURL = encodeURI(url);
   return encodedURL.replace(/([.()*?+$\\])/g, '\\$1');
@@ -118,17 +114,6 @@ export function createRegexFromURL(url: string) {
     .replace(/(\/+)$/, '(?:/+)?');
 
   return new RegExp(`^${urlWithReplacedPathParams}$`);
-}
-
-export function createRegexFromWildcardPath(path: string, options: { prefix: string }) {
-  const pathWithReplacedWildcards = prepareURLForRegex(path)
-    .replace(/^\/+|\/+$/g, '')
-    .replace(/\\\*/g, '*')
-    .replace(/\*\*\/\*/g, '**')
-    .replace(/(^|[^*])\*([^*]|$)/g, '$1[^/]*$2')
-    .replace(/\*\*/g, '.*');
-
-  return new RegExp(`^${options.prefix}/*${pathWithReplacedWildcards}/*$`);
 }
 
 export function joinURL(...parts: (string | URL)[]) {

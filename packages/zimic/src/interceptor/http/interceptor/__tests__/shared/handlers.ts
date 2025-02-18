@@ -1,8 +1,6 @@
+import { HttpHeaders, HttpSearchParams, HTTP_METHODS, HttpSchema } from '@zimic/http';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import DisabledRequestSavingError from '@/interceptor/http/requestHandler/errors/DisabledRequestSavingError';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';

@@ -1,6 +1,6 @@
+import { HttpSchema, HttpMethod } from '@zimic/http';
 import { expect } from 'vitest';
 
-import { ConvertToStrictHttpSchema, HttpMethod, HttpSchema } from '@/http/types/schema';
 import { httpInterceptor } from '@/interceptor/http';
 import HttpInterceptorStore from '@/interceptor/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
@@ -55,20 +55,20 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): LocalHttpInterceptor<HttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): RemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>> | RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): LocalHttpInterceptor<HttpSchema<Schema>> | RemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
-  }) satisfies HttpInterceptor<ConvertToStrictHttpSchema<Schema>> as
-    | LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
-    | RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+  }) satisfies HttpInterceptor<HttpSchema<Schema>> as
+    | LocalHttpInterceptor<HttpSchema<Schema>>
+    | RemoteHttpInterceptor<HttpSchema<Schema>>;
 }
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (
@@ -82,23 +82,21 @@ interface UsingInterceptorOptions {
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callback: UsingInterceptorCallback<ConvertToStrictHttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   options: UsingInterceptorOptions,
-  callback: UsingInterceptorCallback<ConvertToStrictHttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callbackOrOptions: UsingInterceptorCallback<ConvertToStrictHttpSchema<Schema>> | UsingInterceptorOptions,
-  optionalCallback?: UsingInterceptorCallback<ConvertToStrictHttpSchema<Schema>>,
+  callbackOrOptions: UsingInterceptorCallback<HttpSchema<Schema>> | UsingInterceptorOptions,
+  optionalCallback?: UsingInterceptorCallback<HttpSchema<Schema>>,
 ): Promise<void> {
   const { start: shouldStartInterceptor = true, checkTimes: shouldCheckTimes = false } =
     typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<
-    ConvertToStrictHttpSchema<Schema>
-  >;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<HttpSchema<Schema>>;
 
   const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
 

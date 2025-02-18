@@ -1,7 +1,6 @@
+import { HttpSearchParams, HTTP_METHODS, HttpSchema } from '@zimic/http';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { httpInterceptor } from '@/interceptor/http';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';

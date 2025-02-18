@@ -1,8 +1,15 @@
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpHeadersInit } from '@/http/headers/types';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpRequest, HttpResponse } from '@/http/types/requests';
-import { HttpMethodSchema, HttpResponseSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
+import {
+  HttpHeaders,
+  HttpHeadersInit,
+  HttpMethodSchema,
+  HttpRequest,
+  HttpResponse,
+  HttpResponseSchema,
+  HttpSearchParams,
+  HttpStatusCode,
+  InferPathParams,
+} from '@zimic/http';
+
 import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
 
 export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =

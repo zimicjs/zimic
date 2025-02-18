@@ -1,7 +1,6 @@
+import { HttpHeaders, HttpSearchParams } from '@zimic/http';
 import { expectTypeOf, expect, it, beforeAll, afterAll, describe } from 'vitest';
 
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';

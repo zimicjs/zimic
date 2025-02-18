@@ -11,8 +11,10 @@ import {
   HttpRequest,
   HttpSearchParams,
   HttpHeaders,
-} from '@/http';
-import { AllowAnyStringInPathParams, LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
+  AllowAnyStringInPathParams,
+  LiteralHttpSchemaPathFromNonLiteral,
+} from '@zimic/http';
+
 import {
   HttpResponseBodySchema,
   HttpRequestBodySchema,

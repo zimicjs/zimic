@@ -1,6 +1,6 @@
+import { HttpSchema } from '@zimic/http';
 import { describe, it } from 'vitest';
 
-import { HttpSchema } from '@/http';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';

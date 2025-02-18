@@ -1,4 +1,4 @@
-import { HttpMethod, HttpMethodSchema } from '@/http';
+import { HttpMethod, HttpMethodSchema } from '@zimic/http';
 
 import { FetchRequest, FetchResponse } from '../types/requests';
 

@@ -1,9 +1,8 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
+import { HttpRequest, HttpMethod } from '@zimic/http';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
-import { HttpRequest } from '@/http';
-import { HttpMethod } from '@/http/types/schema';
 import HttpInterceptorWorker from '@/interceptor/http/interceptorWorker/HttpInterceptorWorker';
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';

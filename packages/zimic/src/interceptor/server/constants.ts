@@ -1,4 +1,5 @@
-import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
+import { HTTP_METHODS, HttpSchema } from '@zimic/http';
+
 import { DEFAULT_HTTP_SERVER_LIFECYCLE_TIMEOUT } from '@/utils/http';
 import { DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT } from '@/utils/webSocket';
 

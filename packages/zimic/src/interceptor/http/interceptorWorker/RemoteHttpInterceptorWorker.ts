@@ -1,8 +1,7 @@
+import { HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
-import { HttpResponse } from '@/http/types/requests';
-import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/interceptor/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';

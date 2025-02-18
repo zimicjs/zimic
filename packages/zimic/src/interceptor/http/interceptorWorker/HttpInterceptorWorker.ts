@@ -1,12 +1,18 @@
+import {
+  HttpHeadersInit,
+  HttpHeaders,
+  HttpBody,
+  HttpResponse,
+  HttpMethod,
+  HttpMethodSchema,
+  HttpSchema,
+  HttpStatusCode,
+  InferPathParams,
+  HttpFormData,
+  HttpSearchParams,
+} from '@zimic/http';
 import chalk from 'chalk';
 
-import InvalidJSONError from '@/errors/InvalidJSONError';
-import { HttpHeadersInit } from '@/http';
-import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
-import HttpFormData from '@/http/formData/HttpFormData';
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import { HttpBody, HttpResponse } from '@/http/types/requests';
-import { HttpMethod, HttpMethodSchema, HttpSchema, HttpStatusCode, InferPathParams } from '@/http/types/schema';
 import { Default, PossiblePromise } from '@/types/utils';
 import { removeArrayElement } from '@/utils/arrays';
 import { formatValueToLog, logWithPrefix } from '@/utils/console';
@@ -15,7 +21,6 @@ import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
 import { createURL } from '@/utils/urls';
 
-import HttpSearchParams from '../../../http/searchParams/HttpSearchParams';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
 import {
@@ -29,6 +34,8 @@ import {
   HttpInterceptorResponse,
 } from '../requestHandler/types/requests';
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
+import InvalidFormDataError from './errors/InvalidFormDataError';
+import InvalidJSONError from './errors/InvalidJSONError';
 import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
 import { HttpResponseFactory } from './types/requests';
 

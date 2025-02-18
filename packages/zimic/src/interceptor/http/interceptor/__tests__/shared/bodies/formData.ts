@@ -1,10 +1,15 @@
+import {
+  HTTP_METHODS_WITH_REQUEST_BODY,
+  HttpSchema,
+  HttpFormData,
+  HttpRequest,
+  HttpResponse,
+  StrictFormData,
+} from '@zimic/http';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import InvalidFormDataError from '@/http/errors/InvalidFormDataError';
-import HttpFormData from '@/http/formData/HttpFormData';
-import { HttpRequest, HttpResponse, StrictFormData } from '@/http/types/requests';
-import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
+import InvalidFormDataError from '@/interceptor/http/interceptorWorker/errors/InvalidFormDataError';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
