@@ -14,7 +14,6 @@ concurrency:
 
 env:
   CI: true
-  NODE_VERSION: 22
 
   TURBO_TOKEN:
     ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
@@ -44,7 +43,6 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'
@@ -170,7 +168,6 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'

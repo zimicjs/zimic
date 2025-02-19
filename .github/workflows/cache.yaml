@@ -21,9 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    env:
-      NODE_VERSION: 22
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,7 +28,6 @@ jobs:
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'

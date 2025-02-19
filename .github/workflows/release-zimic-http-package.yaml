@@ -1,4 +1,4 @@
-name: Release Zimic Package
+name: Release zimic-http Package
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
       - published
 
 concurrency:
-  group: release-zimic-${{ github.ref_name }}
+  group: release-zimic-http-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -29,8 +29,8 @@ jobs:
         uses: ./zimic/.github/actions/zimic-release-npm
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: zimic
-          project-directory: packages/zimic
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
           npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
 
   test-npm-release:
@@ -45,8 +45,8 @@ jobs:
         uses: ./zimic/.github/actions/zimic-release-npm-test
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: zimic
-          project-directory: packages/zimic
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
 
   release-docs:
     name: Release documentation
@@ -63,12 +63,12 @@ jobs:
         uses: ./zimic/.github/actions/zimic-release-docs
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: zimic
-          project-directory: packages/zimic
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
           wiki-ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
 
   publish-release-comments:
-    name: Publish Zimic release comments
+    name: Publish release comments
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs:
@@ -85,4 +85,4 @@ jobs:
         uses: ./zimic/.github/actions/zimic-release-comments
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: zimic
+          project-name: '@zimic/http'
