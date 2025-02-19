@@ -1,0 +1,79 @@
+name: Zimic Release NPM Test
+description: Zimic Release NPM Test
+
+inputs:
+  ref-name:
+    description: The Git reference name to release
+    required: true
+  project-name:
+    description: The project name to release
+    required: true
+  project-directory:
+    description: The project directory to release
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref-name }}
+
+    - name: Get Zimic release version
+      id: zimic-version
+      uses: ./.github/actions/zimic-version
+      with:
+        project-directory: ${{ inputs.project-directory }}
+        validate-ref-name: ${{ github.ref_name }}
+
+    - name: Set up Zimic
+      uses: ./.github/actions/zimic-setup
+      id: zimic-setup
+      with:
+        install: '"zimic-test-client..." "zimic-example*..."'
+        build: '"zimic-test-client^..." "zimic-example*^..."'
+
+    - name: Test released package
+      shell: bash
+      run: |
+        sed -i \
+          's/link-workspace-packages = true/link-workspace-packages = false/' \
+          .npmrc
+
+        echo "Using ${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} for testing..."
+
+        for file in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
+          sed -E -i \
+            's/"${{ inputs.project-name }}": ".*"/"${{ inputs.project-name }}\1": "npm:${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }}"/' \
+            $file
+        done
+
+        timeout 60s bash -c '
+          until pnpm view ${{ inputs.project-name }} versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
+            echo "${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
+            sleep 5
+            echo "Checking again..."
+          done
+        '
+
+        echo "${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
+
+        timeout 90s bash -c '
+          until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
+            sleep 5
+            echo "Retrying..."
+          done
+        '
+
+        pnpm turbo \
+          types:check lint:turbo \
+          --continue \
+          --concurrency 100% \
+          ${{ steps.zimic-setup.outputs.install-filters }}
+
+        pnpm turbo \
+          test:turbo \
+          --continue \
+          --concurrency 100% \
+          ${{ steps.zimic-setup.outputs.install-filters }}

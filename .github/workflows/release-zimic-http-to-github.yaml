@@ -1,4 +1,4 @@
-name: Release Zimic to GitHub
+name: Release zimic-http to GitHub
 
 on:
   pull_request:
@@ -6,8 +6,7 @@ on:
       - closed
     branches:
       - canary
-      - v*
-      - zimic@*
+      - '@zimic/http@*'
   workflow_dispatch:
     inputs:
       upgrade-type:
@@ -31,7 +30,7 @@ on:
           - none
 
 concurrency:
-  group: release-to-github
+  group: release-to-zimic-http-github
   cancel-in-progress: false
 
 env:
@@ -62,23 +61,23 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: zimic...
+          install: '@zimic/http...'
 
       - name: Get release settings
         id: release-settings
         uses: ./.github/actions/zimic-get-release-settings
         with:
-          project-name: zimic
+          project-name: '@zimic/http'
           input-upgrade-type: ${{ inputs.upgrade-type }}
           input-pre-release-id: ${{ inputs.pre-release-id }}
 
-      - name: Bump version
+      - name: Bump @version
         id: bump-version
         if: ${{ steps.release-settings.outputs.upgrade-type != '' }}
         uses: ./.github/actions/zimic-bump-version
         with:
-          project-name: zimic
-          project-directory: packages/zimic
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
           upgrade-type: ${{ steps.release-settings.outputs.upgrade-type }}
           pre-release-id: ${{ steps.release-settings.outputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
