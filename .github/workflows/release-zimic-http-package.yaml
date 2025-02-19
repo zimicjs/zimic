@@ -1,4 +1,4 @@
-name: Release zimic-http Package
+name: 'Release Package: @zimic/http'
 
 on:
   release:

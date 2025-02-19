@@ -1,4 +1,4 @@
-name: Release Zimic to GitHub
+name: 'Release to GitHub: zimic'
 
 on:
   pull_request:
