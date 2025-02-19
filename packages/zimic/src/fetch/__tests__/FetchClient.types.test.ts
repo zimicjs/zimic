@@ -1,6 +1,6 @@
+import { HttpSchema, MergeHttpResponsesByStatusCode } from '@zimic/http';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpSchema, MergeHttpResponsesByStatusCode } from '@/http';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 

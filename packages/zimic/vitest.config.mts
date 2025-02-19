@@ -29,7 +29,6 @@ export default defineConfig({
         'dist/**',
         'tests/coverage/**',
         'tests/setup/global/**',
-        'scripts/dev/**',
         '**/types/**',
         '**/{*.d.ts,types,typescript}.ts',
         '**/.lintstagedrc.js',
@@ -41,7 +40,6 @@ export default defineConfig({
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.TYPEGEN_HTTP_IMPORT_MODULE': "'@/http'",
   },
   resolve: {
     alias: {

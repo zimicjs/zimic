@@ -137,7 +137,7 @@ describe('CLI (server)', async () => {
     });
 
     it('should start the server on localhost if no hostname is provided', async () => {
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5000']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '6500']);
 
       await usingIgnoredConsole(['log'], async (spies) => {
         await runCLI();
@@ -145,10 +145,10 @@ describe('CLI (server)', async () => {
         expect(server).toBeDefined();
         expect(server!.isRunning()).toBe(true);
         expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBe(5000);
+        expect(server!.port()).toBe(6500);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://localhost:5000');
+        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://localhost:6500');
       });
     });
 

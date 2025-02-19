@@ -1,12 +1,13 @@
-import { HttpResponse } from '@/http';
 import {
+  HttpResponse,
   HTTP_METHODS,
   HttpMethod,
-  HttpSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
   HttpStatusCode,
-} from '@/http/types/schema';
+  HttpSchema,
+} from '@zimic/http';
+
 import { Default, PossiblePromise } from '@/types/utils';
 import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
 

@@ -1,12 +1,11 @@
-import { Server as HttpServer } from 'http';
-
 import {
   HTTP_METHODS_WITH_REQUEST_BODY,
   HTTP_METHODS_WITH_RESPONSE_BODY,
   HttpMethod,
   HttpMethodWithRequestBody,
   HttpMethodWithResponseBody,
-} from '@/http/types/schema';
+} from '@zimic/http';
+import { Server as HttpServer } from 'http';
 
 class HttpServerTimeoutError extends Error {}
 

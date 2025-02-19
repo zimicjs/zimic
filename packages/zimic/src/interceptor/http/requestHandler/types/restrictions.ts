@@ -1,14 +1,15 @@
 import {
   HttpBody,
   HttpFormData,
+  HttpHeaders,
   HttpHeadersSchema,
   HttpSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
   HttpSearchParams,
   HttpSearchParamsSchema,
-} from '@/http';
-import HttpHeaders from '@/http/headers/HttpHeaders';
+} from '@zimic/http';
+
 import { IfNever, Default, DeepPartial, PossiblePromise } from '@/types/utils';
 
 import {

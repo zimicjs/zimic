@@ -1,4 +1,4 @@
-import { HttpSchema } from '@/http/types/schema';
+import { HttpSchema } from '@zimic/http';
 
 import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
 import { HttpInterceptorPlatform } from './options';

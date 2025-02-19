@@ -39,10 +39,8 @@
     "!src/**/*.test.ts",
     "dist",
     "index.d.ts",
-    "http.d.ts",
     "interceptor/http.d.ts",
-    "interceptor/server.d.ts",
-    "typegen.d.ts"
+    "interceptor/server.d.ts"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -57,12 +55,6 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./http": {
-      "types": "./dist/http.d.ts",
-      "import": "./dist/http.mjs",
-      "require": "./dist/http.js",
-      "default": "./dist/http.js"
-    },
     "./interceptor/http": {
       "types": "./dist/interceptor/http.d.ts",
       "import": "./dist/interceptor/http.mjs",
@@ -74,12 +66,6 @@
       "import": "./dist/interceptor/server.mjs",
       "require": "./dist/interceptor/server.js",
       "default": "./dist/interceptor/server.js"
-    },
-    "./typegen": {
-      "types": "./dist/typegen.d.ts",
-      "import": "./dist/typegen.mjs",
-      "require": "./dist/typegen.js",
-      "default": "./dist/typegen.js"
     },
     "./fetch": {
       "types": "./dist/fetch.d.ts",
@@ -93,7 +79,7 @@
     "dev": "tsup --watch",
     "cli": "node ./dist/cli.js",
     "build": "tsup",
-    "lint": "eslint --cache --no-error-on-unmatched-pattern --fix",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
@@ -101,7 +87,6 @@
     "test": "dotenv -v NODE_ENV=test -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "typegen:fixtures": "tsx ./scripts/dev/typegen/generateFixtureTypes.js",
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
@@ -115,7 +100,6 @@
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
     "msw": "2.7.0",
-    "openapi-typescript": "7.6.1",
     "ws": "8.18.0",
     "yargs": "17.7.2"
   },
@@ -123,27 +107,25 @@
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.6",
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.13.4",
     "@types/ws": "^8.5.14",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.0.5",
     "@vitest/coverage-istanbul": "^3.0.5",
     "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/http": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.20.1",
-    "js-yaml": "^4.1.0",
     "playwright": "^1.50.1",
-    "prettier": "^3.5.1",
     "tsup": "^8.3.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
   },
   "peerDependencies": {
+    "@zimic/http": "^0.0.0",
     "typescript": ">=4.8.0"
   },
   "peerDependenciesMeta": {

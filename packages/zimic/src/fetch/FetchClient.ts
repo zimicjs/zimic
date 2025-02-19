@@ -1,5 +1,11 @@
-import { HttpSchema, HttpSchemaPath, HttpSchemaMethod, HttpSearchParams } from '@/http';
-import { LiteralHttpSchemaPathFromNonLiteral } from '@/http/types/schema';
+import {
+  HttpSchemaPath,
+  HttpSchemaMethod,
+  HttpSearchParams,
+  LiteralHttpSchemaPathFromNonLiteral,
+  HttpSchema,
+} from '@zimic/http';
+
 import { Default } from '@/types/utils';
 import { createRegexFromURL, excludeNonPathParams, joinURL } from '@/utils/urls';
 

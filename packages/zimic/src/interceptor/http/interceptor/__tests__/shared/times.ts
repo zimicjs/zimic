@@ -1,6 +1,6 @@
+import { HTTP_METHODS, HttpSchema } from '@zimic/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { HTTP_METHODS, HttpSchema } from '@/http/types/schema';
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import { expectTimesCheckError } from '@/interceptor/http/requestHandler/__tests__/shared/utils';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';

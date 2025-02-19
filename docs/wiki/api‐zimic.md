@@ -27,7 +27,7 @@ The module `zimic` exports general resources and utility types used by Zimic.
 Represents or validates a type that is compatible with JSON.
 
 ```ts
-import { type JSONValue } from 'zimic';
+import { type JSONValue } from '@zimic/http';
 
 // Can be used as a standalone type:
 const value: JSONValue = {
@@ -37,7 +37,7 @@ const value: JSONValue = {
 ```
 
 ```ts
-import { type JSONValue } from 'zimic';
+import { type JSONValue } from '@zimic/http';
 
 // Can be used with a type argument to validate a JSON value:
 type ValidJSON = JSONValue<{
@@ -66,7 +66,7 @@ Recursively converts a type to its JSON-serialized version. Dates are converted 
 are excluded.
 
 ```ts
-import { type JSONSerialized } from 'zimic';
+import { type JSONSerialized } from '@zimic/http';
 
 type SerializedUser = JSONSerialized<{
   id: string;

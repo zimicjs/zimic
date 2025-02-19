@@ -88,7 +88,7 @@ describe('Typegen', () => {
 
         await $(
           'pnpm',
-          ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
+          ['zimic-http', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
           { stderr: 'inherit' },
         );
 

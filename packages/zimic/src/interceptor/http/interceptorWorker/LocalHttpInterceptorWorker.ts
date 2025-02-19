@@ -1,9 +1,8 @@
+import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
-import { HttpRequest, HttpResponse } from '@/http/types/requests';
-import { HttpMethod, HttpSchema } from '@/http/types/schema';
 import { removeArrayIndex } from '@/utils/arrays';
 import { createURL } from '@/utils/urls';
 

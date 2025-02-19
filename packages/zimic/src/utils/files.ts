@@ -1,4 +1,3 @@
-import { blobEquals } from './data';
 import { createCachedDynamicImport } from './imports';
 
 export const importBuffer = createCachedDynamicImport(
@@ -24,8 +23,4 @@ export async function importFile() {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   FileSingleton = globalThis.File ?? (await importBuffer()).File;
   return FileSingleton;
-}
-
-export async function fileEquals(file: File, otherFile: File) {
-  return file.name === otherFile.name && (await blobEquals(file, otherFile));
 }

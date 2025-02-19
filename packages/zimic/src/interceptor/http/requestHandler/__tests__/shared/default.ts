@@ -1,6 +1,6 @@
+import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
-import { HttpRequest, HttpResponse, StrictFormData } from '@/http/types/requests';
 import { SharedHttpInterceptorClient } from '@/interceptor/http/interceptor/HttpInterceptorClient';
 import LocalHttpInterceptor from '@/interceptor/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/interceptor/http/interceptor/RemoteHttpInterceptor';

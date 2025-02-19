@@ -4,7 +4,8 @@ import {
   HttpSchemaMethod,
   HttpSchemaPath,
   HttpStatusCode,
-} from '@/http/types/schema';
+} from '@zimic/http';
+
 import { Default, PossiblePromise } from '@/types/utils';
 
 import HttpRequestHandlerClient from '../HttpRequestHandlerClient';

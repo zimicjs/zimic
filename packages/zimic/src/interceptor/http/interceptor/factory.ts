@@ -1,4 +1,4 @@
-import { ConvertToStrictHttpSchema, HttpSchema } from '@/http/types/schema';
+import { HttpSchema } from '@zimic/http';
 
 import UnknownHttpInterceptorTypeError from './errors/UnknownHttpInterceptorTypeError';
 import LocalHttpInterceptor from './LocalHttpInterceptor';
@@ -28,26 +28,22 @@ function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
  */
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicLocalHttpInterceptor<HttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicRemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-):
-  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
-  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>;
+): PublicLocalHttpInterceptor<HttpSchema<Schema>> | PublicRemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-):
-  | PublicLocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>
-  | PublicRemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>> {
+): PublicLocalHttpInterceptor<HttpSchema<Schema>> | PublicRemoteHttpInterceptor<HttpSchema<Schema>> {
   const type = options.type;
 
   if (isLocalHttpInterceptorOptions(options)) {
-    return new LocalHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
+    return new LocalHttpInterceptor<HttpSchema<Schema>>(options);
   } else if (isRemoteHttpInterceptorOptions(options)) {
-    return new RemoteHttpInterceptor<ConvertToStrictHttpSchema<Schema>>(options);
+    return new RemoteHttpInterceptor<HttpSchema<Schema>>(options);
   }
 
   throw new UnknownHttpInterceptorTypeError(type);

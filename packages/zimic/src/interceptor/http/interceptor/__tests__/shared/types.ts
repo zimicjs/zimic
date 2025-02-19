@@ -1,9 +1,14 @@
+import {
+  HttpHeadersSerialized,
+  HttpSearchParamsSerialized,
+  HttpHeaders,
+  HttpSearchParams,
+  HttpSchema,
+  HttpStatusCode,
+  MergeHttpResponsesByStatusCode,
+} from '@zimic/http';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import { HttpHeadersSerialized, HttpSearchParamsSerialized } from '@/http';
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpSchema, HttpStatusCode, MergeHttpResponsesByStatusCode } from '@/http/types/schema';
 import { HttpRequestHandlerPath } from '@/interceptor/http/requestHandler/types/utils';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 

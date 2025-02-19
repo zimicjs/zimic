@@ -1,4 +1,5 @@
-import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@/http/types/schema';
+import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
+
 import { createURL } from '@/utils/urls';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';

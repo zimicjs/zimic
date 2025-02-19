@@ -1,7 +1,13 @@
-import HttpFormData from '@/http/formData/HttpFormData';
-import HttpHeaders from '@/http/headers/HttpHeaders';
-import HttpSearchParams from '@/http/searchParams/HttpSearchParams';
-import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@/http/types/schema';
+import {
+  HttpSchemaMethod,
+  HttpSchemaPath,
+  HttpStatusCode,
+  HttpFormData,
+  HttpHeaders,
+  HttpSearchParams,
+  HttpSchema,
+} from '@zimic/http';
+
 import { Default, Range } from '@/types/utils';
 import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';

@@ -1,5 +1,5 @@
-import { HttpFormData, HttpSearchParams } from '@/http';
-import { HttpSchema } from '@/http/types/schema';
+import { HttpFormData, HttpSearchParams, HttpSchema } from '@zimic/http';
+
 import { HttpInterceptorPlatform, HttpInterceptorType } from '@/interceptor/http/interceptor/types/options';
 import { PossiblePromise } from '@/types/utils';
 import { ExtendedURL } from '@/utils/urls';

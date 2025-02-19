@@ -150,7 +150,7 @@ use remote interceptors.
    <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
    ```ts
-   import { type HttpSchema } from 'zimic/http';
+   import { type HttpSchema } from '@zimic/http';
    import { httpInterceptor } from 'zimic/interceptor/http';
 
    // Declare your types:
@@ -218,7 +218,7 @@ use remote interceptors.
    </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
    ```ts
-   import { type HttpSchema } from 'zimic/http';
+   import { type HttpSchema } from '@zimic/http';
    import { httpInterceptor } from 'zimic/interceptor/http';
 
    // Declare your types
