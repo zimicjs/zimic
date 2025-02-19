@@ -1,7 +1,12 @@
-# API reference: `zimic/http` <!-- omit from toc -->
+# API reference: `@zimic/http` <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
+- [Getting started](#getting-started)
+  - [1. Requirements](#1-requirements)
+    - [Supported environments](#supported-environments)
+  - [Supported languages](#supported-languages)
+  - [2. Installation](#2-installation)
 - [`HttpHeaders`](#httpheaders)
   - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpHeaders` utility types](#httpheaders-utility-types)
@@ -17,6 +22,8 @@
   - [`HttpFormData` utility types](#httpformdata-utility-types)
     - [`HttpFormDataSerialized`](#httpformdataserialized)
 - [Utility types](#utility-types)
+  - [`JSONValue`](#jsonvalue)
+  - [`JSONSerialized`](#jsonserialized)
   - [`HttpSchemaPath`](#httpschemapath)
     - [`HttpSchemaPath.Literal`](#httpschemapathliteral)
     - [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral)
@@ -25,7 +32,62 @@
 
 ---
 
-This module exports general HTTP resources.
+This package exports general HTTP resources. They are used by other Zimic packages, such as `@zimic/fetch` and
+`@zimic/interceptor`, to provide type safety when working with HTTP requests and responses.
+
+- [`@zimic/http`](api‐zimic‐http): HTTP resources and utility types.
+- [`@zimic/http/typegen`](api‐zimic‐typegen): HTTP type generation.
+
+## Getting started
+
+### 1. Requirements
+
+#### Supported environments
+
+- If you are on **client-side**:
+  - Any relatively modern browser
+- If you are on **server-side**:
+  - [Node](https://nodejs.org) >= 18.13.0
+  - [Bun](https://bun.sh) >= 1.0.0
+  - [Deno](https://deno.com) >= 1.0.0
+
+### Supported languages
+
+- [TypeScript](https://www.typescriptlang.org) >= 4.8
+  - If you plan on using [`zimic-http typegen`](cli‐zimic‐typegen), we recommend
+    [TypeScript](https://www.typescriptlang.org) >= 5.0.
+
+We recommend enabling `strict` in your `tsconfig.json`:
+
+```jsonc
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "strict": true,
+  },
+}
+```
+
+### 2. Installation
+
+`@zimic/http` is available on [npm](https://www.npmjs.com/package/@zimic/http).
+
+| Manager | Command                              |
+| :-----: | ------------------------------------ |
+|   npm   | `npm install @zimic/http --save-dev` |
+|  pnpm   | `pnpm add @zimic/http --dev`         |
+|  yarn   | `yarn add @zimic/http --dev`         |
+|   bun   | `bun add @zimic/http --dev`          |
+
+We also canary releases under the tag `canary`, containing the latest features and bug fixes:
+
+| Manager | Command                                     |
+| :-----: | ------------------------------------------- |
+|   npm   | `npm install @zimic/http@canary --save-dev` |
+|  pnpm   | `pnpm add @zimic/http@canary --dev`         |
+|  yarn   | `yarn add @zimic/http@canary --dev`         |
+|   bun   | `bun add @zimic/http@canary --dev`          |
 
 > [!TIP]
 >
@@ -340,6 +402,65 @@ type Schema = HttpFormDataSerialized<{
 ```
 
 ## Utility types
+
+### `JSONValue`
+
+Represents or validates a type that is compatible with JSON.
+
+```ts
+import { type JSONValue } from '@zimic/http';
+
+// Can be used as a standalone type:
+const value: JSONValue = {
+  name: 'example',
+  tags: ['one', 'two'],
+};
+```
+
+```ts
+import { type JSONValue } from '@zimic/http';
+
+// Can be used with a type argument to validate a JSON value:
+type ValidJSON = JSONValue<{
+  id: string;
+  email: string;
+  createdAt: string;
+}>;
+
+// This results in a type error:
+type InvalidJSON = JSONValue<{
+  id: string;
+  email: string;
+  createdAt: Date; // `Date` is not a valid JSON value.
+  save(): Promise<void>; // Functions are not valid JSON values.
+}>;
+```
+
+> [!IMPORTANT]
+>
+> The input of `JSONValue` and all of its internal types must be declared inline or as a type aliases (`type`). They
+> cannot be interfaces.
+
+### `JSONSerialized`
+
+Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON values
+are excluded.
+
+```ts
+import { type JSONSerialized } from '@zimic/http';
+
+type SerializedUser = JSONSerialized<{
+  id: string;
+  email: string;
+  createdAt: Date;
+  save(): Promise<void>;
+}>;
+// {
+//   id: string;
+//   email: string;
+//   createdAt: string;
+// }
+```
 
 ### `HttpSchemaPath`
 

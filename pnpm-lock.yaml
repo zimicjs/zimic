@@ -96,6 +96,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/zimic
 
+  docs/wiki: {}
+
   examples:
     dependencies:
       zimic:

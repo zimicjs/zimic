@@ -34,7 +34,7 @@
 
 ### Supported languages
 
-- [TypeScript](https://www.typescriptlang.org) >= 4.7
+- [TypeScript](https://www.typescriptlang.org) >= 4.8
   - If you plan on using [`zimic typegen`](cli‐zimic‐typegen), we recommend
     [TypeScript](https://www.typescriptlang.org) >= 5.0.
 - [JavaScript](https://developer.mozilla.org/docs/Web/JavaScript) >= ES6
