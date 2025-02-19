@@ -1,4 +1,4 @@
-name: Release zimic-http to GitHub
+name: 'Release to GitHub: @zimic/http'
 
 on:
   pull_request:
@@ -71,7 +71,7 @@ jobs:
           input-upgrade-type: ${{ inputs.upgrade-type }}
           input-pre-release-id: ${{ inputs.pre-release-id }}
 
-      - name: Bump @version
+      - name: Bump version
         id: bump-version
         if: ${{ steps.release-settings.outputs.upgrade-type != '' }}
         uses: ./.github/actions/zimic-bump-version
