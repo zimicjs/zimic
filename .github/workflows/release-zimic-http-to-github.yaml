@@ -87,8 +87,8 @@ jobs:
         if: ${{ steps.release-settings.outputs.upgrade-type != '' }}
         uses: ncipollo/release-action@v1
         with:
-          name: v${{ steps.bump-version.outputs.value }}
-          tag: v${{ steps.bump-version.outputs.value }}
+          name: '@zimic/http@${{ steps.bump-version.outputs.value }}'
+          tag: '@zimic/http@${{ steps.bump-version.outputs.value }}'
           commit: ${{ steps.bump-version.outputs.commit-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           makeLatest: ${{ steps.release-settings.outputs.pre-release-id == 'none' }}
