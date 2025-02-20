@@ -43,7 +43,7 @@ runs:
 
         echo 'Bumping version...'
 
-        currentVersion=$(pnpm version --json | jq ".[\"$projectName\"]" -r)
+        currentVersion=$(pnpm version --json | jq ".\"$projectName\"" -r)
         stableCurrentVersion=$(echo "$currentVersion" | sed 's/-.*//')
 
         bumpedVersion=$(
