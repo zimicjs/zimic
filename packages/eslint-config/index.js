@@ -337,10 +337,7 @@ export default [
       '@typescript-eslint/restrict-template-expressions': [
         'warn',
         {
-          allow: [
-            { name: ['Error', 'URL', 'URLSearchParams', 'unknown'], from: 'lib' },
-            { name: ['HttpSearchParams'], from: 'file' },
-          ],
+          allow: [{ name: ['Error', 'URL', 'URLSearchParams', 'unknown'], from: 'lib' }],
           allowAny: true,
           allowBoolean: true,
           allowNullish: true,

@@ -404,7 +404,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                   arrayWithMultipleValues: ['value-1', 'value-2'],
                 });
 
-                const request = new Request(joinURL(baseURL, `/users/other?${searchParams}`), { method });
+                const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), { method });
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
@@ -562,7 +562,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const searchParams = new HttpSearchParams({ value: '1' });
 
-              const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
               expect(response.status).toBe(200);
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -693,7 +693,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 arrayWithMultipleValues: ['value-1', 'value-2'],
               });
 
-              const request = new Request(joinURL(baseURL, `/users/other?${searchParams}`), {
+              const request = new Request(joinURL(baseURL, `/users/other?${searchParams.toString()}`), {
                 method,
                 headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
               });
@@ -792,7 +792,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const searchParams = new HttpSearchParams({ value: '1' });
 
-              const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+              const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
               expect(response.status).toBe(200);
 
               requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -837,7 +837,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -941,7 +941,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         await usingIgnoredConsole(['warn', 'error'], async (spies) => {
           const searchParams = new HttpSearchParams({ value: '1' });
 
-          const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+          const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
           expect(response.status).toBe(200);
 
           requests = await promiseIfRemote(handler.requests(), interceptor);

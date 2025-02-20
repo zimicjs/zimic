@@ -90,7 +90,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -103,7 +103,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -176,7 +176,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -189,7 +189,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -263,7 +263,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -276,7 +276,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });
@@ -361,7 +361,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               name?: string;
             }>({ value: '1' });
 
-            const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+            const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
             requests = await promiseIfRemote(handler.requests(), interceptor);
@@ -374,7 +374,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             searchParams.set('value', '2');
             searchParams.set('name', 'User 1');
 
-            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams}`), {
+            let responsePromise = fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), {
               method,
               headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
             });

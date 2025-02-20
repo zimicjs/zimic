@@ -296,7 +296,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
 
-        const response = await fetch(joinURL(baseURL, `/users?${searchParams}`), { method });
+        const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
         expect(response.status).toBe(200);
 
         requests = await promiseIfRemote(handler.requests(), interceptor);
