@@ -10,7 +10,7 @@
     "mock",
     "static"
   ],
-  "version": "0.14.0-canary.5",
+  "version": "0.14.0-canary.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
