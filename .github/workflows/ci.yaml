@@ -16,16 +16,17 @@ env:
   CI: true
 
   TURBO_TOKEN:
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM:
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
 
   TURBO_LOG_ORDER: stream
   TURBO_FILTERS:
-    ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') && '--filter
-    "./{apps,packages}/*" --filter "zimic-example*"' || '--filter "...[HEAD^1]"' }}
+    ${{ github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/')) && '--filter "./{apps,packages}/*" --filter
+    "zimic-example*"' || '--filter "...[HEAD^1]"' }}
 
 jobs:
   ci-general:
