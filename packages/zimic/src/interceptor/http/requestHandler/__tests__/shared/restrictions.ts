@@ -65,7 +65,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           });
 
         for (const matchingSearchParams of [new HttpSearchParams<SearchParamsSchema>({ name })]) {
-          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -75,7 +75,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -101,7 +101,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name }),
           new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+          const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(true);
         }
@@ -111,7 +111,7 @@ export function declareRestrictionHttpRequestHandlerTests(
           new HttpSearchParams<SearchParamsSchema>({ name: 'other' }),
           new HttpSearchParams<SearchParamsSchema>({}),
         ]) {
-          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+          const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
           const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
           expect(await handler.matchesRequest(parsedRequest)).toBe(false);
         }
@@ -139,7 +139,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name, other: 'param' }),
         new HttpSearchParams<SearchParamsSchema>({ name: `${name} other` }),
       ]) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`));
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(true);
       }
@@ -148,7 +148,7 @@ export function declareRestrictionHttpRequestHandlerTests(
         new HttpSearchParams<SearchParamsSchema>({ name: `Other ${name}` }),
         new HttpSearchParams<SearchParamsSchema>({}),
       ]) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`));
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`));
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
       }
@@ -442,7 +442,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const matchingHeaders of matchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -450,7 +450,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: matchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -460,7 +460,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 
     for (const mismatchingHeaders of mismatchingHeadersSamples) {
       for (const matchingSearchParams of matchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${matchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${matchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
@@ -468,7 +468,7 @@ export function declareRestrictionHttpRequestHandlerTests(
       }
 
       for (const mismatchingSearchParams of mismatchingSearchParamsSamples) {
-        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams}`), {
+        const request = new Request(joinURL(baseURL, `?${mismatchingSearchParams.toString()}`), {
           headers: mismatchingHeaders,
         });
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);

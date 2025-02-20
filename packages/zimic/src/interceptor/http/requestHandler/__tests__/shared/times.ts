@@ -549,7 +549,7 @@ export function declareTimesHttpRequestHandlerTests(
         );
 
         const searchParams = new HttpSearchParams({ name: '1', value: '2' });
-        request = new Request(joinURL(baseURL, `/users?${searchParams}`), { method: 'POST' });
+        request = new Request(joinURL(baseURL, `/users?${searchParams.toString()}`), { method: 'POST' });
         parsedRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(request);
 
         expect(await handler.matchesRequest(parsedRequest)).toBe(false);
@@ -572,7 +572,7 @@ export function declareTimesHttpRequestHandlerTests(
               '       - { "value": "1" }',
               '       + {}',
               '',
-              `2: POST ${joinURL(baseURL, `/users?${searchParams}`)}`,
+              `2: POST ${joinURL(baseURL, `/users?${searchParams.toString()}`)}`,
               '     Search params:',
               '       - { "value": "1" }',
               '       + { "name": "1", "value": "2" }',
