@@ -28,6 +28,7 @@ runs:
       id: zimic-version
       uses: ./zimic/.github/actions/zimic-version
       with:
+        project-name: ${{ inputs.project-name }}
         project-directory: zimic/${{ inputs.project-directory }}
         validate-ref-name: ${{ inputs.ref_name }}
 
