@@ -26,8 +26,11 @@ jobs:
       id-token: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Release to NPM
-        uses: ./zimic/.github/actions/zimic-release-npm
+        uses: ./.github/actions/zimic-release-npm
         with:
           ref-name: ${{ github.ref_name }}
           project-name: zimic
@@ -42,8 +45,11 @@ jobs:
       - release-to-npm
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Test NPM release
-        uses: ./zimic/.github/actions/zimic-release-npm-test
+        uses: ./.github/actions/zimic-release-npm-test
         with:
           ref-name: ${{ github.ref_name }}
           project-name: zimic
@@ -61,6 +67,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: zimic
+
       - name: Release documentation
         uses: ./zimic/.github/actions/zimic-release-docs
         with:
@@ -83,8 +94,11 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Publish release comments
-        uses: ./zimic/.github/actions/zimic-release-comments
+        uses: ./.github/actions/zimic-release-comments
         with:
           ref-name: ${{ github.ref_name }}
           project-name: zimic
