@@ -16,6 +16,7 @@ jobs:
   release-to-npm:
     name: Release to NPM
     runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref_name, 'v') }}
     timeout-minutes: 7
 
     environment: NPM
@@ -51,6 +52,7 @@ jobs:
   release-docs:
     name: Release documentation
     runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref_name, 'v') }}
     timeout-minutes: 5
 
     environment: Wiki
