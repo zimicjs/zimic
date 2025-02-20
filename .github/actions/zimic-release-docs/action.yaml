@@ -62,7 +62,7 @@ runs:
         echo 'Pushing changes...'
 
         numberOfPushRetries=0
-        maxNumberOfPushRetries=3
+        maxNumberOfPushRetries=5
 
         until git push -u origin HEAD --no-verify; do
           if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
