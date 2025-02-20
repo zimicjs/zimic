@@ -19,8 +19,9 @@ runs:
       id: zimic-version
       uses: ./.github/actions/zimic-version
       with:
+        project-name: ${{ inputs.project-name }}
         project-directory: ${{ inputs.project-directory }}
-        validate-ref-name: ${{ github.ref_name }}
+        validate-ref-name: ${{ inputs.ref_name }}
 
     - name: Set up Zimic
       uses: ./.github/actions/zimic-setup

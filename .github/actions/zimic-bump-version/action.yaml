@@ -75,7 +75,7 @@ runs:
         echo 'Pushing changes...'
 
         numberOfPushRetries=0
-        maxNumberOfPushRetries=3
+        maxNumberOfPushRetries=5
 
         git config pull.rebase true
 

@@ -14,6 +14,12 @@ inputs:
   wiki-ssh-key:
     description: The SSH key to push to the wiki repository
     required: true
+  commit-user-name:
+    description: Commit user name
+    required: true
+  commit-user-email:
+    description: Commit user email
+    required: true
 
 runs:
   using: composite
@@ -22,8 +28,9 @@ runs:
       id: zimic-version
       uses: ./zimic/.github/actions/zimic-version
       with:
+        project-name: ${{ inputs.project-name }}
         project-directory: zimic/${{ inputs.project-directory }}
-        validate-ref-name: ${{ github.ref_name }}
+        validate-ref-name: ${{ inputs.ref_name }}
 
     - name: Checkout wiki
       uses: actions/checkout@v4
@@ -38,25 +45,25 @@ runs:
       working-directory: zimic
       shell: bash
       run: |
-        bash scripts/docs/sync-wiki.sh '${{ github.ref_name }}'
+        bash scripts/docs/sync-wiki.sh '${{ inputs.ref_name }}'
 
     - name: Commit and push wiki changes
       if: ${{ steps.zimic-version.outputs.label == 'latest' }}
       working-directory: zimic.wiki
       shell: bash
       run: |
-        git config user.name '${{ vars.RELEASE_COMMIT_USER_NAME }}'
-        git config user.email '${{ vars.RELEASE_COMMIT_USER_EMAIL }}'
+        git config user.name '${{ inputs.commit-user-name }}'
+        git config user.email '${{ inputs.commit-user-email }}'
 
         echo 'Committing changes...'
 
-        git add .
+        git add --all
         git commit -m 'docs(wiki): ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}'
           
         echo 'Pushing changes...'
 
         numberOfPushRetries=0
-        maxNumberOfPushRetries=3
+        maxNumberOfPushRetries=5
 
         until git push -u origin HEAD --no-verify; do
           if [[ $numberOfPushRetries -gt $maxNumberOfPushRetries ]]; then
