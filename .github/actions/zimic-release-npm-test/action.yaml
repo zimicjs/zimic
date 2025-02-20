@@ -37,23 +37,37 @@ runs:
           's/link-workspace-packages = true/link-workspace-packages = false/' \
           .npmrc
 
-        echo "Using ${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} for testing..."
+        echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
         for file in apps/zimic-test-client/package.json examples/package.json examples/*/package.json; do
-          sed -E -i \
-            's/"${{ inputs.project-name }}": ".*"/"${{ inputs.project-name }}\1": "npm:${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }}"/' \
-            $file
+          for packageName in zimic @zimic/http; do
+            jq "if .dependencies.\"$packageName\"? then
+              .dependencies.\"$packageName\" = \"workspace:*\"
+            else . end | if .devDependencies.\"$packageName\"? then
+              .devDependencies.\"$packageName\" = \"workspace:*\"
+            else . end" < "$file" > "$file.tmp"
+
+            mv "$file.tmp" "$file"
+          done
+
+          jq 'if .dependencies."${{ inputs.project-name }}"? then
+            .dependencies."${{ inputs.project-name }}" = "npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}"
+          else . end | if .devDependencies."${{ inputs.project-name }}"? then
+            .devDependencies."${{ inputs.project-name }}" = "npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}"
+          else . end' < "$file" > "$file.tmp"
+
+          mv "$file.tmp" "$file"
         done
 
         timeout 60s bash -c '
           until pnpm view ${{ inputs.project-name }} versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
-            echo "${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
+            echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
             sleep 5
             echo "Checking again..."
           done
         '
 
-        echo "${{ inputs.project_name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
+        echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
         timeout 90s bash -c '
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
