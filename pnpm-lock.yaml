@@ -53,6 +53,9 @@ importers:
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../../packages/eslint-config-node
+      '@zimic/fetch':
+        specifier: workspace:*
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: workspace:*
         version: link:../../packages/zimic-http
@@ -119,12 +122,12 @@ importers:
 
   examples/with-jest-jsdom:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@jest/globals':
         specifier: ^29.7.0
@@ -156,18 +159,21 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-jest-node:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -196,12 +202,18 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-next-js-app:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -217,9 +229,6 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -254,12 +263,18 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-next-js-pages:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -275,9 +290,6 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -309,18 +321,21 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-openapi-typegen:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -343,9 +358,15 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-playwright:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
@@ -361,9 +382,6 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -398,15 +416,18 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-
-  examples/with-vitest-browser:
-    dependencies:
-      '@zimic/http':
-        specifier: latest
-        version: link:../../packages/zimic-http
       zimic:
         specifier: latest
         version: link:../../packages/zimic
+
+  examples/with-vitest-browser:
+    dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -435,15 +456,18 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
-
-  examples/with-vitest-jsdom:
-    dependencies:
-      '@zimic/http':
-        specifier: latest
-        version: link:../../packages/zimic-http
       zimic:
         specifier: latest
         version: link:../../packages/zimic
+
+  examples/with-vitest-jsdom:
+    dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
+      '@zimic/http':
+        specifier: latest
+        version: link:../../packages/zimic-http
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -466,18 +490,21 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   examples/with-vitest-node:
     dependencies:
+      '@zimic/fetch':
+        specifier: latest
+        version: link:../../packages/zimic-fetch
       '@zimic/http':
         specifier: latest
         version: link:../../packages/zimic-http
       fastify:
         specifier: ^5.2.1
         version: 5.2.1
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -500,6 +527,9 @@ importers:
       vitest:
         specifier: ^3.0.5
         version: 3.0.5(@types/debug@4.1.12)(@types/node@22.13.4)(@vitest/browser@3.0.5)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.13.4)(typescript@5.7.3))(tsx@4.19.2)(yaml@2.7.0)
+      zimic:
+        specifier: latest
+        version: link:../../packages/zimic
 
   packages/eslint-config:
     dependencies:

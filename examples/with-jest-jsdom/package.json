@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@zimic/http": "latest",
-    "zimic": "latest"
+    "@zimic/fetch": "latest"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -21,6 +21,7 @@
     "dotenv-cli": "^8.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "zimic": "latest"
   }
 }

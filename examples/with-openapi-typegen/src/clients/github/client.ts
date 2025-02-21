@@ -1,4 +1,4 @@
-import { createFetch } from 'zimic/fetch';
+import { createFetch } from '@zimic/fetch';
 
 import { GitHubSchema } from './typegen/generated';
 

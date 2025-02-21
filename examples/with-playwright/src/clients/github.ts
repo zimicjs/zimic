@@ -1,5 +1,5 @@
+import { createFetch } from '@zimic/fetch';
 import type { HttpSchema } from '@zimic/http';
-import { createFetch } from 'zimic/fetch';
 
 import environment from '../config/environment';
 
