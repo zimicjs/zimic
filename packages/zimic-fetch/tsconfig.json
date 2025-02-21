@@ -9,10 +9,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"],
-      "@scripts/*": ["./scripts/*"],
       "@@/package.json": ["./package.json"]
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", "dist", "*.d.ts", "interceptor/*.d.ts"]
+  "exclude": ["node_modules", "dist", "*.d.ts"]
 }

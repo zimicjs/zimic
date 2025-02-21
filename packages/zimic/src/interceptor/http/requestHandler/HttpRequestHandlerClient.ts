@@ -6,6 +6,8 @@ import {
   HttpHeaders,
   HttpSearchParams,
   HttpSchema,
+  HttpRequestSearchParamsSchema,
+  HttpRequestHeadersSchema,
 } from '@zimic/http';
 
 import { Default, Range } from '@/types/utils';
@@ -23,8 +25,6 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  HttpRequestHeadersSchema,
-  HttpRequestSearchParamsSchema,
   TrackedHttpInterceptorRequest,
 } from './types/requests';
 import {

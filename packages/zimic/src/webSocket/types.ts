@@ -1,6 +1,6 @@
+import { JSONSerialized, JSONValue } from '@zimic/http';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
 
-import { JSONSerialized, JSONValue } from '@/types/json';
 import { PossiblePromise } from '@/types/utils';
 
 export namespace WebSocket {

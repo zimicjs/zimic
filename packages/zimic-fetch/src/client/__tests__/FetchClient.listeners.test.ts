@@ -36,7 +36,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -138,7 +138,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post(`/users/${users[0].id}`)
         .respond({
@@ -239,7 +239,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -312,7 +312,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -394,7 +394,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -464,7 +464,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -527,7 +527,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -621,7 +621,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post(`/users/${users[0].id}`)
         .respond({
@@ -720,7 +720,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -790,7 +790,7 @@ describe('FetchClient (node) > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({

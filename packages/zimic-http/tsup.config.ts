@@ -1,6 +1,6 @@
 import { Options, defineConfig } from 'tsup';
 
-export function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]): Pick<Type, Key> {
+function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]): Pick<Type, Key> {
   return keys.reduce(
     (pickedObject, key) => {
       pickedObject[key] = object[key];

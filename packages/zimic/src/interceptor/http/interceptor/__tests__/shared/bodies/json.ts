@@ -1,11 +1,17 @@
-import { HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema, HttpRequest, HttpResponse } from '@zimic/http';
+import {
+  HTTP_METHODS_WITH_REQUEST_BODY,
+  HttpSchema,
+  HttpRequest,
+  HttpResponse,
+  JSONSerialized,
+  JSONValue,
+} from '@zimic/http';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/interceptor/http/interceptorWorker/__tests__/utils/promises';
 import InvalidJSONError from '@/interceptor/http/interceptorWorker/errors/InvalidJSONError';
 import LocalHttpRequestHandler from '@/interceptor/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/interceptor/http/requestHandler/RemoteHttpRequestHandler';
-import { JSONSerialized, JSONValue } from '@/types/json';
 import { importCrypto } from '@/utils/crypto';
 import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';

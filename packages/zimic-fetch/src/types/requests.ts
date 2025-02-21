@@ -1,13 +1,16 @@
-import { JSONSerialized, JSONValue } from '@/types/json';
-import { HttpMethodSchema, HttpStatusCode } from '@/types/schema';
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@/types/utils';
+import {
+  HttpFormData,
+  HttpFormDataSchema,
+  HttpHeaders,
+  HttpHeadersSchema,
+  HttpSearchParams,
+  HttpSearchParamsSchema,
+  JSONSerialized,
+  JSONValue,
+  HttpStatusCode,
+} from '@zimic/http';
 
-import HttpFormData from '../formData/HttpFormData';
-import { HttpFormDataSchema } from '../formData/types';
-import HttpHeaders from '../headers/HttpHeaders';
-import { HttpHeadersSchema } from '../headers/types';
-import HttpSearchParams from '../searchParams/HttpSearchParams';
-import { HttpSearchParamsSchema } from '../searchParams/types';
+import { ReplaceBy } from '@/types/utils';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,35 +97,3 @@ export interface HttpResponse<
   >;
   clone: () => this;
 }
-
-export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['headers']
->;
-
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['searchParams']
->;
-
-export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
-  ArrayBuffer,
-  Blob
->;
-
-export type HttpResponseHeadersSchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>;
-
-export type HttpResponseBodySchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = ReplaceBy<
-  ReplaceBy<
-    IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
-    undefined,
-    null
-  >,
-  ArrayBuffer,
-  Blob
->;

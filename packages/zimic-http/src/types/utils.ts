@@ -16,15 +16,6 @@ export type UnionToIntersection<Union> = (Union extends unknown ? (union: Union)
   ? IntersectedUnion
   : never;
 
-type LastUnionType<Union> =
-  UnionToIntersection<Union extends unknown ? (union: Union) => void : never> extends (x: infer LastType) => void
-    ? LastType
-    : never;
-
-export type UnionToTuple<Union, LastType = LastUnionType<Union>> = [Union] extends [never]
-  ? []
-  : [...UnionToTuple<Exclude<Union, LastType>>, LastType];
-
 export type UnionHasMoreThanOneType<Union> = [UnionToIntersection<Union>] extends [never] ? true : false;
 
 export type Prettify<Type> = {
@@ -46,19 +37,4 @@ export type NonEmptyArray<Type> = [Type, ...Type[]];
 
 export type ReplaceBy<Type, Source, Target> = Type extends Source ? Target : Type;
 
-export type Collection<Type> = Type[] | Set<Type>;
-
-export type DeepPartial<Type> = Type extends (...parameters: never[]) => unknown
-  ? Type
-  : Type extends (infer ArrayItem)[]
-    ? DeepPartial<ArrayItem>[]
-    : Type extends object
-      ? { [Key in keyof Type]?: DeepPartial<Type[Key]> }
-      : Type;
-
 export type Override<Type, OverrideType> = Omit<Type, keyof OverrideType> & OverrideType;
-
-export interface Range<Value> {
-  min: Value;
-  max: Value;
-}

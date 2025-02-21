@@ -1,4 +1,4 @@
-import { JSONValue } from '@/types/json';
+import { JSONValue } from '@zimic/http';
 
 function isPrimitiveJSONValue<Value extends JSONValue>(value: Value): value is Exclude<Value, object> {
   return typeof value !== 'object' || value === null;

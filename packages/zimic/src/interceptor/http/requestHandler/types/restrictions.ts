@@ -3,6 +3,9 @@ import {
   HttpFormData,
   HttpHeaders,
   HttpHeadersSchema,
+  HttpRequestBodySchema,
+  HttpRequestHeadersSchema,
+  HttpRequestSearchParamsSchema,
   HttpSchema,
   HttpSchemaMethod,
   HttpSchemaPath,
@@ -12,12 +15,7 @@ import {
 
 import { IfNever, Default, DeepPartial, PossiblePromise } from '@/types/utils';
 
-import {
-  HttpRequestHeadersSchema,
-  HttpRequestSearchParamsSchema,
-  HttpRequestBodySchema,
-  HttpInterceptorRequest,
-} from './requests';
+import { HttpInterceptorRequest } from './requests';
 
 type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> = IfNever<
   Schema,

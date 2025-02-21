@@ -1,13 +1,12 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
 import { HttpSchema } from '@zimic/http';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
+import { FetchClientOptions } from '../..';
 import createFetch from '../factory';
 import { FetchResponse, FetchRequest, FetchRequestInit } from '../types/requests';
-
-import { FetchClientOptions } from '..';
 
 describe('FetchClient (node) > Defaults', () => {
   const baseURL = 'http://localhost:3000';
@@ -27,7 +26,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -78,7 +77,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({ headers: { 'content-type': 'application/json' } })
@@ -156,7 +155,7 @@ describe('FetchClient (node) > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         // .with({ headers: { 'content-type': 'application/json' } })

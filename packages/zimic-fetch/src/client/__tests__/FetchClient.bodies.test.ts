@@ -26,7 +26,7 @@ describe('FetchClient (node) > Bodies', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       interceptor.post('/users').respond({ status: 204 });
 
       const fetch = createFetch<Schema>({ baseURL });

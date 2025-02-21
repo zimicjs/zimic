@@ -1,37 +1,51 @@
-import { HttpSchema, StrictHeaders } from '@zimic/http';
+import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@zimic/http';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { importFile } from '@/utils/files';
 import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
-describe('FetchClient (node) > Bodies > Plain text', () => {
+describe('FetchClient (node) > Bodies > Form data', () => {
   const baseURL = 'http://localhost:3000';
 
-  it('should support requests and responses with a plain text body', async () => {
+  it('should support requests and responses with a form data body', async () => {
+    type FormDataSchema = HttpSchema.FormData<{ title: string; file: File }>;
+
     type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: {
-            headers: { 'content-type': 'text/plain' };
-            body: 'request';
+            body: HttpFormData<FormDataSchema>;
           };
           response: {
-            201: { body: 'response' };
+            201: {
+              body: HttpFormData<FormDataSchema>;
+            };
           };
         };
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      const File = await importFile();
+
+      const requestFormData = new HttpFormData<FormDataSchema>();
+      requestFormData.append('title', 'request');
+      requestFormData.append('file', new File(['request'], 'request.txt', { type: 'text/plain' }));
+
+      const responseFormData = new HttpFormData<FormDataSchema>();
+      responseFormData.append('title', 'response');
+      responseFormData.append('file', new File(['response'], 'response.txt', { type: 'text/plain' }));
+
       await interceptor
         .post('/users')
-        .with({ body: 'request' })
+        .with({ body: requestFormData })
         .respond({
           status: 201,
-          body: 'response',
+          body: responseFormData,
         })
         .times(1);
 
@@ -39,12 +53,15 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
 
       const response = await fetch('/users', {
         method: 'POST',
-        headers: { 'content-type': 'text/plain' },
-        body: 'request',
+        body: requestFormData,
       });
 
       expect(response.status).toBe(201);
-      expect(await response.text()).toBe('response');
+      const receivedResponseFormData = await response.formData();
+      expect(Array.from(receivedResponseFormData.entries())).toHaveLength(2);
+
+      expect(receivedResponseFormData.get('title')).toBe(responseFormData.get('title'));
+      expect(receivedResponseFormData.get('file')).toEqual(responseFormData.get('file'));
 
       expect(response).toBeInstanceOf(Response);
       expectTypeOf(response satisfies Response).toEqualTypeOf<
@@ -57,10 +74,10 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
-      expectTypeOf(response.text).toEqualTypeOf<() => Promise<'response'>>();
+      expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema>>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
@@ -72,36 +89,41 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'text/plain' }>>();
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<never>>();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
-      expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<'request'>>();
-      expect(await response.request.text()).toBe('request');
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
+      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema>>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
 
-  it('should consider requests and responses with empty plain text bodies as null', async () => {
+  it('should consider requests and responses with empty form data bodies as form data', async () => {
+    type FormDataSchema = HttpSchema.FormData<{ title: string; file: File }>;
+
     type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: {
-            headers: { 'content-type': 'text/plain' };
-            body?: 'request';
+            headers: { 'content-type': 'multipart/form-data' };
+            body?: HttpFormData<FormDataSchema>;
           };
           response: {
-            201: { body?: 'response' };
+            201: {
+              headers: { 'content-type': 'multipart/form-data' };
+              body?: HttpFormData<FormDataSchema>;
+            };
           };
         };
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
           status: 201,
+          headers: { 'content-type': 'multipart/form-data' },
         })
         .times(1);
 
@@ -109,7 +131,7 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
 
       const response = await fetch('/users', {
         method: 'POST',
-        headers: { 'content-type': 'text/plain' },
+        headers: { 'content-type': 'multipart/form-data' },
       });
 
       expect(response.status).toBe(201);
@@ -123,14 +145,13 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<never>>();
+      expectTypeOf(response.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'multipart/form-data' }>>();
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
-      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema> | FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
@@ -142,13 +163,11 @@ describe('FetchClient (node) > Bodies > Plain text', () => {
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'text/plain' }>>();
+      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'content-type': 'multipart/form-data' }>>();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
-      expect(await response.request.text()).toBe('');
-      expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
-      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
+      expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema> | FormData>>();
       expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
     });
   });
