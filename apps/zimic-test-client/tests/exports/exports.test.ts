@@ -1,4 +1,17 @@
 import {
+  createFetch,
+  type Fetch,
+  type FetchClient,
+  type FetchClientOptions,
+  type FetchFunction,
+  type FetchInput,
+  type FetchRequest,
+  type FetchRequestConstructor,
+  type FetchRequestInit,
+  type FetchResponse,
+  FetchResponseError,
+} from '@zimic/fetch';
+import {
   type JSONValue,
   type JSONSerialized,
   type HttpBody,
@@ -40,19 +53,6 @@ import {
   type MergeHttpResponsesByStatusCode,
 } from '@zimic/http';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import {
-  createFetch,
-  type Fetch,
-  type FetchClient,
-  type FetchClientOptions,
-  type FetchFunction,
-  type FetchInput,
-  type FetchRequest,
-  type FetchRequestConstructor,
-  type FetchRequestInit,
-  type FetchResponse,
-  FetchResponseError,
-} from 'zimic/fetch';
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
