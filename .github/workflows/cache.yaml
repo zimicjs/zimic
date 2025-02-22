@@ -1,7 +1,9 @@
 name: Cache
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - canary
   workflow_dispatch:
@@ -19,6 +21,7 @@ jobs:
   cache-canary:
     name: Cache canary
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.merged == true }}
     timeout-minutes: 10
 
     steps:
