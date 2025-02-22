@@ -89,7 +89,7 @@ runs:
           types:check lint:turbo test:turbo \
           --continue \
           --concurrency 100% \
-          zimic-test-client --filter zimic-example*
+          --filter zimic-test-client --filter zimic-example*
       env:
         TURBO_TOKEN: ${{ inputs.turbo-token }}
         TURBO_TEAM: ${{ inputs.turbo-team }}
