@@ -1,4 +1,4 @@
-name: 'Release to GitHub: zimic'
+name: 'Release to GitHub: @zimic/fetch'
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - closed
     branches:
       - canary
-      - v*
+      - '@zimic/fetch@*'
   workflow_dispatch:
     inputs:
       upgrade-type:
@@ -30,7 +30,7 @@ on:
           - none
 
 concurrency:
-  group: release-to-github
+  group: release-to-zimic-fetch-github
   cancel-in-progress: false
 
 env:
@@ -53,11 +53,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Zimic
+        uses: ./.github/actions/zimic-setup
+        with:
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+          install: '@zimic/fetch...'
+
       - name: Get release settings
         id: release-settings
         uses: ./.github/actions/zimic-get-release-settings
         with:
-          project-name: zimic
+          project-name: '@zimic/fetch'
           input-upgrade-type: ${{ inputs.upgrade-type }}
           input-pre-release-id: ${{ inputs.pre-release-id }}
 
@@ -90,8 +97,8 @@ jobs:
         id: bump-version
         uses: ./.github/actions/zimic-bump-version
         with:
-          project-name: zimic
-          project-directory: packages/zimic
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
           upgrade-type: ${{ needs.pre-release-to-github.outputs.upgrade-type }}
           pre-release-id: ${{ needs.pre-release-to-github.outputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
@@ -100,8 +107,8 @@ jobs:
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
-          name: v${{ steps.bump-version.outputs.value }}
-          tag: v${{ steps.bump-version.outputs.value }}
+          name: '@zimic/fetch: ${{ steps.bump-version.outputs.value }}'
+          tag: '@zimic/fetch@${{ steps.bump-version.outputs.value }}'
           commit: ${{ steps.bump-version.outputs.commit-sha }}
           token: ${{ secrets.GITHUB_TOKEN }}
           makeLatest: ${{ needs.pre-release-to-github.outputs.pre-release-id == 'none' }}

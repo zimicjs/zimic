@@ -1,4 +1,4 @@
-name: 'Release Package: @zimic/http'
+name: 'Release Package: @zimic/fetch'
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
       - published
 
 concurrency:
-  group: release-zimic-http-${{ github.ref_name }}
+  group: release-zimic-fetch-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -16,7 +16,7 @@ jobs:
   release-to-npm:
     name: Release to NPM
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref_name, '@zimic/http@') }}
+    if: ${{ startsWith(github.ref_name, '@zimic/fetch@') }}
     timeout-minutes: 7
 
     environment: NPM
@@ -33,8 +33,8 @@ jobs:
         uses: ./.github/actions/zimic-release-npm
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: '@zimic/http'
-          project-directory: packages/zimic-http
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
           npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
 
   test-npm-release:
@@ -52,13 +52,13 @@ jobs:
         uses: ./.github/actions/zimic-release-npm-test
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: '@zimic/http'
-          project-directory: packages/zimic-http
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
 
   release-docs:
     name: Release documentation
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref_name, '@zimic/http@') }}
+    if: ${{ startsWith(github.ref_name, '@zimic/fetch@') }}
     timeout-minutes: 5
 
     environment: Wiki
@@ -76,8 +76,8 @@ jobs:
         uses: ./zimic/.github/actions/zimic-release-docs
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: '@zimic/http'
-          project-directory: packages/zimic-http
+          project-name: '@zimic/fetch'
+          project-directory: packages/zimic-fetch
           wiki-ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
           commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
@@ -103,4 +103,4 @@ jobs:
         uses: ./.github/actions/zimic-release-comments
         with:
           ref-name: ${{ github.ref_name }}
-          project-name: '@zimic/http'
+          project-name: '@zimic/fetch'
