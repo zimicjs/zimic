@@ -11,6 +11,12 @@ inputs:
   project-directory:
     description: The project directory to release
     required: true
+  turbo-token:
+    description: Turbo remote cache token
+    required: false
+  turbo-team:
+    description: Turbo remote cache team
+    required: false
 
 runs:
   using: composite
@@ -28,9 +34,10 @@ runs:
       id: zimic-setup
       with:
         install: '"zimic-test-client..." "zimic-example*..."'
-        build: '"zimic-test-client^..." "zimic-example*^..."'
+        turbo-token: ${{ inputs.turbo-token }}
+        turbo-team: ${{ inputs.turbo-team }}
 
-    - name: Test released package
+    - name: Change package versions for testing
       shell: bash
       run: |
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
@@ -55,6 +62,9 @@ runs:
           done
         done
 
+    - name: Wait for released package to be available on NPM
+      shell: bash
+      run: |
         timeout 60s bash -c '
           until pnpm view ${{ inputs.project-name }} versions --json | grep --quiet "${{ steps.zimic-version.outputs.value }}"; do
             echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is not yet available on NPM..."
@@ -65,6 +75,9 @@ runs:
 
         echo "${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} is now available on NPM!"
 
+    - name: Test released package
+      shell: bash
+      run: |
         timeout 90s bash -c '
           until pnpm install --no-frozen-lockfile ${{ steps.zimic-setup.outputs.install-filters }}; do
             sleep 5
@@ -73,13 +86,11 @@ runs:
         '
 
         pnpm turbo \
-          types:check lint:turbo \
+          types:check lint:turbo test:turbo \
           --continue \
           --concurrency 100% \
-          ${{ steps.zimic-setup.outputs.install-filters }}
-
-        pnpm turbo \
-          test:turbo \
-          --continue \
-          --concurrency 100% \
-          ${{ steps.zimic-setup.outputs.install-filters }}
+          zimic-test-client --filter zimic-example*
+      env:
+        TURBO_TOKEN: ${{ inputs.turbo-token }}
+        TURBO_TEAM: ${{ inputs.turbo-team }}
+        TURBO_LOG_ORDER: stream

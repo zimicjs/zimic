@@ -10,6 +10,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
   TURBO_LOG_ORDER: stream
 
 jobs:
@@ -25,11 +27,16 @@ jobs:
       contents: read
       id-token: write
 
+    outputs:
+      version-value: ${{ steps.release.outputs.version-value }}
+      version-label: ${{ steps.release.outputs.version-label }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Release to NPM
+        id: release
         uses: ./.github/actions/zimic-release-npm
         with:
           ref-name: ${{ github.ref_name }}
@@ -41,6 +48,7 @@ jobs:
     name: Test NPM release
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     needs:
       - release-to-npm
 
@@ -54,12 +62,19 @@ jobs:
           ref-name: ${{ github.ref_name }}
           project-name: '@zimic/interceptor'
           project-directory: packages/zimic-interceptor
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
 
   release-docs:
     name: Release documentation
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref_name, '@zimic/interceptor@') }}
+    if:
+      ${{ startsWith(github.ref_name, '@zimic/interceptor@') && needs.release-to-npm.outputs.version-label == 'latest'
+      }}
     timeout-minutes: 5
+
+    needs:
+      - release-to-npm
 
     environment: Wiki
 
@@ -86,6 +101,8 @@ jobs:
     name: Publish release comments
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: ${{ needs.release-to-npm.outputs.version-label == 'latest' }}
+
     needs:
       - release-to-npm
       - test-npm-release

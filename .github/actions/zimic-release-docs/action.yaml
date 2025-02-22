@@ -8,9 +8,6 @@ inputs:
   project-name:
     description: The project name to release
     required: true
-  project-directory:
-    description: The project directory to release
-    required: true
   wiki-ssh-key:
     description: The SSH key to push to the wiki repository
     required: true
@@ -24,31 +21,20 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Get Zimic release version
-      id: zimic-version
-      uses: ./zimic/.github/actions/zimic-version
-      with:
-        project-name: ${{ inputs.project-name }}
-        project-directory: zimic/${{ inputs.project-directory }}
-        validate-ref-name: ${{ inputs.ref_name }}
-
     - name: Checkout wiki
       uses: actions/checkout@v4
-      if: ${{ steps.zimic-version.outputs.label == 'latest' }}
       with:
         repository: zimicjs/zimic.wiki
         path: zimic.wiki
         ssh-key: ${{ inputs.wiki-ssh-key }}
 
     - name: Sync wiki content
-      if: ${{ steps.zimic-version.outputs.label == 'latest' }}
       working-directory: zimic
       shell: bash
       run: |
         bash scripts/docs/sync-wiki.sh '${{ inputs.ref_name }}'
 
     - name: Commit and push wiki changes
-      if: ${{ steps.zimic-version.outputs.label == 'latest' }}
       working-directory: zimic.wiki
       shell: bash
       run: |
