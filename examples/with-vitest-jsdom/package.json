@@ -15,7 +15,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
-    "@vitest/spy": "^3.0.5",
+    "@vitest/spy": "^3.0.6",
     "dotenv-cli": "^8.0.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.6",
