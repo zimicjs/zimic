@@ -38,19 +38,19 @@ runs:
         for packageFile in apps/*/package.json examples/package.json examples/*/package.json; do
           for packageName in zimic @zimic/http @zimic/fetch; do
             sed -i -E \
-              "s;\"$packageName\": \"(latest|workspace:.*|>=.*)\";\"$packageName\": \"workspace:*\";" \
+              "s;\"$packageName\": \"(latest|workspace:.*)\";\"$packageName\": \"workspace:*\";" \
               "$packageFile"
           done
 
           sed -i -E \
-            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*|>=.*)\";\"${{ inputs.project-name }}\": \"npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}\";" \
+            "s;\"${{ inputs.project-name }}\": \"(latest|workspace:.*)\";\"${{ inputs.project-name }}\": \"npm:${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}\";" \
             "$packageFile"
         done
 
         for packageFile in packages/*/package.json; do
           for packageName in zimic @zimic/http @zimic/fetch; do
             sed -i -E \
-              "s;\"$packageName\": \"(latest|workspace:.*|>=.*)\";\"$packageName\": \"workspace:*\";" \
+              "s;\"$packageName\": \"(latest|workspace:.*|.+-canary\..+)\";\"$packageName\": \"workspace:*\";" \
               "$packageFile"
           done
         done
