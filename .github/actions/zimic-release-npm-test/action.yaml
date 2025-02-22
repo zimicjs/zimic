@@ -33,6 +33,10 @@ runs:
     - name: Test released package
       shell: bash
       run: |
+        sed -i \
+          's/link-workspace-packages = true/link-workspace-packages = false/' \
+          .npmrc
+
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
         for packageFile in apps/*/package.json examples/package.json examples/*/package.json; do
