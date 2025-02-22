@@ -518,7 +518,10 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
                 const request = new Request(joinURL(baseURL, '/users'), {
                   method,
-                  headers: { 'content-type': 'application/json' },
+                  headers: {
+                    'x-id': crypto.randomUUID(), // Ensure the request is unique.
+                    'content-type': 'application/json',
+                  },
                   body: JSON.stringify({ message: 'ok' }),
                 });
                 const requestClone = request.clone();

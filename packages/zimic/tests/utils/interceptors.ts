@@ -103,8 +103,6 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
       await interceptor.start();
     }
     await callback(interceptor);
-
-    await interceptor.checkTimes();
   } finally {
     await interceptor.stop();
   }

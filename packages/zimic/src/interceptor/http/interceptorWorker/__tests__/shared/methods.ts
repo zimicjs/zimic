@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import NotStartedHttpInterceptorError from '@/interceptor/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/interceptor/server/constants';
 import { PossiblePromise } from '@/types/utils';
+import { importCrypto } from '@/utils/crypto';
 import { fetchWithTimeout } from '@/utils/fetch';
 import { waitForDelay } from '@/utils/time';
 import { joinURL, DuplicatedPathParamError, createURL, InvalidURLError, createRegexFromURL } from '@/utils/urls';
@@ -524,7 +525,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
-        const responsePromise = fetch(baseURL, { method });
+        const crypto = await importCrypto();
+
+        const responsePromise = fetch(baseURL, {
+          method,
+          headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+        });
 
         if (overridesPreflightResponse) {
           await expectPreflightResponse(responsePromise);
