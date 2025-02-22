@@ -15,6 +15,14 @@ inputs:
     description: The NPM token to release
     required: true
 
+outputs:
+  version-value:
+    description: The version of the released package
+    value: ${{ steps.zimic-version.outputs.value }}
+  version-label:
+    description: The label of the released package version
+    value: ${{ steps.zimic-version.outputs.label }}
+
 runs:
   using: composite
   steps:
