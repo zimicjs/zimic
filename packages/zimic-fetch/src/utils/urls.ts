@@ -26,7 +26,14 @@ export function joinURL(...parts: (string | URL)[]) {
     .map((part, index) => {
       const partAsString = part.toString();
       const isLastPath = index === parts.length - 1;
-      return isLastPath ? partAsString.replace(/^[/ ]+/, '') : partAsString.replace(/^[/ ]+|[/ ]+$/, '');
+
+      if (isLastPath) {
+        const partWithoutLeadingSlash = partAsString.replace(/^\/+/, '');
+        return partWithoutLeadingSlash;
+      } else {
+        const partWithoutLeadingOrTrailingSlash = partAsString.replace(/^\/+|\/+$/, '');
+        return partWithoutLeadingOrTrailingSlash;
+      }
     })
     .filter((part) => part.length > 0)
     .join('/');
