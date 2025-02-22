@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "lint:turbo": {
-      "dependsOn": ["^build", "zimic#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/fetch#build", "zimic#build"],
       "inputs": [
         "with-*/{src,tests}/**/*.{ts,json}",
         "with-*/{package,tsconfig}.json",

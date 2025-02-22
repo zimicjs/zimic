@@ -13,16 +13,13 @@ import {
   HttpHeaders,
   AllowAnyStringInPathParams,
   LiteralHttpSchemaPathFromNonLiteral,
+  JSONValue,
+  HttpResponseBodySchema,
+  HttpResponseHeadersSchema,
+  HttpRequestHeadersSchema,
 } from '@zimic/http';
 
-import {
-  HttpResponseBodySchema,
-  HttpRequestBodySchema,
-  HttpRequestHeadersSchema,
-  HttpResponseHeadersSchema,
-} from '@/interceptor/http/requestHandler/types/requests';
-import { JSONValue } from '@/types/json';
-import { Default, ReplaceBy } from '@/types/utils';
+import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@/types/utils';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { JSONStringified } from './json';
@@ -79,6 +76,12 @@ type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpRes
 type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, ErrorOnly extends boolean> = ErrorOnly extends true
   ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
+
+export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
+  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
+  ArrayBuffer,
+  Blob
+>;
 
 export interface FetchRequest<
   Path extends string = string,

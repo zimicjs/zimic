@@ -14,5 +14,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", "dist", "*.d.ts", "interceptor/*.d.ts", "http/*.d.ts", "**/fixtures/**/generated"]
+  "exclude": ["node_modules", "dist", "*.d.ts", "interceptor/*.d.ts"]
 }

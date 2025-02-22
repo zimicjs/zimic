@@ -8,7 +8,7 @@ export default defineConfig({
     testTimeout: 5000,
     hookTimeout: 5000,
     retry: process.env.CI === 'true' ? 1 : 0,
-    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,
     coverage: {

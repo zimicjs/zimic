@@ -3,14 +3,19 @@ import {
   HttpHeadersInit,
   HttpMethodSchema,
   HttpRequest,
+  HttpRequestBodySchema,
+  HttpRequestHeadersSchema,
+  HttpRequestSearchParamsSchema,
   HttpResponse,
+  HttpResponseBodySchema,
+  HttpResponseHeadersSchema,
   HttpResponseSchema,
   HttpSearchParams,
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
 
-import { Default, DefaultNoExclude, IfNever, PossiblePromise, ReplaceBy } from '@/types/utils';
+import { Default, PossiblePromise, ReplaceBy } from '@/types/utils';
 
 export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
   unknown extends ResponseSchema['body']
@@ -49,20 +54,6 @@ export type HttpRequestHandlerResponseDeclarationFactory<
   request: Omit<HttpInterceptorRequest<Path, MethodSchema>, 'response'>,
 ) => PossiblePromise<HttpRequestHandlerResponseDeclaration<MethodSchema, StatusCode>>;
 
-export type HttpRequestHeadersSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['headers']
->;
-
-export type HttpRequestSearchParamsSchema<MethodSchema extends HttpMethodSchema> = Default<
-  Default<MethodSchema['request']>['searchParams']
->;
-
-export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
-  ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
-  ArrayBuffer,
-  Blob
->;
-
 /**
  * A strict representation of an intercepted HTTP request. The body, search params and path params are already parsed by
  * default.
@@ -80,24 +71,6 @@ export interface HttpInterceptorRequest<Path extends string, MethodSchema extend
   /** The raw request object. */
   raw: HttpRequest<HttpRequestBodySchema<MethodSchema>>;
 }
-
-export type HttpResponseHeadersSchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = Default<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['headers']>>;
-
-export type HttpResponseBodySchema<
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode,
-> = ReplaceBy<
-  ReplaceBy<
-    IfNever<DefaultNoExclude<Default<Default<MethodSchema['response']>[StatusCode]>['body']>, null>,
-    undefined,
-    null
-  >,
-  ArrayBuffer,
-  Blob
->;
 
 /**
  * A strict representation of an intercepted HTTP response. The body, search params and path params are already parsed

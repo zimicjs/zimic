@@ -28,7 +28,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       const requestSearchParams = new HttpSearchParams<SearchParamsSchema>({
         title: 'request',
         descriptions: ['description 1', 'description 2'],
@@ -115,7 +115,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({

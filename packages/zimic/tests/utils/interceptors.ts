@@ -77,7 +77,6 @@ type UsingInterceptorCallback<Schema extends HttpSchema> = (
 
 interface UsingInterceptorOptions {
   start?: boolean;
-  checkTimes?: boolean;
 }
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
@@ -94,8 +93,7 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   callbackOrOptions: UsingInterceptorCallback<HttpSchema<Schema>> | UsingInterceptorOptions,
   optionalCallback?: UsingInterceptorCallback<HttpSchema<Schema>>,
 ): Promise<void> {
-  const { start: shouldStartInterceptor = true, checkTimes: shouldCheckTimes = false } =
-    typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
+  const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
   const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<HttpSchema<Schema>>;
 
   const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
@@ -105,10 +103,6 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
       await interceptor.start();
     }
     await callback(interceptor);
-
-    if (shouldCheckTimes) {
-      await interceptor.checkTimes();
-    }
   } finally {
     await interceptor.stop();
   }

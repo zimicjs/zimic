@@ -30,7 +30,7 @@ describe('FetchClient (node) > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       const searchParams: RequestSearchParams = { name: 'User' };
 
       await interceptor
@@ -85,7 +85,7 @@ describe('FetchClient (node) > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       const searchParams = new HttpSearchParams<RequestSearchParams>({ name: 'User' });
 
       await interceptor
@@ -144,7 +144,7 @@ describe('FetchClient (node) > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       expectTypeOf<RequestSearchParams>().toEqualTypeOf<{
         name: string;
         usernames: string[];
@@ -204,7 +204,7 @@ describe('FetchClient (node) > Search params', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, { checkTimes: true }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({

@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "test:turbo": {
-      "dependsOn": ["^build", "zimic#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/fetch#build", "zimic#build"],
       "passThroughEnv": ["PLAYWRIGHT_WORKERS"],
       "inputs": [
         "{src,tests}/**/*.{ts,tsx,json}",
@@ -13,7 +13,7 @@
     },
 
     "types:check": {
-      "dependsOn": ["^build", "zimic#build"],
+      "dependsOn": ["^build", "@zimic/http#build", "@zimic/fetch#build", "zimic#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }

@@ -1,4 +1,4 @@
-import { JSONValue } from '@/types/json';
+import { JSONValue } from '@zimic/http';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';
 

@@ -30,6 +30,11 @@ export type {
   StrictHeaders,
   StrictURLSearchParams,
   StrictFormData,
+  HttpRequestHeadersSchema,
+  HttpRequestBodySchema,
+  HttpRequestSearchParamsSchema,
+  HttpResponseHeadersSchema,
+  HttpResponseBodySchema,
 } from './types/requests';
 
 export type {
