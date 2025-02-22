@@ -1,10 +1,9 @@
+import { httpInterceptor } from '@zimic/interceptor/http';
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
 import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
-// TODO: Replace by the actual @zimic/interceptor on package.json
-import { httpInterceptor } from 'zimic/interceptor/http';
 
 import runCLI from '@/cli/cli';
 import { isDefined } from '@/utils/data';
