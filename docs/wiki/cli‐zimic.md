@@ -4,9 +4,9 @@
 zimic [command]
 
 Commands:
-  zimic browser  Manage your browser mock configuration
-  zimic server   Manage interceptor servers
-  zimic typegen  Generate types from schema sources
+  zimic-interceptor browser  Manage your browser mock configuration
+  zimic-interceptor server   Manage interceptor servers
+  zimic-http typegen  Generate types from schema sources
 
 Options:
   --help     Show help                                                 [boolean]
@@ -15,9 +15,9 @@ Options:
 
 See also:
 
-- [`zimic browser`](cli‐zimic‐browser)
-- [`zimic server`](cli‐zimic‐server)
-- [`zimic typegen`](cli‐zimic‐typegen)
+- [`zimic-interceptor browser`](cli‐zimic‐browser)
+- [`zimic-interceptor server`](cli‐zimic‐server)
+- [`zimic-http typegen`](cli‐zimic‐typegen)
 
 > [!TIP]
 >

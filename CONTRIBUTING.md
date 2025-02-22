@@ -169,8 +169,9 @@ Some general guidelines:
   period at the end.
 - It is not necessary to add "closes", "fixes", or "resolves" in your commit message. Linking the issue in the message
   is also not required. We track which issues are being resolved in the pull request description.
-- If you are changing a package, prefix the scope of the commit with a `#`. For example, `feat(#zimic): add new feature`
-  indicates a change in `packages/zimic-interceptor`. This helps us understand that a package was changed.
+- If you are changing a package, prefix the scope of the commit with a `#`. For example,
+  `feat(#zimic-interceptor): add new feature` indicates a change in `packages/zimic-interceptor`. This helps us
+  understand that a package was changed.
 
 Some examples of valid commit messages:
 

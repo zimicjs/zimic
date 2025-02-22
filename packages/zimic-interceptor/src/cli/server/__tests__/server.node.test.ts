@@ -52,12 +52,13 @@ describe('CLI (server)', async () => {
   });
 
   const serverHelpOutput = [
-    'zimic server',
+    'zimic-interceptor server',
     '',
     'Manage interceptor servers',
     '',
     'Commands:',
-    '  zimic server start [-- onReady]  Start an interceptor server.',
+    '  zimic-interceptor server start [-- onRea  Start an interceptor server.',
+    '  dy]',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -90,7 +91,7 @@ describe('CLI (server)', async () => {
     const temporarySaveFile = path.join(temporarySaveDirectory, 'tmp.txt');
 
     const serverStartHelpOutput = [
-      'zimic server start [-- onReady]',
+      'zimic-interceptor server start [-- onReady]',
       '',
       'Start an interceptor server.',
       '',

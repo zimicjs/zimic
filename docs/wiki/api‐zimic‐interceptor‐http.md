@@ -54,7 +54,7 @@ Creates an HTTP interceptor, the main interface to intercept HTTP requests and r
 > [!TIP]
 >
 > If you are using TypeScript and have an [OpenAPI v3](https://swagger.io/specification) schema, you can use
-> [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
+> [`zimic-http typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema!
 
 #### Creating a local HTTP interceptor
 

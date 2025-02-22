@@ -1,6 +1,6 @@
 {
   "name": "@zimic/interceptor",
-  "description": "TypeScript-first HTTP request intercepting and mocking",
+  "description": "TypeScript-first HTTP request mocking and interceptor",
   "keywords": [
     "zimic",
     "typescript",

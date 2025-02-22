@@ -45,9 +45,12 @@ before the application is started in development. It is used by the command `dev
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
    git sparse-checkout set examples/with-next-js-app
-   git pull origin v0
+   git pull origin canary # or a specific branch or tag
    cd examples/with-next-js-app
    ```
+
+   If you'd like to clone the example of a previous version, replace `canary` with the desired branch or tag, such as
+   `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 2. Install the dependencies:
 

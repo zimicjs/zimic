@@ -10,11 +10,11 @@ describe('CLI', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   const rootHelpOutput = [
-    'zimic [command]',
+    'zimic-interceptor [command]',
     '',
     'Commands:',
-    '  zimic browser  Manage your browser mock configuration',
-    '  zimic server   Manage interceptor servers',
+    '  zimic-interceptor browser  Manage your browser mock configuration',
+    '  zimic-interceptor server   Manage interceptor servers',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',

@@ -1,6 +1,6 @@
 {
   "name": "zimic",
-  "description": "TypeScript-first HTTP request mocking (moved to @zimic/interceptor)",
+  "description": "TypeScript-first HTTP intercepting and mocking (moved to @zimic/interceptor)",
   "keywords": [
     "zimic",
     "typescript",
@@ -85,7 +85,8 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init": "pnpm deps:install-playwright"
+    "deps:init": "pnpm deps:install-playwright",
+    "prepublishOnly": "cp ../../LICENSE.md ."
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

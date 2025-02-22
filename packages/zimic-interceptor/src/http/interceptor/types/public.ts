@@ -33,8 +33,8 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   /**
    * Starts the interceptor, allowing it to intercept HTTP requests.
    *
-   * When targeting a browser environment, make sure to run `npx zimic browser init <publicDirectory>` on your terminal
-   * before starting the worker. This initializes the mock service worker in your public directory.
+   * When targeting a browser environment, make sure to run `npx zimic-interceptor browser init <publicDirectory>` on
+   * your terminal before starting the worker. This initializes the mock service worker in your public directory.
    *
    * @throws {UnregisteredServiceWorkerError} When the worker is targeting a browser environment and the mock service
    *   worker is not registered.

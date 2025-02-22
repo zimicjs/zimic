@@ -8,7 +8,7 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public || true",
+    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {

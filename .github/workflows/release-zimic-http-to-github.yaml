@@ -98,7 +98,7 @@ jobs:
         uses: ./.github/actions/zimic-bump-version
         with:
           project-name: '@zimic/http'
-          project-directory: packages/zimic-interceptor-http
+          project-directory: packages/zimic-http
           upgrade-type: ${{ needs.pre-release-to-github.outputs.upgrade-type }}
           pre-release-id: ${{ needs.pre-release-to-github.outputs.pre-release-id }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}

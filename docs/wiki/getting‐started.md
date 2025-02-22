@@ -35,7 +35,7 @@
 ### Supported languages
 
 - [TypeScript](https://www.typescriptlang.org) >= 4.8
-  - If you plan on using [`zimic typegen`](cli‐zimic‐typegen), we recommend
+  - If you plan on using [`zimic-http typegen`](cli‐zimic‐typegen), we recommend
     [TypeScript](https://www.typescriptlang.org) >= 5.0.
 - [JavaScript](https://developer.mozilla.org/docs/Web/JavaScript) >= ES6
   - Zimic is fully functional on JavaScript, but consider using TypeScript for improved type safety and editor support.
@@ -290,7 +290,8 @@ use remote interceptors.
    service supporting `POST` and `GET` requests to `/users`. A successful response after creating a user is a `User`
    object, whereas listing users returns an array of `User` objects. Errors are represented by a `RequestError` object.
 
-   You can also use [`zimic typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor schema.
+   You can also use [`zimic-http typegen`](cli‐zimic‐typegen) to automatically generate types for your interceptor
+   schema.
 
 2. Then, manage your interceptor lifecycle:
 
@@ -485,6 +486,6 @@ use remote interceptors.
 
 - Explore the [`zimic` CLI](cli‐zimic):
 
-  - [`zimic browser`](cli‐zimic‐browser)
-  - [`zimic server`](cli‐zimic‐server)
-  - [`zimic typegen`](cli‐zimic‐typegen)
+  - [`zimic-interceptor browser`](cli‐zimic‐browser)
+  - [`zimic-interceptor server`](cli‐zimic‐server)
+  - [`zimic-http typegen`](cli‐zimic‐typegen)

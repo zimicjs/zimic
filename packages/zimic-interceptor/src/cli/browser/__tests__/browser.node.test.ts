@@ -16,13 +16,13 @@ describe('CLI (browser)', () => {
   });
 
   const browserHelpOutput = [
-    'zimic browser',
+    'zimic-interceptor browser',
     '',
     'Manage your browser mock configuration',
     '',
     'Commands:',
-    '  zimic browser init <publicDirectory>  Initialize the browser service worker co',
-    '                                        nfiguration.',
+    '  zimic-interceptor browser init <publicDi  Initialize the browser service worke',
+    '  rectory>                                  r configuration.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -52,7 +52,7 @@ describe('CLI (browser)', () => {
 
   describe('Init', () => {
     const browserInitHelpOutput = [
-      'zimic browser init <publicDirectory>',
+      'zimic-interceptor browser init <publicDirectory>',
       '',
       'Initialize the browser service worker configuration.',
       '',

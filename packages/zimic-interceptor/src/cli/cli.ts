@@ -8,7 +8,7 @@ import startInterceptorServer from './server/start';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
-    .scriptName('zimic')
+    .scriptName('zimic-interceptor')
     .version(version)
     .showHelpOnFail(false)
     .strict()
