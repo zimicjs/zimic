@@ -103,9 +103,12 @@ importers:
 
   examples:
     dependencies:
-      zimic:
+      '@zimic/fetch':
         specifier: latest
-        version: link:../packages/zimic
+        version: link:../packages/zimic-fetch
+      '@zimic/http':
+        specifier: latest
+        version: link:../packages/zimic-http
     devDependencies:
       '@zimic/eslint-config-react':
         specifier: workspace:*
@@ -119,6 +122,9 @@ importers:
       eslint:
         specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
+      zimic:
+        specifier: latest
+        version: link:../packages/zimic
 
   examples/with-jest-jsdom:
     dependencies:
