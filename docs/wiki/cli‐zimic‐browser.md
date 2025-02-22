@@ -1,19 +1,19 @@
-# CLI: `zimic browser` <!-- omit from toc -->
+# CLI: `zimic-interceptor browser` <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic browser init`](#zimic-browser-init)
+- [`zimic-interceptor browser init`](#zimic-browser-init)
 
 ---
 
 This module contains commands to manage browser mock configuration.
 
-## `zimic browser init`
+## `zimic-interceptor browser init`
 
 Initialize the browser service worker configuration.
 
 ```
-zimic browser init <publicDirectory>
+zimic-interceptor browser init <publicDirectory>
 
 Positionals:
   publicDirectory  The path to the public directory of your application.

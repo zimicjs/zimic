@@ -1,5 +1,5 @@
+import { HttpInterceptorPlatform, HttpInterceptorType } from '@zimic/interceptor/http';
 import { describe } from 'vitest';
-import { HttpInterceptorPlatform, HttpInterceptorType } from 'zimic/interceptor/http';
 
 import declareDefaultClientTests from './default';
 

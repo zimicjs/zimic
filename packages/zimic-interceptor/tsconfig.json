@@ -1,0 +1,18 @@
+{
+  "extends": "@zimic/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "target": "esnext",
+    "allowSyntheticDefaultImports": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./tests/*"],
+      "@scripts/*": ["./scripts/*"],
+      "@@/package.json": ["./package.json"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.mts"],
+  "exclude": ["node_modules", "dist", "*.d.ts", "interceptor/*.d.ts"]
+}

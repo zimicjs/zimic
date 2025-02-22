@@ -15,9 +15,9 @@
   },
   "devDependencies": {
     "@zimic/eslint-config-react": "workspace:*",
+    "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "eslint": "^9.21.0",
-    "zimic": "latest"
+    "eslint": "^9.21.0"
   }
 }

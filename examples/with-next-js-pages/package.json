@@ -8,7 +8,7 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public || true",
+    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "dependencies": {
@@ -26,11 +26,11 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@zimic/interceptor": "latest",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.8",
-    "typescript": "^5.7.3",
-    "zimic": "latest"
+    "typescript": "^5.7.3"
   }
 }

@@ -51,13 +51,13 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./typegen": {
-      "types": "./dist/typegen.d.ts",
+      "types": "./typegen.d.ts",
       "import": "./dist/typegen.mjs",
       "require": "./dist/typegen.js",
       "default": "./dist/typegen.js"

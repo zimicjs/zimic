@@ -8,11 +8,11 @@
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write",
-    "test": "dotenv -v NODE_ENV=test -- zimic server start --port 4000 --ephemeral -- vitest",
+    "test": "dotenv -v NODE_ENV=test -- zimic-interceptor server start --port 4000 --ephemeral -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
     "deps:install-playwright": "playwright install chromium",
-    "deps:init-zimic": "zimic browser init ./public || true",
+    "deps:init-zimic": "zimic-interceptor browser init ./public || true",
     "postinstall": "concurrently --names playwright,zimic 'pnpm deps:install-playwright' 'pnpm deps:init-zimic'"
   },
   "devDependencies": {
@@ -22,6 +22,7 @@
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/fetch": "workspace:*",
     "@zimic/http": "workspace:*",
+    "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "axios": "^1.7.9",
@@ -33,7 +34,6 @@
     "playwright": "^1.50.1",
     "superagent": "^10.1.1",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.6",
-    "zimic": "workspace:*"
+    "vitest": "^3.0.6"
   }
 }

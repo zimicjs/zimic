@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "@zimic/http#build"],
+      "dependsOn": ["^build"],
       "inputs": [
         "{src,scripts}/**/*.{ts,json}",
         "{package,tsconfig}.json",
@@ -16,23 +16,15 @@
       "outputs": ["dist/**"]
     },
 
-    "deps:init-msw": {
-      "inputs": ["package.json"],
-      "outputs": ["public/mockServiceWorker.js"]
-    },
-
     "test:turbo": {
-      "dependsOn": ["^build", "@zimic/http#build", "deps:init-msw"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
     "lint:turbo": {
-      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
     },
 
     "types:check": {
-      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }

@@ -1,4 +1,4 @@
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 import { GITHUB_API_BASE_URL, GitHubSchema } from '../../src/clients/github';
 

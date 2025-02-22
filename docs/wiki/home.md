@@ -55,8 +55,8 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 - :zap: **Statically-typed mocks**: Declare the
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) of your HTTP endpoints and create
   fully typed mocks. If you have an [OpenAPI v3](https://swagger.io/specification) schema, use
-  [`zimic typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) to automatically generate types and keep
-  your mocks in sync with your API.
+  [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) to automatically generate types and
+  keep your mocks in sync with your API.
 - :link: **Network-level intercepts**: Internally, Zimic combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to act on real HTTP requests. From you
   application's point of view, the mocked responses are indistinguishable from the real ones.
@@ -67,7 +67,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // 1. Declare your types:
 interface User {
@@ -253,10 +253,6 @@ application, so no parts of your application code are skipped and you can get mo
 > - Breaking changes, if any, will be delivered in the next **_minor_** version.
 > - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
 >   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
->
-> From v0.8 onwards, we expect Zimic's public API to become more stable. If you'd like to share any feedback, please
-> feel free to [open an issue](https://github.com/zimicjs/zimic/issues) or
-> [create a discussion](https://github.com/zimicjs/zimic/discussions/new/choose)!
 
 ## Examples
 

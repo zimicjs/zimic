@@ -1,0 +1,132 @@
+{
+  "name": "@zimic/interceptor",
+  "description": "TypeScript-first HTTP request mocking and interceptor",
+  "keywords": [
+    "zimic",
+    "typescript",
+    "types",
+    "typegen",
+    "validation",
+    "inference",
+    "http",
+    "interceptor",
+    "mock",
+    "api",
+    "static"
+  ],
+  "version": "0.14.0-canary.13",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zimicjs/zimic.git",
+    "directory": "packages/zimic-interceptor-interceptor"
+  },
+  "author": {
+    "name": "Diego Aquino",
+    "url": "https://github.com/diego-aquino"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=18.13.0"
+  },
+  "license": "MIT",
+  "files": [
+    "package.json",
+    "README.md",
+    "LICENSE.md",
+    "src",
+    "!src/**/tests",
+    "!src/**/__tests__",
+    "!src/**/*.test.ts",
+    "dist",
+    "index.d.ts",
+    "http.d.ts",
+    "server.d.ts"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "index.d.ts",
+  "bin": {
+    "zimic-interceptor": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./http.d.ts",
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js"
+    },
+    "./server": {
+      "types": "./server.d.ts",
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js",
+      "default": "./dist/server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "cli": "node ./dist/cli.js",
+    "build": "tsup",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "test": "dotenv -v NODE_ENV=test -- vitest",
+    "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
+    "types:check": "tsc --noEmit",
+    "deps:install-playwright": "playwright install chromium",
+    "deps:init-msw": "msw init ./public --no-save",
+    "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
+    "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\"",
+    "prepublish:patch-relative-paths": "sed -E -i 's/\\]\\(\\.\\/([^\\)]+)\\)/](..\\/..\\/\\1)/g;s/\"\\.\\/([^\"]+)\"/\"..\\/..\\/\\1\"/g'",
+    "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
+  },
+  "dependencies": {
+    "@whatwg-node/server": "0.9.68",
+    "chalk": "4.1.2",
+    "execa": "9.5.2",
+    "isomorphic-ws": "5.0.0",
+    "msw": "2.7.1",
+    "ws": "8.18.1",
+    "yargs": "17.7.2"
+  },
+  "optionalDependencies": {
+    "bufferutil": "4.0.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "@types/ws": "^8.5.14",
+    "@types/yargs": "^17.0.33",
+    "@vitest/browser": "^3.0.6",
+    "@vitest/coverage-istanbul": "^3.0.6",
+    "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "dotenv-cli": "^8.0.0",
+    "eslint": "^9.21.0",
+    "playwright": "^1.50.1",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  },
+  "peerDependencies": {
+    "@zimic/http": "^0.1.0 || ^0.1.0-canary.0",
+    "typescript": ">=4.8.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

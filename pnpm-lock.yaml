@@ -59,6 +59,9 @@ importers:
       '@zimic/http':
         specifier: workspace:*
         version: link:../../packages/zimic-http
+      '@zimic/interceptor':
+        specifier: workspace:*
+        version: link:../../packages/zimic-interceptor
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:../../packages/lint-staged-config
@@ -95,9 +98,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: workspace:*
-        version: link:../../packages/zimic
 
   docs/wiki: {}
 
@@ -113,6 +113,9 @@ importers:
       '@zimic/eslint-config-react':
         specifier: workspace:*
         version: link:../packages/eslint-config-react
+      '@zimic/interceptor':
+        specifier: workspace:*
+        version: link:../packages/zimic-interceptor
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:../packages/lint-staged-config
@@ -122,9 +125,6 @@ importers:
       eslint:
         specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
-      zimic:
-        specifier: latest
-        version: link:../packages/zimic
 
   examples/with-jest-jsdom:
     dependencies:
@@ -153,6 +153,9 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -165,9 +168,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-jest-node:
     dependencies:
@@ -196,6 +196,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.2
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -208,9 +211,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-next-js-app:
     dependencies:
@@ -251,6 +251,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.4
         version: 19.0.4(@types/react@19.0.10)
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -269,9 +272,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-next-js-pages:
     dependencies:
@@ -312,6 +312,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.4
         version: 19.0.4(@types/react@19.0.10)
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       concurrently:
         specifier: ^9.1.2
         version: 9.1.2
@@ -327,9 +330,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-openapi-typegen:
     dependencies:
@@ -352,6 +352,9 @@ importers:
       '@vitest/spy':
         specifier: ^3.0.6
         version: 3.0.6
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -364,9 +367,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-playwright:
     dependencies:
@@ -404,6 +404,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.4
         version: 19.0.4(@types/react@19.0.10)
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -422,9 +425,6 @@ importers:
       typescript:
         specifier: ^5.7.3
         version: 5.7.3
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-vitest-browser:
     dependencies:
@@ -447,6 +447,9 @@ importers:
       '@vitest/browser':
         specifier: ^3.0.6
         version: 3.0.6(@types/node@22.13.5)(bufferutil@4.0.9)(playwright@1.50.1)(typescript@5.7.3)(vite@6.1.1(@types/node@22.13.5)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.3)(yaml@2.7.0))(vitest@3.0.6)
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       concurrently:
         specifier: ^9.1.2
         version: 9.1.2
@@ -462,9 +465,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-vitest-jsdom:
     dependencies:
@@ -487,6 +487,9 @@ importers:
       '@vitest/spy':
         specifier: ^3.0.6
         version: 3.0.6
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -496,9 +499,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   examples/with-vitest-node:
     dependencies:
@@ -521,6 +521,9 @@ importers:
       '@vitest/spy':
         specifier: ^3.0.6
         version: 3.0.6
+      '@zimic/interceptor':
+        specifier: latest
+        version: link:../../packages/zimic-interceptor
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -533,9 +536,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: latest
-        version: link:../../packages/zimic
 
   packages/eslint-config:
     dependencies:
@@ -616,45 +616,10 @@ importers:
         version: 5.7.3
 
   packages/zimic:
-    dependencies:
-      '@whatwg-node/server':
-        specifier: 0.9.68
-        version: 0.9.68
-      '@zimic/http':
-        specifier: '>=0.1.0-canary.0 <0.2.0'
-        version: link:../zimic-http
-      chalk:
-        specifier: 4.1.2
-        version: 4.1.2
-      execa:
-        specifier: 9.5.2
-        version: 9.5.2
-      isomorphic-ws:
-        specifier: 5.0.0
-        version: 5.0.0(ws@8.18.1(bufferutil@4.0.9))
-      msw:
-        specifier: 2.7.1
-        version: 2.7.1(@types/node@22.13.5)(typescript@5.7.3)
-      ws:
-        specifier: 8.18.1
-        version: 8.18.1(bufferutil@4.0.9)
-      yargs:
-        specifier: 17.7.2
-        version: 17.7.2
-    optionalDependencies:
-      bufferutil:
-        specifier: 4.0.9
-        version: 4.0.9
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
         version: 22.13.5
-      '@types/ws':
-        specifier: ^8.5.14
-        version: 8.5.14
-      '@types/yargs':
-        specifier: ^17.0.33
-        version: 17.0.33
       '@vitest/browser':
         specifier: ^3.0.6
         version: 3.0.6(@types/node@22.13.5)(bufferutil@4.0.9)(playwright@1.50.1)(typescript@5.7.3)(vite@6.1.1(@types/node@22.13.5)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.3)(yaml@2.7.0))(vitest@3.0.6)
@@ -692,7 +657,7 @@ importers:
   packages/zimic-fetch:
     dependencies:
       '@zimic/http':
-        specifier: '>=0.1.0-canary.0 <0.2.0'
+        specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
     devDependencies:
       '@types/node':
@@ -707,6 +672,9 @@ importers:
       '@zimic/eslint-config-node':
         specifier: workspace:*
         version: link:../eslint-config-node
+      '@zimic/interceptor':
+        specifier: workspace:*
+        version: link:../zimic-interceptor
       '@zimic/lint-staged-config':
         specifier: workspace:*
         version: link:../lint-staged-config
@@ -731,9 +699,6 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
-      zimic:
-        specifier: workspace:*
-        version: link:../zimic
 
   packages/zimic-http:
     dependencies:
@@ -804,6 +769,80 @@ importers:
       zimic:
         specifier: ^0.13.2
         version: 0.13.2(@types/node@22.13.5)(typescript@5.7.3)
+
+  packages/zimic-interceptor:
+    dependencies:
+      '@whatwg-node/server':
+        specifier: 0.9.68
+        version: 0.9.68
+      '@zimic/http':
+        specifier: ^0.1.0 || ^0.1.0-canary.0
+        version: link:../zimic-http
+      chalk:
+        specifier: 4.1.2
+        version: 4.1.2
+      execa:
+        specifier: 9.5.2
+        version: 9.5.2
+      isomorphic-ws:
+        specifier: 5.0.0
+        version: 5.0.0(ws@8.18.1(bufferutil@4.0.9))
+      msw:
+        specifier: 2.7.1
+        version: 2.7.1(@types/node@22.13.5)(typescript@5.7.3)
+      ws:
+        specifier: 8.18.1
+        version: 8.18.1(bufferutil@4.0.9)
+      yargs:
+        specifier: 17.7.2
+        version: 17.7.2
+    optionalDependencies:
+      bufferutil:
+        specifier: 4.0.9
+        version: 4.0.9
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.13.5
+      '@types/ws':
+        specifier: ^8.5.14
+        version: 8.5.14
+      '@types/yargs':
+        specifier: ^17.0.33
+        version: 17.0.33
+      '@vitest/browser':
+        specifier: ^3.0.6
+        version: 3.0.6(@types/node@22.13.5)(bufferutil@4.0.9)(playwright@1.50.1)(typescript@5.7.3)(vite@6.1.1(@types/node@22.13.5)(jiti@2.4.2)(lightningcss@1.29.1)(tsx@4.19.3)(yaml@2.7.0))(vitest@3.0.6)
+      '@vitest/coverage-istanbul':
+        specifier: ^3.0.6
+        version: 3.0.6(vitest@3.0.6)
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      dotenv-cli:
+        specifier: ^8.0.0
+        version: 8.0.0
+      eslint:
+        specifier: ^9.21.0
+        version: 9.21.0(jiti@2.4.2)
+      playwright:
+        specifier: ^1.50.1
+        version: 1.50.1
+      tsup:
+        specifier: ^8.3.6
+        version: 8.3.6(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.7.3)(yaml@2.7.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: ^3.0.6
+        version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
 
 packages:
 

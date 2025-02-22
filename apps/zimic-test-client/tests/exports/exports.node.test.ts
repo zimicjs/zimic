@@ -1,5 +1,4 @@
 import { typegen, type TypegenNamespace, type OpenAPITypegenOptions } from '@zimic/http/typegen';
-import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   interceptorServer,
   type InterceptorServer,
@@ -8,7 +7,8 @@ import {
   NotStartedInterceptorServerError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
-} from 'zimic/interceptor/server';
+} from '@zimic/interceptor/server';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports (Node.js)', () => {
   it('should export all expected resources', () => {
