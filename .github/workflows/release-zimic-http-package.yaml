@@ -40,7 +40,7 @@ jobs:
   test-npm-release:
     name: Test NPM release
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     needs:
       - release-to-npm
 
