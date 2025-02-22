@@ -621,7 +621,7 @@ importers:
         specifier: 0.9.68
         version: 0.9.68
       '@zimic/http':
-        specifier: '>=0.1.0-canary.0 <0.2.0'
+        specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
       chalk:
         specifier: 4.1.2

@@ -126,7 +126,7 @@
     "vitest": "^3.0.6"
   },
   "peerDependencies": {
-    "@zimic/http": ">=0.1.0-canary.0 <0.2.0",
+    "@zimic/http": "^0.1.0 || ^0.1.0-canary.0",
     "typescript": ">=4.8.0"
   },
   "peerDependenciesMeta": {
