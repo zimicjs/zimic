@@ -16,7 +16,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
-    "directory": "packages/zimic-http"
+    "directory": "packages/zimic-interceptor-http"
   },
   "author": {
     "name": "Diego Aquino",
@@ -51,13 +51,13 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./typegen": {
-      "types": "./dist/typegen.d.ts",
+      "types": "./typegen.d.ts",
       "import": "./dist/typegen.mjs",
       "require": "./dist/typegen.js",
       "default": "./dist/typegen.js"

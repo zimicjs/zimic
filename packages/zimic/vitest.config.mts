@@ -2,13 +2,10 @@ import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  publicDir: './public',
   test: {
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
-    retry: process.env.CI === 'true' ? 1 : 0,
-    setupFiles: ['./tests/setup/shared.ts'],
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,
@@ -38,14 +35,10 @@ export default defineConfig({
       ],
     },
   },
-  define: {
-    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
-      '@scripts': path.resolve(__dirname, './scripts'),
       '@@': path.resolve(__dirname, '.'),
     },
   },

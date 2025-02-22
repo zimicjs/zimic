@@ -63,7 +63,7 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
@@ -90,7 +90,7 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
@@ -164,7 +164,7 @@ dynamically determine which strategy to use for an unhandled request.
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
@@ -184,7 +184,7 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
@@ -204,7 +204,7 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
@@ -238,7 +238,7 @@ that `onUnhandledRequest` strategies declared when creating an interceptor will 
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // For local interceptors:
 httpInterceptor.default.local.onUnhandledRequest = {
@@ -261,7 +261,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // For local interceptors:
 httpInterceptor.default.local.onUnhandledRequest = {
@@ -284,7 +284,7 @@ httpInterceptor.default.remote.onUnhandledRequest = {
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // For local interceptors:
 httpInterceptor.default.local.onUnhandledRequest = (request) => {
@@ -351,7 +351,7 @@ their intercepted requests in memory.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'local',
@@ -369,7 +369,7 @@ afterEach(() => {
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'remote',
@@ -393,7 +393,7 @@ afterEach(async () => {
 > mock servers.
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<Schema>({
   type: 'remote',
@@ -469,7 +469,7 @@ be considered first as long as it is created **after** the generic one.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -493,7 +493,7 @@ const listHandler = interceptor.get('/users').respond({
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -522,7 +522,7 @@ Paths with parameters are supported, such as `/users/:id`. Even when using a com
 original path is automatically inferred, guaranteeing type safety.
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users/:id': {
@@ -660,7 +660,7 @@ await interceptor.clear();
 Infers the schema of an [HTTP interceptor](#httpinterceptor).
 
 ```ts
-import { httpInterceptor, type InferHttpInterceptorSchema } from 'zimic/interceptor/http';
+import { httpInterceptor, type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {

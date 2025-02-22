@@ -29,12 +29,12 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
     "execa": "^9.5.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.8",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3",
-    "zimic": "latest"
+    "typescript": "^5.7.3"
   }
 }

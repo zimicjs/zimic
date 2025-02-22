@@ -116,16 +116,18 @@ suggestions.
 
 Zimic uses the following long-lived branches:
 
-| Branch   | Description                                                                |
-| -------- | -------------------------------------------------------------------------- |
-| `canary` | Development branch containing the latest unstable code.                    |
-| `v0`     | Production branch containing the latest stable code in the `v0.x.x` range. |
+| Branch                 | Description                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `canary`               | Development branch containing the latest (possibly unstable) code.                                  |
+| `@zimic/http@0`        | Production branch containing the latest stable code for `@zimic/http` in the `v0.x.x` range.        |
+| `@zimic/fetch@0`       | Production branch containing the latest stable code for `@zimic/fetch` in the `v0.x.x` range.       |
+| `@zimic/interceptor@0` | Production branch containing the latest stable code for `@zimic/interceptor` in the `v0.x.x` range. |
 
-New pull requests should be opened against the `canary` branch. The `v*` branches are updated only when a new stable
-release is ready for their respective major version.
+New pull requests should be opened against the `canary` branch. The `@zimic/*@*` branches are updated only when a new
+stable release is ready for their respective major version.
 
-Each supported major version of Zimic will have its own `v*` branch. This will allow backporting fixes and security
-patches to older versions.
+Each supported major version of Zimic will have its own `@zimic/*@*` branch. This will allow backporting fixes and
+security patches to older versions.
 
 #### Creating a branch
 
@@ -168,7 +170,7 @@ Some general guidelines:
 - It is not necessary to add "closes", "fixes", or "resolves" in your commit message. Linking the issue in the message
   is also not required. We track which issues are being resolved in the pull request description.
 - If you are changing a package, prefix the scope of the commit with a `#`. For example, `feat(#zimic): add new feature`
-  indicates a change in `packages/zimic`. This helps us understand that a package was changed.
+  indicates a change in `packages/zimic-interceptor`. This helps us understand that a package was changed.
 
 Some examples of valid commit messages:
 
@@ -246,7 +248,7 @@ pnpm turbo build
 pnpm turbo build --filter zimic
 ```
 
-The build outputs of any package are stored in the `dist` directory, such as `packages/zimic/dist`.
+The build outputs of any package are stored in the `dist` directory, such as `packages/zimic-interceptor/dist`.
 
 For more information about using tsup and Turborepo, please refer to their documentation.
 

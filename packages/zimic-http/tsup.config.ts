@@ -1,15 +1,5 @@
 import { Options, defineConfig } from 'tsup';
 
-function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]): Pick<Type, Key> {
-  return keys.reduce(
-    (pickedObject, key) => {
-      pickedObject[key] = object[key];
-      return pickedObject;
-    },
-    {} as Pick<Type, Key>,
-  );
-}
-
 const isDevelopment = process.env.npm_lifecycle_event === 'dev';
 
 const sharedConfig: Options = {
@@ -43,7 +33,9 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     cli: 'src/cli/index.ts',
   };
 
-  const dtsEntry = pickKeys(entry, ['typegen']);
+  const dtsEntry = {
+    typegen: entry.typegen,
+  };
 
   return {
     ...sharedConfig,

@@ -15,7 +15,7 @@ This module exports resources to generate types programmatically. We recommend u
 An example using the programmatic API to generate types from an OpenAPI schema:
 
 ```ts
-import { typegen } from 'zimic/typegen';
+import { typegen } from '@zimic/http/typegen';
 
 await typegen.generateFromOpenAPI({
   input: './schema.yaml',

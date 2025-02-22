@@ -10,7 +10,7 @@ pnpm-lock.yaml
 
 /packages/*/dist
 /packages/*/build
-/packages/zimic/**/fixtures/**/generated/*
+**/fixtures/**/generated/*
 
 /examples/*/.next
 

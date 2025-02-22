@@ -17,7 +17,7 @@ server is ready:
 
 ```ts
 import { execa as $ } from 'execa';
-import { interceptorServer } from 'zimic/interceptor/server';
+import { interceptorServer } from '@zimic/interceptor/server';
 
 const server = interceptorServer.create({
   hostname: 'localhost',

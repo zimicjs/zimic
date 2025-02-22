@@ -22,7 +22,7 @@ and response bodies, and status codes. Interceptors use this schema to type your
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // Declaring base types
 interface User {
@@ -96,7 +96,7 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // Declaring the base types
 interface User {
@@ -181,7 +181,7 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
 At the root level, each key represents a path or route of the service:
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -206,7 +206,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type UserPaths = HttpSchema<{
   '/users': {
@@ -237,7 +237,7 @@ Each path can have one or more methods, (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`
 names are case-sensitive.
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -262,7 +262,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type UserMethods = HttpSchema.Methods<{
   GET: {
@@ -297,7 +297,7 @@ Each method can have a `request`, which defines the schema of the accepted reque
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface UserListSearchParams {
   username?: string;
@@ -324,7 +324,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface UserCreationBody {
   username: string;
@@ -360,7 +360,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema, type HttpFormData } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
@@ -387,7 +387,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -409,7 +409,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -432,7 +432,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema, type HttpSearchParams } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
@@ -459,7 +459,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface UserCreationBody {
   username: string;
@@ -497,7 +497,7 @@ Bodies can be a JSON object, [`HttpFormData`](api‐zimic‐http#httpformdata),
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
@@ -540,7 +540,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema, type HttpFormData } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type FileUploadData = HttpSchema.FormData<{
   files: File[];
@@ -569,7 +569,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -593,7 +593,7 @@ const interceptor = httpInterceptor.create<{
   </summary>
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = httpInterceptor.create<{
   '/users': {
@@ -618,7 +618,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema, type HttpSearchParams } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
   username?: string;
@@ -648,7 +648,7 @@ const interceptor = httpInterceptor.create<{
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;

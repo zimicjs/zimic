@@ -4,7 +4,7 @@ import {
   HttpInterceptorOptions,
   LocalHttpInterceptor,
   RemoteHttpInterceptor,
-} from 'zimic/interceptor/http';
+} from '@zimic/interceptor/http';
 
 import { PossiblePromise } from '@/types/utils';
 

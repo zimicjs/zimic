@@ -9,7 +9,6 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tests/*": ["./tests/*"],
-      "@scripts/*": ["./scripts/*"],
       "@@/package.json": ["./package.json"]
     }
   },

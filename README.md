@@ -56,7 +56,7 @@ Zimic provides a flexible and type-safe way to mock HTTP requests.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
 // 1. Declare your types:
 interface User {

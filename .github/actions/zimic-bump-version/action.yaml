@@ -58,11 +58,6 @@ runs:
 
         bumpedVersion=${bumpedVersion#*v}
 
-        if [[ '${{ inputs.project-directory }}' == 'packages/zimic' ]]; then
-          # also update the root package.json
-          cat <<< $(jq ".version = \"$bumpedVersion\"" ../../package.json) > ../../package.json
-        fi
-
         echo "Project '$projectName' is now at $bumpedVersion"
         echo 'Committing changes...'
 

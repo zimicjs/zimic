@@ -52,7 +52,6 @@ import {
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
 } from '@zimic/http';
-import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
@@ -92,7 +91,8 @@ import {
   TimesCheckError,
   InvalidJSONError,
   InvalidFormDataError,
-} from 'zimic/interceptor/http';
+} from '@zimic/interceptor/http';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {

@@ -151,7 +151,7 @@ use remote interceptors.
 
    ```ts
    import { type HttpSchema } from '@zimic/http';
-   import { httpInterceptor } from 'zimic/interceptor/http';
+   import { httpInterceptor } from '@zimic/interceptor/http';
 
    // Declare your types:
    interface User {
@@ -219,7 +219,7 @@ use remote interceptors.
 
    ```ts
    import { type HttpSchema } from '@zimic/http';
-   import { httpInterceptor } from 'zimic/interceptor/http';
+   import { httpInterceptor } from '@zimic/interceptor/http';
 
    // Declare your types
    interface User {
