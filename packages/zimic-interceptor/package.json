@@ -18,7 +18,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
-    "directory": "packages/zimic-interceptor-interceptor"
+    "directory": "packages/zimic-interceptor"
   },
   "author": {
     "name": "Diego Aquino",
