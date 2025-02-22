@@ -3,6 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": [
         "src/**/*.{ts,json}",
         "{package,tsconfig}.json",
@@ -15,15 +16,17 @@
     },
 
     "test:turbo": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
     "lint:turbo": {
+      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
     },
 
     "types:check": {
+      "dependsOn": ["^build", "@zimic/http#build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
     }
   }
