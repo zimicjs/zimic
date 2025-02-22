@@ -58,7 +58,6 @@ jobs:
         with:
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
-          install: '@zimic/interceptor...'
 
       - name: Get release settings
         id: release-settings
