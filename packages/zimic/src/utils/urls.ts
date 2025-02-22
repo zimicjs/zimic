@@ -119,16 +119,19 @@ export function createRegexFromURL(url: string) {
 export function joinURL(...parts: (string | URL)[]) {
   return parts
     .map((part, index) => {
-      const partAsString = part.toString();
-      const isLastPath = index === parts.length - 1;
+      const isFirstPart = index === 0;
+      const isLastPart = index === parts.length - 1;
 
-      if (isLastPath) {
-        const partWithoutLeadingSlash = partAsString.replace(/^\/+/, '');
-        return partWithoutLeadingSlash;
-      } else {
-        const partWithoutLeadingOrTrailingSlash = partAsString.replace(/^\/+|\/+$/, '');
-        return partWithoutLeadingOrTrailingSlash;
+      let partAsString = part.toString();
+
+      if (!isFirstPart) {
+        partAsString = partAsString.replace(/^\//, '');
       }
+      if (!isLastPart) {
+        partAsString = partAsString.replace(/\/$/, '');
+      }
+
+      return partAsString;
     })
     .filter((part) => part.length > 0)
     .join('/');
