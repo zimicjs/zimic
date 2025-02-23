@@ -14,7 +14,7 @@ import {
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
-import { Default, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
+import { Default, PartialByKey, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
 
 export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
   unknown extends ResponseSchema['body']
@@ -23,10 +23,16 @@ export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpRespon
       ? { body?: ReplaceBy<ReplaceBy<ResponseSchema['body'], undefined, null>, ArrayBuffer, Blob> }
       : { body: ReplaceBy<ResponseSchema['body'], ArrayBuffer, Blob> };
 
+type HttpRequestHandlerResponseHeaders<ResponseSchema extends HttpResponseSchema> = HttpHeadersInit<
+  PartialByKey<Default<ResponseSchema['headers']>, 'content-type'>
+>;
+
 export type HttpRequestHandlerResponseWithHeaders<ResponseSchema extends HttpResponseSchema> =
   undefined extends ResponseSchema['headers']
-    ? { headers?: undefined }
-    : { headers: HttpHeadersInit<Default<ResponseSchema['headers']>> };
+    ? { headers?: HttpRequestHandlerResponseHeaders<ResponseSchema> }
+    : keyof ResponseSchema['headers'] extends 'content-type'
+      ? { headers?: HttpRequestHandlerResponseHeaders<ResponseSchema> }
+      : { headers: HttpRequestHandlerResponseHeaders<ResponseSchema> };
 
 /** A declaration of an HTTP response for an intercepted request. */
 export type HttpRequestHandlerResponseDeclaration<
