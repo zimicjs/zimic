@@ -28,7 +28,6 @@ describe('Example tests', () => {
       .get(`/repos/${ownerName}/${repositoryName}`)
       .respond({
         status: 200,
-        headers: { 'content-type': 'application/json' },
         body: repository,
       })
       .times(1);
@@ -47,7 +46,6 @@ describe('Example tests', () => {
       .get('/repos/:owner/:name')
       .respond({
         status: 404,
-        headers: { 'content-type': 'application/json' },
         body: { message: 'Not Found' },
       })
       .times(1);
