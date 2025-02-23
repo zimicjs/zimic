@@ -10,7 +10,7 @@ export type FetchInput<
   Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
-export interface FetchFunction<Schema extends HttpSchema> {
+interface FetchFunction<Schema extends HttpSchema> {
   <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
     input: Path | URL,
     init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
@@ -27,7 +27,7 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
   onResponse?: (response: FetchResponse.Loose, fetch: Fetch<Schema>) => PossiblePromise<Response>;
 }
 
-export interface FetchClient<Schema extends HttpSchema> {
+interface FetchClient<Schema extends HttpSchema> {
   defaults: FetchRequestInit.Defaults;
 
   Request: FetchRequestConstructor<Schema>;

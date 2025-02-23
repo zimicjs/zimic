@@ -4,8 +4,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import { FetchClientOptions } from '../..';
 import createFetch from '../factory';
+import { FetchOptions } from '../types/public';
 import { FetchResponse, FetchRequest, FetchRequestInit } from '../types/requests';
 
 describe('FetchClient (node) > Defaults', () => {
@@ -96,7 +96,7 @@ describe('FetchClient (node) > Defaults', () => {
         referrer: 'about:client',
         referrerPolicy: 'origin',
         signal: new AbortController().signal,
-      } satisfies FetchClientOptions<Schema>;
+      } satisfies FetchOptions<Schema>;
 
       const fetch = createFetch<Schema>(defaults);
 
@@ -177,7 +177,7 @@ describe('FetchClient (node) > Defaults', () => {
         referrer: 'about:client',
         referrerPolicy: 'origin',
         signal: new AbortController().signal,
-      } satisfies FetchClientOptions<Schema>;
+      } satisfies FetchOptions<Schema>;
 
       fetch.defaults.baseURL = defaults.baseURL;
       fetch.defaults.cache = defaults.cache;
