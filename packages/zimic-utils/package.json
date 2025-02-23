@@ -32,10 +32,16 @@
   ],
   "exports": {
     "./types": {
-      "types": "./types.d.ts"
+      "types": "./types.d.ts",
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./types/globals": {
-      "types": "./types/globals.d.ts"
+      "types": "./types/globals.d.ts",
+      "import": "./dist/types/globals.mjs",
+      "require": "./dist/types/globals.js",
+      "default": "./dist/types/globals.js"
     },
     "./data/isDefined": {
       "types": "./data/isDefined.d.ts",

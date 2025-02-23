@@ -169,6 +169,9 @@ export interface MyServiceComponents {
   responses: {
     /** Success */
     userCreated: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: MyServiceComponents['schemas']['User'];
     }>;
     /** Success */
@@ -204,6 +207,9 @@ export interface MyServiceComponents {
     >;
     /** Not Found */
     notFoundError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** A message describing the error */
         message: string;
@@ -213,6 +219,9 @@ export interface MyServiceComponents {
     }>;
     /** Validation Error */
     validationError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** A message describing the error */
         message: string;
@@ -222,6 +231,9 @@ export interface MyServiceComponents {
     }>;
     /** Client Error */
     clientError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** A message describing the error */
         message: string;
@@ -231,6 +243,9 @@ export interface MyServiceComponents {
     }>;
     /** Server Error */
     serverError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** A message describing the error */
         message: string;
@@ -240,6 +255,9 @@ export interface MyServiceComponents {
     }>;
     /** Error */
     error: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** A message describing the error */
         message: string;

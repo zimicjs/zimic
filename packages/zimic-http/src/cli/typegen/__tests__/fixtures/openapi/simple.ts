@@ -35,9 +35,15 @@ export interface MyServiceOperations {
     };
     response: {
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'][];
       };
       400: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           message: string;
         };
@@ -50,6 +56,7 @@ export interface MyServiceOperations {
         utm_source?: string;
       }>;
       headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
         authorization: string;
       }>;
       body: {
@@ -60,9 +67,15 @@ export interface MyServiceOperations {
     };
     response: {
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'];
       };
       400: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           message: string;
         };

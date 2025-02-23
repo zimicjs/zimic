@@ -76,7 +76,7 @@
     "test": "dotenv -v NODE_ENV=test -- vitest",
     "test:turbo": "dotenv -v CI=true -- pnpm run test run --coverage",
     "types:check": "tsc --noEmit",
-    "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js",
+    "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.ts",
     "deps:init": "playwright install chromium",
     "prepublish:patch-relative-paths": "sed -E -i 's/\\]\\(\\.\\/([^\\)]+)\\)/](..\\/..\\/\\1)/g;s/\"\\.\\/([^\"]+)\"/\"..\\/..\\/\\1\"/g'",
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"

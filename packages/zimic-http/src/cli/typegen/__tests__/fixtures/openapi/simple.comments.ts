@@ -71,10 +71,16 @@ export interface MyServiceOperations {
     response: {
       /** Success */
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'][];
       };
       /** Error */
       400: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           message: string;
         };
@@ -89,6 +95,7 @@ export interface MyServiceOperations {
         utm_source?: string;
       }>;
       headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
         /** The authorization token */
         authorization: string;
       }>;
@@ -119,10 +126,16 @@ export interface MyServiceOperations {
     response: {
       /** The user was created successfully */
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'];
       };
       /** Error */
       400: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           /** The error message */
           message: string;

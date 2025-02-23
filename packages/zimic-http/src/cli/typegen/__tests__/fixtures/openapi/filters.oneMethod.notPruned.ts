@@ -19,6 +19,9 @@ export type MyServiceSchema = HttpSchema<{
       };
       response: {
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['Users'];
         };
       };
@@ -41,6 +44,9 @@ export interface MyServiceComponents {
   };
   responses: {
     error: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
       };
@@ -52,6 +58,9 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'multipart/form-data';
+      }>;
       body: HttpFormData<
         HttpFormDataSerialized<{
           name: string;
@@ -71,6 +80,9 @@ export interface MyServiceOperations {
     };
     response: {
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['Notifications'];
       };
     };

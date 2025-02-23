@@ -332,9 +332,8 @@ export function normalizeContentType(
     return [];
   });
 
-  if (newBodyMembers.length <= 1) {
-    const newBodyMemberPropertySignatures = newBodyMembers.map((bodyMember) => bodyMember.propertySignature);
-    const newMembers = [newHeader, ...newBodyMemberPropertySignatures].filter(isDefined);
+  if (newBodyMembers.length === 0) {
+    const newMembers = [newHeader].filter(isDefined);
 
     return ts.factory.updateTypeLiteralNode(contentType, ts.factory.createNodeArray(newMembers));
   } else {
