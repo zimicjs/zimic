@@ -24,25 +24,33 @@ import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchRespons
 import { JSONStringified } from './json';
 import { FetchInput } from './public';
 
+type FetchRequestInitHeaders<RequestSchema extends HttpRequestSchema> =
+  | RequestSchema['headers']
+  | HttpHeaders<Default<RequestSchema['headers']>>;
+
 type FetchRequestInitWithHeaders<RequestSchema extends HttpRequestSchema> = [RequestSchema['headers']] extends [never]
   ? { headers?: undefined }
   : undefined extends RequestSchema['headers']
-    ? { headers?: RequestSchema['headers'] | HttpHeaders<Default<RequestSchema['headers']>> }
-    : { headers: RequestSchema['headers'] | HttpHeaders<Default<RequestSchema['headers']>> };
+    ? { headers?: FetchRequestInitHeaders<RequestSchema> }
+    : { headers: FetchRequestInitHeaders<RequestSchema> };
+
+type FetchRequestInitSearchParams<RequestSchema extends HttpRequestSchema> =
+  | RequestSchema['searchParams']
+  | HttpSearchParams<Default<RequestSchema['searchParams']>>;
 
 type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> = [
   RequestSchema['searchParams'],
 ] extends [never]
   ? { searchParams?: undefined }
   : undefined extends RequestSchema['searchParams']
-    ? { searchParams?: RequestSchema['searchParams'] | HttpSearchParams<Default<RequestSchema['searchParams']>> }
-    : { searchParams: RequestSchema['searchParams'] | HttpSearchParams<Default<RequestSchema['searchParams']>> };
+    ? { searchParams?: FetchRequestInitSearchParams<RequestSchema> }
+    : { searchParams: FetchRequestInitSearchParams<RequestSchema> };
 
 type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [RequestSchema['body']] extends [never]
   ? { body?: null }
   : RequestSchema['body'] extends string
     ? undefined extends RequestSchema['body']
-      ? { body?: RequestSchema['body'] }
+      ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
       : { body: RequestSchema['body'] }
     : RequestSchema['body'] extends JSONValue
       ? undefined extends RequestSchema['body']
@@ -80,7 +88,7 @@ type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, ErrorOnly ex
   ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
   : AllFetchResponseStatusCode<MethodSchema>;
 
-export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
+type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
   ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
   ArrayBuffer,
   Blob

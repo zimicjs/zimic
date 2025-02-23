@@ -26,8 +26,8 @@ class FetchClient<Schema extends HttpSchema> {
 
   private createFetchFunction() {
     const fetch = async <
-      Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
+      Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
     >(
       input: FetchInput<Schema, Method, Path>,
       init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
