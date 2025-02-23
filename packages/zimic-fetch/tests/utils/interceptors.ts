@@ -13,7 +13,7 @@ type UsingInterceptorCallback<Schema extends HttpSchema> = (
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<Schema>,
 ): Promise<void> {
   const interceptor = httpInterceptor.create<Schema>({
     ...interceptorOptions,

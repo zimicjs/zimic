@@ -1,89 +1,65 @@
-import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from '@zimic/http';
-import { httpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
-import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
+import { createFetch, FetchResponseError } from '@zimic/fetch';
+import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
+import expectToThrow from '@zimic/utils/error/expectToThrow';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import { importCrypto, IsomorphicCrypto } from '@tests/utils/crypto';
-
-import { ClientTestOptionsByWorkerType, ZIMIC_SERVER_PORT } from '.';
 import {
   AuthServiceSchema,
+  ConflictError,
+  NotFoundError,
+  Notification,
   NotificationServiceSchema,
   User,
   UserCreationRequestBody,
-  ValidationError,
-  ConflictError,
   UserListSearchParams,
-  NotFoundError,
-  Notification,
-} from './schema';
+  ValidationError,
+} from '@tests/types/schema';
+import { importCrypto } from '@tests/utils/crypto';
 
-function getAuthBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
-  return type === 'local'
-    ? 'http://localhost:3000'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/auth-${crypto.randomUUID()}`;
-}
-
-function getNotificationsBaseURL(type: HttpInterceptorType, crypto: IsomorphicCrypto) {
-  return type === 'local'
-    ? 'http://localhost:3001'
-    : `http://localhost:${ZIMIC_SERVER_PORT}/notifications-${crypto.randomUUID()}`;
-}
-
-async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType) {
-  const { platform, type, fetch } = options;
-
+describe('Fetch client', async () => {
   const crypto = await importCrypto();
 
+  const authFetch = createFetch<AuthServiceSchema>({
+    baseURL: 'http://localhost:3000',
+  });
+
   const authInterceptor = httpInterceptor.create<AuthServiceSchema>({
-    type,
-    baseURL: getAuthBaseURL(type, crypto),
+    type: 'local',
+    baseURL: authFetch.defaults.baseURL,
     saveRequests: true,
   });
 
+  const notificationFetch = createFetch<NotificationServiceSchema>({
+    baseURL: 'http://localhost:3001',
+  });
+
   const notificationInterceptor = httpInterceptor.create<NotificationServiceSchema>({
-    type,
-    baseURL: getNotificationsBaseURL(type, crypto),
+    type: 'local',
+    baseURL: notificationFetch.defaults.baseURL,
     saveRequests: true,
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
 
-  const authBaseURL = authInterceptor.baseURL();
-  const notificationBaseURL = notificationInterceptor.baseURL();
-
   beforeAll(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
-        expect(interceptor.platform()).toBe(platform);
-      }),
-    );
+    await Promise.all(interceptors.map((interceptor) => interceptor.start()));
   });
 
-  beforeEach(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.clear();
-      }),
-    );
+  beforeEach(() => {
+    for (const interceptor of interceptors) {
+      interceptor.clear();
+    }
   });
 
-  afterEach(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.checkTimes();
-      }),
-    );
+  afterEach(() => {
+    for (const interceptor of interceptors) {
+      interceptor.clear();
+    }
   });
 
   afterAll(async () => {
-    await Promise.all(
-      interceptors.map(async (interceptor) => {
-        await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
-      }),
-    );
+    await Promise.all(interceptors.map((interceptor) => interceptor.stop()));
   });
 
   function serializeUser(user: User): JSONSerialized<User> {
@@ -110,19 +86,21 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       };
 
       async function createUser(payload: UserCreationRequestBody) {
-        const request = new Request(`${authBaseURL}/users`, {
+        const response = await authFetch('/users', {
           method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            accept: 'application/json',
-          },
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        return fetch(request);
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
       }
 
       it('should support creating users', async () => {
-        const creationHandler = await authInterceptor
+        const creationHandler = authInterceptor
           .post('/users')
           .with({
             headers: { 'content-type': 'application/json' },
@@ -147,9 +125,10 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .times(1);
 
         const response = await createUser(creationPayload);
+        expectTypeOf(response.status).toEqualTypeOf<201>();
         expect(response.status).toBe(201);
 
-        const createdUser = (await response.json()) as User;
+        const createdUser = await response.json();
         expect(createdUser).toEqual<JSONSerialized<User>>({
           id: expect.any(String) as string,
           name: creationPayload.name,
@@ -157,10 +136,10 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           birthDate: creationPayload.birthDate,
         });
 
-        const creationRequests = await creationHandler.requests();
+        const creationRequests = creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
@@ -193,24 +172,26 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'validation_error',
           message: 'Invalid payload',
         };
-        const creationHandler = await authInterceptor
+
+        const creationHandler = authInterceptor
           .post('/users')
-          .with({
-            body: invalidPayload,
-          })
-          .respond({
-            status: 400,
-            body: validationError,
-          })
+          .with({ body: invalidPayload })
+          .respond({ status: 400, body: validationError })
           .times(1);
 
-        const response = await createUser(invalidPayload);
+        const error = await expectToThrow(createUser(invalidPayload), {
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+            authFetch.isResponseError(error, 'POST', '/users'),
+        });
+        const { response } = error;
+
+        expectTypeOf(response.status).toEqualTypeOf<400 | 409 | 500>();
         expect(response.status).toBe(400);
 
-        const creationRequests = await creationHandler.requests();
+        const creationRequests = creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
@@ -239,24 +220,26 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'conflict',
           message: 'User already exists',
         };
-        const creationHandler = await authInterceptor
+
+        const creationHandler = authInterceptor
           .post('/users')
-          .with({
-            body: conflictingPayload,
-          })
-          .respond({
-            status: 409,
-            body: conflictError,
-          })
+          .with({ body: conflictingPayload })
+          .respond({ status: 409, body: conflictError })
           .times(1);
 
-        const response = await createUser(conflictingPayload);
+        const error = await expectToThrow(createUser(conflictingPayload), {
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+            authFetch.isResponseError(error, 'POST', '/users'),
+        });
+        const { response } = error;
+
+        expectTypeOf(response.status).toEqualTypeOf<400 | 409 | 500>();
         expect(response.status).toBe(409);
 
-        const creationRequests = await creationHandler.requests();
+        const creationRequests = creationHandler.requests();
         expect(creationRequests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type'?: string }>>();
+        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
 
         expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
         expect(creationRequests[0].searchParams.size).toBe(0);
@@ -301,37 +284,40 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         },
       ];
 
-      beforeEach(async () => {
-        await authInterceptor.get('/users').respond({
+      beforeEach(() => {
+        authInterceptor.get('/users').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listUsers(filters: UserListSearchParams = {}) {
-        const searchParams = new HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>(filters);
-        const request = new Request(`${authBaseURL}/users?${searchParams.toString()}`, {
+        const response = await authFetch('/users', {
           method: 'GET',
+          searchParams: filters,
         });
-        return fetch(request);
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
       }
 
       it('should list users', async () => {
-        const listHandler = await authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
-          .respond({
-            status: 200,
-            body: users.map(serializeUser),
-          })
+          .respond({ status: 200, body: users.map(serializeUser) })
           .times(1);
 
         const response = await listUsers();
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        const returnedUsers = (await response.json()) as User[];
+        const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
-        const listRequests = await listHandler.requests();
+        const listRequests = listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
@@ -362,24 +348,20 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
       it('should list users filtered by name', async () => {
         const user = users[0];
 
-        const listHandler = await authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
-          .with({
-            searchParams: { name: user.name },
-          })
-          .respond({
-            status: 200,
-            body: [serializeUser(user)],
-          })
+          .with({ searchParams: { name: user.name } })
+          .respond({ status: 200, body: [serializeUser(user)] })
           .times(1);
 
         const response = await listUsers({ name: user.name });
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        const returnedUsers = (await response.json()) as User[];
+        const returnedUsers = await response.json();
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
-        const listRequests = await listHandler.requests();
+        const listRequests = listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
@@ -413,26 +395,22 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           return otherUser.email.localeCompare(user.email);
         });
 
-        const listHandler = await authInterceptor
+        const listHandler = authInterceptor
           .get('/users')
-          .with({
-            searchParams: { orderBy: ['email.desc'] },
-          })
-          .respond({
-            status: 200,
-            body: usersSortedByDescendingEmail.map(serializeUser),
-          })
+          .with({ searchParams: { orderBy: ['email.desc'] } })
+          .respond({ status: 200, body: usersSortedByDescendingEmail.map(serializeUser) })
           .times(1);
 
         const response = await listUsers({
           orderBy: ['email.desc'],
         });
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        const returnedUsers = (await response.json()) as User[];
+        const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
-        const listRequests = await listHandler.requests();
+        const listRequests = listHandler.requests();
         expect(listRequests).toHaveLength(1);
 
         expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
@@ -464,12 +442,17 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
     describe('User get by id', () => {
       async function getUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'GET' });
-        return fetch(request);
+        const response = await authFetch(`/users/${userId}`, { method: 'GET' });
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
       }
 
       it('should support getting users by id', async () => {
-        const getHandler = await authInterceptor
+        const getHandler = authInterceptor
           .get(`/users/${user.id}`)
           .respond({
             status: 200,
@@ -478,14 +461,15 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .times(1);
 
         const response = await getUserById(user.id);
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        const returnedUsers = (await response.json()) as User[];
+        const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(serializeUser(user));
 
-        const getRequests = await getHandler.requests();
+        const getRequests = getHandler.requests();
         expect(getRequests).toHaveLength(1);
-        expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(getRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
         expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -514,23 +498,30 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = await authInterceptor
-          .get('/users/:id')
+
+        const getHandler = authInterceptor
+          .get('/users/:userId')
           .respond({
             status: 404,
             body: notFoundError,
           })
           .times(1);
 
-        const response = await getUserById(user.id);
+        const error = await expectToThrow(getUserById(user.id), {
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'GET', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'GET', '/users/:userId'),
+        });
+        const { response } = error;
+
+        expectTypeOf(response.status).toEqualTypeOf<404 | 500>();
         expect(response.status).toBe(404);
 
-        const getRequests = await getHandler.requests();
+        const getRequests = getHandler.requests();
         expect(getRequests).toHaveLength(1);
-        expect(getRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(getRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
-        expect(getRequests[0].pathParams).toEqual({ id: user.id });
+        expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(getRequests[0].pathParams).toEqual({ userId: user.id });
 
         expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -557,26 +548,28 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
 
     describe('User deletion', () => {
       async function deleteUserById(userId: string) {
-        const request = new Request(`${authBaseURL}/users/${userId}`, { method: 'DELETE' });
-        return fetch(request);
+        const request = new authFetch.Request(`/users/${userId}`, { method: 'DELETE' });
+        const response = await authFetch(request);
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
       }
 
       it('should support deleting users by id', async () => {
-        const deleteHandler = await authInterceptor
-          .delete(`/users/${user.id}`)
-          .respond({
-            status: 204,
-          })
-          .times(1);
+        const deleteHandler = authInterceptor.delete(`/users/${user.id}`).respond({ status: 204 }).times(1);
 
         const response = await deleteUserById(user.id);
+        expectTypeOf(response.status).toEqualTypeOf<204>();
         expect(response.status).toBe(204);
 
-        const deleteRequests = await deleteHandler.requests();
+        const deleteRequests = deleteHandler.requests();
         expect(deleteRequests).toHaveLength(1);
-        expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(deleteRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
+        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(deleteRequests[0].pathParams).toEqual({});
 
         expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
@@ -606,23 +599,26 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = await authInterceptor
-          .delete('/users/:id')
-          .respond({
-            status: 404,
-            body: notFoundError,
-          })
+        const getHandler = authInterceptor
+          .delete('/users/:userId')
+          .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const response = await deleteUserById(user.id);
+        const error = await expectToThrow(deleteUserById(user.id), {
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'DELETE', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
+        });
+        const { response } = error;
+
+        expectTypeOf(response.status).toEqualTypeOf<404 | 500>();
         expect(response.status).toBe(404);
 
-        const deleteRequests = await getHandler.requests();
+        const deleteRequests = getHandler.requests();
         expect(deleteRequests).toHaveLength(1);
-        expect(deleteRequests[0].url).toBe(`${authBaseURL}/users/${user.id}`);
+        expect(deleteRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ id: string }>();
-        expect(deleteRequests[0].pathParams).toEqual({ id: user.id });
+        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(deleteRequests[0].pathParams).toEqual({ userId: user.id });
 
         expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
@@ -656,22 +652,29 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
     };
 
     describe('Notification list', () => {
-      beforeEach(async () => {
-        await notificationInterceptor.get('/notifications/:userId').respond({
+      beforeEach(() => {
+        notificationInterceptor.get('/notifications/:userId').respond({
           status: 200,
           body: [],
         });
       });
 
       async function listNotifications(userId: string) {
-        const request = new Request(`${notificationBaseURL}/notifications/${encodeURIComponent(userId)}`, {
+        const request = new notificationFetch.Request(`/notifications/${encodeURIComponent(userId)}`, {
           method: 'GET',
         });
-        return fetch(request);
+
+        const response = await notificationFetch(request);
+
+        if (!response.ok) {
+          throw response.error;
+        }
+
+        return response;
       }
 
       it('should list notifications', async () => {
-        const listHandler = await notificationInterceptor
+        const listHandler = notificationInterceptor
           .get('/notifications/:userId')
           .respond({
             status: 200,
@@ -680,14 +683,15 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
           .times(0, 1);
 
         let response = await listNotifications(notification.userId);
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        let returnedNotifications = (await response.json()) as Notification[];
+        let returnedNotifications = await response.json();
         expect(returnedNotifications).toEqual([notification]);
 
-        const listRequests = await listHandler.requests();
+        const listRequests = listHandler.requests();
         expect(listRequests).toHaveLength(1);
-        expect(listRequests[0].url).toBe(`${notificationBaseURL}/notifications/${notification.userId}`);
+        expect(listRequests[0].url).toBe(`${notificationFetch.defaults.baseURL}/notifications/${notification.userId}`);
 
         expectTypeOf(listRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
         expect(listRequests[0].pathParams).toEqual({ userId: notification.userId });
@@ -713,19 +717,18 @@ async function declareDefaultClientTests(options: ClientTestOptionsByWorkerType)
         expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
         expect(await listRequests[0].response.raw.json()).toEqual([notification]);
 
-        await listHandler.clear();
+        listHandler.clear();
 
         response = await listNotifications(notification.userId);
+        expectTypeOf(response.status).toEqualTypeOf<200>();
         expect(response.status).toBe(200);
 
-        returnedNotifications = (await response.json()) as Notification[];
+        returnedNotifications = await response.json();
         expect(returnedNotifications).toEqual([]);
 
         expect(listRequests).toHaveLength(1);
-        expect(await listHandler.requests()).toHaveLength(0);
+        expect(listHandler.requests()).toHaveLength(0);
       });
     });
   });
-}
-
-export default declareDefaultClientTests;
+});

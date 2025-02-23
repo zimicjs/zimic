@@ -55,6 +55,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: canary
 
       - name: Test NPM release
         uses: ./.github/actions/zimic-release-npm-test

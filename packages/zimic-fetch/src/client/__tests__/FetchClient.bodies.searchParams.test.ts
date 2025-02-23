@@ -63,9 +63,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       expect(receivedResponseSearchParams.getAll('descriptions')).toEqual(responseSearchParams.getAll('descriptions'));
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
-        FetchResponse<'/users', 'POST', Schema['/users']['POST']>
-      >();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -81,9 +79,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
-        FetchRequest<'/users', 'POST', Schema['/users']['POST']>
-      >();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -133,9 +129,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<
-        FetchResponse<'/users', 'POST', Schema['/users']['POST']>
-      >();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
@@ -151,9 +145,7 @@ describe('FetchClient (node) > Bodies > Search params', () => {
       expectTypeOf(response.error).toEqualTypeOf<null>();
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<
-        FetchRequest<'/users', 'POST', Schema['/users']['POST']>
-      >();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 

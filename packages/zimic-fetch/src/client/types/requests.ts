@@ -40,12 +40,16 @@ type FetchRequestInitWithSearchParams<RequestSchema extends HttpRequestSchema> =
 
 type FetchRequestInitWithBody<RequestSchema extends HttpRequestSchema> = [RequestSchema['body']] extends [never]
   ? { body?: null }
-  : undefined extends RequestSchema['body']
-    ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
-    : RequestSchema['body'] extends string
-      ? { body: RequestSchema['body'] }
-      : RequestSchema['body'] extends JSONValue
-        ? { body: JSONStringified<RequestSchema['body']> }
+  : RequestSchema['body'] extends string
+    ? undefined extends RequestSchema['body']
+      ? { body?: RequestSchema['body'] }
+      : { body: RequestSchema['body'] }
+    : RequestSchema['body'] extends JSONValue
+      ? undefined extends RequestSchema['body']
+        ? { body?: JSONStringified<ReplaceBy<RequestSchema['body'], undefined, null>> }
+        : { body: JSONStringified<RequestSchema['body']> }
+      : undefined extends RequestSchema['body']
+        ? { body?: ReplaceBy<RequestSchema['body'], undefined, null> }
         : { body: RequestSchema['body'] };
 
 type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchRequestInitWithHeaders<RequestSchema> &
@@ -54,9 +58,9 @@ type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchReq
 
 export type FetchRequestInit<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
-> = RequestInit & { baseURL?: string; method: Method } & (Path extends Path
+  Path extends HttpSchemaPath<Schema, Method>,
+> = Omit<RequestInit, 'method' | 'headers' | 'body'> & { baseURL?: string; method: Method } & (Path extends Path
     ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>>
     : never);
 
@@ -83,10 +87,13 @@ export type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = Repla
 >;
 
 export interface FetchRequest<
-  Path extends string = string,
-  Method extends HttpMethod = HttpMethod,
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
-> extends HttpRequest<HttpRequestBodySchema<MethodSchema>, HttpRequestHeadersSchema<MethodSchema>> {
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath.Literal<Schema, Method>,
+> extends HttpRequest<
+    HttpRequestBodySchema<Default<Schema[Path][Method]>>,
+    HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
+  > {
   path: AllowAnyStringInPathParams<Path>;
   method: Method;
 }
@@ -100,32 +107,32 @@ export namespace FetchRequest {
 }
 
 export interface FetchResponsePerStatusCode<
-  Path extends string = string,
-  Method extends HttpMethod = HttpMethod,
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath.Literal<Schema, Method>,
   StatusCode extends HttpStatusCode = HttpStatusCode,
 > extends HttpResponse<
-    HttpResponseBodySchema<MethodSchema, StatusCode>,
+    HttpResponseBodySchema<Default<Schema[Path][Method]>, StatusCode>,
     StatusCode,
-    HttpResponseHeadersSchema<MethodSchema, StatusCode>
+    HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>
   > {
-  request: FetchRequest<Path, Method, MethodSchema>;
+  request: FetchRequest<Schema, Method, Path>;
 
   error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
-    ? FetchResponseError<Path, Method, MethodSchema>
+    ? FetchResponseError<Schema, Method, Path>
     : null;
 }
 
 export type FetchResponse<
-  Path extends string = string,
-  Method extends HttpMethod = HttpMethod,
-  MethodSchema extends HttpMethodSchema = HttpMethodSchema,
+  Schema extends HttpSchema,
+  Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath.Literal<Schema, Method>,
   ErrorOnly extends boolean = false,
-  StatusCode extends FetchResponseStatusCode<MethodSchema, ErrorOnly> = FetchResponseStatusCode<
-    MethodSchema,
+  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly> = FetchResponseStatusCode<
+    Default<Schema[Path][Method]>,
     ErrorOnly
   >,
-> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Path, Method, MethodSchema, StatusCode> : never;
+> = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Schema, Method, Path, StatusCode> : never;
 
 export namespace FetchResponse {
   export interface Loose extends Response {
@@ -136,13 +143,9 @@ export namespace FetchResponse {
 }
 
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
 >(
-  input: FetchInput<Schema, Path, Method>,
-  init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
-) => FetchRequest<
-  LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-  Method,
-  Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
->;
+  input: FetchInput<Schema, Method, Path>,
+  init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+) => FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;

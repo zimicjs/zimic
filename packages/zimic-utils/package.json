@@ -67,6 +67,12 @@
       "require": "./dist/data/fileEquals.js",
       "default": "./dist/data/fileEquals.js"
     },
+    "./error/expectToThrow": {
+      "types": "./error/expectToThrow.d.ts",
+      "import": "./dist/error/expectToThrow.mjs",
+      "require": "./dist/error/expectToThrow.js",
+      "default": "./dist/error/expectToThrow.js"
+    },
     "./fetch/expectFetchError": {
       "types": "./fetch/expectFetchError.d.ts",
       "import": "./dist/fetch/expectFetchError.mjs",

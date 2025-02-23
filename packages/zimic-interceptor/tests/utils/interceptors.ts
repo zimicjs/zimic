@@ -66,9 +66,7 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(options
   return httpInterceptor.create<Schema>({
     saveRequests: true,
     ...options,
-  }) satisfies HttpInterceptor<HttpSchema<Schema>> as
-    | LocalHttpInterceptor<HttpSchema<Schema>>
-    | RemoteHttpInterceptor<HttpSchema<Schema>>;
+  }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 }
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (

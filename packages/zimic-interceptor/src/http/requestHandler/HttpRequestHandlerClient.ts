@@ -230,7 +230,7 @@ class HttpRequestHandlerClient<
 
   private matchesRequestHeadersRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
   ): RestrictionMatchResult<RestrictionDiff<HttpHeaders<never>>> {
     if (restriction.headers === undefined) {
       return { value: true };
@@ -254,7 +254,7 @@ class HttpRequestHandlerClient<
 
   private matchesRequestSearchParamsRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
   ): RestrictionMatchResult<RestrictionDiff<HttpSearchParams<never>>> {
     if (restriction.searchParams === undefined) {
       return { value: true };
@@ -278,7 +278,7 @@ class HttpRequestHandlerClient<
 
   private async matchesRequestBodyRestrictions(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
-    restriction: HttpRequestHandlerStaticRestriction<Schema, Path, Method>,
+    restriction: HttpRequestHandlerStaticRestriction<Schema, Method, Path>,
   ): Promise<RestrictionMatchResult<RestrictionDiff<unknown>>> {
     if (restriction.body === undefined) {
       return { value: true };
