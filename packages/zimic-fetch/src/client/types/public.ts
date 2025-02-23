@@ -1,48 +1,25 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
-import { Default, PossiblePromise } from '@zimic/utils/types';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
 
 export type FetchInput<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
-> =
-  | Path
-  | URL
-  | FetchRequest<
-      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-      Method,
-      Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
-    >;
+  Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
+> = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
 export interface FetchFunction<Schema extends HttpSchema> {
-  <Path extends HttpSchemaPath.NonLiteral<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
     input: Path | URL,
-    init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
-  ): Promise<
-    FetchResponse<
-      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-      Method,
-      Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
-    >
-  >;
+    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+  ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>>;
 
-  <Path extends HttpSchemaPath.NonLiteral<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
-    input: FetchRequest<
-      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-      Method,
-      Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
-    >,
-    init?: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
-  ): Promise<
-    FetchResponse<
-      LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-      Method,
-      Default<Schema[LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>][Method]>
-    >
-  >;
+  <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.NonLiteral<Schema, Method>>(
+    input: FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+    init?: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+  ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>>;
 }
 
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
@@ -58,23 +35,23 @@ export interface FetchClient<Schema extends HttpSchema> {
   onRequest?: FetchOptions<Schema>['onRequest'];
   onResponse?: FetchOptions<Schema>['onResponse'];
 
-  isRequest: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     request: unknown,
     path: Path,
     method: Method,
-  ) => request is FetchRequest<Path, Method, Default<Schema[Path][Method]>>;
+  ) => request is FetchRequest<Schema, Method, Path>;
 
-  isResponse: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isResponse: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     response: unknown,
     path: Path,
     method: Method,
-  ) => response is FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
+  ) => response is FetchResponse<Schema, Method, Path>;
 
-  isResponseError: <Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isResponseError: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     error: unknown,
     path: Path,
     method: Method,
-  ) => error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>>;
+  ) => error is FetchResponseError<Schema, Method, Path>;
 }
 
 export type Fetch<Schema extends HttpSchema> = FetchFunction<Schema> & FetchClient<Schema>;

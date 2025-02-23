@@ -56,7 +56,7 @@ describe('FetchClient (node) > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(Request);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
+      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
 
@@ -111,7 +111,7 @@ describe('FetchClient (node) > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(Request);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
+      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User'));
 
@@ -180,7 +180,7 @@ describe('FetchClient (node) > Search params', () => {
         searchParams,
       });
       expect(request).toBeInstanceOf(Request);
-      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
+      expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(request.url).toBe(joinURL(baseURL, '/users?name=User&usernames=User+1&usernames=User+2&orderBy=name'));
 
@@ -233,7 +233,7 @@ describe('FetchClient (node) > Search params', () => {
         new fetch.Request('/users', { method: 'GET', searchParams: new HttpSearchParams() }),
       ]) {
         expect(request).toBeInstanceOf(Request);
-        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<'/users', 'GET', Schema['/users']['GET']>>();
+        expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
         expect(request.url).toBe(joinURL(baseURL, '/users'));
 

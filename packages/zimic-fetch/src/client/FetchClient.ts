@@ -5,7 +5,6 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
 } from '@zimic/http';
-import { Default } from '@zimic/utils/types';
 import createRegexFromURL from '@zimic/utils/url/createRegExpFromURL';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
@@ -30,10 +29,10 @@ class FetchClient<Schema extends HttpSchema> {
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
     >(
-      input: FetchInput<Schema, Path, Method>,
-      init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+      input: FetchInput<Schema, Method, Path>,
+      init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
     ) => {
-      const request = await this.createFetchRequest<Path, Method>(input, init);
+      const request = await this.createFetchRequest<Method, Path>(input, init);
       const requestClone = request.clone();
 
       const rawResponse = await globalThis.fetch(
@@ -41,8 +40,8 @@ class FetchClient<Schema extends HttpSchema> {
         requestClone as Request,
       );
       const response = await this.createFetchResponse<
-        LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-        Method
+        Method,
+        LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
       >(request, rawResponse);
 
       return response;
@@ -54,11 +53,11 @@ class FetchClient<Schema extends HttpSchema> {
   }
 
   private async createFetchRequest<
-    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
     Method extends HttpSchemaMethod<Schema>,
+    Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
   >(
-    input: FetchInput<Schema, Path, Method>,
-    init: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+    input: FetchInput<Schema, Method, Path>,
+    init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
   ) {
     let request = input instanceof Request ? input : new this.fetch.Request(input, init);
 
@@ -74,7 +73,7 @@ class FetchClient<Schema extends HttpSchema> {
 
         request = isFetchRequest
           ? (requestAfterInterceptor as Request as typeof request)
-          : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Path, Method>, init);
+          : new this.fetch.Request(requestAfterInterceptor as FetchInput<Schema, Method, Path>, init);
       }
     }
 
@@ -82,10 +81,10 @@ class FetchClient<Schema extends HttpSchema> {
   }
 
   private async createFetchResponse<
-    Path extends HttpSchemaPath<Schema, Method>,
     Method extends HttpSchemaMethod<Schema>,
-  >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, rawResponse: Response) {
-    let response = this.defineFetchResponseProperties<Path, Method>(fetchRequest, rawResponse);
+    Path extends HttpSchemaPath.Literal<Schema, Method>,
+  >(fetchRequest: FetchRequest<Schema, Method, Path>, rawResponse: Response) {
+    let response = this.defineFetchResponseProperties<Method, Path>(fetchRequest, rawResponse);
 
     if (this.fetch.onResponse) {
       const responseAfterInterceptor = await this.fetch.onResponse(
@@ -101,17 +100,17 @@ class FetchClient<Schema extends HttpSchema> {
 
       response = isFetchResponse
         ? (responseAfterInterceptor as typeof response)
-        : this.defineFetchResponseProperties<Path, Method>(fetchRequest, responseAfterInterceptor);
+        : this.defineFetchResponseProperties<Method, Path>(fetchRequest, responseAfterInterceptor);
     }
 
     return response;
   }
 
   private defineFetchResponseProperties<
-    Path extends HttpSchemaPath<Schema, Method>,
     Method extends HttpSchemaMethod<Schema>,
-  >(fetchRequest: FetchRequest<Path, Method, Default<Schema[Path][Method]>>, response: Response) {
-    const fetchResponse = response as FetchResponse<Path, Method, Default<Schema[Path][Method]>>;
+    Path extends HttpSchemaPath.Literal<Schema, Method>,
+  >(fetchRequest: FetchRequest<Schema, Method, Path>, response: Response) {
+    const fetchResponse = response as FetchResponse<Schema, Method, Path>;
 
     Object.defineProperty(fetchResponse, 'request', {
       value: fetchRequest satisfies FetchResponse.Loose['request'],
@@ -120,13 +119,15 @@ class FetchClient<Schema extends HttpSchema> {
       configurable: false,
     });
 
-    const responseError = (
-      fetchResponse.ok ? null : new FetchResponseError(fetchRequest, fetchResponse)
-    ) satisfies FetchResponse.Loose['error'];
+    let responseError: FetchResponse.Loose['error'] | undefined;
 
     Object.defineProperty(fetchResponse, 'error', {
-      value: responseError,
-      writable: false,
+      get() {
+        if (responseError === undefined) {
+          responseError = fetchResponse.ok ? null : new FetchResponseError(fetchRequest, fetchResponse);
+        }
+        return responseError;
+      },
       enumerable: true,
       configurable: false,
     });
@@ -136,14 +137,14 @@ class FetchClient<Schema extends HttpSchema> {
 
   private createRequestClass(defaults: FetchRequestInit.Defaults) {
     class Request<
-      Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
       Method extends HttpSchemaMethod<Schema>,
+      Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
     > extends globalThis.Request {
       path: LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
 
       constructor(
-        input: FetchInput<Schema, Path, Method>,
-        rawInit: FetchRequestInit<Schema, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, Method>,
+        input: FetchInput<Schema, Method, Path>,
+        rawInit: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
       ) {
         const init = { ...defaults, ...rawInit };
 
@@ -174,15 +175,15 @@ class FetchClient<Schema extends HttpSchema> {
         >;
       }
 
-      clone(): Request<Path, Method> {
+      clone(): Request<Method, Path> {
         const rawClone = super.clone();
 
-        return new Request<Path, Method>(
-          rawClone as unknown as FetchInput<Schema, Path, Method>,
+        return new Request<Method, Path>(
+          rawClone as unknown as FetchInput<Schema, Method, Path>,
           rawClone as unknown as FetchRequestInit<
             Schema,
-            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>,
-            Method
+            Method,
+            LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>
           >,
         );
       }
@@ -191,11 +192,11 @@ class FetchClient<Schema extends HttpSchema> {
     return Request as FetchRequestConstructor<Schema>;
   }
 
-  isRequest<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isRequest<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     request: unknown,
     path: Path,
     method: Method,
-  ): request is FetchRequest<Path, Method, Default<Schema[Path][Method]>> {
+  ): request is FetchRequest<Schema, Method, Path> {
     return (
       request instanceof Request &&
       request.method === method &&
@@ -205,11 +206,11 @@ class FetchClient<Schema extends HttpSchema> {
     );
   }
 
-  isResponse<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isResponse<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     response: unknown,
     path: Path,
     method: Method,
-  ): response is FetchResponse<Path, Method, Default<Schema[Path][Method]>> {
+  ): response is FetchResponse<Schema, Method, Path> {
     return (
       response instanceof Response &&
       'request' in response &&
@@ -218,11 +219,11 @@ class FetchClient<Schema extends HttpSchema> {
     );
   }
 
-  isResponseError<Path extends HttpSchemaPath<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
+  isResponseError<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     error: unknown,
     path: Path,
     method: Method,
-  ): error is FetchResponseError<Path, Method, Default<Schema[Path][Method]>> {
+  ): error is FetchResponseError<Schema, Method, Path> {
     return (
       error instanceof FetchResponseError &&
       error.request.method === method &&
