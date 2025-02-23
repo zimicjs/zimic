@@ -93,7 +93,7 @@
     "@vitest/browser": "^3.0.6",
     "@vitest/coverage-istanbul": "^3.0.6",
     "@zimic/eslint-config-node": "workspace:*",
-    "@zimic/interceptor": "0.14.0-canary.14",
+    "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",

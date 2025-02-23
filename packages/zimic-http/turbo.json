@@ -3,6 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
+      "dependsOn": [],
       "inputs": [
         "{src,scripts}/**/*.{ts,json}",
         "{package,tsconfig}.json",
