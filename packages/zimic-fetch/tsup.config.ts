@@ -16,11 +16,10 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   name: `neutral-${format}`,
   platform: 'neutral',
   format: [format],
-  dts: format === 'cjs',
+  dts: format === 'cjs' ? { resolve: true } : false,
   entry: {
     index: 'src/index.ts',
   },
-  external: ['buffer'],
 }));
 
 export default defineConfig([...neutralConfig]);

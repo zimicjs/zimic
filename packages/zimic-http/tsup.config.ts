@@ -21,7 +21,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   name: `neutral-${format}`,
   platform: 'neutral',
   format: [format],
-  dts: format === 'cjs',
+  dts: format === 'cjs' ? { resolve: true } : false,
   entry: {
     index: 'src/index.ts',
   },
@@ -43,7 +43,7 @@ const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
     name: `node-${format}`,
     platform: 'node',
     format: [format],
-    dts: format === 'cjs' ? { entry: dtsEntry } : false,
+    dts: format === 'cjs' ? { entry: dtsEntry, resolve: true } : false,
     entry,
   };
 });
