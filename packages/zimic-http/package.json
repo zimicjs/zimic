@@ -82,7 +82,6 @@
     "prepublishOnly": "cp ../../README.md ../../LICENSE.md . && pnpm prepublish:patch-relative-paths README.md"
   },
   "dependencies": {
-    "@zimic/utils": "workspace:*",
     "chalk": "4.1.2",
     "openapi-typescript": "7.6.1",
     "yargs": "17.7.2"
@@ -97,6 +96,7 @@
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.21.0",
     "execa": "9.5.2",

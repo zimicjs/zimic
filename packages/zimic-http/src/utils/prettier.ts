@@ -1,4 +1,4 @@
-import prettier, { Options } from 'prettier'; // eslint-disable-line import/no-extraneous-dependencies
+import prettier, { Options } from 'prettier';
 
 export async function resolvedPrettierConfig(fileName: string): Promise<Options> {
   const config = await prettier.resolveConfig(fileName);

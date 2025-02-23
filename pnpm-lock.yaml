@@ -662,9 +662,6 @@ importers:
       '@zimic/http':
         specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
-      '@zimic/utils':
-        specifier: workspace:*
-        version: link:../zimic-utils
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -687,6 +684,9 @@ importers:
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -708,9 +708,6 @@ importers:
 
   packages/zimic-http:
     dependencies:
-      '@zimic/utils':
-        specifier: workspace:*
-        version: link:../zimic-utils
       chalk:
         specifier: 4.1.2
         version: 4.1.2
@@ -748,6 +745,9 @@ importers:
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0
@@ -787,9 +787,6 @@ importers:
       '@zimic/http':
         specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
-      '@zimic/utils':
-        specifier: workspace:*
-        version: link:../zimic-utils
       chalk:
         specifier: 4.1.2
         version: 4.1.2
@@ -837,6 +834,9 @@ importers:
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
       dotenv-cli:
         specifier: ^8.0.0
         version: 8.0.0

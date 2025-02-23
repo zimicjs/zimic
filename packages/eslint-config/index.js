@@ -167,22 +167,7 @@ export default [
       'import/no-absolute-path': 'error',
       'import/no-duplicates': 'error',
       'import/no-self-import': 'error',
-      'import/no-extraneous-dependencies': [
-        'error',
-        {
-          devDependencies: [
-            '**/tests/**/*.ts*',
-            '**/__tests__/**/*.ts*',
-            '**/*.test.ts*',
-            '**/scripts/**/*.ts*',
-            '**/*.config.ts',
-            '**/*.workspace.ts',
-            '**/*.config.mts',
-            '**/*.config.*.mts',
-            '**/*.workspace.mts',
-          ],
-        },
-      ],
+      'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
       'import-helpers/order-imports': [
         'warn',
         {
