@@ -93,6 +93,7 @@
     "@vitest/browser": "^3.0.6",
     "@vitest/coverage-istanbul": "^3.0.6",
     "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
@@ -104,8 +105,7 @@
     "tsup": "^8.3.6",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.6",
-    "zimic": "^0.13.2"
+    "vitest": "^3.0.6"
   },
   "peerDependencies": {
     "typescript": ">=4.8.0"

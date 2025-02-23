@@ -41,10 +41,16 @@ runs:
     - name: Change package versions for testing
       shell: bash
       run: |
+        sed -i \
+          's/link-workspace-packages = true/link-workspace-packages = false/' \
+          .npmrc
+
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
+        internalPackageNames=(zimic @zimic/http @zimic/fetch @zimic/interceptor)
+
         for packageFile in apps/*/package.json examples/package.json examples/*/package.json; do
-          for packageName in zimic @zimic/http @zimic/fetch; do
+          for packageName in "${internalPackageNames[@]}"; do
             sed -i -E \
               "s;\"$packageName\": \"(latest|workspace:.*)\";\"$packageName\": \"workspace:*\";" \
               "$packageFile"
@@ -56,7 +62,7 @@ runs:
         done
 
         for packageFile in packages/*/package.json; do
-          for packageName in zimic @zimic/http @zimic/fetch; do
+          for packageName in "${internalPackageNames[@]}"; do
             sed -i -E \
               "s;\"$packageName\": \"(latest|workspace:.*|.+-canary\..+)\";\"$packageName\": \"workspace:*\";" \
               "$packageFile"
