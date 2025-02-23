@@ -23,6 +23,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     'data/blobEquals': 'src/data/blobEquals.ts',
     'data/blobContains': 'src/data/blobContains.ts',
     'data/fileEquals': 'src/data/fileEquals.ts',
+    'error/expectToThrow': 'src/error/expectToThrow.ts',
     'fetch/expectFetchError': 'src/fetch/expectFetchError.ts',
     'import/createCachedDynamicImport': 'src/import/createCachedDynamicImport.ts',
     'time/waitFor': 'src/time/waitFor.ts',
