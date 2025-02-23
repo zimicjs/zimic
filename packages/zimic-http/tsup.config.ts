@@ -10,6 +10,7 @@ const sharedConfig: Options = {
   minify: false,
   clean: true,
   keepNames: true,
+  noExternal: ['@zimic/utils'],
   env: {
     TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/index' : '@zimic/http',
   },
