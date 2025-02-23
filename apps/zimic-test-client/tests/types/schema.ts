@@ -11,10 +11,6 @@ interface UserWithPassword extends User {
   password: string;
 }
 
-interface UserCreationRequestHeaders {
-  'content-type'?: string;
-}
-
 export type UserCreationRequestBody = Omit<JSONSerialized<UserWithPassword>, 'id'>;
 
 type LoginResult = JSONValue<{
@@ -47,6 +43,11 @@ export interface ConflictError extends RequestError {
   message: string;
 }
 
+export interface InternalServerError extends RequestError {
+  code: 'internal_server_error';
+  message: string;
+}
+
 export interface UserListSearchParams {
   name?: string;
   orderBy?: `${'name' | 'email'}.${'asc' | 'desc'}`[];
@@ -56,50 +57,54 @@ type UserPaths = HttpSchema<{
   '/users': {
     POST: {
       request: {
-        headers: UserCreationRequestHeaders;
+        headers: { 'content-type': 'application/json' };
         body: UserCreationRequestBody;
       };
       response: {
-        201: {
-          headers: { 'x-user-id': User['id'] };
-          body: User;
-        };
+        201: { headers: { 'x-user-id': User['id'] }; body: User };
         400: { body: ValidationError };
         409: { body: ConflictError };
+        500: { body: InternalServerError };
       };
     };
     GET: {
-      request: {
-        searchParams: UserListSearchParams;
-      };
+      request: { searchParams: UserListSearchParams };
       response: {
         200: { body: User[] };
+        400: { body: ValidationError };
+        500: { body: InternalServerError };
       };
     };
   };
 }>;
 
 type UserByIdPaths = HttpSchema<{
-  '/users/:id': {
+  '/users/:userId': {
     GET: {
       response: {
         200: { body: User };
         404: { body: NotFoundError };
+        500: { body: InternalServerError };
       };
     };
+
     PATCH: {
       request: {
+        headers: { 'content-type': 'application/json' };
         body: Partial<User>;
       };
       response: {
         200: { body: User };
         404: { body: NotFoundError };
+        500: { body: InternalServerError };
       };
     };
+
     DELETE: {
       response: {
         204: {};
         404: { body: NotFoundError };
+        500: { body: InternalServerError };
       };
     };
   };
@@ -109,15 +114,14 @@ type SessionPaths = HttpSchema<{
   '/session/login': {
     POST: {
       request: {
-        body: {
-          email: string;
-          password: string;
-        };
+        headers: { 'content-type': 'application/json' };
+        body: { email: string; password: string };
       };
       response: {
         201: { body: LoginResult };
         400: { body: ValidationError };
         401: { body: UnauthorizedError };
+        500: { body: InternalServerError };
       };
     };
   };
@@ -125,11 +129,13 @@ type SessionPaths = HttpSchema<{
   '/session/refresh': {
     POST: {
       request: {
+        headers: { 'content-type': 'application/json' };
         body: { refreshToken: string };
       };
       response: {
         201: { body: LoginResult };
         401: { body: UnauthorizedError };
+        500: { body: InternalServerError };
       };
     };
   };
@@ -139,6 +145,7 @@ type SessionPaths = HttpSchema<{
       response: {
         204: { body: undefined };
         401: { body: UnauthorizedError };
+        500: { body: InternalServerError };
       };
     };
   };
@@ -157,6 +164,8 @@ export type NotificationServiceSchema = HttpSchema<{
     GET: {
       response: {
         200: { body: Notification[] };
+        404: { body: NotFoundError };
+        500: { body: InternalServerError };
       };
     };
   };

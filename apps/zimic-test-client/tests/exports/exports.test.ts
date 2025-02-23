@@ -176,11 +176,11 @@ describe('Exports', () => {
     expectTypeOf<FetchClientOptions<never>>().not.toBeAny();
     expectTypeOf<FetchFunction<never>>().not.toBeAny();
     expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchRequest<never>>().not.toBeAny();
+    expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
-    expectTypeOf<FetchResponse<never>>().not.toBeAny();
-    expectTypeOf<FetchResponseError<never>>().not.toBeAny();
+    expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
     expect(typeof FetchResponseError).toBe('function');
 
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
