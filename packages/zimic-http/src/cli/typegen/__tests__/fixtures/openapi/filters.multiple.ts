@@ -14,12 +14,18 @@ export type MyServiceSchema = HttpSchema<{
   users: {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           name: string;
         };
       };
       response: {
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['User'];
         };
       };
@@ -29,12 +35,18 @@ export type MyServiceSchema = HttpSchema<{
     GET: {
       response: {
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['User'];
         };
       };
     };
     PUT: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'];
       };
       response: {
@@ -46,6 +58,9 @@ export type MyServiceSchema = HttpSchema<{
     GET: {
       response: {
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['Users'];
         };
       };
@@ -98,6 +113,9 @@ export interface MyServiceComponents {
   };
   responses: {
     error: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
       };
@@ -108,6 +126,9 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'multipart/form-data';
+      }>;
       body: HttpFormData<
         HttpFormDataSerialized<{
           name: string;

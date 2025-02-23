@@ -134,6 +134,9 @@ export interface MyServiceComponents {
   };
   responses: {
     userCreated: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: MyServiceComponents['schemas']['User'];
     }>;
     userCreatedMultipleContents: HttpSchema.Response<
@@ -157,30 +160,45 @@ export interface MyServiceComponents {
         }
     >;
     notFoundError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
         code?: 'NOT_FOUND';
       };
     }>;
     validationError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
         code?: 'VALIDATION_ERROR';
       };
     }>;
     clientError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
         code?: 'CLIENT_ERROR';
       };
     }>;
     serverError: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
         code?: 'SERVER_ERROR';
       };
     }>;
     error: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
       };

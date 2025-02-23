@@ -75,6 +75,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-schema-component-in-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['CreateUserBody'];
       };
     };
@@ -124,6 +127,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-optional-schema-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body?: MyServiceComponents['schemas']['CreateUserBody'];
       };
     };
@@ -131,6 +137,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-optional-by-default-schema-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body?: MyServiceComponents['schemas']['CreateUserBody'];
       };
     };
@@ -138,6 +147,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-literal-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           /** The email of the user */
           email: string;
@@ -212,6 +224,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-optional-literal-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body?: {
           /** The email of the user */
           email: string;
@@ -224,6 +239,9 @@ export type MyServiceSchema = HttpSchema<{
   '/users-with-optional-by-default-literal-request-body': {
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body?: {
           /** The email of the user */
           email: string;
@@ -249,6 +267,9 @@ export interface MyServiceComponents {
   };
   requests: {
     createUser: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body?: {
         /** The name of the user */
         name?: string;
@@ -259,6 +280,9 @@ export interface MyServiceComponents {
       };
     }>;
     requiredCreateUser: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         /** The name of the user */
         name?: string;
@@ -293,6 +317,9 @@ export interface MyServiceComponents {
         }
     >;
     optionalCreateUser: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body?: {
         /** The name of the user */
         name?: string;

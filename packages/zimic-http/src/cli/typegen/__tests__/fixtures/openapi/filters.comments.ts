@@ -21,12 +21,18 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         /** Success */
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['Users'];
         };
       };
     };
     POST: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           name: string;
         };
@@ -34,6 +40,9 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         /** Success */
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['User'];
         };
       };
@@ -44,12 +53,18 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         /** Success */
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['User'];
         };
       };
     };
     PUT: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['User'];
       };
       response: {
@@ -59,6 +74,9 @@ export type MyServiceSchema = HttpSchema<{
     };
     PATCH: {
       request: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: {
           name?: string;
         };
@@ -74,6 +92,9 @@ export type MyServiceSchema = HttpSchema<{
       response: {
         /** Success */
         200: {
+          headers: HttpHeadersSerialized<{
+            'content-type': 'application/json';
+          }>;
           body: MyServiceComponents['schemas']['Users'];
         };
       };
@@ -136,6 +157,9 @@ export interface MyServiceComponents {
   responses: {
     /** Error */
     error: HttpSchema.Response<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'application/json';
+      }>;
       body: {
         message: string;
       };
@@ -147,6 +171,9 @@ export interface MyServiceComponents {
   };
   requests: {
     fileUpload: HttpSchema.Request<{
+      headers: HttpHeadersSerialized<{
+        'content-type': 'multipart/form-data';
+      }>;
       body: HttpFormData<
         HttpFormDataSerialized<{
           /** The name of the file */
@@ -173,6 +200,9 @@ export interface MyServiceOperations {
     response: {
       /** Success */
       200: {
+        headers: HttpHeadersSerialized<{
+          'content-type': 'application/json';
+        }>;
         body: MyServiceComponents['schemas']['Notifications'];
       };
     };
