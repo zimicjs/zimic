@@ -63,11 +63,11 @@ describe('FetchClient (node) > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(fetchSelf).toEqualTypeOf(fetch);
 
-        expect(fetchSelf.isRequest(request, '/users', 'POST')).toBe(true);
+        expect(fetchSelf.isRequest(request, 'POST', '/users')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (fetchSelf.isRequest(request, '/users', 'POST')) {
+        if (fetchSelf.isRequest(request, 'POST', '/users')) {
           expect(request).toBeInstanceOf(Request);
           expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
 
@@ -159,11 +159,11 @@ describe('FetchClient (node) > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(fetchSelf).toEqualTypeOf(fetch);
 
-        expect(fetchSelf.isRequest(request, '/users/:id', 'POST')).toBe(true);
+        expect(fetchSelf.isRequest(request, 'POST', '/users/:id')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (fetchSelf.isRequest(request, '/users/:id', 'POST')) {
+        if (fetchSelf.isRequest(request, 'POST', '/users/:id')) {
           expect(request).toBeInstanceOf(Request);
           expectTypeOf(request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
 
@@ -310,7 +310,7 @@ describe('FetchClient (node) > Listeners', () => {
         .times(1);
 
       const onRequest = vi.fn<Default<Fetch<Schema>['onRequest']>>((request, { Request, isRequest }) => {
-        if (isRequest(request, '/users', 'POST')) {
+        if (isRequest(request, 'POST', '/users')) {
           const headers = new HttpHeaders<HeadersSchema>(request.headers);
           headers.set('accept-language', 'en');
 
@@ -538,11 +538,11 @@ describe('FetchClient (node) > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(fetchSelf).toEqualTypeOf(fetch);
 
-        expect(fetchSelf.isResponse(response, '/users', 'POST')).toBe(true);
+        expect(fetchSelf.isResponse(response, 'POST', '/users')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (fetchSelf.isResponse(response, '/users', 'POST')) {
+        if (fetchSelf.isResponse(response, 'POST', '/users')) {
           expect(response).toBeInstanceOf(Response);
           expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
         } else {
@@ -626,11 +626,11 @@ describe('FetchClient (node) > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(fetchSelf).toEqualTypeOf(fetch);
 
-        expect(fetchSelf.isResponse(response, '/users/:id', 'POST')).toBe(true);
+        expect(fetchSelf.isResponse(response, 'POST', '/users/:id')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (fetchSelf.isResponse(response, '/users/:id', 'POST')) {
+        if (fetchSelf.isResponse(response, 'POST', '/users/:id')) {
           expect(response).toBeInstanceOf(Response);
           expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users/:id'>>();
         } else {

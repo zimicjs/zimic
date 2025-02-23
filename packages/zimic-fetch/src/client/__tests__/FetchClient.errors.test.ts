@@ -261,13 +261,13 @@ describe('FetchClient (node) > Errors', () => {
 
       const error = response.error as unknown;
 
-      expect(fetch.isResponseError(error, '/users', 'GET')).toBe(true);
-      expect(fetch.isResponseError(error, '/users', 'POST')).toBe(false);
-      expect(fetch.isResponseError(error, '/users/:id', 'GET')).toBe(false);
+      expect(fetch.isResponseError(error, 'GET', '/users')).toBe(true);
+      expect(fetch.isResponseError(error, 'POST', '/users')).toBe(false);
+      expect(fetch.isResponseError(error, 'GET', '/users/:id')).toBe(false);
 
       /* istanbul ignore else -- @preserve
        * This if is necessary to narrow the error type to a specific error. */
-      if (fetch.isResponseError(error, '/users', 'GET')) {
+      if (fetch.isResponseError(error, 'GET', '/users')) {
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
 
         expect(error.request).toBe(response.request);
@@ -341,13 +341,13 @@ describe('FetchClient (node) > Errors', () => {
 
       const error = response.error as unknown;
 
-      expect(fetch.isResponseError(error, '/users', 'GET')).toBe(false);
-      expect(fetch.isResponseError(error, '/users', 'POST')).toBe(false);
-      expect(fetch.isResponseError(error, '/users/:id', 'GET')).toBe(true);
+      expect(fetch.isResponseError(error, 'GET', '/users')).toBe(false);
+      expect(fetch.isResponseError(error, 'POST', '/users')).toBe(false);
+      expect(fetch.isResponseError(error, 'GET', '/users/:id')).toBe(true);
 
       /* istanbul ignore else -- @preserve
        * This if is necessary to narrow the error type to a specific error. */
-      if (fetch.isResponseError(error, '/users/:id', 'GET')) {
+      if (fetch.isResponseError(error, 'GET', '/users/:id')) {
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users/:id'>>();
 
         expect(error.request).toBe(response.request);

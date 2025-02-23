@@ -37,20 +37,20 @@ export interface FetchClient<Schema extends HttpSchema> {
 
   isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     request: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ) => request is FetchRequest<Schema, Method, Path>;
 
   isResponse: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     response: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ) => response is FetchResponse<Schema, Method, Path>;
 
   isResponseError: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     error: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ) => error is FetchResponseError<Schema, Method, Path>;
 }
 

@@ -194,8 +194,8 @@ class FetchClient<Schema extends HttpSchema> {
 
   isRequest<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     request: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ): request is FetchRequest<Schema, Method, Path> {
     return (
       request instanceof Request &&
@@ -208,21 +208,21 @@ class FetchClient<Schema extends HttpSchema> {
 
   isResponse<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     response: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ): response is FetchResponse<Schema, Method, Path> {
     return (
       response instanceof Response &&
       'request' in response &&
       'error' in response &&
-      this.isRequest(response.request, path, method)
+      this.isRequest(response.request, method, path)
     );
   }
 
   isResponseError<Path extends HttpSchemaPath.Literal<Schema, Method>, Method extends HttpSchemaMethod<Schema>>(
     error: unknown,
-    path: Path,
     method: Method,
+    path: Path,
   ): error is FetchResponseError<Schema, Method, Path> {
     return (
       error instanceof FetchResponseError &&
