@@ -41,6 +41,10 @@ runs:
     - name: Change package versions for testing
       shell: bash
       run: |
+        sed -i \
+          's/link-workspace-packages = true/link-workspace-packages = false/' \
+          .npmrc
+
         echo "Using ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }} for testing..."
 
         internalPackageNames=(zimic @zimic/http @zimic/fetch @zimic/interceptor)
