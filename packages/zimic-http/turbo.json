@@ -17,7 +17,6 @@
     },
 
     "test:turbo": {
-      "dependsOn": ["^build"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
