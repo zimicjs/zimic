@@ -25,6 +25,7 @@
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
+    "@zimic/utils": "workspace:*",
     "axios": "^1.7.9",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",

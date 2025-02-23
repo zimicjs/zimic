@@ -1,6 +1,7 @@
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+
 import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
-import { createCachedDynamicImport } from '@tests/utils/imports';
 
 export const importNodeFetch = createCachedDynamicImport(() => import('node-fetch'));
 
