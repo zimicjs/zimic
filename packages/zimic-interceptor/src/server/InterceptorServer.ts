@@ -1,5 +1,7 @@
 import { normalizeNodeRequest, sendNodeResponse } from '@whatwg-node/server';
 import { HttpRequest, HttpMethod } from '@zimic/http';
+import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import { createServer, Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { WebSocket as Socket } from 'isomorphic-ws';
 
@@ -7,7 +9,6 @@ import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorke
 import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
-import { createRegexFromURL, createURL } from '@/utils/urls';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
@@ -175,13 +176,14 @@ class InterceptorServer implements PublicInterceptorServer {
   private registerHttpHandler({ id, url, method }: HttpHandlerCommit, socket: Socket) {
     const handlerGroups = this.httpHandlerGroups[method];
 
-    const fullURL = createURL(url.full, { excludeNonPathParams: true });
+    const fullURL = new URL(url.full);
+    excludeURLParams(fullURL);
 
     handlerGroups.push({
       id,
       url: {
         base: url.base,
-        fullRegex: createRegexFromURL(fullURL.toString()),
+        fullRegex: createRegExpFromURL(fullURL.toString()),
       },
       socket,
     });
@@ -279,7 +281,7 @@ class InterceptorServer implements PublicInterceptorServer {
     const webSocketServer = this.webSocketServer();
     const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
 
-    const requestURL = createURL(request.url, { excludeNonPathParams: true }).toString();
+    const requestURL = excludeURLParams(new URL(request.url)).toString();
 
     let matchedSomeInterceptor = false;
 

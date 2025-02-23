@@ -1,4 +1,4 @@
-import { PossiblePromise } from '@/types/utils';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import { UnhandledHttpInterceptorRequest } from './requests';
 

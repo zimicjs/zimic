@@ -1,10 +1,9 @@
 import { HttpHeaders, HttpSearchParams, HttpRequest, HttpRequestBodySchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import { expect, expectTypeOf } from 'vitest';
 
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
-import { PossiblePromise } from '@/types/utils';
 import { formatValueToLog } from '@/utils/console';
-import { ExtendedURL } from '@/utils/urls';
 
 import { HttpInterceptorOptions, HttpInterceptorPlatform, HttpInterceptorType } from '../../types/options';
 import { UnhandledHttpInterceptorRequest, UnhandledHttpInterceptorRequestMethodSchema } from '../../types/requests';
@@ -13,13 +12,13 @@ export interface SharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
   stopServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<URL>;
 }
 
 export interface RuntimeSharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
   type: HttpInterceptorType;
-  getBaseURL: () => ExtendedURL;
+  getBaseURL: () => URL;
   getInterceptorOptions: () => HttpInterceptorOptions;
 }
 
@@ -37,7 +36,7 @@ export async function verifyUnhandledRequestMessage(
   const body: unknown = request.body;
 
   const firstLineRegex = new RegExp(
-    `^[^\\s]*\\[zimic\\][^\\s]* ${type === 'bypass' ? 'Warning:' : 'Error:'} ` +
+    `^[^\\s]*\\[@zimic/interceptor\\][^\\s]* ${type === 'bypass' ? 'Warning:' : 'Error:'} ` +
       `Request was not handled and was [^\\s]*${type === 'bypass' ? 'bypassed' : 'rejected'}[^\\s]*\n`,
   );
   expect(message).toMatch(firstLineRegex);

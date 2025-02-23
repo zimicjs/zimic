@@ -1,8 +1,7 @@
+import { Override } from '@zimic/utils/types';
 import filesystem from 'fs/promises';
 import type mswPackage from 'msw/package.json';
 import path from 'path';
-
-import { Override } from '@/types/utils';
 
 export type MSWPackage = typeof mswPackage;
 export type MSWExports = MSWPackage['exports'];

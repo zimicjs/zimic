@@ -1,8 +1,8 @@
+import isNonEmpty from '@zimic/utils/data/isNonEmpty';
+import { Range } from '@zimic/utils/types';
 import chalk from 'chalk';
 
-import { Range } from '@/types/utils';
 import { stringifyValueToLog } from '@/utils/console';
-import { isNonEmpty } from '@/utils/data';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
 import TimesDeclarationPointer from './TimesDeclarationPointer';

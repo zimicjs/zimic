@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 
 import NotStartedHttpInterceptorError from '@/http/interceptor/errors/NotStartedHttpInterceptorError';
-import { createURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -33,7 +32,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     workerOptions =
       defaultWorkerOptions.type === 'local'
         ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: createURL(baseURL.origin) };
+        : { ...defaultWorkerOptions, serverURL: new URL(baseURL.origin) };
   });
 
   afterAll(async () => {

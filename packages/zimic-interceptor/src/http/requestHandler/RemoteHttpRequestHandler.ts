@@ -1,6 +1,5 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath, HttpStatusCode } from '@zimic/http';
-
-import { Default, PossiblePromise } from '@/types/utils';
+import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import HttpRequestHandlerClient from './HttpRequestHandlerClient';

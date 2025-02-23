@@ -11,15 +11,14 @@ import {
   HttpFormData,
   HttpSearchParams,
 } from '@zimic/http';
+import isDefined from '@zimic/utils/data/isDefined';
+import { Default, PossiblePromise } from '@zimic/utils/types';
 import chalk from 'chalk';
 
-import { Default, PossiblePromise } from '@/types/utils';
 import { removeArrayElement } from '@/utils/arrays';
 import { formatValueToLog, logWithPrefix } from '@/utils/console';
-import { isDefined } from '@/utils/data';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
-import { createURL } from '@/utils/urls';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
@@ -195,7 +194,7 @@ abstract class HttpInterceptorWorker {
 
   private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
-      const baseURL = interceptor.baseURL().toString();
+      const baseURL = interceptor.baseURL();
       return request.url.startsWith(baseURL);
     });
 
@@ -284,7 +283,7 @@ abstract class HttpInterceptorWorker {
 
     const pathParams = options.urlRegex ? this.parseRawPathParams<Path>(options.urlRegex, rawRequest) : {};
 
-    const parsedURL = createURL(rawRequest.url);
+    const parsedURL = new URL(rawRequest.url);
     type SearchParamsSchema = Default<Default<MethodSchema['request']>['searchParams']>;
     const searchParams = new HttpSearchParams<SearchParamsSchema>(parsedURL.searchParams);
 

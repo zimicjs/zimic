@@ -1,7 +1,6 @@
 import { JSONSerialized, JSONValue } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import type { WebSocket as ClientSocket } from 'isomorphic-ws';
-
-import { PossiblePromise } from '@/types/utils';
 
 export namespace WebSocket {
   export interface EventMessage<Data extends JSONValue.Loose = JSONValue> {

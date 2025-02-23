@@ -1,4 +1,5 @@
 import { HttpFormData, HttpSearchParams } from '@zimic/http';
+import joinURL from '@zimic/utils/url/joinURL';
 import { expect, it, beforeAll, afterAll, describe } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
@@ -8,7 +9,6 @@ import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import { importFile, isGlobalFileAvailable } from '@/utils/files';
-import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';

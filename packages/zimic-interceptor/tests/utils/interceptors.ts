@@ -1,4 +1,6 @@
 import { HttpSchema, HttpMethod } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
+import joinURL from '@zimic/utils/url/joinURL';
 import { expect } from 'vitest';
 
 import { httpInterceptor } from '@/http';
@@ -21,26 +23,24 @@ import {
   RemoteHttpInterceptorWorkerOptions,
 } from '@/http/interceptorWorker/types/options';
 import InterceptorServer from '@/server/InterceptorServer';
-import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
-import { createURL, ExtendedURL, joinURL } from '@/utils/urls';
 import { GLOBAL_INTERCEPTOR_SERVER_HOSTNAME, GLOBAL_INTERCEPTOR_SERVER_PORT } from '@tests/setup/global/browser';
 import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
 export async function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
-    return createURL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
+    return new URL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
   }
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
-  return createURL(baseURL);
+  return new URL(baseURL);
 }
 
 export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
-    return createURL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
+    return new URL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
   }
 
   const hostname = server.hostname();
@@ -50,7 +50,7 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
   const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
-  return createURL(baseURL);
+  return new URL(baseURL);
 }
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
@@ -143,11 +143,7 @@ export async function usingHttpInterceptorWorker(
   }
 }
 
-export function getSingletonWorkerByType(
-  store: HttpInterceptorStore,
-  type: HttpInterceptorType,
-  serverURL: ExtendedURL,
-) {
+export function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: URL) {
   return type === 'local' ? store.localWorker() : store.remoteWorker(serverURL);
 }
 

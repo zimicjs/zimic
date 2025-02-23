@@ -9,9 +9,10 @@ import {
   HttpRequestSearchParamsSchema,
   HttpRequestHeadersSchema,
 } from '@zimic/http';
+import blobContains from '@zimic/utils/data/blobContains';
+import blobEquals from '@zimic/utils/data/blobEquals';
+import { Default, Range } from '@zimic/utils/types';
 
-import { Default, Range } from '@/types/utils';
-import { blobContains, blobEquals } from '@/utils/data';
 import { jsonContains, jsonEquals } from '@/utils/json';
 
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';

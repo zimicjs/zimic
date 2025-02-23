@@ -11,6 +11,7 @@ const sharedConfig: Options = {
   env: {
     SERVER_ACCESS_CONTROL_MAX_AGE: '',
   },
+  noExternal: ['@zimic/utils'],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({

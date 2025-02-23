@@ -1,6 +1,5 @@
+import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 import ClientSocket from 'isomorphic-ws';
-
-import { createURL } from '@/utils/urls';
 
 import { WebSocket } from './types';
 import WebSocketHandler from './WebSocketHandler';
@@ -24,9 +23,8 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
       messageTimeout: options.messageTimeout,
     });
 
-    this.url = createURL(options.url, {
-      protocols: SUPPORTED_WEB_SOCKET_PROTOCOLS,
-    });
+    this.url = new URL(options.url);
+    validateURLProtocol(this.url, SUPPORTED_WEB_SOCKET_PROTOCOLS);
   }
 
   isRunning() {

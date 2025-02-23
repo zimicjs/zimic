@@ -1,3 +1,5 @@
+import waitFor from '@zimic/utils/time/waitFor';
+import waitForNot from '@zimic/utils/time/waitForNot';
 import { createServer } from 'http';
 import ClientSocket from 'isomorphic-ws';
 import { AddressInfo } from 'net';
@@ -12,7 +14,6 @@ import {
   WebSocketOpenTimeoutError,
 } from '@/utils/webSocket';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { waitFor, waitForNot } from '@tests/utils/time';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';

@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe } from 'vitest';
 
-import { ExtendedURL } from '@/utils/urls';
 import { getNodeBaseURL } from '@tests/utils/interceptors';
 import { createInternalInterceptorServer } from '@tests/utils/interceptorServers';
 
@@ -10,7 +9,7 @@ import { declareTimesHttpInterceptorTests } from './shared/times';
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Times', async ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  let baseURL: ExtendedURL;
+  let baseURL: URL;
 
   beforeAll(async () => {
     if (type === 'remote') {
