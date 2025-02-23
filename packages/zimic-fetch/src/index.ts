@@ -1,10 +1,6 @@
-export type {
-  Fetch,
-  FetchFunction,
-  FetchClient,
-  FetchOptions as FetchClientOptions,
-  FetchInput,
-} from './client/types/public';
+export type { JSONStringified } from './client/types/json';
+
+export type { Fetch, InferFetchSchema, FetchOptions, FetchInput } from './client/types/public';
 
 export type { FetchRequestInit, FetchRequest, FetchRequestConstructor, FetchResponse } from './client/types/requests';
 
