@@ -68,6 +68,9 @@ importers:
       '@zimic/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../../packages/zimic-utils
       axios:
         specifier: ^1.7.9
         version: 1.7.9
@@ -659,6 +662,9 @@ importers:
       '@zimic/http':
         specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
     devDependencies:
       '@types/node':
         specifier: ^22.13.5
@@ -702,6 +708,9 @@ importers:
 
   packages/zimic-http:
     dependencies:
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
       chalk:
         specifier: 4.1.2
         version: 4.1.2
@@ -778,6 +787,9 @@ importers:
       '@zimic/http':
         specifier: ^0.1.0 || ^0.1.0-canary.0
         version: link:../zimic-http
+      '@zimic/utils':
+        specifier: workspace:*
+        version: link:../zimic-utils
       chalk:
         specifier: 4.1.2
         version: 4.1.2
@@ -843,6 +855,34 @@ importers:
       vitest:
         specifier: ^3.0.6
         version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
+
+  packages/zimic-utils:
+    dependencies:
+      vitest:
+        specifier: ^3.0.6
+        version: 3.0.6(@types/debug@4.1.12)(@types/node@22.13.5)(@vitest/browser@3.0.6)(jiti@2.4.2)(jsdom@20.0.3(bufferutil@4.0.9))(lightningcss@1.29.1)(msw@2.7.1(@types/node@22.13.5)(typescript@5.7.3))(tsx@4.19.3)(yaml@2.7.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.13.5
+      '@zimic/eslint-config-node':
+        specifier: workspace:*
+        version: link:../eslint-config-node
+      '@zimic/lint-staged-config':
+        specifier: workspace:*
+        version: link:../lint-staged-config
+      '@zimic/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      eslint:
+        specifier: ^9.21.0
+        version: 9.21.0(jiti@2.4.2)
+      tsup:
+        specifier: ^8.3.6
+        version: 8.3.6(@swc/core@1.10.18(@swc/helpers@0.5.15))(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.7.3)(yaml@2.7.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
 
 packages:
 
