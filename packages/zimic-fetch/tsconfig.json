@@ -5,6 +5,7 @@
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "types": ["@zimic/utils/types/globals"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

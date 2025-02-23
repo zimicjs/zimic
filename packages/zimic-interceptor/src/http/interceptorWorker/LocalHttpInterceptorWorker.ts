@@ -1,10 +1,11 @@
 import { HttpRequest, HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
 import { HttpHandler as MSWHttpHandler, SharedOptions as MSWWorkerSharedOptions, http, passthrough } from 'msw';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
 import { removeArrayIndex } from '@/utils/arrays';
-import { createURL } from '@/utils/urls';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -148,10 +149,9 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
-    const url = createURL(rawURL, {
-      excludeNonPathParams: true,
-      ensureUniquePathParams: true,
-    });
+    const url = new URL(rawURL);
+    excludeURLParams(url);
+    validateURLPathParams(url);
 
     const httpHandler = http[lowercaseMethod](url.toString(), async (context) => {
       const request = context.request as HttpRequest;

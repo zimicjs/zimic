@@ -14,8 +14,7 @@ import {
   HttpStatusCode,
   InferPathParams,
 } from '@zimic/http';
-
-import { Default, PossiblePromise, ReplaceBy } from '@/types/utils';
+import { Default, PossiblePromise, ReplaceBy } from '@zimic/utils/types';
 
 export type HttpRequestHandlerResponseWithBody<ResponseSchema extends HttpResponseSchema> =
   unknown extends ResponseSchema['body']

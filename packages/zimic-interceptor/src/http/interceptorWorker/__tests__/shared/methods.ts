@@ -1,14 +1,16 @@
 import { HttpResponse, HttpHeaders, HTTP_METHODS } from '@zimic/http';
+import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import waitForDelay from '@zimic/utils/time/waitForDelay';
+import { PossiblePromise } from '@zimic/utils/types';
+import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import joinURL from '@zimic/utils/url/joinURL';
+import { DuplicatedPathParamError } from '@zimic/utils/url/validateURLPathParams';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import NotStartedHttpInterceptorError from '@/http/interceptor/errors/NotStartedHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
-import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
-import { waitForDelay } from '@/utils/time';
-import { joinURL, DuplicatedPathParamError, createURL, InvalidURLError, createRegexFromURL } from '@/utils/urls';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
   createInternalHttpInterceptor,
@@ -44,7 +46,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     workerOptions =
       defaultWorkerOptions.type === 'local'
         ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: createURL(baseURL.origin) };
+        : { ...defaultWorkerOptions, serverURL: new URL(baseURL.origin) };
   });
 
   afterAll(async () => {
@@ -294,7 +296,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(handlerContext.request).toBeInstanceOf(Request);
         expect(handlerContext.request.method).toBe(method);
 
-        const urlRegex = createRegexFromURL(url);
+        const urlRegex = createRegExpFromURL(url);
         const parsedRequest = await HttpInterceptorWorker.parseRawRequest(handlerContext.request, { urlRegex });
         expect(parsedRequest.pathParams).toEqual(path.params);
 
@@ -495,7 +497,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
           await expect(async () => {
             await worker.use(interceptor.client(), method, url, spiedRequestHandler);
-          }).rejects.toThrowError(new DuplicatedPathParamError(url, paths.duplicatedParameter));
+          }).rejects.toThrowError(new DuplicatedPathParamError(new URL(url), paths.duplicatedParameter));
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -560,7 +562,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let responsePromise = fetchWithTimeout(baseURL, { method, timeout: 20 });
+        let responsePromise = fetch(baseURL, { method, signal: AbortSignal.timeout(20) });
         await expectFetchError(responsePromise, { canBeAborted: true });
 
         responsePromise = fetch(baseURL, { method });
@@ -584,9 +586,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        const responsePromise = fetchWithTimeout(baseURL, {
+        const responsePromise = fetch(baseURL, {
           method,
-          timeout: overridesPreflightResponse ? 0 : 500,
+          signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
         });
 
         if (overridesPreflightResponse) {
@@ -608,9 +610,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await worker.stop();
 
-        const responsePromise = fetchWithTimeout(baseURL, {
+        const responsePromise = fetch(baseURL, {
           method,
-          timeout: overridesPreflightResponse ? 0 : 500,
+          signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
         });
 
         if (overridesPreflightResponse) {
@@ -633,9 +635,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         await worker.stop();
         await worker.start();
 
-        const responsePromise = fetchWithTimeout(baseURL, {
+        const responsePromise = fetch(baseURL, {
           method,
-          timeout: overridesPreflightResponse ? 0 : 500,
+          signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
         });
 
         if (overridesPreflightResponse) {
@@ -791,7 +793,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await expect(async () => {
           await worker.use(interceptor.client(), method, invalidURL, spiedRequestHandler);
-        }).rejects.toThrowError(new InvalidURLError(invalidURL));
+        }).rejects.toThrowError(/Invalid URL/);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
       });

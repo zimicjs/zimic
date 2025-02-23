@@ -1,4 +1,4 @@
-import { createCachedDynamicImport } from './imports';
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 
 export type IsomorphicCrypto = Crypto | typeof import('crypto');
 

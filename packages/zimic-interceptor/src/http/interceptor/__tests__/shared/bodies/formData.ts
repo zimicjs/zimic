@@ -6,6 +6,7 @@ import {
   HttpResponse,
   StrictFormData,
 } from '@zimic/http';
+import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -14,7 +15,6 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
-import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 

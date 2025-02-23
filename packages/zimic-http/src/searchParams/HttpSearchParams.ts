@@ -1,4 +1,4 @@
-import { ReplaceBy, ArrayItemIfArray } from '@/types/utils';
+import { ReplaceBy, ArrayItemIfArray } from '@zimic/utils/types';
 
 import { HttpSearchParamsSchema, HttpSearchParamsInit, HttpSearchParamsSchemaName } from './types';
 

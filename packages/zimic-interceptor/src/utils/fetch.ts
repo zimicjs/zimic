@@ -2,26 +2,6 @@ import { JSONValue } from '@zimic/http';
 
 import { convertArrayBufferToBase64, convertBase64ToArrayBuffer } from './data';
 
-export async function fetchWithTimeout(url: URL | RequestInfo, options: RequestInit & { timeout: number }) {
-  const { timeout: timeoutDuration, ...fetchOptions } = options;
-
-  const abort = new AbortController();
-
-  const timeout =
-    timeoutDuration > 0
-      ? setTimeout(() => {
-          abort.abort();
-        }, timeoutDuration)
-      : undefined;
-
-  try {
-    const result = await fetch(url, { ...fetchOptions, signal: abort.signal });
-    return result;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 export type SerializedHttpRequest = JSONValue<{
   url: string;
   method: string;

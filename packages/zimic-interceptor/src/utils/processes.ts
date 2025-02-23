@@ -1,4 +1,4 @@
-import { createCachedDynamicImport } from './imports';
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 
 export const PROCESS_EXIT_EVENTS = Object.freeze([
   'beforeExit',

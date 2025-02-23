@@ -1,13 +1,13 @@
 import { HTTP_METHODS, HttpSchema } from '@zimic/http';
+import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
-import { fetchWithTimeout } from '@/utils/fetch';
-import { joinURL } from '@/utils/urls';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import {
   assessPreflightInterference,
   createInternalHttpInterceptor,
@@ -78,9 +78,9 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         await interceptor.stop();
         expect(interceptor.isRunning()).toBe(false);
 
-        let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+        let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method,
-          timeout: overridesPreflightResponse ? 0 : 500,
+          signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
         });
 
         if (overridesPreflightResponse) {
@@ -148,9 +148,9 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           expect(interceptor.isRunning()).toBe(false);
           expect(otherInterceptor.isRunning()).toBe(true);
 
-          let responsePromise = fetchWithTimeout(joinURL(baseURL, '/users'), {
+          let responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
-            timeout: overridesPreflightResponse ? 0 : 500,
+            signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
           });
 
           if (overridesPreflightResponse) {

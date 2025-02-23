@@ -1,7 +1,6 @@
+import isDefined from '@zimic/utils/data/isDefined';
+import { Override } from '@zimic/utils/types';
 import ts from 'typescript';
-
-import { Override } from '@/types/utils';
-import { isDefined } from '@/utils/data';
 
 import { TypeTransformContext } from './context';
 import { normalizeTypeLiteralMethodType } from './methods';

@@ -1,9 +1,9 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 import chalk from 'chalk';
 
 import { isClientSide } from './environment';
 import { isGlobalFileAvailable } from './files';
-import { createCachedDynamicImport } from './imports';
 
 function stringifyJSONToLog(value: unknown): string {
   return JSON.stringify(
@@ -80,14 +80,9 @@ export async function formatValueToLog(value: unknown, options: { colors?: boole
   });
 }
 
-export function logWithPrefix(
-  messageOrMessages: unknown,
-  options: {
-    method?: 'log' | 'warn' | 'error';
-  } = {},
-) {
+export function logWithPrefix(messageOrMessages: unknown, options: { method?: 'log' | 'warn' | 'error' } = {}) {
   const { method = 'log' } = options;
 
   const messages = Array.isArray(messageOrMessages) ? messageOrMessages : [messageOrMessages];
-  console[method](chalk.cyan('[zimic]'), ...messages);
+  console[method](chalk.cyan('[@zimic/interceptor]'), ...messages);
 }

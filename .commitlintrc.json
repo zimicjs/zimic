@@ -19,6 +19,7 @@
         "#zimic-http",
         "#zimic-fetch",
         "#zimic-interceptor",
+        "#zimic-utils",
         "#eslint",
         "#eslint-node",
         "#eslint-react",

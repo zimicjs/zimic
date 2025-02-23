@@ -1,4 +1,4 @@
-import { PossiblePromise } from '@/types/utils';
+import { PossiblePromise } from '@zimic/utils/types';
 
 export async function usingElapsedTime<ReturnType>(callback: () => PossiblePromise<ReturnType>) {
   const startTimeInMilliseconds = performance.now();

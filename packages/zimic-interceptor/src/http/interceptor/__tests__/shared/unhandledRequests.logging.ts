@@ -1,4 +1,6 @@
 import { HttpSearchParams, HTTP_METHODS, HttpSchema } from '@zimic/http';
+import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import joinURL from '@zimic/utils/url/joinURL';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { httpInterceptor } from '@/http';
@@ -7,11 +9,9 @@ import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandl
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { fetchWithTimeout } from '@/utils/fetch';
 import { methodCanHaveRequestBody } from '@/utils/http';
-import { joinURL } from '@/utils/urls';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectBypassedResponse, expectPreflightResponse, expectFetchError } from '@tests/utils/fetch';
+import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
@@ -976,8 +976,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
           await interceptor.stop();
 
-          responsePromise = fetchWithTimeout(request, {
-            timeout: overridesPreflightResponse ? 0 : 500,
+          responsePromise = fetch(request, {
+            signal: overridesPreflightResponse ? undefined : AbortSignal.timeout(500),
           });
 
           if (overridesPreflightResponse) {

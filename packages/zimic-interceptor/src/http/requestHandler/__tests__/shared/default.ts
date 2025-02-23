@@ -1,4 +1,6 @@
 import { HttpRequest, HttpResponse, StrictFormData } from '@zimic/http';
+import waitForDelay from '@zimic/utils/time/waitForDelay';
+import joinURL from '@zimic/utils/url/joinURL';
 import { expectTypeOf, expect, vi, it, beforeAll, afterAll, describe } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
@@ -8,8 +10,6 @@ import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '@/http/interceptorWorker/LocalHttpInterceptorWorker';
-import { waitForDelay } from '@/utils/time';
-import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import NoResponseDefinitionError from '../../errors/NoResponseDefinitionError';

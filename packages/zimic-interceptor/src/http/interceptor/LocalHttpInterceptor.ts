@@ -1,6 +1,6 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
-
-import { createURL } from '@/utils/urls';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
@@ -18,10 +18,9 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   constructor(options: LocalHttpInterceptorOptions) {
     this.type = options.type;
 
-    const baseURL = createURL(options.baseURL, {
-      protocols: SUPPORTED_BASE_URL_PROTOCOLS,
-      excludeNonPathParams: true,
-    });
+    const baseURL = new URL(options.baseURL);
+    validateURLProtocol(baseURL, SUPPORTED_BASE_URL_PROTOCOLS);
+    excludeURLParams(baseURL);
 
     const worker = this.store.getOrCreateLocalWorker({});
 
@@ -40,7 +39,7 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   baseURL() {
-    return this._client.baseURL().raw;
+    return this._client.baseURL();
   }
 
   platform() {

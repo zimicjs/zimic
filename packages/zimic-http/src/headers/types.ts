@@ -1,4 +1,4 @@
-import { IfNever } from '@/types/utils';
+import { IfNever } from '@zimic/utils/types';
 
 import { HttpPathParamsSerialized } from '../pathParams/types';
 import HttpHeaders from './HttpHeaders';

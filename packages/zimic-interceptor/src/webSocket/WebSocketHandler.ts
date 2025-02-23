@@ -1,6 +1,6 @@
+import { Collection } from '@zimic/utils/types';
 import ClientSocket from 'isomorphic-ws';
 
-import { Collection } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import {
   DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT,

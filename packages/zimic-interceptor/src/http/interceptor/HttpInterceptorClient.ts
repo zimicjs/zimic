@@ -7,9 +7,9 @@ import {
   HttpStatusCode,
   HttpSchema,
 } from '@zimic/http';
-
-import { Default, PossiblePromise } from '@/types/utils';
-import { joinURL, ExtendedURL, createRegexFromURL } from '@/utils/urls';
+import { Default, PossiblePromise } from '@zimic/utils/types';
+import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import joinURL from '@zimic/utils/url/joinURL';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -31,7 +31,7 @@ class HttpInterceptorClient<
 > {
   private worker: HttpInterceptorWorker;
   private store: HttpInterceptorStore;
-  private _baseURL: ExtendedURL;
+  private _baseURL: URL;
   private _isRunning = false;
   private _onUnhandledRequest?: UnhandledRequestStrategy;
   private _shouldSaveRequests = false;
@@ -53,7 +53,7 @@ class HttpInterceptorClient<
   constructor(options: {
     worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
-    baseURL: ExtendedURL;
+    baseURL: URL;
     Handler: HandlerConstructor;
     onUnhandledRequest?: UnhandledRequestStrategy;
     saveRequests?: boolean;
@@ -67,7 +67,13 @@ class HttpInterceptorClient<
   }
 
   baseURL() {
-    return this._baseURL;
+    const baseURL = this._baseURL;
+
+    if (baseURL.href === `${baseURL.origin}/`) {
+      return baseURL.origin;
+    }
+
+    return baseURL.toString();
   }
 
   platform() {
@@ -184,7 +190,7 @@ class HttpInterceptorClient<
     this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
 
     const url = joinURL(this.baseURL(), handler.path());
-    const urlRegex = createRegexFromURL(url);
+    const urlRegex = createRegExpFromURL(url);
 
     const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {
       const response = await this.handleInterceptedRequest(

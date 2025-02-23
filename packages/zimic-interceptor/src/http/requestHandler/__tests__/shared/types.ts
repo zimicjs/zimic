@@ -1,14 +1,13 @@
 import { HttpFormData, HttpSearchParams, HttpSchema } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 
 import { HttpInterceptorPlatform, HttpInterceptorType } from '@/http/interceptor/types/options';
-import { PossiblePromise } from '@/types/utils';
-import { ExtendedURL } from '@/utils/urls';
 
 export interface SharedHttpRequestHandlerTestOptions {
   platform: HttpInterceptorPlatform;
   startServer?: () => PossiblePromise<void>;
   stopServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorType) => Promise<ExtendedURL>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<URL>;
 }
 
 export type HeadersSchema = HttpSchema.Headers<{

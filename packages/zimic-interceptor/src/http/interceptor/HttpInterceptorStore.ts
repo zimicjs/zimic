@@ -1,5 +1,3 @@
-import { ExtendedURL } from '@/utils/urls';
-
 import { createHttpInterceptorWorker } from '../interceptorWorker/factory';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import RemoteHttpInterceptorWorker from '../interceptorWorker/RemoteHttpInterceptorWorker';
@@ -22,7 +20,7 @@ class HttpInterceptorStore {
     return this.class._localWorker;
   }
 
-  remoteWorker(baseURL: ExtendedURL) {
+  remoteWorker(baseURL: URL) {
     return this.class.remoteWorkers.get(baseURL.origin);
   }
 
@@ -30,7 +28,7 @@ class HttpInterceptorStore {
     return this.class.runningLocalInterceptors.size;
   }
 
-  numberOfRunningRemoteInterceptors(baseURL: ExtendedURL) {
+  numberOfRunningRemoteInterceptors(baseURL: URL) {
     const runningInterceptors = this.class.runningRemoteInterceptors.get(baseURL.origin);
     return runningInterceptors?.size ?? 0;
   }
@@ -43,7 +41,7 @@ class HttpInterceptorStore {
     }
   }
 
-  markRemoteInterceptorAsRunning(interceptor: AnyHttpInterceptorClient, isRunning: boolean, baseURL: ExtendedURL) {
+  markRemoteInterceptorAsRunning(interceptor: AnyHttpInterceptorClient, isRunning: boolean, baseURL: URL) {
     const runningInterceptors =
       this.class.runningRemoteInterceptors.get(baseURL.origin) ?? this.createRunningInterceptorsSet(baseURL);
 
@@ -54,7 +52,7 @@ class HttpInterceptorStore {
     }
   }
 
-  private createRunningInterceptorsSet(baseURL: ExtendedURL) {
+  private createRunningInterceptorsSet(baseURL: URL) {
     const runningInterceptors = new Set<AnyHttpInterceptorClient>();
     this.class.runningRemoteInterceptors.set(baseURL.origin, runningInterceptors);
     return runningInterceptors;

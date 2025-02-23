@@ -1,6 +1,5 @@
 import { afterEach, beforeAll, expect, it } from 'vitest';
 
-import { ExtendedURL, createURL } from '@/utils/urls';
 import {
   createInternalHttpInterceptor,
   getSingletonWorkerByType,
@@ -17,14 +16,14 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   const store = new HttpInterceptorStore();
 
-  let baseURL: ExtendedURL;
-  let serverURL: ExtendedURL;
+  let baseURL: URL;
+  let serverURL: URL;
 
   beforeAll(() => {
     store.clear();
 
     baseURL = getBaseURL();
-    serverURL = createURL(baseURL.origin);
+    serverURL = new URL(baseURL.origin);
 
     expect(store.numberOfRunningLocalInterceptors()).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);

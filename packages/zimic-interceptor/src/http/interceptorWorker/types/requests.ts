@@ -1,8 +1,7 @@
 import { HttpResponse, HttpBody, HttpRequest } from '@zimic/http';
+import { PossiblePromise } from '@zimic/utils/types';
 import type { SetupWorker as BrowserMSWWorker } from 'msw/browser';
 import type { SetupServer as NodeMSWWorker } from 'msw/node';
-
-import { PossiblePromise } from '@/types/utils';
 
 export type HttpWorker = BrowserMSWWorker | NodeMSWWorker;
 export { BrowserMSWWorker as BrowserHttpWorker, NodeMSWWorker as NodeHttpWorker };

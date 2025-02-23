@@ -1,3 +1,4 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { execa as $ } from 'execa';
 import path from 'path';
 import yargs from 'yargs';
@@ -7,7 +8,6 @@ import { version } from '@@/package.json';
 
 import typegenFixtures from '@/cli/typegen/__tests__/fixtures/typegenFixtures';
 import { TypegenFixtureCase, TypegenFixtureCaseName, TypegenFixtureType } from '@/cli/typegen/__tests__/fixtures/types';
-import { PossiblePromise } from '@/types/utils';
 
 export async function usingConsoleTime<ReturnType>(
   label: string,

@@ -12,8 +12,7 @@ import {
   HttpSearchParams,
   HttpSearchParamsSchema,
 } from '@zimic/http';
-
-import { IfNever, Default, DeepPartial, PossiblePromise } from '@/types/utils';
+import { IfNever, Default, DeepPartial, PossiblePromise } from '@zimic/utils/types';
 
 import { HttpInterceptorRequest } from './requests';
 

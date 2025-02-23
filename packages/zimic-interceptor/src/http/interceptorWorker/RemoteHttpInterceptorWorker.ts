@@ -1,11 +1,12 @@
 import { HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
 import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { createURL, ExtendedURL } from '@/utils/urls';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
@@ -41,8 +42,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  private deriveWebSocketServerURL(serverURL: ExtendedURL) {
-    const webSocketServerURL = createURL(serverURL);
+  private deriveWebSocketServerURL(serverURL: URL) {
+    const webSocketServerURL = new URL(serverURL);
     webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
     return webSocketServerURL;
   }
@@ -141,15 +142,14 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     const crypto = await importCrypto();
 
-    const url = createURL(rawURL, {
-      excludeNonPathParams: true,
-      ensureUniquePathParams: true,
-    });
+    const url = new URL(rawURL);
+    excludeURLParams(url);
+    validateURLPathParams(url);
 
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
       url: {
-        base: interceptor.baseURL().toString(),
+        base: interceptor.baseURL(),
         full: url.toString(),
       },
       method,

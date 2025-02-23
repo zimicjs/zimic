@@ -1,3 +1,8 @@
+import expectFetchError from '@zimic/utils/fetch/expectFetchError';
+import waitFor from '@zimic/utils/time/waitFor';
+import waitForDelay from '@zimic/utils/time/waitForDelay';
+import waitForNot from '@zimic/utils/time/waitForNot';
+import { PossiblePromise } from '@zimic/utils/types';
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
@@ -6,16 +11,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { verifyUnhandledRequestMessage } from '@/http/interceptor/__tests__/shared/utils';
 import { createHttpInterceptor } from '@/http/interceptor/factory';
 import { DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT } from '@/server/constants';
-import { PossiblePromise } from '@/types/utils';
 import { importCrypto } from '@/utils/crypto';
 import { HttpServerStartTimeoutError, HttpServerStopTimeoutError } from '@/utils/http';
 import { CommandError, PROCESS_EXIT_CODE_BY_EXIT_EVENT, PROCESS_EXIT_EVENTS } from '@/utils/processes';
-import { waitForDelay } from '@/utils/time';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 import { usingIgnoredConsole } from '@tests/utils/console';
-import { expectFetchError } from '@tests/utils/fetch';
-import { waitFor, waitForNot } from '@tests/utils/time';
 
 import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
@@ -149,7 +150,10 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(6500);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://localhost:6500');
+        expect(spies.log).toHaveBeenCalledWith(
+          chalk.cyan('[@zimic/interceptor]'),
+          'Server is running on http://localhost:6500',
+        );
       });
     });
 
@@ -174,7 +178,10 @@ describe('CLI (server)', async () => {
         expect(server!.port()).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(chalk.cyan('[zimic]'), 'Server is running on http://0.0.0.0:3000');
+        expect(spies.log).toHaveBeenCalledWith(
+          chalk.cyan('[@zimic/interceptor]'),
+          'Server is running on http://0.0.0.0:3000',
+        );
       });
     });
 
@@ -191,7 +198,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          chalk.cyan('[zimic]'),
+          chalk.cyan('[@zimic/interceptor]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
       });
@@ -308,7 +315,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          chalk.cyan('[zimic]'),
+          chalk.cyan('[@zimic/interceptor]'),
           `Ephemeral server is running on http://localhost:${server!.port()}`,
         );
 
@@ -352,7 +359,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            chalk.cyan('[zimic]'),
+            chalk.cyan('[@zimic/interceptor]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -532,7 +539,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
-            chalk.cyan('[zimic]'),
+            chalk.cyan('[@zimic/interceptor]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -573,7 +580,7 @@ describe('CLI (server)', async () => {
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
-          chalk.cyan('[zimic]'),
+          chalk.cyan('[@zimic/interceptor]'),
           `Server is running on http://localhost:${server!.port()}`,
         );
 
@@ -620,7 +627,7 @@ describe('CLI (server)', async () => {
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            chalk.cyan('[zimic]'),
+            chalk.cyan('[@zimic/interceptor]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 
@@ -669,7 +676,7 @@ describe('CLI (server)', async () => {
           expect(spies.error).toHaveBeenCalledTimes(0);
 
           expect(spies.log).toHaveBeenCalledWith(
-            chalk.cyan('[zimic]'),
+            chalk.cyan('[@zimic/interceptor]'),
             `Server is running on http://localhost:${server!.port()}`,
           );
 

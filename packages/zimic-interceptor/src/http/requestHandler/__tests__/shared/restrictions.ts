@@ -1,4 +1,5 @@
 import { HttpHeaders, HttpSearchParams } from '@zimic/http';
+import joinURL from '@zimic/utils/url/joinURL';
 import { expectTypeOf, expect, it, beforeAll, afterAll, describe } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
@@ -6,7 +7,6 @@ import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import { HttpInterceptorType } from '@/http/interceptor/types/options';
 import HttpInterceptorWorker from '@/http/interceptorWorker/HttpInterceptorWorker';
-import { joinURL } from '@/utils/urls';
 import { createInternalHttpInterceptor } from '@tests/utils/interceptors';
 
 import type LocalHttpRequestHandler from '../../LocalHttpRequestHandler';

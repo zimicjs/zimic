@@ -1,13 +1,12 @@
 import { beforeAll, describe } from 'vitest';
 
-import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import { declareClearHttpInterceptorTests } from './shared/clear';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Clear', ({ type }) => {
-  let baseURL: ExtendedURL;
+  let baseURL: URL;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

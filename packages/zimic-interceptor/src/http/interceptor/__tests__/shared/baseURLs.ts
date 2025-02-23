@@ -1,7 +1,8 @@
+import joinURL from '@zimic/utils/url/joinURL';
+import { UnsupportedURLProtocolError } from '@zimic/utils/url/validateURLProtocol';
 import { beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import { joinURL, ExtendedURL, InvalidURLError, UnsupportedURLProtocolError } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { SUPPORTED_BASE_URL_PROTOCOLS } from '../../HttpInterceptorClient';
@@ -11,7 +12,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { type, getBaseURL, getInterceptorOptions } = options;
 
-  let defaultBaseURL: ExtendedURL;
+  let defaultBaseURL: URL;
   let interceptorOptions: HttpInterceptorOptions;
 
   beforeEach(() => {
@@ -21,10 +22,10 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   it('should handle base URLs and paths correctly', async () => {
     for (const { baseURL, path } of [
-      { baseURL: defaultBaseURL.raw, path: 'path' },
-      { baseURL: `${defaultBaseURL.raw}/`, path: 'path' },
-      { baseURL: defaultBaseURL.raw, path: '/path' },
-      { baseURL: `${defaultBaseURL.raw}/`, path: '/path' },
+      { baseURL: defaultBaseURL.toString().replace(/\/$/, ''), path: 'path' },
+      { baseURL: defaultBaseURL.toString(), path: 'path' },
+      { baseURL: defaultBaseURL.toString().replace(/\/$/, ''), path: '/path' },
+      { baseURL: defaultBaseURL.toString(), path: '/path' },
     ]) {
       await usingHttpInterceptor<{
         ':any': {
@@ -35,7 +36,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
           };
         };
       }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-        expect(interceptor.baseURL()).toBe(baseURL);
+        expect(interceptor.baseURL()).toBe(baseURL.replace(/\/$/, ''));
 
         const handler = await promiseIfRemote(interceptor.get(path).respond({ status: 200 }), interceptor);
 
@@ -71,7 +72,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
 
     await expect(async () => {
       await usingHttpInterceptor({ ...interceptorOptions, baseURL: invalidURL }, handler);
-    }).rejects.toThrowError(new InvalidURLError(invalidURL));
+    }).rejects.toThrowError(/Invalid URL/);
 
     expect(handler).not.toHaveBeenCalled();
   });

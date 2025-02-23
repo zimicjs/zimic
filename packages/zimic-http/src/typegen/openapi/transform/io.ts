@@ -1,9 +1,7 @@
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 import type { SchemaObject } from 'openapi-typescript';
 import path from 'path';
 import ts from 'typescript';
-
-import { createCachedDynamicImport } from '@/utils/imports';
-import { createFileURL, createURL } from '@/utils/urls';
 
 import { createBlobType, createNullType } from '../utils/types';
 
@@ -24,9 +22,9 @@ function transformSchemaObject(schemaObject: SchemaObject) {
 
 function convertFilePathOrURLToURL(filePathOrURL: string) {
   try {
-    return createURL(filePathOrURL);
+    return new URL(filePathOrURL);
   } catch {
-    return createFileURL(path.resolve(filePathOrURL));
+    return new URL(`file://${path.resolve(filePathOrURL)}`);
   }
 }
 

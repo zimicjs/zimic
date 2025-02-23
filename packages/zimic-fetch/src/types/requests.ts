@@ -9,8 +9,7 @@ import {
   JSONValue,
   HttpStatusCode,
 } from '@zimic/http';
-
-import { ReplaceBy } from '@/types/utils';
+import { ReplaceBy } from '@zimic/utils/types';
 
 /** The body type for HTTP requests and responses. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

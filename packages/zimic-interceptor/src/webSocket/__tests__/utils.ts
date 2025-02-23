@@ -1,7 +1,6 @@
+import waitForDelay from '@zimic/utils/time/waitForDelay';
 import ClientSocket from 'isomorphic-ws';
 import { vi } from 'vitest';
-
-import { waitForDelay } from '@/utils/time';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 

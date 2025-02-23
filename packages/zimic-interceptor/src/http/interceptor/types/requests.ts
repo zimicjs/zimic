@@ -1,6 +1,5 @@
 import { HttpBody, HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
-
-import { Default } from '@/types/utils';
+import { Default } from '@zimic/utils/types';
 
 import { HttpResponseFactoryContext } from '../../interceptorWorker/types/requests';
 import { HttpInterceptorRequest } from '../../requestHandler/types/requests';

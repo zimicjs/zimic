@@ -5,9 +5,10 @@ import {
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
 } from '@zimic/http';
-
-import { Default } from '@/types/utils';
-import { createRegexFromURL, excludeNonPathParams, joinURL } from '@/utils/urls';
+import { Default } from '@zimic/utils/types';
+import createRegexFromURL from '@zimic/utils/url/createRegExpFromURL';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
+import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
 import { FetchInput, FetchOptions, Fetch } from './types/public';
@@ -166,9 +167,11 @@ class FetchClient<Schema extends HttpSchema> {
           super(url, init);
         }
 
-        this.path = excludeNonPathParams(url)
-          .toString()
-          .replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
+        this.path = excludeURLParams(url).toString().replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<
+          Schema,
+          Method,
+          Path
+        >;
       }
 
       clone(): Request<Path, Method> {

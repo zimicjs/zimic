@@ -94,6 +94,7 @@
   },
   "dependencies": {
     "@whatwg-node/server": "0.9.68",
+    "@zimic/utils": "workspace:*",
     "chalk": "4.1.2",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",

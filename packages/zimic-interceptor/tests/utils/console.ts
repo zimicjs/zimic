@@ -1,6 +1,5 @@
+import { PossiblePromise } from '@zimic/utils/types';
 import { MockInstance, vi } from 'vitest';
-
-import { PossiblePromise } from '@/types/utils';
 
 type IgnorableConsoleMethod = 'error' | 'warn' | 'info' | 'log' | 'debug';
 

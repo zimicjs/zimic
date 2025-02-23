@@ -1,4 +1,4 @@
-import { Default, ReplaceBy } from '@/types/utils';
+import { Default, ReplaceBy } from '@zimic/utils/types';
 
 import { HttpHeadersSchema, HttpHeadersInit, HttpHeadersSchemaName } from './types';
 

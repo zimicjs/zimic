@@ -1,4 +1,5 @@
 import { HttpRequest, HttpResponse, HTTP_METHODS_WITH_REQUEST_BODY, HttpSchema } from '@zimic/http';
+import joinURL from '@zimic/utils/url/joinURL';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -7,7 +8,6 @@ import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHan
 import { importCrypto } from '@/utils/crypto';
 import { importFile } from '@/utils/files';
 import { randomInt } from '@/utils/numbers';
-import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions } from '../../../types/options';

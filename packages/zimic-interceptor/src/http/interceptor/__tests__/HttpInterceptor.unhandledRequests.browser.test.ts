@@ -1,6 +1,5 @@
 import { beforeAll, describe } from 'vitest';
 
-import { ExtendedURL } from '@/utils/urls';
 import { getBrowserBaseURL } from '@tests/utils/interceptors';
 
 import testMatrix from './shared/matrix';
@@ -8,7 +7,7 @@ import { declareUnhandledRequestFactoriesHttpInterceptorTests } from './shared/u
 import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unhandledRequests.logging';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests', ({ type }) => {
-  let baseURL: ExtendedURL;
+  let baseURL: URL;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

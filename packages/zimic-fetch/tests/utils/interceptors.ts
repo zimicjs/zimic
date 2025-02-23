@@ -5,8 +5,7 @@ import {
   LocalHttpInterceptor,
   RemoteHttpInterceptor,
 } from '@zimic/interceptor/http';
-
-import { PossiblePromise } from '@/types/utils';
+import { PossiblePromise } from '@zimic/utils/types';
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (
   interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>,

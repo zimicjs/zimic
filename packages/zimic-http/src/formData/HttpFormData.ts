@@ -1,5 +1,5 @@
-import { ArrayItemIfArray, ReplaceBy } from '@/types/utils';
-import { fileEquals } from '@/utils/files';
+import fileEquals from '@zimic/utils/data/fileEquals';
+import { ArrayItemIfArray, ReplaceBy } from '@zimic/utils/types';
 
 import { HttpFormDataSchema, HttpFormDataSchemaName } from './types';
 
