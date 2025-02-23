@@ -29,8 +29,8 @@ type PartialHttpHeadersOrSchema<Schema extends HttpHeadersSchema> = IfNever<
  */
 export type HttpRequestHandlerHeadersStaticRestriction<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = PartialHttpHeadersOrSchema<HttpRequestHeadersSchema<Default<Schema[Path][Method]>>>;
 
 type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = IfNever<
@@ -46,8 +46,8 @@ type PartialHttpSearchParamsOrSchema<Schema extends HttpSearchParamsSchema> = If
  */
 export type HttpRequestHandlerSearchParamsStaticRestriction<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = PartialHttpSearchParamsOrSchema<HttpRequestSearchParamsSchema<Default<Schema[Path][Method]>>>;
 
 type PartialBodyOrSchema<Body extends HttpBody> =
@@ -66,8 +66,8 @@ type PartialBodyOrSchema<Body extends HttpBody> =
  */
 export type HttpRequestHandlerBodyStaticRestriction<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > = PartialBodyOrSchema<HttpRequestBodySchema<Default<Schema[Path][Method]>>>;
 
 /**
@@ -77,26 +77,26 @@ export type HttpRequestHandlerBodyStaticRestriction<
  */
 export interface HttpRequestHandlerStaticRestriction<
   Schema extends HttpSchema,
-  Path extends HttpSchemaPath<Schema, Method>,
   Method extends HttpSchemaMethod<Schema>,
+  Path extends HttpSchemaPath<Schema, Method>,
 > {
   /**
    * A set of headers that the intercepted request must contain to match the handler. If exact is `true`, the request
    * must contain exactly these headers and no others.
    */
-  headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Path, Method>;
+  headers?: HttpRequestHandlerHeadersStaticRestriction<Schema, Method, Path>;
 
   /**
    * A set of search params that the intercepted request must contain to match the handler. If exact is `true`, the
    * request must contain exactly these search params and no others.
    */
-  searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Path, Method>;
+  searchParams?: HttpRequestHandlerSearchParamsStaticRestriction<Schema, Method, Path>;
 
   /**
    * The body that the intercepted request must contain to match the handler. If exact is `true`, the request must
    * contain exactly this body and no other.
    */
-  body?: HttpRequestHandlerBodyStaticRestriction<Schema, Path, Method>;
+  body?: HttpRequestHandlerBodyStaticRestriction<Schema, Method, Path>;
 
   /**
    * If `true`, the request must contain **exactly** the headers, search params, and body declared in this restriction.
@@ -126,7 +126,7 @@ export type HttpRequestHandlerRestriction<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
 > =
-  | HttpRequestHandlerStaticRestriction<Schema, Path, Method>
+  | HttpRequestHandlerStaticRestriction<Schema, Method, Path>
   | HttpRequestHandlerComputedRestriction<Schema, Method, Path>;
 
 export interface RestrictionDiff<Value> {
