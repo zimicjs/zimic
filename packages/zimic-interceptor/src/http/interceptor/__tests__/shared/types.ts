@@ -234,6 +234,38 @@ export function declareTypeHttpInterceptorTests(
     });
   });
 
+  it('should correctly type requests with headers containing only `content-type`', async () => {
+    type UserListHeaders = HttpSchema.Headers<{
+      'content-type': string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          request: {
+            headers: UserListHeaders;
+          };
+          response: {
+            200: { body: User };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      const listHandler = await interceptor.get('/users').respond((request) => {
+        expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+
+        return {
+          status: 200,
+          body: users[0],
+        };
+      });
+
+      const _listRequests = await listHandler.requests();
+      type RequestHeaders = (typeof _listRequests)[number]['headers'];
+      expectTypeOf<RequestHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+    });
+  });
+
   it('should correctly type requests with no headers', async () => {
     await usingHttpInterceptor<{
       '/users': {
@@ -586,6 +618,169 @@ export function declareTypeHttpInterceptorTests(
       const _listRequests = await listHandler.requests();
       type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<HttpHeadersSerialized<UserListHeaders>>>();
+    });
+  });
+
+  it('should correctly type responses with headers containing only `content-type`', async () => {
+    // If only content type is specified, the headers should be optional. This is because the content type is
+    // automatically set by the interceptor before returning a response, unless overridden.
+    type UserListHeaders = HttpSchema.Headers<{
+      'content-type': string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      let listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: {},
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': undefined },
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: users[0],
+      });
+
+      const _listRequests = await listHandler.requests();
+      type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+    });
+  });
+
+  it('should correctly type responses with headers containing `content-type` and additional required headers', async () => {
+    // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
+    // additional headers should be kept as defined.
+    type UserListHeaders = HttpSchema.Headers<{
+      'content-type': string;
+      accept: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      // @ts-expect-error Headers are required
+      let listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        // @ts-expect-error Providing an accept header is required
+        headers: {},
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        // @ts-expect-error Providing an accept header is required
+        headers: { 'content-type': undefined },
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        // @ts-expect-error Providing an accept header is required
+        headers: { 'content-type': 'application/json' },
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': 'application/json', accept: '*/*' },
+        body: users[0],
+      });
+
+      const _listRequests = await listHandler.requests();
+      type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
+    });
+  });
+
+  it('should correctly type responses with headers containing `content-type` and additional optional headers', async () => {
+    // If additional headers existing, beyond content type, only the `content-type` key should be optional. The
+    // additional headers should be kept as defined.
+    type UserListHeaders = HttpSchema.Headers<{
+      'content-type': string;
+      accept?: string;
+    }>;
+
+    await usingHttpInterceptor<{
+      '/users': {
+        GET: {
+          response: {
+            200: {
+              headers: UserListHeaders;
+              body: User;
+            };
+          };
+        };
+      };
+    }>({ type, baseURL }, async (interceptor) => {
+      // @ts-expect-error Headers are required
+      let listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: {},
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': undefined },
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: users[0],
+      });
+
+      listHandler = await interceptor.get('/users').respond({
+        status: 200,
+        headers: { 'content-type': 'application/json', accept: '*/*' },
+        body: users[0],
+      });
+
+      const _listRequests = await listHandler.requests();
+      type ResponseHeaders = (typeof _listRequests)[number]['response']['headers'];
+      expectTypeOf<ResponseHeaders>().toEqualTypeOf<HttpHeaders<UserListHeaders>>();
     });
   });
 
