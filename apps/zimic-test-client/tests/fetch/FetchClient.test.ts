@@ -1,4 +1,4 @@
-import { createFetch } from '@zimic/fetch';
+import { createFetch, FetchResponseError } from '@zimic/fetch';
 import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
 import { httpInterceptor } from '@zimic/interceptor/http';
 import expectToThrow from '@zimic/utils/error/expectToThrow';
@@ -180,7 +180,8 @@ describe('Fetch client', async () => {
           .times(1);
 
         const error = await expectToThrow(createUser(invalidPayload), {
-          is: (error) => authFetch.isResponseError(error, '/users', 'POST'),
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+            authFetch.isResponseError(error, 'POST', '/users'),
         });
         const { response } = error;
 
@@ -227,7 +228,8 @@ describe('Fetch client', async () => {
           .times(1);
 
         const error = await expectToThrow(createUser(conflictingPayload), {
-          is: (error) => authFetch.isResponseError(error, '/users', 'POST'),
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+            authFetch.isResponseError(error, 'POST', '/users'),
         });
         const { response } = error;
 
@@ -506,7 +508,8 @@ describe('Fetch client', async () => {
           .times(1);
 
         const error = await expectToThrow(getUserById(user.id), {
-          is: (error) => authFetch.isResponseError(error, '/users/:userId', 'GET'),
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'GET', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'GET', '/users/:userId'),
         });
         const { response } = error;
 
@@ -602,7 +605,8 @@ describe('Fetch client', async () => {
           .times(1);
 
         const error = await expectToThrow(deleteUserById(user.id), {
-          is: (error) => authFetch.isResponseError(error, '/users/:userId', 'DELETE'),
+          is: (error): error is FetchResponseError<AuthServiceSchema, 'DELETE', '/users/:userId'> =>
+            authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
         });
         const { response } = error;
 
