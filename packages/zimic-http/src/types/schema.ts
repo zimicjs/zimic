@@ -1,4 +1,4 @@
-import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify, NonEmptyArray } from '@/types/utils';
+import { IfAny, UnionToIntersection, UnionHasMoreThanOneType, Prettify, NonEmptyArray } from '@zimic/utils/types';
 
 import { HttpFormDataSchema, HttpFormDataSerialized } from '../formData/types';
 import { HttpHeadersSchema, HttpHeadersSerialized } from '../headers/types';

@@ -3,12 +3,11 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": [],
+      "dependsOn": ["@zimic/utils#build"],
       "inputs": [
-        "{src,scripts}/**/*.{ts,json}",
+        "src/**/*.{ts,json}",
         "{package,tsconfig}.json",
         "tsup.config.ts",
-        "!scripts/**/*",
         "!*/**/tests/**/*",
         "!*/**/__tests__/**/*",
         "!*/**/*.test.ts"

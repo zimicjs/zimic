@@ -1,4 +1,6 @@
 import { httpInterceptor } from '@zimic/interceptor/http';
+import isDefined from '@zimic/utils/data/isDefined';
+import joinURL from '@zimic/utils/url/joinURL';
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
@@ -6,7 +8,6 @@ import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
-import { isDefined } from '@/utils/data';
 import { resolvedPrettierConfig } from '@/utils/prettier';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { convertYAMLToJSONFile } from '@tests/utils/json';
@@ -159,7 +160,7 @@ describe('Type generation (OpenAPI)', () => {
       expect(consoleSpies.warn).toHaveBeenCalledTimes(1);
 
       const message = consoleSpies.warn.mock.calls[0].join(' ');
-      expect(message).toMatch(/.*\[zimic\].* /);
+      expect(message).toMatch(/.*\[@zimic\/http\].* /);
       expect(message).toContain(
         `Warning: Filter could not be parsed and was ignored: ${chalk.yellow('invalid filter line')}`,
       );
@@ -179,7 +180,7 @@ describe('Type generation (OpenAPI)', () => {
 
       for (const [index, unknownStatusCode] of expectedUnknownStatusCodes.entries()) {
         const message = messages[index];
-        expect(message).toMatch(/.*\[zimic\].* /);
+        expect(message).toMatch(/.*\[@zimic\/http\].* /);
         expect(message).toContain(
           `Warning: Response has a non-standard status code: ${chalk.yellow(unknownStatusCode)}. ` +
             "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
@@ -204,7 +205,7 @@ describe('Type generation (OpenAPI)', () => {
       }
 
       expect(successMessage).toBeDefined();
-      expect(successMessage).toMatch(/.*\[zimic\].* /);
+      expect(successMessage).toMatch(/.*\[@zimic\/http\].* /);
       expect(successMessage).toContain(`Generated ${outputLabel}`);
       expect(successMessage).toMatch(/.*([\d.]+m?s).*$/);
     }
@@ -235,7 +236,7 @@ describe('Type generation (OpenAPI)', () => {
           const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
 
           const inputFilePathOrURL = fixtureCase.shouldUseURLAsInput
-            ? `${schemaInterceptor.baseURL()}/spec/${fixtureName}`
+            ? joinURL(schemaInterceptor.baseURL(), 'spec', fixtureName)
             : inputFilePath;
 
           const bufferedInputFileContent = await filesystem.readFile(inputFilePath);

@@ -1,8 +1,7 @@
+import isDefined from '@zimic/utils/data/isDefined';
 import filesystem from 'fs/promises';
 import path from 'path';
 import ts from 'typescript';
-
-import { isDefined } from '@/utils/data';
 
 import {
   isComponentsDeclaration,

@@ -1,10 +1,10 @@
+import isDefined from '@zimic/utils/data/isDefined';
+import { Override } from '@zimic/utils/types';
 import chalk from 'chalk';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/types/schema';
-import { Override } from '@/types/utils';
 import { logWithPrefix } from '@/utils/console';
-import { isDefined } from '@/utils/data';
 
 import { isUnknownType, isNeverType, isNullType } from '../utils/types';
 import { renameComponentReferences } from './components';

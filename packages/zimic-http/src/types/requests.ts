@@ -1,6 +1,7 @@
+import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
+
 import { JSONSerialized, JSONValue } from '@/types/json';
 import { HttpMethodSchema, HttpStatusCode } from '@/types/schema';
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@/types/utils';
 
 import HttpFormData from '../formData/HttpFormData';
 import { HttpFormDataSchema } from '../formData/types';

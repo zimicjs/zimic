@@ -1,11 +1,11 @@
+import isNonEmpty from '@zimic/utils/data/isNonEmpty';
+import createRegExpFromWildcardPath from '@zimic/utils/url/createRegExpFromWildcardPath';
 import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
 
 import { HTTP_METHODS } from '@/types/schema';
 import { logWithPrefix } from '@/utils/console';
-import { isNonEmpty } from '@/utils/data';
-import { createRegexFromWildcardPath } from '@/utils/urls';
 
 import { TypePathFilters } from './context';
 
@@ -36,7 +36,7 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
   const isNegativeMatch = filterModifier === '!';
 
   return {
-    expression: createRegexFromWildcardPath(filteredPath, { prefix: methodFilterGroup }),
+    expression: createRegExpFromWildcardPath(filteredPath, { prefix: methodFilterGroup }),
     isNegativeMatch,
   };
 }
