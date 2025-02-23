@@ -8,6 +8,7 @@ const sharedConfig: Options = {
   minify: false,
   clean: true,
   keepNames: true,
+  noExternal: ['@zimic/utils'],
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({

@@ -18,8 +18,7 @@ import {
   HttpResponseHeadersSchema,
   HttpRequestHeadersSchema,
 } from '@zimic/http';
-
-import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@/types/utils';
+import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
 
 import FetchResponseError, { AnyFetchRequestError } from '../errors/FetchResponseError';
 import { JSONStringified } from './json';

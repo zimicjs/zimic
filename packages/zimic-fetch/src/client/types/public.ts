@@ -1,6 +1,5 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
-
-import { Default, PossiblePromise } from '@/types/utils';
+import { Default, PossiblePromise } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';

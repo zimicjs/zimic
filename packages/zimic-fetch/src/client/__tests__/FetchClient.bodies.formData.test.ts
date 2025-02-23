@@ -1,8 +1,8 @@
 import { HttpFormData, HttpSchema, StrictFormData, StrictHeaders } from '@zimic/http';
+import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { importFile } from '@/utils/files';
-import { joinURL } from '@/utils/urls';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
