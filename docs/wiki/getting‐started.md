@@ -25,12 +25,9 @@
 
 - If you are on **client-side**:
   - Any relatively modern browser (we recommend a recent version of a Chromium browser, such as
-    [Chrome](https://www.google.com/chrome) or [Edge](https://www.microsoft.com/edge))
+    [Google Chrome](https://www.google.com/chrome) or [Microsoft Edge](https://www.microsoft.com/edge))
 - If you are on **server-side**:
   - [Node](https://nodejs.org) >= 18.13.0
-  - ~[Bun](https://bun.sh)~ ([:construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/51))
-  - ~[Deno](https://deno.com)~
-    ([ :construction: coming soon :construction:](https://github.com/zimicjs/zimic/issues/327))
 
 ### Supported languages
 
@@ -59,18 +56,16 @@ Zimic is available on [npm](https://www.npmjs.com/package/zimic).
 | Manager | Command                        |
 | :-----: | ------------------------------ |
 |   npm   | `npm install zimic --save-dev` |
-|  pnpm   | `pnpm add zimic --dev`         |
 |  yarn   | `yarn add zimic --dev`         |
-|   bun   | `bun add zimic --dev`          |
+|  pnpm   | `pnpm add zimic --dev`         |
 
 We also canary releases under the tag `canary`, containing the latest features and bug fixes:
 
 | Manager | Command                               |
 | :-----: | ------------------------------------- |
 |   npm   | `npm install zimic@canary --save-dev` |
-|  pnpm   | `pnpm add zimic@canary --dev`         |
 |  yarn   | `yarn add zimic@canary --dev`         |
-|   bun   | `bun add zimic@canary --dev`          |
+|  pnpm   | `pnpm add zimic@canary --dev`         |
 
 ## 3. Post-install
 
