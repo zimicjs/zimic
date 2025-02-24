@@ -220,7 +220,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 |  yarn   | `yarn add @zimic/http @zimic/interceptor --dev`         |
 |  pnpm   | `pnpm add @zimic/http @zimic/interceptor --dev`         |
 
-`@zimic/interceptor` requires `@zimic/http` as a peer dependency.
+Note that `@zimic/interceptor` requires `@zimic/http` as a peer dependency.
 
 ## Documentation
 
@@ -230,46 +230,6 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 - [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic)
 - Guides
   - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
-
-> [!NOTE]
->
-> Zimic has gone a long way in v0, but we're not yet v1!
->
-> Reviews and improvements to the public API are possible, so breaking changes may **_exceptionally_** land without a
-> major release during v0. Despite of that, we do not expect big mental model shifts. Usually, migrating to a new Zimic
-> release requires minimal to no refactoring. During v0, we will follow these guidelines:
->
-> - Breaking changes, if any, will be delivered in the next **_minor_** version.
-> - Breaking changes, if any, will be documented in the [version release](https://github.com/zimicjs/zimic/releases),
->   along with a migration guide detailing the introduced changes and suggesting steps to migrate.
-
-## What is `@zimic/interceptor` for?
-
-`@zimic/interceptor` is a development and testing tool that helps you mock HTTP responses in a type-safe way. Some of
-our best use cases:
-
-- **Testing**: If your application relies on external services over HTTP, you can mock them with Zimic to make your
-  tests simpler, faster and more predictable. Each interceptor references a
-  [schema declaration](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) to provide type
-  inference and validation for your mocks. After breaking changes, adapting the interceptor schema will help you to
-  quickly identify all of the affected mocks and keep your test scenarios consistent with the real-life API.
-- **Development**: If you are developing a feature that depends on an external service that is unreliable, unavailable,
-  or costly, you can use Zimic to mock it and continue your development without interruptions. Zimic can also be used to
-  create mock servers, using
-  [remote interceptors](https://github.com/zimicjs/zimic/wiki/getting‐started#remote-http-interceptors) and
-  [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server), which can be accessible by multiple
-  applications in your development workflow and even be containerized.
-
-## How does `@zimic/interceptor` work?
-
-`@zimic/interceptor` allows you to intercept HTTP requests and return mock responses. In
-[local HTTP interceptors](https://github.com/zimicjs/zimic/wiki/getting‐started#local-http-interceptors), Zimic uses
-[MSW](https://github.com/mswjs/msw) to intercept requests in the same process as your application. In
-[remote HTTP interceptors](https://github.com/zimicjs/zimic/wiki/getting‐started#remote-http-interceptors), Zimic uses a
-dedicated local [interceptor server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to handle requests. This
-opens up more possibilities for mocking, such as handling requests from multiple applications. Both of those strategies
-act on real HTTP requests _after_ they leave your application, so no parts of your application code are skipped and you
-can get more confidence in your tests.
 
 ## Examples
 
