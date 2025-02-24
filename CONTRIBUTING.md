@@ -161,24 +161,22 @@ automate the release process, generate changelogs, and understand the changes ma
 
 Some general guidelines:
 
-- Always declare a type and scope in your commit message. If the change is not related to a specific package, use `root`
-  as the scope.
+- Always declare a type and scope in your commit message. For example, `feat(interceptor): add new feature` indicates a
+  change in `packages/zimic-interceptor`. This helps us understand that a package was changed. If the change is not
+  related to a specific package, use `root` as the scope.
 - Use the imperative mood in your commit message. For example, use "add new feature" instead of "added new feature" or
   "adds new feature". A good rule of thumb is to complete the sentence "If applied, this commit will..."
 - Declare your commit message using all lowercase letters. Do not capitalize the first letter of the message or add a
   period at the end.
 - It is not necessary to add "closes", "fixes", or "resolves" in your commit message. Linking the issue in the message
   is also not required. We track which issues are being resolved in the pull request description.
-- If you are changing a package, prefix the scope of the commit with a `#`. For example,
-  `feat(#zimic-interceptor): add new feature` indicates a change in `packages/zimic-interceptor`. This helps us
-  understand that a package was changed.
 
 Some examples of valid commit messages:
 
 ```
-feat(#zimic): add new feature
-fix(#release): correctly read files
-docs(#zimic): fix typo in `README.md`
+feat(interceptor): add new feature
+fix(http): correctly read files
+docs(fetch): fix typo in `README.md`
 perf(ci): increase build concurrency
 chore(root): upgrade `prettier` to `3.3.3`
 ```
@@ -195,7 +193,7 @@ previous state if necessary.
   git add .
   
   # commit
-  git commit -m "feat(#zimic): add new feature"
+  git commit -m "feat(interceptor): add new feature"
   ```
 
 - Pushing your changes:
@@ -219,7 +217,7 @@ request is related to.
 An example of a valid pull request title:
 
 ```bash
-feat(#zimic): add new feature (#123)
+feat(interceptor): add new feature (#123)
 ```
 
 After opening the pull request, a maintainer will review your changes and automated style, lint, test, and security
