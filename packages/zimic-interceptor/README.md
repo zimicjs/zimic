@@ -34,6 +34,17 @@
 
 ---
 
+- [Features](#features)
+- [Getting started](#getting-started)
+  - [Installation](#installation)
+- [Basic usage](#basic-usage)
+- [Documentation](#documentation)
+- [Examples](#examples)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+
+---
+
 `@zimic/interceptor` is a lightweight, thoroughly tested, TypeScript-first HTTP request interceptor and mock library.
 
 ## Features
@@ -53,14 +64,25 @@
 - :bulb: **Simple**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your mocks.
   Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
+## Getting started
+
+Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started).
+
+### Installation
+
+| Manager | Command                                                 |
+| :-----: | ------------------------------------------------------- |
+|   npm   | `npm install @zimic/http @zimic/interceptor --save-dev` |
+|  yarn   | `yarn add @zimic/http @zimic/interceptor --dev`         |
+|  pnpm   | `pnpm add @zimic/http @zimic/interceptor --dev`         |
+
+Note that `@zimic/interceptor` requires `@zimic/http` as a peer dependency.
+
 ## Basic usage
 
 1.  Declare your types:
 
     ```ts
-    import { type HttpSchema } from '@zimic/http';
-    import { httpInterceptor } from '@zimic/interceptor/http';
-
     interface User {
       username: string;
     }
@@ -71,9 +93,12 @@
     }
     ```
 
-2.  Declare your HTTP schema ([learn more](https://bit.ly/zimic-interceptor-http-schemas)):
+2.  Declare your HTTP schema using `@zimic/http`
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
 
     ```ts
+    import { type HttpSchema } from '@zimic/http';
+
     type MySchema = HttpSchema<{
       '/users': {
         POST: {
@@ -113,49 +138,54 @@
     }>;
     ```
 
-3.  Create your interceptor ([learn more](https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions)):
+3.  Create your interceptor
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions)):
 
     ```ts
-    const myInterceptor = httpInterceptor.create<MySchema>({
+    import { httpInterceptor } from '@zimic/interceptor/http';
+
+    const interceptor = httpInterceptor.create<MySchema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
       saveRequests: true, // Allow access to `handler.requests()`
     });
     ```
 
-4.  Manage your interceptor lifecycle ([learn more](https://bit.ly/zimic-guides-testing)):
+4.  Manage your interceptor lifecycle ([learn more](https://github.com/zimicjs/zimic/wiki/guides‐testing)):
 
-    4.1. Start intercepting requests ([learn more](https://bit.ly/zimic-interceptor-http#http-interceptorstart)):
+    4.1. Start intercepting requests
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart)):
 
     ```ts
     beforeAll(async () => {
-      await myInterceptor.start();
+      await interceptor.start();
     });
     ```
 
     4.2. Clear interceptors so that no tests affect each other
-    ([learn more](https://bit.ly/zimic-interceptor-http#http-interceptorclear)):
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear)):
 
     ```ts
     beforeEach(() => {
-      myInterceptor.clear();
+      interceptor.clear();
     });
     ```
 
     4.3. Check that all expected requests were made
-    ([learn more](https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes)):
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes)):
 
     ```ts
     afterEach(() => {
-      myInterceptor.checkTimes();
+      interceptor.checkTimes();
     });
     ```
 
-    4.4. Stop intercepting requests ([learn more](https://bit.ly/zimic-interceptor-http#http-interceptorstop)):
+    4.4. Stop intercepting requests
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop)):
 
     ```ts
     afterAll(async () => {
-      await myInterceptor.stop();
+      await interceptor.stop();
     });
     ```
 
@@ -166,37 +196,37 @@
       const users: User[] = [{ username: 'my-user' }];
 
       // Declare your mocks:
-      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-      const myHandler = myInterceptor
+      // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath
+      const handler = interceptor
         .get('/users')
         // Use restrictions to make declarative assertions and narrow down your mocks:
-        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
+        // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction
         .with({
           headers: { authorization: 'Bearer my-token' },
           searchParams: { username: 'my' },
         })
         // Respond with your mock data:
-        // https://bit.ly/zimic-interceptor-http#http-handlerresponddeclaration
+        // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration
         .respond({
           status: 200,
           body: users,
         })
         // Define how many requests you expect your application to make:
-        // https://bit.ly/zimic-interceptor-http#http-handlertimes
+        // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes
         .times(1);
 
       // Run your application and make requests:
       // ...
 
       // Check the requests you expect:
-      // https://bit.ly/zimic-interceptor-http#http-handlerrequests
+      // https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests
       //
       // NOTE: The code below checks the requests manually. This is optional in this
       // example because the `with` and `times` calls act as a declarative validation,
       // meaning that exactly one request is expected with specific data. If fewer or
-      // more requests are received, the test will fail when `myInterceptor.checkTimes()`
+      // more requests are received, the test will fail when `interceptor.checkTimes()`
       // is called in the `afterEach` hook.
-      const requests = myHandler.requests();
+      const requests = handler.requests();
       expect(requests).toHaveLength(1);
 
       expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
@@ -207,20 +237,6 @@
       expect(requests[0].body).toBe(null);
     });
     ```
-
-## Getting started
-
-Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started).
-
-### Installation
-
-| Manager | Command                                                 |
-| :-----: | ------------------------------------------------------- |
-|   npm   | `npm install @zimic/http @zimic/interceptor --save-dev` |
-|  yarn   | `yarn add @zimic/http @zimic/interceptor --dev`         |
-|  pnpm   | `pnpm add @zimic/http @zimic/interceptor --dev`         |
-
-Note that `@zimic/interceptor` requires `@zimic/http` as a peer dependency.
 
 ## Documentation
 
@@ -234,7 +250,7 @@ Note that `@zimic/interceptor` requires `@zimic/http` as a peer dependency.
 ## Examples
 
 Visit our [examples](../../examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use
-cases!
+cases.
 
 ## Changelog
 
