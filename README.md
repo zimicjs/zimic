@@ -122,7 +122,7 @@ requests.
 
 ## Examples
 
-Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use cases!
+Visit our [examples](./examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use cases.
 
 ## Changelog
 
