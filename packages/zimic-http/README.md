@@ -77,9 +77,11 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
 ## Basic usage
 
-1.  Declare your types:
+1.  Declare your HTTP schema ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
 
     ```ts
+    import { type HttpSchema } from '@zimic/http';
+
     interface User {
       username: string;
     }
@@ -88,12 +90,6 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
       code: string;
       message: string;
     }
-    ```
-
-2.  Declare your HTTP schema ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
-
-    ```ts
-    import { type HttpSchema } from '@zimic/http';
 
     type MySchema = HttpSchema<{
       '/users': {
@@ -134,7 +130,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     }>;
     ```
 
-3.  Then, use your schema:
+2.  Then, use your schema:
 
     - Example 1: Reference types in your code:
 

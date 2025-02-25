@@ -9,8 +9,9 @@ import { FetchOptions, Fetch } from './types/public';
  * {@link https://developer.mozilla.org/docs/Web/API/Fetch_API native Fetch API}. All requests and responses are typed by
  * default with the schema, including methods, paths, status codes, parameters, and bodies.
  *
- * Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance. Default
- * options are also applied to the requests, if provided.
+ * Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance.
+ * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch.defaults Default options} are also applied to the
+ * requests, if provided.
  *
  * @example
  *   import { type HttpSchema } from '@zimic/http';
@@ -22,16 +23,6 @@ import { FetchOptions, Fetch } from './types/public';
  *
  *   const fetch = createFetch<MySchema>({
  *     baseURL: 'http://localhost:3000',
- *     headers: { 'accept-language': 'en' },
- *     searchParams: {},
- *     onRequest(request) {
- *       console.log(`Request: ${request.method} ${request.url}`);
- *       return request;
- *     },
- *     onResponse(response) {
- *       console.log(`Response: ${response.status} ${response.statusText}`);
- *       return response;
- *     },
  *   });
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions `createFetch(options)` API reference}

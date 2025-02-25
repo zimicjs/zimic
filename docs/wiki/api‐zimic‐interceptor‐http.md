@@ -37,7 +37,7 @@
 
 ---
 
-This module exports resources to create HTTP interceptors and mock HTTP responses.
+`zimic/interceptor/http` exports resources to create HTTP interceptors and mock HTTP responses.
 
 ## `HttpInterceptor`
 

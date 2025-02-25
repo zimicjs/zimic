@@ -1,4 +1,4 @@
-# API reference: `zimic/typegen` <!-- omit from toc -->
+# API reference: `@zimic/http/typegen` <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -7,7 +7,7 @@
 
 ---
 
-This module exports resources to generate types programmatically. We recommend using the
+`@zimic/http/typegen` exports resources to generate types programmatically. We recommend using the
 [`zimic-http typegen` CLI](cli‐zimic‐typegen), but this is still a valid alternative for more advanced use cases.
 
 ## `typegen.generateFromOpenAPI(options)`

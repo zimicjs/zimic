@@ -72,13 +72,14 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 |  yarn   | `yarn add @zimic/http @zimic/fetch`           |
 |  pnpm   | `pnpm add @zimic/http @zimic/fetch`           |
 
-Note that `@zimic/fetch` requires `@zimic/http` as a peer dependency.
-
 ## Basic usage
 
-1.  Declare your types:
+1.  Declare your HTTP schema using `@zimic/http`
+    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
 
     ```ts
+    import { type HttpSchema } from '@zimic/http';
+
     interface User {
       username: string;
     }
@@ -87,13 +88,6 @@ Note that `@zimic/fetch` requires `@zimic/http` as a peer dependency.
       code: string;
       message: string;
     }
-    ```
-
-2.  Declare your HTTP schema using `@zimic/http`
-    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
-
-    ```ts
-    import { type HttpSchema } from '@zimic/http';
 
     type MySchema = HttpSchema<{
       '/users': {
@@ -134,7 +128,7 @@ Note that `@zimic/fetch` requires `@zimic/http` as a peer dependency.
     }>;
     ```
 
-3.  Create your fetch client ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions)):
+2.  Create your fetch client ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions)):
 
     ```ts
     import { createFetch } from '@zimic/fetch';
@@ -144,7 +138,7 @@ Note that `@zimic/fetch` requires `@zimic/http` as a peer dependency.
     });
     ```
 
-4.  Enjoy requests and responses typed by default!
+3.  Enjoy requests and responses typed by default!
 
     ```ts
     const response = await fetch('/users', {

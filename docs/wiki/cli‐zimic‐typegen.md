@@ -10,8 +10,8 @@
 
 ---
 
-This module contains commands to generate types from schema sources. This is useful to save development time, avoid
-errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
+`zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time,
+avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
 ## `zimic-http typegen openapi`
 

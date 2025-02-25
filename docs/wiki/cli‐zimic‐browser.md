@@ -6,7 +6,7 @@
 
 ---
 
-This module contains commands to manage browser mock configuration.
+`zimic-interceptor browser` contains commands to manage browser mock configuration.
 
 ## `zimic-interceptor browser init`
 

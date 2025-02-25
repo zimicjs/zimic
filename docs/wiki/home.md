@@ -115,6 +115,11 @@ HTTP requests.
 - :bulb: **Simplicity**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your
   mocks. Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
 
+> [!TIP]
+>
+> `@zimic/fetch` and `@zimic/interceptor` are not tied to each other. You can use `@zimic/interceptor` with any HTTP
+> client library (e.g. `fetch`, `axios`), and `@zimic/fetch` with any HTTP interceptor library (e.g. `msw`, `nock`).
+
 ### Documentation
 
 - [`@zimic/interceptor` - Getting started](getting‐started‐interceptor)
