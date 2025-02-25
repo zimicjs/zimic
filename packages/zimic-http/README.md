@@ -65,7 +65,7 @@ search params, and form data.
 
 ## Getting started
 
-Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started).
+Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started‐http).
 
 ### Installation
 
@@ -200,9 +200,10 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 ## Documentation
 
 - [Introduction](https://github.com/zimicjs/zimic/wiki)
-- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started#zimic-http)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
 - [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
-- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
+- CLI reference
+  - [Typegen](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
 
 ## Examples
 

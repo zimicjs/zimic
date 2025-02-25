@@ -66,7 +66,7 @@
 
 ## Getting started
 
-Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started).
+Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor).
 
 ### Installation
 
@@ -241,9 +241,11 @@ Note that `@zimic/interceptor` requires `@zimic/http` as a peer dependency.
 ## Documentation
 
 - [Introduction](https://github.com/zimicjs/zimic/wiki)
-- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started)
-- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic)
-- [CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic)
+- [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
+- [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
+- CLI reference
+  - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐browser)
+  - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server)
 - Guides
   - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
 

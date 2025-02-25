@@ -55,7 +55,8 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 ## `@zimic/http`
 
-[`@zimic/http`](./packages/zimic-http) exports utilities to working with HTTP requests and responses in a type-safe way.
+[`@zimic/http`](./packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
+requests, responses, headers, search params, and form data.
 
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and use it to type your HTTP
@@ -70,17 +71,18 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 ### Documentation
 
-- [Getting started with `@zimic/http`](https://github.com/zimicjs/zimic/wiki/getting‐started#zimic-http)
-- [`@zimic/http`- API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
-- [`@zimic/http` - CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
+- [`@zimic/http` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
+- [`@zimic/http` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
+- `@zimic/http` - CLI reference
+  - [Typegen](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
 
 ## `@zimic/fetch`
 
 [`@zimic/fetch`](./packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
-`fetch`-like API client.
+`fetch` -like API client.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
+  [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and have your requests and
   responses fully typed by default.
 - :muscle: **Developer experience**: While mostly compatible with the
@@ -90,8 +92,8 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 ### Documentation
 
-- [Getting started with `@zimic/fetch`](https://github.com/zimicjs/zimic/wiki/getting‐started#zimic-fetch)
-- [`@zimic/fetch`- API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
+- [`@zimic/fetch` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐fetch)
+- [`@zimic/fetch` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
 
 ## `@zimic/interceptor`
 
@@ -115,10 +117,13 @@ requests.
 
 ### Documentation
 
-- [Getting started with `@zimic/interceptor`](https://github.com/zimicjs/zimic/wiki/getting‐started#zimic-interceptor)
-- [`@zimic/interceptor`- API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
-- [`@zimic/interceptor`- Browser CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐browser)
-- [`@zimic/interceptor`- Server CLI reference](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server)
+- [`@zimic/interceptor` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
+- [`@zimic/interceptor` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
+- `@zimic/interceptor` - CLI reference
+  - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐browser)
+  - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server)
+- `@zimic/interceptor` - Guides
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
 
 ## Examples
 
