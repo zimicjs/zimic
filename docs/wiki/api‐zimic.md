@@ -1,4 +1,4 @@
-# API reference: `zimic` <!-- omit from toc -->
+# API reference: `zimic`
 
 > [!NOTE]
 >

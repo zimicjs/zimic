@@ -71,17 +71,18 @@ requests, responses, headers, search params, and form data.
 
 ### Documentation
 
-- [Getting started with `@zimic/http`](getting‐started#zimic-http)
-- [`@zimic/http`- API reference](api‐zimic‐http)
-- [`@zimic/http` - CLI reference](cli‐zimic‐typegen)
+- [`@zimic/http` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
+- [`@zimic/http` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
+- `@zimic/http` - CLI reference
+  - [Typegen](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
 
 ## `@zimic/fetch`
 
 [`@zimic/fetch`](../../packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
-`fetch`-like API client.
+`fetch` -like API client.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
+  [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and have your requests and
   responses fully typed by default.
 - :muscle: **Developer experience**: While mostly compatible with the
@@ -91,8 +92,8 @@ requests, responses, headers, search params, and form data.
 
 ### Documentation
 
-- [Getting started with `@zimic/fetch`](getting‐started#zimic-fetch)
-- [`@zimic/fetch`- API reference](api‐zimic‐fetch)
+- [`@zimic/fetch` - Getting started](getting‐started‐fetch)
+- [`@zimic/fetch` - API reference](api‐zimic‐fetch)
 
 ## `@zimic/interceptor`
 
@@ -116,10 +117,13 @@ HTTP requests.
 
 ### Documentation
 
-- [Getting started with `@zimic/interceptor`](getting‐started#zimic-interceptor)
-- [`@zimic/interceptor`- API reference](api‐zimic‐interceptor‐http)
-- [`@zimic/interceptor`- Browser CLI reference](cli‐zimic‐browser)
-- [`@zimic/interceptor`- Server CLI reference](cli‐zimic‐server)
+- [`@zimic/interceptor` - Getting started](getting‐started‐interceptor)
+- [`@zimic/interceptor` - API reference](api‐zimic‐interceptor‐http)
+- `@zimic/interceptor` - CLI reference
+  - [Browser](cli‐zimic‐browser)
+  - [Server](cli‐zimic‐server)
+- `@zimic/interceptor` - Guides
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
 
 ## Examples
 

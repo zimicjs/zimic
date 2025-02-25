@@ -2,7 +2,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic-interceptor browser init`](#zimic-browser-init)
+- [`zimic-interceptor browser init`](#zimic-interceptor-browser-init)
 
 ---
 

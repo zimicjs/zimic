@@ -2,7 +2,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic-interceptor server start`](#zimic-server-start)
+- [`zimic-interceptor server start`](#zimic-interceptor-server-start)
 - [Programmatic usage](#programmatic-usage)
 
 ---

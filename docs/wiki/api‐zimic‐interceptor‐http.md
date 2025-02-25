@@ -325,8 +325,8 @@ httpInterceptor.default.remote.onUnhandledRequest = (request) => {
 > If no running interceptor matches the request, one of two things may happen:
 >
 > - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
->   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server.md#zimic-server-start) in the
->   interceptor server.
+>   behavior is configured with the option
+>   [`--log-unhandled-requests`](cli‐zimic‐server.md#zimic-interceptor-server-start) in the interceptor server.
 > - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests

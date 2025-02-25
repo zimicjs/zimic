@@ -72,8 +72,8 @@ We also canary releases under the tag `canary`, containing the latest features a
 ### Client-side post-install
 
 If you plan to use [local interceptors](#local-http-interceptors) and run Zimic in a browser, you must first
-[initialize a mock service worker](cli‐zimic‐browser#zimic-browser-init) in your public directory. After that, you are
-ready to start mocking!
+[initialize a mock service worker](cli‐zimic‐browser#zimic-interceptor-browser-init) in your public directory. After
+that, you are ready to start mocking!
 
 ### Server-side post-install
 
@@ -351,9 +351,9 @@ use remote interceptors.
    </details></td></tr></table>
 
    If you are [creating a remote interceptor](api‐zimic‐interceptor‐http#creating-a-remote-http-interceptor), it's
-   necessary to have a running [interceptor server](cli‐zimic‐server#zimic-server-start) before starting it. The base
-   URL of the remote interceptor should point to the server, optionally including a path to differentiate from other
-   interceptors.
+   necessary to have a running [interceptor server](cli‐zimic‐server#zimic-interceptor-server-start) before starting it.
+   The base URL of the remote interceptor should point to the server, optionally including a path to differentiate from
+   other interceptors.
 
 3. Now, you can intercept requests and return mock responses!
 
