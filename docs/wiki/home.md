@@ -55,8 +55,8 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 ## `@zimic/http`
 
-[`@zimic/http`](../../packages/zimic-http) exports utilities to working with HTTP requests and responses in a type-safe
-way.
+[`@zimic/http`](../../packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
+requests, responses, headers, search params, and form data.
 
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and use it to type your HTTP
@@ -124,7 +124,7 @@ HTTP requests.
 ## Examples
 
 Visit our [examples](../../examples/README.md) to see how to use Zimic with popular frameworks, libraries, and use
-cases!
+cases.
 
 ## Changelog
 

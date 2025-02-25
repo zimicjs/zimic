@@ -203,7 +203,7 @@ use remote interceptors.
 
    // Create your interceptor:
    // https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
-   const myInterceptor = httpInterceptor.create<MySchema>({
+   const interceptor = httpInterceptor.create<MySchema>({
      type: 'local',
      baseURL: 'http://localhost:3000',
      saveRequests: true, // Allow access to `handler.requests()`
@@ -271,7 +271,7 @@ use remote interceptors.
 
    // Create your interceptor:
    // https://bit.ly/zimic-interceptor-http#httpinterceptorcreateoptions
-   const myInterceptor = httpInterceptor.create<MySchema>({
+   const interceptor = httpInterceptor.create<MySchema>({
      type: 'remote',
      // The interceptor server is at http://localhost:4000
      baseURL: 'http://localhost:4000/my-service',
@@ -297,25 +297,25 @@ use remote interceptors.
    beforeAll(async () => {
      // Start intercepting requests:
      // https://bit.ly/zimic-interceptor-http#http-interceptorstart
-     await myInterceptor.start();
+     await interceptor.start();
    });
 
    beforeEach(() => {
      // Clear interceptors so that no tests affect each other:
      // https://bit.ly/zimic-interceptor-http#http-interceptorclear
-     myInterceptor.clear();
+     interceptor.clear();
    });
 
    afterEach(() => {
      // Check that all expected requests were made:
      // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
-     myInterceptor.checkTimes();
+     interceptor.checkTimes();
    });
 
    afterAll(async () => {
      // Stop intercepting requests:
      // https://bit.ly/zimic-interceptor-http#http-interceptorstop
-     await myInterceptor.stop();
+     await interceptor.stop();
    });
    ```
 
@@ -326,25 +326,25 @@ use remote interceptors.
    beforeAll(async () => {
      // Start intercepting requests:
      // https://bit.ly/zimic-interceptor-http#http-interceptorstart
-     await myInterceptor.start();
+     await interceptor.start();
    });
 
    beforeEach(() => {
      // Clear interceptors so that no tests affect each other:
      // https://bit.ly/zimic-interceptor-http#http-interceptorclear
-     await myInterceptor.clear();
+     await interceptor.clear();
    });
 
    afterEach(() => {
      // Check that all expected requests were made:
      // https://bit.ly/zimic-interceptor-http#http-interceptorchecktimes
-     await myInterceptor.checkTimes();
+     await interceptor.checkTimes();
    });
 
    afterAll(async () => {
      // Stop intercepting requests:
      // https://bit.ly/zimic-interceptor-http#http-interceptorstop
-     await myInterceptor.stop();
+     await interceptor.stop();
    });
    ```
 
@@ -365,7 +365,7 @@ use remote interceptors.
 
      // Declare your mocks:
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-     const myHandler = myInterceptor
+     const handler = interceptor
        .get('/users')
        // Use restrictions to make declarative assertions and narrow down your mocks:
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
@@ -392,9 +392,9 @@ use remote interceptors.
      // NOTE: The code below checks the requests manually. This is optional in this
      // example because the `with` and `times` calls act as a declarative validation,
      // meaning that exactly one request is expected with specific data. If fewer or
-     // more requests are received, the test will fail when `myInterceptor.checkTimes()`
+     // more requests are received, the test will fail when `interceptor.checkTimes()`
      // is called in the `afterEach` hook.
-     const requests = myHandler.requests();
+     const requests = handler.requests();
      expect(requests).toHaveLength(1);
 
      expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');
@@ -414,7 +414,7 @@ use remote interceptors.
 
      // Declare your mocks:
      // https://bit.ly/zimic-interceptor-http#http-interceptormethodpath
-     const myHandler = await myInterceptor
+     const handler = await interceptor
        .get('/users')
        // Use restrictions to make declarative assertions and narrow down your mocks:
        // https://bit.ly/zimic-interceptor-http#http-handlerwithrestriction
@@ -441,9 +441,9 @@ use remote interceptors.
      // NOTE: The code below checks the requests manually. This is optional in this
      // example because the `with` and `times` calls act as a declarative validation,
      // meaning that exactly one request is expected with specific data. If fewer or
-     // more requests are received, the test will fail when `myInterceptor.checkTimes()`
+     // more requests are received, the test will fail when `interceptor.checkTimes()`
      // is called in the `afterEach` hook.
-     const requests = await myHandler.requests();
+     const requests = await handler.requests();
      expect(requests).toHaveLength(1);
 
      expect(requests[0].headers.get('authorization')).toBe('Bearer my-token');

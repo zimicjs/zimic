@@ -28,11 +28,11 @@ An example using a [Jest](https://jestjs.io)/[Vitest](https://vitest.dev) API:
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using local interceptors</b></summary>
 
 ```ts
-import myInterceptor from './interceptors/myInterceptor';
+import interceptor from './interceptors/interceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
 // Your interceptors
-const interceptors = [myInterceptor, myOtherInterceptor];
+const interceptors = [interceptor, myOtherInterceptor];
 
 // Start intercepting requests
 beforeAll(async () => {
@@ -70,11 +70,11 @@ afterAll(async () => {
 </details></td></tr><tr></tr><tr><td width="900px" valign="top"><details open><summary><b>Using remote interceptors</b></summary>
 
 ```ts
-import myInterceptor from './interceptors/myInterceptor';
+import interceptor from './interceptors/interceptor';
 import myOtherInterceptor from './interceptors/myOtherInterceptor';
 
 // Your interceptors
-const interceptors = [myInterceptor, myOtherInterceptor];
+const interceptors = [interceptor, myOtherInterceptor];
 
 // Start intercepting requests
 beforeAll(async () => {
