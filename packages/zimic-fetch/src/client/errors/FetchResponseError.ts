@@ -2,6 +2,31 @@ import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 
 import { FetchRequest, FetchResponse } from '../types/requests';
 
+/**
+ * An error that is thrown when a fetch request fails with a failure status code (4XX or 5XX).
+ *
+ * @example
+ *   import { type HttpSchema } from '@zimic/http';
+ *   import { createFetch } from '@zimic/fetch';
+ *
+ *   type MySchema = HttpSchema<{
+ *     // ...
+ *   }>;
+ *
+ *   const fetch = createFetch<MySchema>({
+ *     baseURL: 'http://localhost:3000',
+ *   });
+ *
+ *   await fetch('/users', {
+ *     method: 'GET',
+ *     searchParams: { username: 'my', limit: '10' },
+ *   });
+ *
+ *   if (!response.ok) {
+ *     console.log(response.error.request); // FetchRequest<MySchema, 'GET', '/users'>
+ *     console.log(response.error.response); // FetchResponse<MySchema, 'GET', '/users'>
+ *   }
+ */
 class FetchResponseError<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,

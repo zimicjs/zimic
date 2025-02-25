@@ -152,16 +152,16 @@ Note that `@zimic/fetch` requires `@zimic/http` as a peer dependency.
       searchParams: { username: 'my', limit: '10' },
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log('User not found');
-      }
+    if (response.status === 404) {
+      return null; // User not found
+    }
 
+    if (!response.ok) {
       throw response.error;
     }
 
     const users = await response.json();
-    console.log(users); // [{ username: 'my-user' }]
+    return users; // [{ username: 'my-user' }]
     ```
 
 ## Documentation
