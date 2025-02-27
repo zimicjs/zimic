@@ -45,11 +45,9 @@
 
 ---
 
-`@zimic/fetch` is a lightweight, thoroughly tested, TypeScript-first HTTP request interceptor and mock library.
+`@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch` -like API client.
 
 ## Features
-
-`@zimic/fetch` provides a flexible and type-safe way to intercept and mock HTTP requests.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
   [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`

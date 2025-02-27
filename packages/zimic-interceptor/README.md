@@ -49,8 +49,6 @@
 
 ## Features
 
-`@zimic/interceptor` provides a flexible and type-safe way to intercept and mock HTTP requests.
-
 - :zap: **Fully typed mocks**: Declare the
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) of your HTTP endpoints and have
   your mocks 100% type-checked by default. Have [OpenAPI v3](https://swagger.io/specification) schema?

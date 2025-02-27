@@ -50,8 +50,6 @@ search params, and form data.
 
 ## Features
 
-`@zimic/http` provides a flexible and type-safe way to intercept and mock HTTP requests.
-
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and use it to type your HTTP
   requests and responses. If you have an [OpenAPI v3](https://swagger.io/specification) schema,
