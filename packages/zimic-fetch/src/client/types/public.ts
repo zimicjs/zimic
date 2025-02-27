@@ -45,10 +45,24 @@ export namespace FetchFunction {
  */
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
   /**
-   * A listener function that is called before each request is sent. It can modify the requests before they are sent.
+   * A listener function that is called for each request. It can modify the requests before they are sent.
+   *
+   * @example
+   *   import { createFetch } from '@zimic/fetch';
+   *
+   *   const fetch = createFetch<MySchema>({
+   *     baseURL: 'http://localhost:3000',
+   *   });
+   *
+   *   fetch.onRequest = function (request) {
+   *     if (this.isRequest(request, 'GET', '/users')) {
+   *       request.searchParams.set('limit', '10');
+   *     }
+   *     return request;
+   *   };
    *
    * @param request The original request.
-   * @returns The request to be sent.
+   * @returns The request to be sent. It can be the original request or a modified version of it.
    * @this {Fetch<Schema>} The fetch instance that is sending the request.
    */
   onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
@@ -57,6 +71,26 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
    * A listener function that is called after each response is received. It can modify the responses before they are
    * returned to the fetch caller.
    *
+   * @example
+   *   import { createFetch } from '@zimic/fetch';
+   *
+   *   const fetch = createFetch<MySchema>({
+   *     baseURL: 'http://localhost:3000',
+   *   });
+   *
+   *   fetch.onResponse = function (response) {
+   *     const updatedHeaders = new Headers(response.headers);
+   *     updatedHeaders.set('content-language', 'en');
+   *
+   *     const updatedResponse = new Response(response.body, {
+   *       status: response.status,
+   *       statusText: response.statusText,
+   *       headers: updatedHeaders,
+   *     });
+   *
+   *     return updatedResponse;
+   *   };
+   *
    * @param response The original response.
    * @returns The response to be returned.
    * @this {Fetch<Schema>} The fetch instance that received the response.
@@ -64,6 +98,7 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
   onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
 }
 
+/** The default options for each request sent by the fetch instance. */
 export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 
 export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
@@ -145,7 +180,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
   Request: FetchRequestConstructor<Schema>;
 
   /**
-   * A type guard that checks if a request is a {@link FetchRequest}, was created by this fetch instance, and has a
+   * A type guard that checks if a request is a {@link FetchRequest}, was created by the fetch instance, and has a
    * specific method and path. This is useful to narrow down the type of a request before using it.
    *
    * @example
@@ -171,7 +206,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    * @param request The request to check.
    * @param method The method to check.
    * @param path The path to check.
-   * @returns `true` if the request was created by this fetch instance and has the specified method and path; `false`
+   * @returns `true` if the request was created by the fetch instance and has the specified method and path; `false`
    *   otherwise.
    */
   isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
@@ -181,7 +216,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
   ) => request is FetchRequest<Schema, Method, Path>;
 
   /**
-   * A type guard that checks if a response is a {@link FetchResponse}, was received by this fetch instance, and has a
+   * A type guard that checks if a response is a {@link FetchResponse}, was received by the fetch instance, and has a
    * specific method and path. This is useful to narrow down the type of a response before using it.
    *
    * @example
@@ -208,7 +243,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    * @param response The response to check.
    * @param method The method to check.
    * @param path The path to check.
-   * @returns `true` if the response was received by this fetch instance and has the specified method and path; `false`
+   * @returns `true` if the response was received by the fetch instance and has the specified method and path; `false`
    *   otherwise.
    */
   isResponse: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
@@ -219,7 +254,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
 
   /**
    * A type guard that checks if an error is a {@link FetchResponseError} related to a {@link FetchResponse response}
-   * received by this fetch instance with a specific method and path. This is useful to narrow down the type of an error
+   * received by the fetch instance with a specific method and path. This is useful to narrow down the type of an error
    * before handling it.
    *
    * @example
@@ -252,7 +287,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    * @param error The error to check.
    * @param method The method to check.
    * @param path The path to check.
-   * @returns `true` if the error is a response error received by this fetch instance and has the specified method and
+   * @returns `true` if the error is a response error received by the fetch instance and has the specified method and
    *   path; `false` otherwise.
    */
   isResponseError: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
