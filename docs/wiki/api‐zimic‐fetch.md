@@ -55,26 +55,38 @@ import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
 interface User {
+  id: string;
   username: string;
 }
 
-type MySchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users': {
     POST: {
-      request: { body: User };
-      response: { 201: { body: User } };
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
     };
 
     GET: {
       request: {
-        searchParams: { username?: string; limit?: `${number}` };
+        searchParams: {
+          query?: string;
+          page?: number;
+          limit?: number;
+        };
       };
-      response: { 200: { body: User[] } };
+      response: {
+        200: { body: User[] };
+      };
     };
   };
 }>;
 
-const fetch = createFetch<MySchema>({
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 ```
@@ -122,16 +134,35 @@ Requests sent by the fetch instance have their URL automatically prefixed with t
 [Default options](#fetchdefaults) are also applied to the requests, if provided.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: { query?: string };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   headers: { 'accept-language': 'en' },
 });
 
 const response = await fetch('/users', {
   method: 'GET',
-  searchParams: { username: 'my', limit: '10' },
+  searchParams: { query: 'my' },
 });
 
 if (response.status === 404) {
@@ -143,7 +174,7 @@ if (!response.ok) {
 }
 
 const users = await response.json();
-return users; // [{ username: 'my-user' }]
+return users; // User[]
 ```
 
 ### `fetch` parameters
@@ -176,15 +207,35 @@ The default options for each request sent by the fetch instance. The available o
 [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) options, plus `baseURL`.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface Post {
+  id: string;
+  title: string;
+}
+
+type Schema = HttpSchema<{
+  '/posts': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { title: string };
+      };
+      response: {
+        201: { body: Post };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   headers: { 'accept-language': 'en' },
 });
 
 // Set the authorization header for all requests
-const token = await getToken();
+const { accessToken } = await authenticate();
 
 fetch.defaults.headers['authorization'] = `Bearer ${token}`;
 console.log(fetch.defaults.headers);
@@ -194,6 +245,8 @@ const response = await fetch('/posts', {
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ title: 'My post' }),
 });
+
+const post = await response.json(); // Post
 ```
 
 ### `fetch.onRequest`
@@ -201,9 +254,28 @@ const response = await fetch('/posts', {
 A listener function that is called for each request. It can modify the requests before they are sent.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: { page?: number; limit?: number };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
@@ -238,23 +310,32 @@ A listener function that is called after each response is received. It can modif
 to the fetch caller.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
-  baseURL: 'http://localhost:3000',
-});
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      response: {
+        200: {
+          headers: { 'content-encoding'?: string };
+          body: User[];
+        };
+      };
+    };
+  };
+}>;
 
 fetch.onResponse = function (response) {
-  const updatedHeaders = new Headers(response.headers);
-  updatedHeaders.set('content-language', 'en');
-
-  const updatedResponse = new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: updatedHeaders,
-  });
-
-  return updatedResponse;
+  if (this.isResponse(response, 'GET', '/users')) {
+    console.log(response.headers.get('content-encoding'));
+  }
+  return response;
 };
 ```
 
@@ -271,15 +352,6 @@ fetch.onResponse = function (response) {
 
 Inside the listener, use `this` to refer to the fetch instance that received the response.
 
-```ts
-fetch.onResponse = function (response) {
-  if (this.isResponse(response, 'GET', '/users')) {
-    console.log(response.headers.get('content-type'));
-  }
-  return response;
-};
-```
-
 #### `fetch.onResponse` return
 
 The response to be returned. It can be the original response or a modified version of it.
@@ -290,18 +362,40 @@ A type guard that checks if a request is a [`FetchRequest`](#fetchrequest), was 
 specific method and path. This is useful to narrow down the type of a request before using it.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-const request = new fetch.Request('POST', '/users', {
+const request = new fetch.Request('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'my-user' }),
 });
 
 if (fetch.isRequest(request, 'POST', '/users')) {
-  // request is a FetchRequest<MySchema, 'POST', '/users'>
+  // request is a FetchRequest<Schema, 'POST', '/users'>
 }
 ```
 
@@ -324,19 +418,38 @@ A type guard that checks if a response is a [`FetchResponse`](#fetchresponse), w
 has a specific method and path. This is useful to narrow down the type of a response before using it.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: { query?: string };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
 const response = await fetch('/users', {
   method: 'GET',
-  searchParams: { username: 'my', limit: '10' },
+  searchParams: { query: 'my' },
 });
 
 if (fetch.isResponse(response, 'GET', '/users')) {
-  // response is a FetchResponse<MySchema, 'GET', '/users'>
+  // response is a FetchResponse<Schema, 'GET', '/users'>
 }
 ```
 
@@ -359,29 +472,50 @@ A type guard that checks if an error is a `FetchResponseError` related to a `Fet
 fetch instance with a specific method and path. This is useful to narrow down the type of an error before handling it.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: { query?: string };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: { message: string } };
+        500: { body: { message: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
 try {
-  await fetch('/users', {
+  const response = await fetch('/users', {
     method: 'GET',
-    searchParams: { username: 'my', limit: '10' },
+    searchParams: { query: 'my' },
   });
 
   if (!response.ok) {
-    throw response.error;
+    throw response.error; // FetchResponseError<Schema, 'GET', '/users'>
   }
 } catch (error) {
   if (fetch.isResponseError(error, 'GET', '/users')) {
-    // error is a FetchResponseError<MySchema, 'GET', '/users'>
+    // error is a FetchResponseError<Schema, 'GET', '/users'>
 
-    const status = error.response.status;
-    const data = await error.response.json();
+    const status = error.response.status; // 400 | 500
+    const { message } = await error.response.json(); // { message: string }
 
-    console.error('Could not fetch users:', status, data);
+    console.error('Could not fetch users:', { status, message });
   }
 }
 ```
@@ -410,21 +544,42 @@ with the base URL of their fetch instance. Default options are also applied, if 
 The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-const request = new fetch.Request('POST', '/users', {
+const request = new fetch.Request('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'my-user' }),
 });
-console.log(request); // FetchRequest<MySchema, 'POST', '/users'>
+console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 ```
 
 **See also:**
 
-- [`fetch` API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch)
 - [Request](https://developer.mozilla.org/docs/Web/API/Request)
 
 ## `FetchResponse`
@@ -438,22 +593,47 @@ originated them, available in the `request` property.
 If the response has a failure status code (4XX or 5XX), an error is available in the `error` property.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users/:userId': {
+    GET: {
+      response: {
+        200: { body: User };
+        404: { body: { message: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-const response = await fetch('/users', {
+const response = await fetch(`/users/${userId}`, {
   method: 'GET',
-  searchParams: { username: 'my', limit: '10' },
 });
-console.log(response); // FetchResponse<MySchema, 'GET', '/users'>
+
+console.log(response); // FetchResponse<Schema, 'GET', '/users'>
+
+if (response.status === 404) {
+  const errorBody = await response.json(); // { message: string }
+  console.error(errorBody.message);
+  return null;
+} else {
+  const user = await response.json(); // User
+  return user;
+}
 ```
 
 **See also:**
 
-- [`fetch` API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch)
 - [Response](https://developer.mozilla.org/docs/Web/API/Response)
 
 ## `FetchResponseError`
@@ -461,20 +641,39 @@ console.log(response); // FetchResponse<MySchema, 'GET', '/users'>
 An error that is thrown when a fetch request fails with a failure status code (4XX or 5XX).
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-const fetch = createFetch<MySchema>({
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users/:userId': {
+    GET: {
+      response: {
+        200: { body: User };
+        404: { body: { message: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
 });
 
-await fetch('/users', {
+const response = await fetch(`/users/${userId}`, {
   method: 'GET',
-  searchParams: { username: 'my', limit: '10' },
 });
 
 if (!response.ok) {
-  console.log(response.error.request); // FetchRequest<MySchema, 'GET', '/users'>
-  console.log(response.error.response); // FetchResponse<MySchema, 'GET', '/users'>
+  console.log(response.status); // 404
+
+  console.log(response.error); // FetchResponseError<Schema, 'GET', '/users'>
+  console.log(response.error.request); // FetchRequest<Schema, 'GET', '/users'>
+  console.log(response.error.response); // FetchResponse<Schema, 'GET', '/users'>
 }
 ```
 
@@ -485,31 +684,64 @@ if (!response.ok) {
 You can set headers for individual `fetch` requests by using the `headers` option.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        headers: { 'accept-language'?: string };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
 // The 'accept-language' header for this request is set to 'fr'.
 const response = await fetch('/users', {
   method: 'GET',
   headers: { 'accept-language': 'fr' },
 });
+
+const users = await response.json(); // User[]
 ```
 
 If you'd like to set default headers for all requests, you can use [`fetch.defaults`](#fetchdefaults), either when
 creating the fetch instance or at runtime.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-// All requests will have the 'accept-language' header set to 'en'.
-const fetch = createFetch<MySchema>({
+type Schema = HttpSchema<{
+  // ...
+}>;
+
+// Set default headers for all requests on creation
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   headers: { 'accept-language': 'en' },
 });
 
-// Set the authorization header for all requests
-const token = await getToken();
+// Set default headers for all requests at runtime
+const { accessToken } = await authenticate();
+
 fetch.defaults.headers['authorization'] = `Bearer ${token}`;
 ```
 
-[`fetch.onRequest`](#fetchonrequest) can also be used to set headers for all of a subset of your requests.
+[`fetch.onRequest`](#fetchonrequest) can also be used to set headers for all of your requests or a subset of them.
 
 ```ts
 fetch.onRequest = function (request) {
@@ -525,6 +757,34 @@ fetch.onRequest = function (request) {
 You can set search params (query) for individual `fetch` requests by using the `searchParams` option.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        searchParams: {
+          limit?: `${number}`;
+          orderBy?: 'createdAt:asc' | 'createdAt:desc';
+        };
+      };
+      response: {
+        200: { body: User[] };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
 // The search params for this request are set to 'limit=10&orderBy=createdAt:desc'.
 const response = await fetch('/users', {
   method: 'GET',
@@ -536,20 +796,25 @@ If you'd like to set default search params for all requests, you can use [`fetch
 creating the fetch instance or at runtime.
 
 ```ts
+import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
 
-// All requests will have the search params set to 'limit=10'.
-const fetch = createFetch<MySchema>({
+type Schema = HttpSchema<{
+  // ...
+}>;
+
+// Set default search params for all requests on creation
+const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
   searchParams: { limit: '10' },
 });
 
-// Set the search params for all requests
+// Set default search params for all requests at runtime
 fetch.defaults.searchParams['orderBy'] = 'createdAt:desc';
 console.log(fetch.defaults.searchParams);
 ```
 
-[`fetch.onRequest`](#fetchonrequest) can also be used to set search params for all of a subset of your requests.
+[`fetch.onRequest`](#fetchonrequest) can also be used to set search params for all of your requests or a subset of them.
 
 ```ts
 fetch.onRequest = function (request) {
@@ -564,10 +829,243 @@ fetch.onRequest = function (request) {
 
 #### Using a JSON body
 
+To send a JSON body in a request, use the header `'content-type': 'application/json'` and pass the stringified JSON
+object in the `body` option.
+
+```ts
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { username: string };
+      };
+      response: {
+        201: { body: User };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch('/users', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'my-user' }),
+});
+
+const user = await response.json(); // User
+```
+
 #### Using a `FormData` body
+
+To send a `FormData` body in a request, use the header `'content-type': 'multipart/form-data'` and pass the
+[`HttpFormData`](api‐zimic‐http#httpformdata) object in the `body` option.
+
+The HTTP schema should define the body as a `HttpFormData<FormDataSchema>` object, where `FormDataSchema` is a type
+representing the form data fields.
+
+```ts
+import { HttpFormData, type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+type AvatarFormDataSchema = HttpSchema.FormData<{
+  image: File;
+}>;
+
+type Schema = HttpSchema<{
+  '/users/:userId/avatar': {
+    PUT: {
+      request: {
+        headers: { 'content-type': 'multipart/form-data' };
+        body: HttpFormData<AvatarFormDataSchema>;
+      };
+      response: {
+        200: { body: { url: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const formData = new HttpFormData<AvatarFormDataSchema>();
+
+const imageInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+const imageFile = imageInput!.files![0];
+formData.append('image', imageFile);
+
+const response = await fetch(`/users/${userId}/avatar`, {
+  method: 'PUT',
+  headers: { 'content-type': 'multipart/form-data' },
+  body: formData,
+});
+
+const result = await response.json(); // { url: string }
+```
 
 #### Using a file or binary body
 
+To send a file or binary body in a request, use the header `'content-type': 'application/octet-stream'` and pass the
+`File`, `Blob` or `ArrayBuffer` in the `body` option.
+
+```ts
+import fs from 'fs';
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface Video {
+  id: string;
+  url: string;
+}
+
+type Schema = HttpSchema<{
+  '/upload/mp4': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'video/mp4' };
+        body: Blob;
+      };
+    };
+    response: {
+      201: { body: Video };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const videoBuffer = await fs.promises.readFile('video.mp4');
+const videoFile = new File([videoBuffer], 'video.mp4');
+
+const response = await fetch('/upload/mp4', {
+  method: 'POST',
+  headers: { 'content-type': 'video/mp4' },
+  body: videoFile,
+});
+
+const video = await response.json(); // Video
+```
+
 ### Handling authentication
 
+To manage authenticated clients, you can use [`fetch.defaults`](#fetchdefaults) to set the necessary headers for your
+requests.
+
+```ts
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users': {
+    GET: {
+      request: {
+        headers?: { authorization?: string };
+        searchParams: { query?: string };
+      };
+      response: {
+        200: { body: User[] };
+        400: { body: { message: string } };
+        500: { body: { message: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+// Authenticate to your service
+const { accessToken } = await authenticate();
+
+// Set the authorization header for all requests
+fetch.defaults.headers['authorization'] = `Bearer ${token}`;
+
+const request = await fetch('/users', {
+  method: 'GET',
+  searchParams: { query: 'my' },
+});
+
+const users = await request.json(); // User[]
+```
+
+Alternatively, you can use [`fetch.onRequest`](#fetchonrequest) to manually set headers in all of your requests or a
+subset of them.
+
 ### Handling errors
+
+`@zimic/fetch` fully types the responses and errors of your requests based on your HTTP schema. If the response has a
+failure status code (4XX or 5XX), the `response.ok` property is `false` and throw the `response.error` property, which
+is a `FetchResponseError` and can be handled upper in the call stack. If you want to handle the error in the same place
+as the request, you can check the `response.status` or the `response.ok` properties.
+
+```ts
+import { type HttpSchema } from '@zimic/http';
+import { createFetch } from '@zimic/fetch';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+type Schema = HttpSchema<{
+  '/users/:userId': {
+    GET: {
+      request: {
+        headers?: { authorization?: string };
+      };
+      response: {
+        200: { body: User };
+        401: { body: { code: 'UNAUTHORIZED'; message: string } };
+        403: { body: { code: 'FORBIDDEN'; message: string } };
+        404: { body: { code: 'NOT_FOUND'; message: string } };
+        500: { body: { code: 'INTERNAL_SERVER_ERROR'; message: string } };
+        503: { body: { code: 'SERVICE_UNAVAILABLE'; message: string } };
+      };
+    };
+  };
+}>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+});
+
+const response = await fetch(`/users/${userId}`, {
+  method: 'GET',
+});
+
+if (response.ok) {
+  const user = await response.json(); // User
+  return user;
+} else {
+  if (response.status === 401 || response.status === 403) {
+    const errorBody = await response.json(); // { code: 'UNAUTHORIZED' | 'FORBIDDEN'; message: string }
+    console.error('Authentication error:', errorBody);
+  } else if (response.status === 404) {
+    return null;
+  }
+
+  throw response.error;
+}
+```
