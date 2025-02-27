@@ -17,6 +17,8 @@ import {
   HttpResponseBodySchema,
   HttpResponseHeadersSchema,
   HttpRequestHeadersSchema,
+  HttpHeadersSchema,
+  HttpSearchParamsSchema,
 } from '@zimic/http';
 import { Default, DefaultNoExclude, IfNever, ReplaceBy } from '@zimic/utils/types';
 
@@ -73,10 +75,12 @@ export type FetchRequestInit<
     : never);
 
 export namespace FetchRequestInit {
-  export interface Defaults extends RequestInit {
+  /** The default options for each request sent by a fetch instance. */
+  export interface Defaults extends Omit<RequestInit, 'headers'> {
     baseURL: string;
     method?: HttpMethod;
-    searchParams?: HttpSearchParams;
+    headers?: HttpHeadersSchema;
+    searchParams?: HttpSearchParamsSchema;
   }
 }
 

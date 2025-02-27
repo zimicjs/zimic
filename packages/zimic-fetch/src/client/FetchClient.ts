@@ -4,13 +4,14 @@ import {
   HttpSearchParams,
   LiteralHttpSchemaPathFromNonLiteral,
   HttpSchema,
+  HttpHeaders,
 } from '@zimic/http';
 import createRegexFromURL from '@zimic/utils/url/createRegExpFromURL';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
-import { FetchInput, FetchOptions, Fetch } from './types/public';
+import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema> {
@@ -18,8 +19,14 @@ class FetchClient<Schema extends HttpSchema> {
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
     this.fetch = this.createFetchFunction();
-    this.fetch.defaults = defaults;
-    this.fetch.Request = this.createRequestClass(defaults);
+
+    this.fetch.defaults = {
+      ...defaults,
+      headers: defaults.headers ?? {},
+      searchParams: defaults.searchParams ?? {},
+    };
+
+    this.fetch.Request = this.createRequestClass(this.fetch.defaults);
     this.fetch.onRequest = onRequest;
     this.fetch.onResponse = onResponse;
   }
@@ -133,7 +140,7 @@ class FetchClient<Schema extends HttpSchema> {
     return fetchResponse;
   }
 
-  private createRequestClass(defaults: FetchRequestInit.Defaults) {
+  private createRequestClass(defaults: FetchDefaults) {
     class Request<
       Method extends HttpSchemaMethod<Schema>,
       Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -142,35 +149,53 @@ class FetchClient<Schema extends HttpSchema> {
 
       constructor(
         input: FetchInput<Schema, Method, Path>,
-        rawInit: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
+        init: FetchRequestInit<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>,
       ) {
-        const init = { ...defaults, ...rawInit };
+        const initWithDefaults = { ...defaults, ...init };
+
+        const headersFromDefaults = new HttpHeaders(defaults.headers);
+        const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
 
         let url: URL;
 
         if (input instanceof globalThis.Request) {
-          super(
-            // Optimize type checking by narrowing the type of input
-            input as globalThis.Request,
-            init,
-          );
+          // Optimize type checking by narrowing the type of input
+          const request = input as globalThis.Request;
+          const headersFromRequest = new HttpHeaders(input.headers);
+
+          initWithDefaults.headers = {
+            ...headersFromDefaults.toObject(),
+            ...headersFromRequest.toObject(),
+            ...headersFromInit.toObject(),
+          };
+
+          super(request, initWithDefaults);
 
           url = new URL(input.url);
         } else {
-          url = input instanceof URL ? new URL(input) : new URL(joinURL(init.baseURL, input));
+          initWithDefaults.headers = {
+            ...headersFromDefaults.toObject(),
+            ...headersFromInit.toObject(),
+          };
 
-          if (init.searchParams) {
-            url.search = new HttpSearchParams(init.searchParams).toString();
-          }
+          url = input instanceof URL ? new URL(input) : new URL(joinURL(initWithDefaults.baseURL, input));
 
-          super(url, init);
+          const searchParamsFromDefaults = new HttpSearchParams(defaults.searchParams);
+          const searchParamsFromInit = new HttpSearchParams(initWithDefaults.searchParams);
+
+          initWithDefaults.searchParams = {
+            ...searchParamsFromDefaults.toObject(),
+            ...searchParamsFromInit.toObject(),
+          };
+
+          url.search = new HttpSearchParams(initWithDefaults.searchParams).toString();
+
+          super(url, initWithDefaults);
         }
 
-        this.path = excludeURLParams(url).toString().replace(init.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<
-          Schema,
-          Method,
-          Path
-        >;
+        this.path = excludeURLParams(url)
+          .toString()
+          .replace(initWithDefaults.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }
 
       clone(): Request<Method, Path> {

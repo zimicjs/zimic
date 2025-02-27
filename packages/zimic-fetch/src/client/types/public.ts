@@ -1,5 +1,5 @@
 import { HttpSchemaPath, HttpSchemaMethod, LiteralHttpSchemaPathFromNonLiteral, HttpSchema } from '@zimic/http';
-import { PossiblePromise } from '@zimic/utils/types';
+import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 
 import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
@@ -27,13 +27,12 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
   onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
 }
 
-interface FetchClient<Schema extends HttpSchema> {
-  defaults: FetchRequestInit.Defaults;
+export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
+
+interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
+  defaults: FetchDefaults;
 
   Request: FetchRequestConstructor<Schema>;
-
-  onRequest?: FetchOptions<Schema>['onRequest'];
-  onResponse?: FetchOptions<Schema>['onResponse'];
 
   isRequest: <Method extends HttpSchemaMethod<Schema>, Path extends HttpSchemaPath.Literal<Schema, Method>>(
     request: unknown,
