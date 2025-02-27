@@ -23,8 +23,8 @@ interface FetchFunction<Schema extends HttpSchema> {
 }
 
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
-  onRequest?: (request: FetchRequest.Loose, fetch: Fetch<Schema>) => PossiblePromise<Request>;
-  onResponse?: (response: FetchResponse.Loose, fetch: Fetch<Schema>) => PossiblePromise<Response>;
+  onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
+  onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
 }
 
 interface FetchClient<Schema extends HttpSchema> {

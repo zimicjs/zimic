@@ -65,7 +65,6 @@ class FetchClient<Schema extends HttpSchema> {
       const requestAfterInterceptor = await this.fetch.onRequest(
         // Optimize type checking by narrowing the type of request
         request as FetchRequest.Loose,
-        this.fetch,
       );
 
       if (requestAfterInterceptor !== request) {
@@ -90,7 +89,6 @@ class FetchClient<Schema extends HttpSchema> {
       const responseAfterInterceptor = await this.fetch.onResponse(
         // Optimize type checking by narrowing the type of response
         response as FetchResponse.Loose,
-        this.fetch,
       );
 
       const isFetchResponse =
