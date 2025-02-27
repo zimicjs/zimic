@@ -1055,17 +1055,19 @@ const response = await fetch(`/users/${userId}`, {
   method: 'GET',
 });
 
-if (response.ok) {
-  const user = await response.json(); // User
-  return user;
-} else {
-  if (response.status === 401 || response.status === 403) {
-    const errorBody = await response.json(); // { code: 'UNAUTHORIZED' | 'FORBIDDEN'; message: string }
-    console.error('Authentication error:', errorBody);
-  } else if (response.status === 404) {
-    return null;
-  }
+if (response.status === 404) {
+  return null; // User not found
+}
 
+if (response.status === 401 || response.status === 403) {
+  const data = await response.json(); // { code: 'UNAUTHORIZED' | 'FORBIDDEN'; message: string }
+  console.error('Authentication error:', data);
+}
+
+if (!response.ok) {
   throw response.error;
 }
+
+const user = await response.json(); // User
+return user;
 ```

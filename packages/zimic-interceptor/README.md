@@ -49,9 +49,9 @@
 
 ## Features
 
-- :zap: **Fully typed mocks**: Declare the
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) of your HTTP endpoints and have
-  your mocks 100% type-checked by default. Have [OpenAPI v3](https://swagger.io/specification) schema?
+- :zap: **Fully typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) of
+  your HTTP endpoints and have your mocks 100% type-checked by default. Have
+  [OpenAPI v3](https://swagger.io/specification) schema?
   [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate types to
   keep your mocks in sync with your API.
 - :link: **Network-level interceptor**: `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and

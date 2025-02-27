@@ -51,8 +51,8 @@
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
   [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and have your requests and
-  responses fully typed by default.
+  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and responses fully
+  typed by default.
 - :muscle: **Developer experience**: While mostly compatible with the
   [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), `@zimic/fetch` provides a more ergonomic
   interface for common use cases. Define defaults to apply to all of your requests, such as a base URL, headers, search
@@ -72,8 +72,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
 ## Basic usage
 
-1.  Declare your HTTP schema using `@zimic/http`
-    ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
+1.  Declare your HTTP schema using [`@zimic/http`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http):
 
     ```ts
     import { type HttpSchema } from '@zimic/http';
@@ -126,7 +125,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     }>;
     ```
 
-2.  Create your fetch client ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions)):
+2.  Create your [fetch client](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions):
 
     ```ts
     import { createFetch } from '@zimic/fetch';

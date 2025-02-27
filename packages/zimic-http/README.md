@@ -51,8 +51,8 @@ search params, and form data.
 ## Features
 
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas) and use it to type your HTTP
-  requests and responses. If you have an [OpenAPI v3](https://swagger.io/specification) schema,
+  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and use it to type your HTTP requests and
+  responses. If you have an [OpenAPI v3](https://swagger.io/specification) schema,
   [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate the types
   of your schema.
 - :pushpin: **Type-safe native HTTP APIs**: Declare type-safe
@@ -75,7 +75,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
 ## Basic usage
 
-1.  Declare your HTTP schema ([learn more](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas)):
+1.  Declare your [HTTP schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas):
 
     ```ts
     import { type HttpSchema } from '@zimic/http';
