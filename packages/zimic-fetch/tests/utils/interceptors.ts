@@ -1,11 +1,37 @@
 import { HttpSchema } from '@zimic/http';
 import {
+  HttpInterceptor,
   httpInterceptor,
   HttpInterceptorOptions,
   LocalHttpInterceptor,
   RemoteHttpInterceptor,
 } from '@zimic/interceptor/http';
 import { PossiblePromise } from '@zimic/utils/types';
+import { afterAll, afterEach } from 'vitest';
+
+const interceptorsToCheckTimes: HttpInterceptor<never>[] = [];
+
+afterEach(async () => {
+  try {
+    for (const interceptor of interceptorsToCheckTimes) {
+      await interceptor.checkTimes();
+    }
+  } finally {
+    interceptorsToCheckTimes.length = 0;
+  }
+});
+
+const interceptorsToStop: HttpInterceptor<never>[] = [];
+
+afterAll(async () => {
+  try {
+    for (const interceptor of interceptorsToStop) {
+      await interceptor.stop();
+    }
+  } finally {
+    interceptorsToStop.length = 0;
+  }
+});
 
 type UsingInterceptorCallback<Schema extends HttpSchema> = (
   interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>,
@@ -18,15 +44,13 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   const interceptor = httpInterceptor.create<Schema>({
     ...interceptorOptions,
     onUnhandledRequest: { action: 'reject', log: false },
+    saveRequests: true,
   });
 
-  try {
-    await interceptor.start();
+  await interceptor.start();
 
-    await callback(interceptor);
+  interceptorsToCheckTimes.push(interceptor);
+  interceptorsToStop.push(interceptor);
 
-    await interceptor.checkTimes();
-  } finally {
-    await interceptor.stop();
-  }
+  await callback(interceptor);
 }

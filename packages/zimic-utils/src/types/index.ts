@@ -41,6 +41,8 @@ export type Collection<Type> = Type[] | Set<Type>;
 
 export type PartialByKey<Type, Key extends keyof Type> = Omit<Type, Key> & Partial<Pick<Type, Key>>;
 
+export type RequiredByKey<Type, Key extends keyof Type> = Omit<Type, Key> & Required<Pick<Type, Key>>;
+
 export type DeepPartial<Type> = Type extends (...parameters: never[]) => unknown
   ? Type
   : Type extends (infer ArrayItem)[]
