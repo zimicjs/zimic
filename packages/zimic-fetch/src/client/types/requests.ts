@@ -141,18 +141,35 @@ type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
  *   import { type HttpSchema } from '@zimic/http';
  *   import { createFetch } from '@zimic/fetch';
  *
- *   type MySchema = HttpSchema<{
- *     // ...
+ *   interface User {
+ *     id: string;
+ *     username: string;
+ *   }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users': {
+ *       POST: {
+ *         request: {
+ *           headers: { 'content-type': 'application/json' };
+ *           body: { username: string };
+ *         };
+ *         response: {
+ *           201: { body: User };
+ *         };
+ *       };
+ *     };
  *   }>;
  *
- *   const fetch = createFetch<MySchema>({
+ *   const fetch = createFetch<Schema>({
  *     baseURL: 'http://localhost:3000',
  *   });
  *
- *   const request = new fetch.Request('POST', '/users', {
+ *   const request = new fetch.Request('/users', {
+ *     method: 'POST',
+ *     headers: { 'content-type': 'application/json' },
  *     body: JSON.stringify({ username: 'my-user' }),
  *   });
- *   console.log(request); // FetchRequest<MySchema, 'POST', '/users'>
+ *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
@@ -208,19 +225,40 @@ export interface FetchResponsePerStatusCode<
  *   import { type HttpSchema } from '@zimic/http';
  *   import { createFetch } from '@zimic/fetch';
  *
- *   type MySchema = HttpSchema<{
- *     // ...
+ *   interface User {
+ *     id: string;
+ *     username: string;
+ *   }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: {
+ *           200: { body: User };
+ *           404: { body: { message: string } };
+ *         };
+ *       };
+ *     };
  *   }>;
  *
- *   const fetch = createFetch<MySchema>({
+ *   const fetch = createFetch<Schema>({
  *     baseURL: 'http://localhost:3000',
  *   });
  *
- *   const response = await fetch('/users', {
+ *   const response = await fetch(`/users/${userId}`, {
  *     method: 'GET',
- *     searchParams: { username: 'my', limit: '10' },
  *   });
- *   console.log(response); // FetchResponse<MySchema, 'GET', '/users'>
+ *
+ *   console.log(response); // FetchResponse<Schema, 'GET', '/users'>
+ *
+ *   if (response.status === 404) {
+ *     const errorBody = await response.json(); // { message: string }
+ *     console.error(errorBody.message);
+ *     return null;
+ *   } else {
+ *     const user = await response.json(); // User
+ *     return user;
+ *   }
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
@@ -255,18 +293,18 @@ export namespace FetchResponse {
  *   import { type HttpSchema } from '@zimic/http';
  *   import { createFetch } from '@zimic/fetch';
  *
- *   type MySchema = HttpSchema<{
+ *   type Schema = HttpSchema<{
  *     // ...
  *   }>;
  *
- *   const fetch = createFetch<MySchema>({
+ *   const fetch = createFetch<Schema>({
  *     baseURL: 'http://localhost:3000',
  *   });
  *
  *   const request = new fetch.Request('POST', '/users', {
  *     body: JSON.stringify({ username: 'my-user' }),
  *   });
- *   console.log(request); // FetchRequest<MySchema, 'POST', '/users'>
+ *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *
  * @param input The resource to fetch, either a path, a URL, or a {@link FetchRequest request}. If a path is provided, it
  *   is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request

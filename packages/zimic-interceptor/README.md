@@ -90,7 +90,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
       message: string;
     }
 
-    type MySchema = HttpSchema<{
+    type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: { body: User };
@@ -138,7 +138,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     import { httpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<MySchema>({
+    const interceptor = httpInterceptor.create<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
       saveRequests: true, // Allow access to `handler.requests()`

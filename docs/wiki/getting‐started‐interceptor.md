@@ -156,7 +156,7 @@ use remote interceptors.
       message: string;
     }
 
-    type MySchema = HttpSchema<{
+    type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: { body: User };
@@ -205,7 +205,7 @@ use remote interceptors.
     ```ts
     import { httpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<MySchema>({
+    const interceptor = httpInterceptor.create<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
       saveRequests: true, // Allow access to `handler.requests()`
@@ -217,7 +217,7 @@ use remote interceptors.
     ```ts
     import { httpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<MySchema>({
+    const interceptor = httpInterceptor.create<Schema>({
       type: 'remote',
       // The interceptor server is at http://localhost:4000
       baseURL: 'http://localhost:4000/my-service',

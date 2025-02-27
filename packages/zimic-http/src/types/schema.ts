@@ -746,7 +746,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  * @example
  *   import { HttpSchema, InferPathParams } from '@zimic/http';
  *
- *   type MySchema = HttpSchema<{
+ *   type Schema = HttpSchema<{
  *     '/users/:userId': {
  *       GET: {
  *         response: { 200: { body: User } };
@@ -755,7 +755,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  *   }>;
  *
  *   // Using a schema to validate the path (recommended):
- *   type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+ *   type PathParams = InferPathParams<Schema, '/users/:userId'>;
  *   // { userId: string }
  *
  * @example

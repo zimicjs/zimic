@@ -17,11 +17,39 @@ import { FetchOptions, Fetch } from './types/public';
  *   import { type HttpSchema } from '@zimic/http';
  *   import { createFetch } from '@zimic/fetch';
  *
- *   type MySchema = HttpSchema<{
- *     // ...
+ *   interface User {
+ *     id: string;
+ *     username: string;
+ *   }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users': {
+ *       POST: {
+ *         request: {
+ *           headers: { 'content-type': 'application/json' };
+ *           body: { username: string };
+ *         };
+ *         response: {
+ *           201: { body: User };
+ *         };
+ *       };
+ *
+ *       GET: {
+ *         request: {
+ *           searchParams: {
+ *             query?: string;
+ *             page?: number;
+ *             limit?: number;
+ *           };
+ *         };
+ *         response: {
+ *           200: { body: User[] };
+ *         };
+ *       };
+ *     };
  *   }>;
  *
- *   const fetch = createFetch<MySchema>({
+ *   const fetch = createFetch<Schema>({
  *     baseURL: 'http://localhost:3000',
  *   });
  *

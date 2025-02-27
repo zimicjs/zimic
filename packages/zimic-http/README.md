@@ -89,7 +89,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
       message: string;
     }
 
-    type MySchema = HttpSchema<{
+    type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: { body: User };
@@ -135,20 +135,20 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     import { HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
 
-    type UserListHeaders = MySchema['/users']['GET']['request']['headers'];
+    type UserListHeaders = Schema['/users']['GET']['request']['headers'];
 
     const headers = new HttpHeaders<UserListHeaders>({
       authorization: 'Bearer token',
     });
 
-    type UserListSearchParams = MySchema['/users']['GET']['request']['searchParams'];
+    type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];
 
     const searchParams = new HttpSearchParams<UserListSearchParams>({
       username: 'user',
       limit: 10,
     });
 
-    type UserCreateBody = MySchema['/users']['POST']['request']['body'];
+    type UserCreateBody = Schema['/users']['POST']['request']['body'];
 
     const formData = new HttpFormData<UserCreateBody>();
     formData.append('username', 'user');
@@ -159,7 +159,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     import { createFetch } from '@zimic/fetch';
 
-    const fetch = createFetch<MySchema>({
+    const fetch = createFetch<Schema>({
       baseURL: 'http://localhost:3000',
     });
 
@@ -180,7 +180,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     import { httpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<MySchema>({
+    const interceptor = httpInterceptor.create<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
     });

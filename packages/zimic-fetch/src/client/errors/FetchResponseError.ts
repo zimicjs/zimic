@@ -9,22 +9,36 @@ import { FetchRequest, FetchResponse } from '../types/requests';
  *   import { type HttpSchema } from '@zimic/http';
  *   import { createFetch } from '@zimic/fetch';
  *
- *   type MySchema = HttpSchema<{
- *     // ...
+ *   interface User {
+ *     id: string;
+ *     username: string;
+ *   }
+ *
+ *   type Schema = HttpSchema<{
+ *     '/users/:userId': {
+ *       GET: {
+ *         response: {
+ *           200: { body: User };
+ *           404: { body: { message: string } };
+ *         };
+ *       };
+ *     };
  *   }>;
  *
- *   const fetch = createFetch<MySchema>({
+ *   const fetch = createFetch<Schema>({
  *     baseURL: 'http://localhost:3000',
  *   });
  *
- *   await fetch('/users', {
+ *   const response = await fetch(`/users/${userId}`, {
  *     method: 'GET',
- *     searchParams: { username: 'my', limit: '10' },
  *   });
  *
  *   if (!response.ok) {
- *     console.log(response.error.request); // FetchRequest<MySchema, 'GET', '/users'>
- *     console.log(response.error.response); // FetchResponse<MySchema, 'GET', '/users'>
+ *     console.log(response.status); // 404
+ *
+ *     console.log(response.error); // FetchResponseError<Schema, 'GET', '/users'>
+ *     console.log(response.error.request); // FetchRequest<Schema, 'GET', '/users'>
+ *     console.log(response.error.response); // FetchResponse<Schema, 'GET', '/users'>
  *   }
  */
 class FetchResponseError<

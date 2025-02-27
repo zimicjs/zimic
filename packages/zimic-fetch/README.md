@@ -87,7 +87,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
       message: string;
     }
 
-    type MySchema = HttpSchema<{
+    type Schema = HttpSchema<{
       '/users': {
         POST: {
           request: { body: User };
@@ -131,7 +131,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     import { createFetch } from '@zimic/fetch';
 
-    const fetch = createFetch<MySchema>({
+    const fetch = createFetch<Schema>({
       baseURL: 'http://localhost:3000',
     });
     ```
@@ -153,7 +153,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     }
 
     const users = await response.json();
-    return users; // [{ username: 'my-user' }]
+    return users; // User[]
     ```
 
 ## Documentation

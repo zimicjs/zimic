@@ -502,7 +502,7 @@ checked to be a valid path in that schema.
 ```ts
 import { HttpSchema, InferPathParams } from '@zimic/http';
 
-type MySchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users/:userId': {
     GET: {
       response: { 200: { body: User } };
@@ -511,7 +511,7 @@ type MySchema = HttpSchema<{
 }>;
 
 // Using a schema to validate the path (recommended):
-type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+type PathParams = InferPathParams<Schema, '/users/:userId'>;
 // { userId: string }
 ```
 

@@ -76,7 +76,7 @@ We also canary releases under the tag `canary`, containing the latest features a
      message: string;
    }
 
-   type MySchema = HttpSchema<{
+   type Schema = HttpSchema<{
      '/users': {
        POST: {
          request: { body: User };
