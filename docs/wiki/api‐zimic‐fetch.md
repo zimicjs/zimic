@@ -150,6 +150,8 @@ type Schema = HttpSchema<{
       };
       response: {
         200: { body: User[] };
+        404: { body: { message: string } };
+        500: { body: { message: string } };
       };
     };
   };
@@ -237,7 +239,7 @@ const fetch = createFetch<Schema>({
 // Set the authorization header for all requests
 const { accessToken } = await authenticate();
 
-fetch.defaults.headers['authorization'] = `Bearer ${token}`;
+fetch.defaults.headers['authorization'] = `Bearer ${accessToken}`;
 console.log(fetch.defaults.headers);
 
 const response = await fetch('/posts', {
@@ -254,8 +256,8 @@ const post = await response.json(); // Post
 A listener function that is called for each request. It can modify the requests before they are sent.
 
 ```ts
-import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
+import { type HttpSchema } from '@zimic/http';
 
 interface User {
   id: string;
@@ -276,13 +278,18 @@ type Schema = HttpSchema<{
 }>;
 
 const fetch = createFetch<Schema>({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:80',
 });
 
 fetch.onRequest = function (request) {
   if (this.isRequest(request, 'GET', '/users')) {
-    request.searchParams.set('limit', '10');
+    const url = new URL(request.url);
+    url.searchParams.append('limit', '10');
+
+    const updatedRequest = new Request(url, request);
+    return updatedRequest;
   }
+
   return request;
 };
 ```
@@ -330,6 +337,10 @@ type Schema = HttpSchema<{
     };
   };
 }>;
+
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:80',
+});
 
 fetch.onResponse = function (response) {
   if (this.isResponse(response, 'GET', '/users')) {
@@ -810,7 +821,7 @@ const fetch = createFetch<Schema>({
 });
 
 // Set default search params for all requests at runtime
-fetch.defaults.searchParams['orderBy'] = 'createdAt:desc';
+fetch.defaults.searchParams.orderBy = 'createdAt:desc';
 console.log(fetch.defaults.searchParams);
 ```
 
@@ -819,8 +830,13 @@ console.log(fetch.defaults.searchParams);
 ```ts
 fetch.onRequest = function (request) {
   if (this.isRequest(request, 'GET', '/users')) {
-    request.searchParams.set('orderBy', 'createdAt:desc');
+    const url = new URL(request.url);
+    url.searchParams.append('limit', '10');
+
+    const updatedRequest = new Request(url, request);
+    return updatedRequest;
   }
+
   return request;
 };
 ```

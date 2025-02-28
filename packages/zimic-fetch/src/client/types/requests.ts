@@ -66,6 +66,12 @@ type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchReq
   FetchRequestInitWithSearchParams<RequestSchema> &
   FetchRequestInitWithBody<RequestSchema>;
 
+/**
+ * The options to create a {@link FetchRequest} instance.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
+ */
 export type FetchRequestInit<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -77,12 +83,6 @@ export type FetchRequestInit<
   redirect?: Redirect;
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>> : never);
 
-/**
- * The options to create a {@link FetchRequest} instance.
- *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
- */
 export namespace FetchRequestInit {
   /** The default options for each request sent by a fetch instance. */
   export interface Defaults extends Omit<RequestInit, 'headers'> {
@@ -171,7 +171,7 @@ type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
  *   });
  *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest `FetchRequest` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
  */
 export interface FetchRequest<
@@ -260,7 +260,7 @@ export interface FetchResponsePerStatusCode<
  *     return user;
  *   }
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
  */
 export type FetchResponse<
@@ -313,11 +313,8 @@ export namespace FetchResponse {
  *   should contain at least the method of the request. If the first argument is a {@link FetchRequest request}, this
  *   argument is optional.
  * @returns A promise that resolves to the response to the request.
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Fetch_API}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponse `FetchResponse` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
- * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
- * @see {@link https://developer.mozilla.org/docs/Web/API/Response}
  */
 export type FetchRequestConstructor<Schema extends HttpSchema> = new <
   Method extends HttpSchemaMethod<Schema>,

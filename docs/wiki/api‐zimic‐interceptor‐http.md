@@ -146,13 +146,13 @@ console by default.
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
-In a [local interceptor](getting‐started#local-http-interceptors), unhandled requests can be either **bypassed** or
-**rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network error. The
-default behavior in local interceptors is to **reject** unhandled requests.
+In a [local interceptor](getting‐started‐interceptor#local-http-interceptors), unhandled requests can be either
+**bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network
+error. The default behavior in local interceptors is to **reject** unhandled requests.
 
-[Remote interceptors](getting‐started#remote-http-interceptors) and [interceptor server](cli‐zimic‐server) always
-**reject** unhandled requests. This is because the unhandled requests have already reached the interceptor server, so
-there would be no way of bypassing them at this point.
+[Remote interceptors](getting‐started‐interceptor#remote-http-interceptors) and [interceptor server](cli‐zimic‐server)
+always **reject** unhandled requests. This is because the unhandled requests have already reached the interceptor
+server, so there would be no way of bypassing them at this point.
 
 You can override the logging behavior per interceptor with `onUnhandledRequest` in
 [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
@@ -346,7 +346,7 @@ their intercepted requests in memory.
 > sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
 > after each test.
 >
-> See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
+> See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -411,7 +411,8 @@ await interceptor.start();
 ```
 
 When targeting a browser environment with a local interceptor, make sure to follow the
-[client-side post-install guide](getting‐started#client-side-post-install) before starting your interceptors.
+[client-side post-install guide](getting‐started‐interceptor#client-side-post-install) before starting your
+interceptors.
 
 ### HTTP `interceptor.stop()`
 
@@ -454,9 +455,9 @@ Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and 
 declared in the interceptor schema. The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and
 `options`.
 
-When using a [remote interceptor](getting‐started#remote-http-interceptors), creating a handler is an asynchronous
-operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
-handler.
+When using a [remote interceptor](getting‐started‐interceptor#remote-http-interceptors), creating a handler is an
+asynchronous operation, so you need to `await` it. You can also chain any number of operations and apply them by
+awaiting the handler.
 
 After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
 interceptor, and the method, path, [restrictions](#http-handlerwithrestriction), and
@@ -629,7 +630,7 @@ afterEach(async () => {
 
 </details></td></tr></table>
 
-See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
+See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ### HTTP `interceptor.clear()`
 

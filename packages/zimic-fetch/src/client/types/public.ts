@@ -4,7 +4,11 @@ import { PossiblePromise, RequiredByKey } from '@zimic/utils/types';
 import FetchResponseError from '../errors/FetchResponseError';
 import { FetchRequest, FetchRequestConstructor, FetchRequestInit, FetchResponse } from './requests';
 
-/** The input to fetch a resource, either a path, a URL, or a {@link FetchRequest request}. */
+/**
+ * The input to fetch a resource, either a path, a URL, or a {@link FetchRequest request}.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
+ */
 export type FetchInput<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
@@ -126,7 +130,11 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
   onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
 }
 
-/** The default options for each request sent by the fetch instance. */
+/**
+ * The default options for each request sent by the fetch instance.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchdefaults `fetch.defaults` API reference}
+ */
 export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 
 export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
@@ -513,5 +521,7 @@ export type Fetch<Schema extends HttpSchema> = FetchFunction<Schema> & FetchClie
  *   //    };
  *   // };
  *   // }
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  */
 export type InferFetchSchema<FetchInstance> = FetchInstance extends Fetch<infer Schema> ? Schema : never;

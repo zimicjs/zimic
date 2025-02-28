@@ -60,7 +60,8 @@
 - :wrench: **Flexible**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
 - :bulb: **Simple**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your mocks.
-  Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started) and starting mocking!
+  Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor) and starting
+  mocking!
 
 ## Getting started
 
@@ -145,7 +146,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     });
     ```
 
-3.  Manage your [interceptor lifecycle](https://github.com/zimicjs/zimic/wiki/guides‐testing):
+3.  Manage your [interceptor lifecycle](https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor):
 
     4.1.
     [Start intercepting requests](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart):
@@ -246,7 +247,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
   - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐browser)
   - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server)
 - Guides
-  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing)
+  - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor)
 
 ## Examples
 

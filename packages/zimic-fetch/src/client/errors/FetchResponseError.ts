@@ -40,6 +40,8 @@ import { FetchRequest, FetchResponse } from '../types/requests';
  *     console.log(response.error.request); // FetchRequest<Schema, 'GET', '/users'>
  *     console.log(response.error.response); // FetchResponse<Schema, 'GET', '/users'>
  *   }
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerror `FetchResponseError` API reference}
  */
 class FetchResponseError<
   Schema extends HttpSchema,

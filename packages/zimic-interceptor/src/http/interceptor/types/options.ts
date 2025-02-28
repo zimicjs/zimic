@@ -132,7 +132,7 @@ export interface SharedHttpInterceptorOptions {
    *
    * @default false
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
-   * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing Testing}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
    */
   saveRequests?: boolean;
 }

@@ -142,7 +142,7 @@ use remote interceptors.
 
 ## 5. Create your interceptor
 
-1.  Declare your HTTP schema using [`@zimic/http`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http):
+1.  Declare your HTTP schema using [`@zimic/http`](api‐zimic‐http):
 
     ```ts
     import { type HttpSchema } from '@zimic/http';
@@ -197,8 +197,7 @@ use remote interceptors.
 
     You can also use [`zimic-http typegen`](cli‐zimic‐typegen) to automatically generate types for your HTTP schema.
 
-2.  Create your
-    [interceptor](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions):
+2.  Create your [interceptor](api‐zimic‐interceptor‐http#httpinterceptorcreateoptions):
 
     <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -231,10 +230,9 @@ use remote interceptors.
     service supporting `POST` and `GET` requests to `/users`. A successful response after creating a user is a `User`
     object, whereas listing users returns an array of `User` objects. Errors are represented by a `RequestError` object.
 
-3.  Manage your [interceptor lifecycle](https://github.com/zimicjs/zimic/wiki/guides‐testing):
+3.  Manage your [interceptor lifecycle](guides‐testing‐interceptor):
 
-    4.1.
-    [Start intercepting requests](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstart):
+    4.1. [Start intercepting requests](api‐zimic‐interceptor‐http#http-interceptorstart):
 
     ```ts
     beforeAll(async () => {
@@ -247,9 +245,7 @@ use remote interceptors.
     it. The base URL of the remote interceptor should point to the server, optionally including a path to differentiate
     from other interceptors.
 
-    4.2.
-    [Clear your interceptors](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear) so
-    that no tests affect each other:
+    4.2. [Clear your interceptors](api‐zimic‐interceptor‐http#http-interceptorclear) so that no tests affect each other:
 
     <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -269,8 +265,7 @@ use remote interceptors.
 
     </details></td></tr></table>
 
-    4.3.
-    [Check that all expected requests were made](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes):
+    4.3. [Check that all expected requests were made](api‐zimic‐interceptor‐http#http-interceptorchecktimes):
 
     <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -290,8 +285,7 @@ use remote interceptors.
 
     </details></td></tr></table>
 
-    4.4.
-    [Stop intercepting requests](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorstop):
+    4.4. [Stop intercepting requests](api‐zimic‐interceptor‐http#http-interceptorstop):
 
     ```ts
     afterAll(async () => {
@@ -349,10 +343,9 @@ use remote interceptors.
 
     </details></td></tr></table>
 
-    Learn more about
-    [`with(restrictions)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction),
-    [`respond(declaration)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerresponddeclaration),
-    and [`times(times)`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes).
+    Learn more about [`with(restrictions)`](api‐zimic‐interceptor‐http#http-handlerwithrestriction),
+    [`respond(declaration)`](api‐zimic‐interceptor‐http#http-handlerresponddeclaration), and
+    [`times(times)`](api‐zimic‐interceptor‐http#http-handlertimes).
 
     5.2. After your application made requests, check if they are as you expect:
 
@@ -391,14 +384,14 @@ use remote interceptors.
     </details></td></tr></table>
 
     NOTE: The code above checks the requests manually. This is optional in this example because the
-    [`with`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction) and
-    [`times`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes) calls act as a
-    declarative validation, meaning that exactly one request is expected with specific data. If fewer or more requests
-    are received, the test will fail when `interceptor.checkTimes()` is called in the `afterEach` hook.
+    [`with`](api‐zimic‐interceptor‐http#http-handlerwithrestriction) and
+    [`times`](api‐zimic‐interceptor‐http#http-handlertimes) calls act as a declarative validation, meaning that exactly
+    one request is expected with specific data. If fewer or more requests are received, the test will fail when
+    `interceptor.checkTimes()` is called in the `afterEach` hook.
 
 ## 6. Next steps
 
-- Take a look at our [examples](../../examples/README.md) and [testing guide](guides‐testing).
+- Take a look at our [examples](../../examples/README.md) and [testing guide](guides‐testing‐interceptor).
 
 - Check out the API reference:
 

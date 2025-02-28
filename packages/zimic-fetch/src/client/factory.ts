@@ -54,6 +54,7 @@ import { FetchOptions, Fetch } from './types/public';
  *   });
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions `createFetch(options)` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  */
 function createFetch<Schema extends HttpSchema>(options: FetchOptions<Schema>): Fetch<Schema> {
   const { fetch } = new FetchClient<Schema>(options);
