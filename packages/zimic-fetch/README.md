@@ -45,9 +45,11 @@
 
 ---
 
-> :construction: Experimental
-
 `@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch`-like API client.
+
+> [!WARNING]
+>
+> :construction: This library is experimental.
 
 ## Features
 
