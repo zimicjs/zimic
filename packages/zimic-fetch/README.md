@@ -45,17 +45,14 @@
 
 ---
 
-`@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch` -like API client.
+> :construction: Experimental
 
-> [!NOTE]
->
-> `@zimic/fetch` is still experimental and under active development. Please share your feedback or report any issues you
-> encounter!
+`@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch`-like API client.
 
 ## Features
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
+  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and responses fully
   typed by default.
 - :muscle: **Developer experience**: While mostly compatible with the

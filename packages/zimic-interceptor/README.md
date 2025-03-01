@@ -45,6 +45,8 @@
 
 ---
 
+> :loudspeaker: Beta
+
 `@zimic/interceptor` is a lightweight, thoroughly tested, TypeScript-first HTTP request interceptor and mock library.
 
 ## Features

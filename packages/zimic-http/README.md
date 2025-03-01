@@ -45,6 +45,8 @@
 
 ---
 
+> :loudspeaker: Beta
+
 `@zimic/http` is a collection of utilities to work with type-safe HTTP resources, such as requests, responses, headers,
 search params, and form data.
 

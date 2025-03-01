@@ -55,6 +55,8 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 ### `@zimic/http`
 
+> :loudspeaker: Beta
+
 [`@zimic/http`](./packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
 requests, responses, headers, search params, and form data.
 
@@ -78,11 +80,13 @@ requests, responses, headers, search params, and form data.
 
 ### `@zimic/fetch`
 
+> :construction: Experimental
+
 [`@zimic/fetch`](./packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
-`fetch` -like API client.
+`fetch`-like API client.
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch` -like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
+  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and responses fully
   typed by default.
 - :muscle: **Developer experience**: While mostly compatible with the
@@ -96,6 +100,8 @@ requests, responses, headers, search params, and form data.
 - [`@zimic/fetch` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
 
 ### `@zimic/interceptor`
+
+> :loudspeaker: Beta
 
 [`@zimic/interceptor`](./packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock HTTP
 requests.
