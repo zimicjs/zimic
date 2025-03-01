@@ -3,25 +3,25 @@
 ## Contents <!-- omit from toc -->
 
 - [`createFetch(options)`](#createfetchoptions)
-  - [`createFetch` parameters](#createfetch-parameters)
+  - [`createFetch` arguments](#createfetch-arguments)
 - [`fetch`](#fetch)
-  - [`fetch` parameters](#fetch-parameters)
+  - [`fetch` arguments](#fetch-arguments)
   - [`fetch` return](#fetch-return)
   - [`fetch.defaults`](#fetchdefaults)
   - [`fetch.onRequest`](#fetchonrequest)
-    - [`fetch.onRequest` parameters](#fetchonrequest-parameters)
+    - [`fetch.onRequest` arguments](#fetchonrequest-arguments)
     - [`fetch.onRequest` return](#fetchonrequest-return)
   - [`fetch.onResponse`](#fetchonresponse)
-    - [`fetch.onResponse` parameters](#fetchonresponse-parameters)
+    - [`fetch.onResponse` arguments](#fetchonresponse-arguments)
     - [`fetch.onResponse` return](#fetchonresponse-return)
   - [`fetch.isRequest`](#fetchisrequest)
-    - [`fetch.isRequest` parameters](#fetchisrequest-parameters)
+    - [`fetch.isRequest` arguments](#fetchisrequest-arguments)
     - [`fetch.isRequest` return](#fetchisrequest-return)
   - [`fetch.isResponse`](#fetchisresponse)
-    - [`fetch.isResponse` parameters](#fetchisresponse-parameters)
+    - [`fetch.isResponse` arguments](#fetchisresponse-arguments)
     - [`fetch.isResponse` return](#fetchisresponse-return)
   - [`fetch.isResponseError`](#fetchisresponseerror)
-    - [`fetch.isResponseError` parameters](#fetchisresponseerror-parameters)
+    - [`fetch.isResponseError` arguments](#fetchisresponseerror-arguments)
     - [`fetch.isResponseError` return](#fetchisresponseerror-return)
 - [`FetchRequest`](#fetchrequest)
 - [`FetchResponse`](#fetchresponse)
@@ -53,7 +53,7 @@
 
 Creates a [`fetch`](#fetch) instance typed with an HTTP schema, closely compatible with the
 [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). All requests and responses are typed by
-default with the schema, including methods, paths, status codes, parameters, and bodies.
+default with the schema, including methods, paths, status codes, arguments, and bodies.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -96,39 +96,38 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-### `createFetch` parameters
+### `createFetch` arguments
 
-- `options`: The options for the fetch instance.
-  - `baseURL`: The base URL to prefix all requests with.
-  - `onRequest`: A listener to be called before the request is sent (see [`fetch.onRequest`](#fetchonrequest)).
-  - `onResponse`: A listener to be called after the response is received (see [`fetch.onResponse`](#fetchonresponse)).
-  - `body`: A BodyInit object or null (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#body)).
-  - `cache`: A string indicating how the request will interact with the browser's cache (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#cache)).
-  - `credentials`: A string indicating whether credentials will be sent with the request (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#credentials)).
-  - `headers`: A Headers object, an object literal, or array of two-item arrays for request headers (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#headers)).
-  - `integrity`: A cryptographic hash of the resource to be fetched (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#integrity)).
-  - `keepalive`: A boolean to set request's keepalive (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#keepalive)).
-  - `method`: A string to set request's method (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#method)).
-  - `mode`: A string to indicate whether the request will use CORS (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#mode)).
-  - `priority`: Request priority level (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#priority)).
-  - `redirect`: A string indicating how redirects should be handled (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#redirect)).
-  - `referrer`: A string for the request's referrer URL (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#referrer)).
-  - `referrerPolicy`: A referrer policy for the request (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#referrerPolicy)).
-  - `signal`: An AbortSignal to control request cancellation (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#signal)).
-  - `window`: Can only be null. Used to disassociate request from any Window (see
-    [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#window)).
+| Argument  | Type           | Description                         |
+| --------- | -------------- | ----------------------------------- |
+| `options` | `FetchOptions` | The options for the fetch instance. |
+
+`options` is an object with the following properties specific to `@zimic/fetch`:
+
+| Option       | Type                                                                                     | Description                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `baseURL`    | `string`                                                                                 | The base URL to prefix all requests with.                                                            |
+| `onRequest`  | `(request: FetchRequest.Loose) => Promise<FetchRequest.Loose> \| FetchRequest.Loose`     | A listener to be called before the request is sent (see [`fetch.onRequest`](#fetchonrequest)).       |
+| `onResponse` | `(response: FetchResponse.Loose) => Promise<FetchResponse.Loose> \| FetchResponse.Loose` | A listener to be called after the response is received (see [`fetch.onResponse`](#fetchonresponse)). |
+
+Additionally, `options` inherits all the properties of the native `RequestInit` object, including the following:
+
+| Option           | Type                 | Description                                                                                                                                                                 |
+| ---------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `body`           | `BodyInit` \| `null` | A `BodyInit` object or null (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#body)).                                                               |
+| `cache`          | `RequestCache`       | A string indicating how the request will interact with the browser's cache (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#cache)).               |
+| `credentials`    | `RequestCredentials` | A string indicating whether credentials will be sent with the request (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#credentials)).              |
+| `headers`        | `HeadersInit`        | A `Headers` object, an object literal, or array of two-item arrays for request headers (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#headers)). |
+| `integrity`      | `string`             | A cryptographic hash of the resource to be fetched (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#integrity)).                                   |
+| `keepalive`      | `boolean`            | A boolean to set request's keepalive (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#keepalive)).                                                 |
+| `method`         | `HttpMethod`         | A string to set request's method (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#method)).                                                        |
+| `mode`           | `RequestMode`        | A string to indicate whether the request will use CORS (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#mode)).                                    |
+| `priority`       | `RequestPriority`    | A request priority level (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#priority)).                                                              |
+| `redirect`       | `RequestRedirect`    | A string indicating how redirects should be handled (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#redirect)).                                   |
+| `referrer`       | `string`             | A string for the request's referrer URL (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#referrer)).                                               |
+| `referrerPolicy` | `ReferrerPolicy`     | A referrer policy for the request (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#referrerPolicy)).                                               |
+| `signal`         | `AbortSignal`        | An AbortSignal to control request cancellation (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#signal)).                                          |
+| `window`         | `null`               | Can only be null. Used to disassociate request from any Window (see [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit#window)).                          |
 
 ## `fetch`
 
@@ -184,18 +183,16 @@ const users = await response.json();
 return users; // User[]
 ```
 
-### `fetch` parameters
+### `fetch` arguments
 
 `fetch(input, init?)`
 
-- `input`: The resource to fetch, either a path, a URL, or a [`FetchRequest`](#fetchrequest) request. If a path is
-  provided, it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a
-  request is provided, it is used as is.
-- `init`: The request options. If a path or a URL is provided as the first argument, this argument is required and
-  should contain at least the method of the request. If the first argument is a [`FetchRequest`](#fetchrequest) request,
-  this argument is optional.
+| Argument | Type                                                                    | Description                                                                                                                                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `input`  | `string` \| `URL` \| [`FetchRequest`](#fetchrequest)                    | The resource to fetch, either a path, a URL, or a [`FetchRequest`](#fetchrequest) request. If a path is provided, it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a request is provided, it is used as is. |
+| `init`   | [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) | The request options. If a path or a URL is provided as the first argument, this argument is required and should contain at least the method of the request. If the first argument is a [`FetchRequest`](#fetchrequest) request, this argument is optional.            |
 
-**See also:**
+**See also**:
 
 - [Request](https://developer.mozilla.org/docs/Web/API/Request)
 - [RequestInit](https://developer.mozilla.org/docs/Web/API/RequestInit)
@@ -204,7 +201,7 @@ return users; // User[]
 
 A promise that resolves to the response to the request. The response is typed with the schema of the fetch instance.
 
-**See also:**
+**See also**:
 
 - [Response](https://developer.mozilla.org/docs/Web/API/Response)
 
@@ -304,11 +301,13 @@ const fetch = createFetch<Schema>({
 > Alternatively, `onRequest` can be provided as an option when creating the fetch instance with
 > [`createFetch`](#createfetchoptions).
 
-#### `fetch.onRequest` parameters
+#### `fetch.onRequest` arguments
 
 `fetch.onRequest(request)`
 
-- `request`: The original request.
+| Argument  | Type                                  | Description                                   |
+| --------- | ------------------------------------- | --------------------------------------------- |
+| `request` | [`FetchRequest.Loose`](#fetchrequest) | The request to be sent by the fetch instance. |
 
 Inside the listener, use `this` to refer to the fetch instance that is sending the request.
 
@@ -360,11 +359,13 @@ const fetch = createFetch<Schema>({
 > Alternatively, `onResponse` can be provided as an option when creating the fetch instance with
 > [`createFetch`](#createfetchoptions).
 
-#### `fetch.onResponse` parameters
+#### `fetch.onResponse` arguments
 
 `fetch.onResponse(response)`
 
-- `response`: The original response.
+| Argument   | Type                                    | Description                                  |
+| ---------- | --------------------------------------- | -------------------------------------------- |
+| `response` | [`FetchResponse.Loose`](#fetchresponse) | The response received by the fetch instance. |
 
 Inside the listener, use `this` to refer to the fetch instance that received the response.
 
@@ -415,13 +416,15 @@ if (fetch.isRequest(request, 'POST', '/users')) {
 }
 ```
 
-#### `fetch.isRequest` parameters
+#### `fetch.isRequest` arguments
 
 `fetch.isRequest(request, method, path)`
 
-- `request`: The request to check.
-- `method`: The method to check.
-- `path`: The path to check.
+| Argument  | Type         | Description           |
+| --------- | ------------ | --------------------- |
+| `request` | `unknown`    | The request to check. |
+| `method`  | `HttpMethod` | The method to check.  |
+| `path`    | `string`     | The path to check.    |
 
 #### `fetch.isRequest` return
 
@@ -469,13 +472,15 @@ if (fetch.isResponse(response, 'GET', '/users')) {
 }
 ```
 
-#### `fetch.isResponse` parameters
+#### `fetch.isResponse` arguments
 
 `fetch.isResponse(response, method, path)`
 
-- `response`: The response to check.
-- `method`: The method to check.
-- `path`: The path to check.
+| Argument   | Type         | Description            |
+| ---------- | ------------ | ---------------------- |
+| `response` | `unknown`    | The response to check. |
+| `method`   | `HttpMethod` | The method to check.   |
+| `path`     | `string`     | The path to check.     |
 
 #### `fetch.isResponse` return
 
@@ -536,13 +541,15 @@ try {
 }
 ```
 
-#### `fetch.isResponseError` parameters
+#### `fetch.isResponseError` arguments
 
 `fetch.isResponseError(error, method, path)`
 
-- `error`: The error to check.
-- `method`: The method to check.
-- `path`: The path to check.
+| Argument | Type         | Description          |
+| -------- | ------------ | -------------------- |
+| `error`  | `unknown`    | The error to check.  |
+| `method` | `HttpMethod` | The method to check. |
+| `path`   | `string`     | The path to check.   |
 
 #### `fetch.isResponseError` return
 
@@ -594,7 +601,7 @@ const request = new fetch.Request('/users', {
 console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 ```
 
-**See also:**
+**See also**:
 
 - [Request](https://developer.mozilla.org/docs/Web/API/Request)
 
@@ -648,7 +655,7 @@ if (response.status === 404) {
 }
 ```
 
-**See also:**
+**See also**:
 
 - [Response](https://developer.mozilla.org/docs/Web/API/Response)
 
