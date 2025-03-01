@@ -11,10 +11,10 @@ import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
-import { FetchInput, FetchOptions, Fetch, FetchDefaults } from './types/public';
+import { FetchInput, FetchOptions, Fetch, FetchClient as PublicFetchClient, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
-class FetchClient<Schema extends HttpSchema> {
+class FetchClient<Schema extends HttpSchema> implements Omit<PublicFetchClient<Schema>, 'defaults' | 'Request'> {
   fetch: Fetch<Schema>;
 
   constructor({ onRequest, onResponse, ...defaults }: FetchOptions<Schema>) {
@@ -157,6 +157,7 @@ class FetchClient<Schema extends HttpSchema> {
         const headersFromInit = new HttpHeaders((init satisfies RequestInit as RequestInit).headers);
 
         let url: URL;
+        const baseURL = new URL(initWithDefaults.baseURL);
 
         if (input instanceof globalThis.Request) {
           // Optimize type checking by narrowing the type of input
@@ -178,7 +179,7 @@ class FetchClient<Schema extends HttpSchema> {
             ...headersFromInit.toObject(),
           };
 
-          url = input instanceof URL ? new URL(input) : new URL(joinURL(initWithDefaults.baseURL, input));
+          url = input instanceof URL ? new URL(input) : new URL(joinURL(baseURL, input));
 
           const searchParamsFromDefaults = new HttpSearchParams(defaults.searchParams);
           const searchParamsFromInit = new HttpSearchParams(initWithDefaults.searchParams);
@@ -193,9 +194,11 @@ class FetchClient<Schema extends HttpSchema> {
           super(url, initWithDefaults);
         }
 
+        const baseURLWithoutTrailingSlash = baseURL.toString().replace(/\/$/, '');
+
         this.path = excludeURLParams(url)
           .toString()
-          .replace(initWithDefaults.baseURL, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
+          .replace(baseURLWithoutTrailingSlash, '') as LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>;
       }
 
       clone(): Request<Method, Path> {
@@ -237,8 +240,9 @@ class FetchClient<Schema extends HttpSchema> {
     return (
       response instanceof Response &&
       'request' in response &&
+      this.isRequest(response.request, method, path) &&
       'error' in response &&
-      this.isRequest(response.request, method, path)
+      (response.error === null || response.error instanceof FetchResponseError)
     );
   }
 
@@ -249,9 +253,8 @@ class FetchClient<Schema extends HttpSchema> {
   ): error is FetchResponseError<Schema, Method, Path> {
     return (
       error instanceof FetchResponseError &&
-      error.request.method === method &&
-      typeof error.request.path === 'string' &&
-      createRegexFromURL(path).test(error.request.path)
+      this.isRequest(error.request, method, path) &&
+      this.isResponse(error.response, method, path)
     );
   }
 }

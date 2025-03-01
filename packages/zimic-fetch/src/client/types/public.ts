@@ -29,7 +29,7 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
 
 export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' | 'searchParams'>;
 
-interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
+export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
   defaults: FetchDefaults;
 
   Request: FetchRequestConstructor<Schema>;
