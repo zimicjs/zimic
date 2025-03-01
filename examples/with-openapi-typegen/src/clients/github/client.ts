@@ -11,7 +11,7 @@ export const githubFetch = createFetch<GitHubSchema>({
 export async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
   const response = await githubFetch(`/repos/${ownerName}/${repositoryName}`, { method: 'GET' });
 
-  if (response.status === 404 || response.status === 301) {
+  if (response.status === 404) {
     return null;
   }
 
