@@ -10,7 +10,7 @@ import createFetch from '../factory';
 import { Fetch } from '../types/public';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
-describe('FetchClient (node) > Listeners', () => {
+describe('FetchClient > Listeners', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {

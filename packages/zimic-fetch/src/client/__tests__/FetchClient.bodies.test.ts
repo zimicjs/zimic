@@ -5,7 +5,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import createFetch from '../factory';
 
-describe('FetchClient (node) > Bodies', () => {
+describe('FetchClient > Bodies', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {

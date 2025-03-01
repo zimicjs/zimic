@@ -8,7 +8,7 @@ import createFetch from '../factory';
 import { FetchDefaults, FetchOptions } from '../types/public';
 import { FetchResponse, FetchRequest } from '../types/requests';
 
-describe('FetchClient (node) > Defaults', () => {
+describe('FetchClient > Defaults', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {

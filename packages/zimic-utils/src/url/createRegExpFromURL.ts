@@ -6,9 +6,9 @@ function createRegExpFromURL(url: string) {
   const urlWithReplacedPathParams = encodeURI(url)
     .replace(/([.()*?+$\\])/g, '\\$1')
     .replace(URL_PATH_PARAM_REGEX, '/(?<$1>[^/]+)')
-    .replace(/(\/+)$/, '(?:/+)?');
+    .replace(/^(\/)|(\/)$/g, '');
 
-  return new RegExp(`^${urlWithReplacedPathParams}$`);
+  return new RegExp(`^(?:/)?${urlWithReplacedPathParams}(?:/)?$`);
 }
 
 export default createRegExpFromURL;
