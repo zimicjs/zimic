@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchRequest } from '../types/requests';
@@ -11,10 +12,14 @@ describe('FetchClient > Search params', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+  ];
 
   it('should support requests with search params as object', async () => {
     type RequestSearchParams = HttpSchema.SearchParams<{
@@ -64,7 +69,7 @@ describe('FetchClient > Search params', () => {
 
       for (const response of responses) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         expect(await response.json()).toEqual(users);
       }
@@ -119,7 +124,7 @@ describe('FetchClient > Search params', () => {
 
       for (const response of responses) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         expect(await response.json()).toEqual(users);
       }
@@ -188,7 +193,7 @@ describe('FetchClient > Search params', () => {
 
       for (const response of responses) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         expect(await response.json()).toEqual(users);
       }
@@ -242,7 +247,7 @@ describe('FetchClient > Search params', () => {
 
       for (const response of responses) {
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         expect(await response.json()).toEqual(users);
       }

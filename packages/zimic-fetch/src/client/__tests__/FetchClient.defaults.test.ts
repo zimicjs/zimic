@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchDefaults, FetchOptions } from '../types/public';
@@ -12,10 +13,14 @@ describe('FetchClient > Defaults', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+  ];
 
   it('should support creating a fetch client without defaults', async () => {
     type Schema = HttpSchema<{
@@ -40,7 +45,7 @@ describe('FetchClient > Defaults', () => {
       const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -105,7 +110,7 @@ describe('FetchClient > Defaults', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -204,7 +209,7 @@ describe('FetchClient > Defaults', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -279,7 +284,7 @@ describe('FetchClient > Defaults', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -346,7 +351,7 @@ describe('FetchClient > Defaults', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -403,7 +408,7 @@ describe('FetchClient > Defaults', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -457,7 +462,7 @@ describe('FetchClient > Defaults', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 

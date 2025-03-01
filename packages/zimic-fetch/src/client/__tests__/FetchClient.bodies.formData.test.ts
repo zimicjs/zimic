@@ -4,6 +4,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { importFile } from '@/utils/files';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
@@ -56,7 +57,7 @@ describe('FetchClient > Bodies > Form data', () => {
         body: requestFormData,
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       const receivedResponseFormData = await response.formData();
       expect(Array.from(receivedResponseFormData.entries())).toHaveLength(2);
 
@@ -130,7 +131,7 @@ describe('FetchClient > Bodies > Form data', () => {
         headers: { 'content-type': 'multipart/form-data' },
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);

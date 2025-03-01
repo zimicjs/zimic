@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchResponse, FetchRequest } from '../types/requests';
@@ -11,10 +12,14 @@ describe('FetchClient > Methods', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+  ];
 
   it('should support making GET requests', async () => {
     type Schema = HttpSchema<{
@@ -39,7 +44,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -85,7 +90,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(url, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -145,7 +150,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(request);
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -181,7 +186,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .post('/users')
@@ -200,7 +205,7 @@ describe('FetchClient > Methods', () => {
         body: JSON.stringify(user),
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -238,7 +243,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .post('/users')
@@ -258,7 +263,7 @@ describe('FetchClient > Methods', () => {
         body: JSON.stringify(user),
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -296,7 +301,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .post('/users')
@@ -330,7 +335,7 @@ describe('FetchClient > Methods', () => {
 
       const response = await fetch(request);
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -368,7 +373,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .put('/users')
@@ -388,7 +393,7 @@ describe('FetchClient > Methods', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -426,7 +431,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .put('/users')
@@ -447,7 +452,7 @@ describe('FetchClient > Methods', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -485,7 +490,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .put('/users')
@@ -520,7 +525,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(request);
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -558,7 +563,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .patch('/users')
@@ -578,7 +583,7 @@ describe('FetchClient > Methods', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -616,7 +621,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .patch('/users')
@@ -637,7 +642,7 @@ describe('FetchClient > Methods', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -675,7 +680,7 @@ describe('FetchClient > Methods', () => {
     }>;
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      const user: User = { name: 'User 1' };
+      const user = users[0];
 
       await interceptor
         .patch('/users')
@@ -714,7 +719,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(request);
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.json()).toEqual(user);
 
       expect(response).toBeInstanceOf(Response);
@@ -754,7 +759,7 @@ describe('FetchClient > Methods', () => {
 
       const response = await fetch('/users', { method: 'DELETE' });
 
-      expect(response.status).toBe(204);
+      expectResponseStatus(response, 204);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -792,7 +797,7 @@ describe('FetchClient > Methods', () => {
       const url = new URL('/users', baseURL);
       const response = await fetch(url, { method: 'DELETE' });
 
-      expect(response.status).toBe(204);
+      expectResponseStatus(response, 204);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -844,7 +849,7 @@ describe('FetchClient > Methods', () => {
 
       const response = await fetch(request);
 
-      expect(response.status).toBe(204);
+      expectResponseStatus(response, 204);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -882,7 +887,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch('/users', { method: 'HEAD' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -921,7 +926,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(url, { method: 'HEAD' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -974,7 +979,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(request);
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -1012,7 +1017,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch('/users', { method: 'OPTIONS' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -1051,7 +1056,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(url, { method: 'OPTIONS' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -1104,7 +1109,7 @@ describe('FetchClient > Methods', () => {
       const response = await fetch(request);
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);
@@ -1245,7 +1250,7 @@ describe('FetchClient > Methods', () => {
         POST: {
           request: {
             headers: { 'content-type': 'application/json' };
-            body: User;
+            body: Omit<User, 'id'>;
           };
           response: { 201: { body: User } };
         };

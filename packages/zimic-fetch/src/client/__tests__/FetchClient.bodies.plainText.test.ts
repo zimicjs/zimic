@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
@@ -43,7 +44,7 @@ describe('FetchClient > Bodies > Plain text', () => {
         body: 'request',
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.text()).toBe('response');
 
       expect(response).toBeInstanceOf(Response);
@@ -108,7 +109,7 @@ describe('FetchClient > Bodies > Plain text', () => {
         headers: { 'content-type': 'text/plain' },
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.text()).toBe('');
 
       expect(response).toBeInstanceOf(Response);

@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchResponse, FetchRequest } from '../types/requests';
@@ -41,7 +42,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/${users[0].username}`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -88,7 +89,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/users/${users[0].username}/get`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -137,7 +138,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/users/${users[0].username}`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -184,7 +185,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/users/${users[0].username}/get/${users[1].username}`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -235,7 +236,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/users/${users[0].username}/${users[1].username}`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -286,7 +287,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch(`/users/${users[0].username}/${users[1].username}/get`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -345,7 +346,7 @@ describe('FetchClient > Path params', () => {
       const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 

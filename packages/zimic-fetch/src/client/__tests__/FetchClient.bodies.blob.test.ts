@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
@@ -46,7 +47,7 @@ describe('FetchClient > Bodies > Blob', () => {
         body: requestBlob,
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       const receivedResponseBlob = await response.blob();
       expect(receivedResponseBlob.size).toBe(responseBlob.size);
 
@@ -122,7 +123,7 @@ describe('FetchClient > Bodies > Blob', () => {
         headers: { 'content-type': 'application/octet-stream' },
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.blob()).toEqual(new Blob([], { type: 'application/octet-stream' }));
 
       expect(response).toBeInstanceOf(Response);
@@ -206,7 +207,7 @@ describe('FetchClient > Bodies > Blob', () => {
         body: requestArrayBuffer,
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.arrayBuffer()).toEqual(responseBuffer);
 
       expect(response).toBeInstanceOf(Response);
@@ -279,7 +280,7 @@ describe('FetchClient > Bodies > Blob', () => {
         headers: { 'content-type': 'application/octet-stream' },
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.arrayBuffer()).toEqual(new ArrayBuffer(0));
 
       expect(response).toBeInstanceOf(Response);

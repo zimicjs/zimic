@@ -5,6 +5,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { Fetch } from '../types/public';
@@ -104,7 +105,7 @@ describe('FetchClient > Listeners', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -204,7 +205,7 @@ describe('FetchClient > Listeners', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -259,7 +260,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -349,7 +350,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -416,7 +417,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -478,7 +479,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -575,7 +576,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -668,7 +669,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch(`/users/${users[0].id}`, { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users[0]);
 
@@ -730,7 +731,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 
@@ -798,7 +799,7 @@ describe('FetchClient > Listeners', () => {
       const response = await fetch('/users', { method: 'POST' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
-      expect(response.status).toBe(200);
+      expectResponseStatus(response, 200);
 
       expect(await response.json()).toEqual(users);
 

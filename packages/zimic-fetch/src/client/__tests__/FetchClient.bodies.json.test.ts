@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
@@ -11,10 +12,14 @@ describe('FetchClient > Bodies > JSON', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+  ];
 
   it('should support requests and responses with a JSON body', async () => {
     type Schema = HttpSchema<{
@@ -49,7 +54,7 @@ describe('FetchClient > Bodies > JSON', () => {
         body: JSON.stringify(users[0]),
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(Response);
@@ -117,7 +122,7 @@ describe('FetchClient > Bodies > JSON', () => {
         body: JSON.stringify(1),
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(2);
 
       expect(response).toBeInstanceOf(Response);
@@ -185,7 +190,7 @@ describe('FetchClient > Bodies > JSON', () => {
         body: JSON.stringify(false),
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(true);
 
       expect(response).toBeInstanceOf(Response);
@@ -247,7 +252,7 @@ describe('FetchClient > Bodies > JSON', () => {
         body: null,
       });
 
-      expect(response.status).toBe(201);
+      expectResponseStatus(response, 201);
       expect(await response.json()).toEqual(null);
 
       expect(response).toBeInstanceOf(Response);
