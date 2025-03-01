@@ -70,9 +70,12 @@ export type FetchRequestInit<
   Schema extends HttpSchema,
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath<Schema, Method>,
-> = Omit<RequestInit, 'method' | 'headers' | 'body'> & { baseURL?: string; method: Method } & (Path extends Path
-    ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>>
-    : never);
+  Redirect extends RequestRedirect = 'follow',
+> = Omit<RequestInit, 'method' | 'headers' | 'body'> & {
+  method: Method;
+  baseURL?: string;
+  redirect?: Redirect;
+} & (Path extends Path ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>> : never);
 
 export namespace FetchRequestInit {
   /** The default options for each request sent by a fetch instance. */
@@ -88,9 +91,28 @@ type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpRes
   Default<MethodSchema['response']>
 >;
 
-type FetchResponseStatusCode<MethodSchema extends HttpMethodSchema, ErrorOnly extends boolean> = ErrorOnly extends true
-  ? AllFetchResponseStatusCode<MethodSchema> & (HttpStatusCode.ClientError | HttpStatusCode.ServerError)
-  : AllFetchResponseStatusCode<MethodSchema>;
+type FilterFetchResponseStatusCodeByError<
+  StatusCode extends HttpStatusCode,
+  ErrorOnly extends boolean,
+> = ErrorOnly extends true ? Extract<StatusCode, HttpStatusCode.ClientError | HttpStatusCode.ServerError> : StatusCode;
+
+type FilterFetchResponseStatusCodeByRedirect<
+  StatusCode extends HttpStatusCode,
+  Redirect extends RequestRedirect,
+> = Redirect extends 'error'
+  ? FilterFetchResponseStatusCodeByRedirect<StatusCode, 'follow'>
+  : Redirect extends 'follow'
+    ? Exclude<StatusCode, Exclude<HttpStatusCode.Redirection, 304>>
+    : StatusCode;
+
+type FetchResponseStatusCode<
+  MethodSchema extends HttpMethodSchema,
+  ErrorOnly extends boolean,
+  Redirect extends RequestRedirect,
+> = FilterFetchResponseStatusCodeByRedirect<
+  FilterFetchResponseStatusCodeByError<AllFetchResponseStatusCode<MethodSchema>, ErrorOnly>,
+  Redirect
+>;
 
 type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
   ReplaceBy<IfNever<DefaultNoExclude<Default<MethodSchema['request']>['body']>, null>, undefined, null>,
@@ -140,10 +162,12 @@ export type FetchResponse<
   Method extends HttpSchemaMethod<Schema>,
   Path extends HttpSchemaPath.Literal<Schema, Method>,
   ErrorOnly extends boolean = false,
-  StatusCode extends FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly> = FetchResponseStatusCode<
+  Redirect extends RequestRedirect = 'follow',
+  StatusCode extends FetchResponseStatusCode<
     Default<Schema[Path][Method]>,
-    ErrorOnly
-  >,
+    ErrorOnly,
+    Redirect
+  > = FetchResponseStatusCode<Default<Schema[Path][Method]>, ErrorOnly, Redirect>,
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Schema, Method, Path, StatusCode> : never;
 
 export namespace FetchResponse {
