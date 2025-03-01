@@ -7,7 +7,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
-describe('FetchClient (node) > Bodies > Search params', () => {
+describe('FetchClient > Bodies > Search params', () => {
   const baseURL = 'http://localhost:3000';
 
   it('should support requests and responses with search params', async () => {

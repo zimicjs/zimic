@@ -7,7 +7,7 @@ import { usingHttpInterceptor } from '@tests/utils/interceptors';
 import createFetch from '../factory';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
-describe('FetchClient (node) > Bodies > Plain text', () => {
+describe('FetchClient > Bodies > Plain text', () => {
   const baseURL = 'http://localhost:3000';
 
   it('should support requests and responses with a plain text body', async () => {

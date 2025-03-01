@@ -8,7 +8,7 @@ import FetchResponseError from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
-describe('FetchClient (node) > Errors', () => {
+describe('FetchClient > Errors', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {

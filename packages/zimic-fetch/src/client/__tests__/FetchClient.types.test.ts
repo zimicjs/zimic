@@ -9,7 +9,7 @@ import createFetch from '../factory';
 import { Fetch, InferFetchSchema } from '../types/public';
 import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
-describe('FetchClient (node) > Types', () => {
+describe('FetchClient > Types', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
