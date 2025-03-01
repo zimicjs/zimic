@@ -294,7 +294,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *   const request = new fetch.Request('/users', {
    *     method: 'POST',
    *     headers: { 'content-type': 'application/json' },
-   *     body: JSON.stringify({ username: 'my-user' }),
+   *     body: JSON.stringify({ username: 'me' }),
    *   });
    *
    *   if (fetch.isRequest(request, 'POST', '/users')) {
@@ -345,7 +345,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *
    *   const response = await fetch('/users', {
    *     method: 'GET',
-   *     searchParams: { query: 'my' },
+   *     searchParams: { query: 'u' },
    *   });
    *
    *   if (fetch.isResponse(response, 'GET', '/users')) {
@@ -400,7 +400,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *   try {
    *     const response = await fetch('/users', {
    *       method: 'GET',
-   *       searchParams: { query: 'my' },
+   *       searchParams: { query: 'u' },
    *     });
    *
    *     if (!response.ok) {
@@ -467,7 +467,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
  *
  *   const response = await fetch('/users', {
  *     method: 'GET',
- *     searchParams: { query: 'my' },
+ *     searchParams: { query: 'u' },
  *   });
  *
  *   if (response.status === 404) {

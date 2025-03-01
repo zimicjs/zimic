@@ -103,7 +103,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
         GET: {
           request: {
             headers: { authorization: string };
-            searchParams: { username?: string; limit?: `${number}` };
+            searchParams: { query?: string; limit?: `${number}` };
           };
           response: {
             200: { body: User[] };
@@ -144,7 +144,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];
 
     const searchParams = new HttpSearchParams<UserListSearchParams>({
-      username: 'user',
+      query: 'u',
       limit: 10,
     });
 

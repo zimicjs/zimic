@@ -167,7 +167,7 @@ type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
  *   const request = new fetch.Request('/users', {
  *     method: 'POST',
  *     headers: { 'content-type': 'application/json' },
- *     body: JSON.stringify({ username: 'my-user' }),
+ *     body: JSON.stringify({ username: 'me' }),
  *   });
  *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *
@@ -302,7 +302,7 @@ export namespace FetchResponse {
  *   });
  *
  *   const request = new fetch.Request('POST', '/users', {
- *     body: JSON.stringify({ username: 'my-user' }),
+ *     body: JSON.stringify({ username: 'me' }),
  *   });
  *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
  *

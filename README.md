@@ -41,11 +41,8 @@
 ## Contents <!-- omit from toc -->
 
 - [`@zimic/http`](#zimichttp)
-  - [Documentation](#documentation)
 - [`@zimic/fetch`](#zimicfetch)
-  - [Documentation](#documentation-1)
 - [`@zimic/interceptor`](#zimicinterceptor)
-  - [Documentation](#documentation-2)
 - [Examples](#examples)
 - [Changelog](#changelog)
 
@@ -69,7 +66,7 @@ requests, responses, headers, search params, and form data.
   [`FormData`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata) objects, fully compatible with their
   native counterparts.
 
-### Documentation
+**Learn more**:
 
 - [`@zimic/http` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
 - [`@zimic/http` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
@@ -90,7 +87,7 @@ requests, responses, headers, search params, and form data.
   interface for common use cases. Define defaults to apply to all of your requests, such as a base URL, headers, search
   parameters, and more. Inspect and modify requests and responses using `onRequest` and `onResponse` listeners.
 
-### Documentation
+**Learn more**:
 
 - [`@zimic/fetch` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐fetch)
 - [`@zimic/fetch` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
@@ -121,7 +118,7 @@ requests.
 > `@zimic/fetch` and `@zimic/interceptor` are not tied to each other. You can use `@zimic/interceptor` with any HTTP
 > client library (e.g. `fetch`, `axios`), and `@zimic/fetch` with any HTTP interceptor library (e.g. `msw`, `nock`).
 
-### Documentation
+**Learn more**:
 
 - [`@zimic/interceptor` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
 - [`@zimic/interceptor` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)

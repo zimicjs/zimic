@@ -105,7 +105,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
         GET: {
           request: {
             headers: { authorization: string };
-            searchParams: { username?: string; limit?: `${number}` };
+            searchParams: { query?: string; limit?: `${number}` };
           };
           response: {
             200: { body: User[] };
@@ -191,13 +191,13 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
 
     ```ts
     test('example', async () => {
-      const users: User[] = [{ username: 'my-user' }];
+      const users: User[] = [{ username: 'me' }];
 
       const handler = interceptor
         .get('/users')
         .with({
           headers: { authorization: 'Bearer my-token' },
-          searchParams: { username: 'my' },
+          searchParams: { query: 'u' },
         })
         .respond({
           status: 200,

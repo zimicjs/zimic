@@ -40,6 +40,11 @@
 
 `@zimic/fetch` is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe `fetch` -like API client.
 
+> [!NOTE]
+>
+> `@zimic/fetch` is still experimental and under active development. Please share your feedback or report any issues you
+> encounter!
+
 > [!TIP]
 >
 > All APIs are documented using [JSDoc](https://jsdoc.app) and visible directly in your IDE.
@@ -164,7 +169,7 @@ const fetch = createFetch<Schema>({
 
 const response = await fetch('/users', {
   method: 'GET',
-  searchParams: { query: 'my' },
+  searchParams: { query: 'u' },
 });
 
 if (response.status === 404) {
@@ -239,7 +244,7 @@ const fetch = createFetch<Schema>({
 // Set the authorization header for all requests
 const { accessToken } = await authenticate();
 
-fetch.defaults.headers['authorization'] = `Bearer ${accessToken}`;
+fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 console.log(fetch.defaults.headers);
 
 const response = await fetch('/posts', {
@@ -279,19 +284,19 @@ type Schema = HttpSchema<{
 
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:80',
+
+  onRequest(request) {
+    if (this.isRequest(request, 'GET', '/users')) {
+      const url = new URL(request.url);
+      url.searchParams.append('limit', '10');
+
+      const updatedRequest = new Request(url, request);
+      return updatedRequest;
+    }
+
+    return request;
+  },
 });
-
-fetch.onRequest = function (request) {
-  if (this.isRequest(request, 'GET', '/users')) {
-    const url = new URL(request.url);
-    url.searchParams.append('limit', '10');
-
-    const updatedRequest = new Request(url, request);
-    return updatedRequest;
-  }
-
-  return request;
-};
 ```
 
 > [!TIP]
@@ -340,14 +345,14 @@ type Schema = HttpSchema<{
 
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:80',
-});
 
-fetch.onResponse = function (response) {
-  if (this.isResponse(response, 'GET', '/users')) {
-    console.log(response.headers.get('content-encoding'));
-  }
-  return response;
-};
+  onResponse(response) {
+    if (this.isResponse(response, 'GET', '/users')) {
+      console.log(response.headers.get('content-encoding'));
+    }
+    return response;
+  },
+});
 ```
 
 > [!TIP]
@@ -402,7 +407,7 @@ const fetch = createFetch<Schema>({
 const request = new fetch.Request('/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ username: 'my-user' }),
+  body: JSON.stringify({ username: 'me' }),
 });
 
 if (fetch.isRequest(request, 'POST', '/users')) {
@@ -456,7 +461,7 @@ const fetch = createFetch<Schema>({
 
 const response = await fetch('/users', {
   method: 'GET',
-  searchParams: { query: 'my' },
+  searchParams: { query: 'u' },
 });
 
 if (fetch.isResponse(response, 'GET', '/users')) {
@@ -513,7 +518,7 @@ const fetch = createFetch<Schema>({
 try {
   const response = await fetch('/users', {
     method: 'GET',
-    searchParams: { query: 'my' },
+    searchParams: { query: 'u' },
   });
 
   if (!response.ok) {
@@ -584,7 +589,7 @@ const fetch = createFetch<Schema>({
 const request = new fetch.Request('/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ username: 'my-user' }),
+  body: JSON.stringify({ username: 'me' }),
 });
 console.log(request); // FetchRequest<Schema, 'POST', '/users'>
 ```
@@ -749,18 +754,22 @@ const fetch = createFetch<Schema>({
 // Set default headers for all requests at runtime
 const { accessToken } = await authenticate();
 
-fetch.defaults.headers['authorization'] = `Bearer ${token}`;
+fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 ```
 
 [`fetch.onRequest`](#fetchonrequest) can also be used to set headers for all of your requests or a subset of them.
 
 ```ts
-fetch.onRequest = function (request) {
-  if (this.isRequest(request, 'GET', '/users')) {
-    request.headers.set('accept-language', 'en');
-  }
-  return request;
-};
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+
+  onRequest(request) {
+    if (this.isRequest(request, 'GET', '/users')) {
+      request.headers.set('accept-language', 'en');
+    }
+    return request;
+  },
+});
 ```
 
 ### Using search params (query)
@@ -828,17 +837,20 @@ console.log(fetch.defaults.searchParams);
 [`fetch.onRequest`](#fetchonrequest) can also be used to set search params for all of your requests or a subset of them.
 
 ```ts
-fetch.onRequest = function (request) {
-  if (this.isRequest(request, 'GET', '/users')) {
-    const url = new URL(request.url);
-    url.searchParams.append('limit', '10');
+const fetch = createFetch<Schema>({
+  baseURL: 'http://localhost:3000',
+  onRequest(request) {
+    if (this.isRequest(request, 'GET', '/users')) {
+      const url = new URL(request.url);
+      url.searchParams.append('limit', '10');
 
-    const updatedRequest = new Request(url, request);
-    return updatedRequest;
-  }
+      const updatedRequest = new Request(url, request);
+      return updatedRequest;
+    }
 
-  return request;
-};
+    return request;
+  },
+});
 ```
 
 ### Using bodies
@@ -878,7 +890,7 @@ const fetch = createFetch<Schema>({
 const response = await fetch('/users', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ username: 'my-user' }),
+  body: JSON.stringify({ username: 'me' }),
 });
 
 const user = await response.json(); // User
@@ -980,8 +992,8 @@ const video = await response.json(); // Video
 
 ### Handling authentication
 
-To manage authenticated clients, you can use [`fetch.defaults`](#fetchdefaults) to set the necessary headers for your
-requests.
+To manage authenticated clients, you can use [`fetch.defaults`](#fetchdefaults) and/or
+[`fetch.onRequest`](#fetchonrequest) to set the necessary headers for your requests.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -1001,7 +1013,7 @@ type Schema = HttpSchema<{
       };
       response: {
         200: { body: User[] };
-        400: { body: { message: string } };
+        401: { body: { message: string } };
         500: { body: { message: string } };
       };
     };
@@ -1010,24 +1022,43 @@ type Schema = HttpSchema<{
 
 const fetch = createFetch<Schema>({
   baseURL: 'http://localhost:3000',
+
+  async onResponse(response) {
+    if (response.status !== 401) {
+      return response;
+    }
+
+    const errorData = (await response.clone().json()) as { message?: string };
+
+    if (errorData.message !== 'Access token expired') {
+      return response;
+    }
+
+    // Refresh the access token and retry the request
+    const { accessToken } = await authenticate();
+
+    fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+
+    const requestClone = response.request.clone();
+    requestClone.headers.set('authorization', `Bearer ${accessToken}`);
+
+    return this.loose(requestClone);
+  },
 });
 
-// Authenticate to your service
+// Authenticate to your service before requests
 const { accessToken } = await authenticate();
 
 // Set the authorization header for all requests
-fetch.defaults.headers['authorization'] = `Bearer ${token}`;
+fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
 
 const request = await fetch('/users', {
   method: 'GET',
-  searchParams: { query: 'my' },
+  searchParams: { query: 'u' },
 });
 
 const users = await request.json(); // User[]
 ```
-
-Alternatively, you can use [`fetch.onRequest`](#fetchonrequest) to manually set headers in all of your requests or a
-subset of them.
 
 ### Handling errors
 
@@ -1085,5 +1116,4 @@ if (!response.ok) {
 }
 
 const user = await response.json(); // User
-return user;
 ```

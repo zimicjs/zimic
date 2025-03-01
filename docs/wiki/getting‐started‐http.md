@@ -91,7 +91,7 @@ We also canary releases under the tag `canary`, containing the latest features a
          request: {
            headers: { authorization: string };
            searchParams: {
-             username?: string;
+             query?: string;
              limit?: `${number}`;
            };
          };

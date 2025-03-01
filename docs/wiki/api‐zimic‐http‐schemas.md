@@ -264,7 +264,7 @@ path string, such as `/users/:id`.
 import { type HttpSchema } from '@zimic/http';
 
 interface UserListSearchParams {
-  username?: string;
+  query?: string;
 }
 
 type MyServiceSchema = HttpSchema<{
@@ -381,7 +381,7 @@ type MyServiceSchema = HttpSchema<{
 import { type HttpSchema, type HttpSearchParams } from '@zimic/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
-  username?: string;
+  query?: string;
 }>;
 
 type MyServiceSchema = HttpSchema<{
@@ -544,7 +544,7 @@ type MyServiceSchema = HttpSchema<{
 import { type HttpSchema, type HttpSearchParams } from '@zimic/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
-  username?: string;
+  query?: string;
 }>;
 
 type MyServiceSchema = HttpSchema<{

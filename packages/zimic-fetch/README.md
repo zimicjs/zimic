@@ -47,6 +47,11 @@
 
 `@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch` -like API client.
 
+> [!NOTE]
+>
+> `@zimic/fetch` is still experimental and under active development. Please share your feedback or report any issues you
+> encounter!
+
 ## Features
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
@@ -100,7 +105,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
         GET: {
           request: {
             headers: { authorization: string };
-            searchParams: { username?: string; limit?: `${number}` };
+            searchParams: { query?: string; limit?: `${number}` };
           };
           response: {
             200: { body: User[] };
@@ -140,7 +145,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     ```ts
     const response = await fetch('/users', {
       method: 'GET',
-      searchParams: { username: 'my', limit: '10' },
+      searchParams: { query: 'u', limit: '10' },
     });
 
     if (response.status === 404) {

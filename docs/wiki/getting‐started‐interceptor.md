@@ -170,7 +170,7 @@ use remote interceptors.
         GET: {
           request: {
             headers: { authorization: string };
-            searchParams: { username?: string; limit?: `${number}` };
+            searchParams: { query?: string; limit?: `${number}` };
           };
           response: {
             200: { body: User[] };
@@ -301,13 +301,13 @@ use remote interceptors.
 
     ```ts
     test('example', async () => {
-      const users: User[] = [{ username: 'my-user' }];
+      const users: User[] = [{ username: 'me' }];
 
       const handler = interceptor
         .get('/users')
         .with({
           headers: { authorization: 'Bearer my-token' },
-          searchParams: { username: 'my' },
+          searchParams: { query: 'u' },
         })
         .respond({
           status: 200,
@@ -323,13 +323,13 @@ use remote interceptors.
 
     ```ts
     test('example', async () => {
-      const users: User[] = [{ username: 'my-user' }];
+      const users: User[] = [{ username: 'me' }];
 
       const handler = await interceptor
         .get('/users')
         .with({
           headers: { authorization: 'Bearer my-token' },
-          searchParams: { username: 'my' },
+          searchParams: { query: 'u' },
         })
         .respond({
           status: 200,
