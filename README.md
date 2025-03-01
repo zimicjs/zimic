@@ -40,9 +40,10 @@
 
 ## Contents <!-- omit from toc -->
 
-- [`@zimic/http`](#zimichttp)
-- [`@zimic/fetch`](#zimicfetch)
-- [`@zimic/interceptor`](#zimicinterceptor)
+- [Libraries](#libraries)
+  - [`@zimic/http`](#zimichttp)
+  - [`@zimic/fetch`](#zimicfetch)
+  - [`@zimic/interceptor`](#zimicinterceptor)
 - [Examples](#examples)
 - [Changelog](#changelog)
 
@@ -50,7 +51,9 @@
 
 Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integration libraries.
 
-## `@zimic/http`
+## Libraries
+
+### `@zimic/http`
 
 [`@zimic/http`](./packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
 requests, responses, headers, search params, and form data.
@@ -73,7 +76,7 @@ requests, responses, headers, search params, and form data.
 - `@zimic/http` - CLI reference
   - [Typegen](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
 
-## `@zimic/fetch`
+### `@zimic/fetch`
 
 [`@zimic/fetch`](./packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
 `fetch` -like API client.
@@ -92,7 +95,7 @@ requests, responses, headers, search params, and form data.
 - [`@zimic/fetch` - Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐fetch)
 - [`@zimic/fetch` - API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch)
 
-## `@zimic/interceptor`
+### `@zimic/interceptor`
 
 [`@zimic/interceptor`](./packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock HTTP
 requests.
@@ -115,8 +118,13 @@ requests.
 
 > [!TIP]
 >
-> `@zimic/fetch` and `@zimic/interceptor` are not tied to each other. You can use `@zimic/interceptor` with any HTTP
-> client library (e.g. `fetch`, `axios`), and `@zimic/fetch` with any HTTP interceptor library (e.g. `msw`, `nock`).
+> `@zimic/fetch` and `@zimic/interceptor` are not required to be used together. `@zimic/interceptor` is compatible with
+> any HTTP client implementation, such as [`fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and
+> [`axios`](https://www.npmjs.com/package/axios). Similarly, `@zimic/fetch` works with any HTTP interceptor library,
+> such as [`msw`](https://www.npmjs.com/package/msw) and [`nock`](https://www.npmjs.com/package/nock).
+>
+> With that in mind, `@zimic/fetch` and `@zimic/interceptor` work best together, providing a seamless and type-safe
+> experience for making HTTP requests in your application and mocking them during development and testing.
 
 **Learn more**:
 
