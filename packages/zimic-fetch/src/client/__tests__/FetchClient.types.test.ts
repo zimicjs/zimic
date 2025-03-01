@@ -13,10 +13,14 @@ describe('FetchClient > Types', () => {
   const baseURL = 'http://localhost:3000';
 
   interface User {
+    id: string;
     name: string;
   }
 
-  const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
+  const users: User[] = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+  ];
 
   it('should correctly type responses with merged status codes', async () => {
     type Schema = HttpSchema<{

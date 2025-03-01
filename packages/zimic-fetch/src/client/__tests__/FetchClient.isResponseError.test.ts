@@ -3,6 +3,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 
@@ -68,7 +69,7 @@ describe('FetchClient > isResponseError', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 500>();
-      expect(response.status).toBe(500);
+      expectResponseStatus(response, 500);
 
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
       expect(response.request.method).toBe('GET');
@@ -127,7 +128,7 @@ describe('FetchClient > isResponseError', () => {
       });
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 404>();
-      expect(response.status).toBe(404);
+      expectResponseStatus(response, 404);
 
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
       expect(response.request.method).toBe('GET');
@@ -190,7 +191,7 @@ describe('FetchClient > isResponseError', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 500>();
-      expect(response.status).toBe(500);
+      expectResponseStatus(response, 500);
 
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
       expect(response.request.method).toBe('GET');
@@ -275,7 +276,7 @@ describe('FetchClient > isResponseError', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users/'));
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 500>();
-      expect(response.status).toBe(500);
+      expectResponseStatus(response, 500);
 
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
       expect(response.request.method).toBe('GET');
@@ -360,7 +361,7 @@ describe('FetchClient > isResponseError', () => {
       expect(response.url).toBe(joinURL(baseURL, '/users/'));
 
       expectTypeOf(response.status).toEqualTypeOf<200 | 500>();
-      expect(response.status).toBe(500);
+      expectResponseStatus(response, 500);
 
       expectTypeOf(response.request.method).toEqualTypeOf<'GET'>();
       expect(response.request.method).toBe('GET');

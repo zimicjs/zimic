@@ -9,7 +9,7 @@ class FetchResponseError<
 > extends Error {
   constructor(
     public request: FetchRequest<Schema, Method, Path>,
-    public response: FetchResponse<Schema, Method, Path, true>,
+    public response: FetchResponse<Schema, Method, Path, true, 'manual'>,
   ) {
     super(`${request.method} ${request.url} failed with status ${response.status}: ${response.statusText}`);
     this.name = 'FetchResponseError';

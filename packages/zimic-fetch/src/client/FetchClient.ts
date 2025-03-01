@@ -129,7 +129,12 @@ class FetchClient<Schema extends HttpSchema> implements Omit<PublicFetchClient<S
     Object.defineProperty(fetchResponse, 'error', {
       get() {
         if (responseError === undefined) {
-          responseError = fetchResponse.ok ? null : new FetchResponseError(fetchRequest, fetchResponse);
+          responseError = fetchResponse.ok
+            ? null
+            : new FetchResponseError(
+                fetchRequest,
+                fetchResponse as FetchResponse<Schema, Method, Path, true, 'manual'>,
+              );
         }
         return responseError;
       },
