@@ -49,7 +49,7 @@
 
 > [!NOTE]
 >
-> :seedling: This library is in beta.
+> :seedling: This library is in **beta**.
 
 ## Features
 

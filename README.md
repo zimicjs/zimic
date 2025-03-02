@@ -57,17 +57,17 @@ Zimic is a set of lightweight, thoroughly tested, TypeScript-first HTTP integrat
 
 > [!NOTE]
 >
-> :seedling: Beta
+> :seedling: This library is in **beta**.
 
-[`@zimic/http`](./packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
-requests, responses, headers, search params, and form data.
+[`@zimic/http`](./packages/zimic-http) is a collection of type-safe utilities to handle HTTP requests and responses,
+including headers, search params, and form data.
 
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and use it to type your HTTP requests and
-  responses. If you have an [OpenAPI v3](https://swagger.io/specification) schema,
+  responses. If you have an [OpenAPI v3](https://swagger.io/specification) declaration,
   [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate the types
   of your schema.
-- :pushpin: **Type-safe native HTTP APIs**: Declare type-safe
+- :pushpin: **Type-safe native APIs**: Declare type-safe
   [`Headers`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders),
   [`URLSearchParams`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams), and
   [`FormData`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata) objects, fully compatible with their
@@ -84,7 +84,7 @@ requests, responses, headers, search params, and form data.
 
 > [!WARNING]
 >
-> :construction: Experimental
+> :construction: This library is **experimental**.
 
 [`@zimic/fetch`](./packages/zimic-fetch) is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe
 `fetch`-like API client.
@@ -107,7 +107,7 @@ requests, responses, headers, search params, and form data.
 
 > [!NOTE]
 >
-> :seedling: Beta
+> :seedling: This library is in **beta**.
 
 [`@zimic/interceptor`](./packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock HTTP
 requests.

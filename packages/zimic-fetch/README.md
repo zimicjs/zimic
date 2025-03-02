@@ -49,7 +49,7 @@
 
 > [!WARNING]
 >
-> :construction: This library is experimental.
+> :construction: This library is **experimental**.
 
 ## Features
 
