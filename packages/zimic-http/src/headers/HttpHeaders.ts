@@ -44,12 +44,12 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/set MDN Reference} */
-  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]>): void {
+  set<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]> & string): void {
     super.set(name, value);
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/append MDN Reference} */
-  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]>): void {
+  append<Name extends HttpHeadersSchemaName<Schema>>(name: Name, value: NonNullable<Schema[Name]> & string): void {
     super.append(name, value);
   }
 
@@ -75,7 +75,7 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
 
   forEach<This extends HttpHeaders<Schema>>(
     callback: <Key extends HttpHeadersSchemaName<Schema>>(
-      value: NonNullable<Schema[Key]>,
+      value: NonNullable<Schema[Key]> & string,
       key: Key,
       parent: Headers,
     ) => void,
@@ -90,22 +90,24 @@ class HttpHeaders<Schema extends HttpHeadersSchema = HttpHeadersSchema> extends 
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/values MDN Reference} */
-  values(): HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]>> {
-    return super.values() as HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]>>;
+  values(): HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string> {
+    return super.values() as HeadersIterator<NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string>;
   }
 
   /** @see {@link https://developer.mozilla.org/docs/Web/API/Headers/entries MDN Reference} */
-  entries(): HeadersIterator<[HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]> {
+  entries(): HeadersIterator<
+    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
+  > {
     return super.entries() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
+      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
     >;
   }
 
   [Symbol.iterator](): HeadersIterator<
-    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
+    [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
   > {
     return super[Symbol.iterator]() as HeadersIterator<
-      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]>]
+      [HttpHeadersSchemaName<Schema>, NonNullable<Schema[HttpHeadersSchemaName<Schema>]> & string]
     >;
   }
 
