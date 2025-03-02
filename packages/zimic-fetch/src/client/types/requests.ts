@@ -85,6 +85,8 @@ export namespace FetchRequestInit {
     headers?: HttpHeadersSchema;
     searchParams?: HttpSearchParamsSchema;
   }
+
+  export type Loose = Partial<Defaults>;
 }
 
 type AllFetchResponseStatusCode<MethodSchema extends HttpMethodSchema> = HttpResponseSchemaStatusCode<

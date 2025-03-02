@@ -10,7 +10,7 @@ export type FetchInput<
   Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
 > = Path | URL | FetchRequest<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>>;
 
-interface FetchFunction<Schema extends HttpSchema> {
+export interface FetchFunction<Schema extends HttpSchema> {
   <
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath.NonLiteral<Schema, Method>,
@@ -30,6 +30,13 @@ interface FetchFunction<Schema extends HttpSchema> {
   ): Promise<FetchResponse<Schema, Method, LiteralHttpSchemaPathFromNonLiteral<Schema, Method, Path>, false, Redirect>>;
 }
 
+export namespace FetchFunction {
+  export type Loose = (
+    input: string | URL | FetchRequest.Loose,
+    init?: FetchRequestInit.Loose,
+  ) => Promise<FetchResponse.Loose>;
+}
+
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
   onRequest?: (this: Fetch<Schema>, request: FetchRequest.Loose) => PossiblePromise<Request>;
   onResponse?: (this: Fetch<Schema>, response: FetchResponse.Loose) => PossiblePromise<Response>;
@@ -39,6 +46,8 @@ export type FetchDefaults = RequiredByKey<FetchRequestInit.Defaults, 'headers' |
 
 export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOptions<Schema>, 'onRequest' | 'onResponse'> {
   defaults: FetchDefaults;
+
+  loose: FetchFunction.Loose;
 
   Request: FetchRequestConstructor<Schema>;
 

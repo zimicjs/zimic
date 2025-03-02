@@ -9,7 +9,7 @@ import { expectResponseStatus } from '@tests/utils/requests';
 
 import createFetch from '../factory';
 import { Fetch } from '../types/public';
-import { FetchRequest, FetchResponse } from '../types/requests';
+import { FetchRequest, FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
 describe('FetchClient > Listeners', () => {
   const baseURL = 'http://localhost:3000';
@@ -226,7 +226,7 @@ describe('FetchClient > Listeners', () => {
   it('should support listening to and modifying requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           request: {
             headers?: { 'accept-language'?: string };
           };
@@ -237,7 +237,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
         })
@@ -257,7 +257,7 @@ describe('FetchClient > Listeners', () => {
         onRequest,
       });
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -265,12 +265,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -294,7 +294,7 @@ describe('FetchClient > Listeners', () => {
 
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           request: {
             headers?: HeadersSchema;
             searchParams?: SearchParamsSchema;
@@ -306,7 +306,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
           searchParams: { page: '1', limit: '10' },
@@ -321,7 +321,7 @@ describe('FetchClient > Listeners', () => {
         this: Fetch<Schema>,
         request: FetchRequest.Loose,
       ) {
-        if (this.isRequest(request, 'POST', '/users')) {
+        if (this.isRequest(request, 'GET', '/users')) {
           const headers = new HttpHeaders<HeadersSchema>(request.headers);
           headers.set('accept-language', 'en');
 
@@ -331,7 +331,7 @@ describe('FetchClient > Listeners', () => {
           searchParams.set('limit', '10');
 
           const updatedRequest = new this.Request('/users', {
-            method: 'POST',
+            method: 'GET',
             headers,
             searchParams,
           });
@@ -347,7 +347,7 @@ describe('FetchClient > Listeners', () => {
         onRequest,
       });
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -355,12 +355,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
@@ -375,7 +375,7 @@ describe('FetchClient > Listeners', () => {
   it('should support listening to and creating modified raw requests', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           request: {
             headers?: { 'accept-language'?: string };
             searchParams?: { page?: number; limit?: number };
@@ -387,7 +387,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
           searchParams: { page: '1', limit: '10' },
@@ -414,7 +414,7 @@ describe('FetchClient > Listeners', () => {
         onRequest,
       });
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -422,12 +422,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
 
@@ -442,7 +442,7 @@ describe('FetchClient > Listeners', () => {
   it('should support changing an `onRequest` listener after the fetch was created', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           request: {
             headers?: { 'accept-language'?: string };
           };
@@ -453,7 +453,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .with({
           headers: { 'accept-language': 'en' },
         })
@@ -471,12 +471,12 @@ describe('FetchClient > Listeners', () => {
         return request;
       });
 
-      const responseBeforeListener = fetch('/users', { method: 'POST' });
+      const responseBeforeListener = fetch('/users', { method: 'GET' });
       await expectFetchError(responseBeforeListener);
 
       fetch.onRequest = onRequest;
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -484,12 +484,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -504,7 +504,7 @@ describe('FetchClient > Listeners', () => {
   it('should support listening to responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           response: { 200: { body: User[] } };
         };
       };
@@ -512,7 +512,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .respond({
           status: 200,
           body: users,
@@ -554,13 +554,13 @@ describe('FetchClient > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(this).toEqualTypeOf(fetch);
 
-        expect(this.isResponse(response, 'POST', '/users')).toBe(true);
+        expect(this.isResponse(response, 'GET', '/users')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (this.isResponse(response, 'POST', '/users')) {
+        if (this.isResponse(response, 'GET', '/users')) {
           expect(response).toBeInstanceOf(Response);
-          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
         } else {
           expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
         }
@@ -573,7 +573,7 @@ describe('FetchClient > Listeners', () => {
         onResponse,
       });
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -581,12 +581,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe(joinURL(baseURL, '/users'));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -597,7 +597,7 @@ describe('FetchClient > Listeners', () => {
   it('should support listening to responses with path params', async () => {
     type Schema = HttpSchema<{
       '/users/:id': {
-        POST: {
+        GET: {
           response: { 200: { body: User } };
         };
       };
@@ -605,7 +605,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post(`/users/${users[0].id}`)
+        .get(`/users/${users[0].id}`)
         .respond({
           status: 200,
           body: users[0],
@@ -647,13 +647,13 @@ describe('FetchClient > Listeners', () => {
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         expectTypeOf(this).toEqualTypeOf(fetch);
 
-        expect(this.isResponse(response, 'POST', '/users/:id')).toBe(true);
+        expect(this.isResponse(response, 'GET', '/users/:id')).toBe(true);
 
         /* istanbul ignore else -- @preserve
          * This else is necessary to narrow the error type to a specific error. */
-        if (this.isResponse(response, 'POST', '/users/:id')) {
+        if (this.isResponse(response, 'GET', '/users/:id')) {
           expect(response).toBeInstanceOf(Response);
-          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users/:id'>>();
+          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
         } else {
           expectTypeOf(response).toEqualTypeOf<FetchResponse.Loose>();
         }
@@ -666,7 +666,7 @@ describe('FetchClient > Listeners', () => {
         onResponse,
       });
 
-      const response = await fetch(`/users/${users[0].id}`, { method: 'POST' });
+      const response = await fetch(`/users/${users[0].id}`, { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -674,12 +674,12 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users[0]);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users/:id'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users/:id'>>();
 
       expect(response.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users/:id'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users/:id'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, `/users/${users[0].id}`));
 
@@ -690,7 +690,7 @@ describe('FetchClient > Listeners', () => {
   it('should support listening to and creating modified raw responses', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           response: {
             200: {
               headers?: { 'content-language'?: string };
@@ -703,7 +703,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .respond({
           status: 200,
           body: users,
@@ -728,7 +728,7 @@ describe('FetchClient > Listeners', () => {
         onResponse,
       });
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -736,7 +736,7 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe('');
 
@@ -745,7 +745,7 @@ describe('FetchClient > Listeners', () => {
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
@@ -753,10 +753,122 @@ describe('FetchClient > Listeners', () => {
     });
   });
 
+  it('should support listening to a response, making another request and retrying the original response', async () => {
+    type Schema = HttpSchema<{
+      '/auth/refresh': {
+        POST: {
+          response: {
+            201: { body: { accessToken: string } };
+          };
+        };
+      };
+
+      '/users': {
+        GET: {
+          request: {
+            headers: { authorization: string };
+          };
+          response: {
+            200: { body: User[] };
+            401: { body: { message: string } };
+            403: { body: { message: string } };
+          };
+        };
+      };
+    }>;
+
+    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+      const accessTokens = Array.from({ length: 2 }, (_, index) => `access-token-${index + 1}`);
+
+      await interceptor
+        .get('/users')
+        .with({ headers: { authorization: `Bearer ${accessTokens[0]}` } })
+        .respond({ status: 401, body: { message: 'Access token expired' } })
+        .times(1);
+
+      await interceptor
+        .post('/auth/refresh')
+        .respond({ status: 201, body: { accessToken: accessTokens[1] } })
+        .times(1);
+
+      await interceptor
+        .get('/users')
+        .with({ headers: { authorization: `Bearer ${accessTokens[1]}` } })
+        .respond({ status: 200, body: users })
+        .times(1);
+
+      const onResponse = vi.fn<Default<Fetch<Schema>['onResponse']>>(async function (
+        this: Fetch<Schema>,
+        response: FetchResponse.Loose,
+      ) {
+        if (response.status === 401) {
+          const data = (await response.clone().json()) as unknown;
+
+          const isAccessTokenExpiredError =
+            typeof data === 'object' && data !== null && 'message' in data && data.message === 'Access token expired';
+
+          if (isAccessTokenExpiredError) {
+            const refreshResponse = await this('/auth/refresh', { method: 'POST' });
+            const { accessToken } = await refreshResponse.json();
+
+            const updatedRequest = response.request.clone();
+            updatedRequest.headers.set('authorization', `Bearer ${accessToken}`);
+
+            return this.loose(updatedRequest);
+          }
+        }
+
+        return response;
+      });
+
+      const fetch = createFetch<Schema>({
+        baseURL,
+        onResponse,
+      });
+
+      const response = await fetch('/users', {
+        method: 'GET',
+        headers: { authorization: `Bearer ${accessTokens[0]}` },
+      });
+
+      expectTypeOf(response.status).toEqualTypeOf<200 | 401 | 403>();
+      expectResponseStatus(response, 200);
+
+      expect(await response.json()).toEqual(users);
+
+      expect(response).toBeInstanceOf(Response);
+      expectTypeOf(response satisfies Response).toEqualTypeOf<
+        FetchResponsePerStatusCode<Schema, 'GET', '/users', 200>
+      >();
+
+      expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request).toBeInstanceOf(Request);
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+
+      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+
+      expect(response.request.headers.get('authorization')).toBe(`Bearer ${accessTokens[1]}`);
+
+      expect(onResponse).toHaveBeenCalledTimes(3);
+
+      const calledResponses = onResponse.mock.calls.map((call) => call[0]);
+
+      expect(calledResponses[0].url).toBe(joinURL(baseURL, '/users'));
+      expect(calledResponses[0].status).toBe(401);
+
+      expect(calledResponses[1].url).toBe(joinURL(baseURL, '/auth/refresh'));
+      expect(calledResponses[1].status).toBe(201);
+
+      expect(calledResponses[2].url).toBe(joinURL(baseURL, '/users'));
+      expect(calledResponses[2].status).toBe(200);
+    });
+  });
+
   it('should support changing an `onResponse` listener after the fetch was created', async () => {
     type Schema = HttpSchema<{
       '/users': {
-        POST: {
+        GET: {
           response: {
             200: {
               headers?: { 'content-language'?: string };
@@ -769,7 +881,7 @@ describe('FetchClient > Listeners', () => {
 
     await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
       await interceptor
-        .post('/users')
+        .get('/users')
         .respond({
           status: 200,
           body: users,
@@ -778,7 +890,7 @@ describe('FetchClient > Listeners', () => {
 
       const fetch = createFetch<Schema>({ baseURL });
 
-      const responseBeforeListener = await fetch('/users', { method: 'POST' });
+      const responseBeforeListener = await fetch('/users', { method: 'GET' });
       expect(responseBeforeListener.headers.has('content-language')).toBe(false);
 
       const onResponse = vi.fn<Default<Fetch<Schema>['onResponse']>>((response) => {
@@ -796,7 +908,7 @@ describe('FetchClient > Listeners', () => {
 
       fetch.onResponse = onResponse;
 
-      const response = await fetch('/users', { method: 'POST' });
+      const response = await fetch('/users', { method: 'GET' });
 
       expectTypeOf(response.status).toEqualTypeOf<200>();
       expectResponseStatus(response, 200);
@@ -804,7 +916,7 @@ describe('FetchClient > Listeners', () => {
       expect(await response.json()).toEqual(users);
 
       expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
       expect(response.url).toBe('');
 
@@ -813,7 +925,7 @@ describe('FetchClient > Listeners', () => {
       expect(response.headers.get('content-language')).toBe('en');
 
       expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'POST', '/users'>>();
+      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
       expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
