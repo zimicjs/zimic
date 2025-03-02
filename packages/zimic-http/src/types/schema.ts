@@ -29,7 +29,7 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 /**
  * A schema representing the structure of an HTTP request.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpRequestSchema {
   headers?: HttpHeadersSchema.Loose;
@@ -50,7 +50,7 @@ type ConvertToStrictHttpRequestSchema<Schema> = {
 /**
  * A schema representing the structure of an HTTP response.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpResponseSchema {
   headers?: HttpHeadersSchema.Loose;
@@ -204,7 +204,7 @@ export namespace HttpResponseSchemaByStatusCode {
 /**
  * A schema representing the structure of HTTP responses by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export type HttpResponseSchemaByStatusCode =
   HttpResponseSchemaByStatusCode.ConvertToStrict<HttpResponseSchemaByStatusCode.Loose>;
@@ -216,7 +216,7 @@ type ConvertToStrictHttpResponseSchemaByStatusCode<Schema> = {
 /**
  * Extracts the status codes used in a response schema by status code.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends HttpResponseSchemaByStatusCode> =
   keyof ResponseSchemaByStatusCode & HttpStatusCode;
@@ -224,7 +224,7 @@ export type HttpResponseSchemaStatusCode<ResponseSchemaByStatusCode extends Http
 /**
  * A schema representing the structure of an HTTP request and response for a given method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpMethodSchema {
   request?: HttpRequestSchema;
@@ -257,7 +257,7 @@ type ConvertToStrictMethod<Schema> = {
 /**
  * A schema representing the structure of HTTP request and response by method.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export interface HttpMethodsSchema {
   GET?: HttpMethodSchema.NoRequestBody;
@@ -283,9 +283,6 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
 
 /**
  * Declares an HTTP service schema.
- *
- * **IMPORTANT**: the input of `HttpSchema` and all of its internal types, except bodies, must be declared inline or as
- * a type aliases (`type`). Types other than bodies cannot be interfaces.
  *
  * @example
  *   import { type HttpSchema } from '@zimic/http';
@@ -317,16 +314,13 @@ export type ConvertToStrictHttpSchema<Schema extends HttpSchema> = {
  *     };
  *   }>;
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export type HttpSchema<Schema extends BaseHttpSchema = BaseHttpSchema> = ConvertToStrictHttpSchema<Schema>;
 
 export namespace HttpSchema {
   /**
    * Declares an HTTP service methods schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Methods` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -348,9 +342,6 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service method schema.
    *
-   * **IMPORTANT**: the input of `HttpSchema.Method` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
-   *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
    *
@@ -370,9 +361,6 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP service request schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Request` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -398,9 +386,6 @@ export namespace HttpSchema {
   /**
    * Declares an HTTP service response schema by status code.
    *
-   * **IMPORTANT**: the input of `HttpSchema.ResponseByStatusCode` and all of its internal types, except bodies, must be
-   * declared inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
-   *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
    *
@@ -422,9 +407,6 @@ export namespace HttpSchema {
 
   /**
    * Declares an HTTP service response schema.
-   *
-   * **IMPORTANT**: the input of `HttpSchema.Response` and all of its internal types, except bodies, must be declared
-   * inline or as a type aliases (`type`). Types other than bodies cannot be interfaces.
    *
    * @example
    *   import { type HttpSchema } from '@zimic/http';
@@ -581,7 +563,7 @@ export namespace HttpSchema {
 /**
  * Extracts the methods from an HTTP service schema.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export type HttpSchemaMethod<Schema extends HttpSchema> = IfAny<
   Schema,
@@ -621,7 +603,7 @@ export type AllowAnyStringInPathParams<Path extends string> = Path extends `${in
  *   type GetPath = HttpSchemaPath<Schema, 'GET'>;
  *   // "/users"
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
  */
 export namespace HttpSchemaPath {
   type LooseLiteral<Schema extends HttpSchema, Method extends HttpMethod = HttpMethod> = {
@@ -654,7 +636,7 @@ export namespace HttpSchemaPath {
    *   type LiteralGetPath = HttpSchemaPath.Literal<Schema, 'GET'>;
    *   // "/users"
    *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
    */
   export type Literal<
     Schema extends HttpSchema,
@@ -687,7 +669,7 @@ export namespace HttpSchemaPath {
    *   type NonLiteralGetPath = HttpSchemaPath.NonLiteral<Schema, 'GET'>;
    *   // "/users"
    *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http‐schemas Declaring HTTP interceptor schemas}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas Declaring HTTP interceptor schemas}
    */
   export type NonLiteral<
     Schema extends HttpSchema,
@@ -746,7 +728,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  * @example
  *   import { HttpSchema, InferPathParams } from '@zimic/http';
  *
- *   type MySchema = HttpSchema<{
+ *   type Schema = HttpSchema<{
  *     '/users/:userId': {
  *       GET: {
  *         response: { 200: { body: User } };
@@ -755,7 +737,7 @@ type RecursiveInferPathParams<Path extends string> = Path extends `${infer _Pref
  *   }>;
  *
  *   // Using a schema to validate the path (recommended):
- *   type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+ *   type PathParams = InferPathParams<Schema, '/users/:userId'>;
  *   // { userId: string }
  *
  * @example

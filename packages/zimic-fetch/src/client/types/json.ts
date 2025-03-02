@@ -1,5 +1,12 @@
 const value = Symbol.for('JSONStringified.value');
 
+/**
+ * Represents a value stringified by `JSON.stringify`, maintaining a reference to the original type.
+ *
+ * This type is used to validate that the expected stringified body is passed to `fetch`.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#using-a-json-body}
+ */
 export type JSONStringified<Value> = string & { [value]: Value };
 
 declare global {

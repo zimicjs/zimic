@@ -1,4 +1,4 @@
-# API reference: `zimic/interceptor/http` <!-- omit from toc -->
+# `zimic/interceptor/http` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -34,10 +34,11 @@
   - [HTTP `handler.clear()`](#http-handlerclear)
   - [HTTP `handler.requests()`](#http-handlerrequests)
 - [Intercepted HTTP resources](#intercepted-http-resources)
+- [Guides](#guides)
 
 ---
 
-This module exports resources to create HTTP interceptors and mock HTTP responses.
+`zimic/interceptor/http` exports resources to create HTTP interceptors and mock HTTP responses.
 
 ## `HttpInterceptor`
 
@@ -146,13 +147,13 @@ console by default.
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
-In a [local interceptor](getting‐started#local-http-interceptors), unhandled requests can be either **bypassed** or
-**rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network error. The
-default behavior in local interceptors is to **reject** unhandled requests.
+In a [local interceptor](getting‐started‐interceptor#local-http-interceptors), unhandled requests can be either
+**bypassed** or **rejected**. Bypassed requests reach the real network, whereas rejected requests fail with an network
+error. The default behavior in local interceptors is to **reject** unhandled requests.
 
-[Remote interceptors](getting‐started#remote-http-interceptors) and [interceptor server](cli‐zimic‐server) always
-**reject** unhandled requests. This is because the unhandled requests have already reached the interceptor server, so
-there would be no way of bypassing them at this point.
+[Remote interceptors](getting‐started‐interceptor#remote-http-interceptors) and [interceptor server](cli‐zimic‐server)
+always **reject** unhandled requests. This is because the unhandled requests have already reached the interceptor
+server, so there would be no way of bypassing them at this point.
 
 You can override the logging behavior per interceptor with `onUnhandledRequest` in
 [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
@@ -325,8 +326,8 @@ httpInterceptor.default.remote.onUnhandledRequest = (request) => {
 > If no running interceptor matches the request, one of two things may happen:
 >
 > - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
->   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server.md#zimic-server-start) in the
->   interceptor server.
+>   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start)
+>   in the interceptor server.
 > - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests
@@ -346,7 +347,7 @@ their intercepted requests in memory.
 > sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
 > after each test.
 >
-> See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
+> See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -411,7 +412,8 @@ await interceptor.start();
 ```
 
 When targeting a browser environment with a local interceptor, make sure to follow the
-[client-side post-install guide](getting‐started#client-side-post-install) before starting your interceptors.
+[client-side post-install guide](getting‐started‐interceptor#client-side-post-install) before starting your
+interceptors.
 
 ### HTTP `interceptor.stop()`
 
@@ -454,9 +456,9 @@ Creates an [`HttpRequestHandler`](#httprequesthandler) for the given method and 
 declared in the interceptor schema. The supported methods are: `get`, `post`, `put`, `patch`, `delete`, `head`, and
 `options`.
 
-When using a [remote interceptor](getting‐started#remote-http-interceptors), creating a handler is an asynchronous
-operation, so you need to `await` it. You can also chain any number of operations and apply them by awaiting the
-handler.
+When using a [remote interceptor](getting‐started‐interceptor#remote-http-interceptors), creating a handler is an
+asynchronous operation, so you need to `await` it. You can also chain any number of operations and apply them by
+awaiting the handler.
 
 After a request is intercepted, Zimic tries to find a handler that matches it, considering the base URL of the
 interceptor, and the method, path, [restrictions](#http-handlerwithrestriction), and
@@ -486,7 +488,7 @@ const interceptor = httpInterceptor.create<{
 
 const listHandler = interceptor.get('/users').respond({
   status: 200
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 ```
 
@@ -510,7 +512,7 @@ const interceptor = httpInterceptor.create<{
 
 const listHandler = await interceptor.get('/users').respond({
   status: 200
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 ```
 
@@ -556,7 +558,7 @@ const updateHandler = interceptor.put('/users/:id').respond((request) => {
 
   return {
     status: 200,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   };
 });
 
@@ -571,7 +573,7 @@ const updateHandler = await interceptor.put('/users/:id').respond((request) => {
 
   return {
     status: 200,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   };
 });
 
@@ -629,7 +631,7 @@ afterEach(async () => {
 
 </details></td></tr></table>
 
-See [Testing](guides‐testing) for an example of how to manage the lifecycle of interceptors in your tests.
+See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
 ### HTTP `interceptor.clear()`
 
@@ -760,7 +762,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -774,7 +776,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -800,7 +802,7 @@ const creationHandler = interceptor
   .with({ headers })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -822,7 +824,7 @@ const creationHandler = await interceptor
   .with({ headers })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -840,11 +842,11 @@ const creationHandler = await interceptor
 const creationHandler = interceptor
   .get('/users')
   .with({
-    searchParams: { username: 'my-user' },
+    searchParams: { query: 'u' },
   })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -854,11 +856,11 @@ const creationHandler = interceptor
 const creationHandler = await interceptor
   .get('/users')
   .with({
-    searchParams: { username: 'my-user' },
+    searchParams: { query: 'u' },
   })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -872,11 +874,11 @@ An equivalent alternative using [`HttpSearchParams`](api‐zimic‐http#httpsear
 import { type HttpSchema, HttpSearchParams } from '@zimic/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
-  username?: string;
+  query?: string;
 }>;
 
 const searchParams = new HttpSearchParams<UserListSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const creationHandler = interceptor
@@ -884,7 +886,7 @@ const creationHandler = interceptor
   .with({ searchParams })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -894,11 +896,11 @@ const creationHandler = interceptor
 import { type HttpSchema, HttpSearchParams } from '@zimic/http';
 
 type UserListSearchParams = HttpSchema.SearchParams<{
-  username?: string;
+  query?: string;
 }>;
 
 const searchParams = new HttpSearchParams<UserListSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const creationHandler = await interceptor
@@ -906,7 +908,7 @@ const creationHandler = await interceptor
   .with({ searchParams })
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -924,11 +926,11 @@ const creationHandler = await interceptor
 const creationHandler = interceptor
   .post('/users')
   .with({
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -938,11 +940,11 @@ const creationHandler = interceptor
 const creationHandler = await interceptor
   .post('/users')
   .with({
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -969,7 +971,7 @@ type UserCreationData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserCreationData>();
-formData.append('username', 'my-user');
+formData.append('username', 'me');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -984,7 +986,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -999,7 +1001,7 @@ type UserCreationData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserCreationData>();
-formData.append('username', 'my-user');
+formData.append('username', 'me');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1014,7 +1016,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1042,7 +1044,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1058,7 +1060,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1084,7 +1086,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1098,7 +1100,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1119,7 +1121,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const creationHandler = interceptor
@@ -1129,7 +1131,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1143,7 +1145,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const creationHandler = await interceptor
@@ -1153,7 +1155,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1177,12 +1179,12 @@ const creationHandler = interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: { username: 'my-user' },
+    body: { username: 'me' },
     exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1193,12 +1195,12 @@ const creationHandler = await interceptor
   .post('/users')
   .with({
     headers: { 'content-type': 'application/json' },
-    body: { username: 'my-user' },
+    body: { username: 'me' },
     exact: true, // Only requests with these exact headers and body will match
   })
   .respond({
     status: 201,
-    body: { username: 'my-user' },
+    body: { username: 'me' },
   });
 ```
 
@@ -1222,7 +1224,7 @@ const creationHandler = interceptor
   })
   .respond({
     status: 201,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -1237,7 +1239,7 @@ const creationHandler = await interceptor
   })
   .respond({
     status: 201,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   });
 ```
 
@@ -1265,7 +1267,7 @@ validated against the schema of the interceptor.
 ```ts
 const listHandler = interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 ```
 
@@ -1274,7 +1276,7 @@ const listHandler = interceptor.get('/users').respond({
 ```ts
 const listHandler = await interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 ```
 
@@ -1297,7 +1299,7 @@ type UserGetByIdData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserGetByIdData>();
-formData.append('username', 'my-user');
+formData.append('username', 'me');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1322,7 +1324,7 @@ type UserGetByIdData = HttpSchema.FormData<{
 }>;
 
 const formData = new HttpFormData<UserGetByIdData>();
-formData.append('username', 'my-user');
+formData.append('username', 'me');
 formData.append(
   'profilePicture',
   new File(['content'], 'profile.png', {
@@ -1410,7 +1412,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const listHandler = interceptor.get('/users').respond({
@@ -1429,7 +1431,7 @@ type UserGetByIdSearchParams = HttpSchema.SearchParams<{
 }>;
 
 const searchParams = new HttpSearchParams<UserGetByIdSearchParams>({
-  username: 'my-user',
+  query: 'u',
 });
 
 const listHandler = await interceptor.get('/users').respond({
@@ -1502,7 +1504,7 @@ const exactListHandler = interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   })
   .times(1); // Matches exactly one request
 
@@ -1510,7 +1512,7 @@ const rangeListHandler = interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   })
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
@@ -1522,7 +1524,7 @@ const exactListHandler = await interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   })
   .times(1); // Matches exactly one request
 
@@ -1530,7 +1532,7 @@ const rangeListHandler = await interceptor
   .get('/users')
   .respond({
     status: 200,
-    body: [{ username: 'my-user' }],
+    body: [{ username: 'me' }],
   })
   .times(0, 3); // Matches at least 0 and at most 3 requests
 ```
@@ -1612,7 +1614,7 @@ const genericListHandler = interceptor.get('/users').respond({
 
 const specificListHandler = interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 
 specificListHandler.clear();
@@ -1631,7 +1633,7 @@ const genericListHandler = await interceptor.get('/users').respond({
 
 const specificListHandler = await interceptor.get('/users').respond({
   status: 200,
-  body: [{ username: 'my-user' }],
+  body: [{ username: 'me' }],
 });
 
 await specificListHandler.clear();
@@ -1740,3 +1742,7 @@ If you need access to the original `Request` and `Response` objects, you can use
 console.log(request.raw); // Request{}
 console.log(request.response.raw); // Response{}
 ```
+
+## Guides
+
+- [Testing](guides‐testing‐interceptor)

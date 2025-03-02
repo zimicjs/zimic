@@ -1,12 +1,12 @@
-# CLI: `zimic-interceptor browser` <!-- omit from toc -->
+# `zimic-interceptor browser` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic-interceptor browser init`](#zimic-browser-init)
+- [`zimic-interceptor browser init`](#zimic-interceptor-browser-init)
 
 ---
 
-This module contains commands to manage browser mock configuration.
+`zimic-interceptor browser` contains commands to manage browser mock configuration.
 
 ## `zimic-interceptor browser init`
 

@@ -1,12 +1,7 @@
-# API reference: `@zimic/http` <!-- omit from toc -->
+# `@zimic/http` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [Getting started](#getting-started)
-  - [1. Requirements](#1-requirements)
-    - [Supported environments](#supported-environments)
-  - [Supported languages](#supported-languages)
-  - [2. Installation](#2-installation)
 - [`HttpHeaders`](#httpheaders)
   - [Comparing `HttpHeaders`](#comparing-httpheaders)
   - [`HttpHeaders` utility types](#httpheaders-utility-types)
@@ -32,62 +27,11 @@
 
 ---
 
-This package exports general HTTP resources. They are used by other Zimic packages, such as `@zimic/fetch` and
+`@zimic/http` exports general HTTP resources. They are used by other Zimic packages, such as `@zimic/fetch` and
 `@zimic/interceptor`, to provide type safety when working with HTTP requests and responses.
 
 - [`@zimic/http`](api‐zimic‐http): HTTP resources and utility types.
 - [`@zimic/http/typegen`](api‐zimic‐typegen): HTTP type generation.
-
-## Getting started
-
-### 1. Requirements
-
-#### Supported environments
-
-- If you are on **client-side**:
-  - Any relatively modern browser
-- If you are on **server-side**:
-  - [Node](https://nodejs.org) >= 18.13.0
-  - [Bun](https://bun.sh) >= 1.0.0
-  - [Deno](https://deno.com) >= 1.0.0
-
-### Supported languages
-
-- [TypeScript](https://www.typescriptlang.org) >= 4.8
-  - If you plan on using [`zimic-http typegen`](cli‐zimic‐typegen), we recommend
-    [TypeScript](https://www.typescriptlang.org) >= 5.0.
-
-We recommend enabling `strict` in your `tsconfig.json`:
-
-```jsonc
-{
-  // ...
-  "compilerOptions": {
-    // ...
-    "strict": true,
-  },
-}
-```
-
-### 2. Installation
-
-`@zimic/http` is available on [npm](https://www.npmjs.com/package/@zimic/http).
-
-| Manager | Command                              |
-| :-----: | ------------------------------------ |
-|   npm   | `npm install @zimic/http --save-dev` |
-|  pnpm   | `pnpm add @zimic/http --dev`         |
-|  yarn   | `yarn add @zimic/http --dev`         |
-|   bun   | `bun add @zimic/http --dev`          |
-
-We also canary releases under the tag `canary`, containing the latest features and bug fixes:
-
-| Manager | Command                                     |
-| :-----: | ------------------------------------------- |
-|   npm   | `npm install @zimic/http@canary --save-dev` |
-|  pnpm   | `pnpm add @zimic/http@canary --dev`         |
-|  yarn   | `yarn add @zimic/http@canary --dev`         |
-|   bun   | `bun add @zimic/http@canary --dev`          |
 
 > [!TIP]
 >
@@ -558,7 +502,7 @@ checked to be a valid path in that schema.
 ```ts
 import { HttpSchema, InferPathParams } from '@zimic/http';
 
-type MySchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users/:userId': {
     GET: {
       response: { 200: { body: User } };
@@ -567,7 +511,7 @@ type MySchema = HttpSchema<{
 }>;
 
 // Using a schema to validate the path (recommended):
-type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+type PathParams = InferPathParams<Schema, '/users/:userId'>;
 // { userId: string }
 ```
 

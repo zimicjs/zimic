@@ -1,17 +1,17 @@
-# CLI: `zimic-http typegen` <!-- omit from toc -->
+# `zimic-http typegen` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic-http typegen openapi`](#zimic-typegen-openapi)
-  - [`zimic-http typegen openapi` comments](#zimic-typegen-openapi-comments)
-  - [`zimic-http typegen openapi` pruning](#zimic-typegen-openapi-pruning)
-  - [`zimic-http typegen openapi` filtering](#zimic-typegen-openapi-filtering)
+- [`zimic-http typegen openapi`](#zimic-http-typegen-openapi)
+  - [`zimic-http typegen openapi` comments](#zimic-http-typegen-openapi-comments)
+  - [`zimic-http typegen openapi` pruning](#zimic-http-typegen-openapi-pruning)
+  - [`zimic-http typegen openapi` filtering](#zimic-http-typegen-openapi-filtering)
 - [Programmatic usage](#programmatic-usage)
 
 ---
 
-This module contains commands to generate types from schema sources. This is useful to save development time, avoid
-errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
+`zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time,
+avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
 ## `zimic-http typegen openapi`
 
@@ -110,8 +110,9 @@ zimic-http typegen openapi ./schema.yaml \
 
 ### `zimic-http typegen openapi` filtering
 
-You can also filter a subset of paths to generate types for. Combined with [pruning](#zimic-typegen-openapi-pruning),
-this is useful to reduce the size of the output file and only generate the types you need.
+You can also filter a subset of paths to generate types for. Combined with
+[pruning](#zimic-http-typegen-openapi-pruning), this is useful to reduce the size of the output file and only generate
+the types you need.
 
 ```bash
 zimic-http typegen openapi ./schema.yaml \

@@ -802,10 +802,10 @@ describe('FetchClient > Listeners', () => {
         response: FetchResponse.Loose,
       ) {
         if (response.status === 401) {
-          const data = (await response.clone().json()) as unknown;
+          const body = (await response.clone().json()) as unknown;
 
           const isAccessTokenExpiredError =
-            typeof data === 'object' && data !== null && 'message' in data && data.message === 'Access token expired';
+            typeof body === 'object' && body !== null && 'message' in body && body.message === 'Access token expired';
 
           if (isAccessTokenExpiredError) {
             const refreshResponse = await this('/auth/refresh', { method: 'POST' });

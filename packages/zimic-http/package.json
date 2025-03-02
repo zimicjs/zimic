@@ -1,6 +1,6 @@
 {
   "name": "@zimic/http",
-  "description": "TypeScript-first HTTP resources",
+  "description": "TypeScript-first HTTP utilities",
   "keywords": [
     "zimic",
     "typescript",
