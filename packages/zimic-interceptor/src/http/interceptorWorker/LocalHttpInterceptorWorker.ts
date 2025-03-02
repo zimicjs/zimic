@@ -6,6 +6,7 @@ import * as mswBrowser from 'msw/browser';
 import * as mswNode from 'msw/node';
 
 import { removeArrayIndex } from '@/utils/arrays';
+import { isClientSide, isServerSide } from '@/utils/environment';
 
 import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
@@ -52,12 +53,11 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createInternalWorker() {
-    if (typeof mswNode.setupServer !== 'undefined') {
+    if (isServerSide() && 'setupServer' in mswNode) {
       return mswNode.setupServer(this.defaultHttpHandler);
     }
-
     /* istanbul ignore else -- @preserve */
-    if (typeof mswBrowser.setupWorker !== 'undefined') {
+    if (isClientSide() && 'setupWorker' in mswBrowser) {
       return mswBrowser.setupWorker(this.defaultHttpHandler);
     }
     /* istanbul ignore next -- @preserve

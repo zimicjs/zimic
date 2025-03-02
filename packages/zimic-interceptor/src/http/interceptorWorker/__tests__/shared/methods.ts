@@ -553,8 +553,15 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should support intercepting ${method} requests with a delay`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
+
+        let resolveWaitPromise: (() => void) | undefined;
+
+        let waitPromise = new Promise<void>((resolve) => {
+          resolveWaitPromise = resolve;
+        });
+
         const delayedSpiedRequestHandler = vi.fn(requestHandler).mockImplementation(async (context) => {
-          await waitForDelay(100);
+          await waitPromise;
           return requestHandler(context);
         });
 
@@ -562,8 +569,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
-        let responsePromise = fetch(baseURL, { method, signal: AbortSignal.timeout(20) });
+        let responsePromise = fetch(baseURL, { method, signal: AbortSignal.timeout(50) });
         await expectFetchError(responsePromise, { canBeAborted: true });
+
+        resolveWaitPromise?.();
+
+        waitPromise = waitForDelay(100);
 
         responsePromise = fetch(baseURL, { method });
         await expect(responsePromise).resolves.toBeInstanceOf(Response);

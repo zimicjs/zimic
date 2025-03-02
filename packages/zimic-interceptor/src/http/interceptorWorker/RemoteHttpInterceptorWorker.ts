@@ -1,11 +1,10 @@
 import { HttpResponse, HttpMethod, HttpSchema } from '@zimic/http';
 import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import validateURLPathParams from '@zimic/utils/url/validateURLPathParams';
-import * as mswBrowser from 'msw/browser';
-import * as mswNode from 'msw/node';
 
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/types/schema';
 import { importCrypto } from '@/utils/crypto';
+import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
@@ -103,15 +102,13 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   };
 
   private readPlatform(): HttpInterceptorPlatform {
-    if (typeof mswNode.setupServer !== 'undefined') {
+    if (isServerSide()) {
       return 'node';
     }
-
     /* istanbul ignore else -- @preserve */
-    if (typeof mswBrowser.setupWorker !== 'undefined') {
+    if (isClientSide()) {
       return 'browser';
     }
-
     /* istanbul ignore next -- @preserve
      * Ignoring because checking unknown platforms is not configured in our test setup. */
     throw new UnknownHttpInterceptorPlatformError();

@@ -19,22 +19,22 @@
     "@zimic/fetch": "latest",
     "@zimic/http": "latest",
     "clsx": "^2.1.1",
-    "next": "^15.1.7",
+    "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
-    "@tailwindcss/postcss": "^4.0.8",
-    "@types/node": "^22.13.5",
+    "@tailwindcss/postcss": "^4.0.9",
+    "@types/node": "^22.13.8",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
     "execa": "^9.5.2",
     "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.8",
+    "tailwindcss": "^4.0.9",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   }
 }
