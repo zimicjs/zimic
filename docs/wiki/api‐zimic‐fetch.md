@@ -8,6 +8,7 @@
   - [`fetch` arguments](#fetch-arguments)
   - [`fetch` return](#fetch-return)
   - [`fetch.defaults`](#fetchdefaults)
+  - [`fetch.loose`](#fetchloose)
   - [`fetch.onRequest`](#fetchonrequest)
     - [`fetch.onRequest` arguments](#fetchonrequest-arguments)
     - [`fetch.onRequest` return](#fetchonrequest-return)
@@ -237,6 +238,13 @@ const response = await fetch('/posts', {
 
 const post = await response.json(); // Post
 ```
+
+### `fetch.loose`
+
+A loosely-typed version of [`fetch`](#fetch). This can be useful to make requests with fewer type constraints, such as
+in [`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonresponse) listeners.
+
+See [Guides: Handling authentication](#handling-authentication) for an example.
 
 ### `fetch.onRequest`
 
@@ -997,49 +1005,72 @@ interface User {
 }
 
 type Schema = HttpSchema<{
+  '/auth/login': {
+    POST: {
+      request: {
+        headers: { 'content-type': 'application/json' };
+        body: { username: string; password: string };
+      };
+      response: {
+        201: { body: { accessToken: string } };
+      };
+    };
+  };
+
+  '/auth/refresh': {
+    POST: {
+      response: {
+        201: { body: { accessToken: string } };
+      };
+    };
+  };
+
   '/users': {
     GET: {
       request: {
-        headers?: { authorization?: string };
-        searchParams: { query?: string };
+        headers: { authorization: string };
       };
       response: {
         200: { body: User[] };
         401: { body: { message: string } };
-        500: { body: { message: string } };
+        403: { body: { message: string } };
       };
     };
   };
 }>;
 
 const fetch = createFetch<Schema>({
-  baseURL: 'http://localhost:3000',
+  baseURL,
 
   async onResponse(response) {
-    if (response.status !== 401) {
-      return response;
+    if (response.status === 401) {
+      const data = await response.clone().json();
+
+      if (data.message === 'Access token expired') {
+        // Refresh the access token
+        const refreshResponse = await this('/auth/refresh', { method: 'POST' });
+        const { accessToken } = await refreshResponse.json();
+
+        // Clone the original request and update its headers
+        const updatedRequest = response.request.clone();
+        updatedRequest.headers.set('authorization', `Bearer ${accessToken}`);
+
+        // Retry the original request with the updated headers
+        return this.loose(updatedRequest);
+      }
     }
 
-    const errorData = (await response.clone().json()) as { message?: string };
-
-    if (errorData.message !== 'Access token expired') {
-      return response;
-    }
-
-    // Refresh the access token and retry the request
-    const { accessToken } = await authenticate();
-
-    fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
-
-    const requestClone = response.request.clone();
-    requestClone.headers.set('authorization', `Bearer ${accessToken}`);
-
-    return this.loose(requestClone);
+    return response;
   },
 });
 
 // Authenticate to your service before requests
-const { accessToken } = await authenticate();
+const loginRequest = await fetch('/auth/login', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ username: 'me', password: 'password' }),
+});
+const { accessToken } = await loginRequest.json();
 
 // Set the authorization header for all requests
 fetch.defaults.headers.authorization = `Bearer ${accessToken}`;

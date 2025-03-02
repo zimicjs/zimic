@@ -187,8 +187,8 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
   defaults: FetchDefaults;
 
   /**
-   * A loosely-typed version of the {@link Fetch fetch instance}. This can be useful to make requests with fewer type
-   * constraints, such as in {@link onRequest `onRequest`} and {@link onResponse `onResponse`} listeners.
+   * A loosely-typed version of {@link Fetch `fetch`}. This can be useful to make requests with fewer type constraints,
+   * such as in {@link onRequest `onRequest`} and {@link onResponse `onResponse`} listeners.
    *
    * @example
    *   type Schema = HttpSchema<{
@@ -218,7 +218,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *     baseURL,
    *     onResponse(response) {
    *       if (response.status === 401) {
-   *         const data = (await response.clone().json()) as unknown;
+   *         const data = await response.clone().json();
    *
    *         if (data.message === 'Access token expired') {
    *           const refreshResponse = await this('/auth/refresh', { method: 'POST' });
