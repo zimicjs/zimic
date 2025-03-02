@@ -1,4 +1,4 @@
-# CLI: `zimic-http typegen` <!-- omit from toc -->
+# `zimic-http typegen` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

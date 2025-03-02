@@ -19,8 +19,6 @@
   - [With Playwright](../../examples/README.md#playwright)
   - [With Next.js](../../examples/README.md#nextjs)
   - [With type generation](../../examples/README.md#type-generation)
-- Guides
-  - [Testing](guides‐testing)
 
 ---
 
@@ -31,6 +29,7 @@
     - [Guides](api‐zimic‐fetch#guides)
   - [`@zimic/interceptor`](api‐zimic‐interceptor‐http)
     - [`@zimic/interceptor/server`](api‐zimic‐interceptor‐server)
+    - [Guides](api‐zimic‐interceptor‐http#guides)
 - [CLI reference](cli‐zimic)
   - `@zimic/http`
     - [`zimic-http typegen`](cli‐zimic‐typegen)

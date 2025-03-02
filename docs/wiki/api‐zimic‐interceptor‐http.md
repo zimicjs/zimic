@@ -1,4 +1,4 @@
-# API reference: `zimic/interceptor/http` <!-- omit from toc -->
+# `zimic/interceptor/http` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -34,6 +34,7 @@
   - [HTTP `handler.clear()`](#http-handlerclear)
   - [HTTP `handler.requests()`](#http-handlerrequests)
 - [Intercepted HTTP resources](#intercepted-http-resources)
+- [Guides](#guides)
 
 ---
 
@@ -325,8 +326,8 @@ httpInterceptor.default.remote.onUnhandledRequest = (request) => {
 > If no running interceptor matches the request, one of two things may happen:
 >
 > - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
->   behavior is configured with the option
->   [`--log-unhandled-requests`](cli‐zimic‐server.md#zimic-interceptor-server-start) in the interceptor server.
+>   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start)
+>   in the interceptor server.
 > - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests
@@ -1741,3 +1742,7 @@ If you need access to the original `Request` and `Response` objects, you can use
 console.log(request.raw); // Request{}
 console.log(request.response.raw); // Response{}
 ```
+
+## Guides
+
+- [Testing](guides‐testing‐interceptor)

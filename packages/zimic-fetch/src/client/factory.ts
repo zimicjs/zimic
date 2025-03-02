@@ -4,10 +4,10 @@ import FetchClient from './FetchClient';
 import { FetchOptions, Fetch } from './types/public';
 
 /**
- * Creates to create a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance} typed with an
- * HTTP schema, closely compatible with the
- * {@link https://developer.mozilla.org/docs/Web/API/Fetch_API native Fetch API}. All requests and responses are typed by
- * default with the schema, including methods, paths, status codes, parameters, and bodies.
+ * Creates a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance} typed with an HTTP
+ * schema, closely compatible with the {@link https://developer.mozilla.org/docs/Web/API/Fetch_API native Fetch API}. All
+ * requests and responses are typed by default with the schema, including methods, paths, status codes, parameters, and
+ * bodies.
  *
  * Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance.
  * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch.defaults Default options} are also applied to the
@@ -53,7 +53,7 @@ import { FetchOptions, Fetch } from './types/public';
  *     baseURL: 'http://localhost:3000',
  *   });
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions `createFetch(options)` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch `createFetch(options)` API reference}
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  */
 function createFetch<Schema extends HttpSchema>(options: FetchOptions<Schema>): Fetch<Schema> {

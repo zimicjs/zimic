@@ -1,4 +1,4 @@
-# CLI: `zimic-interceptor browser` <!-- omit from toc -->
+# `zimic-interceptor browser` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

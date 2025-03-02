@@ -1,4 +1,4 @@
-# CLI reference: `zimic`
+# `zimic` - CLI reference
 
 - `@zimic/http`
   - [`zimic-http typegen`](cli‐zimic‐typegen)

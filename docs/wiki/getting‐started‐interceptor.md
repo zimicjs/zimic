@@ -1,4 +1,4 @@
-# Getting started: `@zimic/interceptor` <!-- omit from toc -->
+# `@zimic/interceptor` - Getting started <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

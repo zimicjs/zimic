@@ -1,4 +1,4 @@
-# Getting started: `@zimic/fetch` <!-- omit from toc -->
+# `@zimic/fetch` - Getting started <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -87,7 +87,6 @@ We also canary releases under the tag `canary`, containing the latest features a
 
         GET: {
           request: {
-            headers: { authorization: string };
             searchParams: { query?: string; limit?: `${number}` };
           };
           response: {
@@ -115,7 +114,7 @@ We also canary releases under the tag `canary`, containing the latest features a
 
     You can also use [`zimic-http typegen`](cli‐zimic‐typegen) to automatically generate types for your HTTP schema.
 
-2.  Create your [fetch instance](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions):
+2.  Create your [fetch instance](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch):
 
     ```ts
     import { createFetch } from '@zimic/fetch';
@@ -148,7 +147,7 @@ We also canary releases under the tag `canary`, containing the latest features a
 ## 6. Next steps
 
 - Check out [`@zimic/interceptor`](../../packages/zimic-interceptor) if you'd like to intercept and mock HTTP requests
-  in your tests or in development:
+  during development or in your tests:
 
   - [`@zimic/interceptor`](../../packages/zimic-interceptor) provides a flexible and type-safe way to intercept and mock
     HTTP requests. Use your HTTP schema to type your interceptors and create realistic mocks in development and testing.
@@ -157,15 +156,26 @@ We also canary releases under the tag `canary`, containing the latest features a
 
 - Check out the API reference:
 
-  - [`createFetch(options)`](api‐zimic‐fetch#createfetchoptions)
-  - [`fetch`](api‐zimic‐fetch#fetch)
-    - [`fetch.defaults`](api‐zimic‐fetch#fetchdefaults)
-    - [`fetch.Request`](api‐zimic‐fetch#fetchRequest)
-    - [`fetch.onRequest`](api‐zimic‐fetch#fetchonRequest)
-    - [`fetch.onResponse`](api‐zimic‐fetch#fetchonResponse)
-    - [`fetch.isRequest`](api‐zimic‐fetch#fetchisRequest)
-    - [`fetch.isResponse`](api‐zimic‐fetch#isResponse)
-    - [`fetch.isResponseError`](api‐zimic‐fetch#isResponseError)
-  - [`FetchRequest`](api‐zimic‐fetch#fetchrequest)
-  - [`FetchResponse`](api‐zimic‐fetch#fetchresponse)
-  - [`FetchResponseError`](api‐zimic‐fetch#fetchresponseerror)
+- [`createFetch(options)`](api‐zimic‐fetch#createfetch)
+- [`fetch`](api‐zimic‐fetch#fetch)
+  - [`fetch.defaults`](api‐zimic‐fetch#fetchdefaults)
+  - [`fetch.loose`](api‐zimic‐fetch#fetchloose)
+  - [`fetch.onRequest`](api‐zimic‐fetch#fetchonrequest)
+  - [`fetch.onResponse`](api‐zimic‐fetch#fetchonresponse)
+  - [`fetch.isRequest`](api‐zimic‐fetch#fetchisrequest)
+  - [`fetch.isResponse`](api‐zimic‐fetch#fetchisresponse)
+  - [`fetch.isResponseError`](api‐zimic‐fetch#fetchisresponseerror)
+- [`FetchRequest`](api‐zimic‐fetch#fetchrequest)
+- [`FetchResponse`](api‐zimic‐fetch#fetchresponse)
+- [`FetchResponseError`](api‐zimic‐fetch#fetchresponseerror)
+
+- View our guides on common use cases:
+
+  - [Using headers](api‐zimic‐fetch#using-headers)
+  - [Using search params (query)](api‐zimic‐fetch#using-search-params-query)
+  - [Using bodies](api‐zimic‐fetch#using-bodies)
+    - [Using a JSON body](api‐zimic‐fetch#using-a-json-body)
+    - [Using a `FormData` body](api‐zimic‐fetch#using-a-formdata-body)
+    - [Using a file or binary body](api‐zimic‐fetch#using-a-file-or-binary-body)
+  - [Handling authentication](api‐zimic‐fetch#handling-authentication)
+  - [Handling errors](api‐zimic‐fetch#handling-errors)

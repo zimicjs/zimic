@@ -67,10 +67,11 @@ type FetchRequestInitPerPath<RequestSchema extends HttpRequestSchema> = FetchReq
   FetchRequestInitWithBody<RequestSchema>;
 
 /**
- * The options to create a {@link FetchRequest} instance.
+ * The options to create a {@link FetchRequest} instance, compatible with
+ * {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
- * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit}
+ * @see {@link https://developer.mozilla.org/docs/Web/API/RequestInit `RequestInit`}
  */
 export type FetchRequestInit<
   Schema extends HttpSchema,
@@ -78,7 +79,9 @@ export type FetchRequestInit<
   Path extends HttpSchemaPath<Schema, Method>,
   Redirect extends RequestRedirect = 'follow',
 > = Omit<RequestInit, 'method' | 'headers' | 'body'> & {
+  /** The HTTP method of the request. */
   method: Method;
+  /** The base URL to prefix the path of the request. */
   baseURL?: string;
   redirect?: Redirect;
 } & (Path extends Path ? FetchRequestInitPerPath<Default<Default<Schema[Path][Method]>['request']>> : never);
@@ -87,11 +90,15 @@ export namespace FetchRequestInit {
   /** The default options for each request sent by a fetch instance. */
   export interface Defaults extends Omit<RequestInit, 'headers'> {
     baseURL: string;
+    /** The HTTP method of the request. */
     method?: HttpMethod;
+    /** The headers of the request. */
     headers?: HttpHeadersSchema;
+    /** The search parameters of the request. */
     searchParams?: HttpSearchParamsSchema;
   }
 
+  /** A loosely typed version of {@link FetchRequestInit `FetchRequestInit`}. */
   export type Loose = Partial<Defaults>;
 }
 
@@ -132,8 +139,9 @@ type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
  * A request instance typed with an HTTP schema, closely compatible with the
  * {@link https://developer.mozilla.org/docs/Web/API/Request native Request class}.
  *
- * On top of the properties available in native Request instances, fetch requests have their URL automatically prefixed
- * with the base URL of their fetch instance. Default options are also applied, if present in the fetch instance.
+ * On top of the properties available in native {@link https://developer.mozilla.org/docs/Web/API/Request `Request`}
+ * instances, fetch requests have their URL automatically prefixed with the base URL of their fetch instance. Default
+ * options are also applied, if present in the fetch instance.
  *
  * The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.
  *
@@ -169,7 +177,9 @@ type HttpRequestBodySchema<MethodSchema extends HttpMethodSchema> = ReplaceBy<
  *     headers: { 'content-type': 'application/json' },
  *     body: JSON.stringify({ username: 'me' }),
  *   });
+ *
  *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
+ *   console.log(request.path); // '/users'
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest `FetchRequest` API reference}
  * @see {@link https://developer.mozilla.org/docs/Web/API/Request}
@@ -182,15 +192,20 @@ export interface FetchRequest<
     HttpRequestBodySchema<Default<Schema[Path][Method]>>,
     HttpRequestHeadersSchema<Default<Schema[Path][Method]>>
   > {
+  /** The path of the request, excluding the base URL. */
   path: AllowAnyStringInPathParams<Path>;
+  /** The HTTP method of the request. */
   method: Method;
 }
 
 export namespace FetchRequest {
-  /** A loosely typed version of {@link FetchRequest}. */
+  /** A loosely typed version of {@link FetchRequest `FetchRequest`}. */
   export interface Loose extends Request {
+    /** The path of the request, excluding the base URL. */
     path: string;
+    /** The HTTP method of the request. */
     method: HttpMethod;
+    /** Clones the request instance, returning a new instance with the same properties. */
     clone: () => Loose;
   }
 }
@@ -205,8 +220,15 @@ export interface FetchResponsePerStatusCode<
     StatusCode,
     HttpResponseHeadersSchema<Default<Schema[Path][Method]>, StatusCode>
   > {
+  /** The request that originated the response. */
   request: FetchRequest<Schema, Method, Path>;
 
+  /**
+   * An error representing a response with a failure status code (4XX or 5XX). It can be thrown to handle the error
+   * upper in the call stack.
+   *
+   * If the response has a success status code (1XX, 2XX or 3XX), this property will be null.
+   */
   error: StatusCode extends HttpStatusCode.ClientError | HttpStatusCode.ServerError
     ? FetchResponseError<Schema, Method, Path>
     : null;
@@ -279,8 +301,18 @@ export type FetchResponse<
 export namespace FetchResponse {
   /** A loosely typed version of {@link FetchResponse}. */
   export interface Loose extends Response {
+    /** The request that originated the response. */
     request: FetchRequest.Loose;
+
+    /**
+     * An error representing a response with a failure status code (4XX or 5XX). It can be thrown to handle the error
+     * upper in the call stack.
+     *
+     * If the response has a success status code (1XX, 2XX or 3XX), this property will be null.
+     */
     error: AnyFetchRequestError | null;
+
+    /** Clones the request instance, returning a new instance with the same properties. */
     clone: () => Loose;
   }
 }

@@ -1,30 +1,31 @@
-# API reference: `@zimic/fetch` <!-- omit from toc -->
+# `@zimic/fetch` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`createFetch(options)`](#createfetchoptions)
+- [`createFetch`](#createfetch)
   - [`createFetch` arguments](#createfetch-arguments)
 - [`fetch`](#fetch)
   - [`fetch` arguments](#fetch-arguments)
   - [`fetch` return](#fetch-return)
-  - [`fetch.defaults`](#fetchdefaults)
-  - [`fetch.loose`](#fetchloose)
-  - [`fetch.onRequest`](#fetchonrequest)
-    - [`fetch.onRequest` arguments](#fetchonrequest-arguments)
-    - [`fetch.onRequest` return](#fetchonrequest-return)
-  - [`fetch.onResponse`](#fetchonresponse)
-    - [`fetch.onResponse` arguments](#fetchonresponse-arguments)
-    - [`fetch.onResponse` return](#fetchonresponse-return)
-  - [`fetch.isRequest`](#fetchisrequest)
-    - [`fetch.isRequest` arguments](#fetchisrequest-arguments)
-    - [`fetch.isRequest` return](#fetchisrequest-return)
-  - [`fetch.isResponse`](#fetchisresponse)
-    - [`fetch.isResponse` arguments](#fetchisresponse-arguments)
-    - [`fetch.isResponse` return](#fetchisresponse-return)
-  - [`fetch.isResponseError`](#fetchisresponseerror)
-    - [`fetch.isResponseError` arguments](#fetchisresponseerror-arguments)
-    - [`fetch.isResponseError` return](#fetchisresponseerror-return)
-- [`FetchRequest`](#fetchrequest)
+- [`fetch.defaults`](#fetchdefaults)
+- [`fetch.loose`](#fetchloose)
+- [`fetch.Request`](#fetchrequest)
+- [`fetch.onRequest`](#fetchonrequest)
+  - [`fetch.onRequest` arguments](#fetchonrequest-arguments)
+  - [`fetch.onRequest` return](#fetchonrequest-return)
+- [`fetch.onResponse`](#fetchonresponse)
+  - [`fetch.onResponse` arguments](#fetchonresponse-arguments)
+  - [`fetch.onResponse` return](#fetchonresponse-return)
+- [`fetch.isRequest`](#fetchisrequest)
+  - [`fetch.isRequest` arguments](#fetchisrequest-arguments)
+  - [`fetch.isRequest` return](#fetchisrequest-return)
+- [`fetch.isResponse`](#fetchisresponse)
+  - [`fetch.isResponse` arguments](#fetchisresponse-arguments)
+  - [`fetch.isResponse` return](#fetchisresponse-return)
+- [`fetch.isResponseError`](#fetchisresponseerror)
+  - [`fetch.isResponseError` arguments](#fetchisresponseerror-arguments)
+  - [`fetch.isResponseError` return](#fetchisresponseerror-return)
+- [`FetchRequest`](#fetchrequest-1)
 - [`FetchResponse`](#fetchresponse)
 - [`FetchResponseError`](#fetchresponseerror)
 - [Guides](#guides)
@@ -50,7 +51,7 @@
 >
 > All APIs are documented using [JSDoc](https://jsdoc.app) and visible directly in your IDE.
 
-## `createFetch(options)`
+## `createFetch`
 
 Creates a [`fetch`](#fetch) instance typed with an HTTP schema, closely compatible with the
 [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API). All requests and responses are typed by
@@ -116,8 +117,8 @@ specific to `@zimic/fetch`:
 
 ## `fetch`
 
-The result of [`createFetch`](#createfetchoptions) is a fetch instance typed with an HTTP schema, closely compatible
-with the [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
+The result of [`createFetch`](#createfetch) is a fetch instance typed with an HTTP schema, closely compatible with the
+[native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API).
 
 Requests sent by the fetch instance have their URL automatically prefixed with the base URL of the instance.
 [Default options](#fetchdefaults) are also applied to the requests, if provided.
@@ -170,7 +171,7 @@ return users; // User[]
 
 ### `fetch` arguments
 
-`fetch(input, init?)`
+`fetch(input, init)`
 
 | Argument | Type                                                            | Description                                                                                                                                                                                                                                                           |
 | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -190,11 +191,11 @@ A promise that resolves to the response to the request. The response is typed wi
 
 - [Response](https://developer.mozilla.org/docs/Web/API/Response)
 
-### `fetch.defaults`
+## `fetch.defaults`
 
 The default options for each request sent by the fetch instance. All of the native
 [`RequestInit`](https://developer.mozilla.org/docs/Web/API/RequestInit) options are supported, plus `baseURL` and
-`searchParams` as in [`createFetch(options)`](#createfetchoptions).
+`searchParams` as in [`createFetch(options)`](#createfetch).
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -239,14 +240,21 @@ const response = await fetch('/posts', {
 const post = await response.json(); // Post
 ```
 
-### `fetch.loose`
+## `fetch.loose`
 
 A loosely-typed version of [`fetch`](#fetch). This can be useful to make requests with fewer type constraints, such as
 in [`onRequest`](#fetchonrequest) and [`onResponse`](#fetchonresponse) listeners.
 
 See [Guides: Handling authentication](#handling-authentication) for an example.
 
-### `fetch.onRequest`
+## `fetch.Request`
+
+A constructor for creating [`FetchRequest`](#fetchrequest-1), closely compatible with the native
+[Request](https://developer.mozilla.org/docs/Web/API/Request) constructor.
+
+See [`FetchRequest`](#fetchrequest-1) for more information.
+
+## `fetch.onRequest`
 
 A listener function that is called for each request. It can modify the requests before they are sent.
 
@@ -289,12 +297,7 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-> [!TIP]
->
-> Alternatively, `onRequest` can be provided as an option when creating the fetch instance with
-> [`createFetch`](#createfetchoptions).
-
-#### `fetch.onRequest` arguments
+### `fetch.onRequest` arguments
 
 `fetch.onRequest(request)`
 
@@ -304,14 +307,14 @@ const fetch = createFetch<Schema>({
 
 Inside the listener, use `this` to refer to the fetch instance that is sending the request.
 
-#### `fetch.onRequest` return
+### `fetch.onRequest` return
 
 The request to be sent. It can be the original request or a modified version of it.
 
-### `fetch.onResponse`
+## `fetch.onResponse`
 
 A listener function that is called after each response is received. It can modify the responses before they are returned
-to the fetch caller.
+to the caller.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -347,12 +350,7 @@ const fetch = createFetch<Schema>({
 });
 ```
 
-> [!TIP]
->
-> Alternatively, `onResponse` can be provided as an option when creating the fetch instance with
-> [`createFetch`](#createfetchoptions).
-
-#### `fetch.onResponse` arguments
+### `fetch.onResponse` arguments
 
 `fetch.onResponse(response)`
 
@@ -362,11 +360,11 @@ const fetch = createFetch<Schema>({
 
 Inside the listener, use `this` to refer to the fetch instance that received the response.
 
-#### `fetch.onResponse` return
+### `fetch.onResponse` return
 
 The response to be returned. It can be the original response or a modified version of it.
 
-### `fetch.isRequest`
+## `fetch.isRequest`
 
 A type guard that checks if a request is a [`FetchRequest`](#fetchrequest), was created by the fetch instance, and has a
 specific method and path. This is useful to narrow down the type of a request before using it.
@@ -406,10 +404,19 @@ const request = new fetch.Request('/users', {
 
 if (fetch.isRequest(request, 'POST', '/users')) {
   // request is a FetchRequest<Schema, 'POST', '/users'>
+
+  const contentType = request.headers.get('content-type'); // 'application/json'
+  const body = await request.json(); // { username: string }
 }
 ```
 
-#### `fetch.isRequest` arguments
+**See also**:
+
+- [`fetch.onRequest`](#fetchonrequest)
+- [`fetch.onResponse`](#fetchonresponse)
+- [Guides: Handling errors](#handling-errors)
+
+### `fetch.isRequest` arguments
 
 `fetch.isRequest(request, method, path)`
 
@@ -419,12 +426,12 @@ if (fetch.isRequest(request, 'POST', '/users')) {
 | `method`  | `HttpMethod` (required) | The method to check.  |
 | `path`    | `string` (required)     | The path to check.    |
 
-#### `fetch.isRequest` return
+### `fetch.isRequest` return
 
 Returns `true` if the request was created by this fetch instance and has the specified method and path; `false`
 otherwise.
 
-### `fetch.isResponse`
+## `fetch.isResponse`
 
 A type guard that checks if a response is a [`FetchResponse`](#fetchresponse), was received by the fetch instance, and
 has a specific method and path. This is useful to narrow down the type of a response before using it.
@@ -462,10 +469,18 @@ const response = await fetch('/users', {
 
 if (fetch.isResponse(response, 'GET', '/users')) {
   // response is a FetchResponse<Schema, 'GET', '/users'>
+
+  const users = await response.json(); // User[]
 }
 ```
 
-#### `fetch.isResponse` arguments
+**See also**:
+
+- [`fetch.onRequest`](#fetchonrequest)
+- [`fetch.onResponse`](#fetchonresponse)
+- [Guides: Handling errors](#handling-errors)
+
+### `fetch.isResponse` arguments
 
 `fetch.isResponse(response, method, path)`
 
@@ -475,12 +490,12 @@ if (fetch.isResponse(response, 'GET', '/users')) {
 | `method`   | `HttpMethod` (required) | The method to check.   |
 | `path`     | `string` (required)     | The path to check.     |
 
-#### `fetch.isResponse` return
+### `fetch.isResponse` return
 
 Returns `true` if the response was received by this fetch instance and has the specified method and path; `false`
 otherwise.
 
-### `fetch.isResponseError`
+## `fetch.isResponseError`
 
 A type guard that checks if an error is a `FetchResponseError` related to a `FetchResponse` response received by the
 fetch instance with a specific method and path. This is useful to narrow down the type of an error before handling it.
@@ -534,7 +549,13 @@ try {
 }
 ```
 
-#### `fetch.isResponseError` arguments
+**See also**:
+
+- [`fetch.onRequest`](#fetchonrequest)
+- [`fetch.onResponse`](#fetchonresponse)
+- [Guides: Handling errors](#handling-errors)
+
+### `fetch.isResponseError` arguments
 
 `fetch.isResponseError(error, method, path)`
 
@@ -544,7 +565,7 @@ try {
 | `method` | `HttpMethod` (required) | The method to check. |
 | `path`   | `string` (required)     | The path to check.   |
 
-#### `fetch.isResponseError` return
+### `fetch.isResponseError` return
 
 Returns `true` if the error is a response error received by the fetch instance and has the specified method and path;
 `false` otherwise.
@@ -555,7 +576,8 @@ A request instance typed with an HTTP schema, closely compatible with the
 [native Request class](https://developer.mozilla.org/docs/Web/API/Request).
 
 On top of the properties available in native Request instances, fetch requests have their URL automatically prefixed
-with the base URL of their fetch instance. Default options are also applied, if present in the fetch instance.
+with the base URL of their fetch instance. [Default options](#fetchdefaults) are also applied, if present in the fetch
+instance.
 
 The path of the request is extracted from the URL, excluding the base URL, and is available in the `path` property.
 
@@ -591,7 +613,9 @@ const request = new fetch.Request('/users', {
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'me' }),
 });
+
 console.log(request); // FetchRequest<Schema, 'POST', '/users'>
+console.log(request.path); // '/users'
 ```
 
 **See also**:
@@ -637,10 +661,14 @@ const response = await fetch(`/users/${userId}`, {
 });
 
 console.log(response); // FetchResponse<Schema, 'GET', '/users'>
+console.log(response.path); // '/users'
 
 if (response.status === 404) {
+  console.log(response.error); // FetchResponseError<Schema, 'GET', '/users/:userId'>
+
   const errorBody = await response.json(); // { message: string }
   console.error(errorBody.message);
+
   return null;
 } else {
   const user = await response.json(); // User
@@ -654,7 +682,7 @@ if (response.status === 404) {
 
 ## `FetchResponseError`
 
-An error that is thrown when a fetch request fails with a failure status code (4XX or 5XX).
+An error representing a response with a failure status code (4XX or 5XX).
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -774,7 +802,9 @@ const fetch = createFetch<Schema>({
 
 ### Using search params (query)
 
-You can set search params (query) for individual `fetch` requests by using the `searchParams` option.
+You can set search params (query) for individual `fetch` requests by using the `searchParams` option. Note that all
+search params are either a string or an array of strings. Numbers, booleans, and other types should be converted to
+strings before being passed as search params.
 
 ```ts
 import { type HttpSchema } from '@zimic/http';
@@ -860,6 +890,8 @@ const fetch = createFetch<Schema>({
 To send a JSON body in a request, use the header `'content-type': 'application/json'` and pass the stringified JSON
 object in the `body` option.
 
+The HTTP schema should define a `content-type` header and a JSON body for the request.
+
 ```ts
 import { type HttpSchema } from '@zimic/http';
 import { createFetch } from '@zimic/fetch';
@@ -901,8 +933,11 @@ const user = await response.json(); // User
 To send a `FormData` body in a request, use the header `'content-type': 'multipart/form-data'` and pass the
 [`HttpFormData`](api‐zimic‐http#httpformdata) object in the `body` option.
 
-The HTTP schema should define the body as a `HttpFormData<FormDataSchema>` object, where `FormDataSchema` is a type
-representing the form data fields.
+The HTTP schema may have a `content-type` header and should define the body as a `HttpFormData<FormDataSchema>` object,
+where `FormDataSchema` is a type representing the form data fields.
+
+Depending on your runtime, the `content-type` header may be set automatically when using a `FormData` body. In that
+case, you are not required to set the header manually.
 
 ```ts
 import { HttpFormData, type HttpSchema } from '@zimic/http';
@@ -949,6 +984,8 @@ const result = await response.json(); // { url: string }
 
 To send a file or binary body in a request, use the header `'content-type': 'application/octet-stream'` and pass the
 `File`, `Blob` or `ArrayBuffer` in the `body` option.
+
+The HTTP schema should define a `content-type` header and a binary body for the request.
 
 ```ts
 import fs from 'fs';
@@ -1044,9 +1081,9 @@ const fetch = createFetch<Schema>({
 
   async onResponse(response) {
     if (response.status === 401) {
-      const data = await response.clone().json();
+      const body = await response.clone().json();
 
-      if (data.message === 'Access token expired') {
+      if (body.message === 'Access token expired') {
         // Refresh the access token
         const refreshResponse = await this('/auth/refresh', { method: 'POST' });
         const { accessToken } = await refreshResponse.json();
@@ -1085,9 +1122,9 @@ const users = await request.json(); // User[]
 
 ### Handling errors
 
-`@zimic/fetch` fully types the responses and errors of your requests based on your HTTP schema. If the response has a
-failure status code (4XX or 5XX), the `response.ok` property is `false` and throw the `response.error` property, which
-is a `FetchResponseError` and can be handled upper in the call stack. If you want to handle the error in the same place
+`@zimic/fetch` fully types the responses of your requests based on your HTTP schema. If the response has a failure
+status code (4XX or 5XX), the `response.ok` property is `false` and you can throw the `response.error` property, which
+is will be `FetchResponseError` to be handled upper in the call stack. If you want to handle the error in the same place
 as the request, you can check the `response.status` or the `response.ok` properties.
 
 ```ts
@@ -1130,11 +1167,12 @@ if (response.status === 404) {
 }
 
 if (response.status === 401 || response.status === 403) {
-  const data = await response.json(); // { code: 'UNAUTHORIZED' | 'FORBIDDEN'; message: string }
-  console.error('Authentication error:', data);
+  const body = await response.json(); // { code: 'UNAUTHORIZED' | 'FORBIDDEN'; message: string }
+  console.error('Authentication error:', body);
 }
 
 if (!response.ok) {
+  // Throw other errors
   throw response.error;
 }
 

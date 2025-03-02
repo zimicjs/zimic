@@ -1,4 +1,4 @@
-# Getting started: `zimic`
+# Getting started
 
 - [`@zimic/http`](getting‐started‐http)
 - [`@zimic/fetch`](getting‐started‐fetch)

@@ -26,9 +26,11 @@
 
 [![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
-[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)
-[![NPM Downloads](https://img.shields.io/npm/dm/@zimic/fetch?style=flat&logo=npm&color=0E69BE&label=Downloads&labelColor=353C43)](https://www.npmjs.com/package/@zimic/fetch)&nbsp;
-[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)&nbsp;
+[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp;
+[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+
+[![NPM Downloads - @zimic/fetch](https://img.shields.io/npm/dm/@zimic/fetch?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Ffetch&labelColor=353C43)](https://www.npmjs.com/package/@zimic/fetch)&nbsp;
+[![Bundle size - @zimic/fetch](https://badgen.net/bundlephobia/minzip/@zimic/fetch?color=0E69BE&labelColor=353C43&label=@zimic/fetch%20min%20gzip)](https://bundlephobia.com/package/@zimic/fetch)<br />
 
 </div>
 
@@ -45,7 +47,7 @@
 
 ---
 
-`@zimic/fetch` is a minimal, zero-dependency, and type-safe `fetch`-like API client.
+`@zimic/fetch` is a minimal (1 kB minified and gzipped), zero-dependency, and type-safe `fetch`-like API client.
 
 > [!WARNING]
 >
@@ -54,13 +56,15 @@
 ## Features
 
 - :sparkles: **Type-safe `fetch`**: Create a type-safe
-  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Import your `@zimic/http`
-  [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and responses fully
-  typed by default.
-- :muscle: **Developer experience**: While mostly compatible with the
-  [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API), `@zimic/fetch` provides a more ergonomic
-  interface for common use cases. Define defaults to apply to all of your requests, such as a base URL, headers, search
-  parameters, and more. Inspect and modify requests and responses using `onRequest` and `onResponse` listeners.
+  [`fetch`-like](https://developer.mozilla.org/docs/Web/API/Fetch_API) API client. Use your
+  [`@zimic/http` schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and have your requests and
+  responses fully typed by default.
+- :muscle: **Developer experience**: `@zimic/fetch` seeks to be as compatible with the
+  [native Fetch API](https://developer.mozilla.org/docs/Web/API/Fetch_API) as possible, while providing an ergonomic
+  interface to improve type safety. Define default options to apply to your requests, such as a base URL, headers,
+  search parameters, and more. Inspect and modify requests and responses using
+  [`onRequest`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchonrequest) and
+  [`onResponse`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchonresponse) listeners.
 
 ## Getting started
 
@@ -103,8 +107,10 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
         GET: {
           request: {
-            headers: { authorization: string };
-            searchParams: { query?: string; limit?: `${number}` };
+            searchParams: {
+              query?: string;
+              limit?: `${number}`;
+            };
           };
           response: {
             200: { body: User[] };
@@ -129,7 +135,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     }>;
     ```
 
-2.  Create your [fetch client](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions):
+2.  Create your [fetch client](https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch):
 
     ```ts
     import { createFetch } from '@zimic/fetch';

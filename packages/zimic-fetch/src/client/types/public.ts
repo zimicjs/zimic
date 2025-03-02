@@ -45,15 +45,15 @@ export namespace FetchFunction {
 /**
  * The options to create a {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch fetch instance}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetchoptions `createFetch(options)` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#createfetch `createFetch(options)` API reference}
  */
 export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchRequestInit.Defaults, 'method'> {
   /**
    * A listener function that is called for each request. It can modify the requests before they are sent.
    *
    * @example
-   *   import { type HttpSchema } from '@zimic/http';
    *   import { createFetch } from '@zimic/fetch';
+   *   import { type HttpSchema } from '@zimic/http';
    *
    *   interface User {
    *     id: string;
@@ -74,15 +74,20 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
    *   }>;
    *
    *   const fetch = createFetch<Schema>({
-   *     baseURL: 'http://localhost:3000',
-   *   });
+   *     baseURL: 'http://localhost:80',
    *
-   *   fetch.onRequest = function (request) {
-   *     if (this.isRequest(request, 'GET', '/users')) {
-   *       request.searchParams.set('limit', '10');
-   *     }
-   *     return request;
-   *   };
+   *     onRequest(request) {
+   *       if (this.isRequest(request, 'GET', '/users')) {
+   *         const url = new URL(request.url);
+   *         url.searchParams.append('limit', '10');
+   *
+   *         const updatedRequest = new Request(url, request);
+   *         return updatedRequest;
+   *       }
+   *
+   *       return request;
+   *     },
+   *   });
    *
    * @param request The original request.
    * @returns The request to be sent. It can be the original request or a modified version of it.
@@ -116,12 +121,16 @@ export interface FetchOptions<Schema extends HttpSchema> extends Omit<FetchReque
    *     };
    *   }>;
    *
-   *   fetch.onResponse = function (response) {
-   *     if (this.isResponse(response, 'GET', '/users')) {
-   *       console.log(response.headers.get('content-encoding'));
-   *     }
-   *     return response;
-   *   };
+   *   const fetch = createFetch<Schema>({
+   *     baseURL: 'http://localhost:80',
+   *
+   *     onResponse(response) {
+   *       if (this.isResponse(response, 'GET', '/users')) {
+   *         console.log(response.headers.get('content-encoding'));
+   *       }
+   *       return response;
+   *     },
+   *   });
    *
    * @param response The original response.
    * @returns The response to be returned.
@@ -173,7 +182,7 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *   // Set the authorization header for all requests
    *   const { accessToken } = await authenticate();
    *
-   *   fetch.defaults.headers['authorization'] = `Bearer ${token}`;
+   *   fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
    *   console.log(fetch.defaults.headers);
    *
    *   const response = await fetch('/posts', {
@@ -191,7 +200,27 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    * such as in {@link onRequest `onRequest`} and {@link onResponse `onResponse`} listeners.
    *
    * @example
+   *   import { type HttpSchema } from '@zimic/http';
+   *   import { createFetch } from '@zimic/fetch';
+   *
+   *   interface User {
+   *     id: string;
+   *     username: string;
+   *   }
+   *
    *   type Schema = HttpSchema<{
+   *     '/auth/login': {
+   *       POST: {
+   *         request: {
+   *           headers: { 'content-type': 'application/json' };
+   *           body: { username: string; password: string };
+   *         };
+   *         response: {
+   *           201: { body: { accessToken: string } };
+   *         };
+   *       };
+   *     };
+   *
    *     '/auth/refresh': {
    *       POST: {
    *         response: {
@@ -216,11 +245,13 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *
    *   const fetch = createFetch<Schema>({
    *     baseURL,
-   *     onResponse(response) {
-   *       if (response.status === 401) {
-   *         const data = await response.clone().json();
    *
-   *         if (data.message === 'Access token expired') {
+   *     async onResponse(response) {
+   *       if (response.status === 401) {
+   *         const body = await response.clone().json();
+   *
+   *         if (body.message === 'Access token expired') {
+   *           // Refresh the access token
    *           const refreshResponse = await this('/auth/refresh', { method: 'POST' });
    *           const { accessToken } = await refreshResponse.json();
    *
@@ -236,6 +267,24 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *       return response;
    *     },
    *   });
+   *
+   *   // Authenticate to your service before requests
+   *   const loginRequest = await fetch('/auth/login', {
+   *     method: 'POST',
+   *     headers: { 'content-type': 'application/json' },
+   *     body: JSON.stringify({ username: 'me', password: 'password' }),
+   *   });
+   *   const { accessToken } = await loginRequest.json();
+   *
+   *   // Set the authorization header for all requests
+   *   fetch.defaults.headers.authorization = `Bearer ${accessToken}`;
+   *
+   *   const request = await fetch('/users', {
+   *     method: 'GET',
+   *     searchParams: { query: 'u' },
+   *   });
+   *
+   *   const users = await request.json(); // User[]
    *
    * @param input The resource to fetch, either a path, a URL, or a {@link FetchRequest request}. If a path is provided,
    *   it is automatically prefixed with the base URL of the fetch instance when the request is sent. If a URL or a
@@ -253,10 +302,47 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
   loose: FetchFunction.Loose;
 
   /**
-   * A constructor for creating requests, closely compatible with the native {@link Request} constructor.
+   * A constructor for creating
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest-1 `FetchRequest`}, closely compatible with
+   * the native {@link https://developer.mozilla.org/docs/Web/API/Request Request} constructor.
    *
-   * Requests created by this constructor have their URL automatically prefixed with the base URL of the fetch instance.
-   * Default options are also applied to the requests, if present in the instance.
+   * @example
+   *   import { type HttpSchema } from '@zimic/http';
+   *   import { createFetch } from '@zimic/fetch';
+   *
+   *   interface User {
+   *     id: string;
+   *     username: string;
+   *   }
+   *
+   *   type Schema = HttpSchema<{
+   *     '/users': {
+   *       POST: {
+   *         request: {
+   *           headers: { 'content-type': 'application/json' };
+   *           body: { username: string };
+   *         };
+   *         response: {
+   *           201: { body: User };
+   *         };
+   *       };
+   *     };
+   *   }>;
+   *
+   *   const fetch = createFetch<Schema>({
+   *     baseURL: 'http://localhost:3000',
+   *   });
+   *
+   *   const request = new fetch.Request('/users', {
+   *     method: 'POST',
+   *     headers: { 'content-type': 'application/json' },
+   *     body: JSON.stringify({ username: 'me' }),
+   *   });
+   *
+   *   console.log(request); // FetchRequest<Schema, 'POST', '/users'>
+   *   console.log(request.path); // '/users'
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchrequest-1 `FetchRequest`}
    */
   Request: FetchRequestConstructor<Schema>;
 
@@ -299,6 +385,9 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *
    *   if (fetch.isRequest(request, 'POST', '/users')) {
    *     // request is a FetchRequest<Schema, 'POST', '/users'>
+   *
+   *     const contentType = request.headers.get('content-type'); // 'application/json'
+   *     const body = await request.json(); // { username: string }
    *   }
    *
    * @param request The request to check.
@@ -350,6 +439,8 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
    *
    *   if (fetch.isResponse(response, 'GET', '/users')) {
    *     // response is a FetchResponse<Schema, 'GET', '/users'>
+   *
+   *     const users = await response.json(); // User[]
    *   }
    *
    * @param response The response to check.
@@ -455,6 +546,8 @@ export interface FetchClient<Schema extends HttpSchema> extends Pick<FetchOption
  *         };
  *         response: {
  *           200: { body: User[] };
+ *           404: { body: { message: string } };
+ *           500: { body: { message: string } };
  *         };
  *       };
  *     };
@@ -520,7 +613,6 @@ export type Fetch<Schema extends HttpSchema> = FetchFunction<Schema> & FetchClie
  *   //      response: { 200: { body: User[] } };
  *   //    };
  *   // };
- *   // }
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetch `fetch` API reference}
  */

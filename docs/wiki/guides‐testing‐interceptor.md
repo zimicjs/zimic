@@ -1,4 +1,4 @@
-# Guides: Testing - `@zimic/interceptor`
+# `@zimic/interceptor` - Guides: Testing
 
 There are many ways to configure `@zimic/interceptor` in a testing environment. Usually, the best approach is dependent
 on your [method of intercepting requests](getting‐started‐interceptor#4-choose-your-method-to-intercept-requests) and

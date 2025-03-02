@@ -3,7 +3,7 @@ import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
 import { FetchRequest, FetchResponse } from '../types/requests';
 
 /**
- * An error that is thrown when a fetch request fails with a failure status code (4XX or 5XX).
+ * An error representing a response with a failure status code (4XX or 5XX).
  *
  * @example
  *   import { type HttpSchema } from '@zimic/http';

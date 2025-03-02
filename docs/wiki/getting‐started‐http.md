@@ -1,4 +1,4 @@
-# Getting started: `@zimic/http` <!-- omit from toc -->
+# `@zimic/http` - Getting started <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -11,8 +11,8 @@
 
 ---
 
-[`@zimic/http`](../../packages/zimic-http) is a collection of utilities to work with type-safe HTTP resources, such as
-requests, responses, headers, search params, and form data.
+[`@zimic/http`](../../packages/zimic-http) is a collection of type-safe utilities to handle HTTP requests and responses,
+including headers, search params, and form data.
 
 ## 1. Requirements
 

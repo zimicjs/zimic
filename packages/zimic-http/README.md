@@ -26,9 +26,11 @@
 
 [![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
-[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)
-[![NPM Downloads](https://img.shields.io/npm/dm/@zimic/http?style=flat&logo=npm&color=0E69BE&label=Downloads&labelColor=353C43)](https://www.npmjs.com/package/@zimic/http)&nbsp;
-[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)&nbsp;
+[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp;
+[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+
+[![NPM Downloads - @zimic/http](https://img.shields.io/npm/dm/@zimic/http?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Fhttp&labelColor=353C43)](https://www.npmjs.com/package/@zimic/http)&nbsp;
+[![Bundle size - @zimic/http](https://badgen.net/bundlephobia/minzip/@zimic/http?color=0E69BE&labelColor=353C43&label=@zimic/http%20min%20gzip)](https://bundlephobia.com/package/@zimic/http)<br />
 
 </div>
 
@@ -45,8 +47,8 @@
 
 ---
 
-`@zimic/http` is a collection of utilities to work with type-safe HTTP resources, such as requests, responses, headers,
-search params, and form data.
+`@zimic/http` is a collection of type-safe utilities to handle HTTP requests and responses, including headers, search
+params, and form data.
 
 > [!NOTE]
 >
@@ -56,10 +58,10 @@ search params, and form data.
 
 - :star: **HTTP schemas and typegen**: Declare the structure of your HTTP endpoints as a TypeScript
   [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and use it to type your HTTP requests and
-  responses. If you have an [OpenAPI v3](https://swagger.io/specification) schema,
+  responses. If you have an [OpenAPI v3](https://swagger.io/specification) declaration,
   [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate the types
   of your schema.
-- :pushpin: **Type-safe native HTTP APIs**: Declare type-safe
+- :pushpin: **Type-safe native APIs**: Declare type-safe
   [`Headers`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpheaders),
   [`URLSearchParams`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpsearchparams), and
   [`FormData`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http#httpformdata) objects, fully compatible with their
@@ -79,129 +81,130 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
 ## Basic usage
 
-1.  Declare your [HTTP schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas):
+1. Declare your [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas):
 
-    ```ts
-    import { type HttpSchema } from '@zimic/http';
+   ```ts
+   import { type HttpSchema } from '@zimic/http';
 
-    interface User {
-      username: string;
-    }
+   interface User {
+     username: string;
+   }
 
-    interface RequestError {
-      code: string;
-      message: string;
-    }
+   interface RequestError {
+     code: string;
+     message: string;
+   }
 
-    type Schema = HttpSchema<{
-      '/users': {
-        POST: {
-          request: { body: User };
-          response: {
-            201: { body: User };
-            400: { body: RequestError };
-            409: { body: RequestError };
-          };
-        };
+   type Schema = HttpSchema<{
+     '/users': {
+       POST: {
+         request: { body: User };
+         response: {
+           201: { body: User };
+           400: { body: RequestError };
+           409: { body: RequestError };
+         };
+       };
 
-        GET: {
-          request: {
-            headers: { authorization: string };
-            searchParams: { query?: string; limit?: `${number}` };
-          };
-          response: {
-            200: { body: User[] };
-            400: { body: RequestError };
-            401: { body: RequestError };
-          };
-        };
-      };
+       GET: {
+         request: {
+           headers: { authorization: string };
+           searchParams: { query?: string; limit?: `${number}` };
+         };
+         response: {
+           200: { body: User[] };
+           400: { body: RequestError };
+           401: { body: RequestError };
+         };
+       };
+     };
 
-      '/users/:userId': {
-        PATCH: {
-          request: {
-            headers: { authorization: string };
-            body: Partial<User>;
-          };
-          response: {
-            204: {};
-            400: { body: RequestError };
-          };
-        };
-      };
-    }>;
-    ```
+     '/users/:userId': {
+       PATCH: {
+         request: {
+           headers: { authorization: string };
+           body: Partial<User>;
+         };
+         response: {
+           204: {};
+           400: { body: RequestError };
+         };
+       };
+     };
+   }>;
+   ```
 
-2.  Then, use your schema:
+2. Use the types in your code!
 
-    - Example 1: Reference types in your code:
+   - **Example 1**: Reference the types in your code:
 
-    ```ts
-    import { HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
+     ```ts
+     import { HttpHeaders, HttpSearchParams, HttpFormData } from '@zimic/http';
 
-    type UserListHeaders = Schema['/users']['GET']['request']['headers'];
+     type UserListHeaders = Schema['/users']['GET']['request']['headers'];
 
-    const headers = new HttpHeaders<UserListHeaders>({
-      authorization: 'Bearer token',
-    });
+     const headers = new HttpHeaders<UserListHeaders>({
+       authorization: 'Bearer token',
+     });
 
-    type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];
+     type UserListSearchParams = Schema['/users']['GET']['request']['searchParams'];
 
-    const searchParams = new HttpSearchParams<UserListSearchParams>({
-      query: 'u',
-      limit: 10,
-    });
+     const searchParams = new HttpSearchParams<UserListSearchParams>({
+       query: 'u',
+       limit: '10',
+     });
 
-    type UserCreateBody = Schema['/users']['POST']['request']['body'];
+     type UserCreateBody = Schema['/users']['POST']['request']['body'];
 
-    const formData = new HttpFormData<UserCreateBody>();
-    formData.append('username', 'user');
-    ```
+     const formData = new HttpFormData<UserCreateBody>();
+     formData.append('username', 'user');
+     ```
 
-    - Example 2: Using `@zimic/fetch`:
+   - **Example 2**: Using [`@zimic/fetch`](../zimic-fetch):
 
-    ```ts
-    import { createFetch } from '@zimic/fetch';
+     ```ts
+     import { createFetch } from '@zimic/fetch';
 
-    const fetch = createFetch<Schema>({
-      baseURL: 'http://localhost:3000',
-    });
+     const fetch = createFetch<Schema>({
+       baseURL: 'http://localhost:3000',
+     });
 
-    const response = await fetch('/users', {
-      method: 'POST',
-      body: { username: 'user' },
-    });
+     const response = await fetch('/users', {
+       method: 'POST',
+       body: { username: 'user' },
+     });
 
-    if (!response.ok) {
-      throw response.error;
-    }
+     if (!response.ok) {
+       throw response.error;
+     }
 
-    console.log(await response.json()); // { username: 'user' }
-    ```
+     console.log(await response.json()); // { username: 'user' }
+     ```
 
-    - Example 3: Using `@zimic/interceptor`:
+   - **Example 3**: Using [`@zimic/interceptor`](../zimic-interceptor):
 
-    ```ts
-    import { httpInterceptor } from '@zimic/interceptor/http';
+     ```ts
+     import { httpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<Schema>({
-      type: 'local',
-      baseURL: 'http://localhost:3000',
-    });
+     const interceptor = httpInterceptor.create<Schema>({
+       type: 'local',
+       baseURL: 'http://localhost:3000',
+     });
 
-    interceptor.post('/users').respond({
-      status: 201,
-      body: { username: body.username },
-    });
-    ```
+     await interceptor.start();
+
+     interceptor.post('/users').respond({
+       status: 201,
+       body: { username: body.username },
+     });
+     ```
 
 ## Documentation
 
-- [Introduction](https://github.com/zimicjs/zimic/wiki)
 - [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐http)
 - [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http)
 - CLI reference
-  - [Typegen](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
+  - [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen)
 
 ## Examples
 

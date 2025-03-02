@@ -26,9 +26,11 @@
 
 [![CI](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml/badge.svg?branch=canary)](https://github.com/zimicjs/zimic/actions/workflows/ci.yaml)&nbsp;
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-31C654?labelColor=353C43)](https://github.com/zimicjs/zimic/actions)&nbsp;
-[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)
-[![NPM Downloads](https://img.shields.io/npm/dm/@zimic/interceptor?style=flat&logo=npm&color=0E69BE&label=Downloads&labelColor=353C43)](https://www.npmjs.com/package/@zimic/interceptor)&nbsp;
-[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)&nbsp;
+[![License](https://img.shields.io/github/license/zimicjs/zimic?color=0E69BE&label=License&labelColor=353C43)](https://github.com/zimicjs/zimic/blob/canary/LICENSE.md)&nbsp;
+[![Stars](https://img.shields.io/github/stars/zimicjs/zimic)](https://github.com/zimicjs/zimic)
+
+[![NPM Downloads - @zimic/interceptor](https://img.shields.io/npm/dm/@zimic/interceptor?style=flat&logo=npm&color=0E69BE&label=%20%40zimic%2Finterceptor&labelColor=353C43)](https://www.npmjs.com/package/@zimic/interceptor)&nbsp;
+[![Bundle size - @zimic/interceptor](https://badgen.net/bundlephobia/minzip/@zimic/interceptor?color=0E69BE&labelColor=353C43&label=@zimic/interceptor%20min%20gzip)](https://bundlephobia.com/package/@zimic/interceptor)&nbsp;
 
 </div>
 
@@ -45,7 +47,7 @@
 
 ---
 
-`@zimic/interceptor` is a lightweight, thoroughly tested, TypeScript-first HTTP request interceptor and mock library.
+`@zimic/interceptor` provides a flexible and type-safe way to intercept and mock HTTP requests.
 
 > [!NOTE]
 >
@@ -53,19 +55,20 @@
 
 ## Features
 
-- :zap: **Fully typed mocks**: Declare the [schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) of
-  your HTTP endpoints and have your mocks 100% type-checked by default. Have
-  [OpenAPI v3](https://swagger.io/specification) schema?
-  [`zimic-http typegen`](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐typegen) can automatically generate types to
-  keep your mocks in sync with your API.
+- :globe_with_meridians: **HTTP interceptors**: Intercept HTTP requests and return mock responses. Use
+  [local](https://github.com/zimicjs/zimic/wiki/getting‐started#local-http-interceptors) or
+  [remote](https://github.com/zimicjs/zimic/wiki/getting‐started#remote-http-interceptors) interceptors to adapt your
+  mocks to your development and testing workflow.
+- :zap: **Fully typed mocks**: Use your
+  [`@zimic/http` schema](https://github.com/zimicjs/zimic/wiki/api‐zimic‐http‐schemas) and create type-safe mocks for
+  your HTTP requests.
 - :link: **Network-level interceptor**: `@zimic/interceptor` combines [MSW](https://github.com/mswjs/msw) and
   [interceptor servers](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server) to handle real HTTP requests. From you
   application's point of view, the mocked responses are indistinguishable from the real ones.
-- :wrench: **Flexible**: Mock external services and reliably test how your application behaves. Simulate success,
+- :wrench: **Flexibility**: Mock external services and reliably test how your application behaves. Simulate success,
   loading, and error states with ease using [standard web APIs](https://developer.mozilla.org/docs/Web/API).
-- :bulb: **Simple**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your mocks.
-  Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor) and starting
-  mocking!
+- :bulb: **Simplicity**: `@zimic/interceptor` was designed to encourage clarity, simplicity, and robustness in your
+  mocks.
 
 ## Getting started
 
@@ -236,15 +239,18 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     });
     ```
 
-    NOTE: The code above checks the requests manually. This is optional in this example because the
-    [`with`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction) and
-    [`times`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes) calls act as a
-    declarative validation, meaning that exactly one request is expected with specific data. If fewer or more requests
-    are received, the test will fail when `interceptor.checkTimes()` is called in the `afterEach` hook.
+> [!NOTE]
+>
+> The 5.2 checks the application requests manually. This is optional in this example because the
+> [`with`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction) and
+> [`times`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes) calls (step 5.1) already
+> act as a declarative validation, expressing that exactly one request is expected with specific data. If fewer or more
+> requests are received, the test will fail when
+> [`interceptor.checkTimes()`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes)
+> is called in the `afterEach` hook.
 
 ## Documentation
 
-- [Introduction](https://github.com/zimicjs/zimic/wiki)
 - [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
 - [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
 - CLI reference

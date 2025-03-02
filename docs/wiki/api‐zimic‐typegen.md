@@ -1,4 +1,4 @@
-# API reference: `@zimic/http/typegen` <!-- omit from toc -->
+# `@zimic/http/typegen` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

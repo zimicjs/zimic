@@ -1,5 +1,5 @@
-# API reference: `zimic/interceptor/http` schemas
+# `zimic/interceptor/http` - API reference schemas
 
 > [!NOTE]
 >
-> This page has been moved to [API reference: `zimic/interceptor/http` schemas](api‐zimic‐http‐schemas)
+> This page has been moved to [`zimic/interceptor/http` - API reference schemas](api‐zimic‐http‐schemas).
