@@ -241,7 +241,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 
 > [!NOTE]
 >
-> The 5.2 checks the application requests manually. This is optional in this example because the
+> Step 5.2 manually verifies the requests made by the application. This is optional in this example because the
 > [`with`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction) and
 > [`times`](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes) calls (step 5.1) already
 > act as a declarative validation, expressing that exactly one request is expected with specific data. If fewer or more
