@@ -32,7 +32,7 @@ runs:
       working-directory: zimic
       shell: bash
       run: |
-        bash scripts/docs/sync-wiki.sh '${{ inputs.ref_name }}'
+        bash scripts/docs/sync-wiki.sh '${{ inputs.ref-name }}'
 
     - name: Commit and push wiki changes
       working-directory: zimic.wiki
