@@ -43,7 +43,7 @@ runs:
 
         echo 'Bumping version...'
 
-        currentVersion=$(pnpm version --json | jq ".$projectName" -r)
+        currentVersion=$(pnpm version --json | jq ".\"$projectName\"" -r)
         stableCurrentVersion=$(echo "$currentVersion" | sed 's/-.*//')
 
         bumpedVersion=$(
@@ -58,11 +58,6 @@ runs:
 
         bumpedVersion=${bumpedVersion#*v}
 
-        if [[ '${{ inputs.project-directory }}' == 'packages/zimic' ]]; then
-          # also update the root package.json
-          cat <<< $(jq ".version = \"$bumpedVersion\"" ../../package.json) > ../../package.json
-        fi
-
         echo "Project '$projectName' is now at $bumpedVersion"
         echo 'Committing changes...'
 
@@ -75,7 +70,7 @@ runs:
         echo 'Pushing changes...'
 
         numberOfPushRetries=0
-        maxNumberOfPushRetries=3
+        maxNumberOfPushRetries=5
 
         git config pull.rebase true
 

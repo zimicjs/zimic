@@ -1,4 +1,4 @@
-# API reference: `zimic/http` <!-- omit from toc -->
+# `@zimic/http` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -17,6 +17,8 @@
   - [`HttpFormData` utility types](#httpformdata-utility-types)
     - [`HttpFormDataSerialized`](#httpformdataserialized)
 - [Utility types](#utility-types)
+  - [`JSONValue`](#jsonvalue)
+  - [`JSONSerialized`](#jsonserialized)
   - [`HttpSchemaPath`](#httpschemapath)
     - [`HttpSchemaPath.Literal`](#httpschemapathliteral)
     - [`HttpSchemaPath.NonLiteral`](#httpschemapathnonliteral)
@@ -25,7 +27,11 @@
 
 ---
 
-This module exports general HTTP resources.
+`@zimic/http` exports general HTTP resources. They are used by other Zimic packages, such as `@zimic/fetch` and
+`@zimic/interceptor`, to provide type safety when working with HTTP requests and responses.
+
+- [`@zimic/http`](api‐zimic‐http): HTTP resources and utility types.
+- [`@zimic/http/typegen`](api‐zimic‐typegen): HTTP type generation.
 
 > [!TIP]
 >
@@ -38,7 +44,7 @@ schema. `HttpHeaders` is fully compatible with `Headers` and is used by Zimic to
 headers.
 
 ```ts
-import { HttpHeaders } from 'zimic/http';
+import { HttpHeaders } from '@zimic/http';
 
 const headers = new HttpHeaders<{
   accept?: string;
@@ -58,7 +64,7 @@ console.log(contentType); // 'application/json'
 other headers:
 
 ```ts
-import { type HttpSchema, HttpHeaders } from 'zimic/http';
+import { type HttpSchema, HttpHeaders } from '@zimic/http';
 
 type HeaderSchema = HttpSchema.Headers<{
   accept?: string;
@@ -102,7 +108,7 @@ version. Numbers and booleans are converted to `${number}` and `${boolean}` resp
 serializable values are excluded, such as functions and dates.
 
 ```ts
-import { type HttpSearchParamsSerialized } from 'zimic/http';
+import { type HttpSearchParamsSerialized } from '@zimic/http';
 
 type Params = HttpSearchParamsSerialized<{
   'content-type': string;
@@ -123,7 +129,7 @@ type Params = HttpSearchParamsSerialized<{
 Extracts the names of the headers defined in a `HttpHeadersSchema`. Each key is considered a header name.
 
 ```ts
-import { type HttpSearchParamsSerialized } from 'zimic/http';
+import { type HttpSearchParamsSerialized } from '@zimic/http';
 
 type HeaderName = HttpHeadersSchemaName<{
   'content-type': string;
@@ -139,7 +145,7 @@ strictly-typed schema. `HttpSearchParams` is fully compatible with `URLSearchPar
 type safety when managing search parameters.
 
 ```ts
-import { HttpSearchParams } from 'zimic/http';
+import { HttpSearchParams } from '@zimic/http';
 
 const searchParams = new HttpSearchParams<{
   names?: string[];
@@ -162,7 +168,7 @@ console.log(page); // '1'
 comparisons with other search params:
 
 ```ts
-import { type HttpSchema, HttpSearchParams } from 'zimic/http';
+import { type HttpSchema, HttpSearchParams } from '@zimic/http';
 
 type SearchParamsSchema = HttpSchema.SearchParams<{
   names?: string[];
@@ -207,7 +213,7 @@ are converted to `${number}` and `${boolean}` respectively, null becomes undefin
 excluded, such as functions and dates.
 
 ```ts
-import { type HttpSearchParamsSerialized } from 'zimic/http';
+import { type HttpSearchParamsSerialized } from '@zimic/http';
 
 type Params = HttpSearchParamsSerialized<{
   query: string | null;
@@ -230,7 +236,7 @@ name. `HttpSearchParamsSchemaName.Array` can be used to extract the names of arr
 `HttpSearchParamsSchemaName.NonArray` extracts the names of non-array search params.
 
 ```ts
-import { type HttpSearchParamsSchemaName } from 'zimic/http';
+import { type HttpSearchParamsSchemaName } from '@zimic/http';
 
 type SearchParamsName = HttpSearchParamsSchemaName<{
   query?: string[];
@@ -261,7 +267,7 @@ strictly-typed schema. `HttpFormData` is fully compatible with `FormData` and is
 when managing form data.
 
 ```ts
-import { HttpFormData } from 'zimic/http';
+import { HttpFormData } from '@zimic/http';
 
 const formData = new HttpFormData<{
   files: File[];
@@ -284,7 +290,7 @@ console.log(description); // 'My file'
 with other form data:
 
 ```ts
-import { type HttpSchema, HttpFormData } from 'zimic/http';
+import { type HttpSchema, HttpFormData } from '@zimic/http';
 
 type FormDataSchema = HttpSchema.FormData<{
   files: File[];
@@ -321,7 +327,7 @@ Numbers and booleans are converted to `${number}` and `${boolean}` respectively,
 excluded, such as functions and dates.
 
 ```ts
-import { type HttpFormDataSerialized } from 'zimic/http';
+import { type HttpFormDataSerialized } from '@zimic/http';
 
 type Schema = HttpFormDataSerialized<{
   contentTitle: string | null;
@@ -341,6 +347,65 @@ type Schema = HttpFormDataSerialized<{
 
 ## Utility types
 
+### `JSONValue`
+
+Represents or validates a type that is compatible with JSON.
+
+```ts
+import { type JSONValue } from '@zimic/http';
+
+// Can be used as a standalone type:
+const value: JSONValue = {
+  name: 'example',
+  tags: ['one', 'two'],
+};
+```
+
+```ts
+import { type JSONValue } from '@zimic/http';
+
+// Can be used with a type argument to validate a JSON value:
+type ValidJSON = JSONValue<{
+  id: string;
+  email: string;
+  createdAt: string;
+}>;
+
+// This results in a type error:
+type InvalidJSON = JSONValue<{
+  id: string;
+  email: string;
+  createdAt: Date; // `Date` is not a valid JSON value.
+  save(): Promise<void>; // Functions are not valid JSON values.
+}>;
+```
+
+> [!IMPORTANT]
+>
+> The input of `JSONValue` and all of its internal types must be declared inline or as a type aliases (`type`). They
+> cannot be interfaces.
+
+### `JSONSerialized`
+
+Recursively converts a type to its JSON-serialized version. Dates are converted to strings and keys with non-JSON values
+are excluded.
+
+```ts
+import { type JSONSerialized } from '@zimic/http';
+
+type SerializedUser = JSONSerialized<{
+  id: string;
+  email: string;
+  createdAt: Date;
+  save(): Promise<void>;
+}>;
+// {
+//   id: string;
+//   email: string;
+//   createdAt: string;
+// }
+```
+
 ### `HttpSchemaPath`
 
 Extracts the [literal](#httpschemapathliteral) and [non-literal](#httpschemapathnonliteral) paths from an HTTP service
@@ -348,7 +413,7 @@ schema. Optionally receives a second argument with one or more methods to filter
 defined in the schema are allowed.
 
 ```ts
-import { type HttpSchema, type HttpSchemaPath } from 'zimic/http';
+import { type HttpSchema, type HttpSchemaPath } from '@zimic/http';
 
 type Schema = HttpSchema<{
   '/users': {
@@ -376,7 +441,7 @@ Extracts the literal paths from an HTTP service schema. Optionally receives a se
 to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
-import { type HttpSchema, type LiteralHttpSchemaPath } from 'zimic/http';
+import { type HttpSchema, type LiteralHttpSchemaPath } from '@zimic/http';
 
 type Schema = HttpSchema<{
   '/users': {
@@ -404,7 +469,7 @@ Extracts the non-literal paths from an HTTP service schema. Optionally receives 
 methods to filter the paths with. Only the methods defined in the schema are allowed.
 
 ```ts
-import { type HttpSchema, type NonLiteralHttpSchemaPath } from 'zimic/http';
+import { type HttpSchema, type NonLiteralHttpSchemaPath } from '@zimic/http';
 
 type Schema = HttpSchema<{
   '/users': {
@@ -435,9 +500,9 @@ If the first argument is a [HttpSchema](api‐zimic‐interceptor‐http‐schem
 checked to be a valid path in that schema.
 
 ```ts
-import { HttpSchema, InferPathParams } from 'zimic/http';
+import { HttpSchema, InferPathParams } from '@zimic/http';
 
-type MySchema = HttpSchema<{
+type Schema = HttpSchema<{
   '/users/:userId': {
     GET: {
       response: { 200: { body: User } };
@@ -446,12 +511,12 @@ type MySchema = HttpSchema<{
 }>;
 
 // Using a schema to validate the path (recommended):
-type PathParams = InferPathParams<MySchema, '/users/:userId'>;
+type PathParams = InferPathParams<Schema, '/users/:userId'>;
 // { userId: string }
 ```
 
 ```ts
-import { InferPathParams } from 'zimic/http';
+import { InferPathParams } from '@zimic/http';
 
 // Without using a schema to validate the path (works as `PathParamsSchemaFromPath`):
 type PathParams = InferPathParams<'/users/:userId'>;
@@ -464,7 +529,7 @@ Merges multiple HTTP response schemas by status code into a single schema. When 
 first declaration takes precedence.
 
 ```ts
-import { type HttpSchema, type HttpStatusCode, type MergeHttpResponsesByStatusCode } from 'zimic/http';
+import { type HttpSchema, type HttpStatusCode, type MergeHttpResponsesByStatusCode } from '@zimic/http';
 
 // Overriding the 400 status code with a more specific schema
 // and using a generic schema for all other client errors.

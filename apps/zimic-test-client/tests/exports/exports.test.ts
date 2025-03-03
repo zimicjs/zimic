@@ -1,6 +1,19 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import { type JSONValue, type JSONSerialized, InvalidJSONError } from 'zimic';
 import {
+  createFetch,
+  type Fetch,
+  type FetchOptions,
+  type InferFetchSchema,
+  type FetchInput,
+  type FetchRequest,
+  type FetchRequestConstructor,
+  type FetchRequestInit,
+  type FetchResponse,
+  type JSONStringified,
+  FetchResponseError,
+} from '@zimic/fetch';
+import {
+  type JSONValue,
+  type JSONSerialized,
   type HttpBody,
   type HttpRequest,
   type HttpResponse,
@@ -38,8 +51,7 @@ import {
   type HttpSchemaPath,
   type InferPathParams,
   type MergeHttpResponsesByStatusCode,
-  InvalidFormDataError,
-} from 'zimic/http';
+} from '@zimic/http';
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
@@ -77,7 +89,10 @@ import {
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
-} from 'zimic/interceptor/http';
+  InvalidJSONError,
+  InvalidFormDataError,
+} from '@zimic/interceptor/http';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports', () => {
   it('should export all expected resources', () => {
@@ -154,6 +169,19 @@ describe('Exports', () => {
     expect(typeof InvalidJSONError).toBe('function');
     expectTypeOf<InvalidFormDataError>().not.toBeAny();
     expect(typeof InvalidFormDataError).toBe('function');
+
+    expect(typeof createFetch).toBe('function');
+    expectTypeOf<Fetch<never>>().not.toBeAny();
+    expectTypeOf<FetchOptions<never>>().not.toBeAny();
+    expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
+    expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
+    expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
+    expectTypeOf<JSONStringified<never>>().not.toBeAny();
+    expect(typeof FetchResponseError).toBe('function');
 
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
     expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();

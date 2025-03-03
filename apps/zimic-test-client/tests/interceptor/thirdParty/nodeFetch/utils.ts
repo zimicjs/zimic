@@ -1,9 +1,13 @@
-import fetch from 'node-fetch';
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
 
 import { requestCanHaveBody } from '@tests/utils/bodies';
 import { convertHeadersToObject, convertObjectToHeaders } from '@tests/utils/headers';
 
+export const importNodeFetch = createCachedDynamicImport(() => import('node-fetch'));
+
 export async function nodeFetchAsFetch(request: Request): Promise<Response> {
+  const { default: fetch } = await importNodeFetch();
+
   const response = await fetch(request.url, {
     method: request.method,
     headers: convertHeadersToObject(request.headers),

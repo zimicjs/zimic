@@ -2,14 +2,11 @@ import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  publicDir: './public',
   test: {
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
-    retry: process.env.CI === 'true' ? 1 : 0,
-    setupFiles: ['./tests/setup/shared.ts'],
-    maxWorkers: process.env.CI === 'true' ? '100%' : '50%',
+    maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,
     coverage: {
@@ -29,7 +26,6 @@ export default defineConfig({
         'dist/**',
         'tests/coverage/**',
         'tests/setup/global/**',
-        'scripts/dev/**',
         '**/types/**',
         '**/{*.d.ts,types,typescript}.ts',
         '**/.lintstagedrc.js',
@@ -39,15 +35,10 @@ export default defineConfig({
       ],
     },
   },
-  define: {
-    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
-    'process.env.TYPEGEN_HTTP_IMPORT_MODULE': "'@/http'",
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@tests': path.resolve(__dirname, './tests'),
-      '@scripts': path.resolve(__dirname, './scripts'),
       '@@': path.resolve(__dirname, '.'),
     },
   },

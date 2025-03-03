@@ -1,0 +1,123 @@
+name: 'Release Package: @zimic/http'
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: release-zimic-http-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_REMOTE_CACHE_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_REMOTE_CACHE_TEAM }}
+  TURBO_LOG_ORDER: stream
+
+jobs:
+  release-to-npm:
+    name: Release to NPM
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref_name, '@zimic/http@') }}
+    timeout-minutes: 7
+
+    environment: NPM
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      version-value: ${{ steps.release.outputs.version-value }}
+      version-label: ${{ steps.release.outputs.version-label }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Release to NPM
+        id: release
+        uses: ./.github/actions/zimic-release-npm
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
+          npm-token: ${{ secrets.ZIMIC_NPM_RELEASE_TOKEN }}
+
+  test-npm-release:
+    name: Test NPM release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    needs:
+      - release-to-npm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: canary
+
+      - name: Test NPM release
+        uses: ./.github/actions/zimic-release-npm-test
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
+          turbo-token: ${{ env.TURBO_TOKEN }}
+          turbo-team: ${{ env.TURBO_TEAM }}
+
+  release-docs:
+    name: Release documentation
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref_name, '@zimic/http@') && needs.release-to-npm.outputs.version-label == 'latest' }}
+    timeout-minutes: 5
+
+    needs:
+      - release-to-npm
+
+    environment: Wiki
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: zimic
+
+      - name: Release documentation
+        uses: ./zimic/.github/actions/zimic-release-docs
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/http'
+          project-directory: packages/zimic-http
+          wiki-ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
+          commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
+          commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
+
+  publish-release-comments:
+    name: Publish release comments
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ needs.release-to-npm.outputs.version-label == 'latest' }}
+
+    needs:
+      - release-to-npm
+      - test-npm-release
+      - release-docs
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish release comments
+        uses: ./.github/actions/zimic-release-comments
+        with:
+          ref-name: ${{ github.ref_name }}
+          project-name: '@zimic/http'

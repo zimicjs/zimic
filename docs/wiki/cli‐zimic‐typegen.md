@@ -1,24 +1,24 @@
-# CLI: `zimic typegen` <!-- omit from toc -->
+# `zimic-http typegen` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic typegen openapi`](#zimic-typegen-openapi)
-  - [`zimic typegen openapi` comments](#zimic-typegen-openapi-comments)
-  - [`zimic typegen openapi` pruning](#zimic-typegen-openapi-pruning)
-  - [`zimic typegen openapi` filtering](#zimic-typegen-openapi-filtering)
+- [`zimic-http typegen openapi`](#zimic-http-typegen-openapi)
+  - [`zimic-http typegen openapi` comments](#zimic-http-typegen-openapi-comments)
+  - [`zimic-http typegen openapi` pruning](#zimic-http-typegen-openapi-pruning)
+  - [`zimic-http typegen openapi` filtering](#zimic-http-typegen-openapi-filtering)
 - [Programmatic usage](#programmatic-usage)
 
 ---
 
-This module contains commands to generate types from schema sources. This is useful to save development time, avoid
-errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
+`zimic-http typegen` contains commands to generate types from schema sources. This is useful to save development time,
+avoid errors and keep your types consistent with specifications, such as [OpenAPI](https://swagger.io/specification).
 
-## `zimic typegen openapi`
+## `zimic-http typegen openapi`
 
 Generate types from an [OpenAPI v3](https://swagger.io/specification) schema.
 
 ```
-zimic typegen openapi <input>
+zimic-http typegen openapi <input>
 
 Positionals:
   input  The path to a local OpenAPI schema file or an URL to fetch it. Version
@@ -56,7 +56,7 @@ Options:
 You can use this command to generate types from a local OpenAPI file:
 
 ```bash
-zimic typegen openapi ./schema.yaml \
+zimic-http typegen openapi ./schema.yaml \
   --output ./schema.ts \
   --service-name MyService
 ```
@@ -64,7 +64,7 @@ zimic typegen openapi ./schema.yaml \
 Or an URL to fetch it:
 
 ```bash
-zimic typegen openapi https://example.com/api/openapi.yaml \
+zimic-http typegen openapi https://example.com/api/openapi.yaml \
   --output ./schema.ts \
   --service-name MyService
 ```
@@ -72,7 +72,7 @@ zimic typegen openapi https://example.com/api/openapi.yaml \
 Then, you can use the types in your interceptors:
 
 ```ts
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 import { type MyServiceSchema } from './schema';
 
 const interceptor = httpInterceptor.create<MyServiceSchema>({
@@ -81,40 +81,41 @@ const interceptor = httpInterceptor.create<MyServiceSchema>({
 });
 ```
 
-Our [OpenAPI typegen example](../../examples/with-openapi-typegen) demonstrates how to use `zimic typegen openapi` to
-generate types and use them in your application and interceptors.
+Our [OpenAPI typegen example](../../examples/with-openapi-typegen) demonstrates how to use `zimic-http typegen openapi`
+to generate types and use them in your application and interceptors.
 
-### `zimic typegen openapi` comments
+### `zimic-http typegen openapi` comments
 
 By default, descriptions in the OpenAPI schema are included as comments in the generated types. You can omit them using
 `--no-comments` or `--comments false`.
 
 ```bash
-zimic typegen openapi ./schema.yaml \
+zimic-http typegen openapi ./schema.yaml \
   --output ./schema.ts \
   --service-name MyService \
   --no-comments
 ```
 
-### `zimic typegen openapi` pruning
+### `zimic-http typegen openapi` pruning
 
 By default, pruning is enabled, meaning that unused types are not generated. If you want all types declared in the
 schema to be generated, you can use `--no-prune` or `--prune false`.
 
 ```bash
-zimic typegen openapi ./schema.yaml \
+zimic-http typegen openapi ./schema.yaml \
   --output ./schema.ts \
   --service-name MyService \
   --no-prune
 ```
 
-### `zimic typegen openapi` filtering
+### `zimic-http typegen openapi` filtering
 
-You can also filter a subset of paths to generate types for. Combined with [pruning](#zimic-typegen-openapi-pruning),
-this is useful to reduce the size of the output file and only generate the types you need.
+You can also filter a subset of paths to generate types for. Combined with
+[pruning](#zimic-http-typegen-openapi-pruning), this is useful to reduce the size of the output file and only generate
+the types you need.
 
 ```bash
-zimic typegen openapi ./schema.yaml \
+zimic-http typegen openapi ./schema.yaml \
   --output ./schema.ts \
   --service-name MyService \
   --filter 'GET /users**'
@@ -142,7 +143,7 @@ GET,POST,PUT /workspaces
 Then, you can use the filter file in the command:
 
 ```bash
-zimic typegen openapi ./schema.yaml \
+zimic-http typegen openapi ./schema.yaml \
   --output ./schema.ts \
   --service-name MyService \
   --filter-file ./filters.txt

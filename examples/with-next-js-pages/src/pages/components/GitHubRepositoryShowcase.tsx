@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchGitHubRepository } from '../../services/github';
+import { fetchGitHubRepository } from '../../clients/github';
 
 interface Props {
   ownerName: string;

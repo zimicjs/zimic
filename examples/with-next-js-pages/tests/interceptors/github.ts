@@ -1,19 +1,9 @@
-import { httpInterceptor } from 'zimic/interceptor/http';
+import { httpInterceptor } from '@zimic/interceptor/http';
 
+import { GitHubRepository, GitHubSchema } from '../../src/clients/github';
 import environment from '../../src/config/environment';
-import { GitHubRepository } from '../../src/services/github';
 
-const githubInterceptor = httpInterceptor.create<{
-  '/repos/:owner/:name': {
-    GET: {
-      response: {
-        200: { body: GitHubRepository };
-        404: { body: { message: string } };
-        500: { body: { message: string } };
-      };
-    };
-  };
-}>({
+const githubInterceptor = httpInterceptor.create<GitHubSchema>({
   type: 'local',
   baseURL: environment.GITHUB_API_BASE_URL,
 });

@@ -7,7 +7,7 @@
     "dev:mock": "dotenv -c test -- dotenv -c development -- pnpm mock -- pnpm dev:no-env",
     "dev:no-env": "next dev --turbo --port 3004",
     "mock": "pnpm mock:start -- pnpm mock:load",
-    "mock:start": "zimic server start --port 3005 --ephemeral",
+    "mock:start": "zimic-interceptor server start --port 3005 --ephemeral",
     "mock:load": "tsx ./tests/interceptors/scripts/load.ts",
     "test": "dotenv -c test -- dotenv -c development -- playwright test",
     "test:turbo": "dotenv -v CI=true -- pnpm run test",
@@ -16,23 +16,25 @@
     "postinstall": "pnpm deps:install-playwright"
   },
   "dependencies": {
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest",
     "clsx": "^2.1.1",
-    "next": "^15.1.7",
+    "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
-    "@tailwindcss/postcss": "^4.0.6",
-    "@types/node": "^22.13.4",
-    "@types/react": "^19.0.8",
-    "@types/react-dom": "^19.0.3",
+    "@tailwindcss/postcss": "^4.0.9",
+    "@types/node": "^22.13.8",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
     "execa": "^9.5.2",
-    "postcss": "^8.5.2",
-    "tailwindcss": "^4.0.6",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3",
-    "zimic": "latest"
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

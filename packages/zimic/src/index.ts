@@ -1,2 +1,8 @@
-export { default as InvalidJSONError } from './errors/InvalidJSONError';
-export type { JSONValue, JSONSerialized } from './types/json';
+console.warn(
+  [
+    'NOTE: The package "zimic" has been renamed to "@zimic/interceptor".',
+    'Please replace "zimic" with "@zimic/interceptor" in your package.json.',
+  ].join('\n'),
+);
+
+export {};

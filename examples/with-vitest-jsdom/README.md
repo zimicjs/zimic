@@ -38,9 +38,12 @@ where the repository is found and another where it is not.
    git remote add origin git@github.com:zimicjs/zimic.git
    git sparse-checkout init
    git sparse-checkout set examples/with-vitest-jsdom
-   git pull origin v0
+   git pull origin canary # or a specific branch or tag
    cd examples/with-vitest-jsdom
    ```
+
+   If you'd like to clone the example of a previous version, replace `canary` with the desired branch or tag, such as
+   `@zimic/interceptor@0` and `@zimic/fetch@0.1.0`.
 
 2. Install the dependencies:
 

@@ -1,4 +1,4 @@
-# API reference: `zimic/interceptor/server` <!-- omit from toc -->
+# `zimic/interceptor/server` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -7,8 +7,9 @@
 
 ---
 
-This module exports resources to manage interceptor servers programmatically. Even though we recommend using the
-[`zimic server` CLI](cli‐zimic‐server), this is still a valid alternative for more advanced use cases.
+`zimic/interceptor/server` exports resources to manage interceptor servers programmatically. Even though we recommend
+using the [`zimic-interceptor server` CLI](cli‐zimic‐server), this is still a valid alternative for more advanced use
+cases.
 
 ## `interceptorServer.create(options)`
 
@@ -17,7 +18,7 @@ server is ready:
 
 ```ts
 import { execa as $ } from 'execa';
-import { interceptorServer } from 'zimic/interceptor/server';
+import { interceptorServer } from '@zimic/interceptor/server';
 
 const server = interceptorServer.create({
   hostname: 'localhost',
@@ -41,4 +42,4 @@ use this function to run the application after the interceptor server is ready a
 
 ## CLI usage
 
-See the [`zimic server` CLI reference](cli‐zimic‐server).
+See the [`zimic-interceptor server` CLI reference](cli‐zimic‐server).

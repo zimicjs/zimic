@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: Questions and discussions
+    url: https://github.com/zimicjs/zimic/discussions
+    about: Use the GitHub Discussions for general questions and discussions.

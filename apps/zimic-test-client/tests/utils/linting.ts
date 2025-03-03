@@ -1,12 +1,16 @@
-import { execa as $ } from 'execa';
+import { importExeca } from './scripting';
 
-export function checkTypes(tsconfigFilePath: string) {
+export async function checkTypes(tsconfigFilePath: string) {
+  const { $ } = await importExeca();
+
   return $('pnpm', ['tsc', '--noEmit', '--project', tsconfigFilePath], {
     stderr: 'inherit',
   });
 }
 
-export function lint(input: string, eslintConfigFilePath: string) {
+export async function lint(input: string, eslintConfigFilePath: string) {
+  const { $ } = await importExeca();
+
   return $('pnpm', ['lint', input, '--no-ignore', '--max-warnings', '0', '--config', eslintConfigFilePath], {
     stderr: 'inherit',
   });
