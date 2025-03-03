@@ -14,19 +14,19 @@ concurrency:
 
 env:
   CI: true
-  NODE_VERSION: 22
 
   TURBO_TOKEN:
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-    secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TOKEN || '' }}
   TURBO_TEAM:
-    ${{ !(github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v')) &&
-    secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
+    ${{ !(github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/'))) && secrets.TURBO_REMOTE_CACHE_TEAM || '' }}
 
   TURBO_LOG_ORDER: stream
   TURBO_FILTERS:
-    ${{ github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'v') && '--filter
-    "./{apps,packages}/*" --filter "zimic-example*"' || '--filter "...[HEAD^1]"' }}
+    ${{ github.event_name == 'pull_request' && (startsWith(github.event.pull_request.base.ref, 'v') ||
+    startsWith(github.event.pull_request.base.ref, '@zimic/')) && '--filter "./{apps,packages}/*" --filter
+    "zimic-example*"' || '--filter "...[HEAD^1]"' }}
 
 jobs:
   ci-general:
@@ -44,7 +44,6 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'
@@ -56,22 +55,22 @@ jobs:
       - name: Check if auto-generated types are in sync
         run: |
           cp \
-            ./examples/with-openapi-typegen/src/types/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/types/github/typegen/generated.current.ts
+            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
 
           pnpm --dir examples/with-openapi-typegen typegen:github
-          pnpm --dir examples style:format ./with-openapi-typegen/src/types/github/typegen/generated.ts
+          pnpm --dir examples style:format ./with-openapi-typegen/src/clients/github/typegen/generated.ts
 
           if ! diff -u \
-            ./examples/with-openapi-typegen/src/types/github/typegen/generated.ts \
-            ./examples/with-openapi-typegen/src/types/github/typegen/generated.current.ts
+            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.ts \
+            ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
           then
             echo \
               "[examples/with-openapi-typegen] Generated types are out of date." \
               "Please run 'pnpm --dir examples/with-openapi-typegen typegen:github' and commit the changes." >&2
             exit 1
           else
-            rm ./examples/with-openapi-typegen/src/types/github/typegen/generated.current.ts
+            rm ./examples/with-openapi-typegen/src/clients/github/typegen/generated.current.ts
             echo "[examples/with-openapi-typegen] Generated types are up to date."
           fi
 
@@ -156,6 +155,7 @@ jobs:
           - '5.5'
           - '5.6'
           - '5.7'
+          - '5.8'
 
     env:
       TYPESCRIPT_VERSION: ${{ matrix.typescript-version }}
@@ -170,7 +170,6 @@ jobs:
         id: zimic-setup
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'

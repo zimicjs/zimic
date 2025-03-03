@@ -1,4 +1,14 @@
-#!/usr/bin/env node
-import runCLI from './cli';
+console.warn(
+  [
+    'NOTE: The package "zimic" has been renamed to "@zimic/interceptor".',
+    'Please replace "zimic" with "@zimic/interceptor" in your package.json and update your commands to use "zimic-interceptor":',
+    '',
+    '  - Before',
+    '  + After',
+    '',
+    '- $ zimic ...',
+    '+ $ zimic-interceptor ...',
+  ].join('\n'),
+);
 
-void runCLI();
+export {};

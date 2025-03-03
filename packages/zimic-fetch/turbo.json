@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "@zimic/http#build"],
+      "inputs": [
+        "src/**/*.{ts,json}",
+        "{package,tsconfig}.json",
+        "tsup.config.ts",
+        "!*/**/tests/**/*",
+        "!*/**/__tests__/**/*",
+        "!*/**/*.test.ts"
+      ],
+      "outputs": ["dist/**"]
+    },
+
+    "test:turbo": {
+      "dependsOn": ["^build", "@zimic/http#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
+    },
+
+    "lint:turbo": {
+      "dependsOn": ["^build", "@zimic/http#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "eslint.config.mjs"]
+    },
+
+    "types:check": {
+      "dependsOn": ["^build", "@zimic/http#build"],
+      "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json"]
+    }
+  }
+}

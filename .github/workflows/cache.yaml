@@ -1,7 +1,9 @@
 name: Cache
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - canary
   workflow_dispatch:
@@ -19,10 +21,8 @@ jobs:
   cache-canary:
     name: Cache canary
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     timeout-minutes: 10
-
-    env:
-      NODE_VERSION: 22
 
     steps:
       - name: Checkout code
@@ -31,7 +31,6 @@ jobs:
       - name: Set up Zimic
         uses: ./.github/actions/zimic-setup
         with:
-          node-version: ${{ env.NODE_VERSION }}
           turbo-token: ${{ env.TURBO_TOKEN }}
           turbo-team: ${{ env.TURBO_TEAM }}
           install: '"./{apps,packages}/*..." "zimic-example*..."'

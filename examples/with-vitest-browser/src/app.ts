@@ -1,25 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { JSONValue } from 'zimic';
-
-export const GITHUB_API_BASE_URL = 'https://api.github.com';
-
-export type GitHubRepository = JSONValue<{
-  id: number;
-  full_name: string;
-  html_url: string;
-}>;
-
-async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
-  const repositoryURL = `${GITHUB_API_BASE_URL}/repos/${ownerName}/${repositoryName}`;
-  const repositoryResponse = await fetch(repositoryURL);
-
-  if (repositoryResponse.status === 404) {
-    return null;
-  }
-
-  const repository = (await repositoryResponse.json()) as GitHubRepository;
-  return repository;
-}
+import { fetchGitHubRepository } from './clients/github';
 
 function renderApp() {
   const container = document.createElement('div');
@@ -41,9 +20,9 @@ function renderApp() {
     </section>
   `;
 
-  const form = container.querySelector('form')!;
+  const form = container.querySelector('form');
 
-  form.addEventListener('submit', async (event) => {
+  form?.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const ownerNameInput = form.elements.namedItem('owner') as HTMLInputElement;
@@ -54,8 +33,12 @@ function renderApp() {
 
     const repository = await fetchGitHubRepository(ownerName, repositoryName);
 
-    const repositoryNameElement = container.querySelector('#repository-name')!;
-    const repositoryURLElement = container.querySelector('#repository-url')!;
+    const repositoryNameElement = container.querySelector('#repository-name');
+    const repositoryURLElement = container.querySelector('#repository-url');
+
+    if (!repositoryNameElement || !repositoryURLElement) {
+      return;
+    }
 
     if (repository) {
       repositoryNameElement.textContent = repository.full_name;

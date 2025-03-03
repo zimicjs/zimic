@@ -1,9 +1,9 @@
-import { execa as $ } from 'execa';
 import filesystem from 'fs/promises';
 import path from 'path';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
 import { checkTypes, lint } from '@tests/utils/linting';
+import { importExeca } from '@tests/utils/scripting';
 
 async function normalizeStripeTypes(generatedFilePath: string) {
   const output = await filesystem.readFile(generatedFilePath, 'utf-8');
@@ -84,9 +84,11 @@ describe('Typegen', () => {
       async ({ input, serviceName, outputFileName }) => {
         const generatedFilePath = path.join(generatedDirectory, outputFileName);
 
+        const { $ } = await importExeca();
+
         await $(
           'pnpm',
-          ['zimic', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
+          ['zimic-http', 'typegen', 'openapi', input, '--output', generatedFilePath, '--service-name', serviceName],
           { stderr: 'inherit' },
         );
 

@@ -15,13 +15,7 @@
       "outputs": ["dist/**"]
     },
 
-    "deps:init-msw": {
-      "inputs": ["package.json"],
-      "outputs": ["public/mockServiceWorker.js"]
-    },
-
     "test:turbo": {
-      "dependsOn": ["^build", "deps:init-msw"],
       "inputs": ["{src,tests}/**/*.{ts,json}", "{package,tsconfig}.json", "vitest.config.mts"]
     },
 
