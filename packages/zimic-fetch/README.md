@@ -102,6 +102,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
             201: { body: User };
             400: { body: RequestError };
             409: { body: RequestError };
+            500: { body: RequestError };
           };
         };
 
@@ -114,8 +115,8 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
           };
           response: {
             200: { body: User[] };
-            400: { body: RequestError };
-            401: { body: RequestError };
+            404: { body: RequestError };
+            500: { body: RequestError };
           };
         };
       };
@@ -129,6 +130,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
           response: {
             204: {};
             400: { body: RequestError };
+            500: { body: RequestError };
           };
         };
       };
@@ -154,7 +156,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     });
 
     if (response.status === 404) {
-      return null; // User not found
+      return null; // Not found
     }
 
     if (!response.ok) {
