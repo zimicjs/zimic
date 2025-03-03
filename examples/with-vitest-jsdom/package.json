@@ -7,14 +7,18 @@
     "test:turbo": "dotenv -v CI=true -- pnpm run test run",
     "types:check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest"
+  },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
-    "@vitest/spy": "^3.0.5",
+    "@vitest/spy": "^3.0.7",
+    "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5",
-    "zimic": "latest"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
   }
 }

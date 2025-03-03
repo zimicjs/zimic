@@ -1,5 +1,5 @@
+import { HttpInterceptorPlatform } from '@zimic/interceptor/http';
 import { describe } from 'vitest';
-import { HttpInterceptorPlatform } from 'zimic/interceptor/http';
 
 import declareClientTests from '../shared';
 import { axiosAsFetch } from './utils';

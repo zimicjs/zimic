@@ -3,19 +3,21 @@
   "version": "0.0.0",
   "private": false,
   "scripts": {
-    "lint": "eslint --cache --no-error-on-unmatched-pattern --fix",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
     "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
     "style:check": "pnpm style --check",
     "style:format": "pnpm style --write"
   },
   "dependencies": {
-    "zimic": "latest"
+    "@zimic/fetch": "latest",
+    "@zimic/http": "latest"
   },
   "devDependencies": {
     "@zimic/eslint-config-react": "workspace:*",
+    "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "eslint": "^9.20.1"
+    "eslint": "^9.21.0"
   }
 }

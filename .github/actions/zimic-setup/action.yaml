@@ -4,7 +4,8 @@ description: Set Up Zimic
 inputs:
   node-version:
     description: Node.js version to use
-    required: true
+    required: false
+    default: lts/*
   node-registry-url:
     description: Node.js registry URL to use (provide only if the action is going to push a release)
     required: false

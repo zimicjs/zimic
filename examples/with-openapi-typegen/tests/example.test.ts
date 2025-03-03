@@ -2,7 +2,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import app from '../src/app';
-import { GitHubRepository } from '../src/types/github/types';
+import { GitHubRepository } from '../src/clients/github/types';
 import githubInterceptor from './interceptors/github';
 
 describe('Example tests', () => {

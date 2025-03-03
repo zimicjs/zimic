@@ -1,26 +1,26 @@
-# CLI: `zimic server` <!-- omit from toc -->
+# `zimic-interceptor server` - CLI <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
-- [`zimic server start`](#zimic-server-start)
+- [`zimic-interceptor server start`](#zimic-interceptor-server-start)
 - [Programmatic usage](#programmatic-usage)
 
 ---
 
-This module contains commands to manage interceptor servers.
+`zimic-interceptor server` contains commands to manage interceptor servers.
 
 An interceptor server is a standalone server that can be used to handle requests and return mock responses. It is used
-in combination with [remote interceptors](getting‐started#remote-http-interceptors), which declare which responses the
-server should return for a given request. Interceptor servers and remote interceptors communicate with
+in combination with [remote interceptors](getting‐started‐interceptor#remote-http-interceptors), which declare which
+responses the server should return for a given request. Interceptor servers and remote interceptors communicate with
 [remote-procedure calls](https://en.wikipedia.org/wiki/Remote_procedure_call) (RPC) over
 [WebSocket](https://developer.mozilla.org/docs/Web/API/WebSockets_API).
 
-## `zimic server start`
+## `zimic-interceptor server start`
 
 Start an interceptor server.
 
 ```
-zimic server start [-- onReady]
+zimic-interceptor server start [-- onReady]
 
 Positionals:
   onReady  A command to run when the server is ready to accept connections.
@@ -45,13 +45,13 @@ Options:
 You can use this command to start an independent server:
 
 ```bash
-zimic server start --port 4000
+zimic-interceptor server start --port 4000
 ```
 
 Or as a prefix of another command:
 
 ```bash
-zimic server start --port 4000 --ephemeral -- npm run test
+zimic-interceptor server start --port 4000 --ephemeral -- npm run test
 ```
 
 The command after `--` will be executed when the server is ready. The flag `--ephemeral` indicates that the server

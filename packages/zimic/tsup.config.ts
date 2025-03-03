@@ -1,17 +1,5 @@
 import { Options, defineConfig } from 'tsup';
 
-export function pickKeys<Type, Key extends keyof Type>(object: Type, keys: Key[]): Pick<Type, Key> {
-  return keys.reduce(
-    (pickedObject, key) => {
-      pickedObject[key] = object[key];
-      return pickedObject;
-    },
-    {} as Pick<Type, Key>,
-  );
-}
-
-const isDevelopment = process.env.npm_lifecycle_event === 'dev';
-
 const sharedConfig: Options = {
   bundle: true,
   splitting: true,
@@ -20,10 +8,6 @@ const sharedConfig: Options = {
   minify: false,
   clean: true,
   keepNames: true,
-  env: {
-    SERVER_ACCESS_CONTROL_MAX_AGE: '',
-    TYPEGEN_HTTP_IMPORT_MODULE: isDevelopment ? '@/http' : 'zimic/http',
-  },
 };
 
 const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
@@ -34,7 +18,6 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
   dts: format === 'cjs',
   entry: {
     index: 'src/index.ts',
-    http: 'src/http/index.ts',
     'interceptor/http': 'src/interceptor/http/index.ts',
   },
   external: ['util', 'buffer', 'crypto'],
@@ -43,12 +26,12 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
   const entry = {
     'interceptor/server': 'src/interceptor/server/index.ts',
-    typegen: 'src/typegen/index.ts',
     cli: 'src/cli/index.ts',
-    'scripts/postinstall': 'scripts/postinstall.ts',
   };
 
-  const dtsEntry = pickKeys(entry, ['interceptor/server', 'typegen']);
+  const dtsEntry = {
+    'interceptor/server': entry['interceptor/server'],
+  };
 
   return {
     ...sharedConfig,

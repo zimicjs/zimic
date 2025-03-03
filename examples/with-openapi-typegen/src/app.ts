@@ -1,7 +1,7 @@
 import fastify from 'fastify';
 import { z } from 'zod';
 
-import { GitHubPath, GitHubRepository } from './types/github/types';
+import { fetchGitHubRepository } from './clients/github/client';
 
 export const GITHUB_API_BASE_URL = 'https://api.github.com';
 
@@ -11,20 +11,6 @@ const getGitHubRepositorySchema = z.object({
   owner: z.string(),
   name: z.string(),
 });
-
-async function fetchGitHubRepository(ownerName: string, repositoryName: string) {
-  const getRepositoryPath = `/repos/${ownerName}/${repositoryName}` satisfies GitHubPath;
-  const repositoryURL = `${GITHUB_API_BASE_URL}${getRepositoryPath}`;
-
-  const repositoryResponse = await fetch(repositoryURL);
-
-  if (repositoryResponse.status === 404) {
-    return null;
-  }
-
-  const repository = (await repositoryResponse.json()) as GitHubRepository;
-  return repository;
-}
 
 app.get('/github/repositories/:owner/:name', async (request, reply) => {
   const { owner: ownerName, name: repositoryName } = getGitHubRepositorySchema.parse(request.params);
