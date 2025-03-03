@@ -1,0 +1,174 @@
+{
+  "name": "@zimic/utils",
+  "description": "Internal utilities shared across Zimic packages",
+  "keywords": [],
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zimicjs/zimic.git",
+    "directory": "packages/zimic-utils"
+  },
+  "author": {
+    "name": "Diego Aquino",
+    "url": "https://github.com/diego-aquino"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "files": [
+    "package.json",
+    "src",
+    "!src/**/tests",
+    "!src/**/__tests__",
+    "!src/**/*.test.ts",
+    "dist",
+    "*/*.d.ts"
+  ],
+  "exports": {
+    "./types": {
+      "types": "./types.d.ts",
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./types/globals": {
+      "types": "./types/globals.d.ts",
+      "import": "./dist/types/globals.mjs",
+      "require": "./dist/types/globals.js",
+      "default": "./dist/types/globals.js"
+    },
+    "./data/isDefined": {
+      "types": "./data/isDefined.d.ts",
+      "import": "./dist/data/isDefined.mjs",
+      "require": "./dist/data/isDefined.js",
+      "default": "./dist/data/isDefined.js"
+    },
+    "./data/isNonEmpty": {
+      "types": "./data/isNonEmpty.d.ts",
+      "import": "./dist/data/isNonEmpty.mjs",
+      "require": "./dist/data/isNonEmpty.js",
+      "default": "./dist/data/isNonEmpty.js"
+    },
+    "./data/blobContains": {
+      "types": "./data/blobContains.d.ts",
+      "import": "./dist/data/blobContains.mjs",
+      "require": "./dist/data/blobContains.js",
+      "default": "./dist/data/blobContains.js"
+    },
+    "./data/blobEquals": {
+      "types": "./data/blobEquals.d.ts",
+      "import": "./dist/data/blobEquals.mjs",
+      "require": "./dist/data/blobEquals.js",
+      "default": "./dist/data/blobEquals.js"
+    },
+    "./data/fileEquals": {
+      "types": "./data/fileEquals.d.ts",
+      "import": "./dist/data/fileEquals.mjs",
+      "require": "./dist/data/fileEquals.js",
+      "default": "./dist/data/fileEquals.js"
+    },
+    "./error/expectToThrow": {
+      "types": "./error/expectToThrow.d.ts",
+      "import": "./dist/error/expectToThrow.mjs",
+      "require": "./dist/error/expectToThrow.js",
+      "default": "./dist/error/expectToThrow.js"
+    },
+    "./fetch/expectFetchError": {
+      "types": "./fetch/expectFetchError.d.ts",
+      "import": "./dist/fetch/expectFetchError.mjs",
+      "require": "./dist/fetch/expectFetchError.js",
+      "default": "./dist/fetch/expectFetchError.js"
+    },
+    "./import/createCachedDynamicImport": {
+      "types": "./import/createCachedDynamicImport.d.ts",
+      "import": "./dist/import/createCachedDynamicImport.mjs",
+      "require": "./dist/import/createCachedDynamicImport.js",
+      "default": "./dist/import/createCachedDynamicImport.js"
+    },
+    "./time/waitFor": {
+      "types": "./time/waitFor.d.ts",
+      "import": "./dist/time/waitFor.mjs",
+      "require": "./dist/time/waitFor.js",
+      "default": "./dist/time/waitFor.js"
+    },
+    "./time/waitForNot": {
+      "types": "./time/waitForNot.d.ts",
+      "import": "./dist/time/waitForNot.mjs",
+      "require": "./dist/time/waitForNot.js",
+      "default": "./dist/time/waitForNot.js"
+    },
+    "./time/waitForDelay": {
+      "types": "./time/waitForDelay.d.ts",
+      "import": "./dist/time/waitForDelay.mjs",
+      "require": "./dist/time/waitForDelay.js",
+      "default": "./dist/time/waitForDelay.js"
+    },
+    "./url/createRegExpFromURL": {
+      "types": "./url/createRegExpFromURL.d.ts",
+      "import": "./dist/url/createRegExpFromURL.mjs",
+      "require": "./dist/url/createRegExpFromURL.js",
+      "default": "./dist/url/createRegExpFromURL.js"
+    },
+    "./url/createRegExpFromWildcardPath": {
+      "types": "./url/createRegExpFromWildcardPath.d.ts",
+      "import": "./dist/url/createRegExpFromWildcardPath.mjs",
+      "require": "./dist/url/createRegExpFromWildcardPath.js",
+      "default": "./dist/url/createRegExpFromWildcardPath.js"
+    },
+    "./url/excludeURLParams": {
+      "types": "./url/excludeURLParams.d.ts",
+      "import": "./dist/url/excludeURLParams.mjs",
+      "require": "./dist/url/excludeURLParams.js",
+      "default": "./dist/url/excludeURLParams.js"
+    },
+    "./url/joinURL": {
+      "types": "./url/joinURL.d.ts",
+      "import": "./dist/url/joinURL.mjs",
+      "require": "./dist/url/joinURL.js",
+      "default": "./dist/url/joinURL.js"
+    },
+    "./url/validateURLPathParams": {
+      "types": "./url/validateURLPathParams.d.ts",
+      "import": "./dist/url/validateURLPathParams.mjs",
+      "require": "./dist/url/validateURLPathParams.js",
+      "default": "./dist/url/validateURLPathParams.js"
+    },
+    "./url/validateURLProtocol": {
+      "types": "./url/validateURLProtocol.d.ts",
+      "import": "./dist/url/validateURLProtocol.mjs",
+      "require": "./dist/url/validateURLProtocol.js",
+      "default": "./dist/url/validateURLProtocol.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "cli": "node ./dist/cli.js",
+    "build": "tsup",
+    "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
+    "lint:turbo": "pnpm lint . --max-warnings 0",
+    "style": "prettier --log-level warn --ignore-unknown --no-error-on-unmatched-pattern --cache",
+    "style:check": "pnpm style --check",
+    "style:format": "pnpm style --write",
+    "types:check": "tsc --noEmit",
+    "typegen:fixtures": "tsx ./scripts/typegen/generateFixtureTypes.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.8",
+    "@zimic/eslint-config-node": "workspace:*",
+    "@zimic/lint-staged-config": "workspace:*",
+    "@zimic/tsconfig": "workspace:*",
+    "eslint": "^9.21.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "vitest": "^3.0.6"
+  }
+}
