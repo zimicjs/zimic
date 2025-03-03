@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP intercepting and mocking
+  TypeScript-first HTTP utilities
 </p>
 
 <p align="center">
