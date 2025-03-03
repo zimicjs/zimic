@@ -44,7 +44,7 @@ runs:
         echo 'Committing changes...'
 
         git add --all
-        git commit -m 'docs(wiki): ${{ inputs.project-name }}@${{ steps.zimic-version.outputs.value }}'
+        git commit -m 'docs(wiki): ${{ inputs.ref-name }}'
           
         echo 'Pushing changes...'
 
