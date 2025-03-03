@@ -3,10 +3,10 @@ description: Zimic Release Comments
 
 inputs:
   ref-name:
-    description: The Git reference name to release
+    description: The Git reference name to create release comments for
     required: true
   project-name:
-    description: The project name to release
+    description: The project name to create release comments for
     required: true
 
 runs:

@@ -25,7 +25,7 @@ rsync ../zimic/docs/wiki/ . \
 
 echo "Pointing local links to 'zimicjs/zimic/tree/$refName'..."
 sed -E -i \
-  "s/\\]\\(\\.\\.\\/\\.\\.\\/([^\\)]*)\\)/](https:\\/\\/github.com\\/zimicjs\\/zimic\\/tree\\/$refName\\/\\1)/g" \
+  "s;\\]\\(\\.\\.\\/\\.\\.\\/([^\\)]*)\\);](https:\\/\\/github.com\\/zimicjs\\/zimic\\/tree\\/$refName\\/\\1);g" \
   ./*.md
 
 echo 'Pointing image links to local files...'
