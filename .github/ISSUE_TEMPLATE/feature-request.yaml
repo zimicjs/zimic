@@ -11,6 +11,18 @@ body:
 
         Please fill in the information below to help us understand your proposal.
 
+  - type: dropdown
+    attributes:
+      label: Scope
+      description: What part of Zimic is this feature related to?
+      options:
+        - General
+        - '@zimic/http'
+        - '@zimic/fetch'
+        - '@zimic/interceptor'
+    validations:
+      required: true
+
   - type: checkboxes
     attributes:
       label: Prerequisites
