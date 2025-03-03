@@ -38,11 +38,13 @@ body:
 
   - type: dropdown
     attributes:
-      label: Scope
+      label: Type
       multiple: false
       options:
         - Adds a new behavior
         - Improves an existing behavior
+        - Improves a documentation section
+        - Improves an example
     validations:
       required: true
 
@@ -66,7 +68,7 @@ body:
 
         Is it something that is not possible in the current version of Zimic? Is it possible, but could be improved?
     validations:
-      required: true
+      required: false
 
   - type: textarea
     attributes:
