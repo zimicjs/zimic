@@ -31,10 +31,11 @@ class HttpInterceptorClient<
 > {
   private worker: HttpInterceptorWorker;
   private store: HttpInterceptorStore;
+
   private _baseURL: URL;
-  private _isRunning = false;
-  private _onUnhandledRequest?: UnhandledRequestStrategy;
-  private _shouldSaveRequests = false;
+  isRunning = false;
+  onUnhandledRequest?: UnhandledRequestStrategy;
+  shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
 
@@ -62,34 +63,22 @@ class HttpInterceptorClient<
     this.store = options.store;
     this._baseURL = options.baseURL;
     this.Handler = options.Handler;
-    this._onUnhandledRequest = options.onUnhandledRequest;
-    this._shouldSaveRequests = options.saveRequests ?? false;
+    this.onUnhandledRequest = options.onUnhandledRequest;
+    this.shouldSaveRequests = options.saveRequests ?? false;
   }
 
-  baseURL() {
+  get baseURLAsString() {
     const baseURL = this._baseURL;
 
     if (baseURL.href === `${baseURL.origin}/`) {
       return baseURL.origin;
     }
 
-    return baseURL.toString();
+    return baseURL.href;
   }
 
-  platform() {
-    return this.worker.platform();
-  }
-
-  onUnhandledRequest() {
-    return this._onUnhandledRequest;
-  }
-
-  isRunning() {
-    return this.worker.isRunning() && this._isRunning;
-  }
-
-  shouldSaveRequests() {
-    return this._shouldSaveRequests;
+  get platform() {
+    return this.worker.platform;
   }
 
   async start() {
@@ -115,12 +104,12 @@ class HttpInterceptorClient<
     } else {
       this.store.markRemoteInterceptorAsRunning(this, isRunning, this._baseURL);
     }
-    this._isRunning = isRunning;
+    this.isRunning = isRunning;
   }
 
   private numberOfRunningInterceptors() {
     if (this.worker instanceof LocalHttpInterceptorWorker) {
-      return this.store.numberOfRunningLocalInterceptors();
+      return this.store.numberOfRunningLocalInterceptors;
     } else {
       return this.store.numberOfRunningRemoteInterceptors(this._baseURL);
     }
@@ -158,7 +147,7 @@ class HttpInterceptorClient<
     Method extends HttpSchemaMethod<Schema>,
     Path extends HttpSchemaPath<Schema, Method>,
   >(method: Method, path: Path): HttpRequestHandler<Schema, Method, Path> {
-    if (!this.isRunning()) {
+    if (!this.isRunning) {
       throw new NotStartedHttpInterceptorError();
     }
 
@@ -173,30 +162,30 @@ class HttpInterceptorClient<
     Path extends HttpSchemaPath<Schema, Method>,
     StatusCode extends HttpStatusCode = never,
   >(handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>) {
-    const handlerClients = this.handlerClientsByMethod[handler.method()].get(handler.path()) ?? [];
+    const handlerClients = this.handlerClientsByMethod[handler.method].get(handler.path) ?? [];
 
-    const isAlreadyRegistered = handlerClients.includes(handler.client());
+    const isAlreadyRegistered = handlerClients.includes(handler.client);
     if (isAlreadyRegistered) {
       return;
     }
 
-    handlerClients.push(handler.client());
+    handlerClients.push(handler.client);
 
     const isFirstHandlerForMethodPath = handlerClients.length === 1;
     if (!isFirstHandlerForMethodPath) {
       return;
     }
 
-    this.handlerClientsByMethod[handler.method()].set(handler.path(), handlerClients);
+    this.handlerClientsByMethod[handler.method].set(handler.path, handlerClients);
 
-    const url = joinURL(this.baseURL(), handler.path());
+    const url = joinURL(this.baseURLAsString, handler.path);
     const urlRegex = createRegExpFromURL(url);
 
-    const registrationResult = this.worker.use(this, handler.method(), url, async (context) => {
+    const registrationResult = this.worker.use(this, handler.method, url, async (context) => {
       const response = await this.handleInterceptedRequest(
         urlRegex,
-        handler.method(),
-        handler.path(),
+        handler.method,
+        handler.path,
         context as HttpInterceptorRequestContext<Schema, Method, Path>,
       );
       return response;
@@ -225,7 +214,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.shouldSaveRequests()) {
+    if (this.shouldSaveRequests) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
@@ -275,7 +264,7 @@ class HttpInterceptorClient<
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
-    if (!this.isRunning()) {
+    if (!this.isRunning) {
       throw new NotStartedHttpInterceptorError();
     }
 

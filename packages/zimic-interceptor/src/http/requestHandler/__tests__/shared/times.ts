@@ -38,10 +38,10 @@ export function declareTimesHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
-    expect(interceptor.platform()).toBe(platform);
+    expect(interceptor.platform).toBe(platform);
   });
 
   afterAll(async () => {
@@ -351,7 +351,7 @@ export function declareTimesHttpRequestHandlerTests(
     describe('Restrictions', () => {
       it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
         const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, saveRequests: false });
-        const interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+        const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with((request) => typeof request.body === 'number')

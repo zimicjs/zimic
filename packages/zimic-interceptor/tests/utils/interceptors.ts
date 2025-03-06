@@ -43,13 +43,11 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
     return new URL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
   }
 
-  const hostname = server.hostname();
-  const port = server.port()!;
-  expect(port).not.toBe(null);
+  expect(server.port).not.toBe(null);
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
+  const baseURL = joinURL(`http://${server.hostname}:${server.port}`, pathPrefix);
   return new URL(baseURL);
 }
 
@@ -142,7 +140,7 @@ export async function usingHttpInterceptorWorker(
 }
 
 export function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: URL) {
-  return type === 'local' ? store.localWorker() : store.remoteWorker(serverURL);
+  return type === 'local' ? store.localWorker : store.remoteWorker(serverURL);
 }
 
 export function assessPreflightInterference(resources: {

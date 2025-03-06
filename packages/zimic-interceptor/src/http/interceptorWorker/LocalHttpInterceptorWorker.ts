@@ -19,7 +19,7 @@ import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } fr
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   readonly type: 'local';
 
-  private _internalWorker?: HttpWorker;
+  private internalWorker?: HttpWorker;
 
   private defaultHttpHandler: MSWHttpHandler;
 
@@ -38,18 +38,18 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
-  internalWorkerOrThrow() {
-    if (!this._internalWorker) {
+  get internalWorkerOrThrow() {
+    if (!this.internalWorker) {
       throw new NotStartedHttpInterceptorError();
     }
-    return this._internalWorker;
+    return this.internalWorker;
   }
 
-  internalWorkerOrCreate() {
-    if (!this._internalWorker) {
-      this._internalWorker = this.createInternalWorker();
+  get internalWorkerOrCreate() {
+    if (!this.internalWorker) {
+      this.internalWorker = this.createInternalWorker();
     }
-    return this._internalWorker;
+    return this.internalWorker;
   }
 
   private createInternalWorker() {
@@ -67,21 +67,21 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      const internalWorker = this.internalWorkerOrCreate();
+      const internalWorker = this.internalWorkerOrCreate;
 
       const sharedOptions: MSWWorkerSharedOptions = {
         onUnhandledRequest: 'bypass',
       };
 
       if (this.isInternalBrowserWorker(internalWorker)) {
-        super.setPlatform('browser');
+        this.platform = 'browser';
         await this.startInBrowser(internalWorker, sharedOptions);
       } else {
-        super.setPlatform('node');
+        this.platform = 'node';
         this.startInNode(internalWorker, sharedOptions);
       }
 
-      super.setIsRunning(true);
+      this.isRunning = true;
     });
   }
 
@@ -106,7 +106,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async stop() {
     await super.sharedStop(() => {
-      const internalWorker = this.internalWorkerOrCreate();
+      const internalWorker = this.internalWorkerOrCreate;
 
       if (this.isInternalBrowserWorker(internalWorker)) {
         this.stopInBrowser(internalWorker);
@@ -115,8 +115,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       }
       this.clearHandlers();
 
-      this._internalWorker = undefined;
-      super.setIsRunning(false);
+      this.internalWorker = undefined;
+      this.isRunning = false;
     });
   }
 
@@ -133,7 +133,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   hasInternalBrowserWorker() {
-    return this.isInternalBrowserWorker(this.internalWorkerOrThrow());
+    return this.isInternalBrowserWorker(this.internalWorkerOrThrow);
   }
 
   hasInternalNodeWorker() {
@@ -146,7 +146,6 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     rawURL: string | URL,
     createResponse: HttpResponseFactory,
   ) {
-    const internalWorker = this.internalWorkerOrThrow();
     const lowercaseMethod = method.toLowerCase<typeof method>();
 
     const url = new URL(rawURL);
@@ -180,7 +179,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
       return response;
     });
 
-    internalWorker.use(httpHandler);
+    this.internalWorkerOrThrow.use(httpHandler);
 
     this.httpHandlerGroups.push({ interceptor, httpHandler });
   }
@@ -199,25 +198,22 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   clearHandlers() {
-    const internalWorker = this.internalWorkerOrThrow();
-    internalWorker.resetHandlers();
+    this.internalWorkerOrThrow.resetHandlers();
     this.httpHandlerGroups = [];
   }
 
   clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    const internalWorker = this.internalWorkerOrThrow();
-
     const groupToRemoveIndex = this.httpHandlerGroups.findIndex((group) => group.interceptor === interceptor);
     removeArrayIndex(this.httpHandlerGroups, groupToRemoveIndex);
 
-    internalWorker.resetHandlers();
+    this.internalWorkerOrThrow.resetHandlers();
 
     for (const { httpHandler } of this.httpHandlerGroups) {
-      internalWorker.use(httpHandler);
+      this.internalWorkerOrThrow.use(httpHandler);
     }
   }
 
-  interceptorsWithHandlers() {
+  get interceptorsWithHandlers() {
     return this.httpHandlerGroups.map((group) => group.interceptor);
   }
 }

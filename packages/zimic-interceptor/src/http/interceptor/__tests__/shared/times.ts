@@ -70,8 +70,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -88,8 +87,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -98,8 +96,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -108,8 +105,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
         });
@@ -135,8 +131,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -151,8 +146,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await expectTimesCheckError(
             async () => {
@@ -169,8 +163,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -179,8 +172,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await expectTimesCheckError(
             async () => {
@@ -216,8 +208,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -234,8 +225,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           const response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -250,8 +240,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await expectTimesCheckError(
             async () => {
@@ -275,8 +264,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await expectTimesCheckError(
             async () => {
@@ -318,30 +306,26 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
         });
@@ -367,8 +351,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -386,8 +369,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           let response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await expectTimesCheckError(
             async () => {
@@ -407,8 +389,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 2);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
         });
@@ -443,8 +424,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          const requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
         });
@@ -479,8 +459,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -495,8 +474,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * 3);
 
           await expectTimesCheckError(
             async () => {
@@ -551,8 +529,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           const response = await fetch(joinURL(baseURL, '/users'), { method });
           expect(response.status).toBe(200);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await promiseIfRemote(interceptor.checkTimes(), interceptor);
 
@@ -567,8 +544,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           await expectTimesCheckError(
             async () => {
@@ -608,8 +584,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -629,8 +604,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           const contentLines = [
             'Expected exactly 1 matching request, but got 0.',
@@ -680,8 +654,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           const handler = await promiseIfRemote(interceptor[lowerMethod]('/users').times(1), interceptor);
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -698,8 +671,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -731,8 +703,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {
@@ -749,8 +720,7 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await expectTimesCheckError(
             async () => {

@@ -65,15 +65,13 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -112,16 +110,14 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
 
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -160,8 +156,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error', 'warn'], async (spies) => {
           const request = new Request(joinURL(baseURL, '/users'), {
@@ -186,8 +181,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
         });
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
       });
     });
 
@@ -229,8 +223,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -240,9 +233,8 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.headers).toEqualTypeOf<HttpHeaders<UserRequestHeaders>>();
@@ -292,17 +284,15 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const searchParams = new HttpSearchParams<UserSearchParams>({ tag: 'admin' });
 
         const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.searchParams).toEqualTypeOf<HttpSearchParams<UserSearchParams>>();
@@ -339,10 +329,9 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         const handlerWithoutResponse = await promiseIfRemote(interceptor[lowerMethod]('/users'), interceptor);
         expect(handlerWithoutResponse).toBeInstanceOf(Handler);
 
-        let requestsWithoutResponse = await promiseIfRemote(handlerWithoutResponse.requests(), interceptor);
-        expect(requestsWithoutResponse).toHaveLength(0);
+        expect(handlerWithoutResponse.requests).toHaveLength(0);
 
-        let _requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight - 1];
+        let _requestWithoutResponse = handlerWithoutResponse.requests[numberOfRequestsIncludingPreflight - 1];
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
@@ -354,10 +343,9 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           await expectFetchError(responsePromise);
         }
 
-        requestsWithoutResponse = await promiseIfRemote(handlerWithoutResponse.requests(), interceptor);
-        expect(requestsWithoutResponse).toHaveLength(0);
+        expect(handlerWithoutResponse.requests).toHaveLength(0);
 
-        _requestWithoutResponse = requestsWithoutResponse[numberOfRequestsIncludingPreflight];
+        _requestWithoutResponse = handlerWithoutResponse.requests[numberOfRequestsIncludingPreflight];
         expectTypeOf<typeof _requestWithoutResponse.body>().toEqualTypeOf<null>();
         expectTypeOf<typeof _requestWithoutResponse.response>().toEqualTypeOf<never>();
 
@@ -372,11 +360,10 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        expect(requestsWithoutResponse).toHaveLength(0);
-        const requestsWithResponse = await promiseIfRemote(handlerWithResponse.requests(), interceptor);
-        expect(requestsWithResponse).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handlerWithoutResponse.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handlerWithResponse.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-        const requestWithResponse = requestsWithResponse[numberOfRequestsIncludingPreflight - 1];
+        const requestWithResponse = handlerWithResponse.requests[numberOfRequestsIncludingPreflight - 1];
         expect(requestWithResponse).toBeInstanceOf(Request);
         expect(requestWithResponse.response.status).toBe(200);
 
@@ -418,15 +405,13 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           interceptor,
         );
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -446,18 +431,15 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           interceptor,
         );
 
-        let otherRequests = await promiseIfRemote(otherHandler.requests(), interceptor);
-        expect(otherRequests).toHaveLength(0);
+        expect(otherHandler.requests).toHaveLength(0);
 
         const otherResponse = await fetch(joinURL(baseURL, '/users'), { method });
         expect(otherResponse.status).toBe(201);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-        otherRequests = await promiseIfRemote(otherHandler.requests(), interceptor);
-        expect(otherRequests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const otherRequest = otherRequests[numberOfRequestsIncludingPreflight - 1];
+        expect(otherHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const otherRequest = otherHandler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(otherRequest).toBeInstanceOf(Request);
 
         expectTypeOf(otherRequest.body).toEqualTypeOf<null>();
@@ -490,8 +472,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             interceptor,
           );
 
-          const initialRequests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(initialRequests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           const responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
@@ -530,13 +511,14 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
             const error = new DisabledRequestSavingError();
 
-            await expect(async () => {
-              await promiseIfRemote(handler.requests(), interceptor);
-            }).rejects.toThrowError(error);
+            expect(() => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              handler.requests;
+            }).toThrowError(error);
 
             // @ts-expect-error Checking that no intercepted requests are saved.
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler._client.interceptedRequests).toHaveLength(0);
+            expect(handler.client._requests).toHaveLength(0);
 
             const numberOfRequests = 5;
 
@@ -545,13 +527,14 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
               expect(response.status).toBe(200);
             }
 
-            await expect(async () => {
-              await promiseIfRemote(handler.requests(), interceptor);
-            }).rejects.toThrowError(error);
+            expect(() => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              handler.requests;
+            }).toThrowError(error);
 
             // @ts-expect-error Checking that no intercepted requests are saved.
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler._client.interceptedRequests).toHaveLength(0);
+            expect(handler.client._requests).toHaveLength(0);
           });
         },
       );
@@ -576,8 +559,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             interceptor,
           );
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           const numberOfRequests = 5;
 
@@ -586,8 +568,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             expect(response.status).toBe(200);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
         });
       });
     });

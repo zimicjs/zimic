@@ -122,8 +122,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const headers = new HttpHeaders<HttpSchema.Headers<RequestHeadersSchema>>({
           'content-language': 'en',
@@ -133,16 +132,14 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         let response = await fetch(joinURL(baseURL, '/users'), { method, headers });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         headers.append('accept', 'application/xml');
 
         response = await fetch(joinURL(baseURL, '/users'), { method, headers });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         headers.delete('accept');
 
@@ -154,8 +151,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         headers.delete('content-language');
 
@@ -167,8 +163,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         headers.set('accept', 'application/json');
         headers.set('content-language', 'pt');
@@ -181,8 +176,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
       });
     });
 
@@ -226,8 +220,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const searchParams = new HttpSearchParams<HttpSchema.SearchParams<RequestSearchParamsSchema>>({
           tag: 'admin',
@@ -239,8 +232,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         searchParams.delete('tag');
 
@@ -254,8 +246,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
       });
     });
   });
@@ -293,8 +284,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -303,8 +293,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
@@ -315,8 +304,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
         }
       });
     });
@@ -351,8 +339,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         let response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -361,8 +348,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -371,8 +357,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         for (const body of [JSON.stringify({ message: 'other' }), JSON.stringify({}), undefined]) {
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
@@ -383,8 +368,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(2);
+          expect(handler.requests).toHaveLength(2);
         }
       });
     });
@@ -423,8 +407,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -432,8 +415,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         const differentTagFile = new File(['more-content'], 'tag.txt', { type: 'text/plain' });
 
@@ -458,8 +440,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
             await expectFetchError(responsePromise);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(1);
+            expect(handler.requests).toHaveLength(1);
 
             if (body && !body.has('tag') && platform === 'browser') {
               expect(spies.error).toHaveBeenCalledTimes(1);
@@ -510,8 +491,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         let response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -519,8 +499,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         const differentTagFile = new File(['other'], 'tag.txt', { type: 'text/plain' });
 
@@ -534,8 +513,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         const differentFormData = new HttpFormData<HttpSchema.FormData<RequestFormDataSchema>>();
         differentFormData.append('tag', differentTagFile);
@@ -553,8 +531,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
             await expectFetchError(responsePromise);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(2);
+            expect(handler.requests).toHaveLength(2);
 
             if (body && !body.has('tag') && platform === 'browser') {
               expect(spies.error).toHaveBeenCalledTimes(1);
@@ -604,8 +581,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -613,8 +589,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         for (const body of [
           new HttpSearchParams<SearchParamsSchema>({ tag: 'admin', other: 'other' }),
@@ -629,8 +604,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
         }
       });
     });
@@ -676,8 +650,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         let response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -685,8 +658,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -694,8 +666,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         for (const body of [
           new HttpSearchParams<SearchParamsSchema>({ tag: 'other' }),
@@ -709,8 +680,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(2);
+          expect(handler.requests).toHaveLength(2);
         }
       });
     });
@@ -747,8 +717,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -756,8 +725,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         for (const body of ['more-content', 'cont', '']) {
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
@@ -767,8 +735,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
         }
       });
     });
@@ -805,8 +772,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         let response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -814,8 +780,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -823,8 +788,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         for (const body of ['cont', '']) {
           const responsePromise = fetch(joinURL(baseURL, '/users'), {
@@ -834,8 +798,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(2);
+          expect(handler.requests).toHaveLength(2);
         }
       });
     });
@@ -875,8 +838,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -885,8 +847,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         for (const body of [
           new File(['more-content'], 'file.bin', { type: 'application/octet-stream' }),
@@ -902,8 +863,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(1);
+          expect(handler.requests).toHaveLength(1);
         }
       });
     });
@@ -943,8 +903,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         let response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -953,8 +912,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
+        expect(handler.requests).toHaveLength(1);
 
         response = await fetch(joinURL(baseURL, '/users'), {
           method,
@@ -963,8 +921,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
         });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(2);
+        expect(handler.requests).toHaveLength(2);
 
         for (const body of [
           new File(['content'], 'file.bin', { type: 'text/plain' }),
@@ -979,8 +936,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
           await expectFetchError(responsePromise);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(2);
+          expect(handler.requests).toHaveLength(2);
         }
       });
     });
