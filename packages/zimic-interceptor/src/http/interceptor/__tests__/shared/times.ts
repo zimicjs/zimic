@@ -1,6 +1,7 @@
 import { HTTP_METHODS, HttpSchema } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
+import chalk from 'chalk';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
@@ -636,8 +637,8 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
             '',
             'Requests evaluated by this handler:',
             '',
-            '  - Expected',
-            '  + Received',
+            `  ${chalk.green('- Expected')}`,
+            `  ${chalk.red('+ Received')}`,
           ];
 
           for (let requestIndex = 0; requestIndex < numberOfRequestsIncludingPreflight; requestIndex++) {
@@ -647,8 +648,8 @@ export async function declareTimesHttpInterceptorTests(options: RuntimeSharedHtt
               '',
               `${requestNumber}: ${method} ${joinURL(baseURL, '/users')}`,
               '     Search params:',
-              '       - { "value": "1" }',
-              '       + {}',
+              `       ${chalk.green('- { "value": "1" }')}`,
+              `       ${chalk.red('+ {}')}`,
             );
           }
 
