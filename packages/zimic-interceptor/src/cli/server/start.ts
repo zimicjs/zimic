@@ -59,7 +59,7 @@ async function startInterceptorServer({
 
   await server.start();
 
-  logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${server.httpURL}`);
+  logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${server.hostname}:${server.port}`);
 
   if (onReady) {
     try {

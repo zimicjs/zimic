@@ -28,14 +28,6 @@ export interface InterceptorServer {
   logUnhandledRequests: boolean;
 
   /**
-   * The HTTP URL of the server.
-   *
-   * @readonly
-   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
-   */
-  httpURL: string | undefined;
-
-  /**
    * Whether the server is running.
    *
    * @readonly
