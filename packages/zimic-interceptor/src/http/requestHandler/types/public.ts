@@ -32,17 +32,19 @@ export interface HttpRequestHandler<
   /**
    * The method that matches this handler.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlermethod `handler.method` API reference}
    */
-  method: Method;
+  get method(): Method;
 
   /**
    * The path that matches this handler. The base URL of the interceptor is not included, but it is used when matching
    * requests.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerpath `handler.path` API reference}
    */
-  path: Path;
+  get path(): Path;
 }
 
 export interface InternalHttpRequestHandler<
@@ -70,7 +72,8 @@ export interface LocalHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends HttpRequestHandler<Schema, Method, Path> {
-  readonly type: 'local';
+  /** @readonly */
+  get type(): 'local';
 
   /**
    * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
@@ -180,9 +183,10 @@ export interface LocalHttpRequestHandler<
    * for more information.
    *
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
    */
-  requests: readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
+  get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**
@@ -198,7 +202,8 @@ export interface SyncedRemoteHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends HttpRequestHandler<Schema, Method, Path> {
-  readonly type: 'remote';
+  /** @readonly */
+  get type(): 'remote';
 
   /**
    * Declares a restriction to intercepted request matches. `headers`, `searchParams`, and `body` are supported to limit
@@ -315,9 +320,10 @@ export interface SyncedRemoteHttpRequestHandler<
    * for more information.
    *
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
    */
-  requests: readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
+  get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**

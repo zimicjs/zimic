@@ -39,6 +39,14 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     return this.client.baseURLAsString;
   }
 
+  get saveRequests() {
+    return this.client.shouldSaveRequests;
+  }
+
+  get onUnhandledRequest() {
+    return this.client.onUnhandledRequest;
+  }
+
   get platform() {
     return this.client.platform;
   }

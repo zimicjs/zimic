@@ -123,12 +123,10 @@ export interface SharedHttpInterceptorOptions {
    * should save their intercepted requests in memory and make them accessible through
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
    *
-   * **Important**: Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the
-   * interceptor or disposal of the handlers (i.e. garbage collection). If you plan on accessing those requests, such as
-   * to assert them in your tests, set this option to `true` and make sure to regularly clear the interceptor. A common
-   * practice is to call
+   * **Important**: If `saveRequests` is true, make sure to regularly clear the interceptor to avoid that the requests
+   * accumulate in memory. A common practice is to call
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
-   * after each test. This prevents leaking memory from the accumulated requests.
+   * after each test.
    *
    * @default false
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}

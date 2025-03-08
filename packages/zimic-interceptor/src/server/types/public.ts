@@ -30,6 +30,7 @@ export interface InterceptorServer {
   /**
    * The HTTP URL of the server.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
   httpURL: string | undefined;
@@ -37,9 +38,10 @@ export interface InterceptorServer {
   /**
    * Whether the server is running.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
-  isRunning: boolean;
+  get isRunning(): boolean;
 
   /**
    * Starts the server.

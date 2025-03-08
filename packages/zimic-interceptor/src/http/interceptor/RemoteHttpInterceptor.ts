@@ -41,6 +41,14 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     return this.client.baseURLAsString;
   }
 
+  get saveRequests() {
+    return this.client.shouldSaveRequests;
+  }
+
+  get onUnhandledRequest() {
+    return this.client.onUnhandledRequest;
+  }
+
   get platform() {
     return this.client.platform;
   }

@@ -34,7 +34,11 @@ class HttpInterceptorClient<
 
   private _baseURL: URL;
   isRunning = false;
-  onUnhandledRequest?: UnhandledRequestStrategy;
+
+  onUnhandledRequest?: HttpRequestHandlerConstructor extends typeof LocalHttpRequestHandler
+    ? UnhandledRequestStrategy.Local
+    : UnhandledRequestStrategy.Remote;
+
   shouldSaveRequests = false;
 
   private Handler: HandlerConstructor;
@@ -55,16 +59,20 @@ class HttpInterceptorClient<
     worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
     baseURL: URL;
-    Handler: HandlerConstructor;
-    onUnhandledRequest?: UnhandledRequestStrategy;
     saveRequests?: boolean;
+    onUnhandledRequest?: UnhandledRequestStrategy;
+    Handler: HandlerConstructor;
   }) {
     this.worker = options.worker;
     this.store = options.store;
+
     this._baseURL = options.baseURL;
-    this.Handler = options.Handler;
-    this.onUnhandledRequest = options.onUnhandledRequest;
     this.shouldSaveRequests = options.saveRequests ?? false;
+    this.onUnhandledRequest = options.onUnhandledRequest satisfies
+      | UnhandledRequestStrategy
+      | undefined as this['onUnhandledRequest'];
+
+    this.Handler = options.Handler;
   }
 
   get baseURLAsString() {

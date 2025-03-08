@@ -1,7 +1,7 @@
 import { HttpSchema } from '@zimic/http';
 
 import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
-import { HttpInterceptorPlatform } from './options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from './options';
 
 /**
  * An interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters, and
@@ -20,18 +20,36 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   baseURL: string;
 
   /**
+   * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
+   * should save their intercepted requests in memory and make them accessible through
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   *
+   * **Important**: If `saveRequests` is true, make sure to regularly clear the interceptor to avoid that the requests
+   * accumulate in memory. A common practice is to call
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
+   * after each test.
+   *
+   * @default false
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
+   */
+  saveRequests: boolean;
+
+  /**
    * The platform the interceptor is running on.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform` API reference}
    */
-  platform: HttpInterceptorPlatform | null;
+  get platform(): HttpInterceptorPlatform | null;
 
   /**
    * Whether the interceptor is currently running and ready to use.
    *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning` API reference}
    */
-  isRunning: boolean;
+  get isRunning(): boolean;
 
   /**
    * Starts the interceptor, allowing it to intercept HTTP requests.
@@ -103,7 +121,17 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
 export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  readonly type: 'local';
+  /** @readonly */
+  get type(): 'local';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest: UnhandledRequestStrategy.Local | undefined;
 
   /**
    * Creates a GET
@@ -304,7 +332,17 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
 export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  readonly type: 'remote';
+  /** @readonly */
+  get type(): 'remote';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest: UnhandledRequestStrategy.Remote | undefined;
 
   /**
    * Creates a GET
