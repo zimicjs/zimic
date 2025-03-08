@@ -11,7 +11,7 @@ import HttpRequestHandlerClient from '../HttpRequestHandlerClient';
 import {
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './requests';
 import { HttpRequestHandlerRestriction } from './restrictions';
 
@@ -181,7 +181,7 @@ export interface LocalHttpRequestHandler<
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
    */
-  requests: () => readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
+  requests: () => readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**
@@ -317,7 +317,9 @@ export interface SyncedRemoteHttpRequestHandler<
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
    */
-  requests: () => Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]>;
+  requests: () => Promise<
+    readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]
+  >;
 }
 
 /**

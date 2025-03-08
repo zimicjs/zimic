@@ -12,7 +12,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
@@ -110,7 +110,7 @@ class RemoteHttpRequestHandler<
     return this.unsynced;
   }
 
-  requests(): Promise<readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]> {
+  requests(): Promise<readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]> {
     return new Promise((resolve, reject) => {
       try {
         resolve(this._client.requests());

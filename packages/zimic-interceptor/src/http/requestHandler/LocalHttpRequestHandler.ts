@@ -9,7 +9,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
@@ -70,7 +70,7 @@ class LocalHttpRequestHandler<
     return this;
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+  requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
     return this._client.requests();
   }
 
