@@ -36,6 +36,7 @@ export default defineConfig({
         '**/tsup.config.*',
       ],
     },
+    env: { FORCE_COLOR: '1' },
   },
   define: {
     'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
