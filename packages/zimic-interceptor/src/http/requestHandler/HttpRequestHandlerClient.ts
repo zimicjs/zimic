@@ -26,7 +26,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import {
   HttpRequestHandlerRestriction,
@@ -58,7 +58,8 @@ class HttpRequestHandlerClient<
 
   private numberOfMatchedRequests = 0;
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
-  private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
+  private interceptedRequests: InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] =
+    [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
     Path,
@@ -394,7 +395,7 @@ class HttpRequestHandlerClient<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    const interceptedRequest = request as unknown as TrackedHttpInterceptorRequest<
+    const interceptedRequest = request as unknown as InterceptedHttpInterceptorRequest<
       Path,
       Default<Schema[Path][Method]>,
       StatusCode
@@ -410,7 +411,7 @@ class HttpRequestHandlerClient<
     return interceptedRequest;
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+  requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
     if (!this.interceptor.shouldSaveRequests()) {
       throw new DisabledRequestSavingError();
     }
