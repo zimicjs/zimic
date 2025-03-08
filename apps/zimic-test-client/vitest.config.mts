@@ -1,11 +1,7 @@
 /// <reference types="vitest" />
 
-import os from 'os';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
-
-const numberOfCPUs = os.cpus().length;
-const maxWorkers = process.env.CI === 'true' ? numberOfCPUs : Math.ceil(numberOfCPUs / 2);
 
 export default defineConfig({
   publicDir: './public',
@@ -13,8 +9,7 @@ export default defineConfig({
     globals: false,
     testTimeout: 5000,
     minWorkers: 1,
-    maxWorkers,
-    maxConcurrency: maxWorkers,
+    maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     clearMocks: true,
     coverage: {
       provider: 'istanbul',

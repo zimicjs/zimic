@@ -13,22 +13,25 @@ import { HttpInterceptorPlatform } from './options';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export interface HttpInterceptor<_Schema extends HttpSchema> {
   /**
-   * @returns The base URL used by the interceptor.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
+   * The base URL used by the interceptor.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL` API reference}
    */
-  baseURL: () => string;
+  baseURL: string;
 
   /**
-   * @returns The platform the interceptor is running on.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform()` API reference}
+   * The platform the interceptor is running on.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform` API reference}
    */
-  platform: () => HttpInterceptorPlatform | null;
+  platform: HttpInterceptorPlatform | null;
 
   /**
-   * @returns Whether the interceptor is currently running and ready to use.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning()` API reference}
+   * Whether the interceptor is currently running and ready to use.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning` API reference}
    */
-  isRunning: () => boolean;
+  isRunning: boolean;
 
   /**
    * Starts the interceptor, allowing it to intercept HTTP requests.

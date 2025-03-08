@@ -27,7 +27,7 @@ class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     validateURLProtocol(this.url, SUPPORTED_WEB_SOCKET_PROTOCOLS);
   }
 
-  isRunning() {
+  get isRunning() {
     return this.socket !== undefined && this.socket.readyState === this.socket.OPEN;
   }
 

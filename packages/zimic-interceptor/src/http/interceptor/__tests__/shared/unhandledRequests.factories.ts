@@ -85,8 +85,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
@@ -94,8 +93,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -115,8 +113,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -131,8 +128,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -171,8 +167,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
@@ -180,8 +175,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -201,8 +195,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -217,8 +210,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -258,8 +250,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{ value: string; name?: string }>({ value: '1' });
@@ -267,8 +258,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -288,8 +278,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -304,8 +293,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 
@@ -353,8 +341,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams<{
@@ -365,8 +352,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(0);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -386,8 +372,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
             expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -402,8 +387,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(onUnhandledRequest).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight * 2);
 

@@ -145,9 +145,9 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBe(6500);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBe(6500);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
@@ -173,9 +173,9 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('0.0.0.0');
-        expect(server!.port()).toBe(3000);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('0.0.0.0');
+        expect(server!.port).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
@@ -192,14 +192,14 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBeGreaterThan(0);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           chalk.cyan('[@zimic/interceptor]'),
-          `Server is running on http://localhost:${server!.port()}`,
+          `Server is running on http://localhost:${server!.port}`,
         );
       });
     });
@@ -241,9 +241,9 @@ describe('CLI (server)', async () => {
         const initialServer = server;
 
         expect(initialServer).toBeDefined();
-        expect(initialServer!.isRunning()).toBe(true);
-        expect(initialServer!.hostname()).toBe('0.0.0.0');
-        expect(initialServer!.port()).toBe(3000);
+        expect(initialServer!.isRunning).toBe(true);
+        expect(initialServer!.hostname).toBe('0.0.0.0');
+        expect(initialServer!.port).toBe(3000);
 
         try {
           await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
@@ -309,14 +309,14 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(false);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+        expect(server!.isRunning).toBe(false);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBeGreaterThan(0);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           chalk.cyan('[@zimic/interceptor]'),
-          `Ephemeral server is running on http://localhost:${server!.port()}`,
+          `Ephemeral server is running on http://localhost:${server!.port}`,
         );
 
         const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
@@ -353,14 +353,14 @@ describe('CLI (server)', async () => {
           await runCLI();
 
           expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.isRunning).toBe(true);
+          expect(server!.hostname).toBe('localhost');
+          expect(server!.port).toBeGreaterThan(0);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
             chalk.cyan('[@zimic/interceptor]'),
-            `Server is running on http://localhost:${server!.port()}`,
+            `Server is running on http://localhost:${server!.port}`,
           );
 
           const savedFile = await filesystem.readFile(temporarySaveFile, 'utf-8');
@@ -533,14 +533,14 @@ describe('CLI (server)', async () => {
           await runCLI();
 
           expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBeGreaterThan(0);
+          expect(server!.isRunning).toBe(true);
+          expect(server!.hostname).toBe('localhost');
+          expect(server!.port).toBeGreaterThan(0);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
             chalk.cyan('[@zimic/interceptor]'),
-            `Server is running on http://localhost:${server!.port()}`,
+            `Server is running on http://localhost:${server!.port}`,
           );
 
           expect(exitEventListeners).toHaveLength(1);
@@ -549,7 +549,7 @@ describe('CLI (server)', async () => {
             await listener();
           }
 
-          expect(server!.isRunning()).toBe(false);
+          expect(server!.isRunning).toBe(false);
 
           const exitCode = PROCESS_EXIT_CODE_BY_EXIT_EVENT[exitEvent];
           if (exitCode === undefined) {
@@ -574,28 +574,28 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBeGreaterThan(0);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBeGreaterThan(0);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           chalk.cyan('[@zimic/interceptor]'),
-          `Server is running on http://localhost:${server!.port()}`,
+          `Server is running on http://localhost:${server!.port}`,
         );
 
         const webSocketClient = new WebSocketClient({
-          url: `ws://localhost:${server!.port()}`,
+          url: `ws://localhost:${server!.port}`,
         });
 
         try {
           await webSocketClient.start();
-          expect(webSocketClient.isRunning()).toBe(true);
+          expect(webSocketClient.isRunning).toBe(true);
 
           await server?.stop();
 
-          expect(server!.isRunning()).toBe(false);
-          expect(webSocketClient.isRunning()).toBe(false);
+          expect(server!.isRunning).toBe(false);
+          expect(webSocketClient.isRunning).toBe(false);
         } finally {
           await webSocketClient.stop();
         }
@@ -617,10 +617,10 @@ describe('CLI (server)', async () => {
           await runCLI();
 
           expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBeGreaterThan(0);
-          expect(server!.logUnhandledRequests()).toBe(true);
+          expect(server!.isRunning).toBe(true);
+          expect(server!.hostname).toBe('localhost');
+          expect(server!.port).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests).toBe(true);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -628,10 +628,10 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledWith(
             chalk.cyan('[@zimic/interceptor]'),
-            `Server is running on http://localhost:${server!.port()}`,
+            `Server is running on http://localhost:${server!.port}`,
           );
 
-          const request = new Request(`http://localhost:${server!.port()}`);
+          const request = new Request(`http://localhost:${server!.port}`);
 
           const response = fetch(request);
           await expectFetchError(response);
@@ -666,10 +666,10 @@ describe('CLI (server)', async () => {
           await runCLI();
 
           expect(server).toBeDefined();
-          expect(server!.isRunning()).toBe(true);
-          expect(server!.hostname()).toBe('localhost');
-          expect(server!.port()).toBeGreaterThan(0);
-          expect(server!.logUnhandledRequests()).toBe(false);
+          expect(server!.isRunning).toBe(true);
+          expect(server!.hostname).toBe('localhost');
+          expect(server!.port).toBeGreaterThan(0);
+          expect(server!.logUnhandledRequests).toBe(false);
 
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.warn).toHaveBeenCalledTimes(0);
@@ -677,10 +677,10 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledWith(
             chalk.cyan('[@zimic/interceptor]'),
-            `Server is running on http://localhost:${server!.port()}`,
+            `Server is running on http://localhost:${server!.port}`,
           );
 
-          const request = new Request(`http://localhost:${server!.port()}`);
+          const request = new Request(`http://localhost:${server!.port}`);
 
           const response = fetch(request);
           await expectFetchError(response);
@@ -716,9 +716,9 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBe(5001);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBe(5001);
 
         const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
 
@@ -733,7 +733,7 @@ describe('CLI (server)', async () => {
           const responsePromise = fetch(request);
           await expectFetchError(responsePromise);
 
-          expect(server!.isRunning()).toBe(true);
+          expect(server!.isRunning).toBe(true);
 
           expect(spies.error).toHaveBeenCalledTimes(2);
           expect(spies.error.mock.calls[0]).toEqual([error]);
@@ -775,13 +775,13 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBe(5001);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBe(5001);
 
         try {
           await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
+          expect(interceptor.isRunning).toBe(true);
 
           let responseFactoryPromise: Promise<{ status: 204 }> | undefined;
 
@@ -800,7 +800,7 @@ describe('CLI (server)', async () => {
           });
 
           await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
+          expect(interceptor.isRunning).toBe(false);
 
           // Wait for request to fail due to stopped interceptor
           await responsePromise;
@@ -842,13 +842,13 @@ describe('CLI (server)', async () => {
         await runCLI();
 
         expect(server).toBeDefined();
-        expect(server!.isRunning()).toBe(true);
-        expect(server!.hostname()).toBe('localhost');
-        expect(server!.port()).toBe(5001);
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBe(5001);
 
         try {
           await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
+          expect(interceptor.isRunning).toBe(true);
 
           let wasResponseFactoryCalled = false;
 
@@ -873,7 +873,7 @@ describe('CLI (server)', async () => {
 
           // @ts-expect-error Force the internal web socket client to stop.
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-          await interceptor._client.worker._webSocketClient.stop();
+          await interceptor.client.worker.webSocketClient.stop();
 
           await responsePromise;
 

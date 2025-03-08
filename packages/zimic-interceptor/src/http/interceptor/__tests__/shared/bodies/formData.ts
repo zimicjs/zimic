@@ -95,8 +95,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const formData = new HttpFormData<UserFormDataSchema>();
         const requestTagFile = new File(['request'], 'tag.txt', { type: 'text/plain' });
@@ -115,9 +114,8 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         const fetchedTagFile = fetchedFormData.get('tag')!;
         expect(fetchedTagFile).toEqual(responseTagFile);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toMatch(/^multipart\/form-data; boundary=.+$/);
@@ -206,8 +204,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -224,9 +221,8 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           ]);
         });
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('multipart/form-data');
@@ -276,8 +272,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -288,9 +283,8 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
         const fetchedFormData = await response.text();
         expect(fetchedFormData).toBe('');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('multipart/form-data');

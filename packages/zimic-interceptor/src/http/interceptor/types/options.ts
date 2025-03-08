@@ -12,7 +12,7 @@ export type HttpInterceptorType = 'local' | 'remote';
 /**
  * The platform where an HTTP interceptor is running.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform()` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform` API reference}
  */
 export type HttpInterceptorPlatform = 'node' | 'browser';
 
@@ -121,9 +121,9 @@ export interface SharedHttpInterceptorOptions {
   /**
    * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
    * should save their intercepted requests in memory and make them accessible through
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()`}.
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
    *
-   * **IMPORTANT**: Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the
+   * **Important**: Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the
    * interceptor or disposal of the handlers (i.e. garbage collection). If you plan on accessing those requests, such as
    * to assert them in your tests, set this option to `true` and make sure to regularly clear the interceptor. A common
    * practice is to call

@@ -34,10 +34,10 @@ export function declareRestrictionHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
-    expect(interceptor.platform()).toBe(platform);
+    expect(interceptor.platform).toBe(platform);
   });
 
   afterAll(async () => {

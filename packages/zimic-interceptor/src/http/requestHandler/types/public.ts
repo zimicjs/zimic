@@ -30,17 +30,19 @@ export interface HttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
 > {
   /**
-   * @returns The method that matches this handler.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlermethod `handler.method()` API reference}
+   * The method that matches this handler.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlermethod `handler.method` API reference}
    */
-  method: () => Method;
+  method: Method;
 
   /**
-   * @returns The path that matches this handler. The base URL of the interceptor is not included, but it is used when
-   *   matching requests.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerpath `handler.path()` API reference}
+   * The path that matches this handler. The base URL of the interceptor is not included, but it is used when matching
+   * requests.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerpath `handler.path` API reference}
    */
-  path: () => Path;
+  path: Path;
 }
 
 export interface InternalHttpRequestHandler<
@@ -49,7 +51,7 @@ export interface InternalHttpRequestHandler<
   Path extends HttpSchemaPath<Schema, Method>,
   StatusCode extends HttpStatusCode = never,
 > extends HttpRequestHandler<Schema, Method, Path> {
-  client: () => HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 }
 
 /**
@@ -118,7 +120,7 @@ export interface LocalHttpRequestHandler<
    * intercepted request in the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
-   * **IMPORTANT**: To make sure that all expected requests were made, use
+   * **Important**: To make sure that all expected requests were made, use
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
    * or {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlertimes `handler.times()`}.
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
@@ -170,18 +172,17 @@ export interface LocalHttpRequestHandler<
   clear: () => this;
 
   /**
-   * Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This
-   * is useful for testing that the correct requests were made by your application.
+   * The intercepted requests that matched this handler, along with the responses returned to each of them. This is
+   * useful for testing that the correct requests were made by your application.
    *
-   * **IMPORTANT**: This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+   * **Important**: This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * for more information.
    *
-   * @returns The intercepted requests.
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
    */
-  requests: () => readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
+  requests: readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**
@@ -249,7 +250,7 @@ export interface SyncedRemoteHttpRequestHandler<
    * intercepted request in the
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}.
    *
-   * **IMPORTANT**: To make sure that all expected requests were made, use
+   * **Important**: To make sure that all expected requests were made, use
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
    * or
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()`}.
@@ -306,20 +307,17 @@ export interface SyncedRemoteHttpRequestHandler<
   clear: () => PendingRemoteHttpRequestHandler<Schema, Method, Path, StatusCode>;
 
   /**
-   * Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This
-   * is useful for testing that the correct requests were made by your application.
+   * The intercepted requests that matched this handler, along with the responses returned to each of them. This is
+   * useful for testing that the correct requests were made by your application.
    *
-   * **IMPORTANT**: This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+   * **Important**: This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * for more information.
    *
-   * @returns The intercepted requests.
    * @throws {DisabledRequestSavingError} If the interceptor was not created with `saveRequests: true`.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests()` API reference}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests` API reference}
    */
-  requests: () => Promise<
-    readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]
-  >;
+  requests: readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[];
 }
 
 /**

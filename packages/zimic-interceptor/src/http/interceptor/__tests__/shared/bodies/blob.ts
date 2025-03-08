@@ -114,8 +114,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const requestFile = await createRandomFile(contentType);
 
@@ -132,9 +131,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(fetchedFile.size).toBe(responseFile.size);
         expect(await fetchedFile.text()).toEqual(await responseFile.text());
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe(contentType);
@@ -211,8 +209,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -224,9 +221,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(fetchedFile).toBeInstanceOf(Blob);
         expect(fetchedFile.size).toBe(0);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/octet-stream');
@@ -284,8 +280,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const requestBuffer = new ArrayBuffer(2);
         const requestView = new Uint8Array(requestBuffer);
@@ -305,9 +300,8 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
         expect(fetchedFile.size).toBe(2);
         expect(await fetchedFile.arrayBuffer()).toEqual(responseBuffer);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/octet-stream');

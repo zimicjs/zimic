@@ -44,10 +44,10 @@ export function declareDefaultHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
-    expect(interceptor.platform()).toBe(platform);
+    expect(interceptor.platform).toBe(platform);
   });
 
   afterAll(async () => {
@@ -61,11 +61,11 @@ export function declareDefaultHttpRequestHandlerTests(
   it('should provide access to the method and path', () => {
     const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users');
 
-    expectTypeOf<typeof handler.method>().toEqualTypeOf<() => 'POST'>();
-    expect(handler.method()).toBe('POST');
+    expectTypeOf<typeof handler.method>().toEqualTypeOf<'POST'>();
+    expect(handler.method).toBe('POST');
 
-    expectTypeOf<typeof handler.path>().toEqualTypeOf<() => '/users'>();
-    expect(handler.path()).toBe('/users');
+    expectTypeOf<typeof handler.path>().toEqualTypeOf<'/users'>();
+    expect(handler.path).toBe('/users');
   });
 
   it('should not match any request if contains no declared response', async () => {
@@ -198,13 +198,12 @@ export function declareDefaultHttpRequestHandlerTests(
 
     handler.saveInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(1);
+    expect(handler.requests).toHaveLength(1);
 
-    expect(interceptedRequests[0].url).toEqual(firstRequest.url);
-    expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
-    expect(interceptedRequests[0].response.body).toEqual(await firstResponse.json());
+    expect(handler.requests[0].url).toEqual(firstRequest.url);
+    expect(handler.requests[0].method).toEqual(firstRequest.method);
+    expect(handler.requests[0].response.status).toBe(firstResponse.status);
+    expect(handler.requests[0].response.body).toEqual(await firstResponse.json());
 
     const secondRequest = new Request(joinURL(baseURL, '/path'));
     const parsedSecondRequest = await HttpInterceptorWorker.parseRawRequest<'/users', MethodSchema>(secondRequest);
@@ -217,19 +216,17 @@ export function declareDefaultHttpRequestHandlerTests(
 
     handler.saveInterceptedRequest(parsedSecondRequest, parsedSecondResponse);
 
-    expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(2);
+    expect(handler.requests).toHaveLength(2);
 
-    expect(interceptedRequests[0].url).toEqual(firstRequest.url);
-    expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
-    expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
+    expect(handler.requests[0].url).toEqual(firstRequest.url);
+    expect(handler.requests[0].method).toEqual(firstRequest.method);
+    expect(handler.requests[0].response.status).toBe(firstResponse.status);
+    expect(handler.requests[0].response.body).toEqual(await firstResponseClone.json());
 
-    expect(interceptedRequests[1].url).toEqual(secondRequest.url);
-    expect(interceptedRequests[1].method).toEqual(secondRequest.method);
-    expect(interceptedRequests[1].response.status).toBe(secondResponse.status);
-    expect(interceptedRequests[1].response.body).toEqual(await secondResponse.json());
+    expect(handler.requests[1].url).toEqual(secondRequest.url);
+    expect(handler.requests[1].method).toEqual(secondRequest.method);
+    expect(handler.requests[1].response.status).toBe(secondResponse.status);
+    expect(handler.requests[1].response.body).toEqual(await secondResponse.json());
   });
 
   it('should clear the intercepted requests and responses after cleared', async () => {
@@ -250,19 +247,16 @@ export function declareDefaultHttpRequestHandlerTests(
 
     handler.saveInterceptedRequest(parsedFirstRequest, parsedFirstResponse);
 
-    let interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(1);
+    expect(handler.requests).toHaveLength(1);
 
-    expect(interceptedRequests[0].url).toEqual(firstRequest.url);
-    expect(interceptedRequests[0].method).toEqual(firstRequest.method);
-    expect(interceptedRequests[0].response.status).toBe(firstResponse.status);
-    expect(interceptedRequests[0].response.body).toEqual(await firstResponseClone.json());
+    expect(handler.requests[0].url).toEqual(firstRequest.url);
+    expect(handler.requests[0].method).toEqual(firstRequest.method);
+    expect(handler.requests[0].response.status).toBe(firstResponse.status);
+    expect(handler.requests[0].response.body).toEqual(await firstResponseClone.json());
 
     await promiseIfRemote(handler.clear(), interceptor);
 
-    expect(interceptedRequests).toHaveLength(1);
-    interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(0);
+    expect(handler.requests).toHaveLength(0);
   });
 
   it('should provide access to the raw intercepted requests and responses', async () => {
@@ -284,34 +278,33 @@ export function declareDefaultHttpRequestHandlerTests(
 
     handler.saveInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(1);
+    expect(handler.requests).toHaveLength(1);
 
-    expect(interceptedRequests[0]).toEqual(parsedRequest);
+    expect(handler.requests[0]).toEqual(parsedRequest);
 
-    expectTypeOf(interceptedRequests[0].raw).toEqualTypeOf<HttpRequest<MethodSchema['request']['body']>>();
-    expect(interceptedRequests[0].raw).toBeInstanceOf(Request);
-    expect(interceptedRequests[0].raw.url).toBe(request.url);
-    expect(interceptedRequests[0].raw.method).toBe('POST');
-    expect(interceptedRequests[0].raw.headers).toEqual(request.headers);
-    expectTypeOf(interceptedRequests[0].raw.json).toEqualTypeOf<() => Promise<{ name?: string; value?: number[] }>>();
-    expect(await interceptedRequests[0].raw.json()).toEqual<MethodSchema['request']['body']>({ name: 'User' });
-    expectTypeOf(interceptedRequests[0].raw.formData).toEqualTypeOf<
+    expectTypeOf(handler.requests[0].raw).toEqualTypeOf<HttpRequest<MethodSchema['request']['body']>>();
+    expect(handler.requests[0].raw).toBeInstanceOf(Request);
+    expect(handler.requests[0].raw.url).toBe(request.url);
+    expect(handler.requests[0].raw.method).toBe('POST');
+    expect(handler.requests[0].raw.headers).toEqual(request.headers);
+    expectTypeOf(handler.requests[0].raw.json).toEqualTypeOf<() => Promise<{ name?: string; value?: number[] }>>();
+    expect(await handler.requests[0].raw.json()).toEqual<MethodSchema['request']['body']>({ name: 'User' });
+    expectTypeOf(handler.requests[0].raw.formData).toEqualTypeOf<
       () => Promise<FormData | StrictFormData<{ name: string }>>
     >();
 
-    expect(interceptedRequests[0].response).toEqual(parsedResponse);
+    expect(handler.requests[0].response).toEqual(parsedResponse);
 
-    expectTypeOf(interceptedRequests[0].response.raw).toEqualTypeOf<HttpResponse<{ success: true }, 200>>();
-    expect(interceptedRequests[0].response.raw).toBeInstanceOf(Response);
-    expectTypeOf(interceptedRequests[0].response.raw.status).toEqualTypeOf<200>();
-    expect(interceptedRequests[0].response.raw.status).toBe(200);
-    expect(interceptedRequests[0].response.raw.headers).toEqual(response.headers);
-    expectTypeOf(interceptedRequests[0].response.raw.json).toEqualTypeOf<() => Promise<{ success: true }>>();
-    expect(await interceptedRequests[0].response.raw.json()).toEqual<MethodSchema['response'][200]['body']>({
+    expectTypeOf(handler.requests[0].response.raw).toEqualTypeOf<HttpResponse<{ success: true }, 200>>();
+    expect(handler.requests[0].response.raw).toBeInstanceOf(Response);
+    expectTypeOf(handler.requests[0].response.raw.status).toEqualTypeOf<200>();
+    expect(handler.requests[0].response.raw.status).toBe(200);
+    expect(handler.requests[0].response.raw.headers).toEqual(response.headers);
+    expectTypeOf(handler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<{ success: true }>>();
+    expect(await handler.requests[0].response.raw.json()).toEqual<MethodSchema['response'][200]['body']>({
       success: true,
     });
-    expectTypeOf(interceptedRequests[0].response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
+    expectTypeOf(handler.requests[0].response.raw.formData).toEqualTypeOf<() => Promise<FormData>>();
   });
 
   it('should provide no access to hidden properties in raw intercepted requests and responses', async () => {
@@ -329,23 +322,22 @@ export function declareDefaultHttpRequestHandlerTests(
 
     handler.saveInterceptedRequest(parsedRequest, parsedResponse);
 
-    const interceptedRequests = await promiseIfRemote(handler.requests(), interceptor);
-    expect(interceptedRequests).toHaveLength(1);
+    expect(handler.requests).toHaveLength(1);
 
-    expect(interceptedRequests[0]).toEqual(parsedRequest);
+    expect(handler.requests[0]).toEqual(parsedRequest);
 
     for (const hiddenProperty of HTTP_INTERCEPTOR_REQUEST_HIDDEN_PROPERTIES) {
-      expect(interceptedRequests[0]).not.toHaveProperty(hiddenProperty);
+      expect(handler.requests[0]).not.toHaveProperty(hiddenProperty);
       // @ts-expect-error Trying to access the hidden property.
-      expect(interceptedRequests[0][hiddenProperty]).toBe(undefined);
+      expect(handler.requests[0][hiddenProperty]).toBe(undefined);
     }
 
-    expect(interceptedRequests[0].response).toEqual(parsedResponse);
+    expect(handler.requests[0].response).toEqual(parsedResponse);
 
     for (const hiddenProperty of HTTP_INTERCEPTOR_RESPONSE_HIDDEN_PROPERTIES) {
-      expect(interceptedRequests[0].response).not.toHaveProperty(hiddenProperty);
+      expect(handler.requests[0].response).not.toHaveProperty(hiddenProperty);
       // @ts-expect-error Trying to access the hidden property.
-      expect(interceptedRequests[0].response[hiddenProperty]).toBe(undefined);
+      expect(handler.requests[0].response[hiddenProperty]).toBe(undefined);
     }
   });
 
@@ -397,26 +389,26 @@ export function declareDefaultHttpRequestHandlerTests(
 
         const fulfillmentListener = vi.fn((syncedHandler) => {
           expect(syncedHandler).toEqual(handler);
-          expect(handler.isSynced()).toBe(true);
+          expect(handler.isSynced).toBe(true);
 
           expect(syncedHandler).not.toHaveProperty('then');
           expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
           expect(syncedHandler).toHaveProperty('finally', expect.any(Function));
         });
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
 
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
         handler.registerSyncPromise(waitForDelay(100));
-        expect(handler.isSynced()).toBe(false);
+        expect(handler.isSynced).toBe(false);
 
         await pendingHandler.then(fulfillmentListener);
 
-        expect(handler.isSynced()).toBe(true);
-        expect(pendingHandler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
+        expect(pendingHandler.isSynced).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
@@ -433,7 +425,7 @@ export function declareDefaultHttpRequestHandlerTests(
 
         const fulfillmentListener = vi.fn((syncedHandler) => {
           expect(handler).toEqual(syncedHandler);
-          expect(handler.isSynced()).toBe(true);
+          expect(handler.isSynced).toBe(true);
 
           expect(syncedHandler).not.toHaveProperty('then');
           expect(syncedHandler).toHaveProperty('catch', expect.any(Function));
@@ -442,19 +434,19 @@ export function declareDefaultHttpRequestHandlerTests(
 
         const delayedSyncPromises = [waitForDelay(200), waitForDelay(100), waitForDelay(300)];
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
         handler.registerSyncPromise(delayedSyncPromises[0]);
-        expect(handler.isSynced()).toBe(false);
+        expect(handler.isSynced).toBe(false);
 
         const thenPromise = handler.with({}).then(fulfillmentListener);
 
         handler.registerSyncPromise(delayedSyncPromises[1]);
         handler.registerSyncPromise(delayedSyncPromises[2]);
-        expect(handler.isSynced()).toBe(false);
+        expect(handler.isSynced).toBe(false);
 
         await thenPromise;
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
 
         expect(fulfillmentListener).toHaveBeenCalledTimes(1);
       });
@@ -494,19 +486,19 @@ export function declareDefaultHttpRequestHandlerTests(
 
         const finallyListener = vi.fn();
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
 
         const pendingHandler = handler.with({});
         expect(pendingHandler).toEqual(handler);
 
-        expect(handler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
         handler.registerSyncPromise(waitForDelay(100));
-        expect(handler.isSynced()).toBe(false);
+        expect(handler.isSynced).toBe(false);
 
         await pendingHandler.finally(finallyListener);
 
-        expect(handler.isSynced()).toBe(true);
-        expect(pendingHandler.isSynced()).toBe(true);
+        expect(handler.isSynced).toBe(true);
+        expect(pendingHandler.isSynced).toBe(true);
 
         expect(finallyListener).toHaveBeenCalledTimes(1);
       });

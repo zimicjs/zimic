@@ -16,7 +16,7 @@ class HttpInterceptorStore {
 
   private class = HttpInterceptorStore;
 
-  localWorker() {
+  get localWorker() {
     return this.class._localWorker;
   }
 
@@ -24,7 +24,7 @@ class HttpInterceptorStore {
     return this.class.remoteWorkers.get(baseURL.origin);
   }
 
-  numberOfRunningLocalInterceptors() {
+  get numberOfRunningLocalInterceptors() {
     return this.class.runningLocalInterceptors.size;
   }
 

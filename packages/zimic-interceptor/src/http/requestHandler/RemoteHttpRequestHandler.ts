@@ -27,7 +27,7 @@ class RemoteHttpRequestHandler<
 {
   readonly type = 'remote';
 
-  private _client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 
   private syncPromises: Promise<unknown>[] = [];
 
@@ -35,7 +35,7 @@ class RemoteHttpRequestHandler<
   private synced: this;
 
   constructor(interceptor: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>, method: Method, path: Path) {
-    this._client = new HttpRequestHandlerClient(interceptor, method, path, this);
+    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
     this.unsynced = this;
     this.synced = this.createSyncedProxy();
   }
@@ -62,20 +62,16 @@ class RemoteHttpRequestHandler<
     return PENDING_PROPERTIES.has(property);
   }
 
-  client() {
-    return this._client;
+  get method() {
+    return this.client.method;
   }
 
-  method() {
-    return this._client.method();
-  }
-
-  path() {
-    return this._client.path();
+  get path() {
+    return this.client.path;
   }
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
-    this._client.with(restriction);
+    this.client.with(restriction);
     return this.unsynced;
   }
 
@@ -85,19 +81,19 @@ class RemoteHttpRequestHandler<
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
     const newUnsyncedThis = this.unsynced as unknown as RemoteHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
-    newUnsyncedThis._client.respond(declaration);
+    newUnsyncedThis.client.respond(declaration);
     return newUnsyncedThis;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
-    this._client.times(minNumberOfRequests, maxNumberOfRequests);
+    this.client.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
 
   async checkTimes() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this._client.checkTimes();
+        this.client.checkTimes();
         resolve();
       } catch (error) {
         reject(error);
@@ -106,42 +102,36 @@ class RemoteHttpRequestHandler<
   }
 
   clear(): this {
-    this._client.clear();
+    this.client.clear();
     return this.unsynced;
   }
 
-  requests(): Promise<readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[]> {
-    return new Promise((resolve, reject) => {
-      try {
-        resolve(this._client.requests());
-      } catch (error) {
-        reject(error);
-      }
-    });
+  get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+    return this.client.requests;
   }
 
   matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
-    return this._client.matchesRequest(request);
+    return this.client.matchesRequest(request);
   }
 
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
-    return this._client.applyResponseDeclaration(request);
+    return this.client.applyResponseDeclaration(request);
   }
 
   saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    this._client.saveInterceptedRequest(request, response);
+    this.client.saveInterceptedRequest(request, response);
   }
 
   registerSyncPromise(promise: Promise<unknown>) {
     this.syncPromises.push(promise);
   }
 
-  isSynced(): boolean {
+  get isSynced() {
     return this.syncPromises.length === 0;
   }
 
@@ -162,7 +152,7 @@ class RemoteHttpRequestHandler<
       .then(() => {
         this.syncPromises = this.syncPromises.filter((promise) => !promisesToWait.has(promise));
 
-        return this.isSynced() ? this.synced : this.unsynced;
+        return this.isSynced ? this.synced : this.unsynced;
       })
       .then(onFulfilled, onRejected);
   }

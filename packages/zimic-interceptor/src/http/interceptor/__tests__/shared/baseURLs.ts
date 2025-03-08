@@ -36,21 +36,19 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
           };
         };
       }>({ ...interceptorOptions, baseURL }, async (interceptor) => {
-        expect(interceptor.baseURL()).toBe(baseURL.replace(/\/$/, ''));
+        expect(interceptor.baseURL).toBe(baseURL.replace(/\/$/, ''));
 
         const handler = await promiseIfRemote(interceptor.get(path).respond({ status: 200 }), interceptor);
 
-        let requests = await handler.requests();
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const url = joinURL(baseURL, path);
 
         const response = await fetch(url, { method: 'GET' });
         expect(response.status).toBe(200);
 
-        requests = await handler.requests();
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();

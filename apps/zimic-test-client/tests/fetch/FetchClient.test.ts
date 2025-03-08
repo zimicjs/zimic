@@ -16,6 +16,7 @@ import {
   ValidationError,
 } from '@tests/types/schema';
 import { importCrypto } from '@tests/utils/crypto';
+import { expectResponseStatus } from '@tests/utils/requests';
 
 describe('Fetch client', async () => {
   const crypto = await importCrypto();
@@ -126,7 +127,7 @@ describe('Fetch client', async () => {
 
         const response = await createUser(creationPayload);
         expectTypeOf(response.status).toEqualTypeOf<201>();
-        expect(response.status).toBe(201);
+        expectResponseStatus(response, 201);
 
         const createdUser = await response.json();
         expect(createdUser).toEqual<JSONSerialized<User>>({
@@ -136,32 +137,35 @@ describe('Fetch client', async () => {
           birthDate: creationPayload.birthDate,
         });
 
-        const creationRequests = creationHandler.requests();
-        expect(creationRequests).toHaveLength(1);
+        expect(creationHandler.requests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
+        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
+          HttpHeaders<{ 'content-type': 'application/json' }>
+        >();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(creationRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
         expect(response.headers.get('x-user-id')).toBe(createdUser.id);
-        expect(creationRequests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
+        expect(creationHandler.requests[0].response.headers.get('x-user-id')).toBe(createdUser.id);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationRequests[0].body).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
+        expect(creationHandler.requests[0].body).toEqual(creationPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
-        expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
 
-        expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
-        expect(creationRequests[0].response.body).toEqual(createdUser);
+        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
+        expect(creationHandler.requests[0].response.body).toEqual(createdUser);
 
-        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 201>>();
-        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
-        expect(await creationRequests[0].response.raw.json()).toEqual(createdUser);
+        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 201>>();
+        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<
+          () => Promise<JSONSerialized<User>>
+        >();
+        expect(await creationHandler.requests[0].response.raw.json()).toEqual(createdUser);
       });
 
       it('should return an error if the payload is not valid', async () => {
@@ -179,38 +183,39 @@ describe('Fetch client', async () => {
           .respond({ status: 400, body: validationError })
           .times(1);
 
-        const error = await expectToThrow(createUser(invalidPayload), {
-          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+        const error = await expectToThrow(
+          createUser(invalidPayload),
+          (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
             authFetch.isResponseError(error, 'POST', '/users'),
-        });
-        const { response } = error;
+        );
 
-        expectTypeOf(response.status).toEqualTypeOf<400 | 409 | 500>();
-        expect(response.status).toBe(400);
+        expectTypeOf(error.response.status).toEqualTypeOf<400 | 409 | 500>();
+        expectResponseStatus(error.response, 400);
 
-        const creationRequests = creationHandler.requests();
-        expect(creationRequests).toHaveLength(1);
+        expect(creationHandler.requests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
+        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
+          HttpHeaders<{ 'content-type': 'application/json' }>
+        >();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(creationRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationRequests[0].body).toEqual(invalidPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
+        expect(creationHandler.requests[0].body).toEqual(invalidPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
-        expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationRequests[0].raw.json()).toEqual(invalidPayload);
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(invalidPayload);
 
-        expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ValidationError>();
-        expect(creationRequests[0].response.body).toEqual(validationError);
+        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ValidationError>();
+        expect(creationHandler.requests[0].response.body).toEqual(validationError);
 
-        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<ValidationError, 400>>();
-        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
-        expect(await creationRequests[0].response.raw.json()).toEqual(validationError);
+        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<ValidationError, 400>>();
+        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ValidationError>>();
+        expect(await creationHandler.requests[0].response.raw.json()).toEqual(validationError);
       });
 
       it('should return an error if the payload is not valid', async () => {
@@ -227,38 +232,39 @@ describe('Fetch client', async () => {
           .respond({ status: 409, body: conflictError })
           .times(1);
 
-        const error = await expectToThrow(createUser(conflictingPayload), {
-          is: (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
+        const error = await expectToThrow(
+          createUser(conflictingPayload),
+          (error): error is FetchResponseError<AuthServiceSchema, 'POST', '/users'> =>
             authFetch.isResponseError(error, 'POST', '/users'),
-        });
-        const { response } = error;
+        );
 
-        expectTypeOf(response.status).toEqualTypeOf<400 | 409 | 500>();
-        expect(response.status).toBe(409);
+        expectTypeOf(error.response.status).toEqualTypeOf<400 | 409 | 500>();
+        expectResponseStatus(error.response, 409);
 
-        const creationRequests = creationHandler.requests();
-        expect(creationRequests).toHaveLength(1);
+        expect(creationHandler.requests).toHaveLength(1);
 
-        expectTypeOf(creationRequests[0].headers).toEqualTypeOf<HttpHeaders<{ 'content-type': 'application/json' }>>();
+        expectTypeOf(creationHandler.requests[0].headers).toEqualTypeOf<
+          HttpHeaders<{ 'content-type': 'application/json' }>
+        >();
 
-        expectTypeOf(creationRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(creationRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(creationHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(creationHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(creationRequests[0].body).toEqualTypeOf<UserCreationRequestBody>();
-        expect(creationRequests[0].body).toEqual(conflictingPayload);
+        expectTypeOf(creationHandler.requests[0].body).toEqualTypeOf<UserCreationRequestBody>();
+        expect(creationHandler.requests[0].body).toEqual(conflictingPayload);
 
-        expectTypeOf(creationRequests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
-        expect(creationRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(creationRequests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
-        expect(await creationRequests[0].raw.json()).toEqual(creationPayload);
+        expectTypeOf(creationHandler.requests[0].raw).toEqualTypeOf<HttpRequest<UserCreationRequestBody>>();
+        expect(creationHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(creationHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<UserCreationRequestBody>>();
+        expect(await creationHandler.requests[0].raw.json()).toEqual(creationPayload);
 
-        expectTypeOf(creationRequests[0].response.body).toEqualTypeOf<ConflictError>();
-        expect(creationRequests[0].response.body).toEqual(conflictError);
+        expectTypeOf(creationHandler.requests[0].response.body).toEqualTypeOf<ConflictError>();
+        expect(creationHandler.requests[0].response.body).toEqual(conflictError);
 
-        expectTypeOf(creationRequests[0].response.raw).toEqualTypeOf<HttpResponse<ConflictError, 409>>();
-        expect(creationRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(creationRequests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
-        expect(await creationRequests[0].response.raw.json()).toEqual(conflictError);
+        expectTypeOf(creationHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<ConflictError, 409>>();
+        expect(creationHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(creationHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<ConflictError>>();
+        expect(await creationHandler.requests[0].response.raw.json()).toEqual(conflictError);
       });
     });
 
@@ -312,37 +318,36 @@ describe('Fetch client', async () => {
 
         const response = await listUsers();
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(users.map(serializeUser));
 
-        const listRequests = listHandler.requests();
-        expect(listRequests).toHaveLength(1);
+        expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
           HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
         >();
-        expect(listRequests[0].searchParams.get('name')).toBe(null);
-        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
+        expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
+        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
 
-        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
-        expect(listRequests[0].body).toBe(null);
+        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(listRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await listRequests[0].raw.text()).toBe('');
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listRequests[0].response.body).toEqual(users.map(serializeUser));
+        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
+        expect(listHandler.requests[0].response.body).toEqual(users.map(serializeUser));
 
-        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
-        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listRequests[0].response.raw.json()).toEqual(users.map(serializeUser));
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
+        expect(await listHandler.requests[0].response.raw.json()).toEqual(users.map(serializeUser));
       });
 
       it('should list users filtered by name', async () => {
@@ -356,38 +361,37 @@ describe('Fetch client', async () => {
 
         const response = await listUsers({ name: user.name });
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         const returnedUsers = await response.json();
         expect(returnedUsers).toEqual([serializeUser(user)]);
 
-        const listRequests = listHandler.requests();
-        expect(listRequests).toHaveLength(1);
+        expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
           HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
         >();
-        expect(listRequests[0].searchParams.size).toBe(1);
-        expect(listRequests[0].searchParams.get('name')).toBe(user.name);
-        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual([]);
+        expect(listHandler.requests[0].searchParams.size).toBe(1);
+        expect(listHandler.requests[0].searchParams.get('name')).toBe(user.name);
+        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual([]);
 
-        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
-        expect(listRequests[0].body).toBe(null);
+        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(listRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await listRequests[0].raw.text()).toBe('');
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listRequests[0].response.body).toEqual([serializeUser(user)]);
+        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
+        expect(listHandler.requests[0].response.body).toEqual([serializeUser(user)]);
 
-        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
-        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listRequests[0].response.raw.json()).toEqual([serializeUser(user)]);
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
+        expect(await listHandler.requests[0].response.raw.json()).toEqual([serializeUser(user)]);
       });
 
       it('should list users with ordering', async () => {
@@ -405,38 +409,39 @@ describe('Fetch client', async () => {
           orderBy: ['email.desc'],
         });
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
-        const listRequests = listHandler.requests();
-        expect(listRequests).toHaveLength(1);
+        expect(listHandler.requests).toHaveLength(1);
 
-        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<
           HttpSearchParams<HttpSchema.SearchParams<UserListSearchParams>>
         >();
-        expect(listRequests[0].searchParams.size).toBe(1);
-        expect(listRequests[0].searchParams.get('name')).toBe(null);
-        expect(listRequests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
+        expect(listHandler.requests[0].searchParams.size).toBe(1);
+        expect(listHandler.requests[0].searchParams.get('name')).toBe(null);
+        expect(listHandler.requests[0].searchParams.getAll('orderBy')).toEqual(['email.desc']);
 
-        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
-        expect(listRequests[0].body).toBe(null);
+        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(listRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await listRequests[0].raw.text()).toBe('');
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
-        expect(listRequests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
+        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>[]>();
+        expect(listHandler.requests[0].response.body).toEqual(usersSortedByDescendingEmail.map(serializeUser));
 
-        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
-        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
-        expect(await listRequests[0].response.raw.json()).toEqual(usersSortedByDescendingEmail.map(serializeUser));
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>[], 200>>();
+        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>[]>>();
+        expect(await listHandler.requests[0].response.raw.json()).toEqual(
+          usersSortedByDescendingEmail.map(serializeUser),
+        );
       });
     });
 
@@ -462,35 +467,34 @@ describe('Fetch client', async () => {
 
         const response = await getUserById(user.id);
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         const returnedUsers = await response.json();
         expect(returnedUsers).toEqual(serializeUser(user));
 
-        const getRequests = getHandler.requests();
-        expect(getRequests).toHaveLength(1);
-        expect(getRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(getHandler.requests).toHaveLength(1);
+        expect(getHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(getRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(getHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
-        expect(getRequests[0].body).toBe(null);
+        expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(getRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await getRequests[0].raw.text()).toBe('');
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await getHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(getRequests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
-        expect(getRequests[0].response.body).toEqual(serializeUser(user));
+        expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<JSONSerialized<User>>();
+        expect(getHandler.requests[0].response.body).toEqual(serializeUser(user));
 
-        expectTypeOf(getRequests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 200>>();
-        expect(getRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(getRequests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
-        expect(await getRequests[0].response.raw.json()).toEqual(serializeUser(user));
+        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<JSONSerialized<User>, 200>>();
+        expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<JSONSerialized<User>>>();
+        expect(await getHandler.requests[0].response.raw.json()).toEqual(serializeUser(user));
       });
 
       it('should return an error if the user was not found', async () => {
@@ -507,42 +511,41 @@ describe('Fetch client', async () => {
           })
           .times(1);
 
-        const error = await expectToThrow(getUserById(user.id), {
-          is: (error): error is FetchResponseError<AuthServiceSchema, 'GET', '/users/:userId'> =>
+        const error = await expectToThrow(
+          getUserById(user.id),
+          (error): error is FetchResponseError<AuthServiceSchema, 'GET', '/users/:userId'> =>
             authFetch.isResponseError(error, 'GET', '/users/:userId'),
-        });
-        const { response } = error;
+        );
 
-        expectTypeOf(response.status).toEqualTypeOf<404 | 500>();
-        expect(response.status).toBe(404);
+        expectTypeOf(error.response.status).toEqualTypeOf<404 | 500>();
+        expectResponseStatus(error.response, 404);
 
-        const getRequests = getHandler.requests();
-        expect(getRequests).toHaveLength(1);
-        expect(getRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(getHandler.requests).toHaveLength(1);
+        expect(getHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(getRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(getRequests[0].pathParams).toEqual({ userId: user.id });
+        expectTypeOf(getHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(getHandler.requests[0].pathParams).toEqual({ userId: user.id });
 
-        expectTypeOf(getRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(getHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(getRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(getRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(getHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(getHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(getRequests[0].body).toEqualTypeOf<null>();
-        expect(getRequests[0].body).toBe(null);
+        expectTypeOf(getHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(getHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(getRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(getRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(getRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await getRequests[0].raw.text()).toBe('');
+        expectTypeOf(getHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(getHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(getHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await getHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(getRequests[0].response.body).toEqualTypeOf<NotFoundError>();
-        expect(getRequests[0].response.body).toEqual(notFoundError);
+        expectTypeOf(getHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
+        expect(getHandler.requests[0].response.body).toEqual(notFoundError);
 
-        expectTypeOf(getRequests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
-        expect(getRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(getRequests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
-        expect(await getRequests[0].response.raw.json()).toEqual(notFoundError);
+        expectTypeOf(getHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expect(getHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(getHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
+        expect(await getHandler.requests[0].response.raw.json()).toEqual(notFoundError);
       });
     });
 
@@ -563,35 +566,34 @@ describe('Fetch client', async () => {
 
         const response = await deleteUserById(user.id);
         expectTypeOf(response.status).toEqualTypeOf<204>();
-        expect(response.status).toBe(204);
+        expectResponseStatus(response, 204);
 
-        const deleteRequests = deleteHandler.requests();
-        expect(deleteRequests).toHaveLength(1);
-        expect(deleteRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests).toHaveLength(1);
+        expect(deleteHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(deleteRequests[0].pathParams).toEqual({});
+        expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(deleteHandler.requests[0].pathParams).toEqual({});
 
-        expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(deleteRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(deleteHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
-        expect(deleteRequests[0].body).toBe(null);
+        expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(deleteRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await deleteRequests[0].raw.text()).toBe('');
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(deleteRequests[0].response.body).toEqualTypeOf<null>();
-        expect(deleteRequests[0].response.body).toBe(null);
+        expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<null>();
+        expect(deleteHandler.requests[0].response.body).toBe(null);
 
-        expectTypeOf(deleteRequests[0].response.raw).toEqualTypeOf<HttpResponse<null, 204>>();
-        expect(deleteRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(deleteRequests[0].response.raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await deleteRequests[0].response.raw.text()).toBe('');
+        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<null, 204>>();
+        expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteHandler.requests[0].response.raw.text()).toBe('');
       });
 
       it('should return an error if the user was not found', async () => {
@@ -599,47 +601,46 @@ describe('Fetch client', async () => {
           code: 'not_found',
           message: 'User not found',
         };
-        const getHandler = authInterceptor
+        const deleteHandler = authInterceptor
           .delete('/users/:userId')
           .respond({ status: 404, body: notFoundError })
           .times(1);
 
-        const error = await expectToThrow(deleteUserById(user.id), {
-          is: (error): error is FetchResponseError<AuthServiceSchema, 'DELETE', '/users/:userId'> =>
+        const error = await expectToThrow(
+          deleteUserById(user.id),
+          (error): error is FetchResponseError<AuthServiceSchema, 'DELETE', '/users/:userId'> =>
             authFetch.isResponseError(error, 'DELETE', '/users/:userId'),
-        });
-        const { response } = error;
+        );
 
-        expectTypeOf(response.status).toEqualTypeOf<404 | 500>();
-        expect(response.status).toBe(404);
+        expectTypeOf(error.response.status).toEqualTypeOf<404 | 500>();
+        expectResponseStatus(error.response, 404);
 
-        const deleteRequests = getHandler.requests();
-        expect(deleteRequests).toHaveLength(1);
-        expect(deleteRequests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
+        expect(deleteHandler.requests).toHaveLength(1);
+        expect(deleteHandler.requests[0].url).toBe(`${authFetch.defaults.baseURL}/users/${user.id}`);
 
-        expectTypeOf(deleteRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(deleteRequests[0].pathParams).toEqual({ userId: user.id });
+        expectTypeOf(deleteHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(deleteHandler.requests[0].pathParams).toEqual({ userId: user.id });
 
-        expectTypeOf(deleteRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(deleteHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(deleteRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(deleteRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(deleteHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(deleteHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(deleteRequests[0].body).toEqualTypeOf<null>();
-        expect(deleteRequests[0].body).toBe(null);
+        expectTypeOf(deleteHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(deleteHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(deleteRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(deleteRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(deleteRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await deleteRequests[0].raw.text()).toBe('');
+        expectTypeOf(deleteHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(deleteHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(deleteHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await deleteHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(deleteRequests[0].response.body).toEqualTypeOf<NotFoundError>();
-        expect(deleteRequests[0].response.body).toEqual(notFoundError);
+        expectTypeOf(deleteHandler.requests[0].response.body).toEqualTypeOf<NotFoundError>();
+        expect(deleteHandler.requests[0].response.body).toEqual(notFoundError);
 
-        expectTypeOf(deleteRequests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
-        expect(deleteRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(deleteRequests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
-        expect(await deleteRequests[0].response.raw.json()).toEqual(notFoundError);
+        expectTypeOf(deleteHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<NotFoundError, 404>>();
+        expect(deleteHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(deleteHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<NotFoundError>>();
+        expect(await deleteHandler.requests[0].response.raw.json()).toEqual(notFoundError);
       });
     });
   });
@@ -684,50 +685,50 @@ describe('Fetch client', async () => {
 
         let response = await listNotifications(notification.userId);
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         let returnedNotifications = await response.json();
         expect(returnedNotifications).toEqual([notification]);
 
-        const listRequests = listHandler.requests();
-        expect(listRequests).toHaveLength(1);
-        expect(listRequests[0].url).toBe(`${notificationFetch.defaults.baseURL}/notifications/${notification.userId}`);
+        expect(listHandler.requests).toHaveLength(1);
+        expect(listHandler.requests[0].url).toBe(
+          `${notificationFetch.defaults.baseURL}/notifications/${notification.userId}`,
+        );
 
-        expectTypeOf(listRequests[0].pathParams).toEqualTypeOf<{ userId: string }>();
-        expect(listRequests[0].pathParams).toEqual({ userId: notification.userId });
+        expectTypeOf(listHandler.requests[0].pathParams).toEqualTypeOf<{ userId: string }>();
+        expect(listHandler.requests[0].pathParams).toEqual({ userId: notification.userId });
 
-        expectTypeOf(listRequests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
+        expectTypeOf(listHandler.requests[0].headers).toEqualTypeOf<HttpHeaders<never>>();
 
-        expectTypeOf(listRequests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
-        expect(listRequests[0].searchParams.size).toBe(0);
+        expectTypeOf(listHandler.requests[0].searchParams).toEqualTypeOf<HttpSearchParams<never>>();
+        expect(listHandler.requests[0].searchParams.size).toBe(0);
 
-        expectTypeOf(listRequests[0].body).toEqualTypeOf<null>();
-        expect(listRequests[0].body).toBe(null);
+        expectTypeOf(listHandler.requests[0].body).toEqualTypeOf<null>();
+        expect(listHandler.requests[0].body).toBe(null);
 
-        expectTypeOf(listRequests[0].raw).toEqualTypeOf<HttpRequest<null>>();
-        expect(listRequests[0].raw).toBeInstanceOf(Request);
-        expectTypeOf(listRequests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
-        expect(await listRequests[0].raw.text()).toBe('');
+        expectTypeOf(listHandler.requests[0].raw).toEqualTypeOf<HttpRequest<null>>();
+        expect(listHandler.requests[0].raw).toBeInstanceOf(Request);
+        expectTypeOf(listHandler.requests[0].raw.json).toEqualTypeOf<() => Promise<null>>();
+        expect(await listHandler.requests[0].raw.text()).toBe('');
 
-        expectTypeOf(listRequests[0].response.body).toEqualTypeOf<Notification[]>();
-        expect(listRequests[0].response.body).toEqual([notification]);
+        expectTypeOf(listHandler.requests[0].response.body).toEqualTypeOf<Notification[]>();
+        expect(listHandler.requests[0].response.body).toEqual([notification]);
 
-        expectTypeOf(listRequests[0].response.raw).toEqualTypeOf<HttpResponse<Notification[], 200>>();
-        expect(listRequests[0].response.raw).toBeInstanceOf(Response);
-        expectTypeOf(listRequests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
-        expect(await listRequests[0].response.raw.json()).toEqual([notification]);
+        expectTypeOf(listHandler.requests[0].response.raw).toEqualTypeOf<HttpResponse<Notification[], 200>>();
+        expect(listHandler.requests[0].response.raw).toBeInstanceOf(Response);
+        expectTypeOf(listHandler.requests[0].response.raw.json).toEqualTypeOf<() => Promise<Notification[]>>();
+        expect(await listHandler.requests[0].response.raw.json()).toEqual([notification]);
 
         listHandler.clear();
 
         response = await listNotifications(notification.userId);
         expectTypeOf(response.status).toEqualTypeOf<200>();
-        expect(response.status).toBe(200);
+        expectResponseStatus(response, 200);
 
         returnedNotifications = await response.json();
         expect(returnedNotifications).toEqual([]);
 
-        expect(listRequests).toHaveLength(1);
-        expect(listHandler.requests()).toHaveLength(0);
+        expect(listHandler.requests).toHaveLength(0);
       });
     });
   });

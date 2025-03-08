@@ -11,9 +11,9 @@
     - [Saving requests](#saving-requests)
   - [HTTP `interceptor.start()`](#http-interceptorstart)
   - [HTTP `interceptor.stop()`](#http-interceptorstop)
-  - [HTTP `interceptor.isRunning()`](#http-interceptorisrunning)
-  - [HTTP `interceptor.baseURL()`](#http-interceptorbaseurl)
-  - [HTTP `interceptor.platform()`](#http-interceptorplatform)
+  - [HTTP `interceptor.isRunning`](#http-interceptorisrunning)
+  - [HTTP `interceptor.baseURL`](#http-interceptorbaseurl)
+  - [HTTP `interceptor.platform`](#http-interceptorplatform)
   - [HTTP `interceptor.<method>(path)`](#http-interceptormethodpath)
     - [Path parameters](#path-parameters)
   - [HTTP `interceptor.checkTimes()`](#http-interceptorchecktimes)
@@ -21,8 +21,8 @@
   - [`HttpInterceptor` utility types](#httpinterceptor-utility-types)
     - [`InferHttpInterceptorSchema`](#inferhttpinterceptorschema)
 - [`HttpRequestHandler`](#httprequesthandler)
-  - [HTTP `handler.method()`](#http-handlermethod)
-  - [HTTP `handler.path()`](#http-handlerpath)
+  - [HTTP `handler.method`](#http-handlermethod)
+  - [HTTP `handler.path`](#http-handlerpath)
   - [HTTP `handler.with(restriction)`](#http-handlerwithrestriction)
     - [Static restrictions](#static-restrictions)
     - [Computed restrictions](#computed-restrictions)
@@ -32,7 +32,7 @@
   - [HTTP `handler.times()`](#http-handlertimes)
   - [HTTP `handler.checkTimes()`](#http-handlerchecktimes)
   - [HTTP `handler.clear()`](#http-handlerclear)
-  - [HTTP `handler.requests()`](#http-handlerrequests)
+  - [HTTP `handler.requests`](#http-handlerrequests)
 - [Intercepted HTTP resources](#intercepted-http-resources)
 - [Guides](#guides)
 
@@ -132,7 +132,7 @@ const interceptor = httpInterceptor.create<{
 });
 
 // Your application should use this base URL when making requests
-const baseURL = interceptor.baseURL();
+console.log(interceptor.baseURL);
 ```
 
 #### Unhandled requests
@@ -333,7 +333,7 @@ httpInterceptor.default.remote.onUnhandledRequest = (request) => {
 #### Saving requests
 
 The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
-requests in memory and make them accessible through [`handler.requests()`](#http-handlerrequests).
+requests in memory and make them accessible through [`handler.requests`](#http-handlerrequests).
 
 This setting is configured per interceptor and is `false` by default. If set to `true`, each handler will keep track of
 their intercepted requests in memory.
@@ -426,28 +426,28 @@ called.
 await interceptor.stop();
 ```
 
-### HTTP `interceptor.isRunning()`
+### HTTP `interceptor.isRunning`
 
-Returns whether the interceptor is currently running and ready to use.
+Whether the interceptor is currently running and ready to use.
 
 ```ts
-const isRunning = interceptor.isRunning();
+const isRunning = interceptor.isRunning;
 ```
 
-### HTTP `interceptor.baseURL()`
+### HTTP `interceptor.baseURL`
 
-Returns the base URL of the interceptor.
+The base URL of the interceptor.
 
 ```ts
-const baseURL = interceptor.baseURL();
+console.log(interceptor.baseURL);
 ```
 
-### HTTP `interceptor.platform()`
+### HTTP `interceptor.platform`
 
-Returns the platform used by the interceptor (`browser` or `node`).
+The platform used by the interceptor (`browser` or `node`).
 
 ```ts
-const platform = interceptor.platform();
+console.log(interceptor.platform);
 ```
 
 ### HTTP `interceptor.<method>(path)`
@@ -694,29 +694,27 @@ correct.
 When multiple handlers match the same method and path, the _last_ created with
 [`interceptor.<method>(path)`](#http-interceptormethodpath) will be used.
 
-### HTTP `handler.method()`
+### HTTP `handler.method`
 
 Returns the method that matches a handler.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const creationHandler = interceptor.post('/users');
-const method = creationHandler.method();
-console.log(method); // 'POST'
+const handler = interceptor.post('/users');
+console.log(handler.method); // 'POST'
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const handler = await interceptor.post('/users');
-const method = handler.method();
-console.log(method); // 'POST'
+console.log(handler.method); // 'POST'
 ```
 
 </details></td></tr></table>
 
-### HTTP `handler.path()`
+### HTTP `handler.path`
 
 Returns the path that matches a handler. The base URL of the interceptor is not included, but it is used when matching
 requests.
@@ -724,17 +722,15 @@ requests.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const listHandler = interceptor.get('/users');
-const path = listHandler.path();
-console.log(path); // '/users'
+const handler = interceptor.get('/users');
+console.log(handler.path); // '/users'
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
 const handler = await interceptor.get('/users');
-const path = handler.path();
-console.log(path); // '/users'
+console.log(handler.path); // '/users'
 ```
 
 </details></td></tr></table>
@@ -1547,10 +1543,10 @@ const rangeListHandler = await interceptor
 
 > [!TIP]
 >
-> Prior to v0.12.0, a common strategy to check the number of requests was to assert the length of `handler.requests()`.
+> Prior to v0.12.0, a common strategy to check the number of requests was to assert the length of `handler.requests`.
 > [`handler.times()`](#http-handlertimes), combined with [`handler.checkTimes()`](#http-handlerchecktimes) or
 > [`interceptor.checkTimes()`](#http-interceptorchecktimes), archives the same purpose in a shorter and more declarative
-> way. In most cases, these methods are preferred over manually checking the length of `handler.requests()`.
+> way. In most cases, these methods are preferred over manually checking the length of `handler.requests`.
 
 ### HTTP `handler.checkTimes()`
 
@@ -1607,44 +1603,44 @@ To make the handler match requests again, register a new response with `handler.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-const genericListHandler = interceptor.get('/users').respond({
+const genericHandler = interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const specificListHandler = interceptor.get('/users').respond({
+const specificHandler = interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'me' }],
 });
 
-specificListHandler.clear();
-// Now, requests GET /users will match `genericListHandler` and receive an empty array
+specificHandler.clear();
+// Now, requests GET /users will match `genericHandler` and receive an empty array
 
-specificListHandler.requests(); // Now empty
+console.log(specificHandler.requests); // []
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-const genericListHandler = await interceptor.get('/users').respond({
+const genericHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [],
 });
 
-const specificListHandler = await interceptor.get('/users').respond({
+const specificHandler = await interceptor.get('/users').respond({
   status: 200,
   body: [{ username: 'me' }],
 });
 
-await specificListHandler.clear();
-// Now, requests GET /users will match `genericListHandler` and receive an empty array
+await specificHandler.clear();
+// Now, requests GET /users will match `genericHandler` and receive an empty array
 
-await specificListHandler.requests(); // Now empty
+console.log(specificHandler.requests); // []
 ```
 
 </details></td></tr></table>
 
-### HTTP `handler.requests()`
+### HTTP `handler.requests`
 
 Returns the intercepted requests that matched this handler, along with the responses returned to each of them. This is
 useful for testing that the correct requests were made by your application. Learn more about the `request` and
@@ -1672,12 +1668,11 @@ await fetch(`http://localhost:3000/users/${1}`, {
   body: JSON.stringify({ username: 'new' }),
 });
 
-const updateRequests = await updateHandler.requests();
-expect(updateRequests).toHaveLength(1);
-expect(updateRequests[0].pathParams).toEqual({ id: '1' });
-expect(updateRequests[0].body).toEqual({ username: 'new' });
-expect(updateRequests[0].response.status).toBe(200);
-expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
+expect(updateHandler.requests).toHaveLength(1);
+expect(updateHandler.requests[0].pathParams).toEqual({ id: '1' });
+expect(updateHandler.requests[0].body).toEqual({ username: 'new' });
+expect(updateHandler.requests[0].response.status).toBe(200);
+expect(updateHandler.requests[0].response.body).toEqual([{ username: 'new' }]);
 ```
 
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
@@ -1697,12 +1692,11 @@ await fetch(`http://localhost:3000/users/${1}`, {
   body: JSON.stringify({ username: 'new' }),
 });
 
-const updateRequests = await updateHandler.requests();
-expect(updateRequests).toHaveLength(1);
-expect(updateRequests[0].pathParams).toEqual({ id: '1' });
-expect(updateRequests[0].body).toEqual({ username: 'new' });
-expect(updateRequests[0].response.status).toBe(200);
-expect(updateRequests[0].response.body).toEqual([{ username: 'new' }]);
+expect(updateHandler.requests).toHaveLength(1);
+expect(updateHandler.requests[0].pathParams).toEqual({ id: '1' });
+expect(updateHandler.requests[0].body).toEqual({ username: 'new' });
+expect(updateHandler.requests[0].response.status).toBe(200);
+expect(updateHandler.requests[0].response.body).toEqual([{ username: 'new' }]);
 ```
 
 </details></td></tr></table>
