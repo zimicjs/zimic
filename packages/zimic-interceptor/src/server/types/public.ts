@@ -8,12 +8,16 @@ export interface InterceptorServer {
   /**
    * The hostname of the server.
    *
+   * If reassigned to a new value, the server must be restarted for the change to take effect.
+   *
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
   hostname: string;
 
   /**
    * The port of the server.
+   *
+   * If reassigned to a new value, the server must be restarted for the change to take effect.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */

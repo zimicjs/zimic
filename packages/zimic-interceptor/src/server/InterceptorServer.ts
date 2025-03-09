@@ -17,6 +17,7 @@ import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
+  DEFAULT_HOSTNAME,
 } from './constants';
 import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
 import { InterceptorServerOptions } from './types/options';
@@ -56,16 +57,9 @@ class InterceptorServer implements PublicInterceptorServer {
   private knownWorkerSockets = new Set<Socket>();
 
   constructor(options: InterceptorServerOptions) {
-    this.hostname = options.hostname ?? 'localhost';
+    this.hostname = options.hostname ?? DEFAULT_HOSTNAME;
     this.port = options.port;
     this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
-  }
-
-  get httpURL() {
-    if (this.port === undefined) {
-      return undefined;
-    }
-    return `http://${this.hostname}:${this.port}`;
   }
 
   get isRunning() {
