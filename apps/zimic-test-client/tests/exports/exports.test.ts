@@ -86,7 +86,8 @@ import {
   type HttpRequestHandlerBodyStaticRestriction,
   UnknownHttpInterceptorPlatformError,
   UnknownHttpInterceptorTypeError,
-  NotStartedHttpInterceptorError,
+  RunningHttpInterceptorError,
+  NotRunningHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
@@ -240,8 +241,10 @@ describe('Exports', () => {
     expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
     expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
     expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
-    expectTypeOf<NotStartedHttpInterceptorError>().not.toBeAny();
-    expect(typeof NotStartedHttpInterceptorError).toBe('function');
+    expectTypeOf<RunningHttpInterceptorError>().not.toBeAny();
+    expect(typeof RunningHttpInterceptorError).toBe('function');
+    expectTypeOf<NotRunningHttpInterceptorError>().not.toBeAny();
+    expect(typeof NotRunningHttpInterceptorError).toBe('function');
     expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
