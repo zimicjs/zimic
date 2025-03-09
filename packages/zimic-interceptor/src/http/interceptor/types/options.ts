@@ -116,7 +116,7 @@ export interface SharedHttpInterceptorOptions {
    * {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server interceptor server}. It may include
    * additional paths to differentiate between conflicting mocks.
    */
-  baseURL: string | URL;
+  baseURL: string;
 
   /**
    * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}

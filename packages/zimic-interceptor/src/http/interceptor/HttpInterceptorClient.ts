@@ -9,7 +9,9 @@ import {
 } from '@zimic/http';
 import { Default, PossiblePromise } from '@zimic/utils/types';
 import createRegExpFromURL from '@zimic/utils/url/createRegExpFromURL';
+import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
+import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
@@ -18,7 +20,8 @@ import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
-import NotStartedHttpInterceptorError from './errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
+import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
 import { HttpInterceptorRequestContext } from './types/requests';
@@ -32,14 +35,14 @@ class HttpInterceptorClient<
   private worker: HttpInterceptorWorker;
   private store: HttpInterceptorStore;
 
-  private _baseURL: URL;
-  isRunning = false;
+  private _baseURL!: URL;
+  shouldSaveRequests = false;
 
   onUnhandledRequest?: HttpRequestHandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
     : UnhandledRequestStrategy.Remote;
 
-  shouldSaveRequests = false;
+  isRunning = false;
 
   private Handler: HandlerConstructor;
 
@@ -66,7 +69,7 @@ class HttpInterceptorClient<
     this.worker = options.worker;
     this.store = options.store;
 
-    this._baseURL = options.baseURL;
+    this.baseURL = options.baseURL;
     this.shouldSaveRequests = options.saveRequests ?? false;
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
       | UnhandledRequestStrategy
@@ -75,14 +78,35 @@ class HttpInterceptorClient<
     this.Handler = options.Handler;
   }
 
-  get baseURLAsString() {
-    const baseURL = this._baseURL;
+  get baseURL() {
+    return this._baseURL;
+  }
 
-    if (baseURL.href === `${baseURL.origin}/`) {
-      return baseURL.origin;
+  set baseURL(newBaseURL: URL) {
+    if (this.isRunning) {
+      throw new RunningHttpInterceptorError(
+        'Did you forget to call `await interceptor.stop` before changing the base URL?',
+      );
     }
 
-    return baseURL.href;
+    validateURLProtocol(newBaseURL, SUPPORTED_BASE_URL_PROTOCOLS);
+    excludeURLParams(newBaseURL);
+    this._baseURL = newBaseURL;
+  }
+
+  get baseURLAsString() {
+    if (this.baseURL.href === `${this.baseURL.origin}/`) {
+      return this.baseURL.origin;
+    }
+    return this.baseURL.href;
+  }
+
+  get saveRequests() {
+    return this.shouldSaveRequests;
+  }
+
+  set saveRequests(saveRequests: boolean) {
+    this.shouldSaveRequests = saveRequests;
   }
 
   get platform() {
@@ -156,7 +180,7 @@ class HttpInterceptorClient<
     Path extends HttpSchemaPath<Schema, Method>,
   >(method: Method, path: Path): HttpRequestHandler<Schema, Method, Path> {
     if (!this.isRunning) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
 
     const handler = new this.Handler<Schema, Method, Path>(this as SharedHttpInterceptorClient<Schema>, method, path);
@@ -273,7 +297,7 @@ class HttpInterceptorClient<
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
     if (!this.isRunning) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
 
     const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];

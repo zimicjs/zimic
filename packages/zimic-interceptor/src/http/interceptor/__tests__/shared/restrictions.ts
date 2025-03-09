@@ -28,7 +28,7 @@ export async function declareRestrictionsHttpInterceptorTests(options: RuntimeSh
 
   const File = await importFile();
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;

@@ -1,27 +1,19 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
-import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
 import { LocalHttpInterceptorOptions } from './types/options';
 import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
-  readonly type: 'local';
-
   private store = new HttpInterceptorStore();
 
   client: HttpInterceptorClient<Schema>;
 
   constructor(options: LocalHttpInterceptorOptions) {
-    this.type = options.type;
-
     const baseURL = new URL(options.baseURL);
-    validateURLProtocol(baseURL, SUPPORTED_BASE_URL_PROTOCOLS);
-    excludeURLParams(baseURL);
 
     const worker = this.store.getOrCreateLocalWorker({});
 
@@ -35,8 +27,16 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     });
   }
 
+  get type() {
+    return 'local' as const;
+  }
+
   get baseURL() {
     return this.client.baseURLAsString;
+  }
+
+  set baseURL(baseURL: string) {
+    this.client.baseURL = new URL(baseURL);
   }
 
   get saveRequests() {

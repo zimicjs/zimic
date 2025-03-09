@@ -21,7 +21,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 ) {
   const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;

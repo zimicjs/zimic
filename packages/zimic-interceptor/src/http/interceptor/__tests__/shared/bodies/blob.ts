@@ -57,7 +57,7 @@ export async function declareBlobBodyHttpInterceptorTests(options: RuntimeShared
     { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler: typeof LocalHttpRequestHandler | typeof RemoteHttpRequestHandler =
