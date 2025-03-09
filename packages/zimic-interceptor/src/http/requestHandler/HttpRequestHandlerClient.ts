@@ -386,7 +386,7 @@ class HttpRequestHandlerClient<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    const interceptedRequest = request as unknown as InterceptedHttpInterceptorRequest<
+    const interceptedRequest = request as InterceptedHttpInterceptorRequest<
       Path,
       Default<Schema[Path][Method]>,
       StatusCode

@@ -8,7 +8,7 @@ import * as mswNode from 'msw/node';
 import { removeArrayIndex } from '@/utils/arrays';
 import { isClientSide, isServerSide } from '@/utils/environment';
 
-import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient from '../interceptor/HttpInterceptorClient';
 import UnregisteredBrowserServiceWorkerError from './errors/UnregisteredBrowserServiceWorkerError';
@@ -17,8 +17,6 @@ import { LocalHttpInterceptorWorkerOptions } from './types/options';
 import { BrowserHttpWorker, HttpResponseFactory, HttpWorker, NodeHttpWorker } from './types/requests';
 
 class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
-  readonly type: 'local';
-
   private internalWorker?: HttpWorker;
 
   private defaultHttpHandler: MSWHttpHandler;
@@ -28,9 +26,8 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     httpHandler: MSWHttpHandler;
   }[] = [];
 
-  constructor(options: LocalHttpInterceptorWorkerOptions) {
+  constructor(_options: LocalHttpInterceptorWorkerOptions) {
     super();
-    this.type = options.type;
 
     this.defaultHttpHandler = http.all('*', async (context) => {
       const request = context.request satisfies Request as HttpRequest;
@@ -38,9 +35,13 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
     });
   }
 
+  get type() {
+    return 'local' as const;
+  }
+
   get internalWorkerOrThrow() {
     if (!this.internalWorker) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
     return this.internalWorker;
   }

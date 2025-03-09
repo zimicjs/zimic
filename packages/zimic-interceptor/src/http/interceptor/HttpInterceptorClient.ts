@@ -38,7 +38,7 @@ class HttpInterceptorClient<
   private _baseURL!: URL;
   shouldSaveRequests = false;
 
-  onUnhandledRequest?: HttpRequestHandlerConstructor extends typeof LocalHttpRequestHandler
+  onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
     : UnhandledRequestStrategy.Remote;
 
@@ -134,7 +134,7 @@ class HttpInterceptorClient<
     if (this.worker instanceof LocalHttpInterceptorWorker) {
       this.store.markLocalInterceptorAsRunning(this, isRunning);
     } else {
-      this.store.markRemoteInterceptorAsRunning(this, isRunning, this._baseURL);
+      this.store.markRemoteInterceptorAsRunning(this, isRunning, this.baseURL);
     }
     this.isRunning = isRunning;
   }
@@ -143,7 +143,7 @@ class HttpInterceptorClient<
     if (this.worker instanceof LocalHttpInterceptorWorker) {
       return this.store.numberOfRunningLocalInterceptors;
     } else {
-      return this.store.numberOfRunningRemoteInterceptors(this._baseURL);
+      return this.store.numberOfRunningRemoteInterceptors(this.baseURL);
     }
   }
 

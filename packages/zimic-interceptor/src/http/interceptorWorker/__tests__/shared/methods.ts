@@ -7,7 +7,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { DuplicatedPathParamError } from '@zimic/utils/url/validateURLPathParams';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import NotStartedHttpInterceptorError from '@/http/interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
@@ -29,7 +29,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
   const responseStatus = 200;
   const responseBody = { success: true };
 
-  let baseURL: URL;
+  let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
@@ -46,7 +46,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     workerOptions =
       defaultWorkerOptions.type === 'local'
         ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(baseURL.origin) };
+        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
@@ -792,7 +792,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await expect(async () => {
           await worker.use(interceptor.client, method, baseURL, spiedRequestHandler);
-        }).rejects.toThrowError(NotStartedHttpInterceptorError);
+        }).rejects.toThrowError(NotRunningHttpInterceptorError);
       });
     });
 

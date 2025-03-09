@@ -9,7 +9,7 @@ import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
-import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
@@ -26,20 +26,21 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  readonly type: 'remote';
-
   webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
 
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
-    this.type = options.type;
 
     const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
     this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
     });
+  }
+
+  get type() {
+    return 'remote' as const;
   }
 
   private deriveWebSocketServerURL(serverURL: URL) {
@@ -130,7 +131,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     createResponse: HttpResponseFactory,
   ) {
     if (!this.isRunning) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
 
     const crypto = await importCrypto();
@@ -164,7 +165,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async clearHandlers() {
     if (!this.isRunning) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
 
     this.httpHandlers.clear();
@@ -176,7 +177,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
     if (!this.isRunning) {
-      throw new NotStartedHttpInterceptorError();
+      throw new NotRunningHttpInterceptorError();
     }
 
     for (const handler of this.httpHandlers.values()) {

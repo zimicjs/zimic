@@ -5,7 +5,8 @@ import { InterceptedHttpInterceptorRequest } from './requestHandler/types/reques
 
 export { default as InvalidJSONError } from './interceptorWorker/errors/InvalidJSONError';
 export { default as InvalidFormDataError } from './interceptorWorker/errors/InvalidFormDataError';
-export { default as NotStartedHttpInterceptorError } from './interceptor/errors/NotStartedHttpInterceptorError';
+export { default as RunningHttpInterceptorError } from './interceptor/errors/RunningHttpInterceptorError';
+export { default as NotRunningHttpInterceptorError } from './interceptor/errors/NotRunningHttpInterceptorError';
 export { default as UnknownHttpInterceptorPlatformError } from './interceptor/errors/UnknownHttpInterceptorPlatformError';
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
