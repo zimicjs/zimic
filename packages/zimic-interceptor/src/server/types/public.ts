@@ -6,19 +6,17 @@
  */
 export interface InterceptorServer {
   /**
-   * The hostname of the server.
+   * The hostname of the server. It can be reassigned to a new value if the server is not running.
    *
-   * If reassigned to a new value, the server must be restarted for the change to take effect.
-   *
+   * @throws {RunningInterceptorServerError} When trying to reassign a new hostname with the server still running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
   hostname: string;
 
   /**
-   * The port of the server.
+   * The port of the server. It can be reassigned to a new value if the server is not running.
    *
-   * If reassigned to a new value, the server must be restarted for the change to take effect.
-   *
+   * @throws {RunningInterceptorServerError} When trying to reassign a new port with the server still running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
   port: number | undefined;
