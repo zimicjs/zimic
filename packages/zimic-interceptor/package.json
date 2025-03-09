@@ -91,7 +91,7 @@
     "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
-    "@whatwg-node/server": "0.9.70",
+    "@whatwg-node/server": "0.10.1",
     "chalk": "4.1.2",
     "execa": "9.5.2",
     "isomorphic-ws": "5.0.0",
@@ -103,21 +103,21 @@
     "bufferutil": "4.0.9"
   },
   "devDependencies": {
-    "@types/node": "^22.13.8",
-    "@types/ws": "^8.5.14",
+    "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.0",
     "@types/yargs": "^17.0.33",
-    "@vitest/browser": "^3.0.7",
-    "@vitest/coverage-istanbul": "^3.0.7",
+    "@vitest/browser": "^3.0.8",
+    "@vitest/coverage-istanbul": "^3.0.8",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.21.0",
-    "playwright": "^1.50.1",
+    "eslint": "^9.22.0",
+    "playwright": "^1.51.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.8"
   },
   "peerDependencies": {
     "@zimic/http": "^0.1.0 || ^0.1.0-canary.0",

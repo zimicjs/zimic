@@ -15,10 +15,10 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
-    "@vitest/spy": "^3.0.7",
+    "@vitest/spy": "^3.0.8",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.8"
   }
 }
