@@ -1,7 +1,4 @@
-import { HttpMethodSchema, HttpStatusCode } from '@zimic/http';
-
 import HttpInterceptorNamespace from './namespace/HttpInterceptorNamespace';
-import { InterceptedHttpInterceptorRequest } from './requestHandler/types/requests';
 
 export { default as InvalidJSONError } from './interceptorWorker/errors/InvalidJSONError';
 export { default as InvalidFormDataError } from './interceptorWorker/errors/InvalidFormDataError';
@@ -20,16 +17,6 @@ export type {
   HttpInterceptorResponse,
   InterceptedHttpInterceptorRequest,
 } from './requestHandler/types/requests';
-
-/**
- * @deprecated This type was renamed to {@link InterceptedHttpInterceptorRequest `InterceptedHttpInterceptorRequest`}.
- *   Please use it instead.
- */
-export type TrackedHttpInterceptorRequest<
-  Path extends string,
-  MethodSchema extends HttpMethodSchema,
-  StatusCode extends HttpStatusCode = never,
-> = InterceptedHttpInterceptorRequest<Path, MethodSchema, StatusCode>;
 
 export type {
   LocalHttpRequestHandler,

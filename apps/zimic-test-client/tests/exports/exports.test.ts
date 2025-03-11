@@ -68,7 +68,6 @@ import {
   type InferHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
-  type TrackedHttpInterceptorRequest,
   type InterceptedHttpInterceptorRequest,
   type UnhandledHttpInterceptorRequest,
   type HttpRequestHandler,
@@ -217,8 +216,6 @@ describe('Exports', () => {
     expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();
     expectTypeOf<InterceptedHttpInterceptorRequest<never, {}>>().not.toBeAny();
     expectTypeOf<UnhandledHttpInterceptorRequest>().not.toBeAny();
 
