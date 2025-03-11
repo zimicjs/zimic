@@ -36,7 +36,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  shouldSaveRequests = false;
+  private _saveRequests = false;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -70,7 +70,7 @@ class HttpInterceptorClient<
     this.store = options.store;
 
     this.baseURL = options.baseURL;
-    this.shouldSaveRequests = options.saveRequests ?? false;
+    this._saveRequests = options.saveRequests ?? false;
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
       | UnhandledRequestStrategy
       | undefined as this['onUnhandledRequest'];
@@ -102,11 +102,11 @@ class HttpInterceptorClient<
   }
 
   get saveRequests() {
-    return this.shouldSaveRequests;
+    return this._saveRequests;
   }
 
   set saveRequests(saveRequests: boolean) {
-    this.shouldSaveRequests = saveRequests;
+    this._saveRequests = saveRequests;
   }
 
   get platform() {
@@ -246,7 +246,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.shouldSaveRequests) {
+    if (this._saveRequests) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<

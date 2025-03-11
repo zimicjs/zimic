@@ -41,11 +41,11 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   }
 
   get saveRequests() {
-    return this.client.shouldSaveRequests;
+    return this.client.saveRequests;
   }
 
   set saveRequests(saveRequests: NonNullable<RemoteHttpInterceptorOptions['saveRequests']>) {
-    this.client.shouldSaveRequests = saveRequests;
+    this.client.saveRequests = saveRequests;
   }
 
   get onUnhandledRequest() {

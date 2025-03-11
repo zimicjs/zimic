@@ -40,11 +40,11 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
   }
 
   get saveRequests() {
-    return this.client.shouldSaveRequests;
+    return this.client.saveRequests;
   }
 
   set saveRequests(saveRequests: NonNullable<LocalHttpInterceptorOptions['saveRequests']>) {
-    this.client.shouldSaveRequests = saveRequests;
+    this.client.saveRequests = saveRequests;
   }
 
   get onUnhandledRequest() {
