@@ -953,4 +953,88 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
       });
     });
   });
+
+  it('should support changing the unhandled request strategy after created', async () => {
+    const initialOnUnhandledRequest: UnhandledRequestStrategy.Remote = { action: 'reject', log: false };
+
+    await usingHttpInterceptor<SchemaWithoutRequestBody>(
+      {
+        ...interceptorOptions,
+        type,
+        onUnhandledRequest: initialOnUnhandledRequest,
+      },
+      async (interceptor) => {
+        expect(interceptor.onUnhandledRequest).toEqual(initialOnUnhandledRequest);
+
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
+          interceptor,
+        );
+        expect(handler).toBeInstanceOf(Handler);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(1);
+          const interceptedRequest = handler.requests[0];
+          expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
+          expect(interceptedRequest.body).toBe(null);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+
+          const request = new Request(joinURL(baseURL, '/users/unknown'), {
+            method: 'GET',
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          });
+          const responsePromise = fetch(request);
+
+          await expectFetchError(responsePromise);
+
+          expect(handler.requests).toHaveLength(1);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
+
+        const newOnUnhandledRequest: UnhandledRequestStrategy.Remote = { action: 'reject', log: true };
+        expect(initialOnUnhandledRequest).not.toEqual(newOnUnhandledRequest);
+
+        interceptor.onUnhandledRequest = newOnUnhandledRequest;
+        expect(interceptor.onUnhandledRequest).toEqual(newOnUnhandledRequest);
+
+        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(2);
+          const interceptedRequest = handler.requests[1];
+          expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
+          expect(interceptedRequest.body).toBe(null);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+
+          const request = new Request(joinURL(baseURL, '/users/unknown'), {
+            method: 'GET',
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          });
+          const responsePromise = fetch(request);
+
+          await expectFetchError(responsePromise);
+
+          expect(handler.requests).toHaveLength(2);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
+
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
+        });
+      },
+    );
+  });
 }

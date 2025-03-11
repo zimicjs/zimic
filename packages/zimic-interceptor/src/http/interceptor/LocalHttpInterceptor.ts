@@ -51,6 +51,10 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     return this.client.onUnhandledRequest;
   }
 
+  set onUnhandledRequest(onUnhandledRequest: LocalHttpInterceptorOptions['onUnhandledRequest']) {
+    this.client.onUnhandledRequest = onUnhandledRequest;
+  }
+
   get platform() {
     return this.client.platform;
   }

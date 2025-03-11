@@ -52,6 +52,10 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     return this.client.onUnhandledRequest;
   }
 
+  set onUnhandledRequest(onUnhandledRequest: RemoteHttpInterceptorOptions['onUnhandledRequest']) {
+    this.client.onUnhandledRequest = onUnhandledRequest;
+  }
+
   get platform() {
     return this.client.platform;
   }
