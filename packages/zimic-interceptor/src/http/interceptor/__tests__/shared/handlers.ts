@@ -572,7 +572,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         });
       });
 
-      it(`should save intercepted ${method} requests if enabled after created with: %s`, async () => {
+      it(`should support changing the save requests strategy after created for ${method} requests`, async () => {
         await usingHttpInterceptor<{
           '/users': {
             GET: MethodSchema;

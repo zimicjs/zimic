@@ -85,7 +85,7 @@ class HttpInterceptorClient<
   set baseURL(newBaseURL: URL) {
     if (this.isRunning) {
       throw new RunningHttpInterceptorError(
-        'Did you forget to call `await interceptor.stop` before changing the base URL?',
+        'Did you forget to call `await interceptor.stop()` before changing the base URL?',
       );
     }
 

@@ -65,7 +65,7 @@ describe('Interceptor server', () => {
     });
 
     it('should start correctly with an undefined hostname', async () => {
-      server = createInternalInterceptorServer();
+      server = createInternalInterceptorServer({ hostname: undefined });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
@@ -78,8 +78,8 @@ describe('Interceptor server', () => {
       expect(server.port).toEqual(expect.any(Number));
     });
 
-    it('should support changing the hostname', async () => {
-      server = createInternalInterceptorServer({ port: 8080 });
+    it('should support changing the hostname after created', async () => {
+      server = createInternalInterceptorServer({ hostname: undefined, port: 8080 });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
@@ -109,7 +109,7 @@ describe('Interceptor server', () => {
       expect(server.port).toBe(8080);
     });
 
-    it('should not support changing the hostname if the server is running', async () => {
+    it('should not support changing the hostname after created if the server is running', async () => {
       server = createInternalInterceptorServer({ port: 8080 });
 
       expect(server.isRunning).toBe(false);
@@ -152,7 +152,7 @@ describe('Interceptor server', () => {
     });
 
     it('should start correctly with an undefined port', async () => {
-      server = createInternalInterceptorServer();
+      server = createInternalInterceptorServer({ port: undefined });
 
       expect(server.isRunning).toBe(false);
       expect(server.hostname).toBe(DEFAULT_HOSTNAME);
@@ -165,7 +165,7 @@ describe('Interceptor server', () => {
       expect(server.port).toEqual(expect.any(Number));
     });
 
-    it('should support changing the port', async () => {
+    it('should support changing the port after created', async () => {
       server = createInternalInterceptorServer({ port: 3000 });
 
       expect(server.isRunning).toBe(false);
@@ -196,7 +196,7 @@ describe('Interceptor server', () => {
       expect(server.port).toBe(newPort);
     });
 
-    it('should not support changing the port if the server is running', async () => {
+    it('should not support changing the port after created if the server is running', async () => {
       server = createInternalInterceptorServer({ port: 3000 });
 
       expect(server.isRunning).toBe(false);
@@ -237,7 +237,7 @@ describe('Interceptor server', () => {
     });
 
     it('should start correctly with an undefined log unhandled requests setting', async () => {
-      server = createInternalInterceptorServer();
+      server = createInternalInterceptorServer({ logUnhandledRequests: undefined });
 
       expect(server.isRunning).toBe(false);
       expect(server.logUnhandledRequests).toBe(DEFAULT_LOG_UNHANDLED_REQUESTS);
@@ -248,7 +248,7 @@ describe('Interceptor server', () => {
       expect(server.logUnhandledRequests).toBe(DEFAULT_LOG_UNHANDLED_REQUESTS);
     });
 
-    it('should support changing the log unhandled requests setting', async () => {
+    it('should support changing the log unhandled requests setting after created', async () => {
       server = createInternalInterceptorServer({ logUnhandledRequests: true });
 
       expect(server.isRunning).toBe(false);

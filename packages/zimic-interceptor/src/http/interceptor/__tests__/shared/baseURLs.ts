@@ -66,7 +66,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
     }
   });
 
-  it('should support changing the base URL', async () => {
+  it('should support changing the base URL after created', async () => {
     const baseURL = defaultBaseURL.toString();
 
     await usingHttpInterceptor<{
@@ -154,7 +154,7 @@ export function declareBaseURLHttpInterceptorTests(options: RuntimeSharedHttpInt
         interceptor.baseURL = newBaseURL;
       }).toThrowError(
         new RunningHttpInterceptorError(
-          'Did you forget to call `await interceptor.stop` before changing the base URL?',
+          'Did you forget to call `await interceptor.stop()` before changing the base URL?',
         ),
       );
 
