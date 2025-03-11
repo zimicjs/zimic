@@ -6,8 +6,8 @@
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning` API reference}
  */
 class RunningHttpInterceptorError extends Error {
-  constructor(additionalMessage?: string) {
-    super(`The interceptor is running.${additionalMessage ? ` ${additionalMessage}` : ''}`);
+  constructor(additionalMessage: string) {
+    super(`The interceptor is running.${additionalMessage}`);
     this.name = 'RunningHttpInterceptorError';
   }
 }
