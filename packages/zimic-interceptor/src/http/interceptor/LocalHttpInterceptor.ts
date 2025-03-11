@@ -10,14 +10,14 @@ import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/publ
 class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
 
-  client: HttpInterceptorClient<Schema>;
+  client: HttpInterceptorClient<Schema, typeof LocalHttpRequestHandler>;
 
   constructor(options: LocalHttpInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
     const worker = this.store.getOrCreateLocalWorker({});
 
-    this.client = new HttpInterceptorClient<Schema>({
+    this.client = new HttpInterceptorClient<Schema, typeof LocalHttpRequestHandler>({
       worker,
       store: this.store,
       baseURL,
@@ -35,12 +35,16 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     return this.client.baseURLAsString;
   }
 
-  set baseURL(baseURL: string) {
+  set baseURL(baseURL: LocalHttpInterceptorOptions['baseURL']) {
     this.client.baseURL = new URL(baseURL);
   }
 
   get saveRequests() {
     return this.client.shouldSaveRequests;
+  }
+
+  set saveRequests(saveRequests: NonNullable<LocalHttpInterceptorOptions['saveRequests']>) {
+    this.client.shouldSaveRequests = saveRequests;
   }
 
   get onUnhandledRequest() {

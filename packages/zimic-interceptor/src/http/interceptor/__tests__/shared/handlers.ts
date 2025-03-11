@@ -571,6 +571,72 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
         });
       });
+
+      it(`should save intercepted ${method} requests if enabled after created with: %s`, async () => {
+        await usingHttpInterceptor<{
+          '/users': {
+            GET: MethodSchema;
+            POST: MethodSchema;
+            PUT: MethodSchema;
+            PATCH: MethodSchema;
+            DELETE: MethodSchema;
+            HEAD: MethodSchema;
+            OPTIONS: MethodSchema;
+          };
+        }>({ ...interceptorOptions, saveRequests: true }, async (interceptor) => {
+          const handler = await promiseIfRemote(
+            interceptor[lowerMethod]('/users').respond({
+              status: 200,
+              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
+            }),
+            interceptor,
+          );
+
+          expect(interceptor.saveRequests).toBe(true);
+          interceptor.saveRequests = false;
+          expect(interceptor.saveRequests).toBe(false);
+
+          const error = new DisabledRequestSavingError();
+
+          expect(() => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            handler.requests;
+          }).toThrowError(error);
+
+          // @ts-expect-error Checking that no intercepted requests are saved.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          expect(handler.client._requests).toHaveLength(0);
+
+          const numberOfRequests = 5;
+
+          for (let index = 0; index < numberOfRequests; index++) {
+            const response = await fetch(joinURL(baseURL, '/users'), { method });
+            expect(response.status).toBe(200);
+          }
+
+          expect(() => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+            handler.requests;
+          }).toThrowError(error);
+
+          // @ts-expect-error Checking that no intercepted requests are saved.
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          expect(handler.client._requests).toHaveLength(0);
+
+          expect(interceptor.saveRequests).toBe(false);
+          interceptor.saveRequests = true;
+          expect(interceptor.saveRequests).toBe(true);
+
+          expect(handler.requests).toHaveLength(0);
+
+          for (let index = 0; index < numberOfRequests; index++) {
+            const response = await fetch(joinURL(baseURL, '/users'), { method });
+            expect(response.status).toBe(200);
+          }
+
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
+        });
+      });
     });
   });
 }
