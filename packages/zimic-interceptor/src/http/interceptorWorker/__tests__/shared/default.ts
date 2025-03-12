@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 
-import NotStartedHttpInterceptorError from '@/http/interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { createInternalHttpInterceptor, usingHttpInterceptorWorker } from '@tests/utils/interceptors';
 
@@ -15,7 +15,7 @@ import { SharedHttpInterceptorWorkerTestOptions } from './types';
 export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInterceptorWorkerTestOptions) {
   const { platform, defaultWorkerOptions, startServer, getBaseURL, stopServer } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
@@ -32,7 +32,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
     workerOptions =
       defaultWorkerOptions.type === 'local'
         ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(baseURL.origin) };
+        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
@@ -132,7 +132,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await expect(async () => {
         await worker.clearHandlers();
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
 
@@ -144,7 +144,7 @@ export function declareDefaultHttpInterceptorWorkerTests(options: SharedHttpInte
 
       await expect(async () => {
         await worker.clearInterceptorHandlers(interceptor.client);
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
 

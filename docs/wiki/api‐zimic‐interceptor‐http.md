@@ -1,4 +1,4 @@
-# `zimic/interceptor/http` - API reference <!-- omit from toc -->
+# `@zimic/interceptor/http` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

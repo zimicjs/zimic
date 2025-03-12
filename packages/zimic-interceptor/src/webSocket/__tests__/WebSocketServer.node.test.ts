@@ -17,7 +17,7 @@ import {
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
-import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
+import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketServer from '../WebSocketServer';
 import {
@@ -620,7 +620,7 @@ describe('Web socket server', async () => {
 
       await expect(async () => {
         await server?.send('no-reply', { message: 'test' });
-      }).rejects.toThrowError(new NotStartedWebSocketHandlerError());
+      }).rejects.toThrowError(new NotRunningWebSocketHandlerError());
     });
   });
 });

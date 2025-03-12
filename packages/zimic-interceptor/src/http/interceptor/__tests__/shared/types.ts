@@ -27,7 +27,7 @@ export function declareTypeHttpInterceptorTests(
 
   const users: User[] = [{ name: 'User 1' }, { name: 'User 2' }];
 
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeEach(() => {
     baseURL = getBaseURL();

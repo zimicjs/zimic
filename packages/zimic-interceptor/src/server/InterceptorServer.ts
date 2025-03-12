@@ -17,8 +17,10 @@ import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
+  DEFAULT_HOSTNAME,
 } from './constants';
-import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
+import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
+import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
@@ -37,8 +39,8 @@ class InterceptorServer implements PublicInterceptorServer {
   private httpServer?: HttpServer;
   private webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
 
-  hostname: string;
-  port: number | undefined;
+  _hostname: string;
+  _port: number | undefined;
   logUnhandledRequests: boolean;
 
   private httpHandlerGroups: {
@@ -56,16 +58,31 @@ class InterceptorServer implements PublicInterceptorServer {
   private knownWorkerSockets = new Set<Socket>();
 
   constructor(options: InterceptorServerOptions) {
-    this.hostname = options.hostname ?? 'localhost';
-    this.port = options.port;
+    this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
+    this._port = options.port;
     this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
   }
 
-  get httpURL() {
-    if (this.port === undefined) {
-      return undefined;
+  get hostname() {
+    return this._hostname;
+  }
+
+  set hostname(newHostname: string) {
+    if (this.isRunning) {
+      throw new RunningInterceptorServerError('Did you forget to stop it before changing the hostname?');
     }
-    return `http://${this.hostname}:${this.port}`;
+    this._hostname = newHostname;
+  }
+
+  get port() {
+    return this._port;
+  }
+
+  set port(newPort: number | undefined) {
+    if (this.isRunning) {
+      throw new RunningInterceptorServerError('Did you forget to stop it before changing the port?');
+    }
+    this._port = newPort;
   }
 
   get isRunning() {
@@ -76,7 +93,7 @@ class InterceptorServer implements PublicInterceptorServer {
     /* istanbul ignore if -- @preserve
      * The HTTP server is initialized before using this method in normal conditions. */
     if (!this.httpServer) {
-      throw new NotStartedInterceptorServerError();
+      throw new NotRunningInterceptorServerError();
     }
     return this.httpServer;
   }
@@ -85,7 +102,7 @@ class InterceptorServer implements PublicInterceptorServer {
     /* istanbul ignore if -- @preserve
      * The web socket server is initialized before using this method in normal conditions. */
     if (!this.webSocketServer) {
-      throw new NotStartedInterceptorServerError();
+      throw new NotRunningInterceptorServerError();
     }
     return this.webSocketServer;
   }

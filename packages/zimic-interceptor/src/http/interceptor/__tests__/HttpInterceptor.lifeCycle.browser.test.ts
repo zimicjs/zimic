@@ -6,7 +6,7 @@ import { declareLifeCycleHttpInterceptorTests } from './shared/lifeCycle';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Life cycle', ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

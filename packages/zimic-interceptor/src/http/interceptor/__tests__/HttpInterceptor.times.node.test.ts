@@ -9,7 +9,7 @@ import { declareTimesHttpInterceptorTests } from './shared/times';
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Times', async ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {

@@ -132,7 +132,7 @@ class HttpRequestHandlerClient<
         declarationPointer: this.timesDeclarationPointer,
         unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
-        hasSavedRequests: this.interceptor.shouldSaveRequests,
+        hasSavedRequests: this.interceptor.saveRequests,
       });
     }
   }
@@ -168,9 +168,7 @@ class HttpRequestHandlerClient<
       this.numberOfMatchedRequests++;
     } else {
       const shouldSaveUnmatchedGroup =
-        this.interceptor.shouldSaveRequests &&
-        this.restrictions.length > 0 &&
-        this.timesDeclarationPointer !== undefined;
+        this.interceptor.saveRequests && this.restrictions.length > 0 && this.timesDeclarationPointer !== undefined;
 
       if (shouldSaveUnmatchedGroup) {
         this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
@@ -386,7 +384,7 @@ class HttpRequestHandlerClient<
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    const interceptedRequest = request as unknown as InterceptedHttpInterceptorRequest<
+    const interceptedRequest = request as InterceptedHttpInterceptorRequest<
       Path,
       Default<Schema[Path][Method]>,
       StatusCode
@@ -403,7 +401,7 @@ class HttpRequestHandlerClient<
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    if (!this.interceptor.shouldSaveRequests) {
+    if (!this.interceptor.saveRequests) {
       throw new DisabledRequestSavingError();
     }
 

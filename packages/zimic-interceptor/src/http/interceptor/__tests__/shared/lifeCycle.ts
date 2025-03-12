@@ -14,14 +14,14 @@ import {
   usingHttpInterceptor,
 } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -178,7 +178,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
 
       await expect(async () => {
         await interceptor[lowerMethod]('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
 }

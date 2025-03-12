@@ -12,7 +12,7 @@ import {
 } from '@/utils/webSocket';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
-import NotStartedWebSocketHandlerError from './errors/NotStartedWebSocketHandlerError';
+import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import { WebSocket } from './types';
 
 abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
@@ -291,7 +291,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
     if (!this.isRunning) {
-      throw new NotStartedWebSocketHandlerError();
+      throw new NotRunningWebSocketHandlerError();
     }
 
     const stringifiedMessage = JSON.stringify(message);

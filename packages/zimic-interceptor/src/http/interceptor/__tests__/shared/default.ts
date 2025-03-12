@@ -6,7 +6,7 @@ import {
   usingHttpInterceptor,
 } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
 import HttpInterceptorStore from '../../HttpInterceptorStore';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
@@ -16,17 +16,17 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   const store = new HttpInterceptorStore();
 
-  let baseURL: URL;
+  let baseURL: string;
   let serverURL: URL;
 
   beforeAll(() => {
     store.clear();
 
     baseURL = getBaseURL();
-    serverURL = new URL(baseURL.origin);
+    serverURL = new URL(new URL(baseURL).origin);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
-    expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
+    expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
   });
 
   afterEach(() => {
@@ -38,7 +38,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     }
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
-    expect(store.numberOfRunningRemoteInterceptors(baseURL)).toBe(0);
+    expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
   });
 
   it('should throw an error if created with an unknown type', () => {
@@ -211,7 +211,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
       await expect(async () => {
         await interceptor.clear();
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
 }

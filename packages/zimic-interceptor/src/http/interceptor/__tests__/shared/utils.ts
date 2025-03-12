@@ -18,7 +18,7 @@ export interface SharedHttpInterceptorTestsOptions {
 export interface RuntimeSharedHttpInterceptorTestsOptions {
   platform: HttpInterceptorPlatform;
   type: HttpInterceptorType;
-  getBaseURL: () => URL;
+  getBaseURL: () => string;
   getInterceptorOptions: () => HttpInterceptorOptions;
 }
 

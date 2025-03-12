@@ -23,7 +23,7 @@ export async function declareUnhandledRequestFactoriesHttpInterceptorTests(
 
   const crypto = await importCrypto();
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;

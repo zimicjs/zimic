@@ -31,7 +31,7 @@ export function declareDefaultHttpRequestHandlerTests(
 ) {
   const { platform, type, startServer, stopServer, getBaseURL, Handler } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;

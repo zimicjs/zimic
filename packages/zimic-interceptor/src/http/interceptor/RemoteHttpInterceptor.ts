@@ -1,30 +1,21 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
-import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
-  readonly type: 'remote';
-
   private store = new HttpInterceptorStore();
 
   client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.type = options.type;
-
     const baseURL = new URL(options.baseURL);
-    validateURLProtocol(baseURL, SUPPORTED_BASE_URL_PROTOCOLS);
-    excludeURLParams(baseURL);
 
     const serverURL = new URL(baseURL.origin);
-
     const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 
     this.client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
@@ -37,8 +28,32 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     });
   }
 
+  get type() {
+    return 'remote' as const;
+  }
+
   get baseURL() {
     return this.client.baseURLAsString;
+  }
+
+  set baseURL(baseURL: string) {
+    this.client.baseURL = new URL(baseURL);
+  }
+
+  get saveRequests() {
+    return this.client.saveRequests;
+  }
+
+  set saveRequests(saveRequests: NonNullable<RemoteHttpInterceptorOptions['saveRequests']>) {
+    this.client.saveRequests = saveRequests;
+  }
+
+  get onUnhandledRequest() {
+    return this.client.onUnhandledRequest;
+  }
+
+  set onUnhandledRequest(onUnhandledRequest: RemoteHttpInterceptorOptions['onUnhandledRequest']) {
+    this.client.onUnhandledRequest = onUnhandledRequest;
   }
 
   get platform() {

@@ -16,7 +16,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
