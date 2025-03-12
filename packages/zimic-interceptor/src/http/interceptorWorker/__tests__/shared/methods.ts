@@ -7,7 +7,7 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { DuplicatedPathParamError } from '@zimic/utils/url/validateURLPathParams';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import NotStartedHttpInterceptorError from '@/http/interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '@/http/interceptor/errors/NotRunningHttpInterceptorError';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
 import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fetch';
@@ -29,7 +29,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
   const responseStatus = 200;
   const responseBody = { success: true };
 
-  let baseURL: URL;
+  let baseURL: string;
   let workerOptions: LocalHttpInterceptorWorkerOptions | RemoteHttpInterceptorWorkerOptions;
 
   function createDefaultHttpInterceptor() {
@@ -46,7 +46,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     workerOptions =
       defaultWorkerOptions.type === 'local'
         ? defaultWorkerOptions
-        : { ...defaultWorkerOptions, serverURL: new URL(baseURL.origin) };
+        : { ...defaultWorkerOptions, serverURL: new URL(new URL(baseURL).origin) };
   });
 
   afterAll(async () => {
@@ -97,7 +97,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -283,7 +283,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client(), method, url, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, url, spiedRequestHandler), worker);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -459,7 +459,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         await usingHttpInterceptorWorker(workerOptions, async (worker) => {
           const interceptor = createDefaultHttpInterceptor();
-          await promiseIfRemote(worker.use(interceptor.client(), method, url, spiedRequestHandler), worker);
+          await promiseIfRemote(worker.use(interceptor.client, method, url, spiedRequestHandler), worker);
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -496,7 +496,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           const interceptor = createDefaultHttpInterceptor();
 
           await expect(async () => {
-            await worker.use(interceptor.client(), method, url, spiedRequestHandler);
+            await worker.use(interceptor.client, method, url, spiedRequestHandler);
           }).rejects.toThrowError(new DuplicatedPathParamError(new URL(url), paths.duplicatedParameter));
 
           expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -523,7 +523,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         const interceptor = createDefaultHttpInterceptor();
         const emptySpiedRequestHandler = vi.fn(requestHandler).mockImplementation(() => null);
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, emptySpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, emptySpiedRequestHandler), worker);
 
         expect(emptySpiedRequestHandler).not.toHaveBeenCalled();
 
@@ -565,7 +565,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
           return requestHandler(context);
         });
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, delayedSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, delayedSpiedRequestHandler), worker);
 
         expect(delayedSpiedRequestHandler).not.toHaveBeenCalled();
 
@@ -592,7 +592,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
       await usingHttpInterceptorWorker(workerOptions, { start: false }, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
         await expect(async () => {
-          await worker.use(interceptor.client(), method, baseURL, spiedRequestHandler);
+          await worker.use(interceptor.client, method, baseURL, spiedRequestHandler);
         }).rejects.toThrowError(Error);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
@@ -617,7 +617,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should not intercept ${method} requests after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
 
         await worker.stop();
 
@@ -641,7 +641,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should clear all ${method} handlers after stopped`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
 
         await worker.stop();
         await worker.start();
@@ -666,7 +666,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
     it(`should not intercept ${method} requests having no handler after cleared`, async () => {
       await usingHttpInterceptorWorker(workerOptions, async (worker) => {
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
 
         await promiseIfRemote(worker.clearHandlers(), worker);
 
@@ -682,7 +682,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, spiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, spiedRequestHandler), worker);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();
 
@@ -711,12 +711,12 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         });
 
         const interceptor = createDefaultHttpInterceptor();
-        await promiseIfRemote(worker.use(interceptor.client(), method, baseURL, okSpiedRequestHandler), worker);
+        await promiseIfRemote(worker.use(interceptor.client, method, baseURL, okSpiedRequestHandler), worker);
 
-        let interceptorsWithHandlers = worker.interceptorsWithHandlers();
+        let interceptorsWithHandlers = worker.interceptorsWithHandlers;
 
         expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client);
 
         let response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
@@ -730,14 +730,14 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
 
         const otherInterceptor = createDefaultHttpInterceptor();
         await promiseIfRemote(
-          worker.use(otherInterceptor.client(), method, baseURL, noContentSpiedRequestHandler),
+          worker.use(otherInterceptor.client, method, baseURL, noContentSpiedRequestHandler),
           worker,
         );
 
-        interceptorsWithHandlers = worker.interceptorsWithHandlers();
+        interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(2);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
-        expect(interceptorsWithHandlers[1]).toBe(otherInterceptor.client());
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client);
+        expect(interceptorsWithHandlers[1]).toBe(otherInterceptor.client);
 
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(204);
@@ -750,11 +750,11 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(noContentHandlerContext.request).toBeInstanceOf(Request);
         expect(noContentHandlerContext.request.method).toBe(method);
 
-        await promiseIfRemote(worker.clearInterceptorHandlers(otherInterceptor.client()), worker);
+        await promiseIfRemote(worker.clearInterceptorHandlers(otherInterceptor.client), worker);
 
-        interceptorsWithHandlers = worker.interceptorsWithHandlers();
+        interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(1);
-        expect(interceptorsWithHandlers[0]).toBe(interceptor.client());
+        expect(interceptorsWithHandlers[0]).toBe(interceptor.client);
 
         response = await fetch(baseURL, { method });
         expect(response.status).toBe(200);
@@ -766,9 +766,9 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         expect(okHandlerContext.request).toBeInstanceOf(Request);
         expect(okHandlerContext.request.method).toBe(method);
 
-        await promiseIfRemote(worker.clearInterceptorHandlers(interceptor.client()), worker);
+        await promiseIfRemote(worker.clearInterceptorHandlers(interceptor.client), worker);
 
-        interceptorsWithHandlers = worker.interceptorsWithHandlers();
+        interceptorsWithHandlers = worker.interceptorsWithHandlers;
         expect(interceptorsWithHandlers).toHaveLength(0);
 
         const responsePromise = fetch(baseURL, { method });
@@ -791,8 +791,8 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         const interceptor = createDefaultHttpInterceptor();
 
         await expect(async () => {
-          await worker.use(interceptor.client(), method, baseURL, spiedRequestHandler);
-        }).rejects.toThrowError(NotStartedHttpInterceptorError);
+          await worker.use(interceptor.client, method, baseURL, spiedRequestHandler);
+        }).rejects.toThrowError(NotRunningHttpInterceptorError);
       });
     });
 
@@ -803,7 +803,7 @@ export function declareMethodHttpInterceptorWorkerTests(options: SharedHttpInter
         const interceptor = createDefaultHttpInterceptor();
 
         await expect(async () => {
-          await worker.use(interceptor.client(), method, invalidURL, spiedRequestHandler);
+          await worker.use(interceptor.client, method, invalidURL, spiedRequestHandler);
         }).rejects.toThrowError(/Invalid URL/);
 
         expect(spiedRequestHandler).not.toHaveBeenCalled();

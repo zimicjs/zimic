@@ -1,4 +1,4 @@
-# `zimic/interceptor/server` - API reference <!-- omit from toc -->
+# `@zimic/interceptor/server` - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 
@@ -7,7 +7,7 @@
 
 ---
 
-`zimic/interceptor/server` exports resources to manage interceptor servers programmatically. Even though we recommend
+`@zimic/interceptor/server` exports resources to manage interceptor servers programmatically. Even though we recommend
 using the [`zimic-interceptor server` CLI](cli‐zimic‐server), this is still a valid alternative for more advanced use
 cases.
 

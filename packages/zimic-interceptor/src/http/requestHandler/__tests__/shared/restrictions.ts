@@ -21,7 +21,7 @@ export function declareRestrictionHttpRequestHandlerTests(
 ) {
   const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
@@ -34,10 +34,10 @@ export function declareRestrictionHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
-    expect(interceptor.platform()).toBe(platform);
+    expect(interceptor.platform).toBe(platform);
   });
 
   afterAll(async () => {

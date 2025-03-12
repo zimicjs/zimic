@@ -236,7 +236,7 @@ describe('Type generation (OpenAPI)', () => {
           const inputFilePath = path.join(inputDirectory, `${inputFileNameWithoutExtension}.${fileType}`);
 
           const inputFilePathOrURL = fixtureCase.shouldUseURLAsInput
-            ? joinURL(schemaInterceptor.baseURL(), 'spec', fixtureName)
+            ? joinURL(schemaInterceptor.baseURL, 'spec', fixtureName)
             : inputFilePath;
 
           const bufferedInputFileContent = await filesystem.readFile(inputFilePath);
@@ -315,8 +315,7 @@ describe('Type generation (OpenAPI)', () => {
 
           expect(generatedOutputContent).toBe(expectedOutputContent);
 
-          const schemaRequests = getSchemaHandler.requests();
-          expect(schemaRequests).toHaveLength(fixtureCase.shouldUseURLAsInput ? 1 : 0);
+          expect(getSchemaHandler.requests).toHaveLength(fixtureCase.shouldUseURLAsInput ? 1 : 0);
         });
       }
     });

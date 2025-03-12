@@ -41,8 +41,9 @@ import { HttpResponseFactory } from './types/requests';
 abstract class HttpInterceptorWorker {
   abstract readonly type: 'local' | 'remote';
 
-  private _platform: HttpInterceptorPlatform | null = null;
-  private _isRunning = false;
+  platform: HttpInterceptorPlatform | null = null;
+  isRunning = false;
+
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
 
@@ -50,26 +51,10 @@ abstract class HttpInterceptorWorker {
 
   private runningInterceptors: AnyHttpInterceptorClient[] = [];
 
-  platform() {
-    return this._platform;
-  }
-
-  protected setPlatform(platform: HttpInterceptorPlatform) {
-    this._platform = platform;
-  }
-
-  isRunning() {
-    return this._isRunning;
-  }
-
-  protected setIsRunning(isRunning: boolean) {
-    this._isRunning = isRunning;
-  }
-
   abstract start(): Promise<void>;
 
   protected async sharedStart(internalStart: () => Promise<void>) {
-    if (this.isRunning()) {
+    if (this.isRunning) {
       return;
     }
 
@@ -98,7 +83,7 @@ abstract class HttpInterceptorWorker {
   abstract stop(): Promise<void>;
 
   protected async sharedStop(internalStop: () => PossiblePromise<void>) {
-    if (!this.isRunning()) {
+    if (!this.isRunning) {
       return;
     }
     if (this.stoppingPromise) {
@@ -194,8 +179,7 @@ abstract class HttpInterceptorWorker {
 
   private findInterceptorByRequestBaseURL(request: Request) {
     const interceptor = this.runningInterceptors.findLast((interceptor) => {
-      const baseURL = interceptor.baseURL();
-      return request.url.startsWith(baseURL);
+      return request.url.startsWith(interceptor.baseURLAsString);
     });
 
     return interceptor;
@@ -217,14 +201,12 @@ abstract class HttpInterceptorWorker {
   }
 
   private async getInterceptorUnhandledRequestStrategy(request: Request, interceptor: AnyHttpInterceptorClient) {
-    const interceptorStrategyOrFactory = interceptor.onUnhandledRequest();
-
-    if (typeof interceptorStrategyOrFactory === 'function') {
+    if (typeof interceptor.onUnhandledRequest === 'function') {
       const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
-      return interceptorStrategyOrFactory(parsedRequest);
+      return interceptor.onUnhandledRequest(parsedRequest);
     }
 
-    return interceptorStrategyOrFactory;
+    return interceptor.onUnhandledRequest;
   }
 
   abstract clearHandlers(): PossiblePromise<void>;
@@ -233,7 +215,7 @@ abstract class HttpInterceptorWorker {
     interceptor: HttpInterceptorClient<Schema>,
   ): PossiblePromise<void>;
 
-  abstract interceptorsWithHandlers(): AnyHttpInterceptorClient[];
+  abstract get interceptorsWithHandlers(): AnyHttpInterceptorClient[];
 
   static createResponseFromDeclaration(
     request: Request,

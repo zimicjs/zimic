@@ -8,6 +8,6 @@ export interface SharedHttpInterceptorWorkerTestOptions {
   platform: HttpInterceptorPlatform;
   defaultWorkerOptions: HttpInterceptorWorkerOptions;
   startServer?: () => PossiblePromise<void>;
-  getBaseURL: (type: HttpInterceptorType) => Promise<URL>;
+  getBaseURL: (type: HttpInterceptorType) => Promise<string>;
   stopServer?: () => PossiblePromise<void>;
 }

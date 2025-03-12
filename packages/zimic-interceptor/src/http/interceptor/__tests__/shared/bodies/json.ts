@@ -40,7 +40,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
     { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -89,8 +89,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -102,9 +101,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedUser = (await response.json()) as UserAsType;
         expect(fetchedUser).toEqual(users[0]);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -173,8 +171,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -186,9 +183,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedUser = (await response.json()) as UserAsInterface;
         expect(fetchedUser).toEqual(users[0]);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -274,8 +270,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -287,9 +282,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedUser = (await response.json()) as UserAsInterface;
         expect(fetchedUser).toEqual({ ...users[0], date: responseDate });
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -368,8 +362,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -381,9 +374,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedBody = (await response.json()) as number;
         expect(fetchedBody).toBe(2);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -452,8 +444,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -465,9 +456,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedBody = (await response.json()) as boolean;
         expect(fetchedBody).toBe(false);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -540,8 +530,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -553,9 +542,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedUser = (await response.json()) as UserAsType;
         expect(fetchedUser).toEqual(users[0]);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('');
@@ -606,8 +594,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -619,9 +606,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe(invalidResponseJSONString);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('');
@@ -672,8 +658,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -685,9 +670,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedUser = (await response.json()) as UserAsType;
         expect(fetchedUser).toEqual(users[0]);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('unknown');
@@ -738,8 +722,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -751,9 +734,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe(invalidResponseJSONString);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('unknown');
@@ -804,8 +786,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -825,9 +806,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
           ]);
         });
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');
@@ -877,8 +857,7 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -889,9 +868,8 @@ export async function declareJSONBodyHttpInterceptorTests(options: RuntimeShared
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe('');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/json');

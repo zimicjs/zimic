@@ -7,7 +7,7 @@ import { declareUnhandledRequestFactoriesHttpInterceptorTests } from './shared/u
 import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unhandledRequests.logging';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Unhandled requests', ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

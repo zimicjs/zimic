@@ -6,7 +6,7 @@ import { declareBlobBodyHttpInterceptorTests } from './shared/bodies/blob';
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Blob', async ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

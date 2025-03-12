@@ -1,5 +1,6 @@
 import { HttpFormData, HttpSearchParams } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
+import chalk from 'chalk';
 import { expect, it, beforeAll, afterAll, describe } from 'vitest';
 
 import { SharedHttpInterceptorClient } from '@/http/interceptor/HttpInterceptorClient';
@@ -24,7 +25,7 @@ export function declareTimesHttpRequestHandlerTests(
 ) {
   const { platform, type, startServer, getBaseURL, stopServer, Handler } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
 
   let interceptor: LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
   let interceptorClient: SharedHttpInterceptorClient<Schema>;
@@ -37,10 +38,10 @@ export function declareTimesHttpRequestHandlerTests(
     baseURL = await getBaseURL(type);
 
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
-    interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+    interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     await interceptor.start();
-    expect(interceptor.platform()).toBe(platform);
+    expect(interceptor.platform).toBe(platform);
   });
 
   afterAll(async () => {
@@ -350,7 +351,7 @@ export function declareTimesHttpRequestHandlerTests(
     describe('Restrictions', () => {
       it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
         const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, saveRequests: false });
-        const interceptorClient = interceptor.client() as SharedHttpInterceptorClient<Schema>;
+        const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
           .with((request) => typeof request.body === 'number')
@@ -419,13 +420,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Computed restriction:',
-              '       - return true',
-              '       + return false',
+              `       ${chalk.green('- return true')}`,
+              `       ${chalk.red('+ return false')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -460,13 +461,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
-              '       - { "accept": "application/json" }',
-              '       + {}',
+              `       ${chalk.green('- { "accept": "application/json" }')}`,
+              `       ${chalk.red('+ {}')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -490,18 +491,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
-              '       - { "accept": "application/json" }',
-              '       + {}',
+              `       ${chalk.green('- { "accept": "application/json" }')}`,
+              `       ${chalk.red('+ {}')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Headers:',
-              '       - { "accept": "application/json" }',
-              '       + { "accept": "text/html", "content-type": "text/plain" }',
+              `       ${chalk.green('- { "accept": "application/json" }')}`,
+              `       ${chalk.red('+ { "accept": "text/html", "content-type": "text/plain" }')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -536,13 +537,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Search params:',
-              '       - { "value": "1" }',
-              '       + {}',
+              `       ${chalk.green('- { "value": "1" }')}`,
+              `       ${chalk.red('+ {}')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -564,18 +565,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Search params:',
-              '       - { "value": "1" }',
-              '       + {}',
+              `       ${chalk.green('- { "value": "1" }')}`,
+              `       ${chalk.red('+ {}')}`,
               '',
               `2: POST ${joinURL(baseURL, `/users?${searchParams.toString()}`)}`,
               '     Search params:',
-              '       - { "value": "1" }',
-              '       + { "name": "1", "value": "2" }',
+              `       ${chalk.green('- { "value": "1" }')}`,
+              `       ${chalk.red('+ { "name": "1", "value": "2" }')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -610,13 +611,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -641,18 +642,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - { "name": "1" }',
-              '       + { "name": "2" }',
+              `       ${chalk.green('- { "name": "1" }')}`,
+              `       ${chalk.red('+ { "name": "2" }')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -687,13 +688,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - URLSearchParams { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- URLSearchParams { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -718,18 +719,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - URLSearchParams { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- URLSearchParams { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - URLSearchParams { "name": "1" }',
-              '       + URLSearchParams { "name": "2" }',
+              `       ${chalk.green('- URLSearchParams { "name": "1" }')}`,
+              `       ${chalk.red('+ URLSearchParams { "name": "2" }')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -767,13 +768,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - FormData { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- FormData { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -808,30 +809,32 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - FormData { "name": "1" }',
-              '       + null',
+              `       ${chalk.green('- FormData { "name": "1" }')}`,
+              `       ${chalk.red('+ null')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - FormData { "name": "1" }',
-              `       + FormData { "name": "2", ${
-                /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
-                isGlobalFileAvailable()
-                  ? "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 },"
-                  : '"blob": Blob { type: \'text/plain\', size: 8 },'
-              } ${
-                /* istanbul ignore next -- @preserve
-                 * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
-                isGlobalFileAvailable()
-                  ? "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 }"
-                  : '"file": Blob { type: \'text/plain\', size: 8 }'
-              } }`,
+              `       ${chalk.green('- FormData { "name": "1" }')}`,
+              `       ${chalk.red(
+                `+ FormData { "name": "2", ${
+                  /* istanbul ignore next -- @preserve
+                   * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                  isGlobalFileAvailable()
+                    ? "\"blob\": File { name: 'blob', type: 'text/plain', size: 8 },"
+                    : '"blob": Blob { type: \'text/plain\', size: 8 },'
+                } ${
+                  /* istanbul ignore next -- @preserve
+                   * Ignoring as Node.js >=20 provides a global File and only one branch can be covered at a time. */
+                  isGlobalFileAvailable()
+                    ? "\"file\": File { name: 'tag.txt', type: 'text/plain', size: 8 }"
+                    : '"file": Blob { type: \'text/plain\', size: 8 }'
+                } }`,
+              )}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -866,13 +869,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              "       - Blob { type: 'application/octet-stream', size: 1 }",
-              '       + null',
+              `       ${chalk.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
+              `       ${chalk.red('+ null')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -896,18 +899,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              "       - Blob { type: 'application/octet-stream', size: 1 }",
-              '       + null',
+              `       ${chalk.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
+              `       ${chalk.red('+ null')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              "       - Blob { type: 'application/octet-stream', size: 1 }",
-              "       + Blob { type: 'application/octet-stream', size: 4 }",
+              `       ${chalk.green("- Blob { type: 'application/octet-stream', size: 1 }")}`,
+              `       ${chalk.red("+ Blob { type: 'application/octet-stream', size: 4 }")}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -942,13 +945,13 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - example',
-              '       + null',
+              `       ${chalk.green('- example')}`,
+              `       ${chalk.red('+ null')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -973,18 +976,18 @@ export function declareTimesHttpRequestHandlerTests(
               '',
               'Requests evaluated by this handler:',
               '',
-              '  - Expected',
-              '  + Received',
+              `  ${chalk.green('- Expected')}`,
+              `  ${chalk.red('+ Received')}`,
               '',
               `1: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - example',
-              '       + null',
+              `       ${chalk.green('- example')}`,
+              `       ${chalk.red('+ null')}`,
               '',
               `2: POST ${joinURL(baseURL, '/users')}`,
               '     Body:',
-              '       - example',
-              '       + text',
+              `       ${chalk.green('- example')}`,
+              `       ${chalk.red('+ text')}`,
             ].join('\n'),
             numberOfRequests: 1,
           },

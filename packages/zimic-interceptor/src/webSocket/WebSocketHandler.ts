@@ -12,14 +12,14 @@ import {
 } from '@/utils/webSocket';
 
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
-import NotStartedWebSocketHandlerError from './errors/NotStartedWebSocketHandlerError';
+import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import { WebSocket } from './types';
 
 abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   private sockets = new Set<ClientSocket>();
 
-  private _socketTimeout: number;
-  private _messageTimeout: number;
+  socketTimeout: number;
+  messageTimeout: number;
 
   private channelListeners: {
     [Channel in WebSocket.ServiceChannel<Schema>]?: {
@@ -33,22 +33,14 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
   };
 
   protected constructor(options: { socketTimeout?: number; messageTimeout?: number }) {
-    this._socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
-    this._messageTimeout = options.messageTimeout ?? DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
+    this.socketTimeout = options.socketTimeout ?? DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT;
+    this.messageTimeout = options.messageTimeout ?? DEFAULT_WEB_SOCKET_MESSAGE_TIMEOUT;
   }
 
-  abstract isRunning(): boolean;
-
-  socketTimeout() {
-    return this._socketTimeout;
-  }
-
-  messageTimeout() {
-    return this._messageTimeout;
-  }
+  abstract isRunning: boolean;
 
   protected async registerSocket(socket: ClientSocket) {
-    const openPromise = waitForOpenClientSocket(socket, { timeout: this._socketTimeout });
+    const openPromise = waitForOpenClientSocket(socket, { timeout: this.socketTimeout });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
       await this.handleSocketMessage(socket, rawMessage);
@@ -173,7 +165,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
 
   protected async closeClientSockets(sockets: Collection<ClientSocket> = this.sockets) {
     const closingPromises = Array.from(sockets, async (socket) => {
-      await closeClientSocket(socket, { timeout: this._socketTimeout });
+      await closeClientSocket(socket, { timeout: this.socketTimeout });
     });
     await Promise.all(closingPromises);
   }
@@ -232,9 +224,9 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
         this.offReply(channel, replyListener); // eslint-disable-line @typescript-eslint/no-use-before-define
         this.offAbortSocketMessages(sockets, abortListener); // eslint-disable-line @typescript-eslint/no-use-before-define
 
-        const timeoutError = new WebSocketMessageTimeoutError(this._messageTimeout);
+        const timeoutError = new WebSocketMessageTimeoutError(this.messageTimeout);
         reject(timeoutError);
-      }, this._messageTimeout);
+      }, this.messageTimeout);
 
       const abortListener = this.onAbortSocketMessages(sockets, (error) => {
         clearTimeout(replyTimeout);
@@ -274,7 +266,7 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     const reply = await this.createReplyMessage(request, replyData);
 
     // If this handler received a request and was stopped before responding, discard any pending replies.
-    if (this.isRunning()) {
+    if (this.isRunning) {
       this.sendMessage(reply, options.sockets);
     }
   }
@@ -298,8 +290,8 @@ abstract class WebSocketHandler<Schema extends WebSocket.ServiceSchema> {
     message: WebSocket.ServiceMessage<Schema, Channel>,
     sockets: Collection<ClientSocket> = this.sockets,
   ) {
-    if (!this.isRunning()) {
-      throw new NotStartedWebSocketHandlerError();
+    if (!this.isRunning) {
+      throw new NotRunningWebSocketHandlerError();
     }
 
     const stringifiedMessage = JSON.stringify(message);

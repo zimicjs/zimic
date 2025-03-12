@@ -17,8 +17,10 @@ import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
   DEFAULT_LOG_UNHANDLED_REQUESTS,
+  DEFAULT_HOSTNAME,
 } from './constants';
-import NotStartedInterceptorServerError from './errors/NotStartedInterceptorServerError';
+import NotRunningInterceptorServerError from './errors/NotRunningInterceptorServerError';
+import RunningInterceptorServerError from './errors/RunningInterceptorServerError';
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
@@ -34,12 +36,12 @@ interface HttpHandler {
 }
 
 class InterceptorServer implements PublicInterceptorServer {
-  private _httpServer?: HttpServer;
-  private _webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
+  private httpServer?: HttpServer;
+  private webSocketServer?: WebSocketServer<InterceptorServerWebSocketSchema>;
 
-  private _hostname: string;
-  private _port?: number;
-  private _logUnhandledRequests: boolean;
+  _hostname: string;
+  _port: number | undefined;
+  logUnhandledRequests: boolean;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -56,87 +58,86 @@ class InterceptorServer implements PublicInterceptorServer {
   private knownWorkerSockets = new Set<Socket>();
 
   constructor(options: InterceptorServerOptions) {
-    this._hostname = options.hostname ?? 'localhost';
+    this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
     this._port = options.port;
-    this._logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
+    this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
   }
 
-  hostname() {
+  get hostname() {
     return this._hostname;
   }
 
-  port() {
+  set hostname(newHostname: string) {
+    if (this.isRunning) {
+      throw new RunningInterceptorServerError('Did you forget to stop it before changing the hostname?');
+    }
+    this._hostname = newHostname;
+  }
+
+  get port() {
     return this._port;
   }
 
-  logUnhandledRequests() {
-    return this._logUnhandledRequests;
-  }
-
-  httpURL() {
-    if (this._port === undefined) {
-      return undefined;
+  set port(newPort: number | undefined) {
+    if (this.isRunning) {
+      throw new RunningInterceptorServerError('Did you forget to stop it before changing the port?');
     }
-    return `http://${this._hostname}:${this._port}`;
+    this._port = newPort;
   }
 
-  isRunning() {
-    return !!this._httpServer?.listening && !!this._webSocketServer?.isRunning();
+  get isRunning() {
+    return !!this.httpServer?.listening && !!this.webSocketServer?.isRunning;
   }
 
-  private httpServer() {
+  private get httpServerOrThrow(): HttpServer {
     /* istanbul ignore if -- @preserve
      * The HTTP server is initialized before using this method in normal conditions. */
-    if (!this._httpServer) {
-      throw new NotStartedInterceptorServerError();
+    if (!this.httpServer) {
+      throw new NotRunningInterceptorServerError();
     }
-    return this._httpServer;
+    return this.httpServer;
   }
 
-  private webSocketServer() {
+  private get webSocketServerOrThrow(): WebSocketServer<InterceptorServerWebSocketSchema> {
     /* istanbul ignore if -- @preserve
      * The web socket server is initialized before using this method in normal conditions. */
-    if (!this._webSocketServer) {
-      throw new NotStartedInterceptorServerError();
+    if (!this.webSocketServer) {
+      throw new NotRunningInterceptorServerError();
     }
-    return this._webSocketServer;
+    return this.webSocketServer;
   }
 
   async start() {
-    if (this.isRunning()) {
+    if (this.isRunning) {
       return;
     }
 
-    this._httpServer = createServer({
+    this.httpServer = createServer({
       keepAlive: true,
       joinDuplicateHeaders: true,
     });
     await this.startHttpServer();
 
-    this._webSocketServer = new WebSocketServer({
-      httpServer: this._httpServer,
+    this.webSocketServer = new WebSocketServer({
+      httpServer: this.httpServer,
     });
     this.startWebSocketServer();
   }
 
   private async startHttpServer() {
-    const httpServer = this.httpServer();
-
-    await startHttpServer(httpServer, {
-      hostname: this._hostname,
-      port: this._port,
+    await startHttpServer(this.httpServerOrThrow, {
+      hostname: this.hostname,
+      port: this.port,
     });
-    this._port = getHttpServerPort(httpServer);
+    this.port = getHttpServerPort(this.httpServerOrThrow);
 
-    httpServer.on('request', this.handleHttpRequest);
+    this.httpServerOrThrow.on('request', this.handleHttpRequest);
   }
 
   private startWebSocketServer() {
-    const webSocketServer = this.webSocketServer();
-
-    webSocketServer.start();
-    webSocketServer.onEvent('interceptors/workers/use/commit', this.commitWorker);
-    webSocketServer.onEvent('interceptors/workers/use/reset', this.resetWorker);
+    this.webSocketServerOrThrow.start();
+    this.webSocketServerOrThrow.onEvent('interceptors/workers/use/commit', this.commitWorker);
+    this.webSocketServerOrThrow.onEvent('interceptors/workers/use/reset', this.resetWorker);
   }
 
   private commitWorker = (
@@ -161,7 +162,7 @@ class InterceptorServer implements PublicInterceptorServer {
     if (isWorkerNoLongerCommitted) {
       // When a worker is no longer committed, we should abort all requests that were using it.
       // This ensures that we only wait for responses from committed worker sockets.
-      this.webSocketServer().abortSocketMessages([socket]);
+      this.webSocketServerOrThrow.abortSocketMessages([socket]);
     } else {
       for (const handler of handlersToResetTo) {
         this.registerHttpHandler(handler, socket);
@@ -209,32 +210,28 @@ class InterceptorServer implements PublicInterceptorServer {
     }
   }
 
-  stop = async () => {
-    if (!this.isRunning()) {
+  async stop() {
+    if (!this.isRunning) {
       return;
     }
 
     await this.stopWebSocketServer();
     await this.stopHttpServer();
-  };
+  }
 
   private async stopHttpServer() {
-    const httpServer = this.httpServer();
-
-    await stopHttpServer(httpServer);
-    httpServer.removeAllListeners();
-
-    this._httpServer = undefined;
+    await stopHttpServer(this.httpServerOrThrow);
+    this.httpServerOrThrow.removeAllListeners();
+    this.httpServer = undefined;
   }
 
   private async stopWebSocketServer() {
-    const webSocketServer = this.webSocketServer();
+    this.webSocketServerOrThrow.offEvent('interceptors/workers/use/commit', this.commitWorker);
+    this.webSocketServerOrThrow.offEvent('interceptors/workers/use/reset', this.resetWorker);
 
-    webSocketServer.offEvent('interceptors/workers/use/commit', this.commitWorker);
-    webSocketServer.offEvent('interceptors/workers/use/reset', this.resetWorker);
-    await webSocketServer.stop();
+    await this.webSocketServerOrThrow.stop();
 
-    this._webSocketServer = undefined;
+    this.webSocketServer = undefined;
   }
 
   private handleHttpRequest = async (nodeRequest: IncomingMessage, nodeResponse: ServerResponse) => {
@@ -278,7 +275,6 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private async createResponseForRequest(request: SerializedHttpRequest) {
-    const webSocketServer = this.webSocketServer();
     const methodHandlers = this.httpHandlerGroups[request.method as HttpMethod];
 
     const requestURL = excludeURLParams(new URL(request.url)).toString();
@@ -295,7 +291,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
       matchedSomeInterceptor = true;
 
-      const { response: serializedResponse } = await webSocketServer.request(
+      const { response: serializedResponse } = await this.webSocketServerOrThrow.request(
         'interceptors/responses/create',
         { handlerId: handler.id, request },
         { sockets: [handler.socket] },
@@ -329,13 +325,11 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async logUnhandledRequestIfNecessary(request: HttpRequest, serializedRequest: SerializedHttpRequest) {
-    const webSocketServer = this.webSocketServer();
-
     const handler = this.findHttpHandlerByRequestBaseURL(request);
 
     if (handler) {
       try {
-        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await webSocketServer.request(
+        const { wasLogged: wasRequestLoggedByRemoteInterceptor } = await this.webSocketServerOrThrow.request(
           'interceptors/responses/unhandled',
           { request: serializedRequest },
           { sockets: [handler.socket] },
@@ -357,7 +351,7 @@ class InterceptorServer implements PublicInterceptorServer {
       }
     }
 
-    if (!this._logUnhandledRequests) {
+    if (!this.logUnhandledRequests) {
       return;
     }
 
