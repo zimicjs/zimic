@@ -14,7 +14,7 @@
         "ci",
         "wiki",
         "release",
-        "zimic-test-client",
+        "test-client",
         "http",
         "fetch",
         "interceptor",
