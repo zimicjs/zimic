@@ -8,10 +8,8 @@ export class ExpectedToThrowError extends Error {
 
 async function expectToThrow<ExpectedError extends Error = Error>(
   promiseOrCallback: Promise<unknown> | (() => PossiblePromise<unknown>),
-  options: { is: (error: unknown) => error is ExpectedError },
+  isExpectedError: (error: unknown) => error is ExpectedError,
 ): Promise<ExpectedError> {
-  const { is: isExpectedError } = options;
-
   try {
     if (promiseOrCallback instanceof Promise) {
       await promiseOrCallback;

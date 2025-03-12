@@ -13,7 +13,7 @@
     "api",
     "static"
   ],
-  "version": "0.1.1-canary.1",
+  "version": "0.1.2-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -70,20 +70,20 @@
     "deps:init": "playwright install chromium"
   },
   "devDependencies": {
-    "@types/node": "^22.13.8",
-    "@vitest/browser": "^3.0.7",
-    "@vitest/coverage-istanbul": "^3.0.7",
+    "@types/node": "^22.13.10",
+    "@vitest/browser": "^3.0.8",
+    "@vitest/coverage-istanbul": "^3.0.8",
     "@zimic/eslint-config-node": "workspace:*",
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.21.0",
-    "playwright": "^1.50.1",
+    "eslint": "^9.22.0",
+    "playwright": "^1.51.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.8"
   },
   "peerDependencies": {
     "@zimic/http": "^0.1.0 || ^0.1.0-canary.0",

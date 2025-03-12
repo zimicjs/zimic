@@ -9,7 +9,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import { HttpRequestHandlerRestriction } from './types/restrictions';
 
@@ -22,26 +22,22 @@ class LocalHttpRequestHandler<
 {
   readonly type = 'local';
 
-  private _client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
+  client: HttpRequestHandlerClient<Schema, Method, Path, StatusCode>;
 
   constructor(interceptor: HttpInterceptorClient<Schema>, method: Method, path: Path) {
-    this._client = new HttpRequestHandlerClient(interceptor, method, path, this);
+    this.client = new HttpRequestHandlerClient(interceptor, method, path, this);
   }
 
-  client() {
-    return this._client;
+  get method() {
+    return this.client.method;
   }
 
-  method() {
-    return this._client.method();
-  }
-
-  path() {
-    return this._client.path();
+  get path() {
+    return this.client.path;
   }
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
-    this._client.with(restriction);
+    this.client.with(restriction);
     return this;
   }
 
@@ -50,45 +46,45 @@ class LocalHttpRequestHandler<
       | HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, NewStatusCode>
       | HttpRequestHandlerResponseDeclarationFactory<Path, Default<Schema[Path][Method]>, NewStatusCode>,
   ): LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode> {
-    this._client.respond(declaration);
+    this.client.respond(declaration);
 
     const newThis = this as unknown as LocalHttpRequestHandler<Schema, Method, Path, NewStatusCode>;
     return newThis;
   }
 
   times(minNumberOfRequests: number, maxNumberOfRequests?: number): this {
-    this._client.times(minNumberOfRequests, maxNumberOfRequests);
+    this.client.times(minNumberOfRequests, maxNumberOfRequests);
     return this;
   }
 
   checkTimes() {
-    this._client.checkTimes();
+    this.client.checkTimes();
   }
 
   clear(): this {
-    this._client.clear();
+    this.client.clear();
     return this;
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    return this._client.requests();
+  get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+    return this.client.requests;
   }
 
   matchesRequest(request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>): Promise<boolean> {
-    return this._client.matchesRequest(request);
+    return this.client.matchesRequest(request);
   }
 
   async applyResponseDeclaration(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
   ): Promise<HttpRequestHandlerResponseDeclaration<Default<Schema[Path][Method]>, StatusCode>> {
-    return this._client.applyResponseDeclaration(request);
+    return this.client.applyResponseDeclaration(request);
   }
 
   saveInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    this._client.saveInterceptedRequest(request, response);
+    this.client.saveInterceptedRequest(request, response);
   }
 }
 

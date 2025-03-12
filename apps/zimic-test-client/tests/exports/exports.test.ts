@@ -68,7 +68,7 @@ import {
   type InferHttpInterceptorSchema,
   type HttpInterceptorRequest,
   type HttpInterceptorResponse,
-  type TrackedHttpInterceptorRequest,
+  type InterceptedHttpInterceptorRequest,
   type UnhandledHttpInterceptorRequest,
   type HttpRequestHandler,
   type LocalHttpRequestHandler,
@@ -85,7 +85,8 @@ import {
   type HttpRequestHandlerBodyStaticRestriction,
   UnknownHttpInterceptorPlatformError,
   UnknownHttpInterceptorTypeError,
-  NotStartedHttpInterceptorError,
+  RunningHttpInterceptorError,
+  NotRunningHttpInterceptorError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
@@ -215,7 +216,7 @@ describe('Exports', () => {
     expectTypeOf<InferHttpInterceptorSchema<never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorRequest<never, never>>().not.toBeAny();
     expectTypeOf<HttpInterceptorResponse<never, never>>().not.toBeAny();
-    expectTypeOf<TrackedHttpInterceptorRequest<never, {}>>().not.toBeAny();
+    expectTypeOf<InterceptedHttpInterceptorRequest<never, {}>>().not.toBeAny();
     expectTypeOf<UnhandledHttpInterceptorRequest>().not.toBeAny();
 
     expectTypeOf<HttpRequestHandler<never, never, never>>().not.toBeAny();
@@ -237,8 +238,10 @@ describe('Exports', () => {
     expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
     expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
     expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
-    expectTypeOf<NotStartedHttpInterceptorError>().not.toBeAny();
-    expect(typeof NotStartedHttpInterceptorError).toBe('function');
+    expectTypeOf<RunningHttpInterceptorError>().not.toBeAny();
+    expect(typeof RunningHttpInterceptorError).toBe('function');
+    expectTypeOf<NotRunningHttpInterceptorError>().not.toBeAny();
+    expect(typeof NotRunningHttpInterceptorError).toBe('function');
     expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();

@@ -1,4 +1,4 @@
-# `zimic/http` - API reference schemas <!-- omit from toc -->
+# `@zimic/http` schemas - API reference <!-- omit from toc -->
 
 ## Contents <!-- omit from toc -->
 

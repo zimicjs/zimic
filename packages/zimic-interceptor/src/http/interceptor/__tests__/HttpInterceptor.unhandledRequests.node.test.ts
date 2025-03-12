@@ -10,7 +10,7 @@ import { declareUnhandledRequestLoggingHttpInterceptorTests } from './shared/unh
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Unhandled requests', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {

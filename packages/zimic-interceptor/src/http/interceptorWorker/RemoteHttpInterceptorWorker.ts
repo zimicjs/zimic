@@ -9,7 +9,7 @@ import { deserializeRequest, serializeResponse } from '@/utils/fetch';
 import { WebSocket } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
-import NotStartedHttpInterceptorError from '../interceptor/errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorPlatformError from '../interceptor/errors/UnknownHttpInterceptorPlatformError';
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform } from '../interceptor/types/options';
@@ -26,19 +26,21 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  readonly type: 'remote';
+  webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
 
-  private _webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
-    this.type = options.type;
 
     const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
-    this._webSocketClient = new WebSocketClient({
+    this.webSocketClient = new WebSocketClient({
       url: webSocketServerURL.toString(),
     });
+  }
+
+  get type() {
+    return 'remote' as const;
   }
 
   private deriveWebSocketServerURL(serverURL: URL) {
@@ -47,20 +49,15 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     return webSocketServerURL;
   }
 
-  webSocketClient() {
-    return this._webSocketClient;
-  }
-
   async start() {
     await super.sharedStart(async () => {
-      await this._webSocketClient.start();
+      await this.webSocketClient.start();
 
-      this._webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
-      this._webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
+      this.webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
-      const platform = this.readPlatform();
-      super.setPlatform(platform);
-      super.setIsRunning(true);
+      this.platform = this.readPlatform();
+      this.isRunning = true;
     });
   }
 
@@ -118,12 +115,12 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.sharedStop(async () => {
       await this.clearHandlers();
 
-      this._webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
-      this._webSocketClient.offEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
+      this.webSocketClient.offEvent('interceptors/responses/create', this.createResponse);
+      this.webSocketClient.offEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);
 
-      await this._webSocketClient.stop();
+      await this.webSocketClient.stop();
 
-      super.setIsRunning(false);
+      this.isRunning = false;
     });
   }
 
@@ -133,8 +130,8 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     rawURL: string | URL,
     createResponse: HttpResponseFactory,
   ) {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorError();
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
     }
 
     const crypto = await importCrypto();
@@ -146,7 +143,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     const handler: HttpHandler = {
       id: crypto.randomUUID(),
       url: {
-        base: interceptor.baseURL(),
+        base: interceptor.baseURLAsString,
         full: url.toString(),
       },
       method,
@@ -159,7 +156,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this._webSocketClient.request('interceptors/workers/use/commit', {
+    await this.webSocketClient.request('interceptors/workers/use/commit', {
       id: handler.id,
       url: handler.url,
       method,
@@ -167,20 +164,20 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   async clearHandlers() {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorError();
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
     }
 
     this.httpHandlers.clear();
 
-    if (this._webSocketClient.isRunning()) {
-      await this._webSocketClient.request('interceptors/workers/use/reset', undefined);
+    if (this.webSocketClient.isRunning) {
+      await this.webSocketClient.request('interceptors/workers/use/reset', undefined);
     }
   }
 
   async clearInterceptorHandlers<Schema extends HttpSchema>(interceptor: HttpInterceptorClient<Schema>) {
-    if (!super.isRunning()) {
-      throw new NotStartedHttpInterceptorError();
+    if (!this.isRunning) {
+      throw new NotRunningHttpInterceptorError();
     }
 
     for (const handler of this.httpHandlers.values()) {
@@ -189,18 +186,18 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
       }
     }
 
-    if (this._webSocketClient.isRunning()) {
+    if (this.webSocketClient.isRunning) {
       const groupsToRecommit = Array.from<HttpHandler, HttpHandlerCommit>(this.httpHandlers.values(), (handler) => ({
         id: handler.id,
         url: handler.url,
         method: handler.method,
       }));
 
-      await this._webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
+      await this.webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
     }
   }
 
-  interceptorsWithHandlers() {
+  get interceptorsWithHandlers() {
     const interceptors = Array.from(this.httpHandlers.values(), (handler) => handler.interceptor);
     return interceptors;
   }

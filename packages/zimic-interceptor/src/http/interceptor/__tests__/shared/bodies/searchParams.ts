@@ -34,7 +34,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
     { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -89,14 +89,13 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
-        const requestSearchParams = new HttpSearchParams<UserSearchParamsSchema>({ tag: 'admin' });
+        const searchParams = new HttpSearchParams<UserSearchParamsSchema>({ tag: 'admin' });
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
-          body: requestSearchParams,
+          body: searchParams,
         });
         expect(response.status).toBe(200);
 
@@ -107,15 +106,14 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         const fetchedTag = fetchedSearchParams.get('tag')!;
         expect(fetchedTag).toBe(responseSearchParams.get('tag'));
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/x-www-form-urlencoded;charset=UTF-8');
         expectTypeOf(request.body).toEqualTypeOf<HttpSearchParams<UserSearchParamsSchema>>();
         expect(request.body).toBeInstanceOf(HttpSearchParams);
-        expect(request.body).toEqual(requestSearchParams);
+        expect(request.body).toEqual(searchParams);
         expect(request.body.get('tag')).toEqual('admin');
 
         expect(request.response).toBeInstanceOf(Response);
@@ -186,8 +184,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['error'], async (spies) => {
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
@@ -200,9 +197,8 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
           expect(spies.error).not.toHaveBeenCalled();
         });
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/x-www-form-urlencoded');
@@ -254,8 +250,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -266,9 +261,8 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
         const fetchedSearchParams = await response.text();
         expect(fetchedSearchParams).toBe('');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/x-www-form-urlencoded');

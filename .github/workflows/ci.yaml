@@ -180,7 +180,6 @@ jobs:
           pnpm update \
             typescript@${{ matrix.typescript-version }} \
             --recursive \
-            --filter !zimic \
             --filter !@zimic/* \
             ${{ env.TURBO_FILTERS }}
 
@@ -202,7 +201,6 @@ jobs:
             types:check \
             --continue \
             --concurrency 100% \
-            --filter !zimic \
             --filter !@zimic/* \
             $([[ '${{ matrix.typescript-version }}' =~ ^4\. ]] && echo ${filterOptionsOfPackagesUsingFastify[@]}) \
             $([[ '${{ matrix.typescript-version }}' =~ ^(4\.|5\.0) ]] && echo ${filterOptionsOfPackagesUsingNext[@]}) \

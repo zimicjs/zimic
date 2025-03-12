@@ -1,6 +1,7 @@
 import InterceptorServerNamespace from './namespace/InterceptorServerNamespace';
 
-export { default as NotStartedInterceptorServerError } from './errors/NotStartedInterceptorServerError';
+export { default as RunningInterceptorServerError } from './errors/RunningInterceptorServerError';
+export { default as NotRunningInterceptorServerError } from './errors/NotRunningInterceptorServerError';
 
 export type { InterceptorServerOptions } from './types/options';
 export type { InterceptorServer } from './types/public';

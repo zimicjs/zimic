@@ -6,7 +6,7 @@ import { declareSearchParamsBodyHttpInterceptorTests } from './shared/bodies/sea
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Search params', async ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

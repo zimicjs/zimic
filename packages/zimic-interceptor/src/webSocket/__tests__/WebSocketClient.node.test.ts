@@ -16,7 +16,7 @@ import {
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
-import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
+import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketClient from '../WebSocketClient';
 import { delayClientSocketClose, delayClientSocketOpen } from './utils';
@@ -64,47 +64,47 @@ describe('Web socket client', async () => {
     it('should support being started', async () => {
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      expect(client.isRunning()).toBe(false);
+      expect(client.isRunning).toBe(false);
 
       await client.start();
 
-      expect(client.isRunning()).toBe(true);
+      expect(client.isRunning).toBe(true);
     });
 
     it('should not throw an error if being started multiple times', async () => {
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
-      expect(client.isRunning()).toBe(false);
+      expect(client.isRunning).toBe(false);
 
       await client.start();
       await client.start();
       await client.start();
 
-      expect(client.isRunning()).toBe(true);
+      expect(client.isRunning).toBe(true);
     });
 
     it('should support being stopped', async () => {
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
       await client.start();
-      expect(client.isRunning()).toBe(true);
+      expect(client.isRunning).toBe(true);
 
       await client.stop();
 
-      expect(client.isRunning()).toBe(false);
+      expect(client.isRunning).toBe(false);
     });
 
     it('should not throw an error if being stopped multiple times', async () => {
       client = new WebSocketClient({ url: `ws://localhost:${port}` });
 
       await client.start();
-      expect(client.isRunning()).toBe(true);
+      expect(client.isRunning).toBe(true);
 
       await client.stop();
       await client.stop();
       await client.stop();
 
-      expect(client.isRunning()).toBe(false);
+      expect(client.isRunning).toBe(false);
     });
 
     it('should throw an error if the client socket open timeout is reached', async () => {
@@ -113,7 +113,7 @@ describe('Web socket client', async () => {
       try {
         const socketTimeout = 100;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
-        expect(client.socketTimeout()).toBe(socketTimeout);
+        expect(client.socketTimeout).toBe(socketTimeout);
 
         await expect(client.start()).rejects.toThrowError(new WebSocketOpenTimeoutError(socketTimeout));
       } finally {
@@ -127,7 +127,7 @@ describe('Web socket client', async () => {
       try {
         const socketTimeout = 100;
         client = new WebSocketClient({ url: `ws://localhost:${port}`, socketTimeout });
-        expect(client.socketTimeout()).toBe(socketTimeout);
+        expect(client.socketTimeout).toBe(socketTimeout);
         await client.start();
 
         await expect(client.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
@@ -256,7 +256,7 @@ describe('Web socket client', async () => {
     it('should throw an error if a reply request timeout is reached', async () => {
       const messageTimeout = 100;
       client = new WebSocketClient({ url: `ws://localhost:${port}`, messageTimeout });
-      expect(client.messageTimeout()).toBe(messageTimeout);
+      expect(client.messageTimeout).toBe(messageTimeout);
       await client.start();
 
       type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
@@ -600,7 +600,7 @@ describe('Web socket client', async () => {
 
       await expect(async () => {
         await client?.send('no-reply', { message: 'test' });
-      }).rejects.toThrowError(new NotStartedWebSocketHandlerError());
+      }).rejects.toThrowError(new NotRunningWebSocketHandlerError());
     });
   });
 });

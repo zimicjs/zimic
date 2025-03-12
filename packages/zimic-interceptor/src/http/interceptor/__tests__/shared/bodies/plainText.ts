@@ -26,7 +26,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
     { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -72,8 +72,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -84,9 +83,8 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe('content-response');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('text/plain;charset=UTF-8');
@@ -157,8 +155,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -170,9 +167,8 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe('<response>content-response</response>');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('application/xml');
@@ -222,8 +218,7 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
           method,
@@ -234,9 +229,8 @@ export async function declarePlainTextBodyHttpInterceptorTests(options: RuntimeS
         const fetchedBody = await response.text();
         expect(fetchedBody).toBe('');
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(1);
-        const [request] = requests;
+        expect(handler.requests).toHaveLength(1);
+        const [request] = handler.requests;
 
         expect(request).toBeInstanceOf(Request);
         expect(request.headers.get('content-type')).toBe('text/plain;charset=UTF-8');

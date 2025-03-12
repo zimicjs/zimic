@@ -14,10 +14,10 @@ inputs:
 
 outputs:
   value:
-    description: The version of the zimic package
+    description: The version of the package
     value: ${{ steps.version.outputs.value }}
   label:
-    description: The label of the zimic package version
+    description: The label of the package version
     value: ${{ steps.label.outputs.value }}
 
 runs:

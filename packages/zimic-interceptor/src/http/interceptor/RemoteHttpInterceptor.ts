@@ -1,32 +1,24 @@
 import { HttpSchema, HttpSchemaMethod, HttpSchemaPath } from '@zimic/http';
-import excludeURLParams from '@zimic/utils/url/excludeURLParams';
-import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
 import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler';
-import HttpInterceptorClient, { SUPPORTED_BASE_URL_PROTOCOLS } from './HttpInterceptorClient';
+import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
 import { RemoteHttpInterceptorOptions } from './types/options';
 import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
-  readonly type: 'remote';
-
   private store = new HttpInterceptorStore();
-  private _client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
+
+  client: HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>;
 
   constructor(options: RemoteHttpInterceptorOptions) {
-    this.type = options.type;
-
     const baseURL = new URL(options.baseURL);
-    validateURLProtocol(baseURL, SUPPORTED_BASE_URL_PROTOCOLS);
-    excludeURLParams(baseURL);
 
     const serverURL = new URL(baseURL.origin);
-
     const worker = this.store.getOrCreateRemoteWorker({ serverURL });
 
-    this._client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
+    this.client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
       worker,
       store: this.store,
       baseURL,
@@ -36,71 +28,91 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     });
   }
 
-  client() {
-    return this._client;
+  get type() {
+    return 'remote' as const;
   }
 
-  baseURL() {
-    return this._client.baseURL();
+  get baseURL() {
+    return this.client.baseURLAsString;
   }
 
-  platform() {
-    return this._client.platform();
+  set baseURL(baseURL: string) {
+    this.client.baseURL = new URL(baseURL);
   }
 
-  isRunning() {
-    return this._client.isRunning();
+  get saveRequests() {
+    return this.client.saveRequests;
+  }
+
+  set saveRequests(saveRequests: NonNullable<RemoteHttpInterceptorOptions['saveRequests']>) {
+    this.client.saveRequests = saveRequests;
+  }
+
+  get onUnhandledRequest() {
+    return this.client.onUnhandledRequest;
+  }
+
+  set onUnhandledRequest(onUnhandledRequest: RemoteHttpInterceptorOptions['onUnhandledRequest']) {
+    this.client.onUnhandledRequest = onUnhandledRequest;
+  }
+
+  get platform() {
+    return this.client.platform;
+  }
+
+  get isRunning() {
+    return this.client.isRunning;
   }
 
   async start() {
-    if (this.isRunning()) {
+    if (this.isRunning) {
       return;
     }
 
-    await this._client.start();
+    await this.client.start();
   }
 
   async stop() {
-    if (!this.isRunning()) {
+    if (!this.isRunning) {
       return;
     }
 
     await this.clear();
-    await this._client.stop();
+    await this.client.stop();
   }
 
   get = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.get(path);
+    return this.client.get(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
 
   post = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.post(path);
+    return this.client.post(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
 
   patch = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.patch(path);
+    return this.client.patch(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
 
   put = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.put(path);
+    return this.client.put(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
 
   delete = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.delete(path);
+    return this.client.delete(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
 
   head = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.head(path);
+    return this.client.head(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
 
   options = ((path: HttpSchemaPath<Schema, HttpSchemaMethod<Schema>>) => {
-    return this._client.options(path);
+    return this.client.options(path);
   }) as unknown as AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
 
   checkTimes() {
     return new Promise<void>((resolve, reject) => {
       try {
-        this._client.checkTimes();
+        this.client.checkTimes();
         resolve();
       } catch (error) {
         reject(error);
@@ -110,7 +122,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
 
   async clear() {
     await new Promise<void>((resolve, reject) => {
-      this._client.clear({
+      this.client.clear({
         onCommitSuccess: resolve,
         onCommitError: reject,
       });

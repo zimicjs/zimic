@@ -6,7 +6,7 @@ import { declarePlainTextBodyHttpInterceptorTests } from './shared/bodies/plainT
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Plain text', async ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);
