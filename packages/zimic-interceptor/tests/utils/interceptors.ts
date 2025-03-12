@@ -29,28 +29,24 @@ import { GLOBAL_FALLBACK_SERVER_PORT } from '@tests/setup/global/shared';
 
 export async function getBrowserBaseURL(type: HttpInterceptorType) {
   if (type === 'local') {
-    return new URL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
+    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
   }
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
-  return new URL(baseURL);
+  return joinURL(`http://${GLOBAL_INTERCEPTOR_SERVER_HOSTNAME}:${GLOBAL_INTERCEPTOR_SERVER_PORT}`, pathPrefix);
 }
 
 export async function getNodeBaseURL(type: HttpInterceptorType, server: InterceptorServer) {
   if (type === 'local') {
-    return new URL(`http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`);
+    return `http://localhost:${GLOBAL_FALLBACK_SERVER_PORT}`;
   }
 
-  const hostname = server.hostname();
-  const port = server.port()!;
-  expect(port).not.toBe(null);
+  expect(server.port).not.toBe(null);
 
   const crypto = await importCrypto();
   const pathPrefix = `path-${crypto.randomUUID()}`;
-  const baseURL = joinURL(`http://${hostname}:${port}`, pathPrefix);
-  return new URL(baseURL);
+  return joinURL(`http://${server.hostname}:${server.port}`, pathPrefix);
 }
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
@@ -142,7 +138,7 @@ export async function usingHttpInterceptorWorker(
 }
 
 export function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: URL) {
-  return type === 'local' ? store.localWorker() : store.remoteWorker(serverURL);
+  return type === 'local' ? store.localWorker : store.remoteWorker(serverURL);
 }
 
 export function assessPreflightInterference(resources: {

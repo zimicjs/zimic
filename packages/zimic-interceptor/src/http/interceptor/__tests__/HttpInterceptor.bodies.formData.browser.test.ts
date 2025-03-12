@@ -6,7 +6,7 @@ import { declareFormDataBodyHttpInterceptorTests } from './shared/bodies/formDat
 import testMatrix from './shared/matrix';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Bodies > Form data', async ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

@@ -3,7 +3,7 @@ import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
-import { httpInterceptor } from '@/http';
+import { httpInterceptor, UnhandledHttpInterceptorRequest } from '@/http';
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
@@ -15,7 +15,6 @@ import { expectBypassedResponse, expectPreflightResponse } from '@tests/utils/fe
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
 
 import { HttpInterceptorOptions, UnhandledRequestStrategy } from '../../types/options';
-import { UnhandledHttpInterceptorRequest } from '../../types/requests';
 import {
   RuntimeSharedHttpInterceptorTestsOptions,
   verifyUnhandledRequestMessage,
@@ -29,7 +28,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
 
   const crypto = await importCrypto();
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -157,16 +156,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
@@ -179,8 +176,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(0);
+                expect(handler.requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -212,8 +208,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
@@ -223,9 +218,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<{ message: string }>();
                 expect(interceptedRequest.body).toEqual({ message: 'ok' });
 
@@ -244,8 +238,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(0);
+                expect(handler.requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -277,8 +270,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
@@ -287,9 +279,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
@@ -300,8 +291,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -331,16 +321,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
@@ -351,8 +339,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -382,16 +369,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), { method });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
                 expect(interceptedRequest.body).toBe(null);
 
@@ -408,8 +393,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectBypassedResponse(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
                 expect(spies.warn).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
                 expect(spies.error).toHaveBeenCalledTimes(0);
@@ -436,16 +420,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             );
             expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-              const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
@@ -466,8 +448,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await expectFetchError(responsePromise);
               }
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -494,8 +475,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               );
               expect(handler).toBeInstanceOf(Handler);
 
-              let requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(0);
+              expect(handler.requests).toHaveLength(0);
 
               await usingIgnoredConsole(['warn', 'error'], async (spies) => {
                 const response = await fetch(joinURL(baseURL, '/users'), {
@@ -505,9 +485,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 });
                 expect(response.status).toBe(200);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-                const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+                expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+                const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
                 expectTypeOf(interceptedRequest.body).toEqualTypeOf<{ message: string }>();
                 expect(interceptedRequest.body).toEqual({ message: 'ok' });
 
@@ -529,8 +508,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 const responsePromise = fetch(request);
                 await expectFetchError(responsePromise);
 
-                requests = await promiseIfRemote(handler.requests(), interceptor);
-                expect(requests).toHaveLength(0);
+                expect(handler.requests).toHaveLength(0);
 
                 expect(spies.warn).toHaveBeenCalledTimes(0);
                 expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -559,8 +537,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             );
             expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const searchParams = new HttpSearchParams({ value: '1' });
@@ -568,9 +545,8 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
               expect(response.status).toBe(200);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-              const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
@@ -589,8 +565,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await expectFetchError(responsePromise);
               }
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(numberOfRequestsIncludingPreflight);
@@ -616,16 +591,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             );
             expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-              const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
@@ -653,8 +626,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
               }
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
             });
           },
         );
@@ -674,16 +646,14 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             );
             expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const response = await fetch(joinURL(baseURL, '/users'), { method });
               expect(response.status).toBe(200);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-              const interceptedRequest = requests[numberOfRequestsIncludingPreflight - 1];
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              const interceptedRequest = handler.requests[numberOfRequestsIncludingPreflight - 1];
               expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
               expect(interceptedRequest.body).toBe(null);
 
@@ -717,8 +687,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
                 await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
               }
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
             });
           },
         );
@@ -789,8 +758,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             );
             expect(handler).toBeInstanceOf(Handler);
 
-            let requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             await usingIgnoredConsole(['warn', 'error'], async (spies) => {
               const searchParams = new HttpSearchParams({ value: '1' });
@@ -798,8 +766,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
               expect(response.status).toBe(200);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(0);
@@ -808,8 +775,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               const responsePromise = fetch(request);
               await expectBypassedResponse(responsePromise);
 
-              requests = await promiseIfRemote(handler.requests(), interceptor);
-              expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+              expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
               expect(spies.warn).toHaveBeenCalledTimes(0);
               expect(spies.error).toHaveBeenCalledTimes(0);
@@ -834,8 +800,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const searchParams = new HttpSearchParams({ value: '1' });
@@ -843,8 +808,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
             const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
             expect(response.status).toBe(200);
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
@@ -858,8 +822,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+            expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
@@ -901,8 +864,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           );
           expect(handler).toBeInstanceOf(Handler);
 
-          let requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await usingIgnoredConsole(['warn', 'error'], async (spies) => {
             const request = new Request(joinURL(baseURL, '/users'), { method });
@@ -918,8 +880,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
               await expectFetchError(responsePromise);
             }
 
-            requests = await promiseIfRemote(handler.requests(), interceptor);
-            expect(requests).toHaveLength(0);
+            expect(handler.requests).toHaveLength(0);
 
             expect(spies.warn).toHaveBeenCalledTimes(0);
             expect(spies.error).toHaveBeenCalledTimes(0);
@@ -938,8 +899,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await usingIgnoredConsole(['warn', 'error'], async (spies) => {
           const searchParams = new HttpSearchParams({ value: '1' });
@@ -947,8 +907,7 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
           const response = await fetch(joinURL(baseURL, `/users?${searchParams.toString()}`), { method });
           expect(response.status).toBe(200);
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
           expect(spies.warn).toHaveBeenCalledTimes(0);
           expect(spies.error).toHaveBeenCalledTimes(0);
@@ -993,5 +952,89 @@ export async function declareUnhandledRequestLoggingHttpInterceptorTests(
         });
       });
     });
+  });
+
+  it('should support changing the unhandled request strategy after created', async () => {
+    const initialOnUnhandledRequest: UnhandledRequestStrategy.Remote = { action: 'reject', log: false };
+
+    await usingHttpInterceptor<SchemaWithoutRequestBody>(
+      {
+        ...interceptorOptions,
+        type,
+        onUnhandledRequest: initialOnUnhandledRequest,
+      },
+      async (interceptor) => {
+        expect(interceptor.onUnhandledRequest).toEqual(initialOnUnhandledRequest);
+
+        const handler = await promiseIfRemote(
+          interceptor.get('/users').respond({ status: 200, headers: DEFAULT_ACCESS_CONTROL_HEADERS }),
+          interceptor,
+        );
+        expect(handler).toBeInstanceOf(Handler);
+
+        expect(handler.requests).toHaveLength(0);
+
+        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(1);
+          const interceptedRequest = handler.requests[0];
+          expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
+          expect(interceptedRequest.body).toBe(null);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+
+          const request = new Request(joinURL(baseURL, '/users/unknown'), {
+            method: 'GET',
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          });
+          const responsePromise = fetch(request);
+
+          await expectFetchError(responsePromise);
+
+          expect(handler.requests).toHaveLength(1);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+        });
+
+        const newOnUnhandledRequest: UnhandledRequestStrategy.Remote = { action: 'reject', log: true };
+        expect(initialOnUnhandledRequest).not.toEqual(newOnUnhandledRequest);
+
+        interceptor.onUnhandledRequest = newOnUnhandledRequest;
+        expect(interceptor.onUnhandledRequest).toEqual(newOnUnhandledRequest);
+
+        await usingIgnoredConsole(['warn', 'error'], async (spies) => {
+          const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+          expect(response.status).toBe(200);
+
+          expect(handler.requests).toHaveLength(2);
+          const interceptedRequest = handler.requests[1];
+          expectTypeOf(interceptedRequest.body).toEqualTypeOf<null>();
+          expect(interceptedRequest.body).toBe(null);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(0);
+
+          const request = new Request(joinURL(baseURL, '/users/unknown'), {
+            method: 'GET',
+            headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
+          });
+          const responsePromise = fetch(request);
+
+          await expectFetchError(responsePromise);
+
+          expect(handler.requests).toHaveLength(2);
+
+          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(spies.error).toHaveBeenCalledTimes(1);
+
+          const errorMessage = spies.error.mock.calls[0].join(' ');
+          await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
+        });
+      },
+    );
   });
 }

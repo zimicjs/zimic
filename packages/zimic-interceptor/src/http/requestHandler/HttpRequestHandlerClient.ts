@@ -26,7 +26,7 @@ import {
   HttpInterceptorResponse,
   HttpRequestHandlerResponseDeclaration,
   HttpRequestHandlerResponseDeclarationFactory,
-  TrackedHttpInterceptorRequest,
+  InterceptedHttpInterceptorRequest,
 } from './types/requests';
 import {
   HttpRequestHandlerRestriction,
@@ -58,7 +58,7 @@ class HttpRequestHandlerClient<
 
   private numberOfMatchedRequests = 0;
   private unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[] = [];
-  private interceptedRequests: TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
+  private _requests: InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] = [];
 
   private createResponseDeclaration?: HttpRequestHandlerResponseDeclarationFactory<
     Path,
@@ -68,18 +68,10 @@ class HttpRequestHandlerClient<
 
   constructor(
     private interceptor: HttpInterceptorClient<Schema>,
-    private _method: Method,
-    private _path: Path,
+    public method: Method,
+    public path: Path,
     private handler: InternalHttpRequestHandler<Schema, Method, Path, StatusCode>,
   ) {}
-
-  method() {
-    return this._method;
-  }
-
-  path() {
-    return this._path;
-  }
 
   with(restriction: HttpRequestHandlerRestriction<Schema, Method, Path>): this {
     this.restrictions.push(restriction);
@@ -99,7 +91,7 @@ class HttpRequestHandlerClient<
 
     newThis.numberOfMatchedRequests = 0;
     newThis.unmatchedRequestGroups.length = 0;
-    newThis.interceptedRequests.length = 0;
+    newThis._requests.length = 0;
 
     this.interceptor.registerRequestHandler(this.handler);
 
@@ -140,7 +132,7 @@ class HttpRequestHandlerClient<
         declarationPointer: this.timesDeclarationPointer,
         unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
-        hasSavedRequests: this.interceptor.shouldSaveRequests(),
+        hasSavedRequests: this.interceptor.saveRequests,
       });
     }
   }
@@ -156,7 +148,7 @@ class HttpRequestHandlerClient<
 
     this.numberOfMatchedRequests = 0;
     this.unmatchedRequestGroups.length = 0;
-    this.interceptedRequests.length = 0;
+    this._requests.length = 0;
 
     this.createResponseDeclaration = undefined;
 
@@ -176,9 +168,7 @@ class HttpRequestHandlerClient<
       this.numberOfMatchedRequests++;
     } else {
       const shouldSaveUnmatchedGroup =
-        this.interceptor.shouldSaveRequests() &&
-        this.restrictions.length > 0 &&
-        this.timesDeclarationPointer !== undefined;
+        this.interceptor.saveRequests && this.restrictions.length > 0 && this.timesDeclarationPointer !== undefined;
 
       if (shouldSaveUnmatchedGroup) {
         this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
@@ -387,14 +377,14 @@ class HttpRequestHandlerClient<
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
     const interceptedRequest = this.createInterceptedRequest(request, response);
-    this.interceptedRequests.push(interceptedRequest);
+    this._requests.push(interceptedRequest);
   }
 
   private createInterceptedRequest(
     request: HttpInterceptorRequest<Path, Default<Schema[Path][Method]>>,
     response: HttpInterceptorResponse<Default<Schema[Path][Method]>, StatusCode>,
   ) {
-    const interceptedRequest = request as unknown as TrackedHttpInterceptorRequest<
+    const interceptedRequest = request as InterceptedHttpInterceptorRequest<
       Path,
       Default<Schema[Path][Method]>,
       StatusCode
@@ -410,14 +400,12 @@ class HttpRequestHandlerClient<
     return interceptedRequest;
   }
 
-  requests(): readonly TrackedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    if (!this.interceptor.shouldSaveRequests()) {
+  get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
+    if (!this.interceptor.saveRequests) {
       throw new DisabledRequestSavingError();
     }
 
-    const interceptedRequestsCopy = [...this.interceptedRequests];
-    Object.freeze(interceptedRequestsCopy);
-    return interceptedRequestsCopy;
+    return this._requests;
   }
 }
 

@@ -27,12 +27,12 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     this.httpServer = options.httpServer;
   }
 
-  isRunning() {
+  get isRunning() {
     return this.webSocketServer !== undefined;
   }
 
   start() {
-    if (this.isRunning()) {
+    if (this.isRunning) {
       return;
     }
 
@@ -54,7 +54,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
   }
 
   async stop() {
-    if (!this.webSocketServer || !this.isRunning()) {
+    if (!this.webSocketServer || !this.isRunning) {
       return;
     }
 
@@ -62,7 +62,7 @@ class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketH
     super.abortSocketMessages();
     await super.closeClientSockets();
 
-    await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout() });
+    await closeServerSocket(this.webSocketServer, { timeout: this.socketTimeout });
     this.webSocketServer.removeAllListeners();
     this.webSocketServer = undefined;
   }

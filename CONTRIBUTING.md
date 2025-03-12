@@ -244,7 +244,7 @@ package dependencies and cache the results.
 pnpm turbo build
 
 # build a specific package (pass the package name as a filter)
-pnpm turbo build --filter zimic
+pnpm turbo build --filter @zimic/interceptor
 ```
 
 The build outputs of any package are stored in the `dist` directory, such as `packages/zimic-interceptor/dist`.
@@ -260,7 +260,7 @@ Zimic uses [TypeScript](https://www.typescriptlang.org) to check type safety usi
 pnpm turbo types:check
 
 # check types for a specific package (pass the package name as a filter)
-pnpm turbo types:check --filter zimic
+pnpm turbo types:check --filter @zimic/interceptor
 ```
 
 ## Linting
@@ -272,7 +272,7 @@ Zimic uses [ESLint](https://eslint.org) to enforce a consistent code style and i
 pnpm turbo lint:turbo
 
 # lint a specific package (pass the package name as a filter)
-pnpm turbo lint:turbo --filter zimic
+pnpm turbo lint:turbo --filter @zimic/interceptor
 ```
 
 For more information about using ESLint, please refer to their documentation.
@@ -308,7 +308,7 @@ pnpm test
 pnpm turbo test:turbo
 
 # run all tests in a specific package in non-interactive mode (pass the package name as a filter)
-pnpm turbo test:turbo --filter zimic
+pnpm turbo test:turbo --filter @zimic/interceptor
 ```
 
 For more information about using Vitest, please refer to their documentation.

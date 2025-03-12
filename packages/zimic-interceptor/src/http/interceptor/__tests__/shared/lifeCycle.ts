@@ -14,14 +14,14 @@ import {
   usingHttpInterceptor,
 } from '@tests/utils/interceptors';
 
-import NotStartedHttpInterceptorError from '../../errors/NotStartedHttpInterceptorError';
+import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import { HttpInterceptorOptions } from '../../types/options';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -65,18 +65,16 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
-        expect(interceptor.isRunning()).toBe(true);
+        expect(interceptor.isRunning).toBe(true);
         await interceptor.stop();
-        expect(interceptor.isRunning()).toBe(false);
+        expect(interceptor.isRunning).toBe(false);
 
         let responsePromise = fetch(joinURL(baseURL, '/users'), {
           method,
@@ -91,11 +89,10 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           await expectFetchError(responsePromise, { canBeAborted: true });
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         await interceptor.start();
-        expect(interceptor.isRunning()).toBe(true);
+        expect(interceptor.isRunning).toBe(true);
 
         responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
@@ -105,8 +102,7 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
       });
     });
 
@@ -131,22 +127,20 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         await usingHttpInterceptor(interceptorOptions, async (otherInterceptor) => {
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
+          expect(interceptor.isRunning).toBe(true);
+          expect(otherInterceptor.isRunning).toBe(true);
 
           await interceptor.stop();
-          expect(interceptor.isRunning()).toBe(false);
-          expect(otherInterceptor.isRunning()).toBe(true);
+          expect(interceptor.isRunning).toBe(false);
+          expect(otherInterceptor.isRunning).toBe(true);
 
           let responsePromise = fetch(joinURL(baseURL, '/users'), {
             method,
@@ -159,12 +153,11 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
             await expectFetchError(responsePromise, { canBeAborted: true });
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
 
           await interceptor.start();
-          expect(interceptor.isRunning()).toBe(true);
-          expect(otherInterceptor.isRunning()).toBe(true);
+          expect(interceptor.isRunning).toBe(true);
+          expect(otherInterceptor.isRunning).toBe(true);
 
           responsePromise = fetch(joinURL(baseURL, '/users'), { method });
 
@@ -174,19 +167,18 @@ export function declareLifeCycleHttpInterceptorTests(options: RuntimeSharedHttpI
             await expectFetchError(responsePromise);
           }
 
-          requests = await promiseIfRemote(handler.requests(), interceptor);
-          expect(requests).toHaveLength(0);
+          expect(handler.requests).toHaveLength(0);
         });
       });
     });
 
     it(`should throw an error when trying to create a ${method} request handler if not running`, async () => {
       const interceptor = createInternalHttpInterceptor(interceptorOptions);
-      expect(interceptor.isRunning()).toBe(false);
+      expect(interceptor.isRunning).toBe(false);
 
       await expect(async () => {
         await interceptor[lowerMethod]('/');
-      }).rejects.toThrowError(new NotStartedHttpInterceptorError());
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
   });
 }

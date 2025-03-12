@@ -16,7 +16,7 @@ import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
   const { platform, type, getBaseURL, getInterceptorOptions } = options;
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -60,14 +60,12 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
 
         await promiseIfRemote(interceptor.clear(), interceptor);
 
@@ -79,8 +77,7 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
           await expectFetchError(responsePromise);
         }
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
       });
     });
 
@@ -115,15 +112,13 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         );
         expect(handler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(handler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = handler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();
@@ -171,15 +166,13 @@ export function declareClearHttpInterceptorTests(options: RuntimeSharedHttpInter
         );
         expect(otherHandler).toBeInstanceOf(Handler);
 
-        let requests = await promiseIfRemote(otherHandler.requests(), interceptor);
-        expect(requests).toHaveLength(0);
+        expect(handler.requests).toHaveLength(0);
 
         const response = await fetch(joinURL(baseURL, '/users'), { method });
         expect(response.status).toBe(200);
 
-        requests = await promiseIfRemote(otherHandler.requests(), interceptor);
-        expect(requests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const request = requests[numberOfRequestsIncludingPreflight - 1];
+        expect(otherHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const request = otherHandler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(request).toBeInstanceOf(Request);
 
         expectTypeOf(request.body).toEqualTypeOf<null>();

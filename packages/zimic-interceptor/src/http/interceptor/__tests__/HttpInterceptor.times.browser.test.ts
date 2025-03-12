@@ -6,7 +6,7 @@ import testMatrix from './shared/matrix';
 import { declareTimesHttpInterceptorTests } from './shared/times';
 
 describe.each(testMatrix)('HttpInterceptor (browser, $type) > Times', async ({ type }) => {
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     baseURL = await getBrowserBaseURL(type);

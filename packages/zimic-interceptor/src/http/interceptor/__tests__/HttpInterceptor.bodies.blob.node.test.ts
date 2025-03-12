@@ -9,7 +9,7 @@ import testMatrix from './shared/matrix';
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Blob', async ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {

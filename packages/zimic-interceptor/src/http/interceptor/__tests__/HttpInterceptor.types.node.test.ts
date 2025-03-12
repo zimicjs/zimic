@@ -9,7 +9,7 @@ import { declareTypeHttpInterceptorTests } from './shared/types';
 describe.each(testMatrix)('HttpInterceptor (node, $type) > Types', ({ type }) => {
   const server = createInternalInterceptorServer({ logUnhandledRequests: false });
 
-  let baseURL: URL;
+  let baseURL: string;
 
   beforeAll(async () => {
     if (type === 'remote') {

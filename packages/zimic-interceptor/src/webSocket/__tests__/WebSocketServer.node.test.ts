@@ -17,7 +17,7 @@ import {
 import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
-import NotStartedWebSocketHandlerError from '../errors/NotStartedWebSocketHandlerError';
+import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
 import { WebSocket } from '../types';
 import WebSocketServer from '../WebSocketServer';
 import {
@@ -69,44 +69,44 @@ describe('Web socket server', async () => {
   describe('Lifecycle', () => {
     it('should support being started', () => {
       server = new WebSocketServer({ httpServer });
-      expect(server.isRunning()).toBe(false);
+      expect(server.isRunning).toBe(false);
 
       server.start();
 
-      expect(server.isRunning()).toBe(true);
+      expect(server.isRunning).toBe(true);
     });
 
     it('should not throw an error if being started multiple times', () => {
       server = new WebSocketServer({ httpServer });
-      expect(server.isRunning()).toBe(false);
+      expect(server.isRunning).toBe(false);
 
       server.start();
       server.start();
       server.start();
 
-      expect(server.isRunning()).toBe(true);
+      expect(server.isRunning).toBe(true);
     });
 
     it('should support being stopped', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
-      expect(server.isRunning()).toBe(true);
+      expect(server.isRunning).toBe(true);
 
       await server.stop();
 
-      expect(server.isRunning()).toBe(false);
+      expect(server.isRunning).toBe(false);
     });
 
     it('should not throw an error if being stopped multiple times', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
-      expect(server.isRunning()).toBe(true);
+      expect(server.isRunning).toBe(true);
 
       await server.stop();
       await server.stop();
       await server.stop();
 
-      expect(server.isRunning()).toBe(false);
+      expect(server.isRunning).toBe(false);
     });
 
     it('should throw an error if the server socket close timeout is reached', async () => {
@@ -115,7 +115,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
-        expect(server.socketTimeout()).toBe(socketTimeout);
+        expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
         await expect(server.stop()).rejects.toThrowError(new WebSocketCloseTimeoutError(socketTimeout));
@@ -127,7 +127,7 @@ describe('Web socket server', async () => {
     it('should terminate connected clients before stopping', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
-      expect(server.isRunning()).toBe(true);
+      expect(server.isRunning).toBe(true);
 
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
@@ -135,7 +135,7 @@ describe('Web socket server', async () => {
       expect(rawClient.readyState).toBe(rawClient.OPEN);
 
       await server.stop();
-      expect(server.isRunning()).toBe(false);
+      expect(server.isRunning).toBe(false);
 
       await waitFor(() => {
         expect(rawClient!.readyState).toBe(rawClient!.CLOSED);
@@ -149,7 +149,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
-        expect(server.socketTimeout()).toBe(socketTimeout);
+        expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
         await usingIgnoredConsole(['error'], async (spies) => {
@@ -172,7 +172,7 @@ describe('Web socket server', async () => {
       try {
         const socketTimeout = 100;
         server = new WebSocketServer({ httpServer, socketTimeout });
-        expect(server.socketTimeout()).toBe(socketTimeout);
+        expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
         rawClient = new ClientSocket(`ws://localhost:${port}`);
@@ -289,7 +289,7 @@ describe('Web socket server', async () => {
     it('should throw an error if the reply request timeout is reached', async () => {
       const messageTimeout = 100;
       server = new WebSocketServer({ httpServer, messageTimeout });
-      expect(server.messageTimeout()).toBe(messageTimeout);
+      expect(server.messageTimeout).toBe(messageTimeout);
       server.start();
 
       rawClient = new ClientSocket(`ws://localhost:${port}`);
@@ -620,7 +620,7 @@ describe('Web socket server', async () => {
 
       await expect(async () => {
         await server?.send('no-reply', { message: 'test' });
-      }).rejects.toThrowError(new NotStartedWebSocketHandlerError());
+      }).rejects.toThrowError(new NotRunningWebSocketHandlerError());
     });
   });
 });

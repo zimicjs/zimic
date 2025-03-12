@@ -1,7 +1,7 @@
 import { HttpSchema } from '@zimic/http';
 
 import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } from './handlers';
-import { HttpInterceptorPlatform } from './options';
+import { HttpInterceptorPlatform, UnhandledRequestStrategy } from './options';
 
 /**
  * An interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters, and
@@ -13,22 +13,43 @@ import { HttpInterceptorPlatform } from './options';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export interface HttpInterceptor<_Schema extends HttpSchema> {
   /**
-   * @returns The base URL used by the interceptor.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL()` API reference}
+   * The base URL used by the interceptor.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorbaseurl `interceptor.baseURL` API reference}
    */
-  baseURL: () => string;
+  baseURL: string;
 
   /**
-   * @returns The platform the interceptor is running on.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform()` API reference}
+   * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
+   * should save their intercepted requests in memory and make them accessible through
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   *
+   * **Important**: If `saveRequests` is true, make sure to regularly clear the interceptor to avoid that the requests
+   * accumulate in memory. A common practice is to call
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
+   * after each test.
+   *
+   * @default false
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
    */
-  platform: () => HttpInterceptorPlatform | null;
+  saveRequests: boolean;
 
   /**
-   * @returns Whether the interceptor is currently running and ready to use.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning()` API reference}
+   * The platform the interceptor is running on.
+   *
+   * @readonly
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorplatform `interceptor.platform` API reference}
    */
-  isRunning: () => boolean;
+  get platform(): HttpInterceptorPlatform | null;
+
+  /**
+   * Whether the interceptor is currently running and ready to use.
+   *
+   * @readonly
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorisrunning `interceptor.isRunning` API reference}
+   */
+  get isRunning(): boolean;
 
   /**
    * Starts the interceptor, allowing it to intercept HTTP requests.
@@ -84,7 +105,7 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    *
    * This method is useful to reset the interceptor mocks between tests.
    *
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()` API reference}
    */
   clear: (() => void) | (() => Promise<void>);
@@ -100,7 +121,17 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
 export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  readonly type: 'local';
+  /** @readonly */
+  get type(): 'local';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest: UnhandledRequestStrategy.Local | undefined;
 
   /**
    * Creates a GET
@@ -123,7 +154,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A GET
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   get: SyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -149,7 +180,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A POST
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   post: SyncHttpInterceptorMethodHandler<Schema, 'POST'>;
@@ -175,7 +206,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A PATCH
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   patch: SyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
@@ -201,7 +232,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A PUT
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   put: SyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
@@ -227,7 +258,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A DELETE
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   delete: SyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
@@ -253,7 +284,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns A HEAD
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   head: SyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
@@ -279,7 +310,7 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
    * @returns An OPTIONS
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   options: SyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;
@@ -301,7 +332,17 @@ export interface LocalHttpInterceptor<Schema extends HttpSchema> extends HttpInt
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor` API reference}
  */
 export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpInterceptor<Schema> {
-  readonly type: 'remote';
+  /** @readonly */
+  get type(): 'remote';
+
+  /**
+   * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
+   * matching handler exists, this strategy will be used. If a function is provided, it will be called with the
+   * unhandled request.
+   *
+   * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests Unhandled requests}
+   */
+  onUnhandledRequest: UnhandledRequestStrategy.Remote | undefined;
 
   /**
    * Creates a GET
@@ -329,7 +370,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A GET
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   get: AsyncHttpInterceptorMethodHandler<Schema, 'GET'>;
@@ -360,7 +401,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A POST
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   post: AsyncHttpInterceptorMethodHandler<Schema, 'POST'>;
@@ -391,7 +432,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A PATCH
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   patch: AsyncHttpInterceptorMethodHandler<Schema, 'PATCH'>;
@@ -422,7 +463,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A PUT
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   put: AsyncHttpInterceptorMethodHandler<Schema, 'PUT'>;
@@ -453,7 +494,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A DELETE
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   delete: AsyncHttpInterceptorMethodHandler<Schema, 'DELETE'>;
@@ -484,7 +525,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns A HEAD
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   head: AsyncHttpInterceptorMethodHandler<Schema, 'HEAD'>;
@@ -515,7 +556,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * @returns An OPTIONS
    *   {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler `HttpRequestHandler`}
    *   for the provided path. The path and method must be declared in the interceptor schema.
-   * @throws {NotStartedHttpInterceptorError} If the interceptor is not running.
+   * @throws {NotRunningHttpInterceptorError} If the interceptor is not running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptormethodpath `interceptor.<method>(path)` API reference}
    */
   options: AsyncHttpInterceptorMethodHandler<Schema, 'OPTIONS'>;

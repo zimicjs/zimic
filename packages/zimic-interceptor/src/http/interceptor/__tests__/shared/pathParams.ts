@@ -29,7 +29,7 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
     { id: crypto.randomUUID(), name: 'User 2' },
   ];
 
-  let baseURL: URL;
+  let baseURL: string;
   let interceptorOptions: HttpInterceptorOptions;
 
   const Handler = type === 'local' ? LocalHttpRequestHandler : RemoteHttpRequestHandler;
@@ -75,15 +75,13 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         );
         expect(genericHandler).toBeInstanceOf(Handler);
 
-        let genericRequests = await promiseIfRemote(genericHandler.requests(), interceptor);
-        expect(genericRequests).toHaveLength(0);
+        expect(genericHandler.requests).toHaveLength(0);
 
         const genericResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method });
         expect(genericResponse.status).toBe(200);
 
-        genericRequests = await promiseIfRemote(genericHandler.requests(), interceptor);
-        expect(genericRequests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const genericRequest = genericRequests[numberOfRequestsIncludingPreflight - 1];
+        expect(genericHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const genericRequest = genericHandler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(genericRequest).toBeInstanceOf(Request);
 
         expectTypeOf(genericRequest.pathParams).toEqualTypeOf<{ id: string }>();
@@ -114,15 +112,13 @@ export async function declarePathParamsHttpInterceptorTests(options: RuntimeShar
         );
         expect(specificHandler).toBeInstanceOf(Handler);
 
-        let specificRequests = await promiseIfRemote(specificHandler.requests(), interceptor);
-        expect(specificRequests).toHaveLength(0);
+        expect(specificHandler.requests).toHaveLength(0);
 
         const specificResponse = await fetch(joinURL(baseURL, `/users/${users[0].id}`), { method });
         expect(specificResponse.status).toBe(200);
 
-        specificRequests = await promiseIfRemote(specificHandler.requests(), interceptor);
-        expect(specificRequests).toHaveLength(numberOfRequestsIncludingPreflight);
-        const specificRequest = specificRequests[numberOfRequestsIncludingPreflight - 1];
+        expect(specificHandler.requests).toHaveLength(numberOfRequestsIncludingPreflight);
+        const specificRequest = specificHandler.requests[numberOfRequestsIncludingPreflight - 1];
         expect(specificRequest).toBeInstanceOf(Request);
 
         expectTypeOf(specificRequest.pathParams).toEqualTypeOf<{ id: string }>();

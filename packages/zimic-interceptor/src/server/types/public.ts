@@ -6,35 +6,36 @@
  */
 export interface InterceptorServer {
   /**
-   * @returns The hostname of the server.
+   * The hostname of the server. It can be reassigned to a new value if the server is not running.
+   *
+   * @throws {RunningInterceptorServerError} When trying to reassign a new hostname with the server still running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
-  hostname: () => string;
+  hostname: string;
 
   /**
-   * @returns The port of the server.
+   * The port of the server. It can be reassigned to a new value if the server is not running.
+   *
+   * @throws {RunningInterceptorServerError} When trying to reassign a new port with the server still running.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
-  port: () => number | undefined;
+  port: number | undefined;
 
   /**
+   * Whether to log warnings about unhandled requests to the console.
+   *
    * @default true
-   * @returns Whether to log warnings about unhandled requests to the console.
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
-  logUnhandledRequests: () => boolean;
+  logUnhandledRequests: boolean;
 
   /**
-   * @returns The HTTP URL of the server.
+   * Whether the server is running.
+   *
+   * @readonly
    * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
    */
-  httpURL: () => string | undefined;
-
-  /**
-   * @returns Whether the server is running.
-   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#zimic-server `zimic-interceptor server` API reference}
-   */
-  isRunning: () => boolean;
+  get isRunning(): boolean;
 
   /**
    * Starts the server.

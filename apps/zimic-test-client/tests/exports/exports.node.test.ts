@@ -4,7 +4,8 @@ import {
   type InterceptorServer,
   type InterceptorServerOptions,
   type InterceptorServerNamespace,
-  NotStartedInterceptorServerError,
+  RunningInterceptorServerError,
+  NotRunningInterceptorServerError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
   DEFAULT_PREFLIGHT_STATUS_CODE,
 } from '@zimic/interceptor/server';
@@ -19,8 +20,10 @@ describe('Exports (Node.js)', () => {
 
     expectTypeOf<InterceptorServer>().not.toBeAny();
     expectTypeOf<InterceptorServerOptions>().not.toBeAny();
-    expectTypeOf<NotStartedInterceptorServerError>().not.toBeAny();
-    expect(typeof NotStartedInterceptorServerError).toBe('function');
+    expectTypeOf<RunningInterceptorServerError>().not.toBeAny();
+    expect(typeof RunningInterceptorServerError).toBe('function');
+    expectTypeOf<NotRunningInterceptorServerError>().not.toBeAny();
+    expect(typeof NotRunningInterceptorServerError).toBe('function');
 
     expect(DEFAULT_ACCESS_CONTROL_HEADERS).toEqual(expect.any(Object));
     expect(DEFAULT_PREFLIGHT_STATUS_CODE).toEqual(expect.any(Number));

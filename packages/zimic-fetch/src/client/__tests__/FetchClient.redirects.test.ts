@@ -60,6 +60,7 @@ describe('FetchClient > Redirects', () => {
 
       if (isClientSide()) {
         // In the browser, the response is opaque and the status is 0. No headers are available.
+        // @ts-expect-error The status 0 is not in the schema.
         expectResponseStatus(firstResponse, 0);
         redirectPath = '/redirected';
       } else {
