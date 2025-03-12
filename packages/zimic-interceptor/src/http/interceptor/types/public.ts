@@ -29,7 +29,7 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
    * after each test.
    *
-   * @default false
+   * @default process.env.NODE_ENV === 'test'
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
    */

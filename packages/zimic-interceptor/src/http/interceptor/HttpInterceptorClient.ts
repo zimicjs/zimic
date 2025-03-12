@@ -13,6 +13,8 @@ import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
+import { isServerSide } from '@/utils/environment';
+
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
@@ -36,7 +38,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  private _saveRequests = false;
+  private _saveRequests?: boolean;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -70,7 +72,7 @@ class HttpInterceptorClient<
     this.store = options.store;
 
     this.baseURL = options.baseURL;
-    this._saveRequests = options.saveRequests ?? false;
+    this._saveRequests = options.saveRequests;
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
       | UnhandledRequestStrategy
       | undefined as this['onUnhandledRequest'];
@@ -102,6 +104,9 @@ class HttpInterceptorClient<
   }
 
   get saveRequests() {
+    if (this._saveRequests === undefined) {
+      return isServerSide() ? process.env.NODE_ENV === 'test' : false;
+    }
     return this._saveRequests;
   }
 
@@ -246,7 +251,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this._saveRequests) {
+    if (this.saveRequests) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
