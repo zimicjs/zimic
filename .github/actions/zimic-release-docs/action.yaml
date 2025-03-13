@@ -8,8 +8,8 @@ inputs:
   project-name:
     description: The project name to release
     required: true
-  wiki-ssh-key:
-    description: The SSH key to push to the wiki repository
+  wiki-token:
+    description: The token to push to the wiki repository
     required: true
   commit-user-name:
     description: Commit user name
@@ -26,7 +26,7 @@ runs:
       with:
         repository: zimicjs/zimic.wiki
         path: zimic.wiki
-        ssh-key: ${{ inputs.wiki-ssh-key }}
+        token: ${{ inputs.wiki-token }}
 
     - name: Sync wiki content
       working-directory: zimic
