@@ -4,6 +4,9 @@ on:
   release:
     types:
       - published
+  push:
+    tags:
+      - '@zimic/fetch@*'
 
 concurrency:
   group: release-zimic-fetch-${{ github.ref_name }}
