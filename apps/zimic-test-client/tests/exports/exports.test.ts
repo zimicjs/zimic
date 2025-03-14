@@ -55,7 +55,6 @@ import {
 import {
   httpInterceptor,
   type HttpInterceptorNamespace,
-  type HttpInterceptorNamespaceDefault,
   type HttpInterceptor,
   type LocalHttpInterceptor,
   type RemoteHttpInterceptor,
@@ -185,14 +184,9 @@ describe('Exports', () => {
     expect(typeof FetchResponseError).toBe('function');
 
     expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
-    expectTypeOf<HttpInterceptorNamespaceDefault>().not.toBeAny();
 
     expectTypeOf(httpInterceptor.create).toEqualTypeOf<HttpInterceptorNamespace['create']>();
     expect(typeof httpInterceptor.create).toBe('function');
-
-    expectTypeOf(httpInterceptor.default).toEqualTypeOf<Readonly<HttpInterceptorNamespace['default']>>();
-    expect(typeof httpInterceptor.default.local.onUnhandledRequest).toBe('object');
-    expect(typeof httpInterceptor.default.remote.onUnhandledRequest).toBe('object');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();

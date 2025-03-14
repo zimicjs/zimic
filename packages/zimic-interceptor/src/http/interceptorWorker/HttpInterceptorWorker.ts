@@ -35,7 +35,6 @@ import {
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import InvalidFormDataError from './errors/InvalidFormDataError';
 import InvalidJSONError from './errors/InvalidJSONError';
-import HttpInterceptorWorkerStore from './HttpInterceptorWorkerStore';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
@@ -46,8 +45,6 @@ abstract class HttpInterceptorWorker {
 
   private startingPromise?: Promise<void>;
   private stoppingPromise?: Promise<void>;
-
-  private store = new HttpInterceptorWorkerStore();
 
   private runningInterceptors: AnyHttpInterceptorClient[] = [];
 
@@ -142,7 +139,7 @@ abstract class HttpInterceptorWorker {
     request: Request,
     interceptorType: HttpInterceptorType,
   ): Promise<UnhandledRequestStrategy.Declaration[]> {
-    const globalDefaultStrategy = this.getGlobalDefaultUnhandledRequestStrategy(interceptorType);
+    const globalDefaultStrategy = DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
 
     try {
       const interceptor = this.findInterceptorByRequestBaseURL(request);
@@ -152,20 +149,13 @@ abstract class HttpInterceptorWorker {
       }
 
       const requestClone = request.clone();
+      const interceptorStrategy = await this.getInterceptorUnhandledRequestStrategy(requestClone, interceptor);
 
-      const [defaultStrategy, interceptorStrategy] = await Promise.all([
-        this.getDefaultUnhandledRequestStrategy(request, interceptorType),
-        this.getInterceptorUnhandledRequestStrategy(requestClone, interceptor),
-      ]);
-
-      const candidatesOrPromises = [interceptorStrategy, defaultStrategy, globalDefaultStrategy];
-      const candidateStrategies = await Promise.all(candidatesOrPromises.filter(isDefined));
-      return candidateStrategies;
+      return [interceptorStrategy, globalDefaultStrategy].filter(isDefined);
     } catch (error) {
       console.error(error);
 
-      const candidateStrategies = [globalDefaultStrategy];
-      return candidateStrategies;
+      return [globalDefaultStrategy];
     }
   }
 
@@ -183,21 +173,6 @@ abstract class HttpInterceptorWorker {
     });
 
     return interceptor;
-  }
-
-  private getGlobalDefaultUnhandledRequestStrategy(interceptorType: HttpInterceptorType) {
-    return DEFAULT_UNHANDLED_REQUEST_STRATEGY[interceptorType];
-  }
-
-  private async getDefaultUnhandledRequestStrategy(request: Request, interceptorType: HttpInterceptorType) {
-    const defaultStrategyOrFactory = this.store.defaultOnUnhandledRequest(interceptorType);
-
-    if (typeof defaultStrategyOrFactory === 'function') {
-      const parsedRequest = await HttpInterceptorWorker.parseRawUnhandledRequest(request);
-      return defaultStrategyOrFactory(parsedRequest);
-    }
-
-    return defaultStrategyOrFactory;
   }
 
   private async getInterceptorUnhandledRequestStrategy(request: Request, interceptor: AnyHttpInterceptorClient) {
