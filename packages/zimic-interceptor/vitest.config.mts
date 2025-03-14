@@ -7,7 +7,6 @@ export default defineConfig({
     globals: false,
     testTimeout: 5000,
     hookTimeout: 5000,
-    setupFiles: ['./tests/setup/shared.ts'],
     maxWorkers: process.env.CI === 'true' ? '50%' : '25%',
     minWorkers: 1,
     clearMocks: true,

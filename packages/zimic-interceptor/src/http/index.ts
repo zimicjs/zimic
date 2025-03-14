@@ -57,4 +57,3 @@ export type { LocalHttpInterceptor, RemoteHttpInterceptor, HttpInterceptor } fro
 export const httpInterceptor = Object.freeze(new HttpInterceptorNamespace());
 
 export type { default as HttpInterceptorNamespace } from './namespace/HttpInterceptorNamespace';
-export type { HttpInterceptorNamespaceDefault } from './namespace/HttpInterceptorNamespace';
