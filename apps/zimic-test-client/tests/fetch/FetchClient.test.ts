@@ -1,6 +1,6 @@
 import { createFetch, FetchResponseError } from '@zimic/fetch';
 import { JSONSerialized, HttpHeaders, HttpSearchParams, HttpRequest, HttpResponse, HttpSchema } from '@zimic/http';
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 import expectToThrow from '@zimic/utils/error/expectToThrow';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -25,7 +25,7 @@ describe('Fetch client', async () => {
     baseURL: 'http://localhost:3000',
   });
 
-  const authInterceptor = httpInterceptor.create<AuthServiceSchema>({
+  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     type: 'local',
     baseURL: authFetch.defaults.baseURL,
     saveRequests: true,
@@ -35,7 +35,7 @@ describe('Fetch client', async () => {
     baseURL: 'http://localhost:3001',
   });
 
-  const notificationInterceptor = httpInterceptor.create<NotificationServiceSchema>({
+  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     type: 'local',
     baseURL: notificationFetch.defaults.baseURL,
     saveRequests: true,

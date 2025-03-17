@@ -177,6 +177,6 @@ export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptio
  * The options to create an
  * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor HTTP interceptor}.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `httpInterceptor.create(options)` API reference}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#createhttpinterceptoroptions `createHttpInterceptor(options)` API reference}
  */
 export type HttpInterceptorOptions = LocalHttpInterceptorOptions | RemoteHttpInterceptorOptions;

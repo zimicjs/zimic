@@ -3,7 +3,7 @@
 ## Contents <!-- omit from toc -->
 
 - [`HttpInterceptor`](#httpinterceptor)
-  - [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions)
+  - [`createHttpInterceptor(options)`](#createhttpinterceptoroptions)
     - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
     - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
@@ -47,7 +47,7 @@ codes, parameters, and responses are statically-typed based on the service schem
 
 Each interceptor represents a service and can be used to mock its paths and methods.
 
-### `httpInterceptor.create(options)`
+### `createHttpInterceptor(options)`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
 [declaring interceptor schemas](api‐zimic‐interceptor‐http‐schemas).
@@ -64,13 +64,13 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
 }
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -91,13 +91,13 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
 }
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -123,7 +123,7 @@ it's important to keep the interceptor base URLs unique. Also, make sure that yo
 correct URL when making requests.
 
 ```ts
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   // ...
 }>({
   type: 'remote',
@@ -143,7 +143,7 @@ console by default.
 > [!TIP]
 >
 > If you expected a request to be handled, but it was not, make sure that the interceptor
-> [base URL](#httpinterceptorcreateoptions), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath),
+> [base URL](#createhttpinterceptoroptions), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath),
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
@@ -156,7 +156,7 @@ always **reject** unhandled requests. This is because the unhandled requests hav
 server, so there would be no way of bypassing them at this point.
 
 You can override the logging behavior per interceptor with `onUnhandledRequest` in
-[`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
+[`createHttpInterceptor(options)`](#createhttpinterceptoroptions). `onUnhandledRequest` also accepts a function to
 dynamically determine which strategy to use for an unhandled request.
 
 <details open>
@@ -165,9 +165,9 @@ dynamically determine which strategy to use for an unhandled request.
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
@@ -185,9 +185,9 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
@@ -205,9 +205,9 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: async (request) => {
@@ -264,9 +264,9 @@ their intercepted requests in memory.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   saveRequests: true,
@@ -282,9 +282,9 @@ afterEach(() => {
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
   saveRequests: true,
@@ -306,9 +306,9 @@ afterEach(async () => {
 > mock servers.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
   saveRequests: process.env.NODE_ENV === 'test',
@@ -383,9 +383,9 @@ be considered first as long as it is created **after** the generic one.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -407,9 +407,9 @@ const listHandler = interceptor.get('/users').respond({
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -436,9 +436,9 @@ Paths with parameters are supported, such as `/users/:id`. Even when using a com
 original path is automatically inferred, guaranteeing type safety.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     PUT: {
       request: {
@@ -504,7 +504,7 @@ including a stack trace to the [`handler.times()`](#http-handlertimes) that was 
 
 > [!TIP]
 >
-> When [`saveRequests: true`](#httpinterceptorcreateoptions) is enabled in your interceptor, the `TimesCheckError`
+> When [`saveRequests: true`](#createhttpinterceptoroptions) is enabled in your interceptor, the `TimesCheckError`
 > errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging
 > requests that did not match a handler with [restrictions](#http-handlerwithrestriction).
 
@@ -574,9 +574,9 @@ await interceptor.clear();
 Infers the schema of an [HTTP interceptor](#httpinterceptor).
 
 ```ts
-import { httpInterceptor, type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
+import { type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: { 200: { body: User[] } };

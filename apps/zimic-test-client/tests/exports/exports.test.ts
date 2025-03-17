@@ -53,8 +53,7 @@ import {
   type MergeHttpResponsesByStatusCode,
 } from '@zimic/http';
 import {
-  httpInterceptor,
-  type HttpInterceptorNamespace,
+  createHttpInterceptor,
   type HttpInterceptor,
   type LocalHttpInterceptor,
   type RemoteHttpInterceptor,
@@ -183,10 +182,8 @@ describe('Exports', () => {
     expectTypeOf<JSONStringified<never>>().not.toBeAny();
     expect(typeof FetchResponseError).toBe('function');
 
-    expectTypeOf<HttpInterceptorNamespace>().not.toBeAny();
-
-    expectTypeOf(httpInterceptor.create).toEqualTypeOf<HttpInterceptorNamespace['create']>();
-    expect(typeof httpInterceptor.create).toBe('function');
+    expectTypeOf(createHttpInterceptor).not.toBeAny();
+    expect(typeof createHttpInterceptor).toBe('function');
 
     expectTypeOf<UnhandledRequestStrategy>().not.toBeAny();
     expectTypeOf<UnhandledRequestStrategy.Action>().not.toBeAny();
