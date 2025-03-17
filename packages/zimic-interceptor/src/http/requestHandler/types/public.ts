@@ -147,7 +147,7 @@ export interface LocalHttpRequestHandler<
    * that was not satisfied.
    *
    * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#createhttpinterceptoroptions `saveRequests: true`}
    * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
    * expected and received data. This is useful for debugging requests that did not match a handler with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
@@ -284,7 +284,7 @@ export interface SyncedRemoteHttpRequestHandler<
    * that was not satisfied.
    *
    * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#createhttpinterceptoroptions `saveRequests: true`}
    * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
    * expected and received data. This is useful for debugging requests that did not match a handler with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.

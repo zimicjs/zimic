@@ -184,9 +184,9 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
    - **Example 3**: Using [`@zimic/interceptor`](../zimic-interceptor):
 
      ```ts
-     import { httpInterceptor } from '@zimic/interceptor/http';
+     import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-     const interceptor = httpInterceptor.create<Schema>({
+     const interceptor = createHttpInterceptor<Schema>({
        type: 'local',
        baseURL: 'http://localhost:3000',
      });

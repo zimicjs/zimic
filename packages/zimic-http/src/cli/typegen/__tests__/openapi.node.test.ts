@@ -1,4 +1,4 @@
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
 import chalk from 'chalk';
@@ -79,7 +79,7 @@ describe('Type generation (OpenAPI)', () => {
     prettierConfig = await resolvedPrettierConfig(__filename);
   }
 
-  const schemaInterceptor = httpInterceptor.create<{
+  const schemaInterceptor = createHttpInterceptor<{
     [Path in `/spec/${TypegenFixtureCaseName}`]: {
       GET: { response: { 200: { body: Blob } } };
     };
