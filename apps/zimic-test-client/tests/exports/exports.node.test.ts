@@ -1,9 +1,8 @@
 import { typegen, type TypegenNamespace, type OpenAPITypegenOptions } from '@zimic/http/typegen';
 import {
-  interceptorServer,
+  createInterceptorServer,
   type InterceptorServer,
   type InterceptorServerOptions,
-  type InterceptorServerNamespace,
   RunningInterceptorServerError,
   NotRunningInterceptorServerError,
   DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -13,10 +12,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 describe('Exports (Node.js)', () => {
   it('should export all expected resources', () => {
-    expectTypeOf<InterceptorServerNamespace>().not.toBeAny();
-
-    expectTypeOf(interceptorServer.create).toEqualTypeOf<InterceptorServerNamespace['create']>();
-    expect(typeof interceptorServer.create).toBe('function');
+    expectTypeOf(createInterceptorServer).not.toBeAny();
+    expect(typeof createInterceptorServer).toBe('function');
 
     expectTypeOf<InterceptorServer>().not.toBeAny();
     expectTypeOf<InterceptorServerOptions>().not.toBeAny();
