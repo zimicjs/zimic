@@ -1,4 +1,4 @@
-import { typegen, type TypegenNamespace, type OpenAPITypegenOptions } from '@zimic/http/typegen';
+import { type OpenAPITypegenOptions, generateTypesFromOpenAPI } from '@zimic/http/typegen';
 import {
   createInterceptorServer,
   type InterceptorServer,
@@ -25,10 +25,9 @@ describe('Exports (Node.js)', () => {
     expect(DEFAULT_ACCESS_CONTROL_HEADERS).toEqual(expect.any(Object));
     expect(DEFAULT_PREFLIGHT_STATUS_CODE).toEqual(expect.any(Number));
 
-    expectTypeOf<TypegenNamespace>().not.toBeAny();
+    expectTypeOf(generateTypesFromOpenAPI).not.toBeAny();
+    expect(typeof generateTypesFromOpenAPI).toBe('function');
 
-    expectTypeOf(typegen.generateFromOpenAPI).toEqualTypeOf<TypegenNamespace['generateFromOpenAPI']>();
-    expect(typeof typegen.generateFromOpenAPI).toBe('function');
     expectTypeOf<OpenAPITypegenOptions>().not.toBeAny();
   });
 });
