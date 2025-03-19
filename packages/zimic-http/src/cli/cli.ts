@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import color from 'picocolors';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -91,8 +91,8 @@ async function runCLI() {
           const outputFilePath = cliArguments.output;
 
           const successMessage =
-            `${chalk.green.bold('✔')} Generated ` +
-            `${outputFilePath ? chalk.green(outputFilePath) : `to ${chalk.yellow('stdout')}`} ${chalk.dim(
+            `${color.green(color.bold('✔'))} Generated ` +
+            `${outputFilePath ? color.green(outputFilePath) : `to ${color.yellow('stdout')}`} ${color.dim(
               `(${formatElapsedTime(executionSummary.elapsedTime)})`,
             )}`;
 
