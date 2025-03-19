@@ -132,7 +132,7 @@ class HttpRequestHandlerClient<
         declarationPointer: this.timesDeclarationPointer,
         unmatchedRequestGroups: this.unmatchedRequestGroups,
         hasRestrictions: this.restrictions.length > 0,
-        hasSavedRequests: this.interceptor.saveRequests,
+        requestSaving: this.interceptor.requestSaving,
       });
     }
   }
@@ -168,7 +168,9 @@ class HttpRequestHandlerClient<
       this.numberOfMatchedRequests++;
     } else {
       const shouldSaveUnmatchedGroup =
-        this.interceptor.saveRequests && this.restrictions.length > 0 && this.timesDeclarationPointer !== undefined;
+        this.interceptor.requestSaving.enabled &&
+        this.restrictions.length > 0 &&
+        this.timesDeclarationPointer !== undefined;
 
       if (shouldSaveUnmatchedGroup) {
         this.unmatchedRequestGroups.push({ request, diff: restrictionsMatch.diff });
@@ -401,7 +403,7 @@ class HttpRequestHandlerClient<
   }
 
   get requests(): readonly InterceptedHttpInterceptorRequest<Path, Default<Schema[Path][Method]>, StatusCode>[] {
-    if (!this.interceptor.saveRequests) {
+    if (!this.interceptor.requestSaving.enabled) {
       throw new DisabledRequestSavingError();
     }
 

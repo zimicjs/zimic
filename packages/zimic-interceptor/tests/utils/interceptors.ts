@@ -60,7 +60,7 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(
 ): LocalHttpInterceptor<HttpSchema<Schema>> | RemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return createHttpInterceptor<Schema>({
-    saveRequests: true,
+    requestSaving: { enabled: true },
     onUnhandledRequest: { action: 'reject', log: false },
     ...options,
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;

@@ -86,7 +86,7 @@ describe('Type generation (OpenAPI)', () => {
   }>({
     type: 'local',
     baseURL: 'http://localhost:3000',
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   beforeAll(async () => {

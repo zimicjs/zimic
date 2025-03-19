@@ -45,8 +45,8 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         await usingHttpInterceptor<{
           '/users': { GET: MethodSchema };
-        }>({ ...interceptorOptions, saveRequests: undefined }, async (interceptor) => {
-          const defaultSaveRequests = interceptor.saveRequests;
+        }>({ ...interceptorOptions, requestSaving: undefined }, async (interceptor) => {
+          const defaultSaveRequests = interceptor.requestSaving.enabled;
 
           if (isClientSide()) {
             expect(defaultSaveRequests).toBe(false);
@@ -102,8 +102,8 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             expect(handler.client._requests).toHaveLength(0);
           }
 
-          interceptor.saveRequests = !defaultSaveRequests;
-          expect(interceptor.saveRequests).toBe(!defaultSaveRequests);
+          interceptor.requestSaving.enabled = !defaultSaveRequests;
+          expect(interceptor.requestSaving.enabled).toBe(!defaultSaveRequests);
         });
       },
     );
@@ -572,7 +572,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             HEAD: MethodSchema;
             OPTIONS: MethodSchema;
           };
-        }>({ ...interceptorOptions, saveRequests: false }, async (interceptor) => {
+        }>({ ...interceptorOptions, requestSaving: { enabled: false } }, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users').respond({
               status: 200,
@@ -621,7 +621,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             HEAD: MethodSchema;
             OPTIONS: MethodSchema;
           };
-        }>({ ...interceptorOptions, saveRequests: true }, async (interceptor) => {
+        }>({ ...interceptorOptions, requestSaving: { enabled: true } }, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users').respond({
               status: 200,
@@ -654,7 +654,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             HEAD: MethodSchema;
             OPTIONS: MethodSchema;
           };
-        }>({ ...interceptorOptions, saveRequests: true }, async (interceptor) => {
+        }>({ ...interceptorOptions, requestSaving: { enabled: true } }, async (interceptor) => {
           const handler = await promiseIfRemote(
             interceptor[lowerMethod]('/users').respond({
               status: 200,
@@ -663,9 +663,9 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             interceptor,
           );
 
-          expect(interceptor.saveRequests).toBe(true);
-          interceptor.saveRequests = false;
-          expect(interceptor.saveRequests).toBe(false);
+          expect(interceptor.requestSaving.enabled).toBe(true);
+          interceptor.requestSaving.enabled = false;
+          expect(interceptor.requestSaving.enabled).toBe(false);
 
           const error = new DisabledRequestSavingError();
 
@@ -694,9 +694,9 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           expect(handler.client._requests).toHaveLength(0);
 
-          expect(interceptor.saveRequests).toBe(false);
-          interceptor.saveRequests = true;
-          expect(interceptor.saveRequests).toBe(true);
+          expect(interceptor.requestSaving.enabled).toBe(false);
+          interceptor.requestSaving.enabled = true;
+          expect(interceptor.requestSaving.enabled).toBe(true);
 
           expect(handler.requests).toHaveLength(0);
 

@@ -350,7 +350,7 @@ export function declareTimesHttpRequestHandlerTests(
   describe('Unmatched requests', () => {
     describe('Restrictions', () => {
       it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
-        const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, saveRequests: false });
+        const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, requestSaving: { enabled: false } });
         const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')
@@ -366,7 +366,7 @@ export function declareTimesHttpRequestHandlerTests(
             message: [
               'Expected exactly 1 matching request, but got 0.',
               '',
-              'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.',
+              'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
             ].join('\n'),
             numberOfRequests: 1,
           },
@@ -385,7 +385,7 @@ export function declareTimesHttpRequestHandlerTests(
             message: [
               'Expected exactly 1 matching request, but got 0.',
               '',
-              'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.',
+              'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.',
             ].join('\n'),
             numberOfRequests: 1,
           },

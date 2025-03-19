@@ -149,7 +149,7 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/gettingâ
     const interceptor = createHttpInterceptor<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
-      saveRequests: true, // Allow access to `handler.requests`
+      requestSaving: { enabled: true },
     });
     ```
 

@@ -26,9 +26,12 @@ import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorEr
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
+import { HttpInterceptorRequestSaving } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
+
+export const DEFAULT_SAVE_REQUESTS_SAFE_LIMIT = 1000;
 
 class HttpInterceptorClient<
   Schema extends HttpSchema,
@@ -38,7 +41,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  private _saveRequests?: boolean;
+  private _saveRequests: HttpInterceptorRequestSaving;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -64,7 +67,7 @@ class HttpInterceptorClient<
     worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
     baseURL: URL;
-    saveRequests?: boolean;
+    requestSaving?: Partial<HttpInterceptorRequestSaving>;
     onUnhandledRequest?: UnhandledRequestStrategy;
     Handler: HandlerConstructor;
   }) {
@@ -72,7 +75,12 @@ class HttpInterceptorClient<
     this.store = options.store;
 
     this.baseURL = options.baseURL;
-    this._saveRequests = options.saveRequests;
+
+    this._saveRequests = {
+      enabled: options.requestSaving?.enabled ?? (isServerSide() ? process.env.NODE_ENV === 'test' : false),
+      safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_SAVE_REQUESTS_SAFE_LIMIT,
+    };
+
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
       | UnhandledRequestStrategy
       | undefined as this['onUnhandledRequest'];
@@ -103,15 +111,12 @@ class HttpInterceptorClient<
     return this.baseURL.href;
   }
 
-  get saveRequests() {
-    if (this._saveRequests === undefined) {
-      return isServerSide() ? process.env.NODE_ENV === 'test' : false;
-    }
+  get requestSaving() {
     return this._saveRequests;
   }
 
-  set saveRequests(saveRequests: boolean) {
-    this._saveRequests = saveRequests;
+  set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
+    this._saveRequests = requestSaving;
   }
 
   get platform() {
@@ -251,7 +256,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this.saveRequests) {
+    if (this.requestSaving.enabled) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<

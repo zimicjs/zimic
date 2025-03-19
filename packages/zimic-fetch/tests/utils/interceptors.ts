@@ -44,7 +44,7 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   const interceptor = createHttpInterceptor<Schema>({
     ...interceptorOptions,
     onUnhandledRequest: { action: 'reject', log: false },
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   await interceptor.start();
