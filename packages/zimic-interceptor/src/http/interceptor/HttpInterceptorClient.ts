@@ -41,7 +41,7 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  private _saveRequests: HttpInterceptorRequestSaving;
+  private _requestSaving: HttpInterceptorRequestSaving;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -76,7 +76,7 @@ class HttpInterceptorClient<
 
     this.baseURL = options.baseURL;
 
-    this._saveRequests = {
+    this._requestSaving = {
       enabled: options.requestSaving?.enabled ?? (isServerSide() ? process.env.NODE_ENV === 'test' : false),
       safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_SAVE_REQUESTS_SAFE_LIMIT,
     };
@@ -112,11 +112,11 @@ class HttpInterceptorClient<
   }
 
   get requestSaving() {
-    return this._saveRequests;
+    return this._requestSaving;
   }
 
   set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
-    this._saveRequests = requestSaving;
+    this._requestSaving = requestSaving;
   }
 
   get platform() {

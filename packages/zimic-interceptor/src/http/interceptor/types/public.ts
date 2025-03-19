@@ -4,8 +4,7 @@ import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } f
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from './options';
 
 /**
- * Configuration options for saving intercepted requests in memory and making them accessible through
- * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+ * Configures if the intercepted requests are saved and how they are handled.
  *
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
  * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
@@ -119,9 +118,9 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    * of each test.
    *
    * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#createhttpinterceptoroptions
-   * `requestSaving.enabled`}
-   * is true in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
+   * `requestSaving.enabled`} is
+   * `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
    * expected and received data. This is useful for debugging requests that did not match a handler with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
    *

@@ -156,8 +156,8 @@ always **reject** unhandled requests. This is because the unhandled requests hav
 server, so there would be no way of bypassing them at this point.
 
 You can override the logging behavior per interceptor with `onUnhandledRequest` in
-[`createHttpInterceptor(options)`](#createhttpinterceptoroptions). `onUnhandledRequest` also accepts a function to
-dynamically determine which strategy to use for an unhandled request.
+[`createHttpInterceptor(options)`](#createhttpinterceptoroptions) or by setting `interceptor.onUnhandledRequest`.
+`onUnhandledRequest` also accepts a function to dynamically determine which strategy to use for an unhandled request.
 
 <details open>
   <summary>
@@ -238,26 +238,24 @@ const interceptor = createHttpInterceptor<Schema>({
 > If no running interceptor matches the request, one of two things may happen:
 >
 > - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
->   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start)
+>   behavior is configured with the [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start) option
 >   in the interceptor server.
 > - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests
 
-The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
-requests in memory and make them accessible through [`handler.requests`](#http-handlerrequests).
+The `requestSaving` option configures if the intercepted requests are saved and how they are handled. It supports the
+following properties:
 
-This setting is configured per interceptor and is `false` by default. If set to `true`, each handler will keep track of
-their intercepted requests in memory.
+| Property    | Description                                                                                                                                                                                                                                                                                                                                                                                                        | Default                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| `enabled`   | Whether [request handlers](#httprequesthandler) should save their intercepted requests in memory and make them accessible through `handler.requests`. If you are using [interceptor.checkTimes()](#http-interceptorchecktimes) or [handler.checkTimes()](#http-handlerchecktimes) during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.                        | `process.env.NODE_ENV === 'test'` |
+| `safeLimit` | The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is true and the interceptor is not regularly cleared with [`interceptor.clear()`](#http-interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of requests saved in memory, but it logs warnings when the limit is reached. | `1000`                            |
 
 > [!IMPORTANT]
 >
-> Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the interceptor or
-> disposal of the handlers (i.e. garbage collection).
->
-> If you plan on accessing those requests, such as to assert them in your tests, set `saveRequests` to `true` and make
-> sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
-> after each test.
+> If `requestSaving.enabled` is true, make sure to regularly clear the interceptor to avoid that the requests accumulate
+> in memory. A common practice is to call [`interceptor.clear()`](#http-interceptorclear) after each test.
 >
 > See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
@@ -269,7 +267,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
-  requestSaving: { enabled: true },
+  requestSaving: { enabled: true, safeLimit: 1000 },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -287,7 +285,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
-  requestSaving: { enabled: true },
+  requestSaving: { enabled: true, safeLimit: 1000 },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -298,22 +296,6 @@ afterEach(async () => {
 ```
 
 </details></td></tr></table>
-
-> [!TIP]
->
-> If you use an interceptor both in tests and as a standalone mock server, consider setting `saveRequests` based on an
-> environment variable. This allows you to access the requests in tests, while preventing memory leaks in long-running
-> mock servers.
-
-```ts
-import { createHttpInterceptor } from '@zimic/interceptor/http';
-
-const interceptor = createHttpInterceptor<Schema>({
-  type: 'remote',
-  baseURL: 'http://localhost:3000',
-  saveRequests: process.env.NODE_ENV === 'test',
-});
-```
 
 ### HTTP `interceptor.start()`
 
@@ -504,9 +486,9 @@ including a stack trace to the [`handler.times()`](#http-handlertimes) that was 
 
 > [!TIP]
 >
-> When [`requestSaving.enabled`](#createhttpinterceptoroptions) is true in your interceptor, the `TimesCheckError`
-> errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging
-> requests that did not match a handler with [restrictions](#http-handlerwithrestriction).
+> When [`requestSaving.enabled`](#saving-requests) is true in your interceptor, the `TimesCheckError` errors will also
+> list each unmatched request with diff of the expected and received data. This is useful for debugging requests that
+> did not match a handler with [restrictions](#http-handlerwithrestriction).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -1560,7 +1542,7 @@ useful for testing that the correct requests were made by your application. Lear
 
 > [!IMPORTANT]
 >
-> This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+> This method can only be used if `requestSaving.enabled` is `true` when creating the interceptor. See
 > [Saving intercepted requests](#saving-requests) for more information.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
