@@ -81,15 +81,16 @@ import {
   type HttpRequestHandlerSearchParamsStaticRestriction,
   type HttpRequestHandlerStaticRestriction,
   type HttpRequestHandlerBodyStaticRestriction,
-  UnknownHttpInterceptorPlatformError,
-  UnknownHttpInterceptorTypeError,
   RunningHttpInterceptorError,
   NotRunningHttpInterceptorError,
+  UnknownHttpInterceptorPlatformError,
+  UnknownHttpInterceptorTypeError,
+  RequestSavingSafeLimitExceededError,
+  InvalidFormDataError,
+  InvalidJSONError,
   UnregisteredBrowserServiceWorkerError,
   DisabledRequestSavingError,
   TimesCheckError,
-  InvalidJSONError,
-  InvalidFormDataError,
 } from '@zimic/interceptor/http';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
@@ -225,18 +226,33 @@ describe('Exports', () => {
     expectTypeOf<HttpRequestHandlerStaticRestriction<never, never, never>>().not.toBeAny();
     expectTypeOf<HttpRequestHandlerBodyStaticRestriction<never, never, never>>().not.toBeAny();
 
-    expectTypeOf<UnknownHttpInterceptorPlatformError>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
-    expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
-    expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
     expectTypeOf<RunningHttpInterceptorError>().not.toBeAny();
     expect(typeof RunningHttpInterceptorError).toBe('function');
+
     expectTypeOf<NotRunningHttpInterceptorError>().not.toBeAny();
     expect(typeof NotRunningHttpInterceptorError).toBe('function');
+
+    expectTypeOf<UnknownHttpInterceptorPlatformError>().not.toBeAny();
+    expect(typeof UnknownHttpInterceptorPlatformError).toBe('function');
+
+    expectTypeOf<UnknownHttpInterceptorTypeError>().not.toBeAny();
+    expect(typeof UnknownHttpInterceptorTypeError).toBe('function');
+
+    expectTypeOf<RequestSavingSafeLimitExceededError>().not.toBeAny();
+    expect(typeof RequestSavingSafeLimitExceededError).toBe('function');
+
+    expectTypeOf<InvalidFormDataError>().not.toBeAny();
+    expect(typeof InvalidFormDataError).toBe('function');
+
+    expectTypeOf<InvalidJSONError>().not.toBeAny();
+    expect(typeof InvalidJSONError).toBe('function');
+
     expectTypeOf<UnregisteredBrowserServiceWorkerError>().not.toBeAny();
     expect(typeof UnregisteredBrowserServiceWorkerError).toBe('function');
+
     expectTypeOf<DisabledRequestSavingError>().not.toBeAny();
     expect(typeof DisabledRequestSavingError).toBe('function');
+
     expectTypeOf<TimesCheckError>().not.toBeAny();
     expect(typeof TimesCheckError).toBe('function');
   });
