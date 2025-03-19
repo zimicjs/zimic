@@ -269,7 +269,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
-  saveRequests: true,
+  requestSaving: { enabled: true },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -287,7 +287,7 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
-  saveRequests: true,
+  requestSaving: { enabled: true },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -504,7 +504,7 @@ including a stack trace to the [`handler.times()`](#http-handlertimes) that was 
 
 > [!TIP]
 >
-> When [`saveRequests: true`](#createhttpinterceptoroptions) is enabled in your interceptor, the `TimesCheckError`
+> When [`requestSaving.enabled`](#createhttpinterceptoroptions) is true in your interceptor, the `TimesCheckError`
 > errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging
 > requests that did not match a handler with [restrictions](#http-handlerwithrestriction).
 
