@@ -80,7 +80,7 @@ class HttpInterceptorClient<
     this.baseURL = options.baseURL;
 
     this.requestSaving = {
-      enabled: options.requestSaving?.enabled ?? (isServerSide() ? process.env.NODE_ENV === 'test' : false),
+      enabled: options.requestSaving?.enabled ?? this.getDefaultRequestSavingEnabled(),
       safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
     };
 
@@ -89,6 +89,10 @@ class HttpInterceptorClient<
       | undefined as this['onUnhandledRequest'];
 
     this.Handler = options.Handler;
+  }
+
+  private getDefaultRequestSavingEnabled(): boolean {
+    return isServerSide() ? process.env.NODE_ENV === 'test' : false;
   }
 
   get baseURL() {
