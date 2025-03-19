@@ -31,7 +31,7 @@ import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
 
-export const DEFAULT_SAVE_REQUESTS_SAFE_LIMIT = 1000;
+export const DEFAULT_REQUEST_SAVING_SAFE_LIMIT = 1000;
 
 class HttpInterceptorClient<
   Schema extends HttpSchema,
@@ -78,7 +78,7 @@ class HttpInterceptorClient<
 
     this._requestSaving = {
       enabled: options.requestSaving?.enabled ?? (isServerSide() ? process.env.NODE_ENV === 'test' : false),
-      safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_SAVE_REQUESTS_SAFE_LIMIT,
+      safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
     };
 
     this.onUnhandledRequest = options.onUnhandledRequest satisfies

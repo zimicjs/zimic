@@ -1,15 +1,13 @@
 import { HttpHeaders, HttpSearchParams, HTTP_METHODS, HttpSchema } from '@zimic/http';
 import expectFetchError from '@zimic/utils/fetch/expectFetchError';
 import joinURL from '@zimic/utils/url/joinURL';
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
 
 import { promiseIfRemote } from '@/http/interceptorWorker/__tests__/utils/promises';
-import DisabledRequestSavingError from '@/http/requestHandler/errors/DisabledRequestSavingError';
 import LocalHttpRequestHandler from '@/http/requestHandler/LocalHttpRequestHandler';
 import RemoteHttpRequestHandler from '@/http/requestHandler/RemoteHttpRequestHandler';
 import { AccessControlHeaders, DEFAULT_ACCESS_CONTROL_HEADERS } from '@/server/constants';
 import { importCrypto } from '@/utils/crypto';
-import { isClientSide } from '@/utils/environment';
 import { usingIgnoredConsole } from '@tests/utils/console';
 import { expectPreflightResponse } from '@tests/utils/fetch';
 import { assessPreflightInterference, usingHttpInterceptor } from '@tests/utils/interceptors';
@@ -34,79 +32,6 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
   beforeEach(() => {
     baseURL = getBaseURL();
     interceptorOptions = getInterceptorOptions();
-  });
-
-  describe('Request saving', () => {
-    it.each([{ NODE_ENV: 'development' }, { NODE_ENV: 'test' }, { NODE_ENV: 'production' }])(
-      'should have the correct default save requests strategy if none is provided (NODE_ENV: %s)',
-      async (environment) => {
-        vi.spyOn(process, 'env', 'get').mockReturnValue(environment);
-        expect(process.env).toEqual(environment);
-
-        await usingHttpInterceptor<{
-          '/users': { GET: MethodSchema };
-        }>({ ...interceptorOptions, requestSaving: undefined }, async (interceptor) => {
-          const defaultSaveRequests = interceptor.requestSaving.enabled;
-
-          if (isClientSide()) {
-            expect(defaultSaveRequests).toBe(false);
-          } else {
-            expect(defaultSaveRequests).toBe(environment.NODE_ENV === 'test');
-          }
-
-          const handler = await promiseIfRemote(
-            interceptor.get('/users').respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-            interceptor,
-          );
-
-          const numberOfRequests = 5;
-
-          if (defaultSaveRequests) {
-            expect(handler.requests).toHaveLength(0);
-
-            for (let index = 0; index < numberOfRequests; index++) {
-              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-              expect(response.status).toBe(200);
-            }
-
-            expect(handler.requests).toHaveLength(numberOfRequests);
-          } else {
-            const error = new DisabledRequestSavingError();
-
-            expect(() => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-              handler.requests;
-            }).toThrowError(error);
-
-            // @ts-expect-error Checking that no intercepted requests are saved.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler.client._requests).toHaveLength(0);
-
-            const numberOfRequests = 5;
-
-            for (let index = 0; index < numberOfRequests; index++) {
-              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-              expect(response.status).toBe(200);
-            }
-
-            expect(() => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-              handler.requests;
-            }).toThrowError(error);
-
-            // @ts-expect-error Checking that no intercepted requests are saved.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler.client._requests).toHaveLength(0);
-          }
-
-          interceptor.requestSaving.enabled = !defaultSaveRequests;
-          expect(interceptor.requestSaving.enabled).toBe(!defaultSaveRequests);
-        });
-      },
-    );
   });
 
   describe.each(HTTP_METHODS)('Method (%s)', (method) => {
@@ -559,155 +484,5 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
         });
       });
     }
-
-    describe('Request saving', () => {
-      it(`should not save intercepted ${method} requests if disabled`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>({ ...interceptorOptions, requestSaving: { enabled: false } }, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users').respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-            interceptor,
-          );
-
-          const error = new DisabledRequestSavingError();
-
-          expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            handler.requests;
-          }).toThrowError(error);
-
-          // @ts-expect-error Checking that no intercepted requests are saved.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(handler.client._requests).toHaveLength(0);
-
-          const numberOfRequests = 5;
-
-          for (let index = 0; index < numberOfRequests; index++) {
-            const response = await fetch(joinURL(baseURL, '/users'), { method });
-            expect(response.status).toBe(200);
-          }
-
-          expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            handler.requests;
-          }).toThrowError(error);
-
-          // @ts-expect-error Checking that no intercepted requests are saved.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(handler.client._requests).toHaveLength(0);
-        });
-      });
-
-      it(`should save intercepted ${method} requests if enabled`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>({ ...interceptorOptions, requestSaving: { enabled: true } }, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users').respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-            interceptor,
-          );
-
-          expect(handler.requests).toHaveLength(0);
-
-          const numberOfRequests = 5;
-
-          for (let index = 0; index < numberOfRequests; index++) {
-            const response = await fetch(joinURL(baseURL, '/users'), { method });
-            expect(response.status).toBe(200);
-          }
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
-        });
-      });
-
-      it(`should support changing the save requests strategy after created for ${method} requests`, async () => {
-        await usingHttpInterceptor<{
-          '/users': {
-            GET: MethodSchema;
-            POST: MethodSchema;
-            PUT: MethodSchema;
-            PATCH: MethodSchema;
-            DELETE: MethodSchema;
-            HEAD: MethodSchema;
-            OPTIONS: MethodSchema;
-          };
-        }>({ ...interceptorOptions, requestSaving: { enabled: true } }, async (interceptor) => {
-          const handler = await promiseIfRemote(
-            interceptor[lowerMethod]('/users').respond({
-              status: 200,
-              headers: DEFAULT_ACCESS_CONTROL_HEADERS,
-            }),
-            interceptor,
-          );
-
-          expect(interceptor.requestSaving.enabled).toBe(true);
-          interceptor.requestSaving.enabled = false;
-          expect(interceptor.requestSaving.enabled).toBe(false);
-
-          const error = new DisabledRequestSavingError();
-
-          expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            handler.requests;
-          }).toThrowError(error);
-
-          // @ts-expect-error Checking that no intercepted requests are saved.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(handler.client._requests).toHaveLength(0);
-
-          const numberOfRequests = 5;
-
-          for (let index = 0; index < numberOfRequests; index++) {
-            const response = await fetch(joinURL(baseURL, '/users'), { method });
-            expect(response.status).toBe(200);
-          }
-
-          expect(() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            handler.requests;
-          }).toThrowError(error);
-
-          // @ts-expect-error Checking that no intercepted requests are saved.
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          expect(handler.client._requests).toHaveLength(0);
-
-          expect(interceptor.requestSaving.enabled).toBe(false);
-          interceptor.requestSaving.enabled = true;
-          expect(interceptor.requestSaving.enabled).toBe(true);
-
-          expect(handler.requests).toHaveLength(0);
-
-          for (let index = 0; index < numberOfRequests; index++) {
-            const response = await fetch(joinURL(baseURL, '/users'), { method });
-            expect(response.status).toBe(200);
-          }
-
-          expect(handler.requests).toHaveLength(numberOfRequestsIncludingPreflight * numberOfRequests);
-        });
-      });
-    });
   });
 }
