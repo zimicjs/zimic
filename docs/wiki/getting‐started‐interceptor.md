@@ -207,7 +207,6 @@ use remote interceptors.
     const interceptor = createHttpInterceptor<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
-      requestSaving: { enabled: true },
     });
     ```
 
@@ -220,7 +219,6 @@ use remote interceptors.
       type: 'remote',
       // The interceptor server is at http://localhost:4000
       baseURL: 'http://localhost:4000/my-service',
-      requestSaving: { enabled: true },
     });
     ```
 
