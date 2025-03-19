@@ -350,7 +350,11 @@ export function declareTimesHttpRequestHandlerTests(
   describe('Unmatched requests', () => {
     describe('Restrictions', () => {
       it('should not include the requests unmatched due to restrictions if not saving requests', async () => {
-        const interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL, requestSaving: { enabled: false } });
+        const interceptor = createInternalHttpInterceptor<Schema>({
+          type,
+          baseURL,
+          requestSaving: { enabled: false },
+        });
         const interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
         const handler = new Handler<Schema, 'POST', '/users'>(interceptorClient, 'POST', '/users')

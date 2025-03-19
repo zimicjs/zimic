@@ -23,6 +23,7 @@ import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
+import RequestSavingSafeLimitExceededError from './errors/RequestSavingSafeLimitExceededError';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
@@ -41,7 +42,9 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  private _requestSaving: HttpInterceptorRequestSaving;
+
+  requestSaving: HttpInterceptorRequestSaving;
+  private numberOfSavedRequests = 0;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -76,7 +79,7 @@ class HttpInterceptorClient<
 
     this.baseURL = options.baseURL;
 
-    this._requestSaving = {
+    this.requestSaving = {
       enabled: options.requestSaving?.enabled ?? (isServerSide() ? process.env.NODE_ENV === 'test' : false),
       safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
     };
@@ -109,14 +112,6 @@ class HttpInterceptorClient<
       return this.baseURL.origin;
     }
     return this.baseURL.href;
-  }
-
-  get requestSaving() {
-    return this._requestSaving;
-  }
-
-  set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
-    this._requestSaving = requestSaving;
   }
 
   get platform() {
@@ -268,6 +263,17 @@ class HttpInterceptorClient<
     }
 
     return response;
+  }
+
+  incrementNumberOfSavedRequests(increment: number) {
+    this.numberOfSavedRequests = Math.max(this.numberOfSavedRequests + increment, 0);
+
+    const exceedsSafeLimit = this.numberOfSavedRequests > this.requestSaving.safeLimit;
+
+    if (increment > 0 && exceedsSafeLimit) {
+      const error = new RequestSavingSafeLimitExceededError(this.numberOfSavedRequests, this.requestSaving.safeLimit);
+      console.warn(error);
+    }
   }
 
   private async findMatchedHandler<

@@ -91,7 +91,8 @@ class HttpRequestHandlerClient<
 
     newThis.numberOfMatchedRequests = 0;
     newThis.unmatchedRequestGroups.length = 0;
-    newThis._requests.length = 0;
+
+    newThis.clearInterceptedRequests();
 
     this.interceptor.registerRequestHandler(this.handler);
 
@@ -148,7 +149,8 @@ class HttpRequestHandlerClient<
 
     this.numberOfMatchedRequests = 0;
     this.unmatchedRequestGroups.length = 0;
-    this._requests.length = 0;
+
+    this.clearInterceptedRequests();
 
     this.createResponseDeclaration = undefined;
 
@@ -380,6 +382,12 @@ class HttpRequestHandlerClient<
   ) {
     const interceptedRequest = this.createInterceptedRequest(request, response);
     this._requests.push(interceptedRequest);
+    this.interceptor.incrementNumberOfSavedRequests(1);
+  }
+
+  private clearInterceptedRequests() {
+    this.interceptor.incrementNumberOfSavedRequests(-this._requests.length);
+    this._requests.length = 0;
   }
 
   private createInterceptedRequest(
