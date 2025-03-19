@@ -1,6 +1,6 @@
 {
   "name": "@zimic/fetch",
-  "description": "TypeScript-first fetch-like API client",
+  "description": "Next-gen, TypeScript-first fetch-like API client",
   "keywords": [
     "zimic",
     "fetch",
