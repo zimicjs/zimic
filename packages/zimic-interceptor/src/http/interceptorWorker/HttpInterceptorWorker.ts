@@ -13,7 +13,7 @@ import {
 } from '@zimic/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import { Default, PossiblePromise } from '@zimic/utils/types';
-import chalk from 'chalk';
+import color from 'picocolors';
 
 import { removeArrayElement } from '@/utils/arrays';
 import { formatValueToLog, logWithPrefix } from '@/utils/console';
@@ -477,7 +477,7 @@ abstract class HttpInterceptorWorker {
     logWithPrefix(
       [
         `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
-          `${action === 'bypass' ? chalk.yellow('bypassed') : chalk.red('rejected')}.\n\n `,
+          `${action === 'bypass' ? color.yellow('bypassed') : color.red('rejected')}.\n\n `,
         `${request.method} ${request.url}`,
         '\n    Headers:',
         formattedHeaders,
