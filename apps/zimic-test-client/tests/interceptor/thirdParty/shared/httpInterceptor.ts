@@ -37,13 +37,13 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     type,
     baseURL: getAuthBaseURL(type, crypto),
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     type,
     baseURL: getNotificationsBaseURL(type, crypto),
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
