@@ -1,10 +1,13 @@
-export { default as InvalidJSONError } from './interceptorWorker/errors/InvalidJSONError';
-export { default as InvalidFormDataError } from './interceptorWorker/errors/InvalidFormDataError';
 export { default as RunningHttpInterceptorError } from './interceptor/errors/RunningHttpInterceptorError';
 export { default as NotRunningHttpInterceptorError } from './interceptor/errors/NotRunningHttpInterceptorError';
 export { default as UnknownHttpInterceptorPlatformError } from './interceptor/errors/UnknownHttpInterceptorPlatformError';
 export { default as UnknownHttpInterceptorTypeError } from './interceptor/errors/UnknownHttpInterceptorTypeError';
+export { default as RequestSavingSafeLimitExceededError } from './interceptor/errors/RequestSavingSafeLimitExceededError';
+
+export { default as InvalidFormDataError } from './interceptorWorker/errors/InvalidFormDataError';
+export { default as InvalidJSONError } from './interceptorWorker/errors/InvalidJSONError';
 export { default as UnregisteredBrowserServiceWorkerError } from './interceptorWorker/errors/UnregisteredBrowserServiceWorkerError';
+
 export { default as DisabledRequestSavingError } from './requestHandler/errors/DisabledRequestSavingError';
 export { default as TimesCheckError } from './requestHandler/errors/TimesCheckError';
 
