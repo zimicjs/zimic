@@ -1,5 +1,6 @@
 import { PossiblePromise } from '@zimic/utils/types';
 
+import { HttpInterceptorRequestSaving } from './public';
 import { UnhandledHttpInterceptorRequest } from './requests';
 
 /**
@@ -119,20 +120,12 @@ export interface SharedHttpInterceptorOptions {
   baseURL: string;
 
   /**
-   * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
-   * should save their intercepted requests in memory and make them accessible through
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   * Configures if the intercepted requests are saved and how they are handled.
    *
-   * **Important**: If `saveRequests` is true, make sure to regularly clear the interceptor to avoid that the requests
-   * accumulate in memory. A common practice is to call
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
-   * after each test.
-   *
-   * @default false
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
    */
-  saveRequests?: boolean;
+  requestSaving?: Partial<HttpInterceptorRequestSaving>;
 }
 
 /**

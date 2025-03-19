@@ -2,6 +2,7 @@ import isNonEmpty from '@zimic/utils/data/isNonEmpty';
 import { Range } from '@zimic/utils/types';
 import chalk from 'chalk';
 
+import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/console';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
@@ -13,7 +14,7 @@ interface TimesCheckErrorOptions {
   declarationPointer: TimesDeclarationPointer | undefined;
   unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[];
   hasRestrictions: boolean;
-  hasSavedRequests: boolean;
+  requestSaving: HttpInterceptorRequestSaving;
 }
 
 function createMessageHeader({
@@ -51,9 +52,9 @@ function createMessageHeader({
     .join('');
 }
 
-function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesCheckErrorOptions) {
-  if (!hasSavedRequests) {
-    return 'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.';
+function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: TimesCheckErrorOptions) {
+  if (!requestSaving.enabled) {
+    return 'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.';
   }
 
   return unmatchedRequestGroups

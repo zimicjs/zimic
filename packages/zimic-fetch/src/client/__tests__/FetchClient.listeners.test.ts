@@ -451,54 +451,61 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
-      await interceptor
-        .get('/users')
-        .with({
-          headers: { 'accept-language': 'en' },
-        })
-        .respond({
-          status: 200,
-          body: users,
-        })
-        .times(1);
+    await usingHttpInterceptor<Schema>(
+      {
+        type: 'local',
+        baseURL,
+        onUnhandledRequest: { action: 'reject', log: false },
+      },
+      async (interceptor) => {
+        await interceptor
+          .get('/users')
+          .with({
+            headers: { 'accept-language': 'en' },
+          })
+          .respond({
+            status: 200,
+            body: users,
+          })
+          .times(1);
 
-      const fetch = createFetch<Schema>({ baseURL });
-      expect(fetch.onRequest).toBe(undefined);
+        const fetch = createFetch<Schema>({ baseURL });
+        expect(fetch.onRequest).toBe(undefined);
 
-      const onRequest = vi.fn<Default<Fetch<Schema>['onRequest']>>((request) => {
-        request.headers.set('accept-language', 'en');
-        return request;
-      });
+        const onRequest = vi.fn<Default<Fetch<Schema>['onRequest']>>((request) => {
+          request.headers.set('accept-language', 'en');
+          return request;
+        });
 
-      const responseBeforeListener = fetch('/users', { method: 'GET' });
-      await expectFetchError(responseBeforeListener);
+        const responseBeforeListener = fetch('/users', { method: 'GET' });
+        await expectFetchError(responseBeforeListener);
 
-      fetch.onRequest = onRequest;
+        fetch.onRequest = onRequest;
 
-      const response = await fetch('/users', { method: 'GET' });
+        const response = await fetch('/users', { method: 'GET' });
 
-      expectTypeOf(response.status).toEqualTypeOf<200>();
-      expectResponseStatus(response, 200);
+        expectTypeOf(response.status).toEqualTypeOf<200>();
+        expectResponseStatus(response, 200);
 
-      expect(await response.json()).toEqual(users);
+        expect(await response.json()).toEqual(users);
 
-      expect(response).toBeInstanceOf(Response);
-      expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+        expect(response).toBeInstanceOf(Response);
+        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
 
-      expect(response.url).toBe(joinURL(baseURL, '/users'));
+        expect(response.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request).toBeInstanceOf(Request);
-      expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
+        expect(response.request).toBeInstanceOf(Request);
+        expectTypeOf(response.request satisfies Request).toEqualTypeOf<FetchRequest<Schema, 'GET', '/users'>>();
 
-      expect(response.request.url).toBe(joinURL(baseURL, '/users'));
+        expect(response.request.url).toBe(joinURL(baseURL, '/users'));
 
-      expect(response.request.headers).toBeInstanceOf(Headers);
-      expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
-      expect(response.request.headers.get('accept-language')).toBe('en');
+        expect(response.request.headers).toBeInstanceOf(Headers);
+        expectTypeOf(response.request.headers).toEqualTypeOf<StrictHeaders<{ 'accept-language'?: string }>>();
+        expect(response.request.headers.get('accept-language')).toBe('en');
 
-      expect(onRequest).toHaveBeenCalledTimes(1);
-    });
+        expect(onRequest).toHaveBeenCalledTimes(1);
+      },
+    );
   });
 
   it('should support listening to responses', async () => {

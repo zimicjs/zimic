@@ -28,7 +28,7 @@ describe('Fetch client', async () => {
   const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     type: 'local',
     baseURL: authFetch.defaults.baseURL,
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   const notificationFetch = createFetch<NotificationServiceSchema>({
@@ -38,7 +38,7 @@ describe('Fetch client', async () => {
   const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     type: 'local',
     baseURL: notificationFetch.defaults.baseURL,
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];
