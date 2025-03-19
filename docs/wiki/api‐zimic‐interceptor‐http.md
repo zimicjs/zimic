@@ -247,15 +247,15 @@ const interceptor = createHttpInterceptor<Schema>({
 The `requestSaving` option configures if the intercepted requests are saved and how they are handled. It supports the
 following properties:
 
-| Property    | Description                                                                                                                                                                                                                                                                                                                                                                                                        | Default                           |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| `enabled`   | Whether [request handlers](#httprequesthandler) should save their intercepted requests in memory and make them accessible through `handler.requests`. If you are using [interceptor.checkTimes()](#http-interceptorchecktimes) or [handler.checkTimes()](#http-handlerchecktimes) during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.                        | `process.env.NODE_ENV === 'test'` |
-| `safeLimit` | The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is true and the interceptor is not regularly cleared with [`interceptor.clear()`](#http-interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of requests saved in memory, but it logs warnings when the limit is reached. | `1000`                            |
+| Property    | Description                                                                                                                                                                                                                                                                                                                                                                                             | Default                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `enabled`   | Whether [request handlers](#httprequesthandler) should save their intercepted requests in memory and make them accessible through [`handler.requests`](#http-handlerrequests). If you are using [interceptor.checkTimes()](#http-interceptorchecktimes) or [handler.checkTimes()](#http-handlerchecktimes), consider enabling this option to get more detailed information in `TimesCheckError` errors. | `process.env.NODE_ENV === 'test'` |
+| `safeLimit` | The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is true and the interceptor is not regularly cleared with [`interceptor.clear()`](#http-interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of saved requests, only when to log warnings.                     | `1000`                            |
 
 > [!IMPORTANT]
 >
-> If `requestSaving.enabled` is true, make sure to regularly clear the interceptor to avoid that the requests accumulate
-> in memory. A common practice is to call [`interceptor.clear()`](#http-interceptorclear) after each test.
+> If `requestSaving.enabled` is `true`, make sure to regularly clear the interceptor to avoid requests accumulating in
+> memory. A common practice is to call [`interceptor.clear()`](#http-interceptorclear) after each test.
 >
 > See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
@@ -486,7 +486,7 @@ including a stack trace to the [`handler.times()`](#http-handlertimes) that was 
 
 > [!TIP]
 >
-> When [`requestSaving.enabled`](#saving-requests) is true in your interceptor, the `TimesCheckError` errors will also
+> When [`requestSaving.enabled`](#saving-requests) is `true` in your interceptor, the `TimesCheckError` errors will also
 > list each unmatched request with diff of the expected and received data. This is useful for debugging requests that
 > did not match a handler with [restrictions](#http-handlerwithrestriction).
 

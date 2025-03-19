@@ -120,8 +120,7 @@ export interface SharedHttpInterceptorOptions {
   baseURL: string;
 
   /**
-   * Configuration options for saving intercepted requests in memory and making them accessible through
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   * Configures if the intercepted requests are saved and how they are handled.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}

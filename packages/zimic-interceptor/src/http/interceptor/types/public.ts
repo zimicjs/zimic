@@ -21,8 +21,8 @@ export interface HttpInterceptorRequestSaving {
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()`}
    * during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.
    *
-   * **Important**: If `requestSaving.enabled` is true, make sure to regularly clear the interceptor to avoid that the
-   * requests accumulate in memory. A common practice is to call
+   * **Important**: If `requestSaving.enabled` is `true`, make sure to regularly clear the interceptor to avoid requests
+   * accumulating in memory. A common practice is to call
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
    * after each test.
    *
@@ -32,10 +32,10 @@ export interface HttpInterceptorRequestSaving {
 
   /**
    * The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is
-   * true and the interceptor is not regularly cleared with
+   * `true` and the interceptor is not regularly cleared with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`},
    * the requests may accumulate in memory and cause performance issues. This option does not limit the number of
-   * requests saved in memory, but it logs warnings when the limit is reached.
+   * requests saved in memory, only when to log warnings.
    *
    * @default 1000
    */
@@ -59,8 +59,7 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   baseURL: string;
 
   /**
-   * Configuration options for saving intercepted requests in memory and making them accessible through
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   * Configures if the intercepted requests are saved and how they are handled.
    *
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
