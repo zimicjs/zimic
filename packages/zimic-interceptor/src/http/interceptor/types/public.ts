@@ -4,6 +4,45 @@ import { SyncHttpInterceptorMethodHandler, AsyncHttpInterceptorMethodHandler } f
 import { HttpInterceptorPlatform, UnhandledRequestStrategy } from './options';
 
 /**
+ * Configures if the intercepted requests are saved and how they are handled.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
+ */
+export interface HttpInterceptorRequestSaving {
+  /**
+   * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
+   * should save their intercepted requests in memory and make them accessible through
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   *
+   * If you are using
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorchecktimes `interceptor.checkTimes()`}
+   * or
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerchecktimes `handler.checkTimes()`}
+   * during tests, consider enabling this option to get more detailed information in `TimesCheckError` errors.
+   *
+   * **Important**: If `requestSaving.enabled` is `true`, make sure to regularly clear the interceptor to avoid requests
+   * accumulating in memory. A common practice is to call
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
+   * after each test.
+   *
+   * @default process.env.NODE_ENV === 'test'
+   */
+  enabled: boolean;
+
+  /**
+   * The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is
+   * `true` and the interceptor is not regularly cleared with
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`},
+   * the requests may accumulate in memory and cause performance issues. This option does not limit the number of
+   * requests saved in memory, only when to log warnings.
+   *
+   * @default 1000
+   */
+  safeLimit: number;
+}
+
+/**
  * An interceptor to handle HTTP requests and return mock responses. The methods, paths, status codes, parameters, and
  * responses are statically-typed based on the provided service schema.
  *
@@ -20,20 +59,12 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
   baseURL: string;
 
   /**
-   * Whether {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httprequesthandler request handlers}
-   * should save their intercepted requests in memory and make them accessible through
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerrequests `handler.requests`}.
+   * Configures if the intercepted requests are saved and how they are handled.
    *
-   * **Important**: If `saveRequests` is true, make sure to regularly clear the interceptor to avoid that the requests
-   * accumulate in memory. A common practice is to call
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-interceptorclear `interceptor.clear()`}
-   * after each test.
-   *
-   * @default false
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests Saving intercepted requests}
    * @see {@link https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor Testing}
    */
-  saveRequests: boolean;
+  requestSaving: HttpInterceptorRequestSaving;
 
   /**
    * The platform the interceptor is running on.
@@ -86,8 +117,9 @@ export interface HttpInterceptor<_Schema extends HttpSchema> {
    * of each test.
    *
    * When
-   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions `saveRequests: true`}
-   * is enabled in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
+   * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#saving-requests
+   * `requestSaving.enabled`} is
+   * `true` in your interceptor, the `TimesCheckError` errors will also list each unmatched request with diff of the
    * expected and received data. This is useful for debugging requests that did not match a handler with
    * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#http-handlerwithrestriction restrictions}.
    *

@@ -1,8 +1,8 @@
 import isNonEmpty from '@zimic/utils/data/isNonEmpty';
 import createRegExpFromWildcardPath from '@zimic/utils/url/createRegExpFromWildcardPath';
-import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
+import color from 'picocolors';
 
 import { HTTP_METHODS } from '@/types/schema';
 import { logWithPrefix } from '@/utils/console';
@@ -26,7 +26,7 @@ export function parseRawFilter(rawFilter: string): ParsedTypePathFilter | undefi
 
   const isValidFilter = !filteredMethodsOrWildcard || !filteredPath;
   if (isValidFilter) {
-    logWithPrefix(`Warning: Filter could not be parsed and was ignored: ${chalk.yellow(rawFilter)}`, {
+    logWithPrefix(`Warning: Filter could not be parsed and was ignored: ${color.yellow(rawFilter)}`, {
       method: 'warn',
     });
     return undefined;

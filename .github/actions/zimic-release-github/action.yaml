@@ -1,0 +1,45 @@
+name: Zimic Release GitHub
+description: Zimic Release GitHub
+
+inputs:
+  token:
+    description: GitHub token
+    required: true
+  project-name:
+    description: The project name to release
+    required: true
+  version:
+    description: The version value to release
+    required: true
+  commit:
+    description: The commit SHA to release
+    required: true
+  pre-release-id:
+    description: The pre-release ID to release
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Create GitHub release
+      uses: ncipollo/release-action@v1
+      if: ${{ inputs.pre-release-id == 'none' }}
+      with:
+        name: '${{ inputs.project-name }}: ${{ inputs.version }}'
+        tag: '${{ inputs.project-name }}@${{ inputs.version }}'
+        commit: ${{ inputs.commit }}
+        token: ${{ inputs.token }}
+        makeLatest: true
+        prerelease: false
+        generateReleaseNotes: true
+        draft: true
+
+    - name: Create GitHub tag
+      if: ${{ inputs.pre-release-id != 'none' }}
+      shell: bash
+      run: |
+        git checkout ${{ inputs.commit }}
+
+        tag=${{ inputs.project-name }}@${{ inputs.version }}
+        git tag "$tag"
+        git push origin "$tag"

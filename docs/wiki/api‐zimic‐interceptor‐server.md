@@ -2,7 +2,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [`interceptorServer.create(options)`](#interceptorservercreateoptions)
+- [`createInterceptorServer(options)`](#createinterceptorserveroptions)
 - [CLI usage](#cli-usage)
 
 ---
@@ -11,16 +11,16 @@
 using the [`zimic-interceptor server` CLI](cli‐zimic‐server), this is still a valid alternative for more advanced use
 cases.
 
-## `interceptorServer.create(options)`
+## `createInterceptorServer(options)`
 
 An example using the programmatic API and [`execa`](https://www.npmjs.com/package/execa) to run a command when the
 server is ready:
 
 ```ts
 import { execa as $ } from 'execa';
-import { interceptorServer } from '@zimic/interceptor/server';
+import { createInterceptorServer } from '@zimic/interceptor/server';
 
-const server = interceptorServer.create({
+const server = createInterceptorServer({
   hostname: 'localhost',
   port: 3000,
 });

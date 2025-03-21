@@ -4,8 +4,8 @@ import LocalHttpRequestHandler from '../requestHandler/LocalHttpRequestHandler';
 import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { SyncHttpInterceptorMethodHandler } from './types/handlers';
-import { LocalHttpInterceptorOptions } from './types/options';
-import { LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
+import { LocalHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
+import { HttpInterceptorRequestSaving, LocalHttpInterceptor as PublicLocalHttpInterceptor } from './types/public';
 
 class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
@@ -23,7 +23,7 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
       baseURL,
       Handler: LocalHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
-      saveRequests: options.saveRequests,
+      requestSaving: options.requestSaving,
     });
   }
 
@@ -39,19 +39,19 @@ class LocalHttpInterceptor<Schema extends HttpSchema> implements PublicLocalHttp
     this.client.baseURL = new URL(baseURL);
   }
 
-  get saveRequests() {
-    return this.client.saveRequests;
+  get requestSaving() {
+    return this.client.requestSaving;
   }
 
-  set saveRequests(saveRequests: NonNullable<LocalHttpInterceptorOptions['saveRequests']>) {
-    this.client.saveRequests = saveRequests;
+  set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
+    this.client.requestSaving = requestSaving;
   }
 
   get onUnhandledRequest() {
     return this.client.onUnhandledRequest;
   }
 
-  set onUnhandledRequest(onUnhandledRequest: LocalHttpInterceptorOptions['onUnhandledRequest']) {
+  set onUnhandledRequest(onUnhandledRequest: UnhandledRequestStrategy.Local | undefined) {
     this.client.onUnhandledRequest = onUnhandledRequest;
   }
 

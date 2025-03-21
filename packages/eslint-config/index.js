@@ -80,7 +80,7 @@ export default [
       'no-loss-of-precision': 'off',
       'no-lonely-if': 'warn',
       'no-multi-assign': 'warn',
-      'no-nested-ternary': 'warn',
+      'no-nested-ternary': 'off',
       'no-param-reassign': 'warn',
       'no-new-func': 'warn',
       'no-new-object': 'warn',

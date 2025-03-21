@@ -1,6 +1,6 @@
-import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
+import color from 'picocolors';
 
 import { logWithPrefix } from '@/utils/console';
 
@@ -20,7 +20,7 @@ async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServic
   const destinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
   await filesystem.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
 
-  logWithPrefix(`Service worker script saved to ${chalk.green(destinationPath)}!`);
+  logWithPrefix(`Service worker script saved to ${color.green(destinationPath)}!`);
   logWithPrefix('You can now use browser interceptors!');
 }
 

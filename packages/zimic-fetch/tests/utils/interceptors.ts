@@ -1,7 +1,7 @@
 import { HttpSchema } from '@zimic/http';
 import {
   HttpInterceptor,
-  httpInterceptor,
+  createHttpInterceptor,
   HttpInterceptorOptions,
   LocalHttpInterceptor,
   RemoteHttpInterceptor,
@@ -41,11 +41,7 @@ export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   callback: UsingInterceptorCallback<Schema>,
 ): Promise<void> {
-  const interceptor = httpInterceptor.create<Schema>({
-    ...interceptorOptions,
-    onUnhandledRequest: { action: 'reject', log: false },
-    saveRequests: true,
-  });
+  const interceptor = createHttpInterceptor<Schema>(interceptorOptions);
 
   await interceptor.start();
 

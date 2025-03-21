@@ -197,36 +197,34 @@ use remote interceptors.
 
     You can also use [`zimic-http typegen`](cli‐zimic‐typegen) to automatically generate types for your HTTP schema.
 
-2.  Create your [interceptor](api‐zimic‐interceptor‐http#httpinterceptorcreateoptions):
+2.  Create your [interceptor](api‐zimic‐interceptor‐http#createhttpinterceptoroptions):
 
     <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
     ```ts
-    import { httpInterceptor } from '@zimic/interceptor/http';
+    import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<Schema>({
+    const interceptor = createHttpInterceptor<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
-      saveRequests: true, // Allow access to `handler.requests`
     });
     ```
 
     </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
     ```ts
-    import { httpInterceptor } from '@zimic/interceptor/http';
+    import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<Schema>({
+    const interceptor = createHttpInterceptor<Schema>({
       type: 'remote',
       // The interceptor server is at http://localhost:4000
       baseURL: 'http://localhost:4000/my-service',
-      saveRequests: true, // Allow access to `handler.requests`
     });
     ```
 
     </details></td></tr></table>
 
-    In this example, we're [creating an interceptor](api‐zimic‐interceptor‐http#httpinterceptorcreateoptions) for a
+    In this example, we're [creating an interceptor](api‐zimic‐interceptor‐http#createhttpinterceptoroptions) for a
     service supporting `POST` and `GET` requests to `/users`. A successful response after creating a user is a `User`
     object, whereas listing users returns an array of `User` objects. Errors are represented by a `RequestError` object.
 

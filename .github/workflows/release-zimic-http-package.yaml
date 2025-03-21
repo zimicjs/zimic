@@ -4,6 +4,9 @@ on:
   release:
     types:
       - published
+  push:
+    tags:
+      - '@zimic/http@*-*'
 
 concurrency:
   group: release-zimic-http-${{ github.ref_name }}
@@ -92,7 +95,7 @@ jobs:
         with:
           ref-name: ${{ github.ref_name }}
           project-name: '@zimic/http'
-          wiki-ssh-key: ${{ secrets.RELEASE_GITHUB_PUSH_KEY }}
+          wiki-token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           commit-user-name: ${{ vars.RELEASE_COMMIT_USER_NAME }}
           commit-user-email: ${{ vars.RELEASE_COMMIT_USER_EMAIL }}
 

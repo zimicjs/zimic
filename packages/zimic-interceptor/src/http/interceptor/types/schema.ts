@@ -5,9 +5,9 @@ import { LocalHttpInterceptor, RemoteHttpInterceptor } from './public';
  * {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptor `HttpInterceptor`}.
  *
  * @example
- *   import { httpInterceptor, type InferHttpInterceptorSchema } from '@zimic/http';
+ *   import { type InferHttpInterceptorSchema } from '@zimic/http';
  *
- *   const interceptor = httpInterceptor.create<{
+ *   const interceptor = createHttpInterceptor<{
  *     '/users': {
  *       GET: {
  *         response: { 200: { body: User[] } };

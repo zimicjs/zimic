@@ -1,4 +1,4 @@
-import type InterceptorServer from '@/server/InterceptorServer';
+import type { InterceptorServer } from '@/server';
 
 import { setup as sharedSetup, teardown as sharedTeardown } from './shared';
 
@@ -13,9 +13,9 @@ export const GLOBAL_INTERCEPTOR_SERVER_PORT = 3001;
 export async function setup() {
   await sharedSetup();
 
-  const { default: InterceptorServer } = await import('@/server/InterceptorServer');
+  const { createInterceptorServer } = await import('@/server/factory');
 
-  interceptorServer = new InterceptorServer({
+  interceptorServer = createInterceptorServer({
     hostname: GLOBAL_INTERCEPTOR_SERVER_HOSTNAME,
     port: GLOBAL_INTERCEPTOR_SERVER_PORT,
     logUnhandledRequests: false,

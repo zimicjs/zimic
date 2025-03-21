@@ -1,4 +1,4 @@
-import { InterceptorServer, interceptorServer } from '@/server';
+import { InterceptorServer, createInterceptorServer } from '@/server';
 import { InterceptorServerOptions } from '@/server/types/options';
 import { logWithPrefix } from '@/utils/console';
 import {
@@ -26,7 +26,7 @@ async function startInterceptorServer({
   logUnhandledRequests,
   onReady,
 }: InterceptorServerStartOptions) {
-  const server = interceptorServer.create({
+  const server = createInterceptorServer({
     hostname,
     port,
     logUnhandledRequests,

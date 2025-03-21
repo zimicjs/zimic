@@ -4,8 +4,8 @@ import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler
 import HttpInterceptorClient from './HttpInterceptorClient';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { AsyncHttpInterceptorMethodHandler } from './types/handlers';
-import { RemoteHttpInterceptorOptions } from './types/options';
-import { RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
+import { RemoteHttpInterceptorOptions, UnhandledRequestStrategy } from './types/options';
+import { HttpInterceptorRequestSaving, RemoteHttpInterceptor as PublicRemoteHttpInterceptor } from './types/public';
 
 class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHttpInterceptor<Schema> {
   private store = new HttpInterceptorStore();
@@ -24,7 +24,7 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
       baseURL,
       Handler: RemoteHttpRequestHandler,
       onUnhandledRequest: options.onUnhandledRequest,
-      saveRequests: options.saveRequests,
+      requestSaving: options.requestSaving,
     });
   }
 
@@ -40,19 +40,19 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     this.client.baseURL = new URL(baseURL);
   }
 
-  get saveRequests() {
-    return this.client.saveRequests;
+  get requestSaving() {
+    return this.client.requestSaving;
   }
 
-  set saveRequests(saveRequests: NonNullable<RemoteHttpInterceptorOptions['saveRequests']>) {
-    this.client.saveRequests = saveRequests;
+  set requestSaving(requestSaving: HttpInterceptorRequestSaving) {
+    this.client.requestSaving = requestSaving;
   }
 
   get onUnhandledRequest() {
     return this.client.onUnhandledRequest;
   }
 
-  set onUnhandledRequest(onUnhandledRequest: RemoteHttpInterceptorOptions['onUnhandledRequest']) {
+  set onUnhandledRequest(onUnhandledRequest: UnhandledRequestStrategy.Remote | undefined) {
     this.client.onUnhandledRequest = onUnhandledRequest;
   }
 

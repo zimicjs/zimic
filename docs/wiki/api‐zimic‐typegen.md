@@ -2,7 +2,7 @@
 
 ## Contents <!-- omit from toc -->
 
-- [`typegen.generateFromOpenAPI(options)`](#typegengeneratefromopenapioptions)
+- [`generateTypesFromOpenAPI(options)`](#generatetypesfromopenapioptions)
 - [CLI usage](#cli-usage)
 
 ---
@@ -10,14 +10,14 @@
 `@zimic/http/typegen` exports resources to generate types programmatically. We recommend using the
 [`zimic-http typegen` CLI](cli‐zimic‐typegen), but this is still a valid alternative for more advanced use cases.
 
-## `typegen.generateFromOpenAPI(options)`
+## `generateTypesFromOpenAPI(options)`
 
 An example using the programmatic API to generate types from an OpenAPI schema:
 
 ```ts
-import { typegen } from '@zimic/http/typegen';
+import { generateTypesFromOpenAPI } from '@zimic/http/typegen';
 
-await typegen.generateFromOpenAPI({
+await generateTypesFromOpenAPI({
   input: './schema.yaml',
   output: './schema.ts',
   serviceName: 'MyService',
@@ -27,8 +27,8 @@ await typegen.generateFromOpenAPI({
 });
 ```
 
-The options of `typegen.generateFromOpenAPI(options)` are the same as the CLI options for the
-`zimic-http typegen openapi` command.
+The options of `generateTypesFromOpenAPI(options)` are the same as the CLI options for the `zimic-http typegen openapi`
+command.
 
 ## CLI usage
 

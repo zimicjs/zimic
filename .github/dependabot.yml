@@ -17,11 +17,6 @@ updates:
       npm:
         patterns:
           - '*'
-    ignore:
-      # Chalk v4 still supports CommonJS and is necessary for the Next.js and Playwright examples.
-      - dependency-name: chalk
-        update-types:
-          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /

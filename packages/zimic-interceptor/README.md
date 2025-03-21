@@ -7,7 +7,7 @@
 </h1>
 
 <p align="center">
-  TypeScript-first HTTP intercepting and mocking
+  Next-gen, TypeScript-first HTTP intercepting and mocking
 </p>
 
 <p align="center">
@@ -141,15 +141,14 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
     generate types for your HTTP schema.
 
 2.  Create your
-    [interceptor](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#httpinterceptorcreateoptions):
+    [interceptor](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#createhttpinterceptoroptions):
 
     ```ts
-    import { httpInterceptor } from '@zimic/interceptor/http';
+    import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-    const interceptor = httpInterceptor.create<Schema>({
+    const interceptor = createHttpInterceptor<Schema>({
       type: 'local',
       baseURL: 'http://localhost:3000',
-      saveRequests: true, // Allow access to `handler.requests`
     });
     ```
 
