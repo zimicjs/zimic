@@ -1,9 +1,9 @@
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 import isDefined from '@zimic/utils/data/isDefined';
 import joinURL from '@zimic/utils/url/joinURL';
-import chalk from 'chalk';
 import filesystem from 'fs/promises';
 import path from 'path';
+import color from 'picocolors';
 import prettier, { Options } from 'prettier';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
@@ -79,14 +79,13 @@ describe('Type generation (OpenAPI)', () => {
     prettierConfig = await resolvedPrettierConfig(__filename);
   }
 
-  const schemaInterceptor = httpInterceptor.create<{
+  const schemaInterceptor = createHttpInterceptor<{
     [Path in `/spec/${TypegenFixtureCaseName}`]: {
       GET: { response: { 200: { body: Blob } } };
     };
   }>({
     type: 'local',
     baseURL: 'http://localhost:3000',
-    saveRequests: true,
   });
 
   beforeAll(async () => {
@@ -162,7 +161,7 @@ describe('Type generation (OpenAPI)', () => {
       const message = consoleSpies.warn.mock.calls[0].join(' ');
       expect(message).toMatch(/.*\[@zimic\/http\].* /);
       expect(message).toContain(
-        `Warning: Filter could not be parsed and was ignored: ${chalk.yellow('invalid filter line')}`,
+        `Warning: Filter could not be parsed and was ignored: ${color.yellow('invalid filter line')}`,
       );
     }
 
@@ -182,7 +181,7 @@ describe('Type generation (OpenAPI)', () => {
         const message = messages[index];
         expect(message).toMatch(/.*\[@zimic\/http\].* /);
         expect(message).toContain(
-          `Warning: Response has a non-standard status code: ${chalk.yellow(unknownStatusCode)}. ` +
+          `Warning: Response has a non-standard status code: ${color.yellow(unknownStatusCode)}. ` +
             "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
             "or 'default'.",
         );
@@ -290,8 +289,8 @@ describe('Type generation (OpenAPI)', () => {
               }
 
               const successOutputLabel = fixtureCase.shouldWriteToStdout
-                ? `to ${chalk.yellow('stdout')}`
-                : chalk.green(outputFilePath);
+                ? `to ${color.yellow('stdout')}`
+                : color.green(outputFilePath);
 
               verifySuccessMessage(fixtureCase, successOutputLabel, spies);
             });

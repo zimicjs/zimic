@@ -1,9 +1,12 @@
+import color from 'picocolors';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import generateTypesFromOpenAPI from './typegen/openapi';
+import { generateTypesFromOpenAPI } from '@/typegen';
+import { logWithPrefix } from '@/utils/console';
+import { usingElapsedTime, formatElapsedTime } from '@/utils/time';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -73,15 +76,28 @@ async function runCLI() {
               alias: 'F',
             }),
         async (cliArguments) => {
-          await generateTypesFromOpenAPI({
-            input: cliArguments.input,
-            output: cliArguments.output,
-            serviceName: cliArguments.serviceName,
-            includeComments: cliArguments.comments,
-            prune: cliArguments.prune,
-            filters: cliArguments.filter,
-            filterFile: cliArguments.filterFile,
+          const executionSummary = await usingElapsedTime(async () => {
+            await generateTypesFromOpenAPI({
+              input: cliArguments.input,
+              output: cliArguments.output,
+              serviceName: cliArguments.serviceName,
+              includeComments: cliArguments.comments,
+              prune: cliArguments.prune,
+              filters: cliArguments.filter,
+              filterFile: cliArguments.filterFile,
+            });
           });
+
+          const outputFilePath = cliArguments.output;
+
+          const successMessage =
+            `${color.green(color.bold('✔'))} Generated ` +
+            `${outputFilePath ? color.green(outputFilePath) : `to ${color.yellow('stdout')}`} ${color.dim(
+              `(${formatElapsedTime(executionSummary.elapsedTime)})`,
+            )}`;
+
+          const hasWrittenToStdout = outputFilePath === undefined;
+          logWithPrefix(successMessage, { method: hasWrittenToStdout ? 'warn' : 'log' });
         },
       ),
     )

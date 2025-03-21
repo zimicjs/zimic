@@ -3,7 +3,7 @@ import { PossiblePromise } from '@zimic/utils/types';
 import joinURL from '@zimic/utils/url/joinURL';
 import { expect } from 'vitest';
 
-import { httpInterceptor } from '@/http';
+import { createHttpInterceptor } from '@/http';
 import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
@@ -59,8 +59,9 @@ export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
 ): LocalHttpInterceptor<HttpSchema<Schema>> | RemoteHttpInterceptor<HttpSchema<Schema>>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
-  return httpInterceptor.create<Schema>({
-    saveRequests: true,
+  return createHttpInterceptor<Schema>({
+    requestSaving: { enabled: true },
+    onUnhandledRequest: { action: 'reject', log: false },
     ...options,
   }) satisfies HttpInterceptor<Schema> as LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 }

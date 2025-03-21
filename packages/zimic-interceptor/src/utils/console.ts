@@ -1,6 +1,6 @@
 import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
 import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
-import chalk from 'chalk';
+import color from 'picocolors';
 
 import { isClientSide } from './environment';
 import { isGlobalFileAvailable } from './files';
@@ -84,5 +84,5 @@ export function logWithPrefix(messageOrMessages: unknown, options: { method?: 'l
   const { method = 'log' } = options;
 
   const messages = Array.isArray(messageOrMessages) ? messageOrMessages : [messageOrMessages];
-  console[method](chalk.cyan('[@zimic/interceptor]'), ...messages);
+  console[method](color.cyan('[@zimic/interceptor]'), ...messages);
 }
