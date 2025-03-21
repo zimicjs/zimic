@@ -6,7 +6,7 @@ on:
       - published
   push:
     tags:
-      - '@zimic/interceptor@*'
+      - '@zimic/interceptor@*-*'
 
 concurrency:
   group: release-zimic-interceptor-${{ github.ref_name }}
