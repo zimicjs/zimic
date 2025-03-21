@@ -1,7 +1,8 @@
 import isNonEmpty from '@zimic/utils/data/isNonEmpty';
 import { Range } from '@zimic/utils/types';
-import chalk from 'chalk';
+import color from 'picocolors';
 
+import { HttpInterceptorRequestSaving } from '@/http/interceptor/types/public';
 import { stringifyValueToLog } from '@/utils/console';
 
 import { UnmatchedHttpInterceptorRequestGroup } from '../types/restrictions';
@@ -13,7 +14,7 @@ interface TimesCheckErrorOptions {
   declarationPointer: TimesDeclarationPointer | undefined;
   unmatchedRequestGroups: UnmatchedHttpInterceptorRequestGroup[];
   hasRestrictions: boolean;
-  hasSavedRequests: boolean;
+  requestSaving: HttpInterceptorRequestSaving;
 }
 
 function createMessageHeader({
@@ -45,15 +46,15 @@ function createMessageHeader({
     '.',
 
     unmatchedRequestGroups.length > 0 &&
-      `\n\nRequests evaluated by this handler:\n\n  ${chalk.green('- Expected')}\n  ${chalk.red('+ Received')}`,
+      `\n\nRequests evaluated by this handler:\n\n  ${color.green('- Expected')}\n  ${color.red('+ Received')}`,
   ]
     .filter((part) => part !== false)
     .join('');
 }
 
-function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesCheckErrorOptions) {
-  if (!hasSavedRequests) {
-    return 'Tip: enable `saveRequests: true` in your interceptor for more details about the unmatched requests.';
+function createMessageDiffs({ requestSaving, unmatchedRequestGroups }: TimesCheckErrorOptions) {
+  if (!requestSaving.enabled) {
+    return 'Tip: use `requestSaving.enabled: true` in your interceptor for more details about the unmatched requests.';
   }
 
   return unmatchedRequestGroups
@@ -68,8 +69,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
         const stringifiedExpected = stringifyValueToLog(diff.computed.expected);
         const stringifiedReceived = stringifyValueToLog(diff.computed.received);
 
-        messageParts.push(`  ${chalk.green(`- return ${stringifiedExpected}`)}`);
-        messageParts.push(`  ${chalk.red(`+ return ${stringifiedReceived}`)}`);
+        messageParts.push(`  ${color.green(`- return ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${color.red(`+ return ${stringifiedReceived}`)}`);
       }
 
       if (diff.headers) {
@@ -78,8 +79,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
         const stringifiedExpected = stringifyValueToLog(diff.headers.expected);
         const stringifiedReceived = stringifyValueToLog(diff.headers.received);
 
-        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
+        messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
       }
 
       if (diff.searchParams) {
@@ -88,8 +89,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
         const stringifiedExpected = stringifyValueToLog(diff.searchParams.expected);
         const stringifiedReceived = stringifyValueToLog(diff.searchParams.received);
 
-        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
+        messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
       }
 
       if (diff.body) {
@@ -102,8 +103,8 @@ function createMessageDiffs({ hasSavedRequests, unmatchedRequestGroups }: TimesC
           includeClassName: { searchParams: true },
         });
 
-        messageParts.push(`  ${chalk.green(`- ${stringifiedExpected}`)}`);
-        messageParts.push(`  ${chalk.red(`+ ${stringifiedReceived}`)}`);
+        messageParts.push(`  ${color.green(`- ${stringifiedExpected}`)}`);
+        messageParts.push(`  ${color.red(`+ ${stringifiedReceived}`)}`);
       }
 
       return messageParts.join('\n     ');

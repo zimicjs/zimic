@@ -1,5 +1,5 @@
 import { JSONSerialized, HttpHeaders, HttpRequest, HttpResponse, HttpSchema, HttpSearchParams } from '@zimic/http';
-import { httpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
+import { createHttpInterceptor, HttpInterceptorType } from '@zimic/interceptor/http';
 import { beforeAll, beforeEach, afterAll, expect, describe, it, expectTypeOf, afterEach } from 'vitest';
 
 import {
@@ -34,16 +34,16 @@ async function declareHttpInterceptorTests(options: ClientTestOptionsByWorkerTyp
 
   const crypto = await importCrypto();
 
-  const authInterceptor = httpInterceptor.create<AuthServiceSchema>({
+  const authInterceptor = createHttpInterceptor<AuthServiceSchema>({
     type,
     baseURL: getAuthBaseURL(type, crypto),
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
-  const notificationInterceptor = httpInterceptor.create<NotificationServiceSchema>({
+  const notificationInterceptor = createHttpInterceptor<NotificationServiceSchema>({
     type,
     baseURL: getNotificationsBaseURL(type, crypto),
-    saveRequests: true,
+    requestSaving: { enabled: true },
   });
 
   const interceptors = [authInterceptor, notificationInterceptor];

@@ -13,6 +13,8 @@ import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 
+import { isServerSide } from '@/utils/environment';
+
 import HttpInterceptorWorker from '../interceptorWorker/HttpInterceptorWorker';
 import LocalHttpInterceptorWorker from '../interceptorWorker/LocalHttpInterceptorWorker';
 import HttpRequestHandlerClient, { AnyHttpRequestHandlerClient } from '../requestHandler/HttpRequestHandlerClient';
@@ -21,12 +23,16 @@ import RemoteHttpRequestHandler from '../requestHandler/RemoteHttpRequestHandler
 import { HttpRequestHandler, InternalHttpRequestHandler } from '../requestHandler/types/public';
 import { HttpInterceptorRequest } from '../requestHandler/types/requests';
 import NotRunningHttpInterceptorError from './errors/NotRunningHttpInterceptorError';
+import RequestSavingSafeLimitExceededError from './errors/RequestSavingSafeLimitExceededError';
 import RunningHttpInterceptorError from './errors/RunningHttpInterceptorError';
 import HttpInterceptorStore from './HttpInterceptorStore';
 import { UnhandledRequestStrategy } from './types/options';
+import { HttpInterceptorRequestSaving } from './types/public';
 import { HttpInterceptorRequestContext } from './types/requests';
 
 export const SUPPORTED_BASE_URL_PROTOCOLS = Object.freeze(['http', 'https']);
+
+export const DEFAULT_REQUEST_SAVING_SAFE_LIMIT = 1000;
 
 class HttpInterceptorClient<
   Schema extends HttpSchema,
@@ -36,7 +42,9 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
 
   private _baseURL!: URL;
-  private _saveRequests = false;
+
+  requestSaving: HttpInterceptorRequestSaving;
+  private numberOfSavedRequests = 0;
 
   onUnhandledRequest?: HandlerConstructor extends typeof LocalHttpRequestHandler
     ? UnhandledRequestStrategy.Local
@@ -62,7 +70,7 @@ class HttpInterceptorClient<
     worker: HttpInterceptorWorker;
     store: HttpInterceptorStore;
     baseURL: URL;
-    saveRequests?: boolean;
+    requestSaving?: Partial<HttpInterceptorRequestSaving>;
     onUnhandledRequest?: UnhandledRequestStrategy;
     Handler: HandlerConstructor;
   }) {
@@ -70,12 +78,21 @@ class HttpInterceptorClient<
     this.store = options.store;
 
     this.baseURL = options.baseURL;
-    this._saveRequests = options.saveRequests ?? false;
+
+    this.requestSaving = {
+      enabled: options.requestSaving?.enabled ?? this.getDefaultRequestSavingEnabled(),
+      safeLimit: options.requestSaving?.safeLimit ?? DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
+    };
+
     this.onUnhandledRequest = options.onUnhandledRequest satisfies
       | UnhandledRequestStrategy
       | undefined as this['onUnhandledRequest'];
 
     this.Handler = options.Handler;
+  }
+
+  private getDefaultRequestSavingEnabled(): boolean {
+    return isServerSide() ? process.env.NODE_ENV === 'test' : false;
   }
 
   get baseURL() {
@@ -99,14 +116,6 @@ class HttpInterceptorClient<
       return this.baseURL.origin;
     }
     return this.baseURL.href;
-  }
-
-  get saveRequests() {
-    return this._saveRequests;
-  }
-
-  set saveRequests(saveRequests: boolean) {
-    this._saveRequests = saveRequests;
   }
 
   get platform() {
@@ -246,7 +255,7 @@ class HttpInterceptorClient<
     const responseDeclaration = await matchedHandler.applyResponseDeclaration(parsedRequest);
     const response = HttpInterceptorWorker.createResponseFromDeclaration(request, responseDeclaration);
 
-    if (this._saveRequests) {
+    if (this.requestSaving.enabled) {
       const responseClone = response.clone();
 
       const parsedResponse = await HttpInterceptorWorker.parseRawResponse<
@@ -258,6 +267,17 @@ class HttpInterceptorClient<
     }
 
     return response;
+  }
+
+  incrementNumberOfSavedRequests(increment: number) {
+    this.numberOfSavedRequests = Math.max(this.numberOfSavedRequests + increment, 0);
+
+    const exceedsSafeLimit = this.numberOfSavedRequests > this.requestSaving.safeLimit;
+
+    if (increment > 0 && exceedsSafeLimit) {
+      const error = new RequestSavingSafeLimitExceededError(this.numberOfSavedRequests, this.requestSaving.safeLimit);
+      console.warn(error);
+    }
   }
 
   private async findMatchedHandler<
