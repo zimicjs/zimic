@@ -1,6 +1,6 @@
 import isDefined from '@zimic/utils/data/isDefined';
 import { Override } from '@zimic/utils/types';
-import chalk from 'chalk';
+import color from 'picocolors';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/types/schema';
@@ -438,7 +438,7 @@ export function normalizeResponse(
 
     if (!mappedType) {
       logWithPrefix(
-        `Warning: Response has a non-standard status code: ${chalk.yellow(response.name.text)}. ` +
+        `Warning: Response has a non-standard status code: ${color.yellow(response.name.text)}. ` +
           "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
           "or 'default'.",
         { method: 'warn' },

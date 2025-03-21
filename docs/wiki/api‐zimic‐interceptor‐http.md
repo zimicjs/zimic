@@ -3,7 +3,7 @@
 ## Contents <!-- omit from toc -->
 
 - [`HttpInterceptor`](#httpinterceptor)
-  - [`httpInterceptor.create(options)`](#httpinterceptorcreateoptions)
+  - [`createHttpInterceptor(options)`](#createhttpinterceptoroptions)
     - [Creating a local HTTP interceptor](#creating-a-local-http-interceptor)
     - [Creating a remote HTTP interceptor](#creating-a-remote-http-interceptor)
       - [Path discriminators in remote HTTP interceptors](#path-discriminators-in-remote-http-interceptors)
@@ -47,7 +47,7 @@ codes, parameters, and responses are statically-typed based on the service schem
 
 Each interceptor represents a service and can be used to mock its paths and methods.
 
-### `httpInterceptor.create(options)`
+### `createHttpInterceptor(options)`
 
 Creates an HTTP interceptor, the main interface to intercept HTTP requests and return responses. Learn more about
 [declaring interceptor schemas](api‐zimic‐interceptor‐http‐schemas).
@@ -64,13 +64,13 @@ interceptor. Any request starting with the `baseURL` will be intercepted if a ma
 exists.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
 }
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -91,13 +91,13 @@ A remote interceptor is configured with `type: 'remote'`. The `baseURL` points t
 [handler](#httprequesthandler) exists.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 interface User {
   username: string;
 }
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     GET: {
       response: {
@@ -123,7 +123,7 @@ it's important to keep the interceptor base URLs unique. Also, make sure that yo
 correct URL when making requests.
 
 ```ts
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   // ...
 }>({
   type: 'remote',
@@ -143,7 +143,7 @@ console by default.
 > [!TIP]
 >
 > If you expected a request to be handled, but it was not, make sure that the interceptor
-> [base URL](#httpinterceptorcreateoptions), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath),
+> [base URL](#createhttpinterceptoroptions), [path](#http-interceptormethodpath), [method](#http-interceptormethodpath),
 > and [restrictions](#http-handlerwithrestriction) correctly match the request. Additionally, confirm that no errors
 > occurred while creating the response.
 
@@ -156,8 +156,8 @@ always **reject** unhandled requests. This is because the unhandled requests hav
 server, so there would be no way of bypassing them at this point.
 
 You can override the logging behavior per interceptor with `onUnhandledRequest` in
-[`httpInterceptor.create(options)`](#httpinterceptorcreateoptions). `onUnhandledRequest` also accepts a function to
-dynamically determine which strategy to use for an unhandled request.
+[`createHttpInterceptor(options)`](#createhttpinterceptoroptions) or by setting `interceptor.onUnhandledRequest`.
+`onUnhandledRequest` also accepts a function to dynamically determine which strategy to use for an unhandled request.
 
 <details open>
   <summary>
@@ -165,9 +165,9 @@ dynamically determine which strategy to use for an unhandled request.
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
@@ -185,9 +185,9 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
@@ -205,9 +205,9 @@ const interceptor = httpInterceptor.create<Schema>({
   </summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: async (request) => {
@@ -228,94 +228,6 @@ const interceptor = httpInterceptor.create<Schema>({
 
 </details>
 
-If you want to override the default logging behavior for all interceptors, use
-`httpInterceptor.default.local.onUnhandledRequest` or `httpInterceptor.default.remote.onUnhandledRequest`. Keep in mind
-that `onUnhandledRequest` strategies declared when creating an interceptor will take precedence over
-`httpInterceptor.default.local.onUnhandledRequest` and `httpInterceptor.default.remote.onUnhandledRequest`.
-
-<details>
-  <summary>
-    Example 4: Ignore unhandled requests without logging in all interceptors:
-  </summary>
-
-```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
-
-// For local interceptors:
-httpInterceptor.default.local.onUnhandledRequest = {
-  action: 'bypass',
-  log: false,
-};
-
-// For remote interceptors:
-httpInterceptor.default.remote.onUnhandledRequest = {
-  action: 'reject',
-  log: false,
-};
-```
-
-</details>
-
-<details>
-  <summary>
-    Example 5: Reject unhandled requests with logging in all interceptors:
-  </summary>
-
-```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
-
-// For local interceptors:
-httpInterceptor.default.local.onUnhandledRequest = {
-  action: 'reject',
-  log: true,
-};
-
-// For remote interceptors:
-httpInterceptor.default.remote.onUnhandledRequest = {
-  action: 'reject',
-  log: true,
-};
-```
-
-</details>
-
-<details>
-  <summary>
-    Example 6: Dynamically ignore or reject unhandled requests in all interceptors:
-  </summary>
-
-```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
-
-// For local interceptors:
-httpInterceptor.default.local.onUnhandledRequest = (request) => {
-  const url = new URL(request.url);
-
-  // Ignore only unhandled requests to /assets
-  if (url.pathname.startsWith('/assets')) {
-    return { action: 'bypass', log: false };
-  }
-
-  // Reject all other unhandled requests
-  return { action: 'reject', log: true };
-};
-
-// For remote interceptors:
-httpInterceptor.default.remote.onUnhandledRequest = (request) => {
-  const url = new URL(request.url);
-
-  // Reject without logging only unhandled requests to /assets
-  if (url.pathname.startsWith('/assets')) {
-    return { action: 'reject', log: false };
-  }
-
-  // Reject with logging all other unhandled requests
-  return { action: 'reject', log: true };
-};
-```
-
-</details>
-
 > [!NOTE]
 >
 > When a request is unhandled, Zimic looks for a running interceptor whose base URL is the prefix of the unhandled
@@ -326,38 +238,36 @@ httpInterceptor.default.remote.onUnhandledRequest = (request) => {
 > If no running interceptor matches the request, one of two things may happen:
 >
 > - If it was targeted to an interceptor server, it will be **rejected** with a network error. In this case, the logging
->   behavior is configured with the option [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start)
+>   behavior is configured with the [`--log-unhandled-requests`](cli‐zimic‐server#zimic-interceptor-server-start) option
 >   in the interceptor server.
 > - If it was not targeted to an interceptor server, it will be **bypassed** and reach the real network.
 
 #### Saving requests
 
-The option `saveRequests` indicates whether [request handlers](#httprequesthandler) should save their intercepted
-requests in memory and make them accessible through [`handler.requests`](#http-handlerrequests).
+The `requestSaving` option configures if the intercepted requests are saved and how they are handled. It supports the
+following properties:
 
-This setting is configured per interceptor and is `false` by default. If set to `true`, each handler will keep track of
-their intercepted requests in memory.
+| Property    | Description                                                                                                                                                                                                                                                                                                                                                                                             | Default                           |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `enabled`   | Whether [request handlers](#httprequesthandler) should save their intercepted requests in memory and make them accessible through [`handler.requests`](#http-handlerrequests). If you are using [interceptor.checkTimes()](#http-interceptorchecktimes) or [handler.checkTimes()](#http-handlerchecktimes), consider enabling this option to get more detailed information in `TimesCheckError` errors. | `process.env.NODE_ENV === 'test'` |
+| `safeLimit` | The safe number of requests to save in memory before logging warnings in the console. If `requestSaving.enabled` is true and the interceptor is not regularly cleared with [`interceptor.clear()`](#http-interceptorclear), the requests may accumulate in memory and cause performance issues. This option does not limit the number of saved requests, only when to log warnings.                     | `1000`                            |
 
 > [!IMPORTANT]
 >
-> Saving the intercepted requests will lead to a memory leak if not accompanied by clearing of the interceptor or
-> disposal of the handlers (i.e. garbage collection).
->
-> If you plan on accessing those requests, such as to assert them in your tests, set `saveRequests` to `true` and make
-> sure to regularly clear the interceptor. A common practice is to call [`interceptor.clear()`](#http-interceptorclear)
-> after each test.
+> If `requestSaving.enabled` is `true`, make sure to regularly clear the interceptor to avoid requests accumulating in
+> memory. A common practice is to call [`interceptor.clear()`](#http-interceptorclear) after each test.
 >
 > See [Testing](guides‐testing‐interceptor) for an example of how to manage the lifecycle of interceptors in your tests.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'local',
   baseURL: 'http://localhost:3000',
-  saveRequests: true,
+  requestSaving: { enabled: true, safeLimit: 1000 },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -370,12 +280,12 @@ afterEach(() => {
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<Schema>({
+const interceptor = createHttpInterceptor<Schema>({
   type: 'remote',
   baseURL: 'http://localhost:3000',
-  saveRequests: true,
+  requestSaving: { enabled: true, safeLimit: 1000 },
 });
 
 // Recommended: Clear the interceptor after each test.
@@ -386,22 +296,6 @@ afterEach(async () => {
 ```
 
 </details></td></tr></table>
-
-> [!TIP]
->
-> If you use an interceptor both in tests and as a standalone mock server, consider setting `saveRequests` based on an
-> environment variable. This allows you to access the requests in tests, while preventing memory leaks in long-running
-> mock servers.
-
-```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
-
-const interceptor = httpInterceptor.create<Schema>({
-  type: 'remote',
-  baseURL: 'http://localhost:3000',
-  saveRequests: process.env.NODE_ENV === 'test',
-});
-```
 
 ### HTTP `interceptor.start()`
 
@@ -471,9 +365,9 @@ be considered first as long as it is created **after** the generic one.
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -495,9 +389,9 @@ const listHandler = interceptor.get('/users').respond({
 </details></td><td width="900px" valign="top"><details open><summary><b>Using a remote interceptor</b></summary>
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: {
@@ -524,9 +418,9 @@ Paths with parameters are supported, such as `/users/:id`. Even when using a com
 original path is automatically inferred, guaranteeing type safety.
 
 ```ts
-import { httpInterceptor } from '@zimic/interceptor/http';
+import { createHttpInterceptor } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users/:id': {
     PUT: {
       request: {
@@ -592,9 +486,9 @@ including a stack trace to the [`handler.times()`](#http-handlertimes) that was 
 
 > [!TIP]
 >
-> When [`saveRequests: true`](#httpinterceptorcreateoptions) is enabled in your interceptor, the `TimesCheckError`
-> errors will also list each unmatched request with diff of the expected and received data. This is useful for debugging
-> requests that did not match a handler with [restrictions](#http-handlerwithrestriction).
+> When [`requestSaving.enabled`](#saving-requests) is `true` in your interceptor, the `TimesCheckError` errors will also
+> list each unmatched request with diff of the expected and received data. This is useful for debugging requests that
+> did not match a handler with [restrictions](#http-handlerwithrestriction).
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
 
@@ -662,9 +556,9 @@ await interceptor.clear();
 Infers the schema of an [HTTP interceptor](#httpinterceptor).
 
 ```ts
-import { httpInterceptor, type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
+import { type InferHttpInterceptorSchema } from '@zimic/interceptor/http';
 
-const interceptor = httpInterceptor.create<{
+const interceptor = createHttpInterceptor<{
   '/users': {
     GET: {
       response: { 200: { body: User[] } };
@@ -1648,7 +1542,7 @@ useful for testing that the correct requests were made by your application. Lear
 
 > [!IMPORTANT]
 >
-> This method can only be used if `saveRequests` was set to `true` when creating the interceptor. See
+> This method can only be used if `requestSaving.enabled` is `true` when creating the interceptor. See
 > [Saving intercepted requests](#saving-requests) for more information.
 
 <table><tr><td width="900px" valign="top"><details open><summary><b>Using a local interceptor</b></summary>
