@@ -2,9 +2,10 @@ import { HttpSchema } from '@zimic/http';
 import joinURL from '@zimic/utils/url/joinURL';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { isClientSide } from '@/utils/environment';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import FetchResponseError from '../errors/FetchResponseError';
+import FetchResponseError, { FetchResponseErrorObject } from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
@@ -201,7 +202,7 @@ describe('FetchClient > Errors', () => {
             body: User;
           };
           response: {
-            200: { body: User };
+            201: { body: User };
           };
         };
 
@@ -265,17 +266,18 @@ describe('FetchClient > Errors', () => {
       expect(fetch.isResponseError(error, 'POST', '/users')).toBe(false);
       expect(fetch.isResponseError(error, 'GET', '/users/:id')).toBe(false);
 
-      /* istanbul ignore else -- @preserve
+      /* istanbul ignore if -- @preserve
        * This if is necessary to narrow the error type to a specific error. */
-      if (fetch.isResponseError(error, 'GET', '/users')) {
-        expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
-
-        expect(error.request).toBe(response.request);
-        expect(error.response).toBe(response);
-        expect(error.cause).toBe(response);
-      } else {
+      if (!fetch.isResponseError(error, 'GET', '/users')) {
         expectTypeOf(error).toEqualTypeOf<unknown>();
+        throw error;
       }
+
+      expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+
+      expect(error.request).toBe(response.request);
+      expect(error.response).toBe(response);
+      expect(error.cause).toBe(response);
     });
   });
 
@@ -288,7 +290,7 @@ describe('FetchClient > Errors', () => {
             body: User;
           };
           response: {
-            200: { body: User };
+            201: { body: User };
           };
         };
 
@@ -345,17 +347,410 @@ describe('FetchClient > Errors', () => {
       expect(fetch.isResponseError(error, 'POST', '/users')).toBe(false);
       expect(fetch.isResponseError(error, 'GET', '/users/:id')).toBe(true);
 
-      /* istanbul ignore else -- @preserve
+      /* istanbul ignore if -- @preserve
        * This if is necessary to narrow the error type to a specific error. */
-      if (fetch.isResponseError(error, 'GET', '/users/:id')) {
-        expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users/:id'>>();
-
-        expect(error.request).toBe(response.request);
-        expect(error.response).toBe(response);
-        expect(error.cause).toBe(response);
-      } else {
+      if (!fetch.isResponseError(error, 'GET', '/users/:id')) {
         expectTypeOf(error).toEqualTypeOf<unknown>();
+        throw error;
       }
+
+      expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users/:id'>>();
+
+      expect(error.request).toBe(response.request);
+      expect(error.response).toBe(response);
+      expect(error.cause).toBe(response);
+    });
+  });
+
+  describe('Plain object', () => {
+    it.each([{ includeBody: undefined }, { includeBody: false as const }])(
+      'should correctly convert response errors to plain objects (includeBody: %s)',
+      async ({ includeBody }) => {
+        type Schema = HttpSchema<{
+          '/users': {
+            POST: {
+              request: {
+                headers: { 'content-type': 'application/json' };
+                body: User;
+              };
+              response: {
+                201: { body: User };
+                409: { body: { code: 409; message: string } };
+              };
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+          await interceptor
+            .post('/users')
+            .respond({
+              status: 409,
+              body: { code: 409, message: 'Conflict' },
+            })
+            .times(1);
+
+          const fetch = createFetch<Schema>({ baseURL });
+
+          const response = await fetch('/users', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(users[0]),
+          });
+
+          expectTypeOf(response.status).toEqualTypeOf<201 | 409>();
+          expect(response.status).toBe(409);
+          expect(await response.json()).toEqual({ code: 409, message: 'Conflict' });
+
+          expect(response).toBeInstanceOf(Response);
+          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+          expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+          expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'> | null>();
+
+          expect(response.ok).toBe(false);
+
+          /* istanbul ignore if -- @preserve
+           * response.ok is false. This if is necessary to narrow the response to a failed type. */
+          if (response.ok) {
+            expectTypeOf(response.status).toEqualTypeOf<201>();
+            expectTypeOf(response.error).toEqualTypeOf<null>();
+
+            throw new Error('Expected a failed response.');
+          }
+
+          const error = response.error as unknown;
+
+          /* istanbul ignore if -- @preserve
+           * This if is necessary to narrow the error type to a specific error. */
+          if (!fetch.isResponseError(error, 'POST', '/users')) {
+            expectTypeOf(error).toEqualTypeOf<unknown>();
+            throw error;
+          }
+
+          expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
+
+          expect(error.toObject({ includeBody })).toEqual<FetchResponseErrorObject>({
+            message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+            name: 'FetchResponseError',
+            request: {
+              url: joinURL(baseURL, '/users'),
+              path: '/users',
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              cache: 'default',
+              destination: '',
+              credentials: 'same-origin',
+              integrity: '',
+              keepalive: false,
+              mode: 'cors',
+              redirect: 'follow',
+              referrer: 'about:client',
+              referrerPolicy: '',
+            },
+            response: {
+              url: joinURL(baseURL, '/users'),
+              type: isClientSide() ? 'basic' : 'default',
+              status: 409,
+              statusText: '',
+              ok: false,
+              headers: { 'content-type': 'application/json' },
+              redirected: false,
+            },
+          });
+        });
+      },
+    );
+
+    it.each([{ includeBody: true as const }])(
+      'should correctly convert response errors to plain objects (includeBody: %s)',
+      async ({ includeBody }) => {
+        type Schema = HttpSchema<{
+          '/users': {
+            POST: {
+              request: {
+                headers: { 'content-type': 'application/json' };
+                body: User;
+              };
+              response: {
+                201: { body: User };
+                409: { body: { code: 409; message: string } };
+              };
+            };
+          };
+        }>;
+
+        await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+          await interceptor
+            .post('/users')
+            .respond({
+              status: 409,
+              body: { code: 409, message: 'Conflict' },
+            })
+            .times(1);
+
+          const fetch = createFetch<Schema>({ baseURL });
+
+          const response = await fetch('/users', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(users[0]),
+          });
+
+          expectTypeOf(response.status).toEqualTypeOf<201 | 409>();
+          expect(response.status).toBe(409);
+          expect(await response.clone().json()).toEqual({ code: 409, message: 'Conflict' });
+
+          expect(response).toBeInstanceOf(Response);
+          expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+          expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+          expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'> | null>();
+
+          expect(response.ok).toBe(false);
+
+          /* istanbul ignore if -- @preserve
+           * response.ok is false. This if is necessary to narrow the response to a failed type. */
+          if (response.ok) {
+            expectTypeOf(response.status).toEqualTypeOf<201>();
+            expectTypeOf(response.error).toEqualTypeOf<null>();
+
+            throw new Error('Expected a failed response.');
+          }
+
+          const error = response.error as unknown;
+
+          /* istanbul ignore if -- @preserve
+           * This if is necessary to narrow the error type to a specific error. */
+          if (!fetch.isResponseError(error, 'POST', '/users')) {
+            expectTypeOf(error).toEqualTypeOf<unknown>();
+            throw error;
+          }
+
+          expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
+
+          expect(await error.toObject({ includeBody })).toEqual<FetchResponseErrorObject>({
+            message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+            name: 'FetchResponseError',
+            request: {
+              url: joinURL(baseURL, '/users'),
+              path: '/users',
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(users[0]),
+              cache: 'default',
+              destination: '',
+              credentials: 'same-origin',
+              integrity: '',
+              keepalive: false,
+              mode: 'cors',
+              redirect: 'follow',
+              referrer: 'about:client',
+              referrerPolicy: '',
+            },
+            response: {
+              url: joinURL(baseURL, '/users'),
+              type: isClientSide() ? 'basic' : 'default',
+              status: 409,
+              statusText: '',
+              ok: false,
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ code: 409, message: 'Conflict' }),
+              redirected: false,
+            },
+          });
+        });
+      },
+    );
+
+    it('should correctly convert response errors to plain objects, considering empty bodies', async () => {
+      type Schema = HttpSchema<{
+        '/users': {
+          POST: {
+            response: {
+              201: {};
+              409: {};
+            };
+          };
+        };
+      }>;
+
+      await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+        await interceptor
+          .post('/users')
+          .respond({
+            status: 409,
+          })
+          .times(1);
+
+        const fetch = createFetch<Schema>({ baseURL });
+
+        const response = await fetch('/users', {
+          method: 'POST',
+        });
+
+        expectTypeOf(response.status).toEqualTypeOf<201 | 409>();
+        expect(response.status).toBe(409);
+        expect(await response.clone().text()).toBe('');
+
+        expect(response).toBeInstanceOf(Response);
+        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'POST', '/users'>>();
+
+        expect(response.url).toBe(joinURL(baseURL, '/users'));
+
+        expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'> | null>();
+
+        expect(response.ok).toBe(false);
+
+        /* istanbul ignore if -- @preserve
+         * response.ok is false. This if is necessary to narrow the response to a failed type. */
+        if (response.ok) {
+          expectTypeOf(response.status).toEqualTypeOf<201>();
+          expectTypeOf(response.error).toEqualTypeOf<null>();
+
+          throw new Error('Expected a failed response.');
+        }
+
+        const error = response.error as unknown;
+
+        /* istanbul ignore if -- @preserve
+         * This if is necessary to narrow the error type to a specific error. */
+        if (!fetch.isResponseError(error, 'POST', '/users')) {
+          expectTypeOf(error).toEqualTypeOf<unknown>();
+          throw error;
+        }
+
+        expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
+
+        expect(await error.toObject({ includeBody: true })).toEqual<FetchResponseErrorObject>({
+          message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
+          name: 'FetchResponseError',
+          request: {
+            url: joinURL(baseURL, '/users'),
+            path: '/users',
+            method: 'POST',
+            headers: {},
+            body: null,
+            cache: 'default',
+            destination: '',
+            credentials: 'same-origin',
+            integrity: '',
+            keepalive: false,
+            mode: 'cors',
+            redirect: 'follow',
+            referrer: 'about:client',
+            referrerPolicy: '',
+          },
+          response: {
+            url: joinURL(baseURL, '/users'),
+            type: isClientSide() ? 'basic' : 'default',
+            status: 409,
+            statusText: '',
+            ok: false,
+            headers: {},
+            body: null,
+            redirected: false,
+          },
+        });
+      });
+    });
+
+    it('should correctly convert response errors to plain objects including search params', async () => {
+      type Schema = HttpSchema<{
+        '/users': {
+          GET: {
+            request: {
+              searchParams: { page: number; limit: number };
+            };
+            response: {
+              200: { body: User[] };
+              401: { body: { code: 401; message: string } };
+              403: { body: { code: 403; message: string } };
+            };
+          };
+        };
+      }>;
+
+      await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+        await interceptor
+          .get('/users')
+          .respond({
+            status: 401,
+            body: { code: 401, message: 'Unauthorized' },
+          })
+          .times(1);
+
+        const fetch = createFetch<Schema>({ baseURL });
+
+        const response = await fetch('/users', {
+          method: 'GET',
+          searchParams: { page: '1', limit: '10' },
+        });
+
+        expectTypeOf(response.status).toEqualTypeOf<200 | 401 | 403>();
+        expect(response.status).toBe(401);
+        expect(await response.clone().json()).toEqual({ code: 401, message: 'Unauthorized' });
+
+        expect(response).toBeInstanceOf(Response);
+        expectTypeOf(response satisfies Response).toEqualTypeOf<FetchResponse<Schema, 'GET', '/users'>>();
+
+        expect(response.url).toBe(joinURL(baseURL, '/users?page=1&limit=10'));
+
+        expectTypeOf(response.error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'> | null>();
+
+        expect(response.ok).toBe(false);
+
+        /* istanbul ignore if -- @preserve
+         * response.ok is false. This if is necessary to narrow the response to a failed type. */
+        if (response.ok) {
+          expectTypeOf(response.status).toEqualTypeOf<200>();
+          expectTypeOf(response.error).toEqualTypeOf<null>();
+
+          throw new Error('Expected a failed response.');
+        }
+
+        const error = response.error as unknown;
+
+        /* istanbul ignore if -- @preserve
+         * This if is necessary to narrow the error type to a specific error. */
+        if (!fetch.isResponseError(error, 'GET', '/users')) {
+          expectTypeOf(error).toEqualTypeOf<unknown>();
+          throw error;
+        }
+
+        expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'GET', '/users'>>();
+
+        expect(error.toObject()).toEqual<FetchResponseErrorObject>({
+          message: `GET ${joinURL(baseURL, '/users?page=1&limit=10')} failed with status 401: `,
+          name: 'FetchResponseError',
+          request: {
+            url: joinURL(baseURL, '/users?page=1&limit=10'),
+            path: '/users',
+            method: 'GET',
+            headers: {},
+            cache: 'default',
+            destination: '',
+            credentials: 'same-origin',
+            integrity: '',
+            keepalive: false,
+            mode: 'cors',
+            redirect: 'follow',
+            referrer: 'about:client',
+            referrerPolicy: '',
+          },
+          response: {
+            url: joinURL(baseURL, '/users?page=1&limit=10'),
+            type: isClientSide() ? 'basic' : 'default',
+            status: 401,
+            statusText: '',
+            ok: false,
+            headers: { 'content-type': 'application/json' },
+            redirected: false,
+          },
+        });
+      });
     });
   });
 });

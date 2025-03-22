@@ -199,7 +199,7 @@ export interface FetchRequest<
 }
 
 export namespace FetchRequest {
-  /** A loosely typed version of {@link FetchRequest `FetchRequest`}. */
+  /** A loosely typed version of a {@link FetchRequest `FetchRequest`}. */
   export interface Loose extends Request {
     /** The path of the request, excluding the base URL. */
     path: string;
@@ -209,6 +209,30 @@ export namespace FetchRequest {
     clone: () => Loose;
   }
 }
+
+/**
+ * A plain object representation of a {@link FetchRequest `FetchRequest`}, compatible with JSON.
+ *
+ * If the body is included in the object, it is represented as a string or null if empty.
+ */
+export type FetchRequestObject = Pick<
+  FetchRequest.Loose,
+  | 'url'
+  | 'path'
+  | 'method'
+  | 'cache'
+  | 'destination'
+  | 'credentials'
+  | 'integrity'
+  | 'keepalive'
+  | 'mode'
+  | 'redirect'
+  | 'referrer'
+  | 'referrerPolicy'
+> & {
+  headers: HttpHeadersSchema;
+  body?: string | null;
+};
 
 export interface FetchResponsePerStatusCode<
   Schema extends HttpSchema,
@@ -299,7 +323,7 @@ export type FetchResponse<
 > = StatusCode extends StatusCode ? FetchResponsePerStatusCode<Schema, Method, Path, StatusCode> : never;
 
 export namespace FetchResponse {
-  /** A loosely typed version of {@link FetchResponse}. */
+  /** A loosely typed version of a {@link FetchResponse}. */
   export interface Loose extends Response {
     /** The request that originated the response. */
     request: FetchRequest.Loose;
@@ -316,6 +340,19 @@ export namespace FetchResponse {
     clone: () => Loose;
   }
 }
+
+/**
+ * A plain object representation of a {@link FetchResponse `FetchResponse`}, compatible with JSON.
+ *
+ * If the body is included in the object, it is represented as a string or null if empty.
+ */
+export type FetchResponseObject = Pick<
+  FetchResponse.Loose,
+  'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'
+> & {
+  headers: HttpHeadersSchema;
+  body?: string | null;
+};
 
 /**
  * A constructor for {@link FetchRequest} instances, typed with an HTTP schema and compatible with the
