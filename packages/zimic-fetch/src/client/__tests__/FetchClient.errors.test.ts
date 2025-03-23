@@ -277,7 +277,7 @@ describe('FetchClient > Errors', () => {
 
       expect(error.request).toBe(response.request);
       expect(error.response).toBe(response);
-      expect(error.cause).toBe(response);
+      expect(error.cause).toBe(undefined);
     });
   });
 
@@ -358,7 +358,7 @@ describe('FetchClient > Errors', () => {
 
       expect(error.request).toBe(response.request);
       expect(error.response).toBe(response);
-      expect(error.cause).toBe(response);
+      expect(error.cause).toBe(undefined);
     });
   });
 
