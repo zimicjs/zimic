@@ -2,15 +2,26 @@ import { HttpHeaders, HttpHeadersSchema, HttpSchema, HttpSchemaMethod, HttpSchem
 
 import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } from '../types/requests';
 
+/**
+ * Options for converting a {@link FetchResponseError `FetchResponseError`} into a plain object.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
+ */
+export interface FetchResponseErrorObjectOptions {
+  includeBody?: boolean;
+}
+
+/**
+ * A plain object representation of a {@link FetchResponseError `FetchResponseError`}, compatible with JSON. It is useful
+ * for serialization, debugging, and logging purposes.
+ *
+ * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
+ */
 export interface FetchResponseErrorObject {
   name: string;
   message: string;
   request: FetchRequestObject;
   response: FetchResponseObject;
-}
-
-export interface FetchResponseErrorObjectOptions {
-  includeBody?: boolean;
 }
 
 /**
@@ -96,40 +107,43 @@ class FetchResponseError<
    * @param options.includeBody Whether to include the body of the request and response in the output. Defaults to
    *   `false`.
    * @returns A plain object representing this error. If `options.includeBody` is `true`, the body of the request and
-   *   response will be included and the return of this method will be a `Promise`.
+   *   response will be included and the return of this method will be a `Promise`. Otherwise, the return will be the
+   *   plain object itself without the body.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
    */
   toObject(options: { includeBody: true }): Promise<FetchResponseErrorObject>;
   toObject(options?: { includeBody?: false }): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;
-  toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject {
-    const synchronousData = {
+  toObject(
+    options: FetchResponseErrorObjectOptions = {},
+  ): Promise<FetchResponseErrorObject> | FetchResponseErrorObject {
+    const { includeBody = false } = options;
+
+    const partialObject = {
       name: this.name,
       message: this.message,
     } satisfies Partial<FetchResponseErrorObject>;
 
-    if (options?.includeBody) {
-      return Promise.all([
-        this.convertRequestToObject({ includeBody: true }),
-        this.convertResponseToObject({ includeBody: true }),
-      ]).then(([request, response]) => ({ ...synchronousData, request, response }));
-    } else {
+    if (!includeBody) {
       const request = this.convertRequestToObject({ includeBody: false });
       const response = this.convertResponseToObject({ includeBody: false });
-      return { ...synchronousData, request, response };
+      return { ...partialObject, request, response };
     }
+
+    return Promise.all([
+      this.convertRequestToObject({ includeBody: true }),
+      this.convertResponseToObject({ includeBody: true }),
+    ]).then(([request, response]) => ({ ...partialObject, request, response }));
   }
 
   private convertRequestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
-  private convertRequestToObject(options?: { includeBody?: false }): FetchRequestObject;
-  private convertRequestToObject(options?: {
-    includeBody?: boolean;
-  }): Promise<FetchRequestObject> | FetchRequestObject {
-    const synchronousData = {
+  private convertRequestToObject(options: { includeBody: false }): FetchRequestObject;
+  private convertRequestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
+    const partialObject = {
       url: this.request.url,
       path: this.request.path,
       method: this.request.method,
-      headers: HttpHeaders.prototype.toObject.call(this.request.headers) as HttpHeadersSchema,
+      headers: this.convertHeadersToObject(this.request.headers),
       cache: this.request.cache,
       destination: this.request.destination,
       credentials: this.request.credentials,
@@ -141,39 +155,43 @@ class FetchResponseError<
       referrerPolicy: this.request.referrerPolicy,
     } satisfies Partial<FetchRequestObject>;
 
-    if (options?.includeBody) {
-      return this.request.text().then((bodyAsText: string) => ({
-        ...synchronousData,
-        body: bodyAsText.length > 0 ? bodyAsText : null,
-      }));
-    } else {
-      return synchronousData;
+    if (!options.includeBody) {
+      return partialObject;
     }
+
+    return this.request.text().then((bodyAsText: string) => ({
+      ...partialObject,
+      body: bodyAsText.length > 0 ? bodyAsText : null,
+    }));
   }
 
   private convertResponseToObject(options: { includeBody: true }): Promise<FetchResponseObject>;
-  private convertResponseToObject(options?: { includeBody?: false }): FetchResponseObject;
-  private convertResponseToObject(options?: {
-    includeBody?: boolean;
+  private convertResponseToObject(options: { includeBody: false }): FetchResponseObject;
+  private convertResponseToObject(options: {
+    includeBody: boolean;
   }): Promise<FetchResponseObject> | FetchResponseObject {
-    const synchronousData = {
+    const partialObject = {
       url: this.response.url,
       type: this.response.type,
       status: this.response.status,
       statusText: this.response.statusText,
       ok: this.response.ok,
-      headers: HttpHeaders.prototype.toObject.call(this.response.headers) as HttpHeadersSchema,
+      headers: this.convertHeadersToObject(this.response.headers),
       redirected: this.response.redirected,
     } satisfies Partial<FetchResponseObject>;
 
-    if (options?.includeBody) {
-      return this.response.text().then((bodyAsText: string) => ({
-        ...synchronousData,
-        body: bodyAsText.length > 0 ? bodyAsText : null,
-      }));
-    } else {
-      return synchronousData;
+    if (!options.includeBody) {
+      return partialObject;
     }
+
+    return this.response.text().then((bodyAsText: string) => ({
+      ...partialObject,
+      body: bodyAsText.length > 0 ? bodyAsText : null,
+    }));
+  }
+
+  private convertHeadersToObject(headers: Headers) {
+    return HttpHeaders.prototype.toObject.call(headers) as HttpHeadersSchema;
   }
 }
 

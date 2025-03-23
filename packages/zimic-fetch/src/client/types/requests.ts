@@ -230,7 +230,13 @@ export type FetchRequestObject = Pick<
   | 'referrer'
   | 'referrerPolicy'
 > & {
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSchema;
+  /**
+   * The body of the response, represented as a string or null if empty.
+   *
+   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
+   */
   body?: string | null;
 };
 
@@ -350,7 +356,13 @@ export type FetchResponseObject = Pick<
   FetchResponse.Loose,
   'url' | 'type' | 'status' | 'statusText' | 'ok' | 'redirected'
 > & {
+  /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers) */
   headers: HttpHeadersSchema;
+  /**
+   * The body of the response, represented as a string or null if empty.
+   *
+   * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body)
+   */
   body?: string | null;
 };
 
