@@ -82,10 +82,6 @@ class FetchResponseError<
     this.name = 'FetchResponseError';
   }
 
-  get cause() {
-    return this.response;
-  }
-
   /**
    * Converts this error into a plain object. This method is useful for serialization, debugging, and logging purposes.
    *
