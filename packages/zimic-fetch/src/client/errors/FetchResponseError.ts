@@ -8,7 +8,24 @@ import { FetchRequest, FetchRequestObject, FetchResponse, FetchResponseObject } 
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
  */
 export interface FetchResponseErrorObjectOptions {
-  includeBody?: boolean;
+  includeRequestBody?: boolean;
+  includeResponseBody?: boolean;
+}
+
+export namespace FetchResponseErrorObjectOptions {
+  /**
+   * Options for converting a {@link FetchResponseError `FetchResponseError`} into a plain object, including the body of
+   * the request and/or response.
+   */
+  export type WithBody = FetchResponseErrorObjectOptions &
+    ({ includeRequestBody: true } | { includeResponseBody: true });
+
+  /**
+   * Options for converting a {@link FetchResponseError `FetchResponseError`} into a plain object, excluding the body of
+   * the request and/or response.
+   */
+  export type WithoutBody = FetchResponseErrorObjectOptions &
+    ({ includeRequestBody?: false } | { includeResponseBody?: false });
 }
 
 /**
@@ -107,39 +124,39 @@ class FetchResponseError<
    *   plain object itself without the body.
    * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐fetch#fetchresponseerrortoobject `FetchResponseError#toObject` API reference}
    */
-  toObject(options: { includeBody: true }): Promise<FetchResponseErrorObject>;
-  toObject(options?: { includeBody?: false }): FetchResponseErrorObject;
+  toObject(options: FetchResponseErrorObjectOptions.WithBody): Promise<FetchResponseErrorObject>;
+  toObject(options: FetchResponseErrorObjectOptions.WithoutBody): FetchResponseErrorObject;
   toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject;
-  toObject(
-    options: FetchResponseErrorObjectOptions = {},
-  ): Promise<FetchResponseErrorObject> | FetchResponseErrorObject {
-    const { includeBody = false } = options;
+  toObject(options?: FetchResponseErrorObjectOptions): Promise<FetchResponseErrorObject> | FetchResponseErrorObject {
+    const includeRequestBody = options?.includeRequestBody ?? false;
+    const includeResponseBody = options?.includeResponseBody ?? false;
 
     const partialObject = {
       name: this.name,
       message: this.message,
     } satisfies Partial<FetchResponseErrorObject>;
 
-    if (!includeBody) {
+    if (!includeRequestBody && !includeResponseBody) {
       const request = this.convertRequestToObject({ includeBody: false });
       const response = this.convertResponseToObject({ includeBody: false });
       return { ...partialObject, request, response };
     }
 
     return Promise.all([
-      this.convertRequestToObject({ includeBody: true }),
-      this.convertResponseToObject({ includeBody: true }),
+      this.convertRequestToObject({ includeBody: includeRequestBody }),
+      this.convertResponseToObject({ includeBody: includeResponseBody }),
     ]).then(([request, response]) => ({ ...partialObject, request, response }));
   }
 
   private convertRequestToObject(options: { includeBody: true }): Promise<FetchRequestObject>;
   private convertRequestToObject(options: { includeBody: false }): FetchRequestObject;
+  private convertRequestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject;
   private convertRequestToObject(options: { includeBody: boolean }): Promise<FetchRequestObject> | FetchRequestObject {
     const partialObject = {
       url: this.request.url,
       path: this.request.path,
       method: this.request.method,
-      headers: this.convertHeadersToObject(this.request.headers),
+      headers: HttpHeaders.prototype.toObject.call(this.request.headers) as HttpHeadersSchema,
       cache: this.request.cache,
       destination: this.request.destination,
       credentials: this.request.credentials,
@@ -155,7 +172,10 @@ class FetchResponseError<
       return partialObject;
     }
 
-    return this.request.text().then((bodyAsText: string) => ({
+    // Optimize type checking by narrowing the type of the body
+    const bodyAsTextPromise = this.response.text() as Promise<string>;
+
+    return bodyAsTextPromise.then((bodyAsText) => ({
       ...partialObject,
       body: bodyAsText.length > 0 ? bodyAsText : null,
     }));
@@ -165,6 +185,9 @@ class FetchResponseError<
   private convertResponseToObject(options: { includeBody: false }): FetchResponseObject;
   private convertResponseToObject(options: {
     includeBody: boolean;
+  }): Promise<FetchResponseObject> | FetchResponseObject;
+  private convertResponseToObject(options: {
+    includeBody: boolean;
   }): Promise<FetchResponseObject> | FetchResponseObject {
     const partialObject = {
       url: this.response.url,
@@ -172,7 +195,7 @@ class FetchResponseError<
       status: this.response.status,
       statusText: this.response.statusText,
       ok: this.response.ok,
-      headers: this.convertHeadersToObject(this.response.headers),
+      headers: HttpHeaders.prototype.toObject.call(this.response.headers) as HttpHeadersSchema,
       redirected: this.response.redirected,
     } satisfies Partial<FetchResponseObject>;
 
@@ -180,14 +203,13 @@ class FetchResponseError<
       return partialObject;
     }
 
-    return this.response.text().then((bodyAsText: string) => ({
+    // Optimize type checking by narrowing the type of the body
+    const bodyAsTextPromise = this.response.text() as Promise<string>;
+
+    return bodyAsTextPromise.then((bodyAsText) => ({
       ...partialObject,
       body: bodyAsText.length > 0 ? bodyAsText : null,
     }));
-  }
-
-  private convertHeadersToObject(headers: Headers) {
-    return HttpHeaders.prototype.toObject.call(headers) as HttpHeadersSchema;
   }
 }
 
