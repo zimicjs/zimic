@@ -6,7 +6,7 @@ on:
       - published
   push:
     tags:
-      - '@zimic/http@*'
+      - '@zimic/http@*-*'
 
 concurrency:
   group: release-zimic-http-${{ github.ref_name }}

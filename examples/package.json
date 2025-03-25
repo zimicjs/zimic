@@ -18,6 +18,6 @@
     "@zimic/interceptor": "workspace:*",
     "@zimic/lint-staged-config": "workspace:*",
     "@zimic/tsconfig": "workspace:*",
-    "eslint": "^9.22.0"
+    "eslint": "^9.23.0"
   }
 }

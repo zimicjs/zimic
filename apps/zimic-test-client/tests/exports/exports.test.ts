@@ -4,12 +4,16 @@ import {
   type FetchOptions,
   type InferFetchSchema,
   type FetchInput,
-  type FetchRequest,
   type FetchRequestConstructor,
+  type FetchRequest,
+  type FetchRequestObject,
   type FetchRequestInit,
   type FetchResponse,
+  type FetchResponseObject,
   type JSONStringified,
   FetchResponseError,
+  type FetchResponseErrorObject,
+  type FetchResponseErrorObjectOptions,
 } from '@zimic/fetch';
 import {
   type JSONValue,
@@ -176,12 +180,18 @@ describe('Exports', () => {
     expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
     expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchRequest<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchRequestObject>().not.toBeAny();
     expectTypeOf<FetchRequestConstructor<never>>().not.toBeAny();
     expectTypeOf<FetchRequestInit<never, never, never>>().not.toBeAny();
     expectTypeOf<FetchResponse<never, never, never>>().not.toBeAny();
+    expectTypeOf<FetchResponseObject>().not.toBeAny();
     expectTypeOf<FetchResponseError<never, never, never>>().not.toBeAny();
-    expectTypeOf<JSONStringified<never>>().not.toBeAny();
     expect(typeof FetchResponseError).toBe('function');
+    expectTypeOf<FetchResponseErrorObject>().not.toBeAny();
+    expectTypeOf<FetchResponseErrorObjectOptions>().not.toBeAny();
+    expectTypeOf<FetchResponseErrorObjectOptions.WithBody>().not.toBeAny();
+    expectTypeOf<FetchResponseErrorObjectOptions.WithoutBody>().not.toBeAny();
+    expectTypeOf<JSONStringified<never>>().not.toBeAny();
 
     expectTypeOf(createHttpInterceptor).not.toBeAny();
     expect(typeof createHttpInterceptor).toBe('function');
