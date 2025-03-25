@@ -372,7 +372,7 @@ describe('FetchClient > Errors', () => {
       { includeRequestBody: undefined, includeResponseBody: false as const },
       { includeRequestBody: false as const, includeResponseBody: false as const },
     ] satisfies FetchResponseErrorObjectOptions[])(
-      'should correctly convert response errors to plain objects (includeRequestBody: %s)',
+      'should correctly convert response errors to plain objects (%s)',
       async ({ includeRequestBody, includeResponseBody }) => {
         type Schema = HttpSchema<{
           '/users': {
@@ -480,7 +480,7 @@ describe('FetchClient > Errors', () => {
       { includeRequestBody: undefined, includeResponseBody: true as const },
       { includeRequestBody: true as const, includeResponseBody: true as const },
     ] satisfies FetchResponseErrorObjectOptions[])(
-      'should correctly convert response errors to plain objects (includeBody: %s)',
+      'should correctly convert response errors to plain objects (%s)',
       async ({ includeRequestBody, includeResponseBody }) => {
         type Schema = HttpSchema<{
           '/users': {
@@ -559,7 +559,7 @@ describe('FetchClient > Errors', () => {
               path: '/users',
               method: 'POST',
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify(users[0]),
+              body: includeRequestBody ? JSON.stringify(users[0]) : undefined,
               cache: 'default',
               destination: '',
               credentials: 'same-origin',
@@ -577,7 +577,7 @@ describe('FetchClient > Errors', () => {
               statusText: '',
               ok: false,
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ code: 409, message: 'Conflict' }),
+              body: includeResponseBody ? JSON.stringify({ code: 409, message: 'Conflict' }) : undefined,
               redirected: false,
             },
           });
