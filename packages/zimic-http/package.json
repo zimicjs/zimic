@@ -43,6 +43,7 @@
     "index.d.ts",
     "typegen.d.ts"
   ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "index.d.ts",
