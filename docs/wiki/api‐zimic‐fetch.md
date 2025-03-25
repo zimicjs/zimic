@@ -40,6 +40,7 @@
     - [Using a file or binary body](#using-a-file-or-binary-body)
   - [Handling authentication](#handling-authentication)
   - [Handling errors](#handling-errors)
+    - [Handling errors: Logging](#handling-errors-logging)
 
 ---
 
@@ -1242,6 +1243,8 @@ if (!response.ok) {
 const user = await response.json(); // User
 ```
 
+#### Handling errors: Logging
+
 When logging fetch response errors (e.g. in a global handler), consider using
 [`fetchResponseError.toObject()`](#fetchresponseerrortoobject) to get a plain object representation serializable to
 JSON.
@@ -1269,6 +1272,22 @@ be a `Promise` if `includeBody` is `true`.
 ```ts
 if (error instanceof FetchResponseError) {
   const plainError = await error.toObject({ includeBody: true });
+  console.error(JSON.stringify(plainError));
+}
+```
+
+If you are working with form data or blob bodies, such as file uploads or downloads, logging the body may not be useful
+as binary data won't be human-readable. To handle this, you can check the content type of the request and response and
+include the body conditionally.
+
+```ts
+if (error instanceof FetchResponseError) {
+  const plainError = await error.toObject({
+    // Include the body only if the content type is JSON
+    includeBody:
+      error.request.headers.get('content-type') === 'application/json' ||
+      error.response.headers.get('content-type') === 'application/json',
+  });
   console.error(JSON.stringify(plainError));
 }
 ```
