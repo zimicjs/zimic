@@ -189,6 +189,8 @@ describe('Exports', () => {
     expect(typeof FetchResponseError).toBe('function');
     expectTypeOf<FetchResponseErrorObject>().not.toBeAny();
     expectTypeOf<FetchResponseErrorObjectOptions>().not.toBeAny();
+    expectTypeOf<FetchResponseErrorObjectOptions.WithBody>().not.toBeAny();
+    expectTypeOf<FetchResponseErrorObjectOptions.WithoutBody>().not.toBeAny();
     expectTypeOf<JSONStringified<never>>().not.toBeAny();
 
     expectTypeOf(createHttpInterceptor).not.toBeAny();

@@ -5,7 +5,10 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { isClientSide } from '@/utils/environment';
 import { usingHttpInterceptor } from '@tests/utils/interceptors';
 
-import FetchResponseError, { FetchResponseErrorObject } from '../errors/FetchResponseError';
+import FetchResponseError, {
+  FetchResponseErrorObject,
+  FetchResponseErrorObjectOptions,
+} from '../errors/FetchResponseError';
 import createFetch from '../factory';
 import { FetchResponse, FetchResponsePerStatusCode } from '../types/requests';
 
@@ -363,9 +366,14 @@ describe('FetchClient > Errors', () => {
   });
 
   describe('Plain object', () => {
-    it.each([{ includeBody: undefined }, { includeBody: false as const }])(
-      'should correctly convert response errors to plain objects (includeBody: %s)',
-      async ({ includeBody }) => {
+    it.each([
+      { includeRequestBody: undefined, includeResponseBody: undefined },
+      { includeRequestBody: false as const, includeResponseBody: undefined },
+      { includeRequestBody: undefined, includeResponseBody: false as const },
+      { includeRequestBody: false as const, includeResponseBody: false as const },
+    ] satisfies FetchResponseErrorObjectOptions[])(
+      'should correctly convert response errors to plain objects (%s)',
+      async ({ includeRequestBody, includeResponseBody }) => {
         type Schema = HttpSchema<{
           '/users': {
             POST: {
@@ -431,7 +439,11 @@ describe('FetchClient > Errors', () => {
 
           expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
-          expect(error.toObject({ includeBody })).toEqual<FetchResponseErrorObject>({
+          const toObjectResult = error.toObject({ includeRequestBody, includeResponseBody });
+          expectTypeOf(toObjectResult).toEqualTypeOf<FetchResponseErrorObject>();
+
+          const errorObject = toObjectResult;
+          expect(errorObject).toEqual<FetchResponseErrorObject>({
             message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
             name: 'FetchResponseError',
             request: {
@@ -463,9 +475,13 @@ describe('FetchClient > Errors', () => {
       },
     );
 
-    it.each([{ includeBody: true as const }])(
-      'should correctly convert response errors to plain objects (includeBody: %s)',
-      async ({ includeBody }) => {
+    it.each([
+      { includeRequestBody: true as const, includeResponseBody: undefined },
+      { includeRequestBody: undefined, includeResponseBody: true as const },
+      { includeRequestBody: true as const, includeResponseBody: true as const },
+    ] satisfies FetchResponseErrorObjectOptions[])(
+      'should correctly convert response errors to plain objects (%s)',
+      async ({ includeRequestBody, includeResponseBody }) => {
         type Schema = HttpSchema<{
           '/users': {
             POST: {
@@ -531,7 +547,11 @@ describe('FetchClient > Errors', () => {
 
           expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
-          expect(await error.toObject({ includeBody })).toEqual<FetchResponseErrorObject>({
+          const toObjectResult = error.toObject({ includeRequestBody, includeResponseBody });
+          expectTypeOf(toObjectResult).toEqualTypeOf<Promise<FetchResponseErrorObject> | FetchResponseErrorObject>();
+
+          const errorObject = await toObjectResult;
+          expect(errorObject).toEqual<FetchResponseErrorObject>({
             message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
             name: 'FetchResponseError',
             request: {
@@ -539,7 +559,7 @@ describe('FetchClient > Errors', () => {
               path: '/users',
               method: 'POST',
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify(users[0]),
+              body: includeRequestBody ? JSON.stringify(users[0]) : undefined,
               cache: 'default',
               destination: '',
               credentials: 'same-origin',
@@ -557,7 +577,7 @@ describe('FetchClient > Errors', () => {
               statusText: '',
               ok: false,
               headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ code: 409, message: 'Conflict' }),
+              body: includeResponseBody ? JSON.stringify({ code: 409, message: 'Conflict' }) : undefined,
               redirected: false,
             },
           });
@@ -624,7 +644,11 @@ describe('FetchClient > Errors', () => {
 
         expectTypeOf(error).toEqualTypeOf<FetchResponseError<Schema, 'POST', '/users'>>();
 
-        expect(await error.toObject({ includeBody: true })).toEqual<FetchResponseErrorObject>({
+        const toObjectResult = error.toObject({ includeRequestBody: true, includeResponseBody: true });
+        expectTypeOf(toObjectResult).toEqualTypeOf<Promise<FetchResponseErrorObject>>();
+
+        const errorObject = await toObjectResult;
+        expect(errorObject).toEqual<FetchResponseErrorObject>({
           message: `POST ${joinURL(baseURL, '/users')} failed with status 409: `,
           name: 'FetchResponseError',
           request: {

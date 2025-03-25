@@ -40,6 +40,7 @@
     - [Using a file or binary body](#using-a-file-or-binary-body)
   - [Handling authentication](#handling-authentication)
   - [Handling errors](#handling-errors)
+    - [Handling errors: Logging](#handling-errors-logging)
 
 ---
 
@@ -745,22 +746,24 @@ if (!response.ok) {
 
 `fetchResponseError.toObject(options?)`
 
-| Argument  | Type                                         | Description                            |
-| --------- | -------------------------------------------- | -------------------------------------- |
-| `options` | `FetchResponseErrorObjectOptions` (optional) | The options for serializing the error. |
+| Argument  | Type                                         | Description                                               |
+| --------- | -------------------------------------------- | --------------------------------------------------------- |
+| `options` | `FetchResponseErrorObjectOptions` (optional) | The options for converting the error into a plain object. |
 
 `options` is an object supporting the following properties:
 
-| Option        | Type                                  | Description                                                                      |
-| ------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
-| `includeBody` | `boolean` (optional, default `false`) | Whether to include the body of the request and response in the serialized error. |
+| Option                | Type                                  | Description                                                      |
+| --------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| `includeRequestBody`  | `boolean` (optional, default `false`) | Whether to include the body of the request in the plain object.  |
+| `includeResponseBody` | `boolean` (optional, default `false`) | Whether to include the body of the response in the plain object. |
 
 > [!NOTE]
 >
-> When using `options.includeBody: true`, you can only call `toObject()` if the bodies of the request and response have
-> not been consumed yet. In case you access their bodies before or after calling `toObject()`, use
+> When using `options.includeRequestBody: true` or `options.includeResponseBody: true`, you can only call `toObject()`
+> if the bodies of the request or response have not been consumed yet, respectively. In case you access their bodies
+> before or after calling `toObject()`, consider using
 > [`request.clone()`](https://developer.mozilla.org/docs/Web/API/Request/clone) and
-> [`response.clone()`](https://developer.mozilla.org/en-US/docs/Web/API/Response/clone) to allow multiple reads.
+> [`response.clone()`](https://developer.mozilla.org/en-US/docs/Web/API/Response/clone).
 
 ```ts
 const response = await fetch(`/users/${userId}`, {
@@ -772,17 +775,19 @@ const body = await response.clone().json();
 console.log(body);
 
 if (!response.ok) {
-  // `toObject()` can be called as the response body was consumed from the clone
-  const plainError = await response.error.toObject({ includeBody: true });
+  // `toObject()` can include the response body because it was only consumed from the clone
+  const plainError = await response.error.toObject({
+    includeResponseBody: true,
+  });
   console.log(plainError);
 }
 ```
 
 #### `FetchResponseError#toObject` return
 
-A plain object representing this error. If `options.includeBody` is `true`, the body of the request and response will be
-included and the return of this method will be a `Promise`. Otherwise, the return will be the plain object itself
-without the body.
+A plain object representing this error. If `options.includeRequestBody` or `options.includeResponseBody` is `true`, the
+body of the request and response will be included, respectively, and the return is a `Promise`. Otherwise, the return is
+the plain object itself without the bodies.
 
 ## Guides
 
@@ -1242,6 +1247,8 @@ if (!response.ok) {
 const user = await response.json(); // User
 ```
 
+#### Handling errors: Logging
+
 When logging fetch response errors (e.g. in a global handler), consider using
 [`fetchResponseError.toObject()`](#fetchresponseerrortoobject) to get a plain object representation serializable to
 JSON.
@@ -1263,12 +1270,30 @@ if (error instanceof FetchResponseError) {
 ```
 
 Request and response bodies are not included by default. If you want to include them, use
-[`fetchResponseError.toObject({ includeBody: true })`](#fetchresponseerrortoobject-arguments). Note that the result will
-be a `Promise` if `includeBody` is `true`.
+[`includeRequestBody`](#fetchresponseerrortoobject-arguments) and
+[`includeResponseBody`](#fetchresponseerrortoobject-arguments). Note that the result will be a `Promise`.
 
 ```ts
 if (error instanceof FetchResponseError) {
-  const plainError = await error.toObject({ includeBody: true });
+  const plainError = await error.toObject({
+    includeRequestBody: true,
+    includeResponseBody: true,
+  });
+  console.error(JSON.stringify(plainError));
+}
+```
+
+If you are working with form data or blob bodies, such as file uploads or downloads, logging the body may not be useful
+as binary data won't be human-readable. To handle this, you can check the content type of the request and response and
+include the body conditionally.
+
+```ts
+if (error instanceof FetchResponseError) {
+  const plainError = await error.toObject({
+    // Include the body only if the content type is JSON
+    includeRequestBody: error.request.headers.get('content-type') === 'application/json',
+    includeResponseBody: error.response.headers.get('content-type') === 'application/json',
+  });
   console.error(JSON.stringify(plainError));
 }
 ```
