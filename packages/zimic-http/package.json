@@ -12,7 +12,7 @@
     "api",
     "static"
   ],
-  "version": "0.2.0",
+  "version": "0.2.1-canary.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -43,6 +43,7 @@
     "index.d.ts",
     "typegen.d.ts"
   ],
+  "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "index.d.ts",
@@ -86,7 +87,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.13.10",
+    "@types/node": "^22.13.11",
     "@types/yargs": "^17.0.33",
     "@vitest/browser": "^3.0.9",
     "@vitest/coverage-istanbul": "^3.0.9",
@@ -96,7 +97,7 @@
     "@zimic/tsconfig": "workspace:*",
     "@zimic/utils": "workspace:*",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.22.0",
+    "eslint": "^9.23.0",
     "execa": "9.5.2",
     "js-yaml": "^4.1.0",
     "playwright": "^1.51.1",

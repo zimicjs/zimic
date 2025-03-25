@@ -179,7 +179,9 @@ class FetchClient<Schema extends HttpSchema>
         if (input instanceof globalThis.Request) {
           // Optimize type checking by narrowing the type of input
           const request = input as globalThis.Request;
-          const headersFromRequest = new HttpHeaders(input.headers);
+
+          // Optimize type checking by narrowing the type of headers
+          const headersFromRequest = new HttpHeaders(input.headers as Headers);
 
           initWithDefaults.headers = {
             ...headersFromDefaults.toObject(),

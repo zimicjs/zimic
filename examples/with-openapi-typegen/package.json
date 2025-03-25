@@ -20,7 +20,7 @@
     "@vitest/spy": "^3.0.9",
     "@zimic/interceptor": "latest",
     "dotenv-cli": "^8.0.0",
-    "supertest": "^7.0.0",
+    "supertest": "^7.1.0",
     "typescript": "^5.8.2",
     "vitest": "^3.0.9"
   }
