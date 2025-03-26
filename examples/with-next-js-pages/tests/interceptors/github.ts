@@ -4,7 +4,6 @@ import { GitHubRepository, GitHubSchema } from '../../src/clients/github';
 import environment from '../../src/config/environment';
 
 const githubInterceptor = createHttpInterceptor<GitHubSchema>({
-  type: 'local',
   baseURL: environment.GITHUB_API_BASE_URL,
 });
 
