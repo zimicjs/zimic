@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
 
 import {
   createInternalHttpInterceptor,
@@ -8,7 +8,14 @@ import {
 
 import NotRunningHttpInterceptorError from '../../errors/NotRunningHttpInterceptorError';
 import UnknownHttpInterceptorTypeError from '../../errors/UnknownHttpInterceptorTypeError';
+import { createHttpInterceptor } from '../../factory';
 import HttpInterceptorStore from '../../HttpInterceptorStore';
+import LocalHttpInterceptor from '../../LocalHttpInterceptor';
+import RemoteHttpInterceptor from '../../RemoteHttpInterceptor';
+import {
+  LocalHttpInterceptor as PublicLocalHttpInterceptor,
+  RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
+} from '../../types/public';
 import { RuntimeSharedHttpInterceptorTestsOptions } from './utils';
 
 export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInterceptorTestsOptions) {
@@ -41,24 +48,48 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
     expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
   });
 
-  it('should throw an error if created with an unknown type', () => {
-    // @ts-expect-error Forcing an unknown type.
-    const unknownType: HttpInterceptorType = 'unknown';
-
-    expect(() => {
-      createInternalHttpInterceptor({
-        type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+  describe('Types', () => {
+    it.each(['local' as const, undefined])('should create a local interceptor (type: %s)', (type) => {
+      const interceptor = createHttpInterceptor<{}>({
+        type,
         baseURL: 'http://localhost:3000',
       });
-    }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
-  });
 
-  it('should initialize with the correct platform', async () => {
-    await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
-      expect(interceptor.platform).toBe(platform);
+      expectTypeOf(interceptor).toEqualTypeOf<PublicLocalHttpInterceptor<{}>>();
+      expect(interceptor.type).toBe('local');
+      expect(interceptor).toBeInstanceOf(LocalHttpInterceptor);
+    });
 
-      const worker = getSingletonWorkerByType(store, type, serverURL);
-      expect(worker!.platform).toBe(platform);
+    it.each(['remote' as const])('should create a remote interceptor (type: %s)', (type) => {
+      const interceptor = createHttpInterceptor<{}>({
+        type,
+        baseURL: 'http://localhost:3000',
+      });
+
+      expectTypeOf(interceptor).toEqualTypeOf<PublicRemoteHttpInterceptor<{}>>();
+      expect(interceptor.type).toBe('remote');
+      expect(interceptor).toBeInstanceOf(RemoteHttpInterceptor);
+    });
+
+    it('should throw an error if created with an unknown type', () => {
+      // @ts-expect-error Forcing an unknown type.
+      const unknownType: HttpInterceptorType = 'unknown';
+
+      expect(() => {
+        createInternalHttpInterceptor({
+          type: unknownType, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+          baseURL: 'http://localhost:3000',
+        });
+      }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
+    });
+
+    it('should initialize with the correct platform', async () => {
+      await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
+        expect(interceptor.platform).toBe(platform);
+
+        const worker = getSingletonWorkerByType(store, type, serverURL);
+        expect(worker!.platform).toBe(platform);
+      });
     });
   });
 
