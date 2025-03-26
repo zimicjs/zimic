@@ -35,7 +35,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers: RequestHeaders = {
         'content-type': 'application/json',
       };
@@ -95,7 +95,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers = new HttpHeaders<RequestHeaders>({ 'content-type': 'application/json' });
 
       await interceptor
@@ -155,7 +155,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       expectTypeOf<RequestHeaders>().toEqualTypeOf<{
         'content-type': string;
       }>();
@@ -214,7 +214,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -275,7 +275,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers: ResponseHeaders = {
         'content-type': 'application/json',
       };
@@ -329,7 +329,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const headers = new HttpHeaders<ResponseHeaders>({ 'content-type': 'application/json' });
 
       await interceptor
@@ -383,7 +383,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       expectTypeOf<ResponseHeaders>().toEqualTypeOf<{
         'content-type': string;
       }>();
@@ -437,7 +437,7 @@ describe('FetchClient > Headers', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({

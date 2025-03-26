@@ -31,7 +31,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor.get('/users').respond({ status: 200, body: users }).times(1);
 
       const fetch = createFetch<Schema>({ baseURL });
@@ -77,7 +77,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -153,7 +153,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -255,7 +255,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -322,7 +322,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .with({
@@ -384,7 +384,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({ searchParams: { page: '1', limit: '10', username: ['my', 'other'] } })
@@ -438,7 +438,7 @@ describe('FetchClient > Defaults', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({ searchParams: { page: '1', limit: '20', username: ['any', 'other'] } })

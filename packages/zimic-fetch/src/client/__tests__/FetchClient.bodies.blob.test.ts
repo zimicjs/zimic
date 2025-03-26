@@ -26,7 +26,7 @@ describe('FetchClient > Bodies > Blob', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const requestBlob = new Blob(['request'], { type: 'application/octet-stream' });
       const responseBlob = new Blob(['response'], { type: 'application/octet-stream' });
 
@@ -107,7 +107,7 @@ describe('FetchClient > Bodies > Blob', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -179,7 +179,7 @@ describe('FetchClient > Bodies > Blob', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const requestArrayBuffer = new ArrayBuffer(2);
       const requestView = new Uint8Array(requestArrayBuffer);
       requestView[0] = 0xff;
@@ -264,7 +264,7 @@ describe('FetchClient > Bodies > Blob', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({

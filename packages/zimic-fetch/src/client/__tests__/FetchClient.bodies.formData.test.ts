@@ -30,7 +30,7 @@ describe('FetchClient > Bodies > Form data', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const File = await importFile();
 
       const requestFormData = new HttpFormData<FormDataSchema>();
@@ -115,7 +115,7 @@ describe('FetchClient > Bodies > Form data', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
