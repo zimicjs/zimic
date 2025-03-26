@@ -37,7 +37,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post('/users')
         .respond({
@@ -136,7 +136,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .post(`/users/${users[0].id}`)
         .respond({
@@ -235,7 +235,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -304,7 +304,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -385,7 +385,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .with({
@@ -452,11 +452,7 @@ describe('FetchClient > Listeners', () => {
     }>;
 
     await usingHttpInterceptor<Schema>(
-      {
-        type: 'local',
-        baseURL,
-        onUnhandledRequest: { action: 'reject', log: false },
-      },
+      { baseURL, onUnhandledRequest: { action: 'reject', log: false } },
       async (interceptor) => {
         await interceptor
           .get('/users')
@@ -517,7 +513,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -610,7 +606,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get(`/users/${users[0].id}`)
         .respond({
@@ -708,7 +704,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({
@@ -784,7 +780,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       const accessTokens = Array.from({ length: 2 }, (_, index) => `access-token-${index + 1}`);
 
       await interceptor
@@ -886,7 +882,7 @@ describe('FetchClient > Listeners', () => {
       };
     }>;
 
-    await usingHttpInterceptor<Schema>({ type: 'local', baseURL }, async (interceptor) => {
+    await usingHttpInterceptor<Schema>({ baseURL }, async (interceptor) => {
       await interceptor
         .get('/users')
         .respond({

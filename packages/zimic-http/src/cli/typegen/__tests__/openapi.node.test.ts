@@ -84,7 +84,6 @@ describe('Type generation (OpenAPI)', () => {
       GET: { response: { 200: { body: Blob } } };
     };
   }>({
-    type: 'local',
     baseURL: 'http://localhost:3000',
   });
 

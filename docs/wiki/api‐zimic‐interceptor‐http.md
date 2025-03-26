@@ -59,9 +59,9 @@ Creates an HTTP interceptor, the main interface to intercept HTTP requests and r
 
 #### Creating a local HTTP interceptor
 
-A local interceptor is configured with `type: 'local'`. The `baseURL` represents the URL should be matched by this
-interceptor. Any request starting with the `baseURL` will be intercepted if a matching [handler](#httprequesthandler)
-exists.
+A local interceptor is configured with `type: 'local'`. If the type is not specified, `local` is considered the default.
+The `baseURL` represents the URL should be matched by this interceptor. Any request starting with the `baseURL` will be
+intercepted if a matching [handler](#httprequesthandler) exists.
 
 ```ts
 import { createHttpInterceptor } from '@zimic/interceptor/http';
@@ -168,7 +168,6 @@ You can override the logging behavior per interceptor with `onUnhandledRequest` 
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
     action: 'bypass', // Allow unhandled requests to reach the real network
@@ -188,7 +187,6 @@ const interceptor = createHttpInterceptor<Schema>({
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: {
     action: 'reject', // Do not allow unhandled requests to reach the real network
@@ -208,7 +206,6 @@ const interceptor = createHttpInterceptor<Schema>({
 import { createHttpInterceptor } from '@zimic/interceptor/http';
 
 const interceptor = createHttpInterceptor<Schema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
   onUnhandledRequest: async (request) => {
     const url = new URL(request.url);
@@ -431,10 +428,7 @@ const interceptor = createHttpInterceptor<{
       };
     };
   };
-}>({
-  type: 'local',
-  baseURL: 'http://localhost:3000',
-});
+}>({ baseURL: 'http://localhost:3000' });
 
 interceptor.get('/users/:id'); // Matches any id
 interceptor.get(`/users/${1}`); // Only matches id 1
@@ -564,10 +558,7 @@ const interceptor = createHttpInterceptor<{
       response: { 200: { body: User[] } };
     };
   };
-}>({
-  type: 'local',
-  baseURL: 'http://localhost:3000',
-});
+}>({ baseURL: 'http://localhost:3000' });
 
 type Schema = InferHttpInterceptorSchema<typeof interceptor>;
 // {

@@ -104,8 +104,12 @@ export namespace UnhandledRequestStrategy {
 export type UnhandledRequestStrategy = UnhandledRequestStrategy.Local | UnhandledRequestStrategy.Remote;
 
 export interface SharedHttpInterceptorOptions {
-  /** The type of the HTTP interceptor. */
-  type: HttpInterceptorType;
+  /**
+   * The type of the HTTP interceptor.
+   *
+   * @default 'local'
+   */
+  type?: HttpInterceptorType;
 
   /**
    * Represents the URL that should be matched by the interceptor. Any request starting with this base URL will be
@@ -135,7 +139,7 @@ export interface SharedHttpInterceptorOptions {
  * @see {@link https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#creating-a-local-http-interceptor Creating a local HTTP interceptor}
  */
 export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOptions {
-  type: 'local';
+  type?: 'local';
 
   /**
    * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no

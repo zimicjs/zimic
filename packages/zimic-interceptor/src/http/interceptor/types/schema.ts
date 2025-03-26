@@ -14,7 +14,6 @@ import { LocalHttpInterceptor, RemoteHttpInterceptor } from './public';
  *       };
  *     };
  *   }>({
- *     type: 'local',
  *     baseURL: 'http://localhost:3000',
  *   });
  *

@@ -9,11 +9,11 @@ import {
   RemoteHttpInterceptor as PublicRemoteHttpInterceptor,
 } from './types/public';
 
-function isLocalHttpInterceptorOptions(options: HttpInterceptorOptions) {
-  return options.type === 'local';
+function isLocalHttpInterceptorOptions(options: HttpInterceptorOptions): options is LocalHttpInterceptorOptions {
+  return options.type === undefined || options.type === 'local';
 }
 
-function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions) {
+function isRemoteHttpInterceptorOptions(options: HttpInterceptorOptions): options is RemoteHttpInterceptorOptions {
   return options.type === 'remote';
 }
 

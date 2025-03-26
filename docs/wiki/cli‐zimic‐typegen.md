@@ -76,7 +76,6 @@ import { createHttpInterceptor } from '@zimic/interceptor/http';
 import { type MyServiceSchema } from './schema';
 
 const interceptor = createHttpInterceptor<MyServiceSchema>({
-  type: 'local',
   baseURL: 'http://localhost:3000',
 });
 ```

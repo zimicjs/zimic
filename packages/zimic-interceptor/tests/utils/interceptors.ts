@@ -51,13 +51,13 @@ export async function getNodeBaseURL(type: HttpInterceptorType, server: Intercep
 
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: LocalHttpInterceptorOptions,
-): LocalHttpInterceptor<HttpSchema<Schema>>;
+): LocalHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: RemoteHttpInterceptorOptions,
-): RemoteHttpInterceptor<HttpSchema<Schema>>;
+): RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(
   options: HttpInterceptorOptions,
-): LocalHttpInterceptor<HttpSchema<Schema>> | RemoteHttpInterceptor<HttpSchema<Schema>>;
+): LocalHttpInterceptor<Schema> | RemoteHttpInterceptor<Schema>;
 export function createInternalHttpInterceptor<Schema extends HttpSchema>(options: HttpInterceptorOptions) {
   return createHttpInterceptor<Schema>({
     requestSaving: { enabled: true },
@@ -76,20 +76,20 @@ interface UsingInterceptorOptions {
 
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<Schema>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
   options: UsingInterceptorOptions,
-  callback: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callback: UsingInterceptorCallback<Schema>,
 ): Promise<void>;
 export async function usingHttpInterceptor<Schema extends HttpSchema>(
   interceptorOptions: HttpInterceptorOptions,
-  callbackOrOptions: UsingInterceptorCallback<HttpSchema<Schema>> | UsingInterceptorOptions,
-  optionalCallback?: UsingInterceptorCallback<HttpSchema<Schema>>,
+  callbackOrOptions: UsingInterceptorCallback<Schema> | UsingInterceptorOptions,
+  optionalCallback?: UsingInterceptorCallback<Schema>,
 ): Promise<void> {
   const { start: shouldStartInterceptor = true } = typeof callbackOrOptions === 'function' ? {} : callbackOrOptions;
-  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<HttpSchema<Schema>>;
+  const callback = (optionalCallback ?? callbackOrOptions) as UsingInterceptorCallback<Schema>;
 
   const interceptor = createInternalHttpInterceptor<Schema>(interceptorOptions);
 
