@@ -1,11 +1,13 @@
+import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
+import { DEFAULT_INTERCEPTOR_TOKEN_LENGTH } from '../server/utils/auth';
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
-import { createInterceptorServerToken, DEFAULT_INTERCEPTOR_SERVER_TOKEN_LENGTH } from './server/token/create';
+import { createInterceptorServerToken } from './server/token/create';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -71,6 +73,14 @@ async function runCLI() {
                   'If an interceptor was matched, the logging behavior for that base URL is configured in the ' +
                   'interceptor itself.',
                 alias: 'l',
+              })
+              .option('tokens-dir', {
+                type: 'string',
+                description:
+                  'The path to the directory where the authentication tokens for remote interceptors are stored. ' +
+                  'If not provided, only remote interceptors with one of the allowed tokens will be accepted. This ' +
+                  'option is strongly recommended if you are exposing your interceptor server publicly.',
+                alias: 't',
               }),
           async (cliArguments) => {
             const onReadyCommand = cliArguments._.at(2)?.toString();
@@ -97,21 +107,21 @@ async function runCLI() {
             'Create a token for remote interceptors to connect to this server',
             (yargs) =>
               yargs
-                .option('config', {
-                  type: 'string',
-                  description: 'The path to the Zimic configuration directory to use.',
-                  alias: 'c',
-                  default: '.zimic',
-                })
                 .option('length', {
                   type: 'number',
                   description: 'The length of the token to create.',
                   alias: 'l',
-                  default: DEFAULT_INTERCEPTOR_SERVER_TOKEN_LENGTH,
+                  default: DEFAULT_INTERCEPTOR_TOKEN_LENGTH,
+                })
+                .option('tokens-dir', {
+                  type: 'string',
+                  description: 'The path to directory where the token hashes will be stored.',
+                  alias: 't',
+                  default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
                 }),
             async (cliArguments) => {
               await createInterceptorServerToken({
-                configDirectory: cliArguments.config,
+                tokensDirectory: cliArguments.tokensDir,
                 tokenLength: cliArguments.length,
               });
             },

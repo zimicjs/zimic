@@ -1,77 +1,45 @@
-import crypto from 'crypto';
-import fs from 'fs';
-import os from 'os';
 import color from 'picocolors';
 
-import { getOrCreateConfigDirectories } from '@/cli/utils/config';
+import {
+  createInterceptorToken,
+  createInterceptorTokensDirectory,
+  saveInterceptorTokenToFile,
+} from '@/server/utils/auth';
 import { logWithPrefix } from '@/utils/console';
-
-export const DEFAULT_INTERCEPTOR_SERVER_TOKEN_LENGTH = 32;
-
-const INTERCEPTOR_SERVER_TOKEN_SALT_LENGTH = 32;
-const INTERCEPTOR_SERVER_TOKEN_HASH_ITERATIONS = 1_000_000;
-const INTERCEPTOR_SERVER_TOKEN_HASH_LENGTH = 64;
-const INTERCEPTOR_SERVER_TOKEN_HASH_ALGORITHM = 'sha512';
-
-function generateInterceptorServerToken(length: number) {
-  return crypto.randomBytes(length).toString('base64url');
-}
-
-async function hashInterceptorServerToken(plainToken: string) {
-  const salt = crypto.randomBytes(INTERCEPTOR_SERVER_TOKEN_SALT_LENGTH).toString('base64url');
-
-  const hash = await new Promise<string>((resolve, reject) => {
-    crypto.pbkdf2(
-      plainToken,
-      salt,
-      INTERCEPTOR_SERVER_TOKEN_HASH_ITERATIONS,
-      INTERCEPTOR_SERVER_TOKEN_HASH_LENGTH,
-      INTERCEPTOR_SERVER_TOKEN_HASH_ALGORITHM,
-      (error, derivedBuffer) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(derivedBuffer.toString('base64url'));
-        }
-      },
-    );
-  });
-
-  return { hash, salt };
-}
-
-interface InterceptorServerTokensFileLine {
-  hash: string;
-  salt: string;
-}
-
-export async function saveInterceptorServerTokenHash(tokensFilePath: string, hash: string, salt: string) {
-  const line: InterceptorServerTokensFileLine = { hash, salt };
-  const stringifiedLine = `${JSON.stringify(line)}${os.EOL}`;
-  await fs.promises.appendFile(tokensFilePath, stringifiedLine, { mode: 0o600 });
-}
+import { pathExists } from '@/utils/files';
 
 interface CreateInterceptorServerTokenOptions {
-  configDirectory: string;
+  tokensDirectory: string;
   tokenLength: number;
 }
 
-export async function createInterceptorServerToken(options: CreateInterceptorServerTokenOptions) {
-  const directories = await getOrCreateConfigDirectories(options.configDirectory);
+export async function createInterceptorServerToken({
+  tokensDirectory,
+  tokenLength,
+}: CreateInterceptorServerTokenOptions) {
+  const tokensDirectoryExists = await pathExists(tokensDirectory);
 
-  const plainToken = generateInterceptorServerToken(options.tokenLength);
-  const { hash, salt } = await hashInterceptorServerToken(plainToken);
+  if (!tokensDirectoryExists) {
+    await createInterceptorTokensDirectory(tokensDirectory);
+  }
 
-  await saveInterceptorServerTokenHash(directories.server.tokens.path, hash, salt);
+  const token = await createInterceptorToken({ length: tokenLength });
+  const tokenFile = await saveInterceptorTokenToFile(tokensDirectory, token);
 
   logWithPrefix(
     [
       `${color.green(color.bold('✔'))} Token created:`,
       '',
-      color.yellow(plainToken),
+      `  ${color.yellow(token.value)}`,
       '',
-      'Use this token to authenticate remote interceptors to this server. Store it securely. It cannot be retrieved ',
-      `later. A hash of this token was added to ${color.green(directories.server.tokens.path)}.`,
+      'Remote interceptors can use this token to authenticate with this server. Store it securely. It cannot be ' +
+        'retrieved later.',
+      '',
+      `A secure hash of this token was saved to ${color.yellow(tokenFile)}. When starting your interceptor server, ` +
+        'use the `--tokens-dir` option as follows. Only the tokens in this directory will be accepted for remote ' +
+        'interceptor authentication.',
+      '',
+      `  $ zimic-interceptor server start --tokens-dir ${tokensDirectory}`,
       '',
       'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
     ].join('\n'),

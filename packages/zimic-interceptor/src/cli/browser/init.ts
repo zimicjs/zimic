@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import color from 'picocolors';
 
@@ -15,10 +15,10 @@ interface BrowserServiceWorkerInitOptions {
 
 async function initializeBrowserServiceWorker({ publicDirectory }: BrowserServiceWorkerInitOptions) {
   const absolutePublicDirectory = path.resolve(publicDirectory);
-  await fs.mkdir(absolutePublicDirectory, { recursive: true });
+  await fs.promises.mkdir(absolutePublicDirectory, { recursive: true });
 
   const destinationPath = path.join(absolutePublicDirectory, SERVICE_WORKER_FILE_NAME);
-  await fs.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
+  await fs.promises.copyFile(MOCK_SERVICE_WORKER_PATH, destinationPath);
 
   logWithPrefix(`Service worker script saved to ${color.green(destinationPath)}!`);
   logWithPrefix('You can now use browser interceptors!');
