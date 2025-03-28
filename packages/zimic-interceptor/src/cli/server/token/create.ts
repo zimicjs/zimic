@@ -28,18 +28,16 @@ export async function createInterceptorServerToken({
 
   logWithPrefix(
     [
-      `${color.green(color.bold('✔'))} Token created:`,
+      `${color.green(color.bold('✔'))} Created token: ${color.yellow(token.value)}`,
       '',
-      `  ${color.yellow(token.value)}`,
+      'Remote interceptors can use this token to authenticate with an interceptor server. Store it securely. It ' +
+        'cannot be retrieved later.',
       '',
-      'Remote interceptors can use this token to authenticate with this server. Store it securely. It cannot be ' +
-        'retrieved later.',
+      `A secure hash was saved to ${color.magenta(tokenFile)}. When starting your interceptor server, ` +
+        `use the ${color.cyan('--tokens-dir')} option to enable authentication. Only remote interceptors bearing a ` +
+        'valid token will be allowed to connect.',
       '',
-      `A secure hash of this token was saved to ${color.yellow(tokenFile)}. When starting your interceptor server, ` +
-        'use the `--tokens-dir` option as follows. Only the tokens in this directory will be accepted for remote ' +
-        'interceptor authentication.',
-      '',
-      `  $ zimic-interceptor server start --tokens-dir ${tokensDirectory}`,
+      `${color.dim('$')} zimic-interceptor server start ${color.cyan('--tokens-dir')} ${color.magenta(tokensDirectory)}`,
       '',
       'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
     ].join('\n'),

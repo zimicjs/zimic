@@ -1,3 +1,5 @@
+import color from 'picocolors';
+
 import { InterceptorServer, createInterceptorServer } from '@/server';
 import { InterceptorServerOptions } from '@/server/types/options';
 import { logWithPrefix } from '@/utils/console';
@@ -11,10 +13,7 @@ import {
 
 interface InterceptorServerStartOptions extends InterceptorServerOptions {
   ephemeral: boolean;
-  onReady?: {
-    command: string;
-    arguments: string[];
-  };
+  onReady?: { command: string; arguments: string[] };
 }
 
 export let serverSingleton: InterceptorServer | undefined;
@@ -22,8 +21,9 @@ export let serverSingleton: InterceptorServer | undefined;
 async function startInterceptorServer({
   hostname,
   port,
-  ephemeral,
   logUnhandledRequests,
+  tokensDirectory,
+  ephemeral,
   onReady,
 }: InterceptorServerStartOptions) {
   const server = createInterceptorServer({
@@ -59,7 +59,21 @@ async function startInterceptorServer({
 
   await server.start();
 
-  logWithPrefix(`${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${server.hostname}:${server.port}`);
+  logWithPrefix(
+    `${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${color.yellow(`${server.hostname}:${server.port}`)}`,
+  );
+
+  if (!tokensDirectory && process.env.NODE_ENV === 'production') {
+    logWithPrefix(
+      [
+        `Attention: this server is ${color.red('unprotected')}. Do not expose it publicly without a \`--tokens-dir\` ` +
+          'option.',
+        '',
+        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+      ].join('\n'),
+      { method: 'warn' },
+    );
+  }
 
   if (onReady) {
     try {
