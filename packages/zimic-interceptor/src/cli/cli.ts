@@ -4,7 +4,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { DEFAULT_INTERCEPTOR_TOKEN_LENGTH } from '../server/utils/auth';
+import { DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH } from '../server/utils/auth';
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import { createInterceptorServerToken } from './server/token/create';
@@ -107,11 +107,11 @@ async function runCLI() {
             'Create a token for remote interceptors to connect to this server',
             (yargs) =>
               yargs
-                .option('length', {
+                .option('secret-length', {
                   type: 'number',
-                  description: 'The length of the token to create.',
+                  description: 'The length of the token secret to create.',
                   alias: 'l',
-                  default: DEFAULT_INTERCEPTOR_TOKEN_LENGTH,
+                  default: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
                 })
                 .option('tokens-dir', {
                   type: 'string',
@@ -122,7 +122,7 @@ async function runCLI() {
             async (cliArguments) => {
               await createInterceptorServerToken({
                 tokensDirectory: cliArguments.tokensDir,
-                tokenLength: cliArguments.length,
+                secretLength: cliArguments.secretLength,
               });
             },
           ),

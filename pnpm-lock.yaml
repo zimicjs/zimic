@@ -769,6 +769,9 @@ importers:
       yargs:
         specifier: 17.7.2
         version: 17.7.2
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       '@types/node':
         specifier: ^22.14.0

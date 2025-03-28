@@ -10,12 +10,12 @@ import { pathExists } from '@/utils/files';
 
 interface CreateInterceptorServerTokenOptions {
   tokensDirectory: string;
-  tokenLength: number;
+  secretLength: number;
 }
 
 export async function createInterceptorServerToken({
   tokensDirectory,
-  tokenLength,
+  secretLength,
 }: CreateInterceptorServerTokenOptions) {
   const tokensDirectoryExists = await pathExists(tokensDirectory);
 
@@ -23,12 +23,12 @@ export async function createInterceptorServerToken({
     await createInterceptorTokensDirectory(tokensDirectory);
   }
 
-  const token = await createInterceptorToken({ length: tokenLength });
+  const token = await createInterceptorToken({ secretLength });
   const tokenFile = await saveInterceptorTokenToFile(tokensDirectory, token);
 
   logWithPrefix(
     [
-      `${color.green(color.bold('✔'))} Created token: ${color.yellow(token.value)}`,
+      `${color.green(color.bold('✔'))} Created token: ${color.yellow(token.plainValue)}`,
       '',
       'Remote interceptors can use this token to authenticate with an interceptor server. Store it securely. It ' +
         'cannot be retrieved later.',

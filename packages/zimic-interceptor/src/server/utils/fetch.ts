@@ -3,6 +3,8 @@ import { FetchAPI } from '@whatwg-node/server';
 import { importFile } from '@/utils/files';
 
 export async function getFetchAPI(): Promise<FetchAPI> {
+  const File = await importFile();
+
   return {
     fetch,
     Request,
@@ -17,7 +19,7 @@ export async function getFetchAPI(): Promise<FetchAPI> {
     TextDecoderStream,
     TextEncoderStream,
     Blob,
-    File: await importFile(),
+    File,
     crypto: globalThis.crypto,
     btoa,
     TextEncoder,
