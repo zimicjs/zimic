@@ -1,4 +1,4 @@
-import filesystem from 'fs/promises';
+import fs from 'fs/promises';
 import path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -77,8 +77,8 @@ describe('CLI (browser)', () => {
     });
 
     it('should copy the service worker file to the provided public directory', async () => {
-      const makeDirectorySpy = vi.spyOn(filesystem, 'mkdir').mockImplementation(vi.fn());
-      const copyFileSpy = vi.spyOn(filesystem, 'copyFile').mockImplementation(vi.fn());
+      const makeDirectorySpy = vi.spyOn(fs, 'mkdir').mockImplementation(vi.fn());
+      const copyFileSpy = vi.spyOn(fs, 'copyFile').mockImplementation(vi.fn());
 
       await usingIgnoredConsole(['log'], async (spies) => {
         const publicDirectory = './public';

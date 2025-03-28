@@ -24,7 +24,7 @@ const neutralConfig = (['cjs', 'esm'] as const).map<Options>((format) => ({
     index: 'src/index.ts',
     http: 'src/http/index.ts',
   },
-  external: ['util', 'buffer', 'crypto'],
+  external: ['fs', 'util', 'buffer', 'crypto'],
 }));
 
 const nodeConfig = (['cjs', 'esm'] as const).map<Options>((format) => {
