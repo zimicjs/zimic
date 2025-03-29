@@ -17,7 +17,13 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 
 import InvalidWebSocketMessage from '../errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from '../errors/NotRunningWebSocketHandlerError';
-import { WebSocket } from '../types';
+import {
+  WebSocketEventMessage,
+  WebSocketReplyMessage,
+  WebSocketEventMessageListener,
+  WebSocketReplyMessageListener,
+  WebSocketSchema,
+} from '../types';
 import WebSocketClient from '../WebSocketClient';
 import { delayClientSocketClose, delayClientSocketOpen } from './utils';
 
@@ -29,7 +35,7 @@ describe('Web socket client', async () => {
   const httpServer = createServer();
   let port: number;
 
-  type Schema = WebSocket.ServiceSchema<{
+  type Schema = WebSocketSchema<{
     'no-reply': {
       event: { message: string };
     };
@@ -156,7 +162,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       rawServerSockets[0].addEventListener('message', (message) => {
@@ -191,7 +197,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
 
       const eventMessage: EventMessage['data'] = { message: 'test' };
       rawServerSockets[0].send(
@@ -213,7 +219,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       rawServerSockets[0].addEventListener('message', (message) => {
@@ -237,7 +243,7 @@ describe('Web socket client', async () => {
         data: requestMessage,
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessage: ReplyMessage['data'] = { response: 'answer' };
 
       rawServerSockets[0].send(
@@ -259,7 +265,7 @@ describe('Web socket client', async () => {
       expect(client.messageTimeout).toBe(messageTimeout);
       await client.start();
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessage: RequestMessage['data'] = { question: 'test' };
 
       await expect(client.request('with-reply', requestMessage)).rejects.toThrowError(
@@ -277,7 +283,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       client.onEvent('with-reply', (message) => {
@@ -285,7 +291,7 @@ describe('Web socket client', async () => {
         return { response: 'answer' };
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       rawServerSockets[0].addEventListener('message', (message) => {
@@ -339,7 +345,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       client.onEvent('no-reply', (message) => {
@@ -375,12 +381,12 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type EventMessage = WebSocket.ServiceEventMessage<Schema, 'no-reply'>;
+      type EventMessage = WebSocketEventMessage<Schema, 'no-reply'>;
       const eventMessages: EventMessage[] = [];
 
       const eventListener = client.onEvent(
         'no-reply',
-        vi.fn<WebSocket.EventMessageListener<Schema, 'no-reply'>>(
+        vi.fn<WebSocketEventMessageListener<Schema, 'no-reply'>>(
           /* istanbul ignore next -- @preserve
            * This function is not expected to run. */
           (message) => {
@@ -424,14 +430,14 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       client.onReply('with-reply', (message) => {
         replyMessages.push(message);
       });
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       rawServerSockets[0].addEventListener('message', (message) => {
@@ -489,7 +495,7 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      type RequestMessage = WebSocket.ServiceEventMessage<Schema, 'with-reply'>;
+      type RequestMessage = WebSocketEventMessage<Schema, 'with-reply'>;
       const requestMessages: RequestMessage[] = [];
 
       rawServerSockets[0].addEventListener('message', (message) => {
@@ -501,12 +507,12 @@ describe('Web socket client', async () => {
         requestMessages.push(JSON.parse(message.data) as RequestMessage);
       });
 
-      type ReplyMessage = WebSocket.ServiceReplyMessage<Schema, 'with-reply'>;
+      type ReplyMessage = WebSocketReplyMessage<Schema, 'with-reply'>;
       const replyMessages: ReplyMessage[] = [];
 
       const replyListener = client.onReply(
         'with-reply',
-        vi.fn<WebSocket.ReplyMessageListener<Schema, 'with-reply'>>(
+        vi.fn<WebSocketReplyMessageListener<Schema, 'with-reply'>>(
           /* istanbul ignore next -- @preserve
            * This function is not expected to run. */
           (message) => {

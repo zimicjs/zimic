@@ -3,7 +3,7 @@ import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
-import { WebSocket } from './types';
+import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
@@ -14,7 +14,7 @@ interface WebSocketServerOptions {
   messageTimeout?: number;
 }
 
-class WebSocketServer<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
+class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private webSocketServer?: InstanceType<typeof ServerSocket>;
   private httpServer: HttpServer;
 

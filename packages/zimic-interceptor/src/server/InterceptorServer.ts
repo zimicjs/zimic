@@ -10,7 +10,7 @@ import { removeArrayIndex } from '@/utils/arrays';
 import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/utils/fetch';
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
-import { WebSocket } from '@/webSocket/types';
+import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketServer from '@/webSocket/WebSocketServer';
 
 import {
@@ -136,12 +136,12 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private startWebSocketServer() {
     this.webSocketServerOrThrow.start();
-    this.webSocketServerOrThrow.onEvent('interceptors/workers/use/commit', this.commitWorker);
-    this.webSocketServerOrThrow.onEvent('interceptors/workers/use/reset', this.resetWorker);
+    this.webSocketServerOrThrow.onEvent('interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.onEvent('interceptors/workers/reset', this.resetWorker);
   }
 
   private commitWorker = (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/commit'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/commit'>,
     socket: Socket,
   ) => {
     const commit = message.data;
@@ -151,7 +151,7 @@ class InterceptorServer implements PublicInterceptorServer {
   };
 
   private resetWorker = (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/use/reset'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/workers/reset'>,
     socket: Socket,
   ) => {
     this.removeHttpHandlersBySocket(socket);
@@ -226,8 +226,8 @@ class InterceptorServer implements PublicInterceptorServer {
   }
 
   private async stopWebSocketServer() {
-    this.webSocketServerOrThrow.offEvent('interceptors/workers/use/commit', this.commitWorker);
-    this.webSocketServerOrThrow.offEvent('interceptors/workers/use/reset', this.resetWorker);
+    this.webSocketServerOrThrow.offEvent('interceptors/workers/commit', this.commitWorker);
+    this.webSocketServerOrThrow.offEvent('interceptors/workers/reset', this.resetWorker);
 
     await this.webSocketServerOrThrow.stop();
 

@@ -1,7 +1,7 @@
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
 import ClientSocket from 'isomorphic-ws';
 
-import { WebSocket } from './types';
+import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
 const SUPPORTED_WEB_SOCKET_PROTOCOLS = ['ws', 'wss'];
@@ -12,7 +12,7 @@ interface WebSocketClientOptions {
   messageTimeout?: number;
 }
 
-class WebSocketClient<Schema extends WebSocket.ServiceSchema> extends WebSocketHandler<Schema> {
+class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private url: URL;
 
   private socket?: ClientSocket;

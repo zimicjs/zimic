@@ -6,7 +6,7 @@ import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from '@/server/ty
 import { importCrypto } from '@/utils/crypto';
 import { isClientSide, isServerSide } from '@/utils/environment';
 import { deserializeRequest, serializeResponse } from '@/utils/fetch';
-import { WebSocket } from '@/webSocket/types';
+import { WebSocketEventMessage } from '@/webSocket/types';
 import WebSocketClient from '@/webSocket/WebSocketClient';
 
 import NotRunningHttpInterceptorError from '../interceptor/errors/NotRunningHttpInterceptorError';
@@ -62,7 +62,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   private createResponse = async (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/create'>,
   ) => {
     const { handlerId, request: serializedRequest } = message.data;
 
@@ -87,7 +87,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
   };
 
   private handleUnhandledServerRequest = async (
-    message: WebSocket.ServiceEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
+    message: WebSocketEventMessage<InterceptorServerWebSocketSchema, 'interceptors/responses/unhandled'>,
   ) => {
     const { request: serializedRequest } = message.data;
     const request = deserializeRequest(serializedRequest);
@@ -156,7 +156,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
     this.httpHandlers.set(handler.id, handler);
 
-    await this.webSocketClient.request('interceptors/workers/use/commit', {
+    await this.webSocketClient.request('interceptors/workers/commit', {
       id: handler.id,
       url: handler.url,
       method,
@@ -171,7 +171,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     this.httpHandlers.clear();
 
     if (this.webSocketClient.isRunning) {
-      await this.webSocketClient.request('interceptors/workers/use/reset', undefined);
+      await this.webSocketClient.request('interceptors/workers/reset', undefined);
     }
   }
 
@@ -193,7 +193,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
         method: handler.method,
       }));
 
-      await this.webSocketClient.request('interceptors/workers/use/reset', groupsToRecommit);
+      await this.webSocketClient.request('interceptors/workers/reset', groupsToRecommit);
     }
   }
 
