@@ -1,4 +1,5 @@
-import { Server as HttpServer } from 'http';
+import { PossiblePromise } from '@zimic/utils/types';
+import { Server as HttpServer, IncomingMessage } from 'http';
 import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
@@ -12,11 +13,14 @@ interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
+  authenticateConnection?: (socket: ClientSocket, request: IncomingMessage) => PossiblePromise<boolean>;
 }
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private webSocketServer?: InstanceType<typeof ServerSocket>;
+
   private httpServer: HttpServer;
+  private authenticateConnection?: WebSocketServerOptions['authenticateConnection'];
 
   constructor(options: WebSocketServerOptions) {
     super({
@@ -25,6 +29,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     this.httpServer = options.httpServer;
+    this.authenticateConnection = options.authenticateConnection;
   }
 
   get isRunning() {
@@ -42,7 +47,17 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       console.error(error);
     });
 
-    webSocketServer.on('connection', async (socket) => {
+    webSocketServer.on('connection', async (socket, request) => {
+      if (this.authenticateConnection) {
+        const isValidConnection = await this.authenticateConnection(socket, request);
+
+        if (!isValidConnection) {
+          const unauthorizedData = JSON.stringify({ message: 'Unauthorized' });
+          socket.close(1008, unauthorizedData);
+          return;
+        }
+      }
+
       try {
         await super.registerSocket(socket);
       } catch (error) {

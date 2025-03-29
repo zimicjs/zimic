@@ -24,6 +24,7 @@ import RunningInterceptorServerError from './errors/RunningInterceptorServerErro
 import { InterceptorServerOptions } from './types/options';
 import { InterceptorServer as PublicInterceptorServer } from './types/public';
 import { HttpHandlerCommit, InterceptorServerWebSocketSchema } from './types/schema';
+import { validateInterceptorToken } from './utils/auth';
 import { getFetchAPI } from './utils/fetch';
 
 interface HttpHandler {
@@ -42,6 +43,7 @@ class InterceptorServer implements PublicInterceptorServer {
   _hostname: string;
   _port: number | undefined;
   logUnhandledRequests: boolean;
+  tokensDirectory?: string;
 
   private httpHandlerGroups: {
     [Method in HttpMethod]: HttpHandler[];
@@ -61,6 +63,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this._hostname = options.hostname ?? DEFAULT_HOSTNAME;
     this._port = options.port;
     this.logUnhandledRequests = options.logUnhandledRequests ?? DEFAULT_LOG_UNHANDLED_REQUESTS;
+    this.tokensDirectory = options.tokensDirectory;
   }
 
   get hostname() {
@@ -120,7 +123,17 @@ class InterceptorServer implements PublicInterceptorServer {
 
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
+      authenticateConnection: async (_socket, request) => {
+        if (!this.tokensDirectory) {
+          return true;
+        }
+
+        const tokenValue = request.headers.authorization?.replace(/^Bearer (.+)$/, '$1');
+        const isValidToken = await validateInterceptorToken(tokenValue, { tokensDirectory: this.tokensDirectory });
+        return isValidToken;
+      },
     });
+
     this.startWebSocketServer();
   }
 
@@ -136,6 +149,7 @@ class InterceptorServer implements PublicInterceptorServer {
 
   private startWebSocketServer() {
     this.webSocketServerOrThrow.start();
+
     this.webSocketServerOrThrow.onEvent('interceptors/workers/commit', this.commitWorker);
     this.webSocketServerOrThrow.onEvent('interceptors/workers/reset', this.resetWorker);
   }
@@ -145,8 +159,10 @@ class InterceptorServer implements PublicInterceptorServer {
     socket: Socket,
   ) => {
     const commit = message.data;
+
     this.registerHttpHandler(commit, socket);
     this.registerWorkerSocketIfUnknown(socket);
+
     return {};
   };
 

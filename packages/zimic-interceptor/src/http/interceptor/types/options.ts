@@ -160,6 +160,8 @@ export interface LocalHttpInterceptorOptions extends SharedHttpInterceptorOption
 export interface RemoteHttpInterceptorOptions extends SharedHttpInterceptorOptions {
   type: 'remote';
 
+  auth?: { token: string };
+
   /**
    * The strategy to use for unhandled requests. If a request starts with the base URL of the interceptor, but no
    * matching handler exists, this strategy will be used. If a function is provided, it will be called with the

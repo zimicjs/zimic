@@ -26,17 +26,19 @@ interface HttpHandler {
 }
 
 class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
-  webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
-
   private httpHandlers = new Map<HttpHandler['id'], HttpHandler>();
+
+  webSocketClient: WebSocketClient<InterceptorServerWebSocketSchema>;
+  private auth?: RemoteHttpInterceptorWorkerOptions['auth'];
 
   constructor(options: RemoteHttpInterceptorWorkerOptions) {
     super();
 
-    const webSocketServerURL = this.deriveWebSocketServerURL(options.serverURL);
     this.webSocketClient = new WebSocketClient({
-      url: webSocketServerURL.toString(),
+      url: this.deriveWebSocketServerURL(options.serverURL).toString(),
     });
+
+    this.auth = options.auth;
   }
 
   get type() {
@@ -51,7 +53,9 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
 
   async start() {
     await super.sharedStart(async () => {
-      await this.webSocketClient.start();
+      await this.webSocketClient.start({
+        headers: this.auth ? { authorization: `Bearer ${this.auth.token}` } : undefined,
+      });
 
       this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);
       this.webSocketClient.onEvent('interceptors/responses/unhandled', this.handleUnhandledServerRequest);

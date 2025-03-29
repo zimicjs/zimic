@@ -4,7 +4,6 @@ import joinURL from '@zimic/utils/url/joinURL';
 import { expect } from 'vitest';
 
 import { createHttpInterceptor } from '@/http';
-import HttpInterceptorStore from '@/http/interceptor/HttpInterceptorStore';
 import LocalHttpInterceptor from '@/http/interceptor/LocalHttpInterceptor';
 import RemoteHttpInterceptor from '@/http/interceptor/RemoteHttpInterceptor';
 import {
@@ -136,10 +135,6 @@ export async function usingHttpInterceptorWorker(
   } finally {
     await worker.stop();
   }
-}
-
-export function getSingletonWorkerByType(store: HttpInterceptorStore, type: HttpInterceptorType, serverURL: URL) {
-  return type === 'local' ? store.localWorker : store.remoteWorker(serverURL);
 }
 
 export function assessPreflightInterference(resources: {

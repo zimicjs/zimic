@@ -15,8 +15,10 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
   constructor(options: RemoteHttpInterceptorOptions) {
     const baseURL = new URL(options.baseURL);
 
-    const serverURL = new URL(baseURL.origin);
-    const worker = this.store.getOrCreateRemoteWorker({ serverURL });
+    const worker = this.store.getOrCreateRemoteWorker({
+      serverURL: new URL(baseURL.origin),
+      auth: options.auth,
+    });
 
     this.client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
       worker,

@@ -120,14 +120,14 @@ export async function saveInterceptorTokenToFile(tokensDirectory: string, token:
 }
 
 export async function readInterceptorTokenFromFile(
-  tokensDirectory: string,
   tokenId: InterceptorToken['id'],
+  options: { tokensDirectory: string },
 ): Promise<InterceptorTokenFileContent['token'] | null> {
   if (!isValidInterceptorTokenId(tokenId)) {
     throw new InvalidInterceptorTokenError(tokenId);
   }
 
-  const tokenFilePath = path.join(tokensDirectory, tokenId);
+  const tokenFilePath = path.join(options.tokensDirectory, tokenId);
 
   const tokenFileExists = await pathExists(tokenFilePath);
   if (!tokenFileExists) {
@@ -152,13 +152,17 @@ export async function readInterceptorTokenFromFile(
   return tokenFileContent.token;
 }
 
-export async function validateInterceptorToken(tokensDirectory: string, tokenValue: InterceptorToken['plainValue']) {
+export async function validateInterceptorToken(tokenValue: unknown, options: { tokensDirectory: string }) {
   try {
+    if (typeof tokenValue !== 'string') {
+      throw new InvalidInterceptorTokenError();
+    }
+
     const tokenValueBuffer = Buffer.from(tokenValue, 'base64url');
     const tokenId = tokenValueBuffer.subarray(0, INTERCEPTOR_TOKEN_ID_LENGTH).toString('hex');
     const tokenSecret = tokenValueBuffer.subarray(INTERCEPTOR_TOKEN_ID_LENGTH).toString('hex');
 
-    const tokenFromFile = await readInterceptorTokenFromFile(tokensDirectory, tokenId);
+    const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
     if (!tokenFromFile) {
       return false;
     }
