@@ -47,9 +47,7 @@ class LocalHttpInterceptorWorker extends HttpInterceptorWorker {
   }
 
   get internalWorkerOrCreate() {
-    if (!this.internalWorker) {
-      this.internalWorker = this.createInternalWorker();
-    }
+    this.internalWorker ??= this.createInternalWorker();
     return this.internalWorker;
   }
 
