@@ -71,7 +71,7 @@
     "deps:init": "playwright install chromium"
   },
   "devDependencies": {
-    "@types/node": "^22.13.11",
+    "@types/node": "^22.13.14",
     "@vitest/browser": "^3.0.9",
     "@vitest/coverage-istanbul": "^3.0.9",
     "@zimic/eslint-config-node": "workspace:*",
