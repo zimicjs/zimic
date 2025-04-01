@@ -40,15 +40,20 @@ async function hashInterceptorToken(plainToken: string, salt: string) {
 
 export interface InterceptorToken {
   id: string;
+  name?: string;
   secret: { hash: string; salt: string };
-  plainValue: string;
+  value: string;
+  createdAt: Date;
 }
 
 function isValidInterceptorTokenId(tokenId: string) {
   return INTERCEPTOR_TOKEN_ID_REGEX.test(tokenId);
 }
 
-export async function createInterceptorToken(options: { secretLength: number }): Promise<InterceptorToken> {
+export async function createInterceptorToken(options: {
+  tokenName?: string;
+  secretLength: number;
+}): Promise<InterceptorToken> {
   const tokenId = crypto.randomUUID().replace(/[^a-z0-9]/g, '');
 
   if (!isValidInterceptorTokenId(tokenId)) {
@@ -63,8 +68,10 @@ export async function createInterceptorToken(options: { secretLength: number }):
 
   return {
     id: tokenId,
+    name: options.tokenName,
     secret: { hash: tokenSecretHash, salt: tokenSecretSalt },
-    plainValue: tokenValue,
+    value: tokenValue,
+    createdAt: new Date(),
   };
 }
 
@@ -84,32 +91,45 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
   }
 }
 
-const interceptorTokenFileSchema = z.object({
+const interceptorTokenFileContentSchema = z.object({
   version: z.literal(1),
   token: z.object({
     id: z.string().regex(INTERCEPTOR_TOKEN_ID_REGEX),
+    name: z.string().optional(),
     secret: z.object({
-      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_LENGTH),
-      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_LENGTH),
+      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_LENGTH * 2),
+      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_LENGTH * 2),
     }),
+    createdAt: z
+      .string()
+      .datetime()
+      .transform((dateString) => new Date(dateString)),
   }),
 });
 
-export type InterceptorTokenFileContent = z.infer<typeof interceptorTokenFileSchema>;
+type InterceptorTokenFileContent = z.infer<typeof interceptorTokenFileContentSchema>;
+
+namespace InterceptorTokenFileContent {
+  export type Input = z.input<typeof interceptorTokenFileContentSchema>;
+}
+
+export type PersistedInterceptorToken = InterceptorTokenFileContent['token'];
 
 export async function saveInterceptorTokenToFile(tokensDirectory: string, token: InterceptorToken) {
   const tokeFilePath = path.join(tokensDirectory, token.id);
 
-  const tokenFileContent: InterceptorTokenFileContent = {
+  const tokenFileContent = interceptorTokenFileContentSchema.parse({
     version: 1,
     token: {
       id: token.id,
+      name: token.name,
       secret: {
         hash: token.secret.hash,
         salt: token.secret.salt,
       },
+      createdAt: token.createdAt.toISOString(),
     },
-  };
+  } satisfies InterceptorTokenFileContent.Input);
 
   await fs.promises.writeFile(tokeFilePath, JSON.stringify(tokenFileContent), {
     mode: 0o600,
@@ -122,14 +142,14 @@ export async function saveInterceptorTokenToFile(tokensDirectory: string, token:
 export async function readInterceptorTokenFromFile(
   tokenId: InterceptorToken['id'],
   options: { tokensDirectory: string },
-): Promise<InterceptorTokenFileContent['token'] | null> {
+): Promise<PersistedInterceptorToken | null> {
   if (!isValidInterceptorTokenId(tokenId)) {
     throw new InvalidInterceptorTokenError(tokenId);
   }
 
   const tokenFilePath = path.join(options.tokensDirectory, tokenId);
-
   const tokenFileExists = await pathExists(tokenFilePath);
+
   if (!tokenFileExists) {
     return null;
   }
@@ -138,7 +158,7 @@ export async function readInterceptorTokenFromFile(
     encoding: 'utf-8',
   });
 
-  const tokenFileContentValidation = interceptorTokenFileSchema.safeParse(
+  const tokenFileContentValidation = interceptorTokenFileContentSchema.safeParse(
     JSON.parse(tokenFileContentAsString) as unknown,
   );
 
@@ -148,8 +168,42 @@ export async function readInterceptorTokenFromFile(
     throw error;
   }
 
-  const tokenFileContent = tokenFileContentValidation.data;
-  return tokenFileContent.token;
+  const {
+    data: { token },
+  } = tokenFileContentValidation;
+
+  return token;
+}
+
+export async function listInterceptorTokens(options: { tokensDirectory: string }) {
+  const tokensDirectoryExists = await pathExists(options.tokensDirectory);
+
+  if (!tokensDirectoryExists) {
+    return [];
+  }
+
+  const files = await fs.promises.readdir(options.tokensDirectory);
+  const tokenIds = files.filter((file) => isValidInterceptorTokenId(file));
+
+  const tokenReadPromises = tokenIds.map((tokenId) => readInterceptorTokenFromFile(tokenId, options));
+  const tokenCandidates = await Promise.allSettled(tokenReadPromises);
+
+  const tokens: PersistedInterceptorToken[] = [];
+
+  for (const tokenCandidate of tokenCandidates) {
+    if (tokenCandidate.status === 'rejected') {
+      console.error(tokenCandidate.reason);
+      continue;
+    }
+
+    if (tokenCandidate.value !== null) {
+      tokens.push(tokenCandidate.value);
+    }
+  }
+
+  tokens.sort((token, otherToken) => token.createdAt.getTime() - otherToken.createdAt.getTime());
+
+  return tokens;
 }
 
 export async function validateInterceptorToken(tokenValue: unknown, options: { tokensDirectory: string }) {

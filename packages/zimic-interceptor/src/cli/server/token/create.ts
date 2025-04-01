@@ -8,34 +8,37 @@ import {
 import { logWithPrefix } from '@/utils/console';
 import { pathExists } from '@/utils/files';
 
-interface CreateInterceptorServerTokenOptions {
-  tokensDirectory: string;
+interface InterceptorServerCreateTokenOptions {
+  tokenName?: string;
   secretLength: number;
+  tokensDirectory: string;
 }
 
 export async function createInterceptorServerToken({
-  tokensDirectory,
+  tokenName,
   secretLength,
-}: CreateInterceptorServerTokenOptions) {
+  tokensDirectory,
+}: InterceptorServerCreateTokenOptions) {
   const tokensDirectoryExists = await pathExists(tokensDirectory);
 
   if (!tokensDirectoryExists) {
     await createInterceptorTokensDirectory(tokensDirectory);
   }
 
-  const token = await createInterceptorToken({ secretLength });
-  const tokenFile = await saveInterceptorTokenToFile(tokensDirectory, token);
+  const token = await createInterceptorToken({ tokenName, secretLength });
+  await saveInterceptorTokenToFile(tokensDirectory, token);
 
   logWithPrefix(
     [
-      `${color.green(color.bold('✔'))} Created token: ${color.yellow(token.plainValue)}`,
+      `${color.green(color.bold('✔'))} Created token ${color.green(tokenName)}:`,
       '',
-      'Remote interceptors can use this token to authenticate with an interceptor server. Store it securely. It ' +
-        'cannot be retrieved later.',
+      color.yellow(token.value),
       '',
-      `A secure hash was saved to ${color.magenta(tokenFile)}. When starting your interceptor server, ` +
-        `use the ${color.cyan('--tokens-dir')} option to enable authentication. Only remote interceptors bearing a ` +
-        'valid token will be allowed to connect.',
+      'Store this token securely. It cannot be retrieved later.',
+      '',
+      'To enable authentication in your interceptor server, ' +
+        `use the ${color.cyan('--tokens-dir')} option. Only remote interceptors bearing a valid token will be ` +
+        'allowed to connect.',
       '',
       `${color.dim('$')} zimic-interceptor server start ${color.cyan('--tokens-dir')} ${color.magenta(tokensDirectory)}`,
       '',
