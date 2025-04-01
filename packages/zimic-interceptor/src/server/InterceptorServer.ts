@@ -123,14 +123,25 @@ class InterceptorServer implements PublicInterceptorServer {
 
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
-      authenticateConnection: async (_socket, request) => {
+
+      authenticate: async (_socket, request) => {
         if (!this.tokensDirectory) {
-          return true;
+          return { isValid: true };
         }
 
         const tokenValue = request.headers.authorization?.replace(/^Bearer (.+)$/, '$1');
-        const isValidToken = await validateInterceptorToken(tokenValue, { tokensDirectory: this.tokensDirectory });
-        return isValidToken;
+
+        if (!tokenValue) {
+          return { isValid: false, message: 'An interceptor token is required, but none was provided.' };
+        }
+
+        try {
+          await validateInterceptorToken(tokenValue, { tokensDirectory: this.tokensDirectory });
+          return { isValid: true };
+        } catch (error) {
+          console.error(error);
+          return { isValid: false, message: 'The interceptor token is not valid.' };
+        }
       },
     });
 

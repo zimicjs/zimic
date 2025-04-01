@@ -93,6 +93,7 @@ async function runCLI() {
               port: cliArguments.port,
               ephemeral: cliArguments.ephemeral,
               logUnhandledRequests: cliArguments.logUnhandledRequests,
+              tokensDirectory: cliArguments.tokensDir,
               onReady: onReadyCommand
                 ? {
                     command: onReadyCommand.toString(),
@@ -105,6 +106,7 @@ async function runCLI() {
 
         .command('token', 'Manage remote interceptor authentication tokens', (yargs) =>
           yargs
+            .demandCommand()
             .command(
               'create',
               'Create an interceptor token',

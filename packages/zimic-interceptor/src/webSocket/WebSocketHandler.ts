@@ -11,6 +11,7 @@ import {
   waitForOpenClientSocket,
 } from '@/utils/webSocket';
 
+import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
 import UnauthorizedWebSocketConnect from './errors/UnauthorizedWebSocketConnection';
@@ -50,8 +51,11 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   abstract isRunning: boolean;
 
-  protected async registerSocket(socket: ClientSocket) {
-    const openPromise = waitForOpenClientSocket(socket, { timeout: this.socketTimeout });
+  protected async registerSocket(socket: ClientSocket, options: { waitForAuthentication?: boolean } = {}) {
+    const openPromise = waitForOpenClientSocket(socket, {
+      ...options,
+      timeout: this.socketTimeout,
+    });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {
       await this.handleSocketMessage(socket, rawMessage);
@@ -89,6 +93,10 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   private handleSocketMessage = async (socket: ClientSocket, rawMessage: ClientSocket.MessageEvent) => {
     try {
+      if (this.isControlMessageData(rawMessage.data)) {
+        return;
+      }
+
       const stringifiedMessageData = this.readRawMessageData(rawMessage.data);
       const parsedMessageData = this.parseMessage(stringifiedMessageData);
       await this.notifyListeners(parsedMessageData, socket);
@@ -96,6 +104,12 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       console.error(error);
     }
   };
+
+  private isControlMessageData(messageData: ClientSocket.Data): messageData is WebSocketControlMessage {
+    return (
+      typeof messageData === 'string' && WEB_SOCKET_CONTROL_MESSAGES.includes(messageData as WebSocketControlMessage)
+    );
+  }
 
   private readRawMessageData(data: ClientSocket.Data) {
     /* istanbul ignore else -- @preserve

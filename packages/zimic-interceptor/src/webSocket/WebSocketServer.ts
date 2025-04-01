@@ -4,6 +4,7 @@ import ClientSocket from 'isomorphic-ws';
 
 import { closeServerSocket } from '@/utils/webSocket';
 
+import { WebSocketControlMessage } from './constants';
 import { WebSocketSchema } from './types';
 import WebSocketHandler from './WebSocketHandler';
 
@@ -13,14 +14,17 @@ interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
-  authenticateConnection?: (socket: ClientSocket, request: IncomingMessage) => PossiblePromise<boolean>;
+  authenticate?: (
+    socket: ClientSocket,
+    request: IncomingMessage,
+  ) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
 }
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {
   private webSocketServer?: InstanceType<typeof ServerSocket>;
 
   private httpServer: HttpServer;
-  private authenticateConnection?: WebSocketServerOptions['authenticateConnection'];
+  private authenticate?: WebSocketServerOptions['authenticate'];
 
   constructor(options: WebSocketServerOptions) {
     super({
@@ -29,7 +33,7 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     this.httpServer = options.httpServer;
-    this.authenticateConnection = options.authenticateConnection;
+    this.authenticate = options.authenticate;
   }
 
   get isRunning() {
@@ -48,11 +52,13 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     webSocketServer.on('connection', async (socket, request) => {
-      if (this.authenticateConnection) {
-        const isValidConnection = await this.authenticateConnection(socket, request);
+      if (this.authenticate) {
+        const result = await this.authenticate(socket, request);
 
-        if (!isValidConnection) {
-          const unauthorizedData = JSON.stringify({ message: 'Unauthorized' });
+        if (result.isValid) {
+          socket.send('socket:authenticated' satisfies WebSocketControlMessage);
+        } else {
+          const unauthorizedData = JSON.stringify({ message: result.message });
           socket.close(1008, unauthorizedData);
           return;
         }

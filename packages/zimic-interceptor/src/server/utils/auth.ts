@@ -206,29 +206,29 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
   return tokens;
 }
 
-export async function validateInterceptorToken(tokenValue: unknown, options: { tokensDirectory: string }) {
+export async function validateInterceptorToken(tokenValue: string, options: { tokensDirectory: string }) {
   try {
-    if (typeof tokenValue !== 'string') {
-      throw new InvalidInterceptorTokenError();
-    }
-
-    const tokenValueBuffer = Buffer.from(tokenValue, 'base64url');
-    const tokenId = tokenValueBuffer.subarray(0, INTERCEPTOR_TOKEN_ID_LENGTH).toString('hex');
-    const tokenSecret = tokenValueBuffer.subarray(INTERCEPTOR_TOKEN_ID_LENGTH).toString('hex');
+    const decodedTokenValue = Buffer.from(tokenValue, 'base64url').toString('hex');
+    const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_LENGTH);
+    const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_LENGTH);
 
     const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
+
     if (!tokenFromFile) {
-      return false;
+      throw new InvalidInterceptorTokenError(tokenId);
     }
 
     const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenFromFile.secret.salt);
-    return tokenSecretHash === tokenFromFile.secret.hash;
+
+    if (tokenSecretHash !== tokenFromFile.secret.hash) {
+      throw new InvalidInterceptorTokenError(tokenId);
+    }
   } catch (error) {
     if (error instanceof InterceptorAuthError) {
       throw error;
     }
 
-    const newError = new InvalidInterceptorTokenError();
+    const newError = new InvalidInterceptorTokenError(undefined);
     newError.cause = error;
     throw newError;
   }

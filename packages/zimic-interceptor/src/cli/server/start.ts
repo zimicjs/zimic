@@ -30,6 +30,7 @@ async function startInterceptorServer({
     hostname,
     port,
     logUnhandledRequests,
+    tokensDirectory,
   });
 
   async function handleExitEvent(exitEvent: ProcessExitEvent | undefined) {

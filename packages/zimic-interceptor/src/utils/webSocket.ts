@@ -1,5 +1,7 @@
 import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
+import { WebSocketControlMessage } from '@/webSocket/constants';
+
 class WebSocketTimeoutError extends Error {}
 
 export class WebSocketOpenTimeoutError extends WebSocketTimeoutError {
@@ -37,9 +39,10 @@ export async function waitForOpenClientSocket(
   socket: ClientSocket,
   options: {
     timeout?: number;
+    waitForAuthentication?: boolean;
   } = {},
 ) {
-  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT } = options;
+  const { timeout: timeoutDuration = DEFAULT_WEB_SOCKET_LIFECYCLE_TIMEOUT, waitForAuthentication = false } = options;
 
   const isAlreadyOpen = socket.readyState === socket.OPEN;
 
@@ -50,6 +53,9 @@ export async function waitForOpenClientSocket(
   await new Promise<void>((resolve, reject) => {
     function handleOpenError(error: unknown) {
       socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('message', handleSocketMessage); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('error', handleOpenError);
+      socket.removeEventListener('close', handleOpenError);
       reject(error);
     }
 
@@ -59,13 +65,30 @@ export async function waitForOpenClientSocket(
     }, timeoutDuration);
 
     function handleOpenSuccess() {
+      socket.removeEventListener('open', handleOpenSuccess);
+      socket.removeEventListener('message', handleSocketMessage); // eslint-disable-line @typescript-eslint/no-use-before-define
       socket.removeEventListener('error', handleOpenError);
+      socket.removeEventListener('close', handleOpenError);
       clearTimeout(openTimeout);
       resolve();
     }
 
-    socket.addEventListener('open', handleOpenSuccess);
+    function handleSocketMessage(message: ClientSocket.MessageEvent) {
+      const isAuthenticated = message.data === ('socket:authenticated' satisfies WebSocketControlMessage);
+
+      if (isAuthenticated) {
+        handleOpenSuccess();
+      }
+    }
+
+    if (waitForAuthentication) {
+      socket.addEventListener('message', handleSocketMessage);
+    } else {
+      socket.addEventListener('open', handleOpenSuccess);
+    }
+
     socket.addEventListener('error', handleOpenError);
+    socket.addEventListener('close', handleOpenError);
   });
 }
 

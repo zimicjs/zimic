@@ -38,7 +38,9 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
     });
 
     try {
-      await super.registerSocket(this.socket);
+      await super.registerSocket(this.socket, {
+        waitForAuthentication: options?.headers?.authorization !== undefined,
+      });
     } catch (error) {
       await this.stop();
       throw error;

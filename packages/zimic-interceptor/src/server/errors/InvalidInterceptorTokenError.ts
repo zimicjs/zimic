@@ -1,8 +1,8 @@
 import InterceptorAuthError from './InterceptorAuthError';
 
 class InvalidInterceptorTokenError extends InterceptorAuthError {
-  constructor(tokenId?: string) {
-    super(`Invalid interceptor token${tokenId ? `: ${tokenId}` : ''}`);
+  constructor(tokenId: string | undefined) {
+    super(`Invalid interceptor token:${tokenId === undefined ? '' : ` ${tokenId}`}`);
     this.name = 'InvalidInterceptorTokenError';
   }
 }
