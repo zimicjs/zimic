@@ -10,14 +10,16 @@ import WebSocketHandler from './WebSocketHandler';
 
 const { WebSocketServer: ServerSocket } = ClientSocket;
 
+export type WebSocketAuthenticate = (
+  socket: ClientSocket,
+  request: IncomingMessage,
+) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
+
 interface WebSocketServerOptions {
   httpServer: HttpServer;
   socketTimeout?: number;
   messageTimeout?: number;
-  authenticate?: (
-    socket: ClientSocket,
-    request: IncomingMessage,
-  ) => PossiblePromise<{ isValid: true } | { isValid: false; message: string }>;
+  authenticate?: WebSocketAuthenticate;
 }
 
 class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<Schema> {

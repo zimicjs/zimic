@@ -11,7 +11,7 @@ import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketServer from '@/webSocket/WebSocketServer';
+import WebSocketServer, { WebSocketAuthenticate } from '@/webSocket/WebSocketServer';
 
 import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -123,29 +123,46 @@ class InterceptorServer implements PublicInterceptorServer {
 
     this.webSocketServer = new WebSocketServer({
       httpServer: this.httpServer,
-
-      authenticate: async (_socket, request) => {
-        if (!this.tokensDirectory) {
-          return { isValid: true };
-        }
-
-        const tokenValue = request.headers.authorization?.replace(/^Bearer (.+)$/, '$1');
-
-        if (!tokenValue) {
-          return { isValid: false, message: 'An interceptor token is required, but none was provided.' };
-        }
-
-        try {
-          await validateInterceptorToken(tokenValue, { tokensDirectory: this.tokensDirectory });
-          return { isValid: true };
-        } catch (error) {
-          console.error(error);
-          return { isValid: false, message: 'The interceptor token is not valid.' };
-        }
-      },
+      authenticate: this.authenticateWebSocketConnection,
     });
 
     this.startWebSocketServer();
+  }
+
+  private authenticateWebSocketConnection: WebSocketAuthenticate = async (_socket, request) => {
+    if (!this.tokensDirectory) {
+      return { isValid: true };
+    }
+
+    const tokenValue = this.getWebSocketRequestTokenValue(request);
+
+    if (!tokenValue) {
+      return { isValid: false, message: 'An interceptor token is required, but none was provided.' };
+    }
+
+    try {
+      await validateInterceptorToken(tokenValue, { tokensDirectory: this.tokensDirectory });
+      return { isValid: true };
+    } catch (error) {
+      console.error(error);
+      return { isValid: false, message: 'The interceptor token is not valid.' };
+    }
+  };
+
+  private getWebSocketRequestTokenValue(request: IncomingMessage) {
+    const protocols = request.headers['sec-websocket-protocol'] ?? '';
+    const parametersAsString = decodeURIComponent(protocols).split(', ');
+
+    for (const parameterAsString of parametersAsString) {
+      const tokenValueMatch = /^token=(?<tokenValue>.+?)$/.exec(parameterAsString);
+      const tokenValue = tokenValueMatch?.groups?.tokenValue;
+
+      if (tokenValue) {
+        return tokenValue;
+      }
+    }
+
+    return undefined;
   }
 
   private async startHttpServer() {

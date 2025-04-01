@@ -1,5 +1,4 @@
 import validateURLProtocol from '@zimic/utils/url/validateURLProtocol';
-import { OutgoingHttpHeaders } from 'http';
 import ClientSocket from 'isomorphic-ws';
 
 import { WebSocketSchema } from './types';
@@ -32,15 +31,24 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
     return this.socket !== undefined && this.socket.readyState === this.socket.OPEN;
   }
 
-  async start(options?: { headers?: OutgoingHttpHeaders }) {
-    this.socket = new ClientSocket(this.url, {
-      headers: options?.headers,
-    });
+  async start(
+    options: {
+      parameters?: Record<string, string>;
+      waitForAuthentication?: boolean;
+    } = {},
+  ) {
+    const { parameters } = options;
+
+    const parametersAsString = parameters
+      ? Object.entries(parameters)
+          .map(([key, value]) => `${key}=${value}`)
+          .map(encodeURIComponent)
+      : [];
+
+    this.socket = new ClientSocket(this.url, parametersAsString);
 
     try {
-      await super.registerSocket(this.socket, {
-        waitForAuthentication: options?.headers?.authorization !== undefined,
-      });
+      await super.registerSocket(this.socket, options);
     } catch (error) {
       await this.stop();
       throw error;
