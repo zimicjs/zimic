@@ -18,10 +18,10 @@ async function runCLI() {
     .showHelpOnFail(false)
     .strict()
 
-    .command('browser', 'Manage your browser mock configuration', (yargs) =>
+    .command('browser', 'Manage your browser mock configuration.', (yargs) =>
       yargs.demandCommand().command(
         'init <publicDirectory>',
-        'Initialize the browser service worker configuration',
+        'Initialize the browser service worker configuration.',
         (yargs) =>
           yargs.positional('publicDirectory', {
             type: 'string',
@@ -36,12 +36,12 @@ async function runCLI() {
       ),
     )
 
-    .command('server', 'Manage interceptor servers', (yargs) =>
+    .command('server', 'Manage interceptor servers.', (yargs) =>
       yargs
         .demandCommand()
         .command(
           'start [-- onReady]',
-          'Start an interceptor server',
+          'Start an interceptor server.',
           (yargs) =>
             yargs
               .positional('onReady', {
@@ -104,12 +104,12 @@ async function runCLI() {
           },
         )
 
-        .command('token', 'Manage remote interceptor authentication tokens', (yargs) =>
+        .command('token', 'Manage remote interceptor authentication tokens.', (yargs) =>
           yargs
             .demandCommand()
             .command(
               'create',
-              'Create an interceptor token',
+              'Create an interceptor token.',
               (yargs) =>
                 yargs
                   .option('name', {
@@ -140,7 +140,7 @@ async function runCLI() {
 
             .command(
               'ls',
-              'List interceptor tokens',
+              'List interceptor tokens.',
               (yargs) =>
                 yargs.option('tokens-dir', {
                   type: 'string',
@@ -157,7 +157,7 @@ async function runCLI() {
 
             .command(
               'rm <tokenId>',
-              'Remove an interceptor token',
+              'Remove an interceptor token.',
               (yargs) =>
                 yargs
                   .positional('tokenId', {

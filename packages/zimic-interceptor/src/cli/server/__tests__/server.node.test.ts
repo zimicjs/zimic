@@ -55,11 +55,13 @@ describe('CLI (server)', async () => {
   const serverHelpOutput = [
     'zimic-interceptor server',
     '',
-    'Manage interceptor servers',
+    'Manage interceptor servers.',
     '',
     'Commands:',
     '  zimic-interceptor server start [-- onRea  Start an interceptor server.',
     '  dy]',
+    '  zimic-interceptor server token            Manage remote interceptor authentica',
+    '                                            tion tokens.',
     '',
     'Options:',
     '  --help     Show help                                                 [boolean]',
@@ -116,6 +118,12 @@ describe('CLI (server)', async () => {
       '                                terceptor was matched, the logging behavior for',
       '                                that base URL is configured in the interceptor i',
       '                                tself.                                 [boolean]',
+      '  -t, --tokens-dir              The path to the directory where the authenticati',
+      '                                on tokens for remote interceptors are stored. If',
+      '                                 not provided, only remote interceptors with one',
+      '                                 of the allowed tokens will be accepted. This op',
+      '                                tion is strongly recommended if you are exposing',
+      '                                 your interceptor server publicly.      [string]',
     ].join('\n');
 
     beforeEach(async () => {
@@ -152,7 +160,7 @@ describe('CLI (server)', async () => {
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
-          'Server is running on localhost:6500',
+          `Server is running on ${color.yellow('localhost:6500')}`,
         );
       });
     });
@@ -178,7 +186,10 @@ describe('CLI (server)', async () => {
         expect(server!.port).toBe(3000);
 
         expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(color.cyan('[@zimic/interceptor]'), 'Server is running on 0.0.0.0:3000');
+        expect(spies.log).toHaveBeenCalledWith(
+          color.cyan('[@zimic/interceptor]'),
+          `Server is running on ${color.yellow('0.0.0.0:3000')}`,
+        );
       });
     });
 
@@ -196,7 +207,7 @@ describe('CLI (server)', async () => {
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
-          `Server is running on localhost:${server!.port}`,
+          `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
       });
     });
@@ -313,7 +324,7 @@ describe('CLI (server)', async () => {
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
-          `Ephemeral server is running on localhost:${server!.port}`,
+          `Ephemeral server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
 
         const savedFile = await fs.readFile(temporarySaveFile, 'utf-8');
@@ -357,7 +368,7 @@ describe('CLI (server)', async () => {
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
-            `Server is running on localhost:${server!.port}`,
+            `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
           );
 
           const savedFile = await fs.readFile(temporarySaveFile, 'utf-8');
@@ -537,7 +548,7 @@ describe('CLI (server)', async () => {
           expect(spies.log).toHaveBeenCalledTimes(1);
           expect(spies.log).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
-            `Server is running on localhost:${server!.port}`,
+            `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
           );
 
           expect(exitEventListeners).toHaveLength(1);
@@ -578,7 +589,7 @@ describe('CLI (server)', async () => {
         expect(spies.log).toHaveBeenCalledTimes(1);
         expect(spies.log).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
-          `Server is running on localhost:${server!.port}`,
+          `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
 
         const webSocketClient = new WebSocketClient({
@@ -625,7 +636,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
-            `Server is running on localhost:${server!.port}`,
+            `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
           );
 
           const request = new Request(`http://localhost:${server!.port}`);
@@ -674,7 +685,7 @@ describe('CLI (server)', async () => {
 
           expect(spies.log).toHaveBeenCalledWith(
             color.cyan('[@zimic/interceptor]'),
-            `Server is running on localhost:${server!.port}`,
+            `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
           );
 
           const request = new Request(`http://localhost:${server!.port}`);

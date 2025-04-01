@@ -18,7 +18,7 @@ describe('CLI (browser)', () => {
   const browserHelpOutput = [
     'zimic-interceptor browser',
     '',
-    'Manage your browser mock configuration',
+    'Manage your browser mock configuration.',
     '',
     'Commands:',
     '  zimic-interceptor browser init <publicDi  Initialize the browser service worke',
