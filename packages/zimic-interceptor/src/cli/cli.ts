@@ -9,6 +9,7 @@ import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import { createInterceptorServerToken } from './server/token/create';
 import { listInterceptorServerTokens } from './server/token/list';
+import { removeInterceptorServerToken } from './server/token/remove';
 
 async function runCLI() {
   await yargs(hideBin(process.argv))
@@ -106,7 +107,7 @@ async function runCLI() {
           yargs
             .command(
               'create',
-              'Create a token for remote interceptors to connect to this server',
+              'Create an interceptor token',
               (yargs) =>
                 yargs
                   .option('name', {
@@ -137,7 +138,7 @@ async function runCLI() {
 
             .command(
               'ls',
-              'List the tokens for remote interceptors to connect to this server',
+              'List interceptor tokens',
               (yargs) =>
                 yargs.option('tokens-dir', {
                   type: 'string',
@@ -147,6 +148,30 @@ async function runCLI() {
                 }),
               async (cliArguments) => {
                 await listInterceptorServerTokens({
+                  tokensDirectory: cliArguments.tokensDir,
+                });
+              },
+            )
+
+            .command(
+              'rm <tokenId>',
+              'Remove an interceptor token',
+              (yargs) =>
+                yargs
+                  .positional('tokenId', {
+                    type: 'string',
+                    description: 'The ID of the token to remove.',
+                    demandOption: true,
+                  })
+                  .option('tokens-dir', {
+                    type: 'string',
+                    description: 'The path to directory where the token hashes will be stored.',
+                    alias: 't',
+                    default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
+                  }),
+              async (cliArguments) => {
+                await removeInterceptorServerToken({
+                  tokenId: cliArguments.tokenId,
                   tokensDirectory: cliArguments.tokensDir,
                 });
               },

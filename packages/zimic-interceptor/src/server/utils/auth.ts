@@ -233,3 +233,9 @@ export async function validateInterceptorToken(tokenValue: unknown, options: { t
     throw newError;
   }
 }
+
+export async function removeInterceptorToken(tokenId: string, options: { tokensDirectory: string }) {
+  const tokenFilePath = path.join(options.tokensDirectory, tokenId);
+
+  await fs.promises.rm(tokenFilePath);
+}

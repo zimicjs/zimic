@@ -30,7 +30,7 @@ export async function createInterceptorServerToken({
 
   logWithPrefix(
     [
-      `${color.green(color.bold('✔'))} Created token ${color.green(tokenName)}:`,
+      `${color.green(color.bold('✔'))} Token${tokenName ? ` ${color.green(tokenName)}` : ''} created:`,
       '',
       color.yellow(token.value),
       '',
