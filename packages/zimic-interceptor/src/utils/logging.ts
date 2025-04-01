@@ -20,7 +20,12 @@ export function logAsTable<Row extends TableLogRow>(headers: TableLogHeader<Row>
     return maxValueLength;
   });
 
-  const formattedRows: string[][] = [[]];
+  const formattedRows: string[][] = [];
+
+  const horizontalLine = columnLengths.map((length) => '─'.repeat(length));
+  formattedRows.push(horizontalLine);
+
+  formattedRows.push([]);
 
   for (let headerIndex = 0; headerIndex < headers.length; headerIndex++) {
     const header = headers[headerIndex];
@@ -29,6 +34,8 @@ export function logAsTable<Row extends TableLogRow>(headers: TableLogHeader<Row>
     const value = header.title;
     formattedRows.at(-1)?.push(value.padEnd(columnLength, ' '));
   }
+
+  formattedRows.push(horizontalLine);
 
   for (const row of rows) {
     formattedRows.push([]);
@@ -42,6 +49,28 @@ export function logAsTable<Row extends TableLogRow>(headers: TableLogHeader<Row>
     }
   }
 
-  const formattedTable = formattedRows.map((row) => row.join('   ')).join('\n');
+  formattedRows.push(horizontalLine);
+
+  const formattedTable = formattedRows
+    .map((row, index) => {
+      const isFirstLine = index === 0;
+      if (isFirstLine) {
+        return `┌─${row.join('─┬─')}─┐`;
+      }
+
+      const isLineAfterHeaders = index === 2;
+      if (isLineAfterHeaders) {
+        return `├─${row.join('─┼─')}─┤`;
+      }
+
+      const isLastLine = index === formattedRows.length - 1;
+      if (isLastLine) {
+        return `└─${row.join('─┴─')}─┘`;
+      }
+
+      return `│ ${row.join(' │ ')} │`;
+    })
+    .join('\n');
+
   console.log(formattedTable);
 }

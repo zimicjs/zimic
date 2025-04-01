@@ -12,7 +12,7 @@ export async function listInterceptorServerTokens({ tokensDirectory }: Intercept
     [
       { title: 'ID', property: 'id' },
       { title: 'NAME', property: 'name' },
-      { title: 'CREATED', property: 'createdAt' },
+      { title: 'CREATED AT', property: 'createdAt' },
     ],
     tokens.map((token) => ({
       id: token.id,
