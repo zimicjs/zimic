@@ -193,6 +193,7 @@ describe('Exports', () => {
 
     expect(typeof createFetch).toBe('function');
     expectTypeOf<Fetch<never>>().not.toBeAny();
+    expectTypeOf<Fetch.Loose>().not.toBeAny();
     expectTypeOf<FetchOptions<never>>().not.toBeAny();
     expectTypeOf<InferFetchSchema<never>>().not.toBeAny();
     expectTypeOf<FetchInput<never, never, never>>().not.toBeAny();
