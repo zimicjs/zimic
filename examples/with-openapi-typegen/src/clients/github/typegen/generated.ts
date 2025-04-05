@@ -180,6 +180,9 @@ export interface GitHubComponents {
       advanced_security?: {
         status?: 'enabled' | 'disabled';
       };
+      code_security?: {
+        status?: 'enabled' | 'disabled';
+      };
       dependabot_security_updates?: {
         status?: 'enabled' | 'disabled';
       };
