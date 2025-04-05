@@ -67,7 +67,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<User>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -135,7 +134,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<number>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -203,7 +201,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<boolean>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -265,7 +262,6 @@ describe('FetchClient > Bodies > JSON', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();

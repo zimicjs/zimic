@@ -61,9 +61,7 @@ describe('FetchClient > Bodies > Blob', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.blob).toEqualTypeOf<() => Promise<Blob>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -80,7 +78,6 @@ describe('FetchClient > Bodies > Blob', () => {
       >();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.request.blob).toEqualTypeOf<() => Promise<Blob>>();
       expect(await response.request.blob()).toEqual(requestBlob);
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
@@ -136,9 +133,7 @@ describe('FetchClient > Bodies > Blob', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.blob).toEqualTypeOf<() => Promise<Blob>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -155,7 +150,6 @@ describe('FetchClient > Bodies > Blob', () => {
       >();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.request.blob).toEqualTypeOf<() => Promise<Blob>>();
       expect(await response.request.blob()).toEqual(new Blob([], { type: 'application/octet-stream' }));
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
@@ -220,7 +214,6 @@ describe('FetchClient > Bodies > Blob', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -237,7 +230,6 @@ describe('FetchClient > Bodies > Blob', () => {
       >();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<never>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expect(await response.request.arrayBuffer()).toEqual(requestArrayBuffer);
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
@@ -293,7 +285,6 @@ describe('FetchClient > Bodies > Blob', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -310,7 +301,6 @@ describe('FetchClient > Bodies > Blob', () => {
       >();
 
       expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<null>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.request.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expect(await response.request.arrayBuffer()).toEqual(new ArrayBuffer(0));
       expectTypeOf(response.request.text).toEqualTypeOf<() => Promise<string>>();
