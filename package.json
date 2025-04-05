@@ -7,7 +7,7 @@
     "url": "https://github.com/zimicjs/zimic.git"
   },
   "private": false,
-  "packageManager": "pnpm@9.12.3",
+  "packageManager": "pnpm@10.7.1",
   "engines": {
     "node": ">=18.0.0"
   },
