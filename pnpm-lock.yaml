@@ -621,7 +621,7 @@ importers:
   packages/zimic-fetch:
     dependencies:
       '@zimic/http':
-        specifier: ^0.2.0 || ^0.2.0-canary.0
+        specifier: ^0.3.0 || ^0.3.0-canary.0
         version: link:../zimic-http
     devDependencies:
       '@types/node':
@@ -746,7 +746,7 @@ importers:
         specifier: 0.10.3
         version: 0.10.3
       '@zimic/http':
-        specifier: ^0.2.0 || ^0.2.0-canary.0
+        specifier: ^0.3.0 || ^0.3.0-canary.0
         version: link:../zimic-http
       execa:
         specifier: 9.5.2
