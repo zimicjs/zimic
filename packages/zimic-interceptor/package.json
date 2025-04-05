@@ -14,7 +14,7 @@
     "api",
     "static"
   ],
-  "version": "0.17.0-canary.0",
+  "version": "0.17.0-canary.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/zimicjs/zimic.git",
@@ -76,7 +76,7 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "cli": "node ./dist/cli.js",
+    "cli": "node --enable-source-maps ./dist/cli.js",
     "build": "tsup",
     "lint": "eslint --cache --no-error-on-unmatched-pattern --no-warn-ignored --fix",
     "lint:turbo": "pnpm lint . --max-warnings 0",
@@ -89,7 +89,7 @@
     "deps:install-playwright": "playwright install chromium",
     "deps:init-msw": "msw init ./public --no-save",
     "deps:init": "pnpm deps:install-playwright && pnpm deps:init-msw",
-    "postinstall": "node -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
+    "postinstall": "node --enable-source-maps -e \"try{require('./dist/scripts/postinstall')}catch(error){console.error(error)}\""
   },
   "dependencies": {
     "@whatwg-node/server": "0.10.3",
@@ -121,7 +121,7 @@
     "vitest": "^3.0.9"
   },
   "peerDependencies": {
-    "@zimic/http": "^0.2.0 || ^0.2.0-canary.0",
+    "@zimic/http": "^0.3.0 || ^0.3.0-canary.0",
     "typescript": ">=4.8.0"
   },
   "peerDependenciesMeta": {
