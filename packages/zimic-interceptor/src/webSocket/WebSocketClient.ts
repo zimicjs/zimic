@@ -31,12 +31,7 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
     return this.socket !== undefined && this.socket.readyState === this.socket.OPEN;
   }
 
-  async start(
-    options: {
-      parameters?: Record<string, string>;
-      waitForAuthentication?: boolean;
-    } = {},
-  ) {
+  async start(options: { parameters?: Record<string, string>; waitForAuthentication?: boolean } = {}) {
     const { parameters } = options;
 
     const parametersAsString = parameters

@@ -26,3 +26,7 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
     return Buffer.from(base64Value, 'base64');
   }
 }
+
+export function convertBytesLengthToHexLength(bytesLength: number) {
+  return bytesLength * 2;
+}

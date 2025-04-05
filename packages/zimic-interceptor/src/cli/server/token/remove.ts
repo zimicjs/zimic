@@ -1,12 +1,7 @@
 import color from 'picocolors';
 
-import {
-  createInterceptorTokensDirectory,
-  readInterceptorTokenFromFile,
-  removeInterceptorToken,
-} from '@/server/utils/auth';
+import { readInterceptorTokenFromFile, removeInterceptorToken } from '@/server/utils/auth';
 import { logWithPrefix } from '@/utils/console';
-import { pathExists } from '@/utils/files';
 
 interface InterceptorServerCreateTokenOptions {
   tokenId: string;
@@ -14,12 +9,6 @@ interface InterceptorServerCreateTokenOptions {
 }
 
 export async function removeInterceptorServerToken({ tokenId, tokensDirectory }: InterceptorServerCreateTokenOptions) {
-  const tokensDirectoryExists = await pathExists(tokensDirectory);
-
-  if (!tokensDirectoryExists) {
-    await createInterceptorTokensDirectory(tokensDirectory);
-  }
-
   const token = await readInterceptorTokenFromFile(tokenId, { tokensDirectory });
 
   if (!token) {

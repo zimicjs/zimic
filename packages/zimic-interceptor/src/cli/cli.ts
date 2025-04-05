@@ -79,9 +79,10 @@ async function runCLI() {
               .option('tokens-dir', {
                 type: 'string',
                 description:
-                  'The path to the directory where the authentication tokens for remote interceptors are stored. ' +
-                  'If not provided, only remote interceptors with one of the allowed tokens will be accepted. This ' +
-                  'option is strongly recommended if you are exposing your interceptor server publicly.',
+                  'The path to the directory where the interceptor authentication tokens are stored. ' +
+                  'If provided, only remote interceptors with one of the allowed tokens will be accepted. This ' +
+                  'option is strongly recommended if you are exposing your interceptor server publicly. For local ' +
+                  'development and testing, authentication is not required.',
                 alias: 't',
               }),
           async (cliArguments) => {
@@ -125,7 +126,7 @@ async function runCLI() {
                   })
                   .option('tokens-dir', {
                     type: 'string',
-                    description: 'The path to directory where the token hashes will be stored.',
+                    description: 'The path to the directory where the tokens are stored.',
                     alias: 't',
                     default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
                   }),
@@ -144,7 +145,7 @@ async function runCLI() {
               (yargs) =>
                 yargs.option('tokens-dir', {
                   type: 'string',
-                  description: 'The path to directory where the token hashes will be stored.',
+                  description: 'The path to the directory where the tokens are stored.',
                   alias: 't',
                   default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
                 }),
@@ -167,7 +168,7 @@ async function runCLI() {
                   })
                   .option('tokens-dir', {
                     type: 'string',
-                    description: 'The path to directory where the token hashes will be stored.',
+                    description: 'The path to the directory where the tokens are stored.',
                     alias: 't',
                     default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
                   }),

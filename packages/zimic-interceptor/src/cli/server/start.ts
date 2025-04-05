@@ -64,11 +64,12 @@ async function startInterceptorServer({
     `${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${color.yellow(`${server.hostname}:${server.port}`)}`,
   );
 
-  if (!tokensDirectory && process.env.NODE_ENV === 'production') {
+  const isDangerouslyUnprotected = !tokensDirectory && process.env.NODE_ENV === 'production';
+
+  if (isDangerouslyUnprotected) {
     logWithPrefix(
       [
-        `Attention: this server is ${color.red('unprotected')}. Do not expose it publicly without a \`--tokens-dir\` ` +
-          'option.',
+        `Attention: this server is ${color.red('unprotected')}. Do not expose it publicly without authentication.`,
         '',
         'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
       ].join('\n'),

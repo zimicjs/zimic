@@ -118,12 +118,13 @@ describe('CLI (server)', async () => {
       '                                terceptor was matched, the logging behavior for',
       '                                that base URL is configured in the interceptor i',
       '                                tself.                                 [boolean]',
-      '  -t, --tokens-dir              The path to the directory where the authenticati',
-      '                                on tokens for remote interceptors are stored. If',
-      '                                 not provided, only remote interceptors with one',
-      '                                 of the allowed tokens will be accepted. This op',
-      '                                tion is strongly recommended if you are exposing',
-      '                                 your interceptor server publicly.      [string]',
+      '  -t, --tokens-dir              The path to the directory where the interceptor',
+      '                                authentication tokens are stored. If provided, o',
+      '                                nly remote interceptors with one of the allowed',
+      '                                tokens will be accepted. This option is strongly',
+      '                                 recommended if you are exposing your intercepto',
+      '                                r server publicly. For local development and tes',
+      '                                ting, authentication is not required.   [string]',
     ].join('\n');
 
     beforeEach(async () => {

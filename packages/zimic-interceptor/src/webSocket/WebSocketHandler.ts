@@ -14,7 +14,7 @@ import {
 import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
-import UnauthorizedWebSocketConnect from './errors/UnauthorizedWebSocketConnection';
+import UnauthorizedWebSocketConnectionError from './errors/UnauthorizedWebSocketConnectionError';
 import {
   WebSocketEventMessageListener,
   WebSocketReplyMessageListener,
@@ -53,7 +53,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   protected async registerSocket(socket: ClientSocket, options: { waitForAuthentication?: boolean } = {}) {
     const openPromise = waitForOpenClientSocket(socket, {
-      ...options,
+      waitForAuthentication: options.waitForAuthentication,
       timeout: this.socketTimeout,
     });
 
@@ -75,7 +75,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
       const isUnauthorized = event.code === 1008;
 
       if (isUnauthorized) {
-        const error = new UnauthorizedWebSocketConnect(event);
+        const error = new UnauthorizedWebSocketConnectionError(event);
         socket.emit('error', error);
       }
 

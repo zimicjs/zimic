@@ -11,7 +11,7 @@ import { deserializeResponse, SerializedHttpRequest, serializeRequest } from '@/
 import { getHttpServerPort, startHttpServer, stopHttpServer } from '@/utils/http';
 import { WebSocketMessageAbortError } from '@/utils/webSocket';
 import { WebSocketEventMessage } from '@/webSocket/types';
-import WebSocketServer, { WebSocketAuthenticate } from '@/webSocket/WebSocketServer';
+import WebSocketServer, { WebSocketServerAuthenticate } from '@/webSocket/WebSocketServer';
 
 import {
   DEFAULT_ACCESS_CONTROL_HEADERS,
@@ -129,7 +129,7 @@ class InterceptorServer implements PublicInterceptorServer {
     this.startWebSocketServer();
   }
 
-  private authenticateWebSocketConnection: WebSocketAuthenticate = async (_socket, request) => {
+  private authenticateWebSocketConnection: WebSocketServerAuthenticate = async (_socket, request) => {
     if (!this.tokensDirectory) {
       return { isValid: true };
     }

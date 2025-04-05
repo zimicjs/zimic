@@ -23,9 +23,7 @@ export function logAsTable<Row extends TableLogRow>(headers: TableLogHeader<Row>
   const formattedRows: string[][] = [];
 
   const horizontalLine = columnLengths.map((length) => '─'.repeat(length));
-  formattedRows.push(horizontalLine);
-
-  formattedRows.push([]);
+  formattedRows.push(horizontalLine, []);
 
   for (let headerIndex = 0; headerIndex < headers.length; headerIndex++) {
     const header = headers[headerIndex];

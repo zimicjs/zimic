@@ -7,6 +7,7 @@ import util from 'util';
 import { z } from 'zod';
 
 import { logWithPrefix } from '@/utils/console';
+import { convertBytesLengthToHexLength } from '@/utils/data';
 import { pathExists } from '@/utils/files';
 
 import InterceptorAuthError from '../errors/InterceptorAuthError';
@@ -41,7 +42,10 @@ async function hashInterceptorToken(plainToken: string, salt: string) {
 export interface InterceptorToken {
   id: string;
   name?: string;
-  secret: { hash: string; salt: string };
+  secret: {
+    hash: string;
+    salt: string;
+  };
   value: string;
   createdAt: Date;
 }
@@ -56,6 +60,8 @@ export async function createInterceptorToken(options: {
 }): Promise<InterceptorToken> {
   const tokenId = crypto.randomUUID().replace(/[^a-z0-9]/g, '');
 
+  /* istanbul ignore next -- @preserve
+   * It is expected that all tokens are valid. This is a safeguard that should never be triggered. */
   if (!isValidInterceptorTokenId(tokenId)) {
     throw new InvalidInterceptorTokenError(tokenId);
   }
@@ -69,7 +75,10 @@ export async function createInterceptorToken(options: {
   return {
     id: tokenId,
     name: options.tokenName,
-    secret: { hash: tokenSecretHash, salt: tokenSecretSalt },
+    secret: {
+      hash: tokenSecretHash,
+      salt: tokenSecretSalt,
+    },
     value: tokenValue,
     createdAt: new Date(),
   };
@@ -94,16 +103,16 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
 const interceptorTokenFileContentSchema = z.object({
   version: z.literal(1),
   token: z.object({
-    id: z.string().regex(INTERCEPTOR_TOKEN_ID_REGEX),
+    id: z.string().length(INTERCEPTOR_TOKEN_ID_LENGTH).regex(INTERCEPTOR_TOKEN_ID_REGEX),
     name: z.string().optional(),
     secret: z.object({
-      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_LENGTH * 2),
-      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_LENGTH * 2),
+      hash: z.string().length(convertBytesLengthToHexLength(INTERCEPTOR_TOKEN_HASH_LENGTH)),
+      salt: z.string().length(convertBytesLengthToHexLength(INTERCEPTOR_TOKEN_SALT_LENGTH)),
     }),
     createdAt: z
       .string()
       .datetime()
-      .transform((dateString) => new Date(dateString)),
+      .transform((value) => new Date(value)),
   }),
 });
 
@@ -115,23 +124,29 @@ namespace InterceptorTokenFileContent {
 
 export type PersistedInterceptorToken = InterceptorTokenFileContent['token'];
 
+namespace PersistedInterceptorToken {
+  export type Input = InterceptorTokenFileContent.Input['token'];
+}
+
 export async function saveInterceptorTokenToFile(tokensDirectory: string, token: InterceptorToken) {
   const tokeFilePath = path.join(tokensDirectory, token.id);
 
+  const persistedToken: PersistedInterceptorToken.Input = {
+    id: token.id,
+    name: token.name,
+    secret: {
+      hash: token.secret.hash,
+      salt: token.secret.salt,
+    },
+    createdAt: token.createdAt.toISOString(),
+  };
+
   const tokenFileContent = interceptorTokenFileContentSchema.parse({
     version: 1,
-    token: {
-      id: token.id,
-      name: token.name,
-      secret: {
-        hash: token.secret.hash,
-        salt: token.secret.salt,
-      },
-      createdAt: token.createdAt.toISOString(),
-    },
+    token: persistedToken,
   } satisfies InterceptorTokenFileContent.Input);
 
-  await fs.promises.writeFile(tokeFilePath, JSON.stringify(tokenFileContent), {
+  await fs.promises.writeFile(tokeFilePath, JSON.stringify(tokenFileContent, null, 2), {
     mode: 0o600,
     encoding: 'utf-8',
   });
@@ -237,5 +252,5 @@ export async function validateInterceptorToken(tokenValue: string, options: { to
 export async function removeInterceptorToken(tokenId: string, options: { tokensDirectory: string }) {
   const tokenFilePath = path.join(options.tokensDirectory, tokenId);
 
-  await fs.promises.rm(tokenFilePath);
+  await fs.promises.rm(tokenFilePath, { force: true });
 }
