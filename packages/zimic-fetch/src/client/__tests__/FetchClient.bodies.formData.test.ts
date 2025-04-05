@@ -74,7 +74,6 @@ describe('FetchClient > Bodies > Form data', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema>>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -144,7 +143,6 @@ describe('FetchClient > Bodies > Form data', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<FormDataSchema> | FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();

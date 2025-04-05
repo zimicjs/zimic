@@ -73,7 +73,6 @@ describe('FetchClient > Bodies > Search params', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<never>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<SearchParamsSchema>>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
@@ -139,7 +138,6 @@ describe('FetchClient > Bodies > Search params', () => {
 
       expectTypeOf(response.json).toEqualTypeOf<() => Promise<null>>();
       expectTypeOf(response.text).toEqualTypeOf<() => Promise<string>>();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expectTypeOf(response.arrayBuffer).toEqualTypeOf<() => Promise<ArrayBuffer>>();
       expectTypeOf(response.formData).toEqualTypeOf<() => Promise<StrictFormData<SearchParamsSchema> | FormData>>();
       expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();

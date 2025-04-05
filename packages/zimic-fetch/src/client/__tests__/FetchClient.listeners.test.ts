@@ -58,9 +58,8 @@ describe('FetchClient > Listeners', () => {
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(request.json).toEqualTypeOf<() => Promise<any>>();
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
@@ -157,10 +156,8 @@ describe('FetchClient > Listeners', () => {
         expect(request.headers).toBeInstanceOf(Headers);
         expectTypeOf(request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(request.json).toEqualTypeOf<() => Promise<any>>();
-
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(request.clone).toEqualTypeOf<() => typeof request>();
 
@@ -534,10 +531,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
@@ -547,10 +543,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
 
@@ -627,10 +622,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.clone).toEqualTypeOf<() => typeof response>();
 
@@ -640,10 +634,9 @@ describe('FetchClient > Listeners', () => {
         expect(response.request.headers).toBeInstanceOf(Headers);
         expectTypeOf(response.request.headers).toEqualTypeOf<Headers>();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/unbound-method
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expectTypeOf(response.request.json).toEqualTypeOf<() => Promise<any>>();
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         expectTypeOf(response.request.formData).toEqualTypeOf<() => Promise<FormData>>();
         expectTypeOf(response.request.clone).toEqualTypeOf<() => typeof response.request>();
 

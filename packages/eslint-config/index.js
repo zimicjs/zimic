@@ -337,6 +337,7 @@ export default [
     files: ['**/__tests__/**/*.ts*', '**/*.test.ts*', '**/*.spec.ts*', '**/tests/**/utils/*.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 ];

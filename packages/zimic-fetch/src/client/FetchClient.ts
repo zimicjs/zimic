@@ -11,14 +11,7 @@ import excludeURLParams from '@zimic/utils/url/excludeURLParams';
 import joinURL from '@zimic/utils/url/joinURL';
 
 import FetchResponseError from './errors/FetchResponseError';
-import {
-  FetchInput,
-  FetchOptions,
-  Fetch,
-  FetchClient as PublicFetchClient,
-  FetchDefaults,
-  FetchFunction,
-} from './types/public';
+import { FetchInput, FetchOptions, Fetch, FetchClient as PublicFetchClient, FetchDefaults } from './types/public';
 import { FetchRequestConstructor, FetchRequestInit, FetchRequest, FetchResponse } from './types/requests';
 
 class FetchClient<Schema extends HttpSchema>
@@ -36,7 +29,7 @@ class FetchClient<Schema extends HttpSchema>
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.fetch.loose = this.fetch as Fetch<any> as FetchFunction.Loose;
+    this.fetch.loose = this.fetch as Fetch<any> as Fetch.Loose;
 
     this.fetch.Request = this.createRequestClass(this.fetch.defaults);
     this.fetch.onRequest = onRequest;
