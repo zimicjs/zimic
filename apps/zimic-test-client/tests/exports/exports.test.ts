@@ -107,6 +107,8 @@ describe('Exports', () => {
     expectTypeOf<HttpSearchParamsSerialized<never>>().not.toBeAny();
 
     expectTypeOf<HttpBody>().not.toBeAny();
+    expectTypeOf<HttpBody.Loose>().not.toBeAny();
+    expectTypeOf<HttpBody.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpRequest>().not.toBeAny();
     expectTypeOf<HttpResponse>().not.toBeAny();
 
@@ -141,6 +143,7 @@ describe('Exports', () => {
     expectTypeOf<StrictFormData<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchema<never>>().not.toBeAny();
+    expectTypeOf<HttpSchema.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Methods<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Method<never>>().not.toBeAny();
     expectTypeOf<HttpSchema.Request<never>>().not.toBeAny();
@@ -154,12 +157,26 @@ describe('Exports', () => {
 
     expectTypeOf<HttpMethod>().not.toBeAny();
     expectTypeOf<HttpStatusCode>().not.toBeAny();
-    expectTypeOf<HttpSchema>().not.toBeAny();
+    expectTypeOf<HttpStatusCode.Information>().not.toBeAny();
+    expectTypeOf<HttpStatusCode.Success>().not.toBeAny();
+    expectTypeOf<HttpStatusCode.Redirection>().not.toBeAny();
+    expectTypeOf<HttpStatusCode.ClientError>().not.toBeAny();
+    expectTypeOf<HttpStatusCode.ServerError>().not.toBeAny();
     expectTypeOf<HttpMethodsSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodsSchema.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpMethodSchema>().not.toBeAny();
+    expectTypeOf<HttpMethodSchema.NoBody>().not.toBeAny();
+    expectTypeOf<HttpMethodSchema.NoRequestBody>().not.toBeAny();
+    expectTypeOf<HttpMethodSchema.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpRequestSchema>().not.toBeAny();
+    expectTypeOf<HttpRequestSchema.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpResponseSchemaByStatusCode>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaByStatusCode.Loose>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaByStatusCode.NoBody>().not.toBeAny();
+    expectTypeOf<HttpResponseSchemaByStatusCode.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpResponseSchema>().not.toBeAny();
+    expectTypeOf<HttpResponseSchema.NoBody>().not.toBeAny();
+    expectTypeOf<HttpResponseSchema.AsStrict<never>>().not.toBeAny();
     expectTypeOf<HttpResponseSchemaStatusCode<never>>().not.toBeAny();
 
     expectTypeOf<HttpSchemaMethod<never>>().not.toBeAny();

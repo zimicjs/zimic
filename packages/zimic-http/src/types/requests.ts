@@ -18,8 +18,8 @@ export namespace HttpBody {
   /** A loose version of the HTTP body type. JSON values are not strictly typed. */
   export type Loose = ReplaceBy<HttpBody, JSONValue, JSONValue.Loose>;
 
-  /** Convert a possibly loose HTTP body to be strictly typed. JSON values are serialized to their strict form. */
-  export type ConvertToStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
+  /** Convert an HTTP body to be strictly typed. JSON values are serialized to their strict form. */
+  export type AsStrict<Type> = Type extends Exclude<HttpBody, JSONValue> ? Type : JSONSerialized<Type>;
 }
 
 /**
