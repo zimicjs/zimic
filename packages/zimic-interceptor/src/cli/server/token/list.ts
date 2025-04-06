@@ -1,5 +1,5 @@
 import { listInterceptorTokens } from '@/server/utils/auth';
-import { logAsTable } from '@/utils/logging';
+import { logger } from '@/utils/logging';
 
 interface InterceptorServerListTokensOptions {
   tokensDirectory: string;
@@ -8,7 +8,7 @@ interface InterceptorServerListTokensOptions {
 export async function listInterceptorServerTokens({ tokensDirectory }: InterceptorServerListTokensOptions) {
   const tokens = await listInterceptorTokens({ tokensDirectory });
 
-  logAsTable(
+  logger.raw.table(
     [
       { title: 'ID', property: 'id' },
       { title: 'NAME', property: 'name' },

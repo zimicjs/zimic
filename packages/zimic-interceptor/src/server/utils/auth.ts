@@ -6,13 +6,13 @@ import color from 'picocolors';
 import util from 'util';
 import { z } from 'zod';
 
-import { logWithPrefix } from '@/utils/console';
 import {
   convertSizeInBytesToHexLength,
   convertHexLengthToBase64urlLength,
   convertHexLengthToSizeInBytes,
 } from '@/utils/data';
 import { pathExists } from '@/utils/files';
+import { logger } from '@/utils/logging';
 
 import InterceptorAuthError from '../errors/InterceptorAuthError';
 import InvalidInterceptorTokenError from '../errors/InvalidInterceptorTokenError';
@@ -106,9 +106,8 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
     await fs.promises.mkdir(tokensDirectory, { mode: 0o700, recursive: true });
     await fs.promises.appendFile(path.join(tokensDirectory, '.gitignore'), `*${os.EOL}`, { encoding: 'utf-8' });
   } catch (error) {
-    logWithPrefix(
+    logger.error(
       `${color.red(color.bold('✖'))} Failed to create the tokens directory: ${color.magenta(tokensDirectory)}`,
-      { method: 'error' },
     );
     throw error;
   }

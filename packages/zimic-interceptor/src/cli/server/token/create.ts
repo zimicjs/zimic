@@ -5,8 +5,8 @@ import {
   createInterceptorTokensDirectory,
   saveInterceptorTokenToFile,
 } from '@/server/utils/auth';
-import { logWithPrefix } from '@/utils/console';
 import { pathExists } from '@/utils/files';
+import { logger } from '@/utils/logging';
 
 interface InterceptorServerCreateTokenOptions {
   tokenName?: string;
@@ -28,7 +28,7 @@ export async function createInterceptorServerToken({
   const token = await createInterceptorToken({ tokenName, secretLength });
   await saveInterceptorTokenToFile(tokensDirectory, token);
 
-  logWithPrefix(
+  logger.info(
     [
       `${color.green(color.bold('✔'))} Token${tokenName ? ` ${color.green(tokenName)}` : ''} created:`,
       '',

@@ -1,74 +1,86 @@
-type TableLogRow = Record<string, string>;
+import { HttpFormData, HttpHeaders, HttpSearchParams } from '@zimic/http';
+import createCachedDynamicImport from '@zimic/utils/import/createCachedDynamicImport';
+import Logger from '@zimic/utils/logging/Logger';
+import color from 'picocolors';
 
-interface TableLogHeader<Row extends TableLogRow> {
-  title: string;
-  property: keyof Row;
+import { isClientSide } from './environment';
+import { isGlobalFileAvailable } from './files';
+
+export const logger = new Logger({
+  prefix: color.cyan('[@zimic/interceptor]'),
+});
+
+function stringifyJSONToLog(value: unknown): string {
+  return JSON.stringify(
+    value,
+    (_key, value) => {
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return stringifyValueToLog(value, {
+        fallback: (value) => value as string,
+      });
+    },
+    2,
+  )
+    .replace(/\n\s*/g, ' ')
+    .replace(/"(File { name: '.*?', type: '.*?', size: \d*? })"/g, '$1')
+    .replace(/"(Blob { type: '.*?', size: \d*? })"/g, '$1');
 }
 
-export function logAsTable<Row extends TableLogRow>(headers: TableLogHeader<Row>[], rows: Row[]) {
-  const columnLengths = headers.map((header) => {
-    let maxValueLength = header.title.length;
+export function stringifyValueToLog(
+  value: unknown,
+  options: {
+    fallback?: (value: unknown) => string;
+    includeClassName?: { searchParams?: boolean };
+  } = {},
+): string {
+  const { fallback = stringifyJSONToLog, includeClassName } = options;
 
-    for (const row of rows) {
-      const value = row[header.property];
+  if (value === null || value === undefined || typeof value !== 'object') {
+    return String(value);
+  }
 
-      if (value.length > maxValueLength) {
-        maxValueLength = value.length;
-      }
-    }
+  if (value instanceof HttpHeaders) {
+    return stringifyValueToLog(value.toObject());
+  }
 
-    return maxValueLength;
+  if (value instanceof HttpHeaders || value instanceof HttpSearchParams) {
+    const prefix = (includeClassName?.searchParams ?? false) ? 'URLSearchParams ' : '';
+    return `${prefix}${stringifyValueToLog(value.toObject())}`;
+  }
+
+  if (value instanceof HttpFormData) {
+    return `FormData ${stringifyValueToLog(value.toObject())}`;
+  }
+
+  if (isGlobalFileAvailable() && value instanceof File) {
+    return `File { name: '${value.name}', type: '${value.type}', size: ${value.size} }`;
+  }
+
+  if (value instanceof Blob) {
+    return `Blob { type: '${value.type}', size: ${value.size} }`;
+  }
+
+  return fallback(value);
+}
+
+const importUtil = createCachedDynamicImport(() => import('util'));
+
+export async function formatValueToLog(value: unknown, options: { colors?: boolean } = {}) {
+  if (isClientSide()) {
+    return value;
+  }
+
+  const { colors = true } = options;
+
+  const util = await importUtil();
+
+  return util.inspect(value, {
+    colors,
+    compact: true,
+    depth: Infinity,
+    maxArrayLength: Infinity,
+    maxStringLength: Infinity,
+    breakLength: Infinity,
+    sorted: true,
   });
-
-  const formattedRows: string[][] = [];
-
-  const horizontalLine = columnLengths.map((length) => '─'.repeat(length));
-  formattedRows.push(horizontalLine, []);
-
-  for (let headerIndex = 0; headerIndex < headers.length; headerIndex++) {
-    const header = headers[headerIndex];
-    const columnLength = columnLengths[headerIndex];
-
-    const value = header.title;
-    formattedRows.at(-1)?.push(value.padEnd(columnLength, ' '));
-  }
-
-  formattedRows.push(horizontalLine);
-
-  for (const row of rows) {
-    formattedRows.push([]);
-
-    for (let headerIndex = 0; headerIndex < headers.length; headerIndex++) {
-      const header = headers[headerIndex];
-      const columnLength = columnLengths[headerIndex];
-
-      const value = row[header.property];
-      formattedRows.at(-1)?.push(value.padEnd(columnLength, ' '));
-    }
-  }
-
-  formattedRows.push(horizontalLine);
-
-  const formattedTable = formattedRows
-    .map((row, index) => {
-      const isFirstLine = index === 0;
-      if (isFirstLine) {
-        return `┌─${row.join('─┬─')}─┐`;
-      }
-
-      const isLineAfterHeaders = index === 2;
-      if (isLineAfterHeaders) {
-        return `├─${row.join('─┼─')}─┤`;
-      }
-
-      const isLastLine = index === formattedRows.length - 1;
-      if (isLastLine) {
-        return `└─${row.join('─┴─')}─┘`;
-      }
-
-      return `│ ${row.join(' │ ')} │`;
-    })
-    .join('\n');
-
-  console.log(formattedTable);
 }

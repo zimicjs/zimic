@@ -2,7 +2,7 @@ import color from 'picocolors';
 
 import { InterceptorServer, createInterceptorServer } from '@/server';
 import { InterceptorServerOptions } from '@/server/types/options';
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 import {
   CommandError,
   PROCESS_EXIT_CODE_BY_EXIT_EVENT,
@@ -60,20 +60,19 @@ async function startInterceptorServer({
 
   await server.start();
 
-  logWithPrefix(
+  logger.info(
     `${ephemeral ? 'Ephemeral s' : 'S'}erver is running on ${color.yellow(`${server.hostname}:${server.port}`)}`,
   );
 
   const isDangerouslyUnprotected = !tokensDirectory && process.env.NODE_ENV === 'production';
 
   if (isDangerouslyUnprotected) {
-    logWithPrefix(
+    logger.warn(
       [
         `Attention: this server is ${color.red('unprotected')}. Do not expose it publicly without authentication.`,
         '',
         'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
       ].join('\n'),
-      { method: 'warn' },
     );
   }
 

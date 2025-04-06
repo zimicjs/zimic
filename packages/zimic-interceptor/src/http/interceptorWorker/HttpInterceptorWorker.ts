@@ -16,9 +16,9 @@ import { Default, PossiblePromise } from '@zimic/utils/types';
 import color from 'picocolors';
 
 import { removeArrayElement } from '@/utils/arrays';
-import { formatValueToLog, logWithPrefix } from '@/utils/console';
 import { isClientSide } from '@/utils/environment';
 import { methodCanHaveResponseBody } from '@/utils/http';
+import { formatValueToLog, logger } from '@/utils/logging';
 
 import HttpInterceptorClient, { AnyHttpInterceptorClient } from '../interceptor/HttpInterceptorClient';
 import { HttpInterceptorPlatform, HttpInterceptorType, UnhandledRequestStrategy } from '../interceptor/types/options';
@@ -474,20 +474,17 @@ abstract class HttpInterceptorWorker {
       formatValueToLog(request.body),
     ]);
 
-    logWithPrefix(
-      [
-        `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
-          `${action === 'bypass' ? color.yellow('bypassed') : color.red('rejected')}.\n\n `,
-        `${request.method} ${request.url}`,
-        '\n    Headers:',
-        formattedHeaders,
-        '\n    Search params:',
-        formattedSearchParams,
-        '\n    Body:',
-        formattedBody,
-        '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
-      ],
-      { method: action === 'bypass' ? 'warn' : 'error' },
+    logger[action === 'bypass' ? 'warn' : 'error'](
+      `${action === 'bypass' ? 'Warning:' : 'Error:'} Request was not handled and was ` +
+        `${action === 'bypass' ? color.yellow('bypassed') : color.red('rejected')}.\n\n `,
+      `${request.method} ${request.url}`,
+      '\n    Headers:',
+      formattedHeaders,
+      '\n    Search params:',
+      formattedSearchParams,
+      '\n    Body:',
+      formattedBody,
+      '\n\nLearn more: https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http#unhandled-requests',
     );
   }
 }
