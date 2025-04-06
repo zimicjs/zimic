@@ -703,7 +703,7 @@ describe('CLI (server start)', async () => {
         expect(server!.isRunning).toBe(true);
 
         expect(spies.error).toHaveBeenCalledTimes(2);
-        expect(spies.error.mock.calls[0]).toEqual([error]);
+        expect(spies.error).toHaveBeenNthCalledWith(1, error);
 
         const errorMessage = spies.error.mock.calls[1].join(' ');
         await verifyUnhandledRequestMessage(errorMessage, {

@@ -37,7 +37,8 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env.SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE': "'0'",
+    'process.env.INTERCEPTOR_TOKEN_HASH_ITERATIONS': "'10000'",
   },
   resolve: {
     alias: {

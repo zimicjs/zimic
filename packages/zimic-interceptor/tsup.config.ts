@@ -9,7 +9,9 @@ const sharedConfig: Options = {
   clean: true,
   keepNames: true,
   env: {
-    SERVER_ACCESS_CONTROL_MAX_AGE: '',
+    INTERCEPTOR_SERVER_ACCESS_CONTROL_MAX_AGE: '',
+    INTERCEPTOR_TOKEN_HASH_ITERATIONS: '1000000',
+    VITEST_POOL_ID: '',
   },
   noExternal: ['@zimic/utils'],
 };

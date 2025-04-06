@@ -7,20 +7,30 @@ import util from 'util';
 import { z } from 'zod';
 
 import { logWithPrefix } from '@/utils/console';
-import { convertBytesLengthToHexLength } from '@/utils/data';
+import {
+  convertSizeInBytesToHexLength,
+  convertHexLengthToBase64urlLength,
+  convertHexLengthToSizeInBytes,
+} from '@/utils/data';
 import { pathExists } from '@/utils/files';
 
 import InterceptorAuthError from '../errors/InterceptorAuthError';
 import InvalidInterceptorTokenError from '../errors/InvalidInterceptorTokenError';
 import InvalidInterceptorTokenFileError from '../errors/InvalidInterceptorTokenFileError';
 
-export const DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH = 32;
+export const DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY = path.join(
+  '.zimic',
+  'interceptor',
+  'server',
+  `tokens${process.env.VITEST_POOL_ID ?? ''}`,
+);
+export const DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH = 64;
 
 const INTERCEPTOR_TOKEN_ID_LENGTH = 32;
-const INTERCEPTOR_TOKEN_ID_REGEX = new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_ID_LENGTH}}$`);
+export const INTERCEPTOR_TOKEN_ID_REGEX = new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_ID_LENGTH}}$`);
 
 export const INTERCEPTOR_TOKEN_SALT_LENGTH = 32;
-export const INTERCEPTOR_TOKEN_HASH_ITERATIONS = 1_000_000;
+export const INTERCEPTOR_TOKEN_HASH_ITERATIONS = Number(process.env.INTERCEPTOR_TOKEN_HASH_ITERATIONS);
 export const INTERCEPTOR_TOKEN_HASH_LENGTH = 64;
 export const INTERCEPTOR_TOKEN_HASH_ALGORITHM = 'sha512';
 
@@ -54,19 +64,23 @@ function isValidInterceptorTokenId(tokenId: string) {
   return INTERCEPTOR_TOKEN_ID_REGEX.test(tokenId);
 }
 
+export function getInterceptorTokenValueLength(options: { secretLength: number }) {
+  return convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_ID_LENGTH + options.secretLength);
+}
+
+export function createInterceptorTokenId() {
+  return crypto.randomUUID().replace(/[^a-z0-9]/g, '');
+}
+
 export async function createInterceptorToken(options: {
   tokenName?: string;
   secretLength: number;
 }): Promise<InterceptorToken> {
-  const tokenId = crypto.randomUUID().replace(/[^a-z0-9]/g, '');
+  const tokenId = createInterceptorTokenId();
 
-  /* istanbul ignore next -- @preserve
-   * It is expected that all tokens are valid. This is a safeguard that should never be triggered. */
-  if (!isValidInterceptorTokenId(tokenId)) {
-    throw new InvalidInterceptorTokenError(tokenId);
-  }
+  const tokenSecretSizeInBytes = convertHexLengthToSizeInBytes(options.secretLength);
+  const tokenSecret = crypto.randomBytes(tokenSecretSizeInBytes).toString('hex');
 
-  const tokenSecret = crypto.randomBytes(options.secretLength).toString('hex');
   const tokenSecretSalt = crypto.randomBytes(INTERCEPTOR_TOKEN_SALT_LENGTH).toString('hex');
   const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenSecretSalt);
 
@@ -106,8 +120,8 @@ const interceptorTokenFileContentSchema = z.object({
     id: z.string().length(INTERCEPTOR_TOKEN_ID_LENGTH).regex(INTERCEPTOR_TOKEN_ID_REGEX),
     name: z.string().optional(),
     secret: z.object({
-      hash: z.string().length(convertBytesLengthToHexLength(INTERCEPTOR_TOKEN_HASH_LENGTH)),
-      salt: z.string().length(convertBytesLengthToHexLength(INTERCEPTOR_TOKEN_SALT_LENGTH)),
+      hash: z.string().length(convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_HASH_LENGTH)),
+      salt: z.string().length(convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_SALT_LENGTH)),
     }),
     createdAt: z
       .string()
@@ -116,9 +130,9 @@ const interceptorTokenFileContentSchema = z.object({
   }),
 });
 
-type InterceptorTokenFileContent = z.infer<typeof interceptorTokenFileContentSchema>;
+export type InterceptorTokenFileContent = z.infer<typeof interceptorTokenFileContentSchema>;
 
-namespace InterceptorTokenFileContent {
+export namespace InterceptorTokenFileContent {
   export type Input = z.input<typeof interceptorTokenFileContentSchema>;
 }
 

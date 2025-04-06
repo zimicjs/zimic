@@ -12,8 +12,8 @@ export async function removeInterceptorServerToken({ tokenId, tokensDirectory }:
   const token = await readInterceptorTokenFromFile(tokenId, { tokensDirectory });
 
   if (!token) {
-    logWithPrefix(`${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`);
-    return;
+    logWithPrefix(`${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`, { method: 'error' });
+    process.exit(1);
   }
 
   await removeInterceptorToken(tokenId, { tokensDirectory });

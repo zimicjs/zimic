@@ -1,10 +1,9 @@
-import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH } from '../server/utils/auth';
+import { DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH, DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../server/utils/auth';
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import { createInterceptorServerToken } from './server/token/create';
@@ -120,7 +119,7 @@ async function runCLI() {
                   })
                   .option('secret-length', {
                     type: 'number',
-                    description: 'The length of the token secret to create.',
+                    description: 'The length of the hexadecimal token secret to generate.',
                     alias: 'l',
                     default: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
                   })
@@ -128,7 +127,7 @@ async function runCLI() {
                     type: 'string',
                     description: 'The path to the directory where the tokens are stored.',
                     alias: 't',
-                    default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
+                    default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                   }),
               async (cliArguments) => {
                 await createInterceptorServerToken({
@@ -147,7 +146,7 @@ async function runCLI() {
                   type: 'string',
                   description: 'The path to the directory where the tokens are stored.',
                   alias: 't',
-                  default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
+                  default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                 }),
               async (cliArguments) => {
                 await listInterceptorServerTokens({
@@ -157,7 +156,7 @@ async function runCLI() {
             )
 
             .command(
-              ['rm', 'remove'],
+              ['rm <tokenId>', 'remove <tokenId>'],
               'Remove an interceptor token.',
               (yargs) =>
                 yargs
@@ -170,7 +169,7 @@ async function runCLI() {
                     type: 'string',
                     description: 'The path to the directory where the tokens are stored.',
                     alias: 't',
-                    default: path.join('.zimic', 'interceptor', 'server', 'tokens'),
+                    default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                   }),
               async (cliArguments) => {
                 await removeInterceptorServerToken({
