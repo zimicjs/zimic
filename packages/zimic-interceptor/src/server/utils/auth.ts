@@ -10,7 +10,6 @@ import { convertHexLengthToBase64urlLength, convertHexLengthToByteLength } from 
 import { pathExists } from '@/utils/files';
 import { logger } from '@/utils/logging';
 
-import InterceptorAuthError from '../errors/InterceptorAuthError';
 import InvalidInterceptorTokenError from '../errors/InvalidInterceptorTokenError';
 import InvalidInterceptorTokenFileError from '../errors/InvalidInterceptorTokenFileError';
 import InvalidInterceptorTokenValueError from '../errors/InvalidInterceptorTokenValueError';
@@ -228,37 +227,27 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
 }
 
 export async function validateInterceptorToken(tokenValue: string, options: { tokensDirectory: string }) {
-  try {
-    const expectedTokenValueBase64urlLength = convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
+  const expectedTokenValueBase64urlLength = convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
 
-    if (tokenValue.length !== expectedTokenValueBase64urlLength) {
-      throw new InvalidInterceptorTokenValueError(tokenValue);
-    }
+  if (tokenValue.length !== expectedTokenValueBase64urlLength) {
+    throw new InvalidInterceptorTokenValueError(tokenValue);
+  }
 
-    const decodedTokenValue = Buffer.from(tokenValue, 'base64url').toString('hex');
+  const decodedTokenValue = Buffer.from(tokenValue, 'base64url').toString('hex');
 
-    const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
-    const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_HEX_LENGTH, INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
+  const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
+  const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_HEX_LENGTH, INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
 
-    const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
+  const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
 
-    if (!tokenFromFile) {
-      throw new InvalidInterceptorTokenValueError(tokenValue);
-    }
+  if (!tokenFromFile) {
+    throw new InvalidInterceptorTokenValueError(tokenValue);
+  }
 
-    const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenFromFile.secret.salt);
+  const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenFromFile.secret.salt);
 
-    if (tokenSecretHash !== tokenFromFile.secret.hash) {
-      throw new InvalidInterceptorTokenValueError(tokenValue);
-    }
-  } catch (error) {
-    if (error instanceof InterceptorAuthError) {
-      throw error;
-    }
-
-    const newError = new InvalidInterceptorTokenValueError(tokenValue);
-    newError.cause = error;
-    throw newError;
+  if (tokenSecretHash !== tokenFromFile.secret.hash) {
+    throw new InvalidInterceptorTokenValueError(tokenValue);
   }
 }
 

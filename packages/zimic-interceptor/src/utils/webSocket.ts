@@ -67,11 +67,13 @@ export async function waitForOpenClientSocket(
     function handleClose(event: ClientSocket.CloseEvent) {
       const isUnauthorized = event.code === 1008;
 
-      if (waitForAuthentication && isUnauthorized) {
+      /* istanbul ignore else -- @preserve
+       * An unauthorized close event is the only one we expect to happen here. */
+      if (isUnauthorized) {
         const unauthorizedError = new UnauthorizedWebSocketConnectionError(event);
         handleOpenError(unauthorizedError);
       } else {
-        removeAllSocketListeners();
+        handleOpenError(event);
       }
     }
 
@@ -87,9 +89,11 @@ export async function waitForOpenClientSocket(
     }
 
     function handleSocketMessage(message: ClientSocket.MessageEvent) {
-      const isAuthenticated = message.data === ('socket:auth:valid' satisfies WebSocketControlMessage);
+      const hasValidAuth = message.data === ('socket:auth:valid' satisfies WebSocketControlMessage);
 
-      if (isAuthenticated) {
+      /* istanbul ignore else -- @preserve
+       * We currently only support the 'socket:auth:valid' message and it is the only possible control message here. */
+      if (hasValidAuth) {
         handleOpenSuccess();
       }
     }

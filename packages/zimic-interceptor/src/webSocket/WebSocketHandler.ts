@@ -1,5 +1,5 @@
 import { Collection } from '@zimic/utils/types';
-import ClientSocket, { CloseEvent } from 'isomorphic-ws';
+import ClientSocket from 'isomorphic-ws';
 
 import { importCrypto } from '@/utils/crypto';
 import {
@@ -14,7 +14,6 @@ import {
 import { WEB_SOCKET_CONTROL_MESSAGES, WebSocketControlMessage } from './constants';
 import InvalidWebSocketMessage from './errors/InvalidWebSocketMessage';
 import NotRunningWebSocketHandlerError from './errors/NotRunningWebSocketHandlerError';
-import UnauthorizedWebSocketConnectionError from './errors/UnauthorizedWebSocketConnectionError';
 import {
   WebSocketEventMessageListener,
   WebSocketReplyMessageListener,
@@ -71,14 +70,7 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
     }
     socket.addEventListener('error', handleSocketError);
 
-    const handleSocketClose = (event: CloseEvent) => {
-      const isUnauthorized = event.code === 1008;
-
-      if (isUnauthorized) {
-        const error = new UnauthorizedWebSocketConnectionError(event);
-        socket.emit('error', error);
-      }
-
+    const handleSocketClose = () => {
       socket.removeEventListener('message', handleSocketMessage);
       socket.removeEventListener('close', handleSocketClose);
       socket.removeEventListener('error', handleSocketError);
