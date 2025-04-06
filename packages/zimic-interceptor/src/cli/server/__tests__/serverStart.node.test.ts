@@ -22,7 +22,7 @@ import runCLI from '../../cli';
 import { serverSingleton as server } from '../start';
 import { delayHttpServerListenIndefinitely, delayHttpServerCloseIndefinitely } from './utils';
 
-describe('CLI (server start)', async () => {
+describe('CLI > Server start', async () => {
   const crypto = await importCrypto();
 
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');

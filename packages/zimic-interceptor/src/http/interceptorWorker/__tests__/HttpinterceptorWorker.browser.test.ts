@@ -10,7 +10,7 @@ import { BrowserHttpWorker } from '../types/requests';
 import { declareDefaultHttpInterceptorWorkerTests } from './shared/default';
 import testMatrix from './shared/matrix';
 
-describe('HttpInterceptorWorker (browser)', () => {
+describe('HttpInterceptorWorker > Browser', () => {
   it('should throw an error if trying to start without a registered service worker', async () => {
     const interceptorWorker = createHttpInterceptorWorker({ type: 'local' });
 

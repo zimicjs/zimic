@@ -4,7 +4,7 @@ import runCLI from '@/cli/cli';
 import { PROCESS_EXIT_EVENTS } from '@/utils/processes';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
-describe('CLI (server token)', () => {
+describe('CLI > Server token', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   beforeEach(() => {

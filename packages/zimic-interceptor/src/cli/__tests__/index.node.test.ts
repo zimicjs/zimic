@@ -7,7 +7,7 @@ vi.mock('../cli', () => ({
 }));
 const runCLIMock = vi.mocked(runCLI);
 
-describe('CLI (entry point)', () => {
+describe('CLI > Entry point', () => {
   it('should run the CLI after imported', async () => {
     await import('../index');
 

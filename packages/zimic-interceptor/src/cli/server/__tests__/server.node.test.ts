@@ -5,7 +5,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 
 import runCLI from '../../cli';
 
-describe('CLI (server)', () => {
+describe('CLI > Server', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   beforeEach(() => {

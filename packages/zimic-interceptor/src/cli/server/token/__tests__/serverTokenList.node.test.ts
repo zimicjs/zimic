@@ -7,7 +7,7 @@ import { usingIgnoredConsole } from '@tests/utils/console';
 
 import { clearInterceptorTokens } from './utils';
 
-describe('CLI (server token list)', () => {
+describe('CLI > Server token list', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
 
   const serverStartHelpOutput = [
