@@ -91,6 +91,12 @@
       "require": "./dist/import/createCachedDynamicImport.js",
       "default": "./dist/import/createCachedDynamicImport.js"
     },
+    "./logging/Logger": {
+      "types": "./logging/Logger.d.ts",
+      "import": "./dist/logging/Logger.mjs",
+      "require": "./dist/logging/Logger.js",
+      "default": "./dist/logging/Logger.js"
+    },
     "./time/waitFor": {
       "types": "./time/waitFor.d.ts",
       "import": "./dist/time/waitFor.mjs",
