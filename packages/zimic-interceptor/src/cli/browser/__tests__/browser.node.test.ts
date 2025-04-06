@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import color from 'picocolors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usingIgnoredConsole } from '@tests/utils/console';
@@ -80,7 +81,7 @@ describe('CLI (browser)', () => {
       const makeDirectorySpy = vi.spyOn(fs.promises, 'mkdir').mockImplementation(vi.fn());
       const copyFileSpy = vi.spyOn(fs.promises, 'copyFile').mockImplementation(vi.fn());
 
-      await usingIgnoredConsole(['log'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (spies) => {
         const publicDirectory = './public';
         processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', publicDirectory]);
 
@@ -95,10 +96,10 @@ describe('CLI (browser)', () => {
         expect(copyFileSpy).toHaveBeenCalledTimes(1);
         expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
-        expect(spies.log).toHaveBeenCalledTimes(2);
-        expect(spies.log).toHaveBeenCalledWith(
-          expect.any(String) as string,
-          expect.stringContaining(serviceWorkerDestinationPath),
+        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledWith(
+          color.cyan('[@zimic/interceptor]'),
+          `Service worker script saved to ${color.magenta(serviceWorkerDestinationPath)}.`,
         );
       });
     });

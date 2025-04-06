@@ -108,7 +108,7 @@ describe('CLI (server start)', async () => {
   it('should start the server on localhost if no hostname is provided', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '6500']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -116,8 +116,8 @@ describe('CLI (server start)', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toBe(6500);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(
+      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(spies.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Server is running on ${color.yellow('localhost:6500')}`,
       );
@@ -136,7 +136,7 @@ describe('CLI (server start)', async () => {
       '3000',
     ]);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -144,8 +144,8 @@ describe('CLI (server start)', async () => {
       expect(server!.hostname).toBe('0.0.0.0');
       expect(server!.port).toBe(3000);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(
+      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(spies.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Server is running on ${color.yellow('0.0.0.0:3000')}`,
       );
@@ -155,7 +155,7 @@ describe('CLI (server start)', async () => {
   it('should start the server on any available port if none is provided', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -163,8 +163,8 @@ describe('CLI (server start)', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toBeGreaterThan(0);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(
+      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(spies.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
       );
@@ -202,7 +202,7 @@ describe('CLI (server start)', async () => {
       '3000',
     ]);
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       await runCLI();
 
       const initialServer = server;
@@ -241,7 +241,7 @@ describe('CLI (server start)', async () => {
     try {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+      await usingIgnoredConsole(['error', 'info'], async (spies) => {
         const cliPromise = runCLI();
         vi.advanceTimersByTime(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
 
@@ -272,7 +272,7 @@ describe('CLI (server start)', async () => {
       `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
     ]);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -280,8 +280,8 @@ describe('CLI (server start)', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toBeGreaterThan(0);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(
+      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(spies.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Ephemeral server is running on ${color.yellow(`localhost:${server!.port}`)}`,
       );
@@ -316,7 +316,7 @@ describe('CLI (server start)', async () => {
         `require('fs').writeFileSync('${temporarySaveFile}', '${temporarySaveFileContent}')`,
       ]);
 
-      await usingIgnoredConsole(['log'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (spies) => {
         await runCLI();
 
         expect(server).toBeDefined();
@@ -324,8 +324,8 @@ describe('CLI (server start)', async () => {
         expect(server!.hostname).toBe('localhost');
         expect(server!.port).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
+        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
@@ -351,7 +351,7 @@ describe('CLI (server start)', async () => {
     try {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral']);
 
-      await usingIgnoredConsole(['error', 'log'], async (spies) => {
+      await usingIgnoredConsole(['error', 'info'], async (spies) => {
         const cliPromise = runCLI();
 
         const timeoutError = new HttpServerStopTimeoutError(DEFAULT_SERVER_LIFE_CYCLE_TIMEOUT);
@@ -371,7 +371,7 @@ describe('CLI (server start)', async () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--ephemeral', '--', unknownCommand]);
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       const error = new CommandError(unknownCommand, { originalMessage: `spawn ${unknownCommand} ENOENT` });
 
       await runCLI();
@@ -401,7 +401,7 @@ describe('CLI (server start)', async () => {
       `process.exit(${exitCode})`,
     ]);
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       const error = new CommandError('node', {
         command: ['node', '-e', `process.exit(${exitCode})`],
         exitCode,
@@ -434,7 +434,7 @@ describe('CLI (server start)', async () => {
       `process.kill(process.pid, '${signal}')`,
     ]);
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       const error = new CommandError('node', {
         command: ['node', '-e', `process.kill(process.pid, '${signal}')`],
         signal,
@@ -471,7 +471,7 @@ describe('CLI (server start)', async () => {
       `process.kill(process.pid, '${signal}')`,
     ]);
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       const error = new CommandError('node', {
         command: ['node', '-e', `process.kill(process.pid, '${signal}')`],
         signal,
@@ -496,7 +496,7 @@ describe('CLI (server start)', async () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-      await usingIgnoredConsole(['log'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (spies) => {
         await runCLI();
 
         expect(server).toBeDefined();
@@ -504,8 +504,8 @@ describe('CLI (server start)', async () => {
         expect(server!.hostname).toBe('localhost');
         expect(server!.port).toBeGreaterThan(0);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
-        expect(spies.log).toHaveBeenCalledWith(
+        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
@@ -537,7 +537,7 @@ describe('CLI (server start)', async () => {
   it('should stop the server even if a client is connected', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -545,8 +545,8 @@ describe('CLI (server start)', async () => {
       expect(server!.hostname).toBe('localhost');
       expect(server!.port).toBeGreaterThan(0);
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(
+      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(spies.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
       );
@@ -580,7 +580,7 @@ describe('CLI (server start)', async () => {
         ...(flagValue === undefined ? [] : ['--log-unhandled-requests', flagValue]),
       ]);
 
-      await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+      await usingIgnoredConsole(['info', 'warn', 'error'], async (spies) => {
         await runCLI();
 
         expect(server).toBeDefined();
@@ -589,11 +589,11 @@ describe('CLI (server start)', async () => {
         expect(server!.port).toBeGreaterThan(0);
         expect(server!.logUnhandledRequests).toBe(true);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledTimes(1);
         expect(spies.warn).toHaveBeenCalledTimes(0);
         expect(spies.error).toHaveBeenCalledTimes(0);
 
-        expect(spies.log).toHaveBeenCalledWith(
+        expect(spies.info).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
@@ -603,7 +603,7 @@ describe('CLI (server start)', async () => {
         const response = fetch(request);
         await expectFetchError(response);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledTimes(1);
         expect(spies.warn).toHaveBeenCalledTimes(0);
         expect(spies.error).toHaveBeenCalledTimes(1);
 
@@ -629,7 +629,7 @@ describe('CLI (server start)', async () => {
         flagValue,
       ]);
 
-      await usingIgnoredConsole(['log', 'warn', 'error'], async (spies) => {
+      await usingIgnoredConsole(['info', 'warn', 'error'], async (spies) => {
         await runCLI();
 
         expect(server).toBeDefined();
@@ -638,11 +638,11 @@ describe('CLI (server start)', async () => {
         expect(server!.port).toBeGreaterThan(0);
         expect(server!.logUnhandledRequests).toBe(false);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledTimes(1);
         expect(spies.warn).toHaveBeenCalledTimes(0);
         expect(spies.error).toHaveBeenCalledTimes(0);
 
-        expect(spies.log).toHaveBeenCalledWith(
+        expect(spies.info).toHaveBeenCalledWith(
           color.cyan('[@zimic/interceptor]'),
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
@@ -652,7 +652,7 @@ describe('CLI (server start)', async () => {
         const response = fetch(request);
         await expectFetchError(response);
 
-        expect(spies.log).toHaveBeenCalledTimes(1);
+        expect(spies.info).toHaveBeenCalledTimes(1);
         expect(spies.warn).toHaveBeenCalledTimes(0);
         expect(spies.error).toHaveBeenCalledTimes(0);
       });
@@ -679,7 +679,7 @@ describe('CLI (server start)', async () => {
       baseURL: 'http://localhost:5001',
     });
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -738,7 +738,7 @@ describe('CLI (server start)', async () => {
       baseURL: 'http://localhost:5001',
     });
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
@@ -805,7 +805,7 @@ describe('CLI (server start)', async () => {
       baseURL: 'http://localhost:5001',
     });
 
-    await usingIgnoredConsole(['error', 'log'], async (spies) => {
+    await usingIgnoredConsole(['error', 'info'], async (spies) => {
       await runCLI();
 
       expect(server).toBeDefined();
