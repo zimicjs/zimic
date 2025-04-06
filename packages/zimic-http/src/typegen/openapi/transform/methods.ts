@@ -4,7 +4,7 @@ import color from 'picocolors';
 import ts from 'typescript';
 
 import { HTTP_METHODS, HttpMethod } from '@/types/schema';
-import { logWithPrefix } from '@/utils/console';
+import { logger } from '@/utils/logging';
 
 import { isUnknownType, isNeverType, isNullType } from '../utils/types';
 import { renameComponentReferences } from './components';
@@ -437,11 +437,10 @@ export function normalizeResponse(
     const mappedType = NON_NUMERIC_RESPONSE_STATUS_TO_MAPPED_TYPE[statusCode];
 
     if (!mappedType) {
-      logWithPrefix(
+      logger.warn(
         `Warning: Response has a non-standard status code: ${color.yellow(response.name.text)}. ` +
           "Consider replacing it with a number (e.g. '200'), a pattern ('1xx', '2xx', '3xx', '4xx', or '5xx'), " +
           "or 'default'.",
-        { method: 'warn' },
       );
 
       return undefined;
