@@ -6,32 +6,31 @@ import color from 'picocolors';
 import util from 'util';
 import { z } from 'zod';
 
-import {
-  convertSizeInBytesToHexLength,
-  convertHexLengthToBase64urlLength,
-  convertHexLengthToSizeInBytes,
-} from '@/utils/data';
+import { convertHexLengthToBase64urlLength, convertHexLengthToByteLength } from '@/utils/data';
 import { pathExists } from '@/utils/files';
 import { logger } from '@/utils/logging';
 
 import InterceptorAuthError from '../errors/InterceptorAuthError';
 import InvalidInterceptorTokenError from '../errors/InvalidInterceptorTokenError';
 import InvalidInterceptorTokenFileError from '../errors/InvalidInterceptorTokenFileError';
+import InvalidInterceptorTokenValueError from '../errors/InvalidInterceptorTokenValueError';
 
 export const DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY = path.join(
   '.zimic',
   'interceptor',
   'server',
-  `tokens${process.env.VITEST_POOL_ID ?? ''}`,
+  `tokens${process.env.VITEST_POOL_ID}`,
 );
-export const DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH = 64;
 
-const INTERCEPTOR_TOKEN_ID_LENGTH = 32;
-export const INTERCEPTOR_TOKEN_ID_REGEX = new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_ID_LENGTH}}$`);
+export const INTERCEPTOR_TOKEN_ID_HEX_LENGTH = 32;
+export const INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH = 64;
+export const INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH = INTERCEPTOR_TOKEN_ID_HEX_LENGTH + INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH;
 
-export const INTERCEPTOR_TOKEN_SALT_LENGTH = 32;
+export const INTERCEPTOR_TOKEN_ID_REGEX = new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_ID_HEX_LENGTH}}$`);
+
+export const INTERCEPTOR_TOKEN_SALT_HEX_LENGTH = 64;
 export const INTERCEPTOR_TOKEN_HASH_ITERATIONS = Number(process.env.INTERCEPTOR_TOKEN_HASH_ITERATIONS);
-export const INTERCEPTOR_TOKEN_HASH_LENGTH = 64;
+export const INTERCEPTOR_TOKEN_HASH_HEX_LENGTH = 128;
 export const INTERCEPTOR_TOKEN_HASH_ALGORITHM = 'sha512';
 
 const pbkdf2 = util.promisify(crypto.pbkdf2);
@@ -41,7 +40,7 @@ async function hashInterceptorToken(plainToken: string, salt: string) {
     plainToken,
     salt,
     INTERCEPTOR_TOKEN_HASH_ITERATIONS,
-    INTERCEPTOR_TOKEN_HASH_LENGTH,
+    convertHexLengthToByteLength(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH),
     INTERCEPTOR_TOKEN_HASH_ALGORITHM,
   );
 
@@ -64,24 +63,18 @@ function isValidInterceptorTokenId(tokenId: string) {
   return INTERCEPTOR_TOKEN_ID_REGEX.test(tokenId);
 }
 
-export function getInterceptorTokenValueLength(options: { secretLength: number }) {
-  return convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_ID_LENGTH + options.secretLength);
-}
-
 export function createInterceptorTokenId() {
   return crypto.randomUUID().replace(/[^a-z0-9]/g, '');
 }
 
-export async function createInterceptorToken(options: {
-  tokenName?: string;
-  secretLength: number;
-}): Promise<InterceptorToken> {
+export async function createInterceptorToken(options: { tokenName?: string }): Promise<InterceptorToken> {
   const tokenId = createInterceptorTokenId();
 
-  const tokenSecretSizeInBytes = convertHexLengthToSizeInBytes(options.secretLength);
+  const tokenSecretSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH);
   const tokenSecret = crypto.randomBytes(tokenSecretSizeInBytes).toString('hex');
 
-  const tokenSecretSalt = crypto.randomBytes(INTERCEPTOR_TOKEN_SALT_LENGTH).toString('hex');
+  const tokenSecretSaltSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH);
+  const tokenSecretSalt = crypto.randomBytes(tokenSecretSaltSizeInBytes).toString('hex');
   const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenSecretSalt);
 
   const tokenValue = Buffer.from(`${tokenId}${tokenSecret}`, 'hex').toString('base64url');
@@ -116,11 +109,11 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
 const interceptorTokenFileContentSchema = z.object({
   version: z.literal(1),
   token: z.object({
-    id: z.string().length(INTERCEPTOR_TOKEN_ID_LENGTH).regex(INTERCEPTOR_TOKEN_ID_REGEX),
+    id: z.string().length(INTERCEPTOR_TOKEN_ID_HEX_LENGTH).regex(INTERCEPTOR_TOKEN_ID_REGEX),
     name: z.string().optional(),
     secret: z.object({
-      hash: z.string().length(convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_HASH_LENGTH)),
-      salt: z.string().length(convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_SALT_LENGTH)),
+      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH),
+      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH),
     }),
     createdAt: z
       .string()
@@ -236,27 +229,34 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
 
 export async function validateInterceptorToken(tokenValue: string, options: { tokensDirectory: string }) {
   try {
+    const expectedTokenValueBase64urlLength = convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
+
+    if (tokenValue.length !== expectedTokenValueBase64urlLength) {
+      throw new InvalidInterceptorTokenValueError(tokenValue);
+    }
+
     const decodedTokenValue = Buffer.from(tokenValue, 'base64url').toString('hex');
-    const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_LENGTH);
-    const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_LENGTH);
+
+    const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
+    const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_HEX_LENGTH, INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
 
     const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
 
     if (!tokenFromFile) {
-      throw new InvalidInterceptorTokenError(tokenId);
+      throw new InvalidInterceptorTokenValueError(tokenValue);
     }
 
     const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenFromFile.secret.salt);
 
     if (tokenSecretHash !== tokenFromFile.secret.hash) {
-      throw new InvalidInterceptorTokenError(tokenId);
+      throw new InvalidInterceptorTokenValueError(tokenValue);
     }
   } catch (error) {
     if (error instanceof InterceptorAuthError) {
       throw error;
     }
 
-    const newError = new InvalidInterceptorTokenError(undefined);
+    const newError = new InvalidInterceptorTokenValueError(tokenValue);
     newError.cause = error;
     throw newError;
   }

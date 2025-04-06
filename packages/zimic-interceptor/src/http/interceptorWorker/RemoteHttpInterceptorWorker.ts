@@ -55,7 +55,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     await super.sharedStart(async () => {
       await this.webSocketClient.start({
         parameters: this.auth ? { token: this.auth.token } : undefined,
-        waitForAuthentication: this.auth !== undefined,
+        waitForAuthentication: true,
       });
 
       this.webSocketClient.onEvent('interceptors/responses/create', this.createResponse);

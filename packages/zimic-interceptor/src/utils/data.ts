@@ -27,14 +27,11 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
   }
 }
 
-export function convertHexLengthToSizeInBytes(hexLength: number) {
-  return Math.floor(hexLength / 2); // 1 byte = 2 hex characters
-}
-
-export function convertSizeInBytesToHexLength(byteSize: number) {
-  return byteSize * 2; // 1 byte = 2 hex characters
+export function convertHexLengthToByteLength(hexLength: number) {
+  return Math.ceil(hexLength / 2); // 1 byte = 2 hex characters
 }
 
 export function convertHexLengthToBase64urlLength(hexLength: number) {
-  return Math.ceil((hexLength * 2) / 3); // 1 hex character = 4/3 base64url characters
+  const byteLength = convertHexLengthToByteLength(hexLength);
+  return Math.ceil((byteLength * 4) / 3); // 1 byte = 4/3 base64url characters
 }

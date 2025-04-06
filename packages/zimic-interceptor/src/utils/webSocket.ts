@@ -1,6 +1,7 @@
 import ClientSocket, { type WebSocketServer as ServerSocket } from 'isomorphic-ws';
 
 import { WebSocketControlMessage } from '@/webSocket/constants';
+import UnauthorizedWebSocketConnectionError from '@/webSocket/errors/UnauthorizedWebSocketConnectionError';
 
 class WebSocketTimeoutError extends Error {}
 
@@ -51,12 +52,27 @@ export async function waitForOpenClientSocket(
   }
 
   await new Promise<void>((resolve, reject) => {
-    function handleOpenError(error: unknown) {
-      socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+    function removeAllSocketListeners() {
       socket.removeEventListener('message', handleSocketMessage); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('error', handleOpenError);
-      socket.removeEventListener('close', handleOpenError);
+      socket.removeEventListener('open', handleOpenSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('error', handleOpenError); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    function handleOpenError(error: unknown) {
+      removeAllSocketListeners();
       reject(error);
+    }
+
+    function handleClose(event: ClientSocket.CloseEvent) {
+      const isUnauthorized = event.code === 1008;
+
+      if (waitForAuthentication && isUnauthorized) {
+        const unauthorizedError = new UnauthorizedWebSocketConnectionError(event);
+        handleOpenError(unauthorizedError);
+      } else {
+        removeAllSocketListeners();
+      }
     }
 
     const openTimeout = setTimeout(() => {
@@ -65,16 +81,13 @@ export async function waitForOpenClientSocket(
     }, timeoutDuration);
 
     function handleOpenSuccess() {
-      socket.removeEventListener('open', handleOpenSuccess);
-      socket.removeEventListener('message', handleSocketMessage); // eslint-disable-line @typescript-eslint/no-use-before-define
-      socket.removeEventListener('error', handleOpenError);
-      socket.removeEventListener('close', handleOpenError);
+      removeAllSocketListeners();
       clearTimeout(openTimeout);
       resolve();
     }
 
     function handleSocketMessage(message: ClientSocket.MessageEvent) {
-      const isAuthenticated = message.data === ('socket:authenticated' satisfies WebSocketControlMessage);
+      const isAuthenticated = message.data === ('socket:auth:valid' satisfies WebSocketControlMessage);
 
       if (isAuthenticated) {
         handleOpenSuccess();
@@ -88,7 +101,7 @@ export async function waitForOpenClientSocket(
     }
 
     socket.addEventListener('error', handleOpenError);
-    socket.addEventListener('close', handleOpenError);
+    socket.addEventListener('close', handleClose);
   });
 }
 
@@ -101,24 +114,30 @@ export async function closeClientSocket(socket: ClientSocket, options: { timeout
   }
 
   await new Promise<void>((resolve, reject) => {
-    function handleCloseError(error: unknown) {
-      socket.removeEventListener('close', handleCloseSuccess); // eslint-disable-line @typescript-eslint/no-use-before-define
+    function removeAllSocketListeners() {
+      socket.removeEventListener('error', handleError); // eslint-disable-line @typescript-eslint/no-use-before-define
+      socket.removeEventListener('close', handleClose); // eslint-disable-line @typescript-eslint/no-use-before-define
+    }
+
+    function handleError(error: unknown) {
+      removeAllSocketListeners();
       reject(error);
     }
 
     const closeTimeout = setTimeout(() => {
       const timeoutError = new WebSocketCloseTimeoutError(timeoutDuration);
-      handleCloseError(timeoutError);
+      handleError(timeoutError);
     }, timeoutDuration);
 
-    function handleCloseSuccess() {
-      socket.removeEventListener('error', handleCloseError);
+    function handleClose() {
+      removeAllSocketListeners();
       clearTimeout(closeTimeout);
       resolve();
     }
 
-    socket.addEventListener('error', handleCloseError);
-    socket.addEventListener('close', handleCloseSuccess);
+    socket.addEventListener('error', handleError);
+    socket.addEventListener('close', handleClose);
+
     socket.close();
   });
 }

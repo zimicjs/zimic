@@ -6,17 +6,16 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import runCLI from '@/cli/cli';
 import {
-  DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-  getInterceptorTokenValueLength,
-  INTERCEPTOR_TOKEN_HASH_LENGTH,
   INTERCEPTOR_TOKEN_ID_REGEX,
-  INTERCEPTOR_TOKEN_SALT_LENGTH,
+  INTERCEPTOR_TOKEN_SALT_HEX_LENGTH,
   InterceptorTokenFileContent,
   listInterceptorTokens,
   PersistedInterceptorToken,
+  INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH,
+  INTERCEPTOR_TOKEN_HASH_HEX_LENGTH,
 } from '@/server/utils/auth';
-import { convertSizeInBytesToHexLength } from '@/utils/data';
+import { convertHexLengthToBase64urlLength } from '@/utils/data';
 import { pathExists } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
@@ -24,7 +23,10 @@ import { clearInterceptorTokens } from './utils';
 
 describe('CLI > Server token create', () => {
   const processArgvSpy = vi.spyOn(process, 'argv', 'get');
+
   const numberOfColorCharactersInTokenValue = 10;
+  const expectedTokenBase64urlLength =
+    convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH) + numberOfColorCharactersInTokenValue;
 
   const serverStartHelpOutput = [
     'zimic-interceptor server token create',
@@ -32,12 +34,10 @@ describe('CLI > Server token create', () => {
     'Create an interceptor token.',
     '',
     'Options:',
-    '      --help           Show help                                       [boolean]',
-    '      --version        Show version number                             [boolean]',
-    '  -n, --name           The name of the token to create.                 [string]',
-    '  -l, --secret-length  The length of the hexadecimal token secret to generate.',
-    `                                                          [number] [default: ${DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH}]`,
-    '  -t, --tokens-dir     The path to the directory where the tokens are stored.',
+    '      --help        Show help                                          [boolean]',
+    '      --version     Show version number                                [boolean]',
+    '  -n, --name        The name of the token to create.                    [string]',
+    '  -t, --tokens-dir  The path to the directory where the tokens are stored.',
     `                         [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
   ].join('\n');
 
@@ -76,14 +76,10 @@ describe('CLI > Server token create', () => {
       const logArguments = spies.info.mock.calls[0] as string[];
       const logLines = logArguments.join(' ').split('\n');
 
-      const tokenValueLength = getInterceptorTokenValueLength({
-        secretLength: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
-      });
-
       expect(logLines).toEqual([
         `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
         '',
-        expect.stringMatching(new RegExp(`^.{${tokenValueLength + numberOfColorCharactersInTokenValue}}$`)),
+        expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
         '',
         'Store this token securely. It cannot be retrieved later.',
         '',
@@ -107,15 +103,11 @@ describe('CLI > Server token create', () => {
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
     expect(tokens).toHaveLength(1);
 
-    const tokenSecretHashLength = convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_HASH_LENGTH);
-    const tokenSecretSaltLength = convertSizeInBytesToHexLength(INTERCEPTOR_TOKEN_SALT_LENGTH);
-
     expect(tokens[0]).toEqual<PersistedInterceptorToken>({
       id: expect.stringMatching(INTERCEPTOR_TOKEN_ID_REGEX) as string,
-      name: undefined,
       secret: {
-        hash: expect.stringMatching(new RegExp(`^.{${tokenSecretHashLength}}$`)) as string,
-        salt: expect.stringMatching(new RegExp(`^.{${tokenSecretSaltLength}}$`)) as string,
+        hash: expect.stringMatching(new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_HASH_HEX_LENGTH}}$`)) as string,
+        salt: expect.stringMatching(new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_SALT_HEX_LENGTH}}$`)) as string,
       },
       createdAt: expect.any(Date) as Date,
     });
@@ -242,62 +234,6 @@ describe('CLI > Server token create', () => {
     });
   });
 
-  describe('Token secret length', () => {
-    it('should create an interceptor token using the default secret length', async () => {
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
-
-      await usingIgnoredConsole(['info'], async (spies) => {
-        await runCLI();
-
-        const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
-        expect(tokens).toHaveLength(1);
-
-        const logArguments = spies.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
-
-        const secretValue = logLines[2];
-        const tokenSecretLength = getInterceptorTokenValueLength({
-          secretLength: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
-        });
-
-        expect(secretValue).toMatch(new RegExp(`^.{${tokenSecretLength + numberOfColorCharactersInTokenValue}}$`));
-      });
-    });
-
-    it('should create an interceptor token using a custom secret length', async () => {
-      const customSecretLength = DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH + 10;
-      expect(customSecretLength).not.toBe(DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH);
-
-      processArgvSpy.mockReturnValue([
-        'node',
-        './dist/cli.js',
-        'server',
-        'token',
-        'create',
-        '--secret-length',
-        `${customSecretLength}`,
-      ]);
-
-      await usingIgnoredConsole(['info'], async (spies) => {
-        await runCLI();
-
-        const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
-        expect(tokens).toHaveLength(1);
-
-        const logArguments = spies.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
-
-        const secretValue = logLines[2];
-        const tokenSecretLength = getInterceptorTokenValueLength({ secretLength: customSecretLength });
-
-        expect(secretValue).toMatch(new RegExp(`^.{${tokenSecretLength + numberOfColorCharactersInTokenValue}}$`));
-      });
-
-      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
-      expect(tokens).toHaveLength(1);
-    });
-  });
-
   describe('Token name', () => {
     it('should create an interceptor token using an undefined name by default', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
@@ -310,14 +246,10 @@ describe('CLI > Server token create', () => {
         const logArguments = spies.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
-        const tokenValueLength = getInterceptorTokenValueLength({
-          secretLength: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
-        });
-
         expect(logLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
           '',
-          expect.stringMatching(new RegExp(`^.{${tokenValueLength + numberOfColorCharactersInTokenValue}}$`)),
+          expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
@@ -349,14 +281,10 @@ describe('CLI > Server token create', () => {
         const logArguments = spies.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
-        const tokenValueLength = getInterceptorTokenValueLength({
-          secretLength: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
-        });
-
         expect(logLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token ${color.green(customTokenName)} created:`,
           '',
-          expect.stringMatching(new RegExp(`^.{${tokenValueLength + numberOfColorCharactersInTokenValue}}$`)),
+          expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',

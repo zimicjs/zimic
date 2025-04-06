@@ -3,7 +3,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { version } from '@@/package.json';
 
-import { DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH, DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../server/utils/auth';
+import { DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY } from '../server/utils/auth';
 import initializeBrowserServiceWorker from './browser/init';
 import startInterceptorServer from './server/start';
 import { createInterceptorServerToken } from './server/token/create';
@@ -117,12 +117,6 @@ async function runCLI() {
                     description: 'The name of the token to create.',
                     alias: 'n',
                   })
-                  .option('secret-length', {
-                    type: 'number',
-                    description: 'The length of the hexadecimal token secret to generate.',
-                    alias: 'l',
-                    default: DEFAULT_INTERCEPTOR_TOKEN_SECRET_LENGTH,
-                  })
                   .option('tokens-dir', {
                     type: 'string',
                     description: 'The path to the directory where the tokens are stored.',
@@ -132,7 +126,6 @@ async function runCLI() {
               async (cliArguments) => {
                 await createInterceptorServerToken({
                   tokenName: cliArguments.name,
-                  secretLength: cliArguments.secretLength,
                   tokensDirectory: cliArguments.tokensDir,
                 });
               },

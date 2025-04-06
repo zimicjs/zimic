@@ -57,17 +57,15 @@ class WebSocketServer<Schema extends WebSocketSchema> extends WebSocketHandler<S
       if (this.authenticate) {
         const result = await this.authenticate(socket, request);
 
-        if (result.isValid) {
-          socket.send('socket:authenticated' satisfies WebSocketControlMessage);
-        } else {
-          const unauthorizedData = JSON.stringify({ message: result.message });
-          socket.close(1008, unauthorizedData);
+        if (!result.isValid) {
+          socket.close(1008, result.message);
           return;
         }
       }
 
       try {
         await super.registerSocket(socket);
+        socket.send('socket:auth:valid' satisfies WebSocketControlMessage);
       } catch (error) {
         webSocketServer.emit('error', error);
       }

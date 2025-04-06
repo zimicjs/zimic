@@ -10,13 +10,11 @@ import { logger } from '@/utils/logging';
 
 interface InterceptorServerCreateTokenOptions {
   tokenName?: string;
-  secretLength: number;
   tokensDirectory: string;
 }
 
 export async function createInterceptorServerToken({
   tokenName,
-  secretLength,
   tokensDirectory,
 }: InterceptorServerCreateTokenOptions) {
   const tokensDirectoryExists = await pathExists(tokensDirectory);
@@ -25,7 +23,7 @@ export async function createInterceptorServerToken({
     await createInterceptorTokensDirectory(tokensDirectory);
   }
 
-  const token = await createInterceptorToken({ tokenName, secretLength });
+  const token = await createInterceptorToken({ tokenName });
   await saveInterceptorTokenToFile(tokensDirectory, token);
 
   logger.info(
@@ -45,4 +43,6 @@ export async function createInterceptorServerToken({
       'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
     ].join('\n'),
   );
+
+  return token;
 }
