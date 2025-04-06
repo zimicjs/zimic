@@ -3,7 +3,7 @@ import waitFor from '@zimic/utils/time/waitFor';
 import waitForDelay from '@zimic/utils/time/waitForDelay';
 import waitForNot from '@zimic/utils/time/waitForNot';
 import { PossiblePromise } from '@zimic/utils/types';
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import color from 'picocolors';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,7 +33,7 @@ describe('CLI (server start)', async () => {
   const temporarySaveFile = path.join(temporarySaveDirectory, 'tmp.txt');
 
   const serverStartHelpOutput = [
-    'zimic-interceptor server start [-- onReady]',
+    'zimic-interceptor server start',
     '',
     'Start an interceptor server.',
     '',
@@ -82,8 +82,8 @@ describe('CLI (server start)', async () => {
   beforeEach(async () => {
     processArgvSpy.mockReturnValue([]);
 
-    await fs.mkdir(temporarySaveDirectory, { recursive: true });
-    await fs.rm(temporarySaveFile, { force: true });
+    await fs.promises.mkdir(temporarySaveDirectory, { recursive: true });
+    await fs.promises.rm(temporarySaveFile, { force: true });
   });
 
   afterEach(async () => {
@@ -286,7 +286,7 @@ describe('CLI (server start)', async () => {
         `Ephemeral server is running on ${color.yellow(`localhost:${server!.port}`)}`,
       );
 
-      const savedFile = await fs.readFile(temporarySaveFile, 'utf-8');
+      const savedFile = await fs.promises.readFile(temporarySaveFile, 'utf-8');
       expect(savedFile).toBe(temporarySaveFileContent);
 
       expect(processExitSpy).toHaveBeenCalledTimes(1);
@@ -330,7 +330,7 @@ describe('CLI (server start)', async () => {
           `Server is running on ${color.yellow(`localhost:${server!.port}`)}`,
         );
 
-        const savedFile = await fs.readFile(temporarySaveFile, 'utf-8');
+        const savedFile = await fs.promises.readFile(temporarySaveFile, 'utf-8');
         expect(savedFile).toBe(temporarySaveFileContent);
 
         expect(processExitSpy).not.toHaveBeenCalled();

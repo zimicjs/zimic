@@ -40,7 +40,7 @@ async function runCLI() {
       yargs
         .demandCommand()
         .command(
-          'start [-- onReady]',
+          'start',
           'Start an interceptor server.',
           (yargs) =>
             yargs
@@ -140,7 +140,7 @@ async function runCLI() {
             )
 
             .command(
-              'ls',
+              ['ls', 'list'],
               'List interceptor tokens.',
               (yargs) =>
                 yargs.option('tokens-dir', {
@@ -157,7 +157,7 @@ async function runCLI() {
             )
 
             .command(
-              'rm <tokenId>',
+              ['rm', 'remove'],
               'Remove an interceptor token.',
               (yargs) =>
                 yargs
