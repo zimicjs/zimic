@@ -1,3 +1,4 @@
+import color from 'picocolors';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NotRunningHttpInterceptorError } from '@/http';
@@ -472,5 +473,39 @@ describe('CLI > Server start > Authentication', () => {
         await interceptor.get('/users').respond({ status: 204 });
       }).rejects.toThrowError(new NotRunningHttpInterceptorError());
     });
+  });
+
+  it('should show a warning if started in production without a token directory', async () => {
+    const environment = { NODE_ENV: 'production' };
+    const processEnvSpy = vi.spyOn(process, 'env', 'get').mockReturnValue(environment);
+
+    try {
+      expect(process.env).toEqual(environment);
+
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5001']);
+
+      await usingIgnoredConsole(['info', 'warn'], async (spies) => {
+        await runCLI();
+
+        expect(server).toBeDefined();
+        expect(server!.isRunning).toBe(true);
+        expect(server!.hostname).toBe('localhost');
+        expect(server!.port).toBe(5001);
+        expect(server!.tokensDirectory).toBe(undefined);
+
+        expect(spies.warn).toHaveBeenCalledTimes(1);
+        expect(spies.warn).toHaveBeenCalledWith(
+          color.cyan('[@zimic/interceptor]'),
+          [
+            `Attention: this interceptor server is ${color.bold(color.red('unprotected'))}. Do not expose it publicly ` +
+              'without authentication.',
+            '',
+            'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+          ].join('\n'),
+        );
+      });
+    } finally {
+      processEnvSpy.mockRestore();
+    }
   });
 });

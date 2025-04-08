@@ -33,68 +33,73 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
     it.each([{ NODE_ENV: 'development' }, { NODE_ENV: 'test' }, { NODE_ENV: 'production' }])(
       'should have the correct default request saving configuration if none is provided (NODE_ENV: %s)',
       async (environment) => {
-        vi.spyOn(process, 'env', 'get').mockReturnValue(environment);
-        expect(process.env).toEqual(environment);
+        const processEnvSpy = vi.spyOn(process, 'env', 'get').mockReturnValue(environment);
 
-        await usingHttpInterceptor<{
-          '/users': { GET: MethodSchema };
-        }>({ ...interceptorOptions, requestSaving: undefined }, async (interceptor) => {
-          const defaultRequestSaving = interceptor.requestSaving;
+        try {
+          expect(process.env).toEqual(environment);
 
-          if (isClientSide()) {
-            expect(defaultRequestSaving).toEqual<HttpInterceptorRequestSaving>({
-              enabled: false,
-              safeLimit: DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
-            });
-          } else {
-            expect(defaultRequestSaving).toEqual<HttpInterceptorRequestSaving>({
-              enabled: environment.NODE_ENV === 'test',
-              safeLimit: DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
-            });
-          }
+          await usingHttpInterceptor<{
+            '/users': { GET: MethodSchema };
+          }>({ ...interceptorOptions, requestSaving: undefined }, async (interceptor) => {
+            const defaultRequestSaving = interceptor.requestSaving;
 
-          const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
-
-          const numberOfRequests = 5;
-
-          if (defaultRequestSaving.enabled) {
-            expect(handler.requests).toHaveLength(0);
-
-            for (let index = 0; index < numberOfRequests; index++) {
-              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-              expect(response.status).toBe(200);
+            if (isClientSide()) {
+              expect(defaultRequestSaving).toEqual<HttpInterceptorRequestSaving>({
+                enabled: false,
+                safeLimit: DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
+              });
+            } else {
+              expect(defaultRequestSaving).toEqual<HttpInterceptorRequestSaving>({
+                enabled: environment.NODE_ENV === 'test',
+                safeLimit: DEFAULT_REQUEST_SAVING_SAFE_LIMIT,
+              });
             }
 
-            expect(handler.requests).toHaveLength(numberOfRequests);
-          } else {
-            const error = new DisabledRequestSavingError();
-
-            expect(() => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-              handler.requests;
-            }).toThrowError(error);
-
-            // @ts-expect-error Checking that no intercepted requests are saved.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler.client._requests).toHaveLength(0);
+            const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
 
             const numberOfRequests = 5;
 
-            for (let index = 0; index < numberOfRequests; index++) {
-              const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
-              expect(response.status).toBe(200);
+            if (defaultRequestSaving.enabled) {
+              expect(handler.requests).toHaveLength(0);
+
+              for (let index = 0; index < numberOfRequests; index++) {
+                const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+                expect(response.status).toBe(200);
+              }
+
+              expect(handler.requests).toHaveLength(numberOfRequests);
+            } else {
+              const error = new DisabledRequestSavingError();
+
+              expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                handler.requests;
+              }).toThrowError(error);
+
+              // @ts-expect-error Checking that no intercepted requests are saved.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              expect(handler.client._requests).toHaveLength(0);
+
+              const numberOfRequests = 5;
+
+              for (let index = 0; index < numberOfRequests; index++) {
+                const response = await fetch(joinURL(baseURL, '/users'), { method: 'GET' });
+                expect(response.status).toBe(200);
+              }
+
+              expect(() => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                handler.requests;
+              }).toThrowError(error);
+
+              // @ts-expect-error Checking that no intercepted requests are saved.
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              expect(handler.client._requests).toHaveLength(0);
             }
-
-            expect(() => {
-              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-              handler.requests;
-            }).toThrowError(error);
-
-            // @ts-expect-error Checking that no intercepted requests are saved.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            expect(handler.client._requests).toHaveLength(0);
-          }
-        });
+          });
+        } finally {
+          processEnvSpy.mockRestore();
+        }
       },
     );
 
