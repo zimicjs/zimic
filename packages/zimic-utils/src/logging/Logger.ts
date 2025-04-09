@@ -22,7 +22,7 @@ class Logger {
     this.raw = prefix ? new Logger({ ...options, prefix: undefined }) : this;
   }
 
-  private log(level: 'info' | 'warn' | 'error', ...messages: unknown[]) {
+  private logWithLevel(level: 'log' | 'warn' | 'error', ...messages: unknown[]) {
     if (this.prefix) {
       console[level](this.prefix, ...messages);
     } else {
@@ -31,15 +31,15 @@ class Logger {
   }
 
   info(...messages: unknown[]) {
-    this.log('info', ...messages);
+    this.logWithLevel('log', ...messages);
   }
 
   warn(...messages: unknown[]) {
-    this.log('warn', ...messages);
+    this.logWithLevel('warn', ...messages);
   }
 
   error(...messages: unknown[]) {
-    this.log('error', ...messages);
+    this.logWithLevel('error', ...messages);
   }
 
   table<Row extends TableLogRow>(headers: TableLogHeader<Row>[], rows: Row[]) {
@@ -107,7 +107,7 @@ class Logger {
       })
       .join('\n');
 
-    this.log('info', formattedTable);
+    this.logWithLevel('log', formattedTable);
   }
 }
 
