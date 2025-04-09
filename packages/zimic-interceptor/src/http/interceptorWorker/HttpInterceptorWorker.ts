@@ -35,10 +35,11 @@ import {
 import { DEFAULT_UNHANDLED_REQUEST_STRATEGY } from './constants';
 import InvalidFormDataError from './errors/InvalidFormDataError';
 import InvalidJSONError from './errors/InvalidJSONError';
+import { HttpInterceptorWorkerType } from './types/options';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
-  abstract get type(): 'local' | 'remote';
+  abstract get type(): HttpInterceptorWorkerType;
 
   platform: HttpInterceptorPlatform | null = null;
   isRunning = false;

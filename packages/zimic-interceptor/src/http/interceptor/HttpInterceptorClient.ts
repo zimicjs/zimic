@@ -40,8 +40,8 @@ class HttpInterceptorClient<
   private store: HttpInterceptorStore;
   private _baseURL!: URL;
 
-  private getOrCreateWorker: () => HttpInterceptorWorker;
-  private removeWorker: () => void;
+  private createWorker: () => HttpInterceptorWorker;
+  private deleteWorker: () => void;
   private worker?: HttpInterceptorWorker;
 
   requestSaving: HttpInterceptorRequestSaving;
@@ -70,8 +70,8 @@ class HttpInterceptorClient<
   constructor(options: {
     store: HttpInterceptorStore;
     baseURL: URL;
-    getOrCreateWorker: () => HttpInterceptorWorker;
-    removeWorker: () => void;
+    createWorker: () => HttpInterceptorWorker;
+    deleteWorker: () => void;
     requestSaving?: Partial<HttpInterceptorRequestSaving>;
     onUnhandledRequest?: UnhandledRequestStrategy;
     Handler: HandlerConstructor;
@@ -79,8 +79,8 @@ class HttpInterceptorClient<
     this.store = options.store;
     this.baseURL = options.baseURL;
 
-    this.getOrCreateWorker = options.getOrCreateWorker;
-    this.removeWorker = options.removeWorker;
+    this.createWorker = options.createWorker;
+    this.deleteWorker = options.deleteWorker;
 
     this.requestSaving = {
       enabled: options.requestSaving?.enabled ?? this.getDefaultRequestSavingEnabled(),
@@ -135,7 +135,7 @@ class HttpInterceptorClient<
 
   async start() {
     try {
-      this.worker = this.getOrCreateWorker();
+      this.worker = this.createWorker();
 
       await this.worker.start();
       this.worker.registerRunningInterceptor(this);
@@ -155,7 +155,7 @@ class HttpInterceptorClient<
 
     if (isLastRunningInterceptor) {
       await this.worker?.stop();
-      this.removeWorker();
+      this.deleteWorker();
     }
 
     this.markAsRunning(false);
@@ -168,7 +168,6 @@ class HttpInterceptorClient<
     } else {
       this.store.markRemoteInterceptorAsRunning(this, isRunning, this.baseURL);
     }
-
     this.isRunning = isRunning;
   }
 

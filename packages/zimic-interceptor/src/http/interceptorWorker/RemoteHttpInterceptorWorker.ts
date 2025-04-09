@@ -35,7 +35,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     super();
 
     this.webSocketClient = new WebSocketClient({
-      url: this.deriveWebSocketServerURL(options.serverURL).toString(),
+      url: this.getWebSocketServerURL(options.serverURL).toString(),
     });
 
     this.auth = options.auth;
@@ -45,7 +45,7 @@ class RemoteHttpInterceptorWorker extends HttpInterceptorWorker {
     return 'remote' as const;
   }
 
-  private deriveWebSocketServerURL(serverURL: URL) {
+  private getWebSocketServerURL(serverURL: URL) {
     const webSocketServerURL = new URL(serverURL);
     webSocketServerURL.protocol = serverURL.protocol.replace(/^http(s)?:$/, 'ws$1:');
     return webSocketServerURL;

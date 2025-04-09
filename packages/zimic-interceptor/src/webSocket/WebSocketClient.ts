@@ -32,10 +32,8 @@ class WebSocketClient<Schema extends WebSocketSchema> extends WebSocketHandler<S
   }
 
   async start(options: { parameters?: Record<string, string>; waitForAuthentication?: boolean } = {}) {
-    const { parameters } = options;
-
-    const parametersAsString = parameters
-      ? Object.entries(parameters)
+    const parametersAsString = options.parameters
+      ? Object.entries(options.parameters)
           .map(([key, value]) => `${key}=${value}`)
           .map(encodeURIComponent)
       : [];

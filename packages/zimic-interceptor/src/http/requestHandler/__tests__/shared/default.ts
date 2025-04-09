@@ -47,7 +47,9 @@ export function declareDefaultHttpRequestHandlerTests(
     interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
     expect(interceptor.platform).toBe(null);
+
     await interceptor.start();
+
     expect(interceptor.platform).toBe(platform);
   });
 

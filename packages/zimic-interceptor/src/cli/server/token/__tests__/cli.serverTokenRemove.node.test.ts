@@ -23,12 +23,12 @@ describe('CLI > Server token remove', () => {
     'Remove an interceptor token.',
     '',
     'Positionals:',
-    '  tokenId  The ID of the token to remove.                    [string] [required]',
+    '  tokenId  The identifier of the token to remove.            [string] [required]',
     '',
     'Options:',
     '      --help        Show help                                          [boolean]',
     '      --version     Show version number                                [boolean]',
-    '  -t, --tokens-dir  The path to the directory where the tokens are stored.',
+    '  -t, --tokens-dir  The directory where the interceptor tokens are saved.',
     `                         [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
   ].join('\n');
 

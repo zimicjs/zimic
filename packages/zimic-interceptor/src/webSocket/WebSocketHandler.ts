@@ -52,8 +52,8 @@ abstract class WebSocketHandler<Schema extends WebSocketSchema> {
 
   protected async registerSocket(socket: ClientSocket, options: { waitForAuthentication?: boolean } = {}) {
     const openPromise = waitForOpenClientSocket(socket, {
-      waitForAuthentication: options.waitForAuthentication,
       timeout: this.socketTimeout,
+      waitForAuthentication: options.waitForAuthentication,
     });
 
     const handleSocketMessage = async (rawMessage: ClientSocket.MessageEvent) => {

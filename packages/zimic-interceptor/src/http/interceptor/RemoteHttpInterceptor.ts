@@ -18,13 +18,13 @@ class RemoteHttpInterceptor<Schema extends HttpSchema> implements PublicRemoteHt
     this.client = new HttpInterceptorClient<Schema, typeof RemoteHttpRequestHandler>({
       store: this.store,
       baseURL,
-      getOrCreateWorker() {
+      createWorker() {
         return this.store.getOrCreateRemoteWorker({
           serverURL: new URL(baseURL.origin),
           auth: options.auth,
         });
       },
-      removeWorker() {
+      deleteWorker() {
         this.store.deleteRemoteWorker(baseURL, { auth: options.auth });
       },
       Handler: RemoteHttpRequestHandler,

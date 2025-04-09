@@ -33,7 +33,7 @@ describe('CLI > Server start', async () => {
   const temporarySaveFile = path.join(temporarySaveDirectory, 'tmp.txt');
 
   const serverStartHelpOutput = [
-    'zimic-interceptor server start',
+    'zimic-interceptor server start [-- onReady]',
     '',
     'Start an interceptor server.',
     '',
@@ -57,13 +57,13 @@ describe('CLI > Server start', async () => {
     '                                terceptor was matched, the logging behavior for',
     '                                that base URL is configured in the interceptor i',
     '                                tself.                                 [boolean]',
-    '  -t, --tokens-dir              The path to the directory where the interceptor',
-    '                                authentication tokens are stored. If provided, o',
-    '                                nly remote interceptors with one of the allowed',
-    '                                tokens will be accepted. This option is strongly',
-    '                                 recommended if you are exposing your intercepto',
-    '                                r server publicly. For local development and tes',
-    '                                ting, authentication is not required.   [string]',
+    '  -t, --tokens-dir              The directory where the authorized interceptor a',
+    '                                uthentication tokens are saved. If provided, onl',
+    '                                y remote interceptors bearing a valid token will',
+    '                                 be accepted. This option is essential if you ar',
+    '                                e exposing your interceptor server publicly. For',
+    '                                 local development and testing, though, `--token',
+    '                                s-dir` is optional.                     [string]',
   ].join('\n');
 
   function watchExitEventListeners(exitEvent: (typeof PROCESS_EXIT_EVENTS)[number]) {
@@ -133,7 +133,7 @@ describe('CLI > Server start', async () => {
       '--hostname',
       '0.0.0.0',
       '--port',
-      '3000',
+      '5000',
     ]);
 
     await usingIgnoredConsole(['log'], async (console) => {
@@ -142,12 +142,12 @@ describe('CLI > Server start', async () => {
       expect(server).toBeDefined();
       expect(server!.isRunning).toBe(true);
       expect(server!.hostname).toBe('0.0.0.0');
-      expect(server!.port).toBe(3000);
+      expect(server!.port).toBe(5000);
 
       expect(console.log).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
-        `Server is running on ${color.yellow('0.0.0.0:3000')}`,
+        `Server is running on ${color.yellow('0.0.0.0:5000')}`,
       );
     });
   });
@@ -199,7 +199,7 @@ describe('CLI > Server start', async () => {
       '--hostname',
       '0.0.0.0',
       '--port',
-      '3000',
+      '5001',
     ]);
 
     await usingIgnoredConsole(['log', 'error'], async (console) => {
@@ -210,7 +210,7 @@ describe('CLI > Server start', async () => {
       expect(initialServer).toBeDefined();
       expect(initialServer!.isRunning).toBe(true);
       expect(initialServer!.hostname).toBe('0.0.0.0');
-      expect(initialServer!.port).toBe(3000);
+      expect(initialServer!.port).toBe(5001);
 
       try {
         await expect(runCLI()).rejects.toThrowError('EADDRINUSE: address already in use');
@@ -219,14 +219,14 @@ describe('CLI > Server start', async () => {
 
         const errorArguments = console.error.mock.calls[0];
 
-        const error = new Error('listen EADDRINUSE: address already in use 0.0.0.0:3000');
+        const error = new Error('listen EADDRINUSE: address already in use 0.0.0.0:5001');
         expect(errorArguments).toEqual([expect.objectContaining(error)]);
 
         expect(errorArguments[0]).toHaveProperty('code', 'EADDRINUSE');
         expect(errorArguments[0]).toHaveProperty('errno', -98);
         expect(errorArguments[0]).toHaveProperty('syscall', 'listen');
         expect(errorArguments[0]).toHaveProperty('address', '0.0.0.0');
-        expect(errorArguments[0]).toHaveProperty('port', 3000);
+        expect(errorArguments[0]).toHaveProperty('port', 5001);
       } finally {
         await initialServer?.stop();
       }

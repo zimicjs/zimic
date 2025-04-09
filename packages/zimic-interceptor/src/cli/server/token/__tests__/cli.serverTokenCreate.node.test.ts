@@ -37,8 +37,8 @@ describe('CLI > Server token create', () => {
     '      --help        Show help                                          [boolean]',
     '      --version     Show version number                                [boolean]',
     '  -n, --name        The name of the token to create.                    [string]',
-    '  -t, --tokens-dir  The path to the directory where the tokens are stored.',
-    `                         [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
+    '  -t, --tokens-dir  The directory where the created interceptor token will be sa',
+    `                    ved. [string] [default: "${DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY}"]`,
   ].join('\n');
 
   beforeEach(async () => {
@@ -83,8 +83,8 @@ describe('CLI > Server token create', () => {
         '',
         'Store this token securely. It cannot be retrieved later.',
         '',
-        `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
-          'remote interceptors bearing a valid token will be allowed to connect.',
+        `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
+          'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
         '',
         `${color.dim('$')} zimic-interceptor server start ${color.cyan(
           '--tokens-dir',
@@ -257,8 +257,8 @@ describe('CLI > Server token create', () => {
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
-          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
-            'remote interceptors bearing a valid token will be allowed to connect.',
+          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
+            'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
@@ -292,8 +292,8 @@ describe('CLI > Server token create', () => {
           '',
           'Store this token securely. It cannot be retrieved later.',
           '',
-          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option. Only ` +
-            'remote interceptors bearing a valid token will be allowed to connect.',
+          `To enable authentication in your interceptor server, use the ${color.cyan('--tokens-dir')} option as ` +
+            'shown below. Only remote interceptors bearing a valid token will be allowed to connect.',
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',

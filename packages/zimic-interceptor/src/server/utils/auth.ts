@@ -84,7 +84,6 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
   try {
     const parentTokensDirectory = path.dirname(tokensDirectory);
     await fs.promises.mkdir(parentTokensDirectory, { recursive: true });
-
     await fs.promises.mkdir(tokensDirectory, { mode: 0o700, recursive: true });
     await fs.promises.appendFile(path.join(tokensDirectory, '.gitignore'), `*${os.EOL}`, { encoding: 'utf-8' });
   } catch (error) {
@@ -164,9 +163,7 @@ export async function readInterceptorTokenFromFile(
     return null;
   }
 
-  const tokenFileContentAsString = await fs.promises.readFile(tokenFilePath, {
-    encoding: 'utf-8',
-  });
+  const tokenFileContentAsString = await fs.promises.readFile(tokenFilePath, { encoding: 'utf-8' });
 
   const validation = interceptorTokenFileContentSchema.safeParse(JSON.parse(tokenFileContentAsString) as unknown);
 
@@ -237,9 +234,17 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
   }
 
   const files = await fs.promises.readdir(options.tokensDirectory);
-  const tokenIds = files.filter((file) => isValidInterceptorTokenId(file));
 
-  const tokenReadPromises = tokenIds.map((tokenId) => readInterceptorTokenFromFile(tokenId, options));
+  const tokenReadPromises = files.map(async (file) => {
+    if (!isValidInterceptorTokenId(file)) {
+      return null;
+    }
+
+    const tokenId = file;
+    const token = await readInterceptorTokenFromFile(tokenId, options);
+    return token;
+  });
+
   const tokenCandidates = await Promise.allSettled(tokenReadPromises);
 
   const tokens: PersistedInterceptorToken[] = [];
@@ -247,12 +252,7 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
   for (const tokenCandidate of tokenCandidates) {
     if (tokenCandidate.status === 'rejected') {
       console.error(tokenCandidate.reason);
-      continue;
-    }
-
-    /* istanbul ignore if -- @preserve
-     * At this point, it is guaranteed that the token exists. */
-    if (tokenCandidate.value !== null) {
+    } else if (tokenCandidate.value !== null) {
       tokens.push(tokenCandidate.value);
     }
   }
@@ -270,7 +270,10 @@ export async function validateInterceptorToken(tokenValue: string, options: { to
   const decodedTokenValue = Buffer.from(tokenValue, 'base64url').toString('hex');
 
   const tokenId = decodedTokenValue.slice(0, INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
-  const tokenSecret = decodedTokenValue.slice(INTERCEPTOR_TOKEN_ID_HEX_LENGTH, INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
+  const tokenSecret = decodedTokenValue.slice(
+    INTERCEPTOR_TOKEN_ID_HEX_LENGTH,
+    INTERCEPTOR_TOKEN_ID_HEX_LENGTH + INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH,
+  );
 
   const tokenFromFile = await readInterceptorTokenFromFile(tokenId, options);
 
@@ -286,6 +289,12 @@ export async function validateInterceptorToken(tokenValue: string, options: { to
 }
 
 export async function removeInterceptorToken(tokenId: string, options: { tokensDirectory: string }) {
+  /* istanbul ignore if -- @preserve
+   * At this point, we should have a valid tokenId. This is just a sanity check. */
+  if (!isValidInterceptorTokenId(tokenId)) {
+    throw new InvalidInterceptorTokenError(tokenId);
+  }
+
   const tokenFilePath = path.join(options.tokensDirectory, tokenId);
 
   await fs.promises.rm(tokenFilePath, { force: true });

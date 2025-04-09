@@ -16,7 +16,7 @@ export async function removeInterceptorServerToken({ tokenId, tokensDirectory }:
     process.exit(1);
   }
 
-  await removeInterceptorToken(tokenId, { tokensDirectory });
+  await removeInterceptorToken(token.id, { tokensDirectory });
 
-  logger.info(`${color.green(color.bold('✔'))} Token ${color.green(token.name ?? tokenId)} removed.`);
+  logger.info(`${color.green(color.bold('✔'))} Token ${color.green(token.name ?? token.id)} removed.`);
 }

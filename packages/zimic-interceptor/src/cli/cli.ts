@@ -39,7 +39,7 @@ async function runCLI() {
       yargs
         .demandCommand()
         .command(
-          'start',
+          'start [-- onReady]',
           'Start an interceptor server.',
           (yargs) =>
             yargs
@@ -78,10 +78,10 @@ async function runCLI() {
               .option('tokens-dir', {
                 type: 'string',
                 description:
-                  'The path to the directory where the interceptor authentication tokens are stored. ' +
-                  'If provided, only remote interceptors with one of the allowed tokens will be accepted. This ' +
-                  'option is strongly recommended if you are exposing your interceptor server publicly. For local ' +
-                  'development and testing, authentication is not required.',
+                  'The directory where the authorized interceptor authentication tokens are saved. If provided, only ' +
+                  'remote interceptors bearing a valid token will be accepted. This option is essential if you are ' +
+                  'exposing your interceptor server publicly. For local development and testing, though, ' +
+                  '`--tokens-dir` is optional.',
                 alias: 't',
               }),
           async (cliArguments) => {
@@ -119,7 +119,7 @@ async function runCLI() {
                   })
                   .option('tokens-dir', {
                     type: 'string',
-                    description: 'The path to the directory where the tokens are stored.',
+                    description: 'The directory where the created interceptor token will be saved.',
                     alias: 't',
                     default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                   }),
@@ -133,11 +133,11 @@ async function runCLI() {
 
             .command(
               ['ls', 'list'],
-              'List interceptor tokens.',
+              'List the authorized interceptor tokens.',
               (yargs) =>
                 yargs.option('tokens-dir', {
                   type: 'string',
-                  description: 'The path to the directory where the tokens are stored.',
+                  description: 'The directory where the interceptor tokens are saved.',
                   alias: 't',
                   default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                 }),
@@ -155,12 +155,12 @@ async function runCLI() {
                 yargs
                   .positional('tokenId', {
                     type: 'string',
-                    description: 'The ID of the token to remove.',
+                    description: 'The identifier of the token to remove.',
                     demandOption: true,
                   })
                   .option('tokens-dir', {
                     type: 'string',
-                    description: 'The path to the directory where the tokens are stored.',
+                    description: 'The directory where the interceptor tokens are saved.',
                     alias: 't',
                     default: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
                   }),

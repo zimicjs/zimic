@@ -8,7 +8,7 @@ import {
 import { AnyHttpInterceptorClient } from './HttpInterceptorClient';
 
 interface RemoteWorkerKeyOptions {
-  auth?: RemoteHttpInterceptorWorkerOptions['auth'];
+  auth: RemoteHttpInterceptorWorkerOptions['auth'];
 }
 
 class HttpInterceptorStore {
@@ -88,8 +88,8 @@ class HttpInterceptorStore {
 
   getOrCreateRemoteWorker(workerOptions: Omit<RemoteHttpInterceptorWorkerOptions, 'type'>) {
     const remoteWorkerKey = this.getRemoteWorkerKey(workerOptions.serverURL, { auth: workerOptions.auth });
-
     const existingWorker = this.class.remoteWorkers.get(remoteWorkerKey);
+
     if (existingWorker) {
       return existingWorker;
     }
