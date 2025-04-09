@@ -2,9 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import runCLI from '../cli';
 
-vi.mock('../cli', () => ({
-  default: vi.fn(),
-}));
+vi.mock('../cli', () => ({ default: vi.fn() }));
 const runCLIMock = vi.mocked(runCLI);
 
 describe('CLI > Entry point', () => {
