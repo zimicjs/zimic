@@ -36,6 +36,7 @@ export function declareRestrictionHttpRequestHandlerTests(
     interceptor = createInternalHttpInterceptor<Schema>({ type, baseURL });
     interceptorClient = interceptor.client as SharedHttpInterceptorClient<Schema>;
 
+    expect(interceptor.platform).toBe(null);
     await interceptor.start();
     expect(interceptor.platform).toBe(platform);
   });

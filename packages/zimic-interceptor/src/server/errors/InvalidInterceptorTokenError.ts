@@ -4,8 +4,8 @@
  * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
  */
 class InvalidInterceptorTokenError extends Error {
-  constructor(tokenId: string | undefined) {
-    super(`Invalid interceptor token:${tokenId === undefined ? '' : ` ${tokenId}`}`);
+  constructor(tokenId: string) {
+    super(`Invalid interceptor token: ${tokenId}`);
     this.name = 'InvalidInterceptorTokenError';
   }
 }

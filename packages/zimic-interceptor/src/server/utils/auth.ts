@@ -54,13 +54,16 @@ async function hashInterceptorToken(plainToken: string, salt: string) {
   return hash;
 }
 
+interface InterceptorTokenSecret {
+  hash: string;
+  salt: string;
+  value: string;
+}
+
 export interface InterceptorToken {
   id: string;
   name?: string;
-  secret: {
-    hash: string;
-    salt: string;
-  };
+  secret: InterceptorTokenSecret;
   value: string;
   createdAt: Date;
 }
@@ -215,6 +218,7 @@ export async function createInterceptorToken(options: {
     secret: {
       hash: tokenSecretHash,
       salt: tokenSecretSalt,
+      value: tokenSecret,
     },
     value: tokenValue,
     createdAt: new Date(),
@@ -246,6 +250,8 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
       continue;
     }
 
+    /* istanbul ignore if -- @preserve
+     * At this point, it is guaranteed that the token exists. */
     if (tokenCandidate.value !== null) {
       tokens.push(tokenCandidate.value);
     }

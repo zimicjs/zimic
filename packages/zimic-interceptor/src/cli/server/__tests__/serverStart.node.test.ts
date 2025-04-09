@@ -660,24 +660,7 @@ describe('CLI > Server start', async () => {
   );
 
   it('should log an error and reject the request if it could not be handled due to an error', async () => {
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'server',
-      'start',
-      '--port',
-      '5001',
-      '--log-unhandled-requests',
-    ]);
-
-    const interceptor = createHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>({
-      type: 'remote',
-      baseURL: 'http://localhost:5001',
-    });
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['error', 'info'], async (console) => {
       await runCLI();
@@ -685,7 +668,16 @@ describe('CLI > Server start', async () => {
       expect(server).toBeDefined();
       expect(server!.isRunning).toBe(true);
       expect(server!.hostname).toBe('localhost');
-      expect(server!.port).toBe(5001);
+      expect(server!.port).toEqual(expect.any(Number));
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: `http://localhost:${server!.port}`,
+      });
 
       const webSocketServerRequestSpy = vi.spyOn(WebSocketServer.prototype, 'request');
 
@@ -696,7 +688,7 @@ describe('CLI > Server start', async () => {
         const error = new Error('An error ocurred.');
         webSocketServerRequestSpy.mockRejectedValueOnce(error);
 
-        const request = new Request('http://localhost:5001/users');
+        const request = new Request(`http://localhost:${server!.port}/users`);
         const responsePromise = fetch(request);
         await expectFetchError(responsePromise);
 
@@ -719,24 +711,7 @@ describe('CLI > Server start', async () => {
   });
 
   it('should abort waiting for a worker reply if it was uncommitted before responding', async () => {
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'server',
-      'start',
-      '--port',
-      '5001',
-      '--log-unhandled-requests',
-    ]);
-
-    const interceptor = createHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>({
-      type: 'remote',
-      baseURL: 'http://localhost:5001',
-    });
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['error', 'info'], async (console) => {
       await runCLI();
@@ -744,7 +719,16 @@ describe('CLI > Server start', async () => {
       expect(server).toBeDefined();
       expect(server!.isRunning).toBe(true);
       expect(server!.hostname).toBe('localhost');
-      expect(server!.port).toBe(5001);
+      expect(server!.port).toEqual(expect.any(Number));
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: `http://localhost:${server!.port}`,
+      });
 
       try {
         await interceptor.start();
@@ -760,7 +744,7 @@ describe('CLI > Server start', async () => {
         await interceptor.get('/users').respond(responseFactory);
 
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch('http://localhost:5001/users').catch(onFetchError);
+        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
 
         await waitFor(() => {
           expect(responseFactoryPromise).toBeDefined();
@@ -786,24 +770,7 @@ describe('CLI > Server start', async () => {
   });
 
   it('should abort waiting for a worker reply if its internal web socket client was closed before responding', async () => {
-    processArgvSpy.mockReturnValue([
-      'node',
-      './dist/cli.js',
-      'server',
-      'start',
-      '--port',
-      '5001',
-      '--log-unhandled-requests',
-    ]);
-
-    const interceptor = createHttpInterceptor<{
-      '/users': {
-        GET: { response: { 204: {} } };
-      };
-    }>({
-      type: 'remote',
-      baseURL: 'http://localhost:5001',
-    });
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--log-unhandled-requests']);
 
     await usingIgnoredConsole(['error', 'info'], async (console) => {
       await runCLI();
@@ -811,7 +778,16 @@ describe('CLI > Server start', async () => {
       expect(server).toBeDefined();
       expect(server!.isRunning).toBe(true);
       expect(server!.hostname).toBe('localhost');
-      expect(server!.port).toBe(5001);
+      expect(server!.port).toEqual(expect.any(Number));
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: `http://localhost:${server!.port}`,
+      });
 
       try {
         await interceptor.start();
@@ -832,7 +808,7 @@ describe('CLI > Server start', async () => {
         await interceptor.get('/users').respond(responseFactory);
 
         const onFetchError = vi.fn<(error: unknown) => void>();
-        const responsePromise = fetch('http://localhost:5001/users').catch(onFetchError);
+        const responsePromise = fetch(`http://localhost:${server!.port}/users`).catch(onFetchError);
 
         await waitFor(() => {
           expect(wasResponseFactoryCalled).toBe(true);

@@ -41,7 +41,7 @@ describe('CLI > Server start > Authentication', () => {
   });
 
   it('should allow an unauthenticated interceptor connection if not using a token directory', async () => {
-    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5001']);
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
     await usingIgnoredConsole(['info'], async () => {
       await runCLI();
@@ -49,8 +49,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(undefined);
 
     await usingHttpInterceptor<{
@@ -60,7 +58,7 @@ describe('CLI > Server start > Authentication', () => {
     }>(
       {
         type: 'remote',
-        baseURL: 'http://localhost:5001',
+        baseURL: `http://localhost:${server!.port}`,
         auth: undefined,
       },
       async (interceptor) => {
@@ -68,7 +66,7 @@ describe('CLI > Server start > Authentication', () => {
 
         await interceptor.get('/users').respond({ status: 204 });
 
-        const response = await fetch('http://localhost:5001/users');
+        const response = await fetch(`http://localhost:${server!.port}/users`);
         expect(response.status).toBe(204);
       },
     );
@@ -80,8 +78,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -92,8 +88,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     const interceptor = createHttpInterceptor<{
@@ -102,7 +96,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: undefined,
     });
 
@@ -126,8 +120,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -146,8 +138,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     await usingHttpInterceptor<{
@@ -157,7 +147,7 @@ describe('CLI > Server start > Authentication', () => {
     }>(
       {
         type: 'remote',
-        baseURL: 'http://localhost:5001',
+        baseURL: `http://localhost:${server!.port}`,
         auth: { token: token.value },
       },
       async (interceptor) => {
@@ -165,7 +155,7 @@ describe('CLI > Server start > Authentication', () => {
 
         await interceptor.get('/users').respond({ status: 204 });
 
-        const response = await fetch('http://localhost:5001/users');
+        const response = await fetch(`http://localhost:${server!.port}/users`);
         expect(response.status).toBe(204);
       },
     );
@@ -187,8 +177,6 @@ describe('CLI > Server start > Authentication', () => {
         './dist/cli.js',
         'server',
         'start',
-        '--port',
-        '5001',
         '--tokens-dir',
         DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
       ]);
@@ -207,8 +195,6 @@ describe('CLI > Server start > Authentication', () => {
 
       expect(server).toBeDefined();
       expect(server!.isRunning).toBe(true);
-      expect(server!.hostname).toBe('localhost');
-      expect(server!.port).toBe(5001);
       expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
       const interceptor = createHttpInterceptor<{
@@ -217,7 +203,7 @@ describe('CLI > Server start > Authentication', () => {
         };
       }>({
         type: 'remote',
-        baseURL: 'http://localhost:5001',
+        baseURL: `http://localhost:${server!.port}`,
         auth: { token: invalidTokenValue },
       });
 
@@ -243,8 +229,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -263,8 +247,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     const invalidTokenValue = 'invalid';
@@ -275,7 +257,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: { token: invalidTokenValue },
     });
 
@@ -298,14 +280,69 @@ describe('CLI > Server start > Authentication', () => {
     }
   });
 
+  it('should not allow an interceptor connection if using a token directory and a token with incorrect secret', async () => {
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'server',
+      'start',
+      '--tokens-dir',
+      DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    ]);
+
+    const token = await createInterceptorToken({
+      tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    });
+    const otherToken = await createInterceptorToken({
+      tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    });
+
+    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    expect(tokens).toHaveLength(2);
+    expect(tokens[0].id).toBe(token.id);
+    expect(tokens[1].id).toBe(otherToken.id);
+
+    await usingIgnoredConsole(['info'], async () => {
+      await runCLI();
+    });
+
+    expect(server).toBeDefined();
+    expect(server!.isRunning).toBe(true);
+    expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+    const invalidTokenValue = Buffer.from(`${token.id}${otherToken.secret.value}`, 'hex').toString('base64url');
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: { response: { 204: {} } };
+      };
+    }>({
+      type: 'remote',
+      baseURL: `http://localhost:${server!.port}`,
+      auth: { token: invalidTokenValue },
+    });
+
+    await usingIgnoredConsole(['error'], async (console) => {
+      await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+
+      expect(interceptor.isRunning).toBe(false);
+
+      expect(console.error).toHaveBeenCalledTimes(2);
+      expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(invalidTokenValue));
+      expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
+    });
+
+    await expect(async () => {
+      await interceptor.get('/users').respond({ status: 204 });
+    }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+  });
+
   it('should not allow an interceptor connection if using a token directory and an invalid token secret', async () => {
     processArgvSpy.mockReturnValue([
       'node',
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -324,8 +361,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     const invalidTokenValue = `${token.value.slice(0, -1)}!`;
@@ -338,7 +373,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: { token: invalidTokenValue },
     });
 
@@ -363,8 +398,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -383,8 +416,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     const invalidTokenValue = `${token.value}a`;
@@ -397,7 +428,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: { token: invalidTokenValue },
     });
 
@@ -422,8 +453,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -442,8 +471,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     const invalidTokenValue = token.value.slice(0, -1);
@@ -456,7 +483,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: { token: invalidTokenValue },
     });
 
@@ -481,8 +508,6 @@ describe('CLI > Server start > Authentication', () => {
       './dist/cli.js',
       'server',
       'start',
-      '--port',
-      '5001',
       '--tokens-dir',
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
@@ -501,8 +526,6 @@ describe('CLI > Server start > Authentication', () => {
 
     expect(server).toBeDefined();
     expect(server!.isRunning).toBe(true);
-    expect(server!.hostname).toBe('localhost');
-    expect(server!.port).toBe(5001);
     expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
 
     await usingHttpInterceptor<{
@@ -512,7 +535,7 @@ describe('CLI > Server start > Authentication', () => {
     }>(
       {
         type: 'remote',
-        baseURL: 'http://localhost:5001',
+        baseURL: `http://localhost:${server!.port}`,
         auth: { token: token.value },
       },
       async (interceptor) => {
@@ -520,7 +543,7 @@ describe('CLI > Server start > Authentication', () => {
 
         await interceptor.get('/users').respond({ status: 204 });
 
-        const response = await fetch('http://localhost:5001/users');
+        const response = await fetch(`http://localhost:${server!.port}/users`);
         expect(response.status).toBe(204);
       },
     );
@@ -538,7 +561,7 @@ describe('CLI > Server start > Authentication', () => {
       };
     }>({
       type: 'remote',
-      baseURL: 'http://localhost:5001',
+      baseURL: `http://localhost:${server!.port}`,
       auth: { token: token.value },
     });
 
@@ -564,7 +587,7 @@ describe('CLI > Server start > Authentication', () => {
     try {
       expect(process.env).toEqual(environment);
 
-      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start', '--port', '5001']);
+      processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
       await usingIgnoredConsole(['info', 'warn'], async (console) => {
         await runCLI();
@@ -572,7 +595,7 @@ describe('CLI > Server start > Authentication', () => {
         expect(server).toBeDefined();
         expect(server!.isRunning).toBe(true);
         expect(server!.hostname).toBe('localhost');
-        expect(server!.port).toBe(5001);
+        expect(server!.port).toEqual(expect.any(Number));
         expect(server!.tokensDirectory).toBe(undefined);
 
         expect(console.warn).toHaveBeenCalledTimes(1);

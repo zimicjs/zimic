@@ -344,11 +344,9 @@ class HttpInterceptorClient<
   }
 
   clear(options: { onCommitSuccess?: () => void; onCommitError?: () => void } = {}) {
-    if (!this.isRunning) {
-      throw new NotRunningHttpInterceptorError();
-    }
-
-    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [];
+    const clearResults: PossiblePromise<AnyHttpRequestHandlerClient | void>[] = [
+      this.workerOrThrow.clearInterceptorHandlers(this),
+    ];
 
     for (const method of HTTP_METHODS) {
       const newClearResults = this.clearMethodHandlers(method);
@@ -360,9 +358,6 @@ class HttpInterceptorClient<
       const handlersByPath = this.handlerClientsByMethod[method];
       handlersByPath.clear();
     }
-
-    const clearResult = this.workerOrThrow.clearInterceptorHandlers(this);
-    clearResults.push(clearResult);
 
     if (options.onCommitSuccess) {
       void Promise.all(clearResults).then(options.onCommitSuccess, options.onCommitError);
