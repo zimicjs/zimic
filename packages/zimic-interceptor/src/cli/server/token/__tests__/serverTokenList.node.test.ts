@@ -1,7 +1,10 @@
+import fs from 'fs';
 import path from 'path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodIssue } from 'zod';
 
 import runCLI from '@/cli/cli';
+import InvalidInterceptorTokenFileError from '@/server/errors/InvalidInterceptorTokenFileError';
 import { DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY, listInterceptorTokens } from '@/server/utils/auth';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
@@ -54,10 +57,10 @@ describe('CLI > Server token list', () => {
 
       expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = console.info.mock.calls[0] as string[];
-      const logLines = logArguments.join(' ').split('\n');
+      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoLines = infoArguments.join(' ').split('\n');
 
-      expect(logLines).toEqual([
+      expect(infoLines).toEqual([
         '┌────┬──────┬────────────┐',
         '│ ID │ NAME │ CREATED AT │',
         '├────┼──────┼────────────┤',
@@ -86,10 +89,10 @@ describe('CLI > Server token list', () => {
 
       expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = console.info.mock.calls[0] as string[];
-      const logLines = logArguments.join(' ').split('\n');
+      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoLines = infoArguments.join(' ').split('\n');
 
-      expect(logLines).toEqual([
+      expect(infoLines).toEqual([
         '┌──────────────────────────────────┬──────┬──────────────────────────┐',
         '│ ID                               │ NAME │ CREATED AT               │',
         '├──────────────────────────────────┼──────┼──────────────────────────┤',
@@ -121,10 +124,10 @@ describe('CLI > Server token list', () => {
 
       expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = console.info.mock.calls[0] as string[];
-      const logLines = logArguments.join(' ').split('\n');
+      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoLines = infoArguments.join(' ').split('\n');
 
-      expect(logLines).toEqual([
+      expect(infoLines).toEqual([
         '┌──────────────────────────────────┬────────────┬──────────────────────────┐',
         '│ ID                               │ NAME       │ CREATED AT               │',
         '├──────────────────────────────────┼────────────┼──────────────────────────┤',
@@ -132,6 +135,66 @@ describe('CLI > Server token list', () => {
         `│ ${tokens[1].id} │ ${tokens[1].name} │ ${tokens[1].createdAt.toISOString()} │`,
         '└──────────────────────────────────┴────────────┴──────────────────────────┘',
       ]);
+    });
+  });
+
+  it('should log an error and ignore tokens whose file not valid', async () => {
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
+
+    await usingIgnoredConsole(['info'], async (console) => {
+      await runCLI();
+      await runCLI();
+
+      expect(console.info).toHaveBeenCalledTimes(2);
+    });
+
+    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    expect(tokens).toHaveLength(2);
+
+    const invalidTokenFileContent = JSON.stringify({});
+    const tokenFilePath = path.join(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY, tokens[0].id);
+    await fs.promises.writeFile(tokenFilePath, invalidTokenFileContent);
+
+    processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
+
+    await usingIgnoredConsole(['info', 'error'], async (console) => {
+      await runCLI();
+
+      expect(console.info).toHaveBeenCalledTimes(1);
+
+      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoLines = infoArguments.join(' ').split('\n');
+
+      expect(infoLines).toEqual([
+        '┌──────────────────────────────────┬──────┬──────────────────────────┐',
+        '│ ID                               │ NAME │ CREATED AT               │',
+        '├──────────────────────────────────┼──────┼──────────────────────────┤',
+        `│ ${tokens[1].id} │      │ ${tokens[1].createdAt.toISOString()} │`,
+        '└──────────────────────────────────┴──────┴──────────────────────────┘',
+      ]);
+
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      const validationIssues: ZodIssue[] = [
+        {
+          code: 'invalid_literal',
+          expected: 1,
+          received: undefined,
+          path: ['version'],
+          message: 'Invalid literal value, expected 1',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'object',
+          received: 'undefined',
+          path: ['token'],
+          message: 'Required',
+        },
+      ];
+      const validationErrorMessage = JSON.stringify(validationIssues, null, 2);
+      const fileError = new InvalidInterceptorTokenFileError(tokenFilePath, validationErrorMessage);
+
+      expect(console.error).toHaveBeenCalledWith(fileError);
     });
   });
 
@@ -173,10 +236,10 @@ describe('CLI > Server token list', () => {
 
         expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = console.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
+        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoLines = infoArguments.join(' ').split('\n');
 
-        expect(logLines).toEqual([
+        expect(infoLines).toEqual([
           '┌──────────────────────────────────┬──────┬──────────────────────────┐',
           '│ ID                               │ NAME │ CREATED AT               │',
           '├──────────────────────────────────┼──────┼──────────────────────────┤',
@@ -199,10 +262,10 @@ describe('CLI > Server token list', () => {
 
         expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = console.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
+        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoLines = infoArguments.join(' ').split('\n');
 
-        expect(logLines).toEqual([
+        expect(infoLines).toEqual([
           '┌────┬──────┬────────────┐',
           '│ ID │ NAME │ CREATED AT │',
           '├────┼──────┼────────────┤',

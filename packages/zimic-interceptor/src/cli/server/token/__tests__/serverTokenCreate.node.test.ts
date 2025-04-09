@@ -73,10 +73,10 @@ describe('CLI > Server token create', () => {
 
       expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = console.info.mock.calls[0] as string[];
-      const logLines = logArguments.join(' ').split('\n');
+      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoLines = infoArguments.join(' ').split('\n');
 
-      expect(logLines).toEqual([
+      expect(infoLines).toEqual([
         `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
         '',
         expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
@@ -163,10 +163,10 @@ describe('CLI > Server token create', () => {
 
         expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = console.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
+        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoLines = infoArguments.join(' ').split('\n');
 
-        expect(logLines).toContain(
+        expect(infoLines).toContain(
           `${color.dim('$')} zimic-interceptor server start ${color.cyan(
             '--tokens-dir',
           )} ${color.magenta(customTokensDirectory)}`,
@@ -247,10 +247,10 @@ describe('CLI > Server token create', () => {
 
         expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = console.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
+        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoLines = infoArguments.join(' ').split('\n');
 
-        expect(logLines).toEqual([
+        expect(infoLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token created:`,
           '',
           expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),
@@ -282,10 +282,10 @@ describe('CLI > Server token create', () => {
 
         expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = console.info.mock.calls[0] as string[];
-        const logLines = logArguments.join(' ').split('\n');
+        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoLines = infoArguments.join(' ').split('\n');
 
-        expect(logLines).toEqual([
+        expect(infoLines).toEqual([
           `${color.cyan('[@zimic/interceptor]')} ${color.green(color.bold('✔'))} Token ${color.green(customTokenName)} created:`,
           '',
           expect.stringMatching(new RegExp(`^.{${expectedTokenBase64urlLength}}$`)),

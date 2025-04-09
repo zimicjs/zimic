@@ -104,13 +104,6 @@ class HttpInterceptorStore {
     const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
     this.class.remoteWorkers.delete(remoteWorkerKey);
   }
-
-  clear() {
-    this.class._localWorker = undefined;
-    this.class.runningLocalInterceptors.clear();
-    this.class.remoteWorkers.clear();
-    this.class.runningRemoteInterceptors.clear();
-  }
 }
 
 export default HttpInterceptorStore;

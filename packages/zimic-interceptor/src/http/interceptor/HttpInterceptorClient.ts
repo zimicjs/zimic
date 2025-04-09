@@ -139,6 +139,7 @@ class HttpInterceptorClient<
 
       await this.worker.start();
       this.worker.registerRunningInterceptor(this);
+
       this.markAsRunning(true);
     } catch (error) {
       await this.stop();
@@ -158,14 +159,16 @@ class HttpInterceptorClient<
     }
 
     this.markAsRunning(false);
+    this.worker = undefined;
   }
 
   private markAsRunning(isRunning: boolean) {
-    if (this.worker?.type === 'local') {
+    if (this.workerOrThrow.type === 'local') {
       this.store.markLocalInterceptorAsRunning(this, isRunning);
-    } else if (this.worker?.type === 'remote') {
+    } else {
       this.store.markRemoteInterceptorAsRunning(this, isRunning, this.baseURL);
     }
+
     this.isRunning = isRunning;
   }
 

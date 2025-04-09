@@ -69,7 +69,7 @@ export function createInterceptorTokenId() {
   return crypto.randomUUID().replace(/[^a-z0-9]/g, '');
 }
 
-function isValidInterceptorTokenId(tokenId: string) {
+export function isValidInterceptorTokenId(tokenId: string) {
   return tokenId.length === INTERCEPTOR_TOKEN_ID_HEX_LENGTH && HEX_REGEX.test(tokenId);
 }
 
@@ -165,21 +165,13 @@ export async function readInterceptorTokenFromFile(
     encoding: 'utf-8',
   });
 
-  const tokenFileContentValidation = interceptorTokenFileContentSchema.safeParse(
-    JSON.parse(tokenFileContentAsString) as unknown,
-  );
+  const validation = interceptorTokenFileContentSchema.safeParse(JSON.parse(tokenFileContentAsString) as unknown);
 
-  if (!tokenFileContentValidation.success) {
-    const error = new InvalidInterceptorTokenFileError(tokenFilePath);
-    error.cause = tokenFileContentValidation.error;
-    throw error;
+  if (!validation.success) {
+    throw new InvalidInterceptorTokenFileError(tokenFilePath, validation.error.message);
   }
 
-  const {
-    data: { token },
-  } = tokenFileContentValidation;
-
-  return token;
+  return validation.data.token;
 }
 
 export async function createInterceptorToken(options: {
