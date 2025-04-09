@@ -52,12 +52,12 @@ describe('CLI > Server token list', () => {
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
     expect(tokens).toHaveLength(0);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledTimes(1);
 
-      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoArguments = console.log.mock.calls[0] as string[];
       const infoLines = infoArguments.join(' ').split('\n');
 
       expect(infoLines).toEqual([
@@ -72,11 +72,11 @@ describe('CLI > Server token list', () => {
   it('should render an empty name column no tokens have a custom name', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(2);
+      expect(console.log).toHaveBeenCalledTimes(2);
     });
 
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -84,12 +84,12 @@ describe('CLI > Server token list', () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledTimes(1);
 
-      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoArguments = console.log.mock.calls[0] as string[];
       const infoLines = infoArguments.join(' ').split('\n');
 
       expect(infoLines).toEqual([
@@ -104,14 +104,14 @@ describe('CLI > Server token list', () => {
   });
 
   it('should render tokens with a custom name', async () => {
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--name', 'my-token-1']);
       await runCLI();
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--name', 'my-token-2']);
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(2);
+      expect(console.log).toHaveBeenCalledTimes(2);
     });
 
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -119,12 +119,12 @@ describe('CLI > Server token list', () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledTimes(1);
 
-      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoArguments = console.log.mock.calls[0] as string[];
       const infoLines = infoArguments.join(' ').split('\n');
 
       expect(infoLines).toEqual([
@@ -141,11 +141,11 @@ describe('CLI > Server token list', () => {
   it('should log an error and ignore tokens whose file not valid', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(2);
+      expect(console.log).toHaveBeenCalledTimes(2);
     });
 
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -157,12 +157,12 @@ describe('CLI > Server token list', () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'ls']);
 
-    await usingIgnoredConsole(['info', 'error'], async (console) => {
+    await usingIgnoredConsole(['log', 'error'], async (console) => {
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledTimes(1);
 
-      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoArguments = console.log.mock.calls[0] as string[];
       const infoLines = infoArguments.join(' ').split('\n');
 
       expect(infoLines).toEqual([
@@ -212,10 +212,10 @@ describe('CLI > Server token list', () => {
         customTokensDirectory,
       ]);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: customTokensDirectory });
@@ -231,12 +231,12 @@ describe('CLI > Server token list', () => {
         customTokensDirectory,
       ]);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
 
-        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoArguments = console.log.mock.calls[0] as string[];
         const infoLines = infoArguments.join(' ').split('\n');
 
         expect(infoLines).toEqual([
@@ -257,12 +257,12 @@ describe('CLI > Server token list', () => {
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
       expect(tokens).toHaveLength(0);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
 
-        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoArguments = console.log.mock.calls[0] as string[];
         const infoLines = infoArguments.join(' ').split('\n');
 
         expect(infoLines).toEqual([

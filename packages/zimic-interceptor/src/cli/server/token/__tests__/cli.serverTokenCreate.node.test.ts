@@ -68,12 +68,12 @@ describe('CLI > Server token create', () => {
     let tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
     expect(tokensDirectoryExists).toBe(false);
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await runCLI();
 
-      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledTimes(1);
 
-      const infoArguments = console.info.mock.calls[0] as string[];
+      const infoArguments = console.log.mock.calls[0] as string[];
       const infoLines = infoArguments.join(' ').split('\n');
 
       expect(infoLines).toEqual([
@@ -158,12 +158,12 @@ describe('CLI > Server token create', () => {
       let tokensDirectoryExists = await pathExists(customTokensDirectory);
       expect(tokensDirectoryExists).toBe(false);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
 
-        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoArguments = console.log.mock.calls[0] as string[];
         const infoLines = infoArguments.join(' ').split('\n');
 
         expect(infoLines).toContain(
@@ -186,7 +186,7 @@ describe('CLI > Server token create', () => {
     it('should reuse the tokens directory if it already exists', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         let tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
         expect(tokensDirectoryExists).toBe(false);
 
@@ -205,7 +205,7 @@ describe('CLI > Server token create', () => {
         tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
         expect(tokensDirectoryExists).toBe(true);
 
-        expect(console.info).toHaveBeenCalledTimes(3);
+        expect(console.log).toHaveBeenCalledTimes(3);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -242,12 +242,12 @@ describe('CLI > Server token create', () => {
     it('should create an interceptor token using an undefined name by default', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
 
-        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoArguments = console.log.mock.calls[0] as string[];
         const infoLines = infoArguments.join(' ').split('\n');
 
         expect(infoLines).toEqual([
@@ -277,12 +277,12 @@ describe('CLI > Server token create', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--name', customTokenName]);
 
-      await usingIgnoredConsole(['info'], async (console) => {
+      await usingIgnoredConsole(['log'], async (console) => {
         await runCLI();
 
-        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(console.log).toHaveBeenCalledTimes(1);
 
-        const infoArguments = console.info.mock.calls[0] as string[];
+        const infoArguments = console.log.mock.calls[0] as string[];
         const infoLines = infoArguments.join(' ').split('\n');
 
         expect(infoLines).toEqual([

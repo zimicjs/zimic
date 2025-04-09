@@ -43,7 +43,7 @@ describe('CLI > Server start > Authentication', () => {
   it('should allow an unauthenticated interceptor connection if not using a token directory', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -82,7 +82,7 @@ describe('CLI > Server start > Authentication', () => {
       DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
     ]);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -107,6 +107,9 @@ describe('CLI > Server start > Authentication', () => {
 
       expect(console.error).toHaveBeenCalledTimes(1);
       expect(console.error).toHaveBeenCalledWith(expect.any(UnauthorizedWebSocketConnectionError));
+
+      const error = console.error.mock.calls[0][0] as UnauthorizedWebSocketConnectionError;
+      expect(error.event.reason).toBe('An interceptor token is required, but none was provided.');
     });
 
     await expect(async () => {
@@ -132,7 +135,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -189,7 +192,7 @@ describe('CLI > Server start > Authentication', () => {
       expect(tokens).toHaveLength(1);
       expect(tokens[0].id).toBe(token.id);
 
-      await usingIgnoredConsole(['info'], async () => {
+      await usingIgnoredConsole(['log'], async () => {
         await runCLI();
       });
 
@@ -215,6 +218,9 @@ describe('CLI > Server start > Authentication', () => {
         expect(console.error).toHaveBeenCalledTimes(2);
         expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(invalidTokenValue));
         expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
+
+        const error = console.error.mock.calls[1][0] as UnauthorizedWebSocketConnectionError;
+        expect(error.event.reason).toBe('The interceptor token is not valid.');
       });
 
       await expect(async () => {
@@ -241,7 +247,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -302,7 +308,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens[0].id).toBe(token.id);
     expect(tokens[1].id).toBe(otherToken.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -355,7 +361,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -410,7 +416,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -465,7 +471,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -520,7 +526,7 @@ describe('CLI > Server start > Authentication', () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).toBe(token.id);
 
-    await usingIgnoredConsole(['info'], async () => {
+    await usingIgnoredConsole(['log'], async () => {
       await runCLI();
     });
 
@@ -589,7 +595,7 @@ describe('CLI > Server start > Authentication', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'start']);
 
-      await usingIgnoredConsole(['info', 'warn'], async (console) => {
+      await usingIgnoredConsole(['log', 'warn'], async (console) => {
         await runCLI();
 
         expect(server).toBeDefined();

@@ -45,7 +45,7 @@ describe('CLI > Browser init', () => {
     const makeDirectorySpy = vi.spyOn(fs.promises, 'mkdir').mockImplementation(vi.fn());
     const copyFileSpy = vi.spyOn(fs.promises, 'copyFile').mockImplementation(vi.fn());
 
-    await usingIgnoredConsole(['info'], async (console) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       const publicDirectory = './public';
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', publicDirectory]);
 
@@ -60,8 +60,8 @@ describe('CLI > Browser init', () => {
       expect(copyFileSpy).toHaveBeenCalledTimes(1);
       expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
-      expect(console.info).toHaveBeenCalledTimes(1);
-      expect(console.info).toHaveBeenCalledWith(
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Service worker script saved to ${color.magenta(serviceWorkerDestinationPath)}.`,
       );
