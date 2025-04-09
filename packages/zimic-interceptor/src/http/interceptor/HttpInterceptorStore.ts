@@ -82,6 +82,10 @@ class HttpInterceptorStore {
     return createdWorker;
   }
 
+  deleteLocalWorker() {
+    this.class._localWorker = undefined;
+  }
+
   getOrCreateRemoteWorker(workerOptions: Omit<RemoteHttpInterceptorWorkerOptions, 'type'>) {
     const remoteWorkerKey = this.getRemoteWorkerKey(workerOptions.serverURL, { auth: workerOptions.auth });
 
@@ -94,6 +98,11 @@ class HttpInterceptorStore {
     this.class.remoteWorkers.set(remoteWorkerKey, createdWorker);
 
     return createdWorker;
+  }
+
+  deleteRemoteWorker(baseURL: URL, options: RemoteWorkerKeyOptions) {
+    const remoteWorkerKey = this.getRemoteWorkerKey(baseURL, options);
+    this.class.remoteWorkers.delete(remoteWorkerKey);
   }
 
   clear() {

@@ -23,10 +23,11 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
   let serverURL: URL;
 
   beforeAll(() => {
-    store.clear();
-
     baseURL = getBaseURL();
     serverURL = new URL(new URL(baseURL).origin);
+
+    const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+    expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
@@ -34,11 +35,7 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
 
   afterEach(() => {
     const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
-
-    if (worker) {
-      expect(worker.isRunning).toBe(false);
-      expect(worker.interceptorsWithHandlers).toHaveLength(0);
-    }
+    expect(worker).toBe(undefined);
 
     expect(store.numberOfRunningLocalInterceptors).toBe(0);
     expect(store.numberOfRunningRemoteInterceptors(new URL(baseURL))).toBe(0);
@@ -78,14 +75,14 @@ export function declareDeclareHttpInterceptorTests(options: RuntimeSharedHttpInt
         });
       }).toThrowError(new UnknownHttpInterceptorTypeError(unknownType));
     });
+  });
 
-    it('should initialize with the correct platform', async () => {
-      await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
-        expect(interceptor.platform).toBe(platform);
+  it('should initialize with the correct platform', async () => {
+    await usingHttpInterceptor<{}>(getInterceptorOptions(), (interceptor) => {
+      expect(interceptor.platform).toBe(platform);
 
-        const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
-        expect(worker!.platform).toBe(platform);
-      });
+      const worker = type === 'local' ? store.localWorker : store.remoteWorker(serverURL, { auth: undefined });
+      expect(worker!.platform).toBe(platform);
     });
   });
 

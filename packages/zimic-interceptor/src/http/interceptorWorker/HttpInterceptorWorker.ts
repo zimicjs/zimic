@@ -38,7 +38,7 @@ import InvalidJSONError from './errors/InvalidJSONError';
 import { HttpResponseFactory } from './types/requests';
 
 abstract class HttpInterceptorWorker {
-  abstract readonly type: 'local' | 'remote';
+  abstract get type(): 'local' | 'remote';
 
   platform: HttpInterceptorPlatform | null = null;
   isRunning = false;
