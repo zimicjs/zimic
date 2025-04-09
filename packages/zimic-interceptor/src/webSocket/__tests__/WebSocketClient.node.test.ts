@@ -571,12 +571,12 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = 'invalid-message';
         rawServerSockets[0].send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });
@@ -591,12 +591,12 @@ describe('Web socket client', async () => {
       await client.start();
       expect(rawServerSockets).toHaveLength(1);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = JSON.stringify({ type: 'invalid-message' });
         rawServerSockets[0].send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });

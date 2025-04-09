@@ -158,13 +158,13 @@ describe('Web socket server', async () => {
         expect(server.socketTimeout).toBe(socketTimeout);
         server.start();
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error'], async (console) => {
           rawClient = new ClientSocket(`ws://localhost:${port}`);
 
           await waitFor(() => {
-            expect(spies.error).toHaveBeenCalledTimes(1);
+            expect(console.error).toHaveBeenCalledTimes(1);
           });
-          expect(spies.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
+          expect(console.error).toHaveBeenCalledWith(new WebSocketOpenTimeoutError(socketTimeout));
         });
       } finally {
         delayedClientSocketAddEventListener.mockRestore();
@@ -578,11 +578,11 @@ describe('Web socket server', async () => {
       server = new WebSocketServer({ httpServer });
       server.start();
 
-      await usingIgnoredConsole(['error'], (spies) => {
+      await usingIgnoredConsole(['error'], (console) => {
         const error = new Error('Test error');
         httpServer.emit('error', error);
 
-        expect(spies.error).toHaveBeenCalledWith(error);
+        expect(console.error).toHaveBeenCalledWith(error);
       });
     });
 
@@ -593,12 +593,12 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = 'invalid-message';
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });
@@ -610,12 +610,12 @@ describe('Web socket server', async () => {
       rawClient = new ClientSocket(`ws://localhost:${port}`);
       await waitForOpenClientSocket(rawClient);
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         const invalidMessage = JSON.stringify({ type: 'unknown' });
         rawClient?.send(invalidMessage);
 
         await waitFor(() => {
-          expect(spies.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
+          expect(console.error).toHaveBeenCalledWith(new InvalidWebSocketMessage(invalidMessage));
         });
       });
     });

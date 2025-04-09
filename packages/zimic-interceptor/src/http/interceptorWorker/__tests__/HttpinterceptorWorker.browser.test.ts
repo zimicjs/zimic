@@ -30,13 +30,13 @@ describe('HttpInterceptorWorker > Browser', () => {
     const mswWorker = interceptorWorker.internalWorkerOrCreate as BrowserHttpWorker;
     vi.spyOn(mswWorker, 'start').mockRejectedValueOnce(unavailableMSWWorkerScriptError);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       const interceptorStartPromise = interceptorWorker.start();
 
       const expectedError = new UnregisteredBrowserServiceWorkerError();
       await expect(interceptorStartPromise).rejects.toThrowError(expectedError);
 
-      expect(spies.error).toHaveBeenCalledTimes(0);
+      expect(console.error).toHaveBeenCalledTimes(0);
     });
 
     expect(interceptorWorker.platform).toBe<HttpInterceptorPlatform>('browser');

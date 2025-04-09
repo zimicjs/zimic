@@ -7,15 +7,15 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import runCLI from '@/cli/cli';
 import {
   DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
-  INTERCEPTOR_TOKEN_ID_REGEX,
   INTERCEPTOR_TOKEN_SALT_HEX_LENGTH,
   InterceptorTokenFileContent,
   listInterceptorTokens,
   PersistedInterceptorToken,
   INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH,
   INTERCEPTOR_TOKEN_HASH_HEX_LENGTH,
+  INTERCEPTOR_TOKEN_ID_HEX_LENGTH,
 } from '@/server/utils/auth';
-import { convertHexLengthToBase64urlLength } from '@/utils/data';
+import { convertHexLengthToBase64urlLength, HEX_REGEX } from '@/utils/data';
 import { pathExists } from '@/utils/files';
 import { usingIgnoredConsole } from '@tests/utils/console';
 
@@ -54,11 +54,11 @@ describe('CLI > Server token create', () => {
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--help']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(serverStartHelpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(serverStartHelpOutput);
     });
   });
 
@@ -68,12 +68,12 @@ describe('CLI > Server token create', () => {
     let tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
     expect(tokensDirectoryExists).toBe(false);
 
-    await usingIgnoredConsole(['info'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (console) => {
       await runCLI();
 
-      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = spies.info.mock.calls[0] as string[];
+      const logArguments = console.info.mock.calls[0] as string[];
       const logLines = logArguments.join(' ').split('\n');
 
       expect(logLines).toEqual([
@@ -104,13 +104,17 @@ describe('CLI > Server token create', () => {
     expect(tokens).toHaveLength(1);
 
     expect(tokens[0]).toEqual<PersistedInterceptorToken>({
-      id: expect.stringMatching(INTERCEPTOR_TOKEN_ID_REGEX) as string,
+      id: expect.stringMatching(HEX_REGEX) as string,
       secret: {
-        hash: expect.stringMatching(new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_HASH_HEX_LENGTH}}$`)) as string,
-        salt: expect.stringMatching(new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_SALT_HEX_LENGTH}}$`)) as string,
+        hash: expect.stringMatching(HEX_REGEX) as string,
+        salt: expect.stringMatching(HEX_REGEX) as string,
       },
       createdAt: expect.any(Date) as Date,
     });
+
+    expect(tokens[0].id).toHaveLength(INTERCEPTOR_TOKEN_ID_HEX_LENGTH);
+    expect(tokens[0].secret.hash).toHaveLength(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH);
+    expect(tokens[0].secret.salt).toHaveLength(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH);
 
     const filesInTokensDirectory = await fs.promises.readdir(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
     expect(filesInTokensDirectory).toHaveLength(2);
@@ -154,12 +158,12 @@ describe('CLI > Server token create', () => {
       let tokensDirectoryExists = await pathExists(customTokensDirectory);
       expect(tokensDirectoryExists).toBe(false);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toContain(
@@ -182,7 +186,7 @@ describe('CLI > Server token create', () => {
     it('should reuse the tokens directory if it already exists', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         let tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
         expect(tokensDirectoryExists).toBe(false);
 
@@ -201,7 +205,7 @@ describe('CLI > Server token create', () => {
         tokensDirectoryExists = await pathExists(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
         expect(tokensDirectoryExists).toBe(true);
 
-        expect(spies.info).toHaveBeenCalledTimes(3);
+        expect(console.info).toHaveBeenCalledTimes(3);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -215,18 +219,18 @@ describe('CLI > Server token create', () => {
       const appendFileSpy = vi.spyOn(fs.promises, 'appendFile').mockRejectedValue(appendFileError);
 
       try {
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error'], async (console) => {
           await expect(runCLI()).rejects.toThrowError(appendFileError);
 
-          expect(spies.error).toHaveBeenCalledTimes(2);
-          expect(spies.error).toHaveBeenNthCalledWith(
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.error).toHaveBeenNthCalledWith(
             1,
             color.cyan('[@zimic/interceptor]'),
             `${color.red(color.bold('✖'))} Failed to create the tokens directory: ${color.magenta(
               DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
             )}`,
           );
-          expect(spies.error).toHaveBeenNthCalledWith(2, appendFileError);
+          expect(console.error).toHaveBeenNthCalledWith(2, appendFileError);
         });
       } finally {
         appendFileSpy.mockRestore();
@@ -238,12 +242,12 @@ describe('CLI > Server token create', () => {
     it('should create an interceptor token using an undefined name by default', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([
@@ -273,12 +277,12 @@ describe('CLI > Server token create', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--name', customTokenName]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([

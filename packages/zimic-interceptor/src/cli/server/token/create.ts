@@ -1,11 +1,6 @@
 import color from 'picocolors';
 
-import {
-  createInterceptorToken,
-  createInterceptorTokensDirectory,
-  saveInterceptorTokenToFile,
-} from '@/server/utils/auth';
-import { pathExists } from '@/utils/files';
+import { createInterceptorToken } from '@/server/utils/auth';
 import { logger } from '@/utils/logging';
 
 interface InterceptorServerCreateTokenOptions {
@@ -17,14 +12,7 @@ export async function createInterceptorServerToken({
   tokenName,
   tokensDirectory,
 }: InterceptorServerCreateTokenOptions) {
-  const tokensDirectoryExists = await pathExists(tokensDirectory);
-
-  if (!tokensDirectoryExists) {
-    await createInterceptorTokensDirectory(tokensDirectory);
-  }
-
-  const token = await createInterceptorToken({ tokenName });
-  await saveInterceptorTokenToFile(tokensDirectory, token);
+  const token = await createInterceptorToken({ name: tokenName, tokensDirectory });
 
   logger.info(
     [
@@ -43,6 +31,4 @@ export async function createInterceptorServerToken({
       'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
     ].join('\n'),
   );
-
-  return token;
 }

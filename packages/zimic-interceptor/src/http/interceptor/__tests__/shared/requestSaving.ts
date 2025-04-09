@@ -179,7 +179,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
         const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit * 2;
           expect(numberOfRequests).toBeGreaterThan(safeLimit);
 
@@ -199,7 +199,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           expect(handler.client._requests).toHaveLength(0);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });
@@ -216,7 +216,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit - 1;
           expect(numberOfRequests).toBeLessThan(safeLimit);
 
@@ -227,7 +227,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           expect(handler.requests).toHaveLength(numberOfRequests);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });
@@ -244,7 +244,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit;
           expect(numberOfRequests).toBe(safeLimit);
 
@@ -255,7 +255,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           expect(handler.requests).toHaveLength(numberOfRequests);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });
@@ -272,7 +272,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users').respond({ status: 200 }), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit * 2;
           expect(numberOfRequests).toBeGreaterThan(safeLimit);
 
@@ -284,9 +284,9 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
           expect(handler.requests).toHaveLength(numberOfRequests);
 
           const numberOfExceedingRequests = numberOfRequests - safeLimit;
-          expect(spies.warn).toHaveBeenCalledTimes(numberOfExceedingRequests);
+          expect(console.warn).toHaveBeenCalledTimes(numberOfExceedingRequests);
 
-          for (const [index, call] of spies.warn.mock.calls.entries()) {
+          for (const [index, call] of console.warn.mock.calls.entries()) {
             const numberOfSavedRequestsAtCall = safeLimit + index + 1;
             const error = new RequestSavingSafeLimitExceededError(numberOfSavedRequestsAtCall, safeLimit);
             expect(call).toEqual([error]);
@@ -316,7 +316,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         );
         expect(otherHandler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequestsPerHandler = safeLimit - 1;
           expect(numberOfRequestsPerHandler).toBeLessThan(safeLimit);
 
@@ -335,9 +335,9 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
           expect(otherHandler.requests).toHaveLength(numberOfRequestsPerHandler);
 
           const numberOfExceedingRequests = numberOfRequests - safeLimit;
-          expect(spies.warn).toHaveBeenCalledTimes(numberOfExceedingRequests);
+          expect(console.warn).toHaveBeenCalledTimes(numberOfExceedingRequests);
 
-          for (const [index, call] of spies.warn.mock.calls.entries()) {
+          for (const [index, call] of console.warn.mock.calls.entries()) {
             const numberOfSavedRequestsAtCall = safeLimit + index + 1;
             const error = new RequestSavingSafeLimitExceededError(numberOfSavedRequestsAtCall, safeLimit);
             expect(call).toEqual([error]);
@@ -358,7 +358,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users'), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit * 2;
           expect(numberOfRequests).toBeGreaterThan(safeLimit);
 
@@ -372,7 +372,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           expect(handler.requests).toHaveLength(1);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });
@@ -389,7 +389,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users'), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit * 2;
           expect(numberOfRequests).toBeGreaterThan(safeLimit);
 
@@ -403,7 +403,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           expect(handler.requests).toHaveLength(1);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });
@@ -420,7 +420,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
         const handler = await promiseIfRemote(interceptor.get('/users'), interceptor);
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['warn'], async (spies) => {
+        await usingIgnoredConsole(['warn'], async (console) => {
           const numberOfRequests = safeLimit * 2;
           expect(numberOfRequests).toBeGreaterThan(safeLimit);
 
@@ -433,7 +433,7 @@ export function declareRequestSavingHttpInterceptorTests(options: RuntimeSharedH
 
           expect(handler.requests).toHaveLength(1);
 
-          expect(spies.warn).toHaveBeenCalledTimes(0);
+          expect(console.warn).toHaveBeenCalledTimes(0);
         });
       });
     });

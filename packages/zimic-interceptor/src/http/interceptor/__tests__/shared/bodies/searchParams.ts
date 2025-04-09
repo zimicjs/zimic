@@ -186,7 +186,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
 
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error'], async (console) => {
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -194,7 +194,7 @@ export async function declareSearchParamsBodyHttpInterceptorTests(options: Runti
           });
           expect(response.status).toBe(200);
 
-          expect(spies.error).not.toHaveBeenCalled();
+          expect(console.error).not.toHaveBeenCalled();
         });
 
         expect(handler.requests).toHaveLength(1);

@@ -33,11 +33,11 @@ describe('CLI > Browser init', () => {
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', '--help']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(browserInitHelpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(browserInitHelpOutput);
     });
   });
 
@@ -45,7 +45,7 @@ describe('CLI > Browser init', () => {
     const makeDirectorySpy = vi.spyOn(fs.promises, 'mkdir').mockImplementation(vi.fn());
     const copyFileSpy = vi.spyOn(fs.promises, 'copyFile').mockImplementation(vi.fn());
 
-    await usingIgnoredConsole(['info'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (console) => {
       const publicDirectory = './public';
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init', publicDirectory]);
 
@@ -60,8 +60,8 @@ describe('CLI > Browser init', () => {
       expect(copyFileSpy).toHaveBeenCalledTimes(1);
       expect(copyFileSpy).toHaveBeenCalledWith(MOCK_SERVICE_WORKER_PATH, serviceWorkerDestinationPath);
 
-      expect(spies.info).toHaveBeenCalledTimes(1);
-      expect(spies.info).toHaveBeenCalledWith(
+      expect(console.info).toHaveBeenCalledTimes(1);
+      expect(console.info).toHaveBeenCalledWith(
         color.cyan('[@zimic/interceptor]'),
         `Service worker script saved to ${color.magenta(serviceWorkerDestinationPath)}.`,
       );
@@ -71,11 +71,11 @@ describe('CLI > Browser init', () => {
   it('should throw an error if no public directory is provided', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'browser', 'init']);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-      expect(spies.error).toHaveBeenCalledTimes(1);
-      expect(spies.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
+      expect(console.error).toHaveBeenCalledTimes(1);
+      expect(console.error).toHaveBeenCalledWith('Not enough non-option arguments: got 0, need at least 1');
     });
   });
 });

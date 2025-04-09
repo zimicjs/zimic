@@ -6,7 +6,12 @@ import color from 'picocolors';
 import util from 'util';
 import { z } from 'zod';
 
-import { convertHexLengthToBase64urlLength, convertHexLengthToByteLength } from '@/utils/data';
+import {
+  BASE64URL_REGEX,
+  convertHexLengthToBase64urlLength,
+  convertHexLengthToByteLength,
+  HEX_REGEX,
+} from '@/utils/data';
 import { pathExists } from '@/utils/files';
 import { logger } from '@/utils/logging';
 
@@ -22,10 +27,12 @@ export const DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY = path.join(
 );
 
 export const INTERCEPTOR_TOKEN_ID_HEX_LENGTH = 32;
+
 export const INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH = 64;
 export const INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH = INTERCEPTOR_TOKEN_ID_HEX_LENGTH + INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH;
-
-export const INTERCEPTOR_TOKEN_ID_REGEX = new RegExp(`^[a-z0-9]{${INTERCEPTOR_TOKEN_ID_HEX_LENGTH}}$`);
+export const INTERCEPTOR_TOKEN_VALUE_BASE64URL_LENGTH = convertHexLengthToBase64urlLength(
+  INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH,
+);
 
 export const INTERCEPTOR_TOKEN_SALT_HEX_LENGTH = 64;
 export const INTERCEPTOR_TOKEN_HASH_ITERATIONS = Number(process.env.INTERCEPTOR_TOKEN_HASH_ITERATIONS);
@@ -58,36 +65,16 @@ export interface InterceptorToken {
   createdAt: Date;
 }
 
-function isValidInterceptorTokenId(tokenId: string) {
-  return INTERCEPTOR_TOKEN_ID_REGEX.test(tokenId);
-}
-
 export function createInterceptorTokenId() {
   return crypto.randomUUID().replace(/[^a-z0-9]/g, '');
 }
 
-export async function createInterceptorToken(options: { tokenName?: string }): Promise<InterceptorToken> {
-  const tokenId = createInterceptorTokenId();
+function isValidInterceptorTokenId(tokenId: string) {
+  return tokenId.length === INTERCEPTOR_TOKEN_ID_HEX_LENGTH && HEX_REGEX.test(tokenId);
+}
 
-  const tokenSecretSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH);
-  const tokenSecret = crypto.randomBytes(tokenSecretSizeInBytes).toString('hex');
-
-  const tokenSecretSaltSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH);
-  const tokenSecretSalt = crypto.randomBytes(tokenSecretSaltSizeInBytes).toString('hex');
-  const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenSecretSalt);
-
-  const tokenValue = Buffer.from(`${tokenId}${tokenSecret}`, 'hex').toString('base64url');
-
-  return {
-    id: tokenId,
-    name: options.tokenName,
-    secret: {
-      hash: tokenSecretHash,
-      salt: tokenSecretSalt,
-    },
-    value: tokenValue,
-    createdAt: new Date(),
-  };
+function isValidInterceptorTokenValue(tokenValue: string) {
+  return tokenValue.length === INTERCEPTOR_TOKEN_VALUE_BASE64URL_LENGTH && BASE64URL_REGEX.test(tokenValue);
 }
 
 export async function createInterceptorTokensDirectory(tokensDirectory: string) {
@@ -108,11 +95,11 @@ export async function createInterceptorTokensDirectory(tokensDirectory: string) 
 const interceptorTokenFileContentSchema = z.object({
   version: z.literal(1),
   token: z.object({
-    id: z.string().length(INTERCEPTOR_TOKEN_ID_HEX_LENGTH).regex(INTERCEPTOR_TOKEN_ID_REGEX),
+    id: z.string().length(INTERCEPTOR_TOKEN_ID_HEX_LENGTH).regex(HEX_REGEX),
     name: z.string().optional(),
     secret: z.object({
-      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH),
-      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH),
+      hash: z.string().length(INTERCEPTOR_TOKEN_HASH_HEX_LENGTH).regex(HEX_REGEX),
+      salt: z.string().length(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH).regex(HEX_REGEX),
     }),
     createdAt: z
       .string()
@@ -195,6 +182,57 @@ export async function readInterceptorTokenFromFile(
   return token;
 }
 
+export async function createInterceptorToken(options: {
+  name?: string;
+  tokensDirectory: string;
+}): Promise<InterceptorToken> {
+  const { name, tokensDirectory } = options;
+
+  const tokensDirectoryExists = await pathExists(tokensDirectory);
+
+  if (!tokensDirectoryExists) {
+    await createInterceptorTokensDirectory(tokensDirectory);
+  }
+
+  const tokenId = createInterceptorTokenId();
+
+  /* istanbul ignore if -- @preserve
+   * This should never happen, but let's check that the token identifier is valid after generated. */
+  if (!isValidInterceptorTokenId(tokenId)) {
+    throw new InvalidInterceptorTokenError(tokenId);
+  }
+
+  const tokenSecretSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SECRET_HEX_LENGTH);
+  const tokenSecret = crypto.randomBytes(tokenSecretSizeInBytes).toString('hex');
+
+  const tokenSecretSaltSizeInBytes = convertHexLengthToByteLength(INTERCEPTOR_TOKEN_SALT_HEX_LENGTH);
+  const tokenSecretSalt = crypto.randomBytes(tokenSecretSaltSizeInBytes).toString('hex');
+  const tokenSecretHash = await hashInterceptorToken(tokenSecret, tokenSecretSalt);
+
+  const tokenValue = Buffer.from(`${tokenId}${tokenSecret}`, 'hex').toString('base64url');
+
+  /* istanbul ignore if -- @preserve
+   * This should never happen, but let's check that the token value is valid after generated. */
+  if (!isValidInterceptorTokenValue(tokenValue)) {
+    throw new InvalidInterceptorTokenValueError(tokenValue);
+  }
+
+  const token: InterceptorToken = {
+    id: tokenId,
+    name,
+    secret: {
+      hash: tokenSecretHash,
+      salt: tokenSecretSalt,
+    },
+    value: tokenValue,
+    createdAt: new Date(),
+  };
+
+  await saveInterceptorTokenToFile(tokensDirectory, token);
+
+  return token;
+}
+
 export async function listInterceptorTokens(options: { tokensDirectory: string }) {
   const tokensDirectoryExists = await pathExists(options.tokensDirectory);
 
@@ -227,9 +265,7 @@ export async function listInterceptorTokens(options: { tokensDirectory: string }
 }
 
 export async function validateInterceptorToken(tokenValue: string, options: { tokensDirectory: string }) {
-  const expectedTokenValueBase64urlLength = convertHexLengthToBase64urlLength(INTERCEPTOR_TOKEN_VALUE_HEX_LENGTH);
-
-  if (tokenValue.length !== expectedTokenValueBase64urlLength) {
+  if (!isValidInterceptorTokenValue(tokenValue)) {
     throw new InvalidInterceptorTokenValueError(tokenValue);
   }
 

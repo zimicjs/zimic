@@ -43,22 +43,22 @@ describe('CLI > Server token remove', () => {
   it('should show a help message', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', '--help']);
 
-    await usingIgnoredConsole(['log'], async (spies) => {
+    await usingIgnoredConsole(['log'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "0"');
 
-      expect(spies.log).toHaveBeenCalledTimes(1);
-      expect(spies.log).toHaveBeenCalledWith(serverStartHelpOutput);
+      expect(console.log).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(serverStartHelpOutput);
     });
   });
 
   it('should remove an existing token', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-    await usingIgnoredConsole(['info'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (console) => {
       await runCLI();
       await runCLI();
 
-      expect(spies.info).toHaveBeenCalledTimes(2);
+      expect(console.info).toHaveBeenCalledTimes(2);
     });
 
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -66,12 +66,12 @@ describe('CLI > Server token remove', () => {
 
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokens[0].id]);
 
-    await usingIgnoredConsole(['info'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (console) => {
       await runCLI();
 
-      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(console.info).toHaveBeenCalledTimes(1);
 
-      const logArguments = spies.info.mock.calls[0] as string[];
+      const logArguments = console.info.mock.calls[0] as string[];
       const logLines = logArguments.join(' ').split('\n');
 
       expect(logLines).toEqual([
@@ -88,10 +88,10 @@ describe('CLI > Server token remove', () => {
   it('should return an error if the token was not found', async () => {
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-    await usingIgnoredConsole(['info'], async (spies) => {
+    await usingIgnoredConsole(['info'], async (console) => {
       await runCLI();
 
-      expect(spies.info).toHaveBeenCalledTimes(1);
+      expect(console.info).toHaveBeenCalledTimes(1);
     });
 
     const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -100,17 +100,17 @@ describe('CLI > Server token remove', () => {
     const tokenId = createInterceptorTokenId();
     processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokenId]);
 
-    await usingIgnoredConsole(['error'], async (spies) => {
+    await usingIgnoredConsole(['error'], async (console) => {
       await expect(runCLI()).rejects.toThrowError('process.exit unexpectedly called with "1"');
 
-      expect(spies.error).toHaveBeenCalledTimes(2);
+      expect(console.error).toHaveBeenCalledTimes(2);
 
-      expect(spies.error).toHaveBeenNthCalledWith(
+      expect(console.error).toHaveBeenNthCalledWith(
         1,
         color.cyan('[@zimic/interceptor]'),
         `${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`,
       );
-      expect(spies.error).toHaveBeenNthCalledWith(2, new Error('process.exit unexpectedly called with "1"'));
+      expect(console.error).toHaveBeenNthCalledWith(2, new Error('process.exit unexpectedly called with "1"'));
     });
   });
 
@@ -128,11 +128,11 @@ describe('CLI > Server token remove', () => {
         customTokensDirectory,
       ]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(2);
+        expect(console.info).toHaveBeenCalledTimes(2);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: customTokensDirectory });
@@ -149,12 +149,12 @@ describe('CLI > Server token remove', () => {
         customTokensDirectory,
       ]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([
@@ -177,16 +177,16 @@ describe('CLI > Server token remove', () => {
 
       const error = new Error('process.exit unexpectedly called with "1"');
 
-      await usingIgnoredConsole(['error'], async (spies) => {
+      await usingIgnoredConsole(['error'], async (console) => {
         await expect(runCLI()).rejects.toThrowError(error);
 
-        expect(spies.error).toHaveBeenCalledTimes(2);
-        expect(spies.error).toHaveBeenNthCalledWith(
+        expect(console.error).toHaveBeenCalledTimes(2);
+        expect(console.error).toHaveBeenNthCalledWith(
           1,
           color.cyan('[@zimic/interceptor]'),
           `${color.red(color.bold('✘'))} Token ${color.red(tokenId)} not found.`,
         );
-        expect(spies.error).toHaveBeenNthCalledWith(2, error);
+        expect(console.error).toHaveBeenNthCalledWith(2, error);
       });
     });
   });
@@ -195,10 +195,10 @@ describe('CLI > Server token remove', () => {
     it('should remove a token using the default undefined name', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -206,12 +206,12 @@ describe('CLI > Server token remove', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokens[0].id]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([
@@ -229,10 +229,10 @@ describe('CLI > Server token remove', () => {
       const customTokenName = 'my-token';
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create', '--name', customTokenName]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -241,12 +241,12 @@ describe('CLI > Server token remove', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'rm', tokens[0].id]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([
@@ -265,11 +265,11 @@ describe('CLI > Server token remove', () => {
     it('should have `remove` as a command alias', async () => {
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'create']);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(2);
+        expect(console.info).toHaveBeenCalledTimes(2);
       });
 
       const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
@@ -277,12 +277,12 @@ describe('CLI > Server token remove', () => {
 
       processArgvSpy.mockReturnValue(['node', './dist/cli.js', 'server', 'token', 'remove', tokens[0].id]);
 
-      await usingIgnoredConsole(['info'], async (spies) => {
+      await usingIgnoredConsole(['info'], async (console) => {
         await runCLI();
 
-        expect(spies.info).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
 
-        const logArguments = spies.info.mock.calls[0] as string[];
+        const logArguments = console.info.mock.calls[0] as string[];
         const logLines = logArguments.join(' ').split('\n');
 
         expect(logLines).toEqual([

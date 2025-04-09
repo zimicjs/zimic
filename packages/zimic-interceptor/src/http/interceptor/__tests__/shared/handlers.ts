@@ -157,7 +157,7 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
 
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['error', 'warn'], async (spies) => {
+        await usingIgnoredConsole(['error', 'warn'], async (console) => {
           const request = new Request(joinURL(baseURL, '/users'), {
             method,
             headers: { 'x-id': crypto.randomUUID() }, // Ensure the request is unique.
@@ -170,13 +170,13 @@ export async function declareHandlerHttpInterceptorTests(options: RuntimeSharedH
             await expectFetchError(responsePromise);
           }
 
-          expect(spies.error).toHaveBeenCalledTimes(
+          expect(console.error).toHaveBeenCalledTimes(
             method === 'OPTIONS' && type === 'remote' && platform === 'browser' ? 4 : 2,
           );
-          expect(spies.warn).toHaveBeenCalledTimes(0);
-          expect(spies.error.mock.calls[0]).toEqual([error]);
+          expect(console.warn).toHaveBeenCalledTimes(0);
+          expect(console.error.mock.calls[0]).toEqual([error]);
 
-          const errorMessage = spies.error.mock.calls[1].join(' ');
+          const errorMessage = console.error.mock.calls[1].join(' ');
           await verifyUnhandledRequestMessage(errorMessage, { request, platform, type: 'reject' });
         });
 

@@ -27,9 +27,13 @@ export function convertBase64ToArrayBuffer(base64Value: string) {
   }
 }
 
+export const HEX_REGEX = /^[a-z0-9]+$/;
+
 export function convertHexLengthToByteLength(hexLength: number) {
   return Math.ceil(hexLength / 2); // 1 byte = 2 hex characters
 }
+
+export const BASE64URL_REGEX = /^[a-zA-Z0-9-_]+$/;
 
 export function convertHexLengthToBase64urlLength(hexLength: number) {
   const byteLength = convertHexLengthToByteLength(hexLength);

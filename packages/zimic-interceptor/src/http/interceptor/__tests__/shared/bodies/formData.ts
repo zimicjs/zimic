@@ -206,7 +206,7 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
 
         expect(handler.requests).toHaveLength(0);
 
-        await usingIgnoredConsole(['error'], async (spies) => {
+        await usingIgnoredConsole(['error'], async (console) => {
           const response = await fetch(joinURL(baseURL, `/users/${users[0].id}`), {
             method,
             headers: { 'content-type': 'multipart/form-data' },
@@ -214,8 +214,8 @@ export async function declareFormDataBodyHttpInterceptorTests(options: RuntimeSh
           });
           expect(response.status).toBe(200);
 
-          expect(spies.error).toHaveBeenCalledTimes(2);
-          expect(spies.error.mock.calls).toEqual([
+          expect(console.error).toHaveBeenCalledTimes(2);
+          expect(console.error.mock.calls).toEqual([
             [new InvalidFormDataError(invalidRequestFormDataString)],
             [new InvalidFormDataError(invalidResponseFormDataString)],
           ]);
