@@ -164,7 +164,7 @@ describe('Type generation (OpenAPI)', () => {
       );
     }
 
-    function verifyResponsesWarnings(console: Console & { info: MockInstance; warn: MockInstance }) {
+    function verifyResponsesWarnings(console: Console & { log: MockInstance; warn: MockInstance }) {
       const expectedUnknownStatusCodes = ['unknown'];
 
       const expectedNumberOfWarnings = expectedUnknownStatusCodes.length;
@@ -190,16 +190,16 @@ describe('Type generation (OpenAPI)', () => {
     function verifySuccessMessage(
       fixtureCase: TypegenFixtureCase,
       outputLabel: string,
-      console: Console & { info: MockInstance; warn: MockInstance },
+      console: Console & { log: MockInstance; warn: MockInstance },
     ) {
       let successMessage: string | undefined;
 
       if (fixtureCase.shouldWriteToStdout) {
-        expect(console.info).not.toHaveBeenCalled();
+        expect(console.log).not.toHaveBeenCalled();
         successMessage = console.warn.mock.calls.at(-1)?.join(' ');
       } else {
-        expect(console.info).toHaveBeenCalledTimes(1);
-        successMessage = console.info.mock.calls.at(-1)?.join(' ');
+        expect(console.log).toHaveBeenCalledTimes(1);
+        successMessage = console.log.mock.calls.at(-1)?.join(' ');
       }
 
       expect(successMessage).toBeDefined();
@@ -274,7 +274,7 @@ describe('Type generation (OpenAPI)', () => {
           });
 
           try {
-            await usingIgnoredConsole(['info', 'warn'], async (console) => {
+            await usingIgnoredConsole(['log', 'warn'], async (console) => {
               await runCLI();
 
               const hasFilterFile = fixtureCase.additionalArguments.includes('--filter-file');

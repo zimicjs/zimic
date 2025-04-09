@@ -11,20 +11,18 @@ export async function usingIgnoredConsole<Method extends IgnorableConsoleMethod,
   ignoredMethods: Method[],
   callback: (spiedConsole: Console & SpyByConsoleMethod<Method>) => PossiblePromise<ReturnType>,
 ) {
-  const initialSpyByMethod = {} as SpyByConsoleMethod<Method>;
+  for (const method of ignoredMethods) {
+    vi.spyOn(console, method).mockImplementation(vi.fn());
+  }
 
-  const spyByMethod = ignoredMethods.reduce((groupedSpies, method) => {
-    const spy = vi.spyOn(console, method).mockImplementation(vi.fn());
-    groupedSpies[method] = spy;
-    return groupedSpies;
-  }, initialSpyByMethod);
+  const spiedConsole = console as Console & SpyByConsoleMethod<Method>;
 
   try {
-    const result = await callback(console as Console & SpyByConsoleMethod<Method>);
+    const result = await callback(spiedConsole);
     return result;
   } finally {
-    for (const spy of Object.values<MockInstance>(spyByMethod)) {
-      spy.mockRestore();
+    for (const method of ignoredMethods) {
+      spiedConsole[method].mockRestore();
     }
   }
 }
