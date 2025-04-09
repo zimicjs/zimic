@@ -171,6 +171,133 @@ describe('CLI > Server start > Authentication', () => {
     );
   });
 
+  it.each([
+    'invalid',
+    'c70ccbce',
+    'b087f533-147f-4ff4-8b8e-5261f42087ee',
+    'package.json',
+    './src/index.ts',
+    '/tmp/secret',
+    '../../../tmp/secret',
+  ])(
+    'should not allow an interceptor connection if using a token directory and an invalid token: %s',
+    async (invalidTokenValue) => {
+      processArgvSpy.mockReturnValue([
+        'node',
+        './dist/cli.js',
+        'server',
+        'start',
+        '--port',
+        '5001',
+        '--tokens-dir',
+        DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+      ]);
+
+      const token = await createInterceptorToken({
+        tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+      });
+
+      const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0].id).toBe(token.id);
+
+      await usingIgnoredConsole(['info'], async () => {
+        await runCLI();
+      });
+
+      expect(server).toBeDefined();
+      expect(server!.isRunning).toBe(true);
+      expect(server!.hostname).toBe('localhost');
+      expect(server!.port).toBe(5001);
+      expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+      const interceptor = createHttpInterceptor<{
+        '/users': {
+          GET: { response: { 204: {} } };
+        };
+      }>({
+        type: 'remote',
+        baseURL: 'http://localhost:5001',
+        auth: { token: invalidTokenValue },
+      });
+
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+
+        expect(interceptor.isRunning).toBe(false);
+
+        expect(console.error).toHaveBeenCalledTimes(2);
+        expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(invalidTokenValue));
+        expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
+      });
+
+      await expect(async () => {
+        await interceptor.get('/users').respond({ status: 204 });
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    },
+  );
+
+  it('should not allow an interceptor connection if using a token directory and an invalid token more than once', async () => {
+    processArgvSpy.mockReturnValue([
+      'node',
+      './dist/cli.js',
+      'server',
+      'start',
+      '--port',
+      '5001',
+      '--tokens-dir',
+      DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    ]);
+
+    const token = await createInterceptorToken({
+      tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY,
+    });
+
+    const tokens = await listInterceptorTokens({ tokensDirectory: DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY });
+    expect(tokens).toHaveLength(1);
+    expect(tokens[0].id).toBe(token.id);
+
+    await usingIgnoredConsole(['info'], async () => {
+      await runCLI();
+    });
+
+    expect(server).toBeDefined();
+    expect(server!.isRunning).toBe(true);
+    expect(server!.hostname).toBe('localhost');
+    expect(server!.port).toBe(5001);
+    expect(server!.tokensDirectory).toBe(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY);
+
+    const invalidTokenValue = 'invalid';
+
+    const interceptor = createHttpInterceptor<{
+      '/users': {
+        GET: { response: { 204: {} } };
+      };
+    }>({
+      type: 'remote',
+      baseURL: 'http://localhost:5001',
+      auth: { token: invalidTokenValue },
+    });
+
+    const numberOfRetries = 3;
+
+    for (let retry = 0; retry < numberOfRetries; retry++) {
+      await usingIgnoredConsole(['error'], async (console) => {
+        await expect(interceptor.start()).rejects.toThrowError(UnauthorizedWebSocketConnectionError);
+
+        expect(interceptor.isRunning).toBe(false);
+
+        expect(console.error).toHaveBeenCalledTimes(2);
+        expect(console.error).toHaveBeenNthCalledWith(1, new InvalidInterceptorTokenValueError(invalidTokenValue));
+        expect(console.error).toHaveBeenNthCalledWith(2, expect.any(UnauthorizedWebSocketConnectionError));
+      });
+
+      await expect(async () => {
+        await interceptor.get('/users').respond({ status: 204 });
+      }).rejects.toThrowError(new NotRunningHttpInterceptorError());
+    }
+  });
+
   it('should not allow an interceptor connection if using a token directory and an invalid token secret', async () => {
     processArgvSpy.mockReturnValue([
       'node',
