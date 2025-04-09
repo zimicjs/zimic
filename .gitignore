@@ -38,5 +38,6 @@ tsconfig.tsbuildinfo
 .vscode
 .DS_Store
 *.pem
+tmp/
 local/
 tracing/
