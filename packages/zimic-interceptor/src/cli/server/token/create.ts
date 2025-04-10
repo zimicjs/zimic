@@ -27,7 +27,7 @@ export async function createInterceptorServerToken({
       '',
       `${color.dim('$')} zimic-interceptor server start ${color.cyan('--tokens-dir')} ${color.magenta(tokensDirectory)}`,
       '',
-      'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+      'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
     ].join('\n'),
   );
 }

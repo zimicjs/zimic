@@ -251,8 +251,8 @@ Check our [getting started guide](https://github.com/zimicjs/zimic/wiki/getting�
 - [Getting started](https://github.com/zimicjs/zimic/wiki/getting‐started‐interceptor)
 - [API reference](https://github.com/zimicjs/zimic/wiki/api‐zimic‐interceptor‐http)
 - CLI reference
-  - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐browser)
-  - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server)
+  - [Browser](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐browser)
+  - [Server](https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server)
 - Guides
   - [Testing](https://github.com/zimicjs/zimic/wiki/guides‐testing‐interceptor)
 

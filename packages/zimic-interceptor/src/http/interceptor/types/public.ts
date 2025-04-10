@@ -371,7 +371,7 @@ export interface RemoteHttpInterceptor<Schema extends HttpSchema> extends HttpIn
    * Options to authenticate the interceptor when connecting to an interceptor server. This is required if the
    * interceptor server was started with the `--tokens-dir` option.
    *
-   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+   * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication Interceptor server authentication}
    */
   auth?: RemoteHttpInterceptorOptions['auth'];
 

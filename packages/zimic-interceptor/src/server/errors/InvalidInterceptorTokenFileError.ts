@@ -1,7 +1,7 @@
 /**
  * Error thrown when an interceptor token file is invalid.
  *
- * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication Interceptor server authentication}
+ * @see {@link https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication Interceptor server authentication}
  */
 class InvalidInterceptorTokenFileError extends Error {
   constructor(tokenFilePath: string, validationErrorMessage: string) {

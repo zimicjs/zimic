@@ -90,7 +90,7 @@ describe('CLI > Server token create', () => {
           '--tokens-dir',
         )} ${color.magenta(DEFAULT_INTERCEPTOR_TOKENS_DIRECTORY)}`,
         '',
-        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+        'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
       ]);
     });
 
@@ -262,7 +262,7 @@ describe('CLI > Server token create', () => {
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
-          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
         ]);
       });
 
@@ -297,7 +297,7 @@ describe('CLI > Server token create', () => {
           '',
           expect.stringMatching('zimic-interceptor server start'),
           '',
-          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐interceptor‐server#authentication',
+          'Learn more: https://github.com/zimicjs/zimic/wiki/cli‐zimic‐server#authentication',
         ]);
       });
 
